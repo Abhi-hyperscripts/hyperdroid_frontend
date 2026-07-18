@@ -67,11 +67,11 @@
 
                 <!-- Toolbar -->
                 <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;">
-                    <button class="btn btn-primary" onclick="openCreateModal()">
+                    <button class="btn btn-primary" data-admin-only onclick="openCreateModal()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         New Recurring
                     </button>
-                    <button class="btn btn-outline" onclick="processDue()">
+                    <button class="btn btn-outline" data-admin-only onclick="processDue()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                         Run Due Now
                     </button>
@@ -155,9 +155,25 @@
                                 <input type="number" id="rAmount" class="form-control" required min="0" step="0.01">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>GL Account *</label>
+                        <div class="form-group" id="glAccountGroup">
+                            <label id="rAccountLabel">Income Account *</label>
                             <div class="searchable-dropdown-container" id="rAccountContainer"></div>
+                        </div>
+                        <div id="journalGroup" style="display:none;">
+                            <div class="form-group">
+                                <label>Journal Type *</label>
+                                <div class="searchable-dropdown-container" id="rJournalTypeContainer"></div>
+                            </div>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label>Debit Account *</label>
+                                    <div class="searchable-dropdown-container" id="rDebitAccountContainer"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Credit Account *</label>
+                                    <div class="searchable-dropdown-container" id="rCreditAccountContainer"></div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -175,7 +191,6 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/confirm-dialog.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');

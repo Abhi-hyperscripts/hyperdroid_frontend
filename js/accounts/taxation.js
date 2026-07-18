@@ -107,9 +107,6 @@ function setupSearchListeners() {
 
     const hsnSearch = document.getElementById('hsnSacSearch');
     if (hsnSearch) hsnSearch.addEventListener('input', debounce(() => { hsnSacPage = 1; loadHsnSacCodes(); }));
-
-    const auditUser = document.getElementById('auditUserSearch');
-    if (auditUser) auditUser.addEventListener('input', debounce(() => loadTaxLedger()));
 }
 
 // ============================================================================
@@ -232,8 +229,10 @@ function editTaxConfig(id) {
     document.getElementById('taxConfigCountry').value = cfg.country_code || cfg.country || '';
     document.getElementById('taxConfigType').value = cfg.tax_type || '';
     document.getElementById('taxConfigRate').value = cfg.configuration?.total_rate ?? cfg.rate ?? '';
-    document.getElementById('taxConfigStatus').value = cfg.status || 'active';
-    document.getElementById('taxConfigDescription').value = cfg.description || '';
+    // Backend emits is_active (there is no top-level status field) — map it to the Status control.
+    document.getElementById('taxConfigStatus').value = cfg.is_active === false ? 'inactive' : 'active';
+    // Description lives inside the configuration JSON, not at top level.
+    document.getElementById('taxConfigDescription').value = cfg.description || cfg.configuration?.description || '';
     // The backend treats country_code / tax_type as immutable after creation (the update
     // payload omits them). Disable so the user isn't misled into editing a discarded field.
     document.getElementById('taxConfigCountry').disabled = true;
@@ -255,10 +254,18 @@ async function saveTaxConfig() {
         return;
     }
 
-    const payload = id
-        ? { name, is_active: status !== 'inactive', configuration: { total_rate: rate, description } }
-        : { name, country_code: country, tax_type, configuration: { total_rate: rate, description }, effective_from: new Date().toISOString() };
+    let payload;
+    if (id) {
+        // MERGE into the existing configuration JSON — replacing it wholesale would wipe
+        // structural keys like intra_state_split / inter_state that the form doesn't edit.
+        const existing = taxConfigs.find(c => c.id === id);
+        const configuration = { ...(existing?.configuration || {}), total_rate: rate, description };
+        payload = { name, is_active: status !== 'inactive', configuration };
+    } else {
+        payload = { name, country_code: country, tax_type, configuration: { total_rate: rate, description }, effective_from: AccountsCommon.todayLocal() };
+    }
 
+    if (!AccountsCommon.beginSubmit('saveTaxConfig')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`tax/configurations/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -272,6 +279,8 @@ async function saveTaxConfig() {
     } catch (err) {
         console.error('[Taxation] saveTaxConfig error:', err);
         Toast.error(err.message || 'Failed to save tax config');
+    } finally {
+        AccountsCommon.endSubmit('saveTaxConfig');
     }
 }
 
@@ -403,6 +412,7 @@ async function saveTaxRate() {
     // field — rates are active by default, so no Status control is offered.
     const payload = { name, rate, tax_configuration_id, tax_account_id };
 
+    if (!AccountsCommon.beginSubmit('saveTaxRate')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`tax/rates/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -416,6 +426,8 @@ async function saveTaxRate() {
     } catch (err) {
         console.error('[Taxation] saveTaxRate error:', err);
         Toast.error(err.message || 'Failed to save tax rate');
+    } finally {
+        AccountsCommon.endSubmit('saveTaxRate');
     }
 }
 
@@ -553,6 +565,7 @@ async function saveHsnSac() {
 
     const payload = { code, code_type: type, description, default_tax_rate };
 
+    if (!AccountsCommon.beginSubmit('saveHsnSac')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`tax/hsn-sac/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -566,6 +579,8 @@ async function saveHsnSac() {
     } catch (err) {
         console.error('[Taxation] saveHsnSac error:', err);
         Toast.error(err.message || 'Failed to save HSN/SAC code');
+    } finally {
+        AccountsCommon.endSubmit('saveHsnSac');
     }
 }
 
@@ -758,12 +773,18 @@ async function calculateTax() {
         Toast.error('Amount and Tax Config are required');
         return;
     }
+    // GST calculation requires both state codes to decide intra-state (CGST+SGST) vs
+    // inter-state (IGST) — the backend rejects the request without them.
+    if (!sellerState || !buyerState) {
+        Toast.error('Seller and Buyer state codes are required (e.g., 27 for Maharashtra)');
+        return;
+    }
 
     const resultCard = document.getElementById('taxCalcResult');
     const resultBody = document.getElementById('taxCalcResultBody');
 
     try {
-        const payload = { taxable_amount: amount, tax_configuration_id: taxConfigId, transaction_type: 'sales', seller_state_code: sellerState || null, buyer_state_code: buyerState || null };
+        const payload = { taxable_amount: amount, tax_configuration_id: taxConfigId, transaction_type: 'sales', seller_state_code: sellerState, buyer_state_code: buyerState };
         const url = AccountsCommon.buildUrl('tax/calculate');
         const res = await api.request(url, { method: 'POST', body: JSON.stringify(payload) });
         // Response: { total_tax, taxable_amount, tax_configuration_id, tax_configuration_name, tax_lines: [{name, rate, amount, account_id, account_code}] }
@@ -813,9 +834,15 @@ async function loadTaxLedger() {
 
         const url = AccountsCommon.buildUrl('tax/ledger', params);
         const res = await api.request(url, { _skipSpinner: true });
-        taxLedgerEntries = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        const total = res?.total || res?.totalCount || taxLedgerEntries.length;
+        // Backend returns { data, total } (total = filtered count); tolerate a bare array too.
+        taxLedgerEntries = res?.data ?? (Array.isArray(res) ? res : []);
+        const total = res?.total ?? res?.totalCount ?? taxLedgerEntries.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        if (taxLedgerPage > totalPages) {
+            // Filter change shrank the result set below the current offset — clamp and refetch.
+            taxLedgerPage = totalPages;
+            return loadTaxLedger();
+        }
 
         renderTaxLedger();
         AccountsCommon.renderPagination('taxLedgerPagination', taxLedgerPage, totalPages, (page) => {

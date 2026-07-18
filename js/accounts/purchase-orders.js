@@ -93,19 +93,19 @@ async function loadInitialData() {
 // Pick a sensible default tax config (GST 18% if available, else first one).
 function _defaultTaxConfigId() {
     if (!taxConfigs || !taxConfigs.length) return '';
-    const eighteen = taxConfigs.find(t => /18/.test(t.name || '') || Number(t.rate) === 18 || Number(t.tax_rate) === 18);
+    const eighteen = taxConfigs.find(t => /18/.test(t.name || '') || _taxRateFor(t.id) === 18);
     return eighteen ? eighteen.id : taxConfigs[0].id;
 }
 
 function _taxRateFor(configId) {
     const cfg = taxConfigs.find(t => t.id === configId);
     if (!cfg) return 0;
-    // Pull rate from the config — names vary slightly across the API surface.
-    const r = Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? 0);
+    // Backend TaxConfiguration nests the rate at configuration.total_rate (the list
+    // endpoint doesn't populate rates[]); older/flat keys kept as fallbacks.
+    const r = Number(cfg.configuration?.total_rate ?? cfg.total_rate ?? cfg.rate ?? cfg.tax_rate ?? 0);
     if (r) return r;
-    // Some configs only have rates inside their .rates array. Sum visible rates as fallback.
     if (Array.isArray(cfg.rates)) {
-        return cfg.rates.reduce((s, r) => s + Number(r.rate_percentage ?? r.percentage ?? 0), 0);
+        return cfg.rates.reduce((s, x) => s + Number(x.rate ?? x.rate_percentage ?? 0), 0);
     }
     // Last-ditch: parse "GST 18%" out of the name
     const m = (cfg.name || '').match(/(\d+(?:\.\d+)?)/);
@@ -179,8 +179,11 @@ async function loadPurchaseOrders() {
         const res = await api.request(AccountsCommon.buildUrl('purchase-orders', params));
         const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
         purchaseOrders = items;  // cache for row action handlers
-        const total = res?.total || items.length;
+        // Backend total is the FILTERED count — ?? (not ||) so a legitimate 0 sticks
+        const total = res?.total ?? items.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        // Clamp if actioning the last row on a page left us past the end (else an empty "No … found").
+        if (poPage > totalPages) { poPage = totalPages; return loadPurchaseOrders(); }
 
         // Stats — prefer backend stats, fallback to client-side
         const stats = res?.stats || {};
@@ -226,6 +229,11 @@ function poActions(po) {
     let html = `<button class="btn-icon" data-tooltip="View" onclick="viewPO('${po.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
     html += ` <button class="btn-icon" data-tooltip="Download PDF" onclick="downloadPoPdf('${po.id}', '${(po.po_number||'').replace(/'/g,'')}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
 
+    // Mutating actions require admin (MANAGE_VENDORS)
+    if (!accountsRoles.isAdmin()) {
+        return html;
+    }
+
     if (s === 'draft') {
         html += ` <button class="btn-icon" data-tooltip="Edit" onclick="editPO('${po.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
         html += ` <button class="btn-icon" data-tooltip="Approve" onclick="approvePO('${po.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>`;
@@ -265,18 +273,13 @@ async function viewPO(id) {
         const vendName = po.vendor_name || vendors.find(v => v.id === po.vendor_id)?.name || '-';
         const lines = po.lines || [];
 
-        // Per-line tax derived from each line's tax_config_id. PO header tax
-        // is only rolled up when the PO is converted to a vendor bill, so the
-        // view computes its own totals to stay consistent with what the user
-        // picked at draft time.
-        let computedTax = 0;
+        // Per-line display uses the STORED tax_amount on the line — historical docs must
+        // show their own totals, never a live recompute against current tax-config rates.
         const lineRows = lines.map(l => {
             const cfg = taxConfigs.find(t => t.id === l.tax_config_id);
-            const rate = cfg ? Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? (cfg.name?.match(/(\d+(?:\.\d+)?)/)?.[1] ?? 0)) : 0;
             const lineAmt = Number(l.amount) || 0;
-            const lineTax = lineAmt * rate / 100;
-            computedTax += lineTax;
-            const taxLabel = cfg ? `${cfg.name || 'Tax'} (${rate}%)` : '—';
+            const lineTax = Number(l.tax_amount) || 0;
+            const taxLabel = cfg ? `${cfg.name || 'Tax'}${lineTax ? ' ' + fmt(lineTax) : ''}` : (lineTax ? fmt(lineTax) : '—');
             return `<tr>
                 <td>${esc(l.description || '-')}</td>
                 <td>${esc(l.account_code ? l.account_code + ' — ' + (l.account_name || '') : (l.account_name || '-'))}</td>
@@ -296,8 +299,8 @@ async function viewPO(id) {
                 </table>
             </div>`;
         }
-        const displayTax = computedTax > 0 ? computedTax : Number(po.tax_amount || 0);
-        const displayTotal = computedTax > 0 ? (Number(po.subtotal || 0) + computedTax) : Number(po.total_amount || 0);
+        const displayTax = Number(po.tax_amount || 0);
+        const displayTotal = Number(po.total_amount || 0);
 
         let approvedHtml = '';
         if (po.approved_by) {
@@ -373,7 +376,9 @@ async function editPO(id) {
         const po = await api.request(AccountsCommon.buildUrl(`purchase-orders/${id}`));
         document.getElementById('poModalTitle').textContent = `Edit PO ${po.po_number || ''}`;
         document.getElementById('poId').value = po.id;
-        document.getElementById('poVendorId').value = po.vendor_id || '';
+        const poVendorSel = document.getElementById('poVendorId');
+        poVendorSel.value = po.vendor_id || '';
+        poVendorSel.dispatchEvent(new Event('change')); // re-sync the SearchableDropdown label on repeat edits
         document.getElementById('poDate').value = po.po_date?.split('T')[0] || '';
         document.getElementById('poExpectedDate').value = po.expected_date?.split('T')[0] || '';
         document.getElementById('poCurrency').value = po.currency || 'INR';
@@ -417,7 +422,7 @@ function addPOLine(data = {}) {
     row.innerHTML = `
         <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
-        <td><input type="number" class="form-control line-qty" value="${data.quantity || 1}" min="0" step="any" oninput="calculatePOTotals()"></td>
+        <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculatePOTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${data.unit_price || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculatePOTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
@@ -668,7 +673,9 @@ function calculatePOTotals() {
 
     setText('poSubtotal', subtotal.toFixed(2));
     setText('poTax', totalTax.toFixed(2));
-    setText('poTotal', (subtotal + totalTax).toFixed(2));
+    // The PO stores/prints the pre-tax subtotal (GST is authoritatively added when it converts to a
+    // bill), so the PO Total must equal the subtotal — matching the saved + detail-view figures.
+    setText('poTotal', subtotal.toFixed(2));
 }
 
 // ============================================================================
@@ -677,6 +684,9 @@ function calculatePOTotals() {
 
 async function savePO() {
     const form = document.getElementById('poForm');
+    // The vendor <select> is hidden (converted to a SearchableDropdown) but keeps `required`, so
+    // reportValidity() fails silently on it with no anchorable bubble. Guard explicitly with a Toast.
+    if (!document.getElementById('poVendorId').value) { Toast.error('Please select a vendor'); return; }
     if (!form.reportValidity()) return;
 
     // Skip fully blank rows and require an account on any non-empty row —
@@ -716,6 +726,7 @@ async function savePO() {
     };
 
     const id = document.getElementById('poId').value;
+    if (!AccountsCommon.beginSubmit('savePO')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`purchase-orders/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
@@ -728,6 +739,8 @@ async function savePO() {
         loadPurchaseOrders();
     } catch (err) {
         Toast.error(err.message || 'Failed to save purchase order');
+    } finally {
+        AccountsCommon.endSubmit('savePO');
     }
 }
 
@@ -806,7 +819,9 @@ async function convertToBill(id) {
     if (!ok) return;
     try {
         const result = await api.request(AccountsCommon.buildUrl(`purchase-orders/${id}/convert-to-bill`), { method: 'POST' });
-        const billNo = result?.bill_number || result?.id || '';
+        // Response shape is { message, purchase_order_id, bill } — the bill
+        // number lives on the nested bill object.
+        const billNo = result?.bill?.bill_number || '';
         Toast.success(`Purchase order converted to bill${billNo ? ' ' + billNo : ''}`);
         // Navigate to payables page so user can see the new bill
         window.location.href = 'payables.html';

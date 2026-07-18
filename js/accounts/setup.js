@@ -310,6 +310,7 @@ async function saveAccountGroup() {
         ? { name, description }
         : { name, account_type_id: accountTypeId, code, parent_group_id: parentGroupId || null, description };
 
+    if (!AccountsCommon.beginSubmit('saveAccountGroup')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`coa/groups/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -323,6 +324,8 @@ async function saveAccountGroup() {
     } catch (err) {
         console.error('[Setup] saveAccountGroup error:', err);
         Toast.error(err.message || 'Failed to save account group');
+    } finally {
+        AccountsCommon.endSubmit('saveAccountGroup');
     }
 }
 
@@ -532,6 +535,7 @@ async function saveAccount() {
         allow_direct_posting: allowDirectPosting
     };
 
+    if (!AccountsCommon.beginSubmit('saveAccount')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`coa/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -545,6 +549,8 @@ async function saveAccount() {
     } catch (err) {
         console.error('[Setup] saveAccount error:', err);
         Toast.error(err.message || 'Failed to save account');
+    } finally {
+        AccountsCommon.endSubmit('saveAccount');
     }
 }
 
@@ -616,6 +622,7 @@ async function importAccounts() {
     }
 
     const file = fileInput.files[0];
+    if (!AccountsCommon.beginSubmit('importAccounts')) return;
     try {
         // Parse CSV client-side → send as JSON (backend expects ImportAccountsRequest)
         const text = await file.text();
@@ -646,6 +653,8 @@ async function importAccounts() {
     } catch (err) {
         console.error('[Setup] importAccounts error:', err);
         Toast.error(err.message || 'Failed to import accounts');
+    } finally {
+        AccountsCommon.endSubmit('importAccounts');
     }
 }
 
@@ -889,15 +898,17 @@ async function loadOpeningBalances() {
         const allAccounts = Array.isArray(accountsRes) ? accountsRes : (accountsRes?.data || accountsRes?.items || []);
 
         // Build a map of account_id → { debit_balance, credit_balance } from the existing
-        // balances. The API returns rows from account_period_balances which use the column
-        // names opening_debit / opening_credit, so try those first and fall back to the
-        // shorter aliases for forward-compat.
+        // balances. The API returns ONE ROW PER ACCOUNT+PERIOD from account_period_balances
+        // (opening_debit / opening_credit per period; fall back to the shorter aliases for
+        // forward-compat). The opening balance typically sits only on the period it was
+        // posted to, so AGGREGATE across each account's rows — last-row-wins would blank
+        // out any account whose OB lives in an early period (and re-entry then 409s).
         const balanceMap = {};
         existingBalances.forEach(b => {
-            balanceMap[b.account_id || b.id] = {
-                debit_balance: b.opening_debit ?? b.debit_balance ?? null,
-                credit_balance: b.opening_credit ?? b.credit_balance ?? null
-            };
+            const key = b.account_id || b.id;
+            if (!balanceMap[key]) balanceMap[key] = { debit_balance: 0, credit_balance: 0 };
+            balanceMap[key].debit_balance += parseFloat(b.opening_debit ?? b.debit_balance ?? 0) || 0;
+            balanceMap[key].credit_balance += parseFloat(b.opening_credit ?? b.credit_balance ?? 0) || 0;
         });
 
         // Merge — every active BALANCE-SHEET account becomes a row, with pre-filled balances if any
@@ -1046,27 +1057,60 @@ async function saveAllOpeningBalances() {
     // Find the fiscal year start date — backend requires as_of_date.
     const fyList = (window.fiscalYears || []).length ? window.fiscalYears : (typeof fiscalYears !== 'undefined' ? fiscalYears : []);
     const fy = fyList.find(f => f.id === fiscalYearId);
-    const asOfDate = fy?.start_date || fy?.startDate || new Date().toISOString().slice(0, 10);
+    const asOfDate = fy?.start_date || fy?.startDate || AccountsCommon.todayLocal();
 
+    // Skip rows whose exact value is already persisted server-side (prefilled by
+    // loadOpeningBalances) — this makes a retry after a partial failure re-runnable
+    // without 409s on the accounts that DID save. The Dr=Cr validation above still
+    // runs over the full entered set, so the books stay balanced overall.
+    const toPost = entries.filter(e => {
+        const ob = openingBalances.find(o => (o.account_id || o.id) === e.accountId);
+        const persisted = parseFloat(e.balance_type === 'debit' ? ob?.debit_balance : ob?.credit_balance) || 0;
+        return !(persisted > 0 && Math.abs(persisted - e.amount) < 0.005);
+    });
+    if (!toPost.length) {
+        Toast.success('All entered balances are already saved — nothing to do');
+        return;
+    }
+
+    const codeOf = (accountId) => {
+        const ob = openingBalances.find(o => (o.account_id || o.id) === accountId);
+        return ob?.account_code || accountId;
+    };
+
+    // No atomic batch endpoint exists — each account is a separate POST, so a mid-loop
+    // failure commits a prefix. Disable the button while the loop runs, and on failure
+    // report exactly which accounts saved vs not (never claim success).
+    const saveBtn = document.getElementById('saveAllOpeningBalancesBtn');
+    if (saveBtn) saveBtn.disabled = true;
+    const savedCodes = [];
     try {
-        let saved = 0;
-        for (const e of entries) {
-            await api.request(AccountsCommon.buildUrl('coa/opening-balances'), {
-                method: 'POST',
-                body: JSON.stringify({
-                    account_id: e.accountId,
-                    amount: e.amount,
-                    balance_type: e.balance_type,
-                    as_of_date: typeof asOfDate === 'string' ? asOfDate.slice(0, 10) : new Date(asOfDate).toISOString().slice(0, 10)
-                })
-            });
-            saved++;
+        for (const e of toPost) {
+            try {
+                await api.request(AccountsCommon.buildUrl('coa/opening-balances'), {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        account_id: e.accountId,
+                        amount: e.amount,
+                        balance_type: e.balance_type,
+                        as_of_date: typeof asOfDate === 'string' ? asOfDate.slice(0, 10) : AccountsCommon.toDateInput(asOfDate)
+                    })
+                });
+                savedCodes.push(codeOf(e.accountId));
+            } catch (err) {
+                console.error('[Setup] saveAllOpeningBalances error:', err);
+                const notSaved = toPost.slice(toPost.indexOf(e)).map(x => codeOf(x.accountId));
+                Toast.error(savedCodes.length
+                    ? `PARTIAL SAVE — books may be unbalanced. Saved: ${savedCodes.join(', ')}. NOT saved: ${notSaved.join(', ')} (failed at ${codeOf(e.accountId)}: ${err.message || 'unknown error'}). Fix the issue and click Save All Balances again — already-saved accounts are skipped on retry.`
+                    : `Failed at ${codeOf(e.accountId)}: ${err.message || 'unknown error'} — nothing was saved.`);
+                await loadOpeningBalances();
+                return;
+            }
         }
-        Toast.success(`Saved ${saved} opening balance${saved === 1 ? '' : 's'} (debits ${AccountsCommon.formatCurrency(totalDebit)}, credits ${AccountsCommon.formatCurrency(totalCredit)})`);
+        Toast.success(`Saved ${savedCodes.length} opening balance${savedCodes.length === 1 ? '' : 's'} (debits ${AccountsCommon.formatCurrency(totalDebit)}, credits ${AccountsCommon.formatCurrency(totalCredit)})`);
         await loadOpeningBalances();
-    } catch (err) {
-        console.error('[Setup] saveAllOpeningBalances error:', err);
-        Toast.error(err.message || 'Failed to save opening balances');
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
     }
 }
 
@@ -1195,6 +1239,7 @@ async function saveFiscalYear() {
     // (they're disabled in the modal and ignored server-side anyway).
     const payload = id ? { name } : { name, start_date: startDate, end_date: endDate };
 
+    if (!AccountsCommon.beginSubmit('saveFiscalYear')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`fiscal/years/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -1208,6 +1253,8 @@ async function saveFiscalYear() {
     } catch (err) {
         console.error('[Setup] saveFiscalYear error:', err);
         Toast.error(err.message || 'Failed to save fiscal year');
+    } finally {
+        AccountsCommon.endSubmit('saveFiscalYear');
     }
 }
 
@@ -1426,6 +1473,7 @@ async function saveJournalType() {
 
     const payload = { code, name, description };
 
+    if (!AccountsCommon.beginSubmit('saveJournalType')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`journals/types/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -1439,6 +1487,8 @@ async function saveJournalType() {
     } catch (err) {
         console.error('[Setup] saveJournalType error:', err);
         Toast.error(err.message || 'Failed to save journal type');
+    } finally {
+        AccountsCommon.endSubmit('saveJournalType');
     }
 }
 

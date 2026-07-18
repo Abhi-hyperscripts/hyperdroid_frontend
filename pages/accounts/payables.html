@@ -171,6 +171,7 @@
                             <option value="approved">Approved</option>
                             <option value="paid">Paid</option>
                             <option value="partially_paid">Partially Paid</option>
+                            <option value="credited">Credited</option>
                             <option value="cancelled">Cancelled</option>
                         </select>
                         <input type="date" id="billFromDate" class="form-control" style="width:auto;" onchange="currentBillPage=1; loadVendorBills()" placeholder="From Date">
@@ -342,7 +343,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-outline" onclick="AccountsCommon.closeModal('debitNoteModal')">Cancel</button>
-                            <button type="button" class="btn btn-primary" onclick="saveDebitNote()">Save</button>
+                            <button type="button" class="btn btn-primary" id="dnSaveBtn" onclick="saveDebitNote()">Save</button>
                         </div>
                     </div>
                 </div>
@@ -638,7 +639,7 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-outline" onclick="AccountsCommon.closeModal('vendorPaymentModal')">Cancel</button>
-                    <button class="btn btn-primary" onclick="saveVendorPayment()">Record Payment</button>
+                    <button class="btn btn-primary" id="paymentSaveBtn" onclick="saveVendorPayment()">Record Payment</button>
                 </div>
             </div>
         </div>

@@ -6,6 +6,7 @@ let recurringList = [];
 let customersList = [];
 let vendorsList = [];
 let accountsList = [];
+let journalTypesList = [];
 
 // Searchable dropdown instances
 let typeDropdown = null;
@@ -13,12 +14,25 @@ let frequencyDropdown = null;
 let customerDropdown = null;
 let vendorDropdown = null;
 let accountDropdown = null;
+let journalTypeDropdown = null;
+let debitAccountDropdown = null;
+let creditAccountDropdown = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await AccountsCommon.initPage('recurring', '../')) return;
 
+    accountsRoles.applyRBAC();
+
+    // Recurring is manager/admin-only (RecurringController). Block USER/AUDITOR up front so they don't
+    // hit a wall of 403s and see action buttons that all fail; show a clear no-access message instead.
+    if (!accountsRoles.isManager()) {
+        const host = document.getElementById('recurringTable') || document.querySelector('table tbody');
+        if (host) host.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary);">You do not have access to recurring transactions. This feature requires an Accounts Manager or Admin role.</td></tr>';
+        return;
+    }
+
     // Set default start date to today
-    document.getElementById('rStartDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('rStartDate').value = AccountsCommon.todayLocal();
 
     await Promise.all([loadRecurring(), loadLookups()]);
     initDropdowns();
@@ -67,11 +81,41 @@ function initDropdowns() {
         compact: true
     });
 
+    // Backend requires an Income account for invoice templates and an
+    // Expenses account for bill templates — options are re-filtered per
+    // selected type in onTypeChange() to avoid guaranteed 400s.
     accountDropdown = new SearchableDropdown(document.getElementById('rAccountContainer'), {
-        options: [{ value: '', label: 'Select account' }, ...accountsList.filter(a => a.allow_direct_posting).map(a => ({ value: a.id, label: `${a.account_code} - ${a.account_name}` }))],
+        options: accountOptionsForType(typeDropdown?.getValue() || 'invoice'),
         placeholder: 'Search GL account...',
         compact: true
     });
+
+    journalTypeDropdown = new SearchableDropdown(document.getElementById('rJournalTypeContainer'), {
+        options: [{ value: '', label: 'Select journal type' }, ...journalTypesList.map(j => ({ value: j.id, label: j.name || j.journal_type_name || j.type }))],
+        placeholder: 'Select journal type',
+        compact: true
+    });
+
+    debitAccountDropdown = new SearchableDropdown(document.getElementById('rDebitAccountContainer'), {
+        options: accountOptionsForType('journal'),
+        placeholder: 'Search debit account...',
+        compact: true
+    });
+
+    creditAccountDropdown = new SearchableDropdown(document.getElementById('rCreditAccountContainer'), {
+        options: accountOptionsForType('journal'),
+        placeholder: 'Search credit account...',
+        compact: true
+    });
+}
+
+function accountOptionsForType(type) {
+    // invoice → Income accounts, bill → Expenses accounts, journal → any
+    // direct-posting account (used for both debit and credit sides).
+    const wanted = type === 'invoice' ? 'Income' : type === 'bill' ? 'Expenses' : null;
+    return [{ value: '', label: 'Select account' }, ...accountsList
+        .filter(a => a.allow_direct_posting && (!wanted || a.account_type_name === wanted))
+        .map(a => ({ value: a.id, label: `${a.account_code} - ${a.account_name}` }))];
 }
 
 async function loadRecurring() {
@@ -88,14 +132,16 @@ async function loadRecurring() {
 
 async function loadLookups() {
     try {
-        const [custRes, vendRes, coaRes] = await Promise.all([
+        const [custRes, vendRes, coaRes, jtRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('customers'), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => [])
+            api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => []),
+            api.request(AccountsCommon.buildUrl('journals/types'), { _skipSpinner: true }).catch(() => [])
         ]);
         customersList = Array.isArray(custRes) ? custRes : (custRes?.data || []);
         vendorsList = Array.isArray(vendRes) ? vendRes : (vendRes?.data || []);
         accountsList = Array.isArray(coaRes) ? coaRes : (coaRes?.data || []);
+        journalTypesList = Array.isArray(jtRes) ? jtRes : (jtRes?.data || []);
     } catch (err) {
         console.error('[Recurring] lookups error:', err);
     }
@@ -124,15 +170,32 @@ function renderTable() {
 
     const typeLabel = (t) => ({ invoice: 'Invoice', bill: 'Bill', journal: 'Journal' })[t] || t;
 
+    // Recurring writes require admin (MANAGE_BILLING). Managers may view the
+    // list but only admins see the Pause/Resume/Cancel actions.
+    const isAdmin = accountsRoles.isAdmin();
     tbody.innerHTML = recurringList.map(r => {
-        const actions = r.status === 'active'
+        const actions = !isAdmin
+            ? ''
+            : r.status === 'active'
             ? `<button class="btn-icon" onclick="pauseRecurring('${r.id}')" data-tooltip="Pause"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></button>`
             : r.status === 'paused'
             ? `<button class="btn-icon" onclick="resumeRecurring('${r.id}')" data-tooltip="Resume"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`
             : '';
-        const cancelBtn = r.status !== 'cancelled' && r.status !== 'completed'
+        const cancelBtn = isAdmin && r.status !== 'cancelled' && r.status !== 'completed'
             ? `<button class="btn-icon btn-icon-danger" onclick="cancelRecurring('${r.id}')" data-tooltip="Cancel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
             : '';
+
+        // Surface auto-pause diagnostics so a failing schedule isn't blindly
+        // resumed — backend pauses after consecutive failures and emits
+        // last_error / consecutive_failures on the row.
+        let pausedNote = '';
+        if (r.status === 'paused' && (r.last_error || r.consecutive_failures > 0)) {
+            const failures = r.consecutive_failures > 0
+                ? `Auto-paused after ${r.consecutive_failures} failure${r.consecutive_failures === 1 ? '' : 's'}`
+                : 'Paused with error';
+            const errText = r.last_error ? `: ${AccountsCommon.escapeHtml(String(r.last_error).slice(0, 140))}` : '';
+            pausedNote = `<div style="font-size:0.72rem;color:var(--color-error);margin-top:2px;max-width:240px;white-space:normal;">${failures}${errText}</div>`;
+        }
 
         return `<tr>
             <td><strong>${AccountsCommon.escapeHtml(r.name)}</strong></td>
@@ -141,7 +204,7 @@ function renderTable() {
             <td>${AccountsCommon.formatDate(r.start_date)}</td>
             <td>${AccountsCommon.formatDate(r.next_run_date)}</td>
             <td style="text-align:center;">${r.total_generated || 0}</td>
-            <td>${statusBadge(r.status)}</td>
+            <td>${statusBadge(r.status)}${pausedNote}</td>
             <td><div style="display:flex;gap:0.35rem;align-items:center;">${actions}${cancelBtn}</div></td>
         </tr>`;
     }).join('');
@@ -152,12 +215,15 @@ function openCreateModal() {
     document.getElementById('rDescription').value = '';
     document.getElementById('rAmount').value = '';
     document.getElementById('rEndDate').value = '';
-    document.getElementById('rStartDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('rStartDate').value = AccountsCommon.todayLocal();
     typeDropdown?.setValue('invoice');
     frequencyDropdown?.setValue('monthly');
     customerDropdown?.setValue('');
     vendorDropdown?.setValue('');
     accountDropdown?.setValue('');
+    journalTypeDropdown?.setValue('');
+    debitAccountDropdown?.setValue('');
+    creditAccountDropdown?.setValue('');
     onTypeChange();
     AccountsCommon.openModal('recurringModal');
 }
@@ -166,6 +232,13 @@ function onTypeChange() {
     const type = typeDropdown?.getValue() || 'invoice';
     document.getElementById('customerGroup').style.display = type === 'invoice' ? '' : 'none';
     document.getElementById('vendorGroup').style.display = type === 'bill' ? '' : 'none';
+    document.getElementById('glAccountGroup').style.display = type === 'journal' ? 'none' : '';
+    document.getElementById('journalGroup').style.display = type === 'journal' ? '' : 'none';
+    const label = document.getElementById('rAccountLabel');
+    if (label) label.textContent = type === 'bill' ? 'Expense Account *' : 'Income Account *';
+    // Re-filter the GL account list to match the backend's per-type
+    // requirement (Income for invoices, Expenses for bills).
+    if (accountDropdown && type !== 'journal') accountDropdown.setOptions(accountOptionsForType(type), true);
 }
 
 async function saveRecurring() {
@@ -178,23 +251,42 @@ async function saveRecurring() {
     const amount = parseFloat(document.getElementById('rAmount').value);
     const accountId = accountDropdown?.getValue();
 
-    if (!name || !frequency || !startDate || !description || !amount || !accountId) {
+    if (!name || !frequency || !startDate || !description || !amount) {
         Toast.error('Please fill all required fields');
         return;
     }
 
-    let templateData = { lines: [{ description, quantity: 1, unit_price: amount, account_id: accountId }] };
+    let templateData;
+    if (type === 'journal') {
+        // Journal templates need a journal type + balanced debit/credit lines.
+        const journalTypeId = journalTypeDropdown?.getValue();
+        const debitId = debitAccountDropdown?.getValue();
+        const creditId = creditAccountDropdown?.getValue();
+        if (!journalTypeId) { Toast.error('Please select a journal type'); return; }
+        if (!debitId || !creditId) { Toast.error('Please select both debit and credit accounts'); return; }
+        if (debitId === creditId) { Toast.error('Debit and credit accounts must be different'); return; }
+        templateData = {
+            journal_type_id: journalTypeId,
+            lines: [
+                { account_id: debitId, debit_amount: amount, credit_amount: 0, description },
+                { account_id: creditId, debit_amount: 0, credit_amount: amount, description }
+            ]
+        };
+    } else {
+        if (!accountId) { Toast.error('Please select a GL account'); return; }
+        templateData = { lines: [{ description, quantity: 1, unit_price: amount, account_id: accountId }] };
 
-    if (type === 'invoice') {
-        const custId = customerDropdown?.getValue();
-        if (!custId) { Toast.error('Please select a customer'); return; }
-        templateData.customer_id = custId;
-        templateData.due_days = 30;
-    } else if (type === 'bill') {
-        const vendId = vendorDropdown?.getValue();
-        if (!vendId) { Toast.error('Please select a vendor'); return; }
-        templateData.vendor_id = vendId;
-        templateData.due_days = 30;
+        if (type === 'invoice') {
+            const custId = customerDropdown?.getValue();
+            if (!custId) { Toast.error('Please select a customer'); return; }
+            templateData.customer_id = custId;
+            templateData.due_days = 30;
+        } else if (type === 'bill') {
+            const vendId = vendorDropdown?.getValue();
+            if (!vendId) { Toast.error('Please select a vendor'); return; }
+            templateData.vendor_id = vendId;
+            templateData.due_days = 30;
+        }
     }
 
     const payload = {
@@ -203,6 +295,7 @@ async function saveRecurring() {
         template_data: JSON.stringify(templateData)
     };
 
+    if (!AccountsCommon.beginSubmit('saveRecurring')) return;
     try {
         await api.request(AccountsCommon.buildUrl('recurring'), {
             method: 'POST', body: JSON.stringify(payload)
@@ -213,23 +306,29 @@ async function saveRecurring() {
     } catch (err) {
         console.error('[Recurring] save error:', err);
         Toast.error(err.message || 'Failed to create recurring');
+    } finally {
+        AccountsCommon.endSubmit('saveRecurring');
     }
 }
 
 async function pauseRecurring(id) {
+    if (!AccountsCommon.beginSubmit('pauseRecurring')) return;
     try {
         await api.request(AccountsCommon.buildUrl(`recurring/${id}/pause`), { method: 'POST' });
         Toast.success('Paused');
         await loadRecurring();
     } catch (err) { Toast.error(err.message || 'Failed to pause'); }
+    finally { AccountsCommon.endSubmit('pauseRecurring'); }
 }
 
 async function resumeRecurring(id) {
+    if (!AccountsCommon.beginSubmit('resumeRecurring')) return;
     try {
         await api.request(AccountsCommon.buildUrl(`recurring/${id}/resume`), { method: 'POST' });
         Toast.success('Resumed');
         await loadRecurring();
     } catch (err) { Toast.error(err.message || 'Failed to resume'); }
+    finally { AccountsCommon.endSubmit('resumeRecurring'); }
 }
 
 async function cancelRecurring(id) {

@@ -234,7 +234,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="proformaCurrency">Currency</label>
-                                <input type="text" id="proformaCurrency" class="form-control" value="INR" placeholder="e.g. INR">
+                                <input type="text" id="proformaCurrency" class="form-control" value="INR" readonly title="Proforma invoices use the account's base currency">
+                                <small style="color: var(--text-secondary);">Base currency (per-document currency not supported)</small>
                             </div>
                         </div>
                         <div class="form-row">
@@ -271,8 +272,8 @@
                         <div class="po-totals">
                             <div class="po-totals-inner">
                                 <div class="po-totals-row"><span>Subtotal:</span><span id="proformaSubtotal">0.00</span></div>
-                                <div class="po-totals-row"><span>Tax:</span><span id="proformaTax">0.00</span></div>
-                                <div class="po-totals-row po-totals-grand"><span>Total:</span><span id="proformaTotal">0.00</span></div>
+                                <div class="po-totals-row"><span>Est. GST (applied on conversion to invoice):</span><span id="proformaTax">0.00</span></div>
+                                <div class="po-totals-row po-totals-grand"><span>Proforma Total:</span><span id="proformaTotal">0.00</span></div>
                             </div>
                         </div>
                     </form>

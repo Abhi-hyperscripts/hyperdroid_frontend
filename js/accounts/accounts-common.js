@@ -101,6 +101,13 @@ const accountsRoles = {
                 el.style.display = 'none';
             });
         }
+        // [data-manager-only]: visible to ACCOUNTS_MANAGER/ADMIN/SUPERADMIN only (e.g. Recurring,
+        // whose controller is manager+). Hidden from ACCOUNTS_USER / ACCOUNTS_AUDITOR.
+        if (!this.isManager()) {
+            document.querySelectorAll('[data-manager-only]').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
     },
 
     getRoles() { return [...this._roles]; },
@@ -396,6 +403,23 @@ const AccountsCommon = {
         return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     },
 
+    /** Today's date as 'YYYY-MM-DD' in the LOCAL timezone (never UTC).
+     *  Use for date-input defaults / "today" — toISOString() shifts a day in IST 00:00-05:30. */
+    todayLocal() {
+        return this.toDateInput(new Date());
+    },
+
+    /** Convert a Date or date-like value to a 'YYYY-MM-DD' string in LOCAL time,
+     *  suitable for <input type="date"> values and preview rows without a UTC day-shift. */
+    toDateInput(dateLike) {
+        const d = dateLike instanceof Date ? dateLike : new Date(dateLike);
+        if (isNaN(d)) return '';
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    },
+
     formatDateTime(dateStr) {
         if (!dateStr) return '-';
         const d = new Date(dateStr);
@@ -410,12 +434,44 @@ const AccountsCommon = {
     // UI Helpers
     // ------------------------------------------------------------------
 
-    /** XSS-safe HTML escaping */
+    /** XSS-safe HTML escaping — quote-safe, so it is correct in element text,
+     *  HTML-attribute, and (with escJs for the JS layer) inline-handler contexts. */
     escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        if (text === null || text === undefined) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    /** Escape a value destined for a single-quoted JS string inside an inline
+     *  handler attribute, e.g. onclick="fn('${escJs(x)}')". Apply escapeHtml
+     *  AFTER this when the result also sits in an HTML attribute. */
+    escJs(text) {
+        if (text === null || text === undefined) return '';
+        return String(text)
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/"/g, '\\"')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r');
+    },
+
+    /** Double-submit guard keyed by an action name. Call beginSubmit(key) at the top of a
+     *  mutating handler (AFTER field validation, so a validation bail doesn't strand the key);
+     *  if it returns false, a prior invocation is still in flight — return immediately. Always
+     *  pair with endSubmit(key) in a finally that covers the await. Prevents a double-click from
+     *  POSTing the same create/payment/import twice. */
+    _inFlightSubmits: new Set(),
+    beginSubmit(key) {
+        if (this._inFlightSubmits.has(key)) return false;
+        this._inFlightSubmits.add(key);
+        return true;
+    },
+    endSubmit(key) {
+        this._inFlightSubmits.delete(key);
     },
 
     /** Status badge HTML using theme CSS variables */
@@ -426,7 +482,7 @@ const AccountsCommon = {
         const classMap = {
             active: 'status-active', approved: 'status-active', posted: 'status-active',
             completed: 'status-active',
-            paid: 'status-paid', reimbursed: 'status-paid',
+            paid: 'status-paid', reimbursed: 'status-paid', credited: 'status-paid',
             sent: 'status-sent',
             submitted: 'status-submitted', in_progress: 'status-submitted',
             draft: 'status-draft', not_started: 'status-draft', trial: 'status-draft',

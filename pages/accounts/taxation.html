@@ -447,12 +447,14 @@
                                 </div>
                                 <div class="form-row two-col">
                                     <div class="form-group">
-                                        <label for="calcSellerState">Seller State</label>
-                                        <input type="text" id="calcSellerState" class="form-control" placeholder="e.g., Maharashtra">
+                                        <label for="calcSellerState">Seller State Code *</label>
+                                        <input type="text" id="calcSellerState" class="form-control" required placeholder="e.g., 27 (Maharashtra)">
+                                        <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">GST state code of the seller — needed to decide CGST+SGST vs IGST.</small>
                                     </div>
                                     <div class="form-group">
-                                        <label for="calcBuyerState">Buyer State</label>
-                                        <input type="text" id="calcBuyerState" class="form-control" placeholder="e.g., Karnataka">
+                                        <label for="calcBuyerState">Buyer State Code *</label>
+                                        <input type="text" id="calcBuyerState" class="form-control" required placeholder="e.g., 29 (Karnataka)">
+                                        <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">GST state code of the buyer. Same as seller = intra-state (CGST+SGST); different = inter-state (IGST).</small>
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary">
@@ -481,7 +483,7 @@
                 <!-- ============================================================ -->
                 <div class="tab-content" id="tax-ledger">
                     <div class="filters-bar">
-                        <select id="ledgerTxnTypeFilter" class="form-control" style="max-width: 180px;" onchange="loadTaxLedger()">
+                        <select id="ledgerTxnTypeFilter" class="form-control" style="max-width: 180px;" onchange="taxLedgerPage = 1; loadTaxLedger()">
                             <option value="">All Transactions</option>
                             <option value="sales">Sales</option>
                             <option value="purchase">Purchase</option>
@@ -490,10 +492,10 @@
                             <option value="tcs_collected">TCS Collected</option>
                         </select>
                         <div class="form-group" style="margin-bottom:0;">
-                            <input type="date" id="ledgerFrom" class="form-control" onchange="loadTaxLedger()">
+                            <input type="date" id="ledgerFrom" class="form-control" onchange="taxLedgerPage = 1; loadTaxLedger()">
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
-                            <input type="date" id="ledgerTo" class="form-control" onchange="loadTaxLedger()">
+                            <input type="date" id="ledgerTo" class="form-control" onchange="taxLedgerPage = 1; loadTaxLedger()">
                         </div>
                     </div>
 

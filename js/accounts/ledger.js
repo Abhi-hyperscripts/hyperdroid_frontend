@@ -15,8 +15,11 @@ let journalTypes = [];
 let coaAccounts = [];
 let glLines = [];
 let currentGlPage = 1;
+let journalPage = 1;
 const GL_PAGE_SIZE = 50;
 let editingGlId = null;
+let glSaveInFlight = false; // double-submit guard for saveGlEntry (each save can create + post an entry)
+let glEditNavigating = false; // true while editGlEntry is switching to the create tab (it repopulates itself)
 
 // Dropdown instances
 let glAccountFilterDropdown = null;
@@ -60,9 +63,11 @@ function onTabSwitch(tabId) {
 }
 
 function initCreateGlTab() {
-    if (!document.getElementById('glLinesBody')?.children.length) {
-        resetGlForm();
-    }
+    // editGlEntry navigates here and repopulates the form itself — don't wipe its data.
+    if (glEditNavigating) { glEditNavigating = false; return; }
+    // Any other way of entering the Create Entry tab is a fresh create: reset unconditionally so a
+    // leftover editingGlId / line rows from an abandoned edit can't make the next save PUT the old entry.
+    resetGlForm();
 }
 
 // ============================================================================
@@ -122,7 +127,7 @@ function setupSearchListeners() {
     if (glSearch) glSearch.addEventListener('input', debounce(() => { currentGlPage = 1; loadGlEntries(); }));
 
     const journalSearch = document.getElementById('journalSearch');
-    if (journalSearch) journalSearch.addEventListener('input', debounce(() => loadJournalEntries()));
+    if (journalSearch) journalSearch.addEventListener('input', debounce(() => { journalPage = 1; loadJournalEntries(); }));
 }
 
 // ============================================================================
@@ -133,7 +138,14 @@ async function loadGlEntries() {
     try {
         const accountId = glAccountFilterDropdown?.getValue?.() || '';
         const journalType = glJournalFilterDropdown?.getValue?.() || '';
-        const status = document.getElementById('glStatusFilter')?.value || '';
+        const statusSel = document.getElementById('glStatusFilter')?.value || '';
+        // 'reversed' is not a real backend status — ReverseGlEntry sets
+        // is_reversed=true while status stays 'posted', and GET /gl has no
+        // is_reversed filter param (backend gap: QueryGlEntries only filters
+        // g.status). Query posted entries and filter is_reversed client-side
+        // over the loaded page (the option is labelled accordingly).
+        const filterReversed = statusSel === 'reversed';
+        const status = filterReversed ? 'posted' : statusSel;
         const fromDate = document.getElementById('glFromDate')?.value || '';
         const toDate = document.getElementById('glToDate')?.value || '';
         const search = document.getElementById('glSearch')?.value || '';
@@ -151,10 +163,15 @@ async function loadGlEntries() {
         const url = AccountsCommon.buildUrl('gl', params);
         const res = await api.request(url, { _skipSpinner: true });
         const data = res?.data || res?.items || (Array.isArray(res) ? res : []);
-        glEntries = data;
+        glEntries = filterReversed ? data.filter(e => e.is_reversed) : data;
 
-        const total = res?.total || res?.totalCount || glEntries.length;
+        // ?? not || — a real total of 0 must not fall back to the page length.
+        // Note: when filterReversed, total/pages still track the posted set —
+        // the reversed subset is a per-page client-side view.
+        const total = res?.total ?? res?.totalCount ?? glEntries.length;
         const totalPages = Math.ceil(total / GL_PAGE_SIZE) || 1;
+        // Clamp if actioning the last row on a page left us past the end (else an empty "No … found").
+        if (currentGlPage > totalPages) { currentGlPage = totalPages; return loadGlEntries(); }
 
         renderGlTable();
         AccountsCommon.renderPagination('glPagination', currentGlPage, totalPages, (page) => {
@@ -267,7 +284,10 @@ async function viewGlEntry(id) {
                 <div><strong>Status:</strong> ${AccountsCommon.statusBadge(entry.status)}</div>
             </div>
             <div style="margin-bottom:1rem;"><strong>Description:</strong> ${esc(entry.description || '-')}</div>
-            <div style="margin-bottom:1rem;"><strong>Reference:</strong> ${esc(entry.reference || '-')}</div>
+            <div style="margin-bottom:1rem;"><strong>Reference:</strong> ${entry.reference_type
+                ? esc(String(entry.reference_type).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))
+                    + (entry.reference_id ? ` <code style="font-size:0.75rem">${esc(entry.reference_id)}</code>` : '')
+                : '-'}</div>
             ${entry.posted_by ? `<div style="margin-bottom:1rem;"><strong>Posted:</strong> ${esc(resolveUserName(entry.posted_by))} on ${fmtD(entry.posted_at)}</div>` : ''}
             <div class="data-table-container" style="margin-top:1rem;">
                 <table class="data-table">
@@ -312,7 +332,7 @@ async function postGlEntry(id) {
 
 function reverseGlEntry(id) {
     document.getElementById('reverseGlId').value = id;
-    document.getElementById('reversalDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('reversalDate').value = AccountsCommon.todayLocal();
     document.getElementById('reversalReason').value = '';
     AccountsCommon.openModal('reverseGlModal');
 }
@@ -368,7 +388,9 @@ async function editGlEntry(id) {
         const entry = res?.data || res;
         if (!entry) { Toast.error('Entry not found'); return; }
 
-        // Switch to Create Entry tab (Tab 2)
+        // Switch to Create Entry tab (Tab 2). Flag the navigation so initCreateGlTab doesn't reset
+        // the form we're about to populate (and so a plain tab click still resets for a fresh create).
+        glEditNavigating = true;
         const btn = document.querySelector('[data-tab="create-gl"]');
         if (btn) btn.click();
 
@@ -457,7 +479,7 @@ function resetGlForm() {
     editingGlId = null;
     const form = document.getElementById('glForm');
     if (form) form.reset();
-    document.getElementById('glEntryDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('glEntryDate').value = AccountsCommon.todayLocal();
     populateJournalTypeSelect();
     clearGlLines();
     addGlLine();
@@ -578,20 +600,32 @@ async function saveGlEntry(post = false) {
         return;
     }
 
-    // Collect line items from DOM
+    // Collect line items from DOM. Fully blank rows are skipped, but a row
+    // with an amount and no account (or an account and no amount) must BLOCK
+    // the save — silently dropping it could post a partial entry (two
+    // forgotten-account lines that balance each other would just vanish).
     const tbody = document.getElementById('glLinesBody');
     const lines = [];
-    tbody?.querySelectorAll('tr').forEach(row => {
+    const incompleteRows = [];
+    tbody?.querySelectorAll('tr').forEach((row, rowNum) => {
         const lineIdx = parseInt(row.dataset.lineIdx);
         const dd = glLineDropdowns.get(lineIdx);
         const account_id = dd ? (dd.getValue() || '') : '';
         const lineDesc = row.querySelector('.line-desc')?.value.trim() || '';
         const debit = parseFloat(row.querySelector('.line-debit')?.value) || 0;
         const credit = parseFloat(row.querySelector('.line-credit')?.value) || 0;
-        if (account_id && (debit > 0 || credit > 0)) {
+        const hasAmount = debit > 0 || credit > 0;
+        if (account_id && hasAmount) {
             lines.push({ account_id, description: lineDesc, debit_amount: debit, credit_amount: credit });
+        } else if (account_id || hasAmount) {
+            incompleteRows.push(rowNum + 1);
         }
     });
+
+    if (incompleteRows.length) {
+        Toast.error(`Line${incompleteRows.length > 1 ? 's' : ''} ${incompleteRows.join(', ')} incomplete — each line needs both an account and a debit or credit amount`);
+        return;
+    }
 
     if (lines.length < 2) {
         Toast.error('At least two line items are required');
@@ -615,6 +649,10 @@ async function saveGlEntry(post = false) {
         lines
     };
 
+    // Guard against a double-click creating (and posting) the same GL entry twice.
+    if (glSaveInFlight) return;
+    glSaveInFlight = true;
+    document.querySelectorAll('#glSaveDraftBtn, #glSavePostBtn').forEach(b => b.disabled = true);
     try {
         let saved;
         if (editingGlId) {
@@ -639,6 +677,9 @@ async function saveGlEntry(post = false) {
     } catch (err) {
         console.error('[Ledger] saveGlEntry error:', err);
         Toast.error(err.message || 'Failed to save GL entry');
+    } finally {
+        glSaveInFlight = false;
+        document.querySelectorAll('#glSaveDraftBtn, #glSavePostBtn').forEach(b => b.disabled = false);
     }
 }
 
@@ -653,7 +694,7 @@ async function loadJournalEntries() {
         const toDate = document.getElementById('journalToDate')?.value || '';
         const search = document.getElementById('journalSearch')?.value?.trim() || '';
 
-        const params = {};
+        const params = { limit: GL_PAGE_SIZE, offset: (journalPage - 1) * GL_PAGE_SIZE };
         if (journalTypeId) params.journalTypeId = journalTypeId;
         if (fromDate) params.fromDate = fromDate;
         if (toDate) params.toDate = toDate;
@@ -662,7 +703,11 @@ async function loadJournalEntries() {
         const url = AccountsCommon.buildUrl('journals/entries', params);
         const res = await api.request(url, { _skipSpinner: true });
         const entries = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const total = res?.total ?? entries.length;
+        const totalPages = Math.ceil(total / GL_PAGE_SIZE) || 1;
+        if (journalPage > totalPages) { journalPage = totalPages; return loadJournalEntries(); }
         renderJournalEntriesTable(entries);
+        AccountsCommon.renderPagination('journalEntriesPagination', journalPage, totalPages, p => { journalPage = p; loadJournalEntries(); });
     } catch (err) {
         console.error('[Ledger] loadJournalEntries error:', err);
         Toast.error('Failed to load journal entries');
@@ -697,7 +742,11 @@ function renderJournalEntriesTable(entries) {
             }
             if (e.status === 'posted') {
                 actions += `<button class="btn-icon" onclick="lockGlEntry('${e.id}')" data-tooltip="Lock">${lockSvg}</button>`;
-                actions += `<button class="btn-icon danger" onclick="reverseGlEntry('${e.id}')" data-tooltip="Reverse">${reverseSvg}</button>`;
+                // Same guard as the GL Entries tab — never offer Reverse on an
+                // already-reversed entry or on a reversal entry itself.
+                if (!e.is_reversed && e.reference_type !== 'reversal') {
+                    actions += `<button class="btn-icon danger" onclick="reverseGlEntry('${e.id}')" data-tooltip="Reverse">${reverseSvg}</button>`;
+                }
             }
         }
         return `<tr>
@@ -758,7 +807,7 @@ function initDropdowns() {
             options: journalOpts,
             placeholder: 'Filter by Type',
             compact: true,
-            onChange: () => loadJournalEntries()
+            onChange: () => { journalPage = 1; loadJournalEntries(); }
         });
     }
 }

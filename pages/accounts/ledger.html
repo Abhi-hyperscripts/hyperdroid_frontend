@@ -142,7 +142,9 @@
                             <option value="">All Statuses</option>
                             <option value="draft">Draft</option>
                             <option value="posted">Posted</option>
-                            <option value="reversed">Reversed</option>
+                            <!-- 'reversed' is NOT a backend status (reversal sets is_reversed=true,
+                                 status stays 'posted') — handled client-side in loadGlEntries() -->
+                            <option value="reversed">Reversed (filters loaded page)</option>
                         </select>
                         <select id="glRefTypeFilter" class="form-control" style="width:auto; min-width:180px;" onchange="currentGlPage=1; loadGlEntries()">
                             <option value="">All Sources</option>
@@ -155,8 +157,10 @@
                             <option value="debit_note">Debit Note</option>
                             <option value="purchase_order">Purchase Order</option>
                             <option value="expense">Expense</option>
+                            <option value="acquisition">Asset Acquisition</option>
                             <option value="depreciation">Depreciation</option>
                             <option value="disposal">Disposal</option>
+                            <option value="loan">Loan</option>
                             <option value="transfer">Transfer</option>
                             <option value="opening_balance">Opening Balance</option>
                             <option value="reversal">Reversal</option>
@@ -271,8 +275,8 @@
                             <!-- Action Buttons -->
                             <div class="form-actions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:1.5rem;">
                                 <button type="button" class="btn btn-outline" onclick="resetGlForm()">Clear</button>
-                                <button type="button" class="btn btn-outline" onclick="saveGlEntry(false)">Save as Draft</button>
-                                <button type="button" class="btn btn-primary" onclick="saveGlEntry(true)">Save &amp; Post</button>
+                                <button type="button" id="glSaveDraftBtn" class="btn btn-outline" onclick="saveGlEntry(false)">Save as Draft</button>
+                                <button type="button" id="glSavePostBtn" class="btn btn-primary" onclick="saveGlEntry(true)">Save &amp; Post</button>
                             </div>
                         </form>
                     </div>
@@ -284,8 +288,8 @@
                 <div class="tab-content" id="journal-entries">
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="journalTypeFilterContainer"></div>
-                        <input type="date" id="journalFromDate" class="form-control" style="width:auto;" onchange="loadJournalEntries()" placeholder="From Date">
-                        <input type="date" id="journalToDate" class="form-control" style="width:auto;" onchange="loadJournalEntries()" placeholder="To Date">
+                        <input type="date" id="journalFromDate" class="form-control" style="width:auto;" onchange="journalPage=1; loadJournalEntries()" placeholder="From Date">
+                        <input type="date" id="journalToDate" class="form-control" style="width:auto;" onchange="journalPage=1; loadJournalEntries()" placeholder="To Date">
                         <input type="text" id="journalSearch" class="form-control" style="width:auto; min-width:180px;" placeholder="Search entries...">
                     </div>
 
@@ -315,6 +319,7 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <div id="journalEntriesPagination" class="pagination-container"></div>
                     </div>
                 </div>
 

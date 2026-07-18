@@ -143,8 +143,13 @@ async function loadVendorBills() {
         const data = res?.data || res?.items || (Array.isArray(res) ? res : []);
         vendorBills = data;
 
-        const total = res?.total || res?.totalCount || vendorBills.length;
+        // `total` feeds ONLY the pager below — the KPI tiles read res.stats.
+        // Backend now returns the FILTERED count in `total`; use ?? (not ||) so a
+        // legitimate total of 0 doesn't fall through to vendorBills.length and cap pages.
+        const total = res?.total ?? res?.totalCount ?? vendorBills.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        // Clamp if actioning the last row on a page left us past the end (else an empty "No … found").
+        if (currentBillPage > totalPages) { currentBillPage = totalPages; return loadVendorBills(); }
 
         // Update stats — prefer backend stats, fallback to client-side
         const stats = res?.stats || {};
@@ -196,7 +201,7 @@ function renderBillsTable() {
             <td><code>${esc(b.bill_number || '-')}</code></td>
             <td>${esc(vendorMap[b.vendor_id] || b.vendor_name || '-')}</td>
             <td>${fmtD(b.bill_date)}</td><td>${fmtD(b.due_date)}</td>
-            <td class="text-right">${fmt(b.total_amount || b.total)}</td>
+            <td class="text-right">${fmt(b.total_amount ?? b.total ?? 0)}</td>
             <td class="text-right">${fmt(b.balance_due ?? b.total_amount ?? 0)}</td>
             <td>${AccountsCommon.statusBadge(b.status)}</td>
             <td class="actions-cell">${actions || '<span class="text-secondary">-</span>'}</td>
@@ -211,7 +216,7 @@ function renderBillsTable() {
 function showCreateBillModal() {
     document.getElementById('billForm').reset();
     document.getElementById('billId').value = '';
-    document.getElementById('billDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('billDate').value = AccountsCommon.todayLocal();
     populateBillVendorSelect();
     clearBillLines();
     addBillLine();
@@ -443,7 +448,8 @@ function addBillLine(data) {
 function _billTaxRateFor(configId) {
     const cfg = taxConfigs.find(t => t.id === configId);
     if (!cfg) return 0;
-    const r = Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? 0);
+    // Rate is nested at configuration.total_rate on the list payload; flat keys are fallbacks.
+    const r = Number(cfg.configuration?.total_rate ?? cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? 0);
     if (r) return r;
     if (Array.isArray(cfg.rates)) {
         return cfg.rates.reduce((s, r) => s + Number(r.rate_percentage ?? r.percentage ?? 0), 0);
@@ -522,6 +528,7 @@ async function openBillQuickAddAccount(dropdownInstance, rebuildOptions) {
             errEl.hidden = false;
             return;
         }
+        if (!AccountsCommon.beginSubmit('apQuickAddAccount')) return;
         try {
             const created = await api.request(AccountsCommon.buildUrl('coa'), {
                 method: 'POST',
@@ -548,6 +555,8 @@ async function openBillQuickAddAccount(dropdownInstance, rebuildOptions) {
         } catch (err) {
             errEl.textContent = err?.message || 'Failed to create account.';
             errEl.hidden = false;
+        } finally {
+            AccountsCommon.endSubmit('apQuickAddAccount');
         }
     };
 }
@@ -654,11 +663,16 @@ async function saveBill(approve = false) {
         return;
     }
 
-    // The backend requires every line to share one tax configuration. Catch mixed slabs
-    // here with a clear message instead of a confusing 400 after the round-trip.
+    // The backend requires all-or-nothing tax tagging: every line the SAME config, or none (default).
+    // Catch both "mixed slabs" and "some taxed + some exempt" here with a clear message instead of a 400.
+    const taggedCount = lines.filter(l => l.tax_config_id).length;
     const distinctTaxConfigs = [...new Set(lines.map(l => l.tax_config_id).filter(Boolean))];
     if (distinctTaxConfigs.length > 1) {
         Toast.error('All line items must use the same tax rate. Set every line to the same GST/tax option before saving.');
+        return;
+    }
+    if (taggedCount > 0 && taggedCount < lines.length) {
+        Toast.error('Either apply the same tax option to every line, or set them all to "No tax". Mixing taxed and tax-exempt lines is not allowed.');
         return;
     }
 
@@ -671,34 +685,43 @@ async function saveBill(approve = false) {
         tds_amount: 0, tds_section: null
     };
 
-    let savedBill;
+    // Disable both save buttons while the request is in flight — a double-click
+    // fired two POSTs and created duplicate bills.
+    const saveBtns = ['billSaveDraftBtn', 'billSaveApproveBtn']
+        .map(bid => document.getElementById(bid)).filter(Boolean);
+    saveBtns.forEach(b => b.disabled = true);
     try {
-        if (id) {
-            savedBill = await api.request(AccountsCommon.buildUrl(`vendor-bills/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
-        } else {
-            savedBill = await api.request(AccountsCommon.buildUrl('vendor-bills'), { method: 'POST', body: JSON.stringify(payload) });
-        }
-    } catch (err) {
-        console.error('[Payables] saveBill error:', err);
-        Toast.error(err.message || 'Failed to save bill');
-        return;
-    }
-
-    // The draft now exists. Approval is a separate step — if it fails, the draft must
-    // still be surfaced (close modal + refresh) so the user doesn't re-submit and create a duplicate.
-    if (approve && savedBill?.id) {
+        let savedBill;
         try {
-            await api.request(AccountsCommon.buildUrl(`vendor-bills/${savedBill.id}/approve`), { method: 'POST' });
-            Toast.success('Bill created and approved');
+            if (id) {
+                savedBill = await api.request(AccountsCommon.buildUrl(`vendor-bills/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
+            } else {
+                savedBill = await api.request(AccountsCommon.buildUrl('vendor-bills'), { method: 'POST', body: JSON.stringify(payload) });
+            }
         } catch (err) {
-            console.error('[Payables] approveBill (chained) error:', err);
-            Toast.error(`Saved as draft, but approval failed: ${err.message || 'unknown error'}`);
+            console.error('[Payables] saveBill error:', err);
+            Toast.error(err.message || 'Failed to save bill');
+            return;
         }
-    } else {
-        Toast.success(id ? 'Bill updated' : 'Bill saved as draft');
+
+        // The draft now exists. Approval is a separate step — if it fails, the draft must
+        // still be surfaced (close modal + refresh) so the user doesn't re-submit and create a duplicate.
+        if (approve && savedBill?.id) {
+            try {
+                await api.request(AccountsCommon.buildUrl(`vendor-bills/${savedBill.id}/approve`), { method: 'POST' });
+                Toast.success('Bill created and approved');
+            } catch (err) {
+                console.error('[Payables] approveBill (chained) error:', err);
+                Toast.error(`Saved as draft, but approval failed: ${err.message || 'unknown error'}`);
+            }
+        } else {
+            Toast.success(id ? 'Bill updated' : 'Bill saved as draft');
+        }
+        AccountsCommon.closeModal('vendorBillModal');
+        await loadVendorBills();
+    } finally {
+        saveBtns.forEach(b => b.disabled = false);
     }
-    AccountsCommon.closeModal('vendorBillModal');
-    await loadVendorBills();
 }
 
 async function approveBill(id) {
@@ -754,6 +777,43 @@ async function cancelBill(id) {
 // BULK BILL IMPORT
 // ============================================================================
 
+// Quote-aware CSV → array of {header: value} objects. Local replica of the
+// parser in setup.js (_parseCsv there is not exported, and setup.js is not
+// loaded on this page). Handles quoted fields containing commas, escaped ""
+// quotes, and CRLF line endings.
+function _parseCsv(text) {
+    const rows = [];
+    let i = 0, field = '', row = [], inQuotes = false;
+    const pushField = () => { row.push(field); field = ''; };
+    const pushRow   = () => { rows.push(row); row = []; };
+    while (i < text.length) {
+        const ch = text[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+                inQuotes = false; i++; continue;
+            }
+            field += ch; i++; continue;
+        }
+        if (ch === '"') { inQuotes = true; i++; continue; }
+        if (ch === ',') { pushField(); i++; continue; }
+        if (ch === '\r') { i++; continue; }
+        if (ch === '\n') { pushField(); pushRow(); i++; continue; }
+        field += ch; i++;
+    }
+    if (field.length > 0 || row.length > 0) { pushField(); pushRow(); }
+    if (rows.length === 0) return [];
+
+    const headers = rows.shift().map(h => h.trim());
+    return rows
+        .filter(r => r.some(cell => (cell ?? '').trim() !== ''))
+        .map(r => {
+            const obj = {};
+            headers.forEach((h, idx) => { obj[h] = (r[idx] ?? '').trim(); });
+            return obj;
+        });
+}
+
 function showBulkBillModal() {
     document.getElementById('bulkBillData').value = '';
     const fileInput = document.getElementById('bulkBillFile');
@@ -770,17 +830,11 @@ function handleBulkBillFileUpload(event) {
         if (file.name.endsWith('.json')) {
             document.getElementById('bulkBillData').value = content;
         } else if (file.name.endsWith('.csv')) {
-            // Basic CSV to JSON conversion — assume header row
             try {
-                const lines = content.split('\n').filter(l => l.trim());
-                if (lines.length < 2) { Toast.error('CSV must have a header row and at least one data row'); return; }
-                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-                const rows = lines.slice(1).map(line => {
-                    const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                    const obj = {};
-                    headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
-                    return obj;
-                });
+                // Quote-aware parse — a naive split(',') shifted every column after
+                // a quoted field containing a comma (e.g. "Acme, Inc.").
+                const rows = _parseCsv(content);
+                if (!rows.length) { Toast.error('CSV must have a header row and at least one data row'); return; }
                 document.getElementById('bulkBillData').value = JSON.stringify(rows, null, 2);
             } catch (csvErr) {
                 Toast.error('Failed to parse CSV file');
@@ -795,6 +849,7 @@ function handleBulkBillFileUpload(event) {
 async function submitBulkBills() {
     const text = document.getElementById('bulkBillData').value.trim();
     if (!text) { Toast.error('Please paste bill data or upload a file'); return; }
+    if (!AccountsCommon.beginSubmit('submitBulkBills')) return;
     try {
         const bills = JSON.parse(text);
         if (!Array.isArray(bills)) { Toast.error('Data must be a JSON array'); return; }
@@ -818,6 +873,8 @@ async function submitBulkBills() {
     } catch (err) {
         console.error('[Payables] submitBulkBills error:', err);
         Toast.error(err.message || 'Failed to import bills');
+    } finally {
+        AccountsCommon.endSubmit('submitBulkBills');
     }
 }
 
@@ -874,9 +931,15 @@ function renderPaymentsTable(payments) {
 // PAYMENT MODAL
 // ============================================================================
 
+// One idempotency key per modal-open: retries/double-clicks of the SAME payment
+// reuse the key (backend dedupes on the Idempotency-Key header), while a newly
+// opened modal gets a fresh key so a genuine second payment is not swallowed.
+let _paymentIdemKey = null;
+
 function showRecordPaymentModal(billId) {
+    _paymentIdemKey = crypto.randomUUID();
     document.getElementById('paymentForm').reset();
-    document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('paymentDate').value = AccountsCommon.todayLocal();
     populatePaymentVendorSelect();
     populatePaymentBankSelect();
 
@@ -959,14 +1022,25 @@ async function loadVendorOpenBills(preSelectBillId) {
 }
 
 async function saveVendorPayment() {
+    // Mirror the AR side: run native form validation first — it enforces the
+    // required fields, min="0" on the amount (blocks negatives) and each
+    // allocation row's max attribute (blocks over-allocating a single bill).
+    const form = document.getElementById('paymentForm');
+    if (form && !form.reportValidity()) return;
+
     const vendorId = document.getElementById('paymentVendor').value;
     const paymentDate = document.getElementById('paymentDate').value;
-    const amount = parseFloat(document.getElementById('paymentAmount').value) || 0;
+    const amount = parseFloat(document.getElementById('paymentAmount').value);
     const bankAccountId = document.getElementById('paymentBankAccount').value;
     const referenceNumber = document.getElementById('paymentReference').value.trim();
 
-    if (!vendorId || !paymentDate || !amount || !bankAccountId) {
+    if (!vendorId || !paymentDate || !bankAccountId) {
         Toast.error('Vendor, Date, Amount, and Bank Account are required');
+        return;
+    }
+    // min="0" on the input lets ₹0 through native validation — require strictly positive.
+    if (isNaN(amount) || amount <= 0) {
+        Toast.error('Payment amount must be greater than zero');
         return;
     }
 
@@ -981,6 +1055,14 @@ async function saveVendorPayment() {
         }
     });
 
+    // Over-allocation guard: the sum of bill allocations cannot exceed the
+    // payment amount (small epsilon for float noise on 2-dp currency).
+    const allocatedTotal = allocations.reduce((s, a) => s + a.allocated_amount, 0);
+    if (allocatedTotal - amount > 0.005) {
+        Toast.error(`Allocated total (${AccountsCommon.formatCurrency(allocatedTotal)}) exceeds the payment amount (${AccountsCommon.formatCurrency(amount)})`);
+        return;
+    }
+
     const payload = {
         vendor_id: vendorId, payment_date: paymentDate, amount,
         bank_account_id: bankAccountId, reference_number: referenceNumber,
@@ -988,8 +1070,17 @@ async function saveVendorPayment() {
         allocations
     };
 
+    // Disable the submit button for the duration of the request (double-click =
+    // duplicate POST) and send the per-modal-open Idempotency-Key so even a
+    // network-level retry can't record the payment twice (backend dedupes on it).
+    const saveBtn = document.getElementById('paymentSaveBtn');
+    if (saveBtn) saveBtn.disabled = true;
     try {
-        await api.request(AccountsCommon.buildUrl('vendor-bills/payments'), { method: 'POST', body: JSON.stringify(payload) });
+        await api.request(AccountsCommon.buildUrl('vendor-bills/payments'), {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { ...(_paymentIdemKey && { 'Idempotency-Key': _paymentIdemKey }) }
+        });
         Toast.success('Payment recorded');
         AccountsCommon.closeModal('vendorPaymentModal');
         await loadVendorBills();
@@ -997,6 +1088,8 @@ async function saveVendorPayment() {
     } catch (err) {
         console.error('[Payables] saveVendorPayment error:', err);
         Toast.error(err.message || 'Failed to record payment');
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
     }
 }
 
@@ -1115,7 +1208,31 @@ async function loadVendorStatement() {
             debit: 0,
             credit: parseFloat(p.amount) || 0
         }));
-        const txns = stmt.transactions || [...bills, ...payments].sort((a, b) => new Date(a.date) - new Date(b.date));
+        // Debit notes reduce what we owe the vendor — the mirror of the AR
+        // statement's credit_notes merge. In this table's display convention
+        // (bills sit in the Debit column and INCREASE the balance owed), a debit
+        // note must land in the Credit column so the running balance reconciles
+        // with the Outstanding header (backend: billed − paid − debit notes − TDS).
+        const debitNoteTxns = (stmt.debit_notes || []).map(d => ({
+            date: d.debit_date,
+            reference: d.debit_note_number,
+            description: 'Debit Note',
+            debit: 0,
+            credit: parseFloat(d.amount) || 0
+        }));
+        // TDS withheld on a bill is never paid to the vendor — surface it as a
+        // credit on the bill date so the running balance nets it out, same as
+        // the header's total_outstanding does.
+        const tdsTxns = (stmt.bills || [])
+            .filter(b => (parseFloat(b.tds_amount) || 0) > 0)
+            .map(b => ({
+                date: b.bill_date,
+                reference: b.bill_number,
+                description: 'TDS Deducted',
+                debit: 0,
+                credit: parseFloat(b.tds_amount) || 0
+            }));
+        const txns = stmt.transactions || [...bills, ...payments, ...debitNoteTxns, ...tdsTxns].sort((a, b) => new Date(a.date) - new Date(b.date));
 
         if (!txns.length) {
             container.innerHTML = '<div class="empty-message"><p>No transactions found for this vendor in the selected period</p></div>';
@@ -1223,12 +1340,16 @@ async function loadDebitNotes() {
 
         const res = await api.request(AccountsCommon.buildUrl('debit-notes', params), { _skipSpinner: true });
         debitNotes = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const total = res?.total ?? debitNotes.length;
+        const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        if (dnPage > totalPages) { dnPage = totalPages; return loadDebitNotes(); }
 
         const tbody = document.getElementById('debitNotesTable');
         if (!tbody) return;
 
         if (!debitNotes.length) {
             tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><div class="empty-message"><p>No debit notes found</p></div></td></tr>';
+            AccountsCommon.renderPagination('debitNotesPagination', 1, 1, () => {});
             return;
         }
 
@@ -1257,6 +1378,8 @@ async function loadDebitNotes() {
                 </td>
             </tr>`;
         }).join('');
+
+        AccountsCommon.renderPagination('debitNotesPagination', dnPage, totalPages, p => { dnPage = p; loadDebitNotes(); });
     } catch (err) {
         console.error('[Payables] loadDebitNotes error:', err);
         Toast.error('Failed to load debit notes');
@@ -1319,10 +1442,18 @@ async function saveDebitNote() {
         Toast.error('Vendor, Date, and Amount are required');
         return;
     }
+    // A debit note must adjust a specific bill (backend requires it) — else AP aging desyncs from GL.
+    if (!billId) {
+        Toast.error('Select the vendor bill this debit note adjusts.');
+        return;
+    }
 
     const payload = { vendor_id: vendorId, debit_date: debitDate, amount, reason: reason || null };
     if (billId) payload.vendor_bill_id = billId;
 
+    // Disable the submit button during the request — double-click = duplicate debit note.
+    const saveBtn = document.getElementById('dnSaveBtn');
+    if (saveBtn) saveBtn.disabled = true;
     try {
         await api.request(AccountsCommon.buildUrl('debit-notes'), { method: 'POST', body: JSON.stringify(payload) });
         Toast.success('Debit note created');
@@ -1331,6 +1462,8 @@ async function saveDebitNote() {
     } catch (err) {
         console.error('[Payables] saveDebitNote error:', err);
         Toast.error(err.message || 'Failed to create debit note');
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
     }
 }
 

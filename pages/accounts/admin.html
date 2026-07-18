@@ -187,7 +187,7 @@
                 <!-- ============================================================ -->
                 <div class="tab-content active" id="audit-logs">
                     <div class="filters-bar">
-                        <select id="auditEntityFilter" class="form-control" style="max-width: 180px;" onchange="loadAuditLogs()">
+                        <select id="auditEntityFilter" class="form-control" style="max-width: 180px;" onchange="auditLogPage=1; loadAuditLogs()">
                             <option value="">All Entities</option>
                             <option value="gl_entry">GL Entry</option>
                             <option value="journal_type">Journal Type</option>
@@ -217,10 +217,10 @@
                             <option value="system">System</option>
                         </select>
                         <div class="form-group" style="margin-bottom:0;">
-                            <input type="date" id="auditFrom" class="form-control" onchange="loadAuditLogs()">
+                            <input type="date" id="auditFrom" class="form-control" onchange="auditLogPage=1; loadAuditLogs()">
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
-                            <input type="date" id="auditTo" class="form-control" onchange="loadAuditLogs()">
+                            <input type="date" id="auditTo" class="form-control" onchange="auditLogPage=1; loadAuditLogs()">
                         </div>
                         <div class="search-box-modern">
                             <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -338,13 +338,17 @@
                 <!-- ============================================================ -->
                 <div class="tab-content" id="job-log">
                     <div class="filters-bar">
-                        <select id="jobTypeFilter" class="form-control" style="max-width: 200px;" onchange="loadJobLogs()">
+                        <!-- Option values must match audit_logs.entity_type strings the backend
+                             stores (see DatabaseLayer_IntegrityCheck.GetJobLog systemTypes). -->
+                        <select id="jobTypeFilter" class="form-control" style="max-width: 200px;" onchange="jobLogPage=1; loadJobLogs()">
                             <option value="">All Job Types</option>
-                            <option value="depreciation">Depreciation</option>
-                            <option value="closing">Period Closing</option>
-                            <option value="reconciliation">Reconciliation</option>
-                            <option value="report">Report Generation</option>
-                            <option value="integrity_check">Integrity Check</option>
+                            <option value="system">System (Recompute / Integrity)</option>
+                            <option value="fiscal_year">Fiscal Year</option>
+                            <option value="closing_checklist">Closing Checklist</option>
+                            <option value="fixed_asset">Fixed Asset (Depreciation / Disposal)</option>
+                            <option value="billing_plan">Billing Plan</option>
+                            <option value="vendor_payment">Vendor Payment</option>
+                            <option value="bank_reconciliation">Bank Reconciliation</option>
                         </select>
                     </div>
 

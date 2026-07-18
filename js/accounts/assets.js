@@ -181,6 +181,7 @@ async function saveCategory() {
 
     const payload = { name, depreciation_method, useful_life_years, depreciation_rate, asset_account_id: gl_account_id, depreciation_account_id: depreciation_expense_account_id };
 
+    if (!AccountsCommon.beginSubmit('saveCategory')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`assets/categories/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -194,6 +195,8 @@ async function saveCategory() {
     } catch (err) {
         console.error('[Assets] saveCategory error:', err);
         Toast.error(err.message || 'Failed to save asset category');
+    } finally {
+        AccountsCommon.endSubmit('saveCategory');
     }
 }
 
@@ -307,7 +310,10 @@ function renderAssets() {
         let actions = `<button class="btn-icon" onclick="viewAssetDetail('${a.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
         actions += `<button class="btn-icon" onclick="viewDepreciationSchedule('${a.id}')" data-tooltip="Schedule"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>`;
         if (accountsRoles.isAdmin()) {
-            actions += `<button class="btn-icon" onclick="editAsset('${a.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+            // Backend UpdateAsset 409s on non-active assets — only offer Edit while active.
+            if (status === 'active') {
+                actions += `<button class="btn-icon" onclick="editAsset('${a.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+            }
             if (status === 'active') {
                 actions += `<button class="btn-icon danger" onclick="showDisposeModal('${a.id}')" data-tooltip="Dispose"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`;
             }
@@ -386,6 +392,7 @@ async function saveAsset() {
     // Backend UpdateAssetBody only supports these four fields
     const updatePayload = { name, description, location, department };
 
+    if (!AccountsCommon.beginSubmit('saveAsset')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`assets/${id}`), { method: 'PUT', body: JSON.stringify(updatePayload) });
@@ -399,6 +406,8 @@ async function saveAsset() {
     } catch (err) {
         console.error('[Assets] saveAsset error:', err);
         Toast.error(err.message || 'Failed to save asset');
+    } finally {
+        AccountsCommon.endSubmit('saveAsset');
     }
 }
 
@@ -413,10 +422,39 @@ function populateAssetCategorySelect(selectedValue) {
 // DISPOSE ASSET
 // ============================================================================
 
+let disposeBankAccountsLoaded = false;
+
 function showDisposeModal(id) {
     document.getElementById('disposeForm').reset();
     document.getElementById('disposeAssetId').value = id;
+    // form.reset() doesn't clear a converted SearchableDropdown's display
+    const bankSel = document.getElementById('disposeBankAccount');
+    if (bankSel?._searchableDropdown) bankSel._searchableDropdown.setValue('');
+    populateDisposeBankAccounts();
     AccountsCommon.openModal('disposeModal');
+}
+
+// Optional destination for sale proceeds — loaded lazily on first open.
+async function populateDisposeBankAccounts() {
+    const sel = document.getElementById('disposeBankAccount');
+    if (!sel || disposeBankAccountsLoaded) return;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true });
+        const banks = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const options = [{ value: '', label: 'No bank account' }].concat(
+            banks.filter(b => b.is_active !== false).map(b => ({
+                value: b.id,
+                label: [b.account_name || b.name, b.bank_name].filter(Boolean).join(' — ') || '-'
+            })));
+        if (sel._searchableDropdown) {
+            sel._searchableDropdown.setOptions(options, false);
+        } else {
+            sel.innerHTML = options.map(o => `<option value="${o.value}">${AccountsCommon.escapeHtml(o.label)}</option>`).join('');
+        }
+        disposeBankAccountsLoaded = true;
+    } catch (err) {
+        console.error('[Assets] populateDisposeBankAccounts error:', err);
+    }
 }
 
 async function confirmDispose() {
@@ -424,6 +462,7 @@ async function confirmDispose() {
     const disposal_date = document.getElementById('disposeDate').value;
     const sale_amount = document.getElementById('disposeSaleAmount').value ? parseFloat(document.getElementById('disposeSaleAmount').value) : 0;
     const reason = document.getElementById('disposeReason').value.trim();
+    const bank_account_id = document.getElementById('disposeBankAccount')?.value || null;
 
     if (!disposal_date) {
         Toast.error('Disposal date is required');
@@ -436,7 +475,7 @@ async function confirmDispose() {
     try {
         await api.request(AccountsCommon.buildUrl(`assets/${id}/dispose`), {
             method: 'POST',
-            body: JSON.stringify({ disposal_date, disposal_amount: sale_amount })
+            body: JSON.stringify({ disposal_date, disposal_amount: sale_amount, reason: reason || null, bank_account_id })
         });
         Toast.success('Asset disposed successfully');
         AccountsCommon.closeModal('disposeModal');

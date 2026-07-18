@@ -21,6 +21,8 @@ let bankAccounts = [];
 let categoryAccountDropdown = null;
 let policyCategoryDropdown = null;
 let reimburseBankDropdown = null;
+let reimburseInFlight = false;  // double-submit guard for reimburseClaim (posts a bank payment + GL)
+let claimSaveInFlight = false;  // double-submit guard for saveExpenseClaim
 
 // Pagination
 let claimsPage = 1;
@@ -99,7 +101,7 @@ function setupSearchListeners() {
     if (polSearch) polSearch.addEventListener('input', debounce(() => renderPoliciesTable()));
 
     const claimSearch = document.getElementById('claimSearch');
-    if (claimSearch) claimSearch.addEventListener('input', debounce(() => renderClaimsTable()));
+    if (claimSearch) claimSearch.addEventListener('input', debounce(() => { claimsPage = 1; loadExpenseClaims(); }));
 }
 
 // ============================================================================
@@ -415,20 +417,39 @@ async function saveExpensePolicy() {
 async function loadExpenseClaims() {
     try {
         const status = document.getElementById('claimStatusFilter')?.value || '';
-        const offset = (claimsPage - 1) * claimsLimit;
-        const params = { limit: claimsLimit, offset };
+        const search = (document.getElementById('claimSearch')?.value || '').trim();
+        const searching = !!search;
+        // The backend claims list has no search param. When searching, fetch broadly and filter +
+        // paginate client-side so the search reaches ALL matching claims (not just the current page).
+        const params = searching
+            ? { limit: 1000, offset: 0 }
+            : { limit: claimsLimit, offset: (claimsPage - 1) * claimsLimit };
         if (status) params.status = status;
 
         const res = await api.request(AccountsCommon.buildUrl('expenses/claims', params), { _skipSpinner: true });
 
+        let all;
         if (res && typeof res === 'object' && !Array.isArray(res)) {
-            expenseClaims = res.data || res.items || [];
-            const total = res.total || res.totalCount || expenseClaims.length;
-            claimsTotalPages = Math.max(1, Math.ceil(total / claimsLimit));
+            all = res.data || res.items || [];
             updateClaimStats(res);
         } else {
-            expenseClaims = Array.isArray(res) ? res : [];
-            claimsTotalPages = 1;
+            all = Array.isArray(res) ? res : [];
+        }
+
+        if (searching) {
+            const q = search.toLowerCase();
+            const filtered = all.filter(c =>
+                (c.claim_number || '').toLowerCase().includes(q) ||
+                (c.employee_name || '').toLowerCase().includes(q) ||
+                (c.description || '').toLowerCase().includes(q)
+            );
+            claimsTotalPages = Math.max(1, Math.ceil(filtered.length / claimsLimit));
+            if (claimsPage > claimsTotalPages) claimsPage = claimsTotalPages;
+            expenseClaims = filtered.slice((claimsPage - 1) * claimsLimit, claimsPage * claimsLimit);
+        } else {
+            const total = res?.total || res?.totalCount || all.length;
+            claimsTotalPages = Math.max(1, Math.ceil(total / claimsLimit));
+            expenseClaims = all;
         }
         renderClaimsTable();
         AccountsCommon.renderPagination('claimsPagination', claimsPage, claimsTotalPages, (page) => {
@@ -501,7 +522,7 @@ function renderClaimsTable() {
 
 function showSubmitClaimModal() {
     document.getElementById('claimForm').reset();
-    document.getElementById('claimDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('claimDate').value = AccountsCommon.todayLocal();
     document.getElementById('claimItemsBody').innerHTML = '';
     document.getElementById('claimTotal').textContent = '0.00';
     addClaimItem();
@@ -527,7 +548,7 @@ function addClaimItem() {
         </select></td>
         <td><input type="text" class="form-control claim-item-desc" data-idx="${idx}" placeholder="Description"></td>
         <td><input type="number" class="form-control claim-item-amount" data-idx="${idx}" min="0" step="0.01" placeholder="0.00" onchange="calculateClaimTotal()" oninput="calculateClaimTotal()"></td>
-        <td><input type="date" class="form-control claim-item-date" data-idx="${idx}" value="${new Date().toISOString().split('T')[0]}"></td>
+        <td><input type="date" class="form-control claim-item-date" data-idx="${idx}" value="${AccountsCommon.todayLocal()}"></td>
         <td><button type="button" class="btn-icon" onclick="removeClaimItem(${idx})" data-tooltip="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
 }
@@ -573,6 +594,11 @@ async function saveExpenseClaim() {
 
     const payload = { claim_date: claimDate, description, items };
 
+    // Guard against a double-click creating duplicate claim records.
+    if (claimSaveInFlight) return;
+    claimSaveInFlight = true;
+    const claimBtn = document.getElementById('saveExpenseClaimBtn');
+    if (claimBtn) claimBtn.disabled = true;
     try {
         await api.request(AccountsCommon.buildUrl('expenses/claims'), { method: 'POST', body: JSON.stringify(payload) });
         Toast.success('Expense claim submitted');
@@ -581,6 +607,9 @@ async function saveExpenseClaim() {
     } catch (err) {
         console.error('[Expenses] saveExpenseClaim error:', err);
         Toast.error(err.message || 'Failed to submit claim');
+    } finally {
+        claimSaveInFlight = false;
+        if (claimBtn) claimBtn.disabled = false;
     }
 }
 
@@ -707,6 +736,11 @@ async function reimburseClaim() {
     const bankAccountId = reimburseBankDropdown?.getValue();
     if (!bankAccountId) { Toast.error('Please select a bank account'); return; }
 
+    // Guard against a double-click posting the reimbursement (bank payment + GL) twice.
+    if (reimburseInFlight) return;
+    reimburseInFlight = true;
+    const reimburseBtn = document.getElementById('reimburseConfirmBtn');
+    if (reimburseBtn) reimburseBtn.disabled = true;
     try {
         await api.request(AccountsCommon.buildUrl(`expenses/claims/${id}/reimburse`), {
             method: 'POST',
@@ -718,6 +752,9 @@ async function reimburseClaim() {
     } catch (err) {
         console.error('[Expenses] reimburseClaim error:', err);
         Toast.error(err.message || 'Failed to reimburse claim');
+    } finally {
+        reimburseInFlight = false;
+        if (reimburseBtn) reimburseBtn.disabled = false;
     }
 }
 

@@ -278,19 +278,39 @@ async function loadAuditLogs() {
         const entityFilter = document.getElementById('auditEntityFilter')?.value || '';
         const from = document.getElementById('auditFrom')?.value || '';
         const to = document.getElementById('auditTo')?.value || '';
-        const userSearch = document.getElementById('auditUserSearch')?.value || '';
+        const userSearch = (document.getElementById('auditUserSearch')?.value || '').trim();
+        const searching = !!userSearch;
 
-        const params = { limit: PAGE_SIZE, offset: (auditLogPage - 1) * PAGE_SIZE };
+        // "Performed by" is a NAME search, but the backend filters performed_by by exact user-id — it can
+        // never match a typed name. So don't send it; fetch broadly and filter on the name-enriched rows
+        // client-side (matching the CSV export), paginating the filtered set.
+        const params = searching
+            ? { limit: 1000, offset: 0 }
+            : { limit: PAGE_SIZE, offset: (auditLogPage - 1) * PAGE_SIZE };
         if (entityFilter) params.entityType = entityFilter;
         if (from) params.fromDate = from;
         if (to) params.toDate = to;
-        if (userSearch) params.performedBy = userSearch;
 
         const url = AccountsCommon.buildUrl('audit/logs', params);
         const res = await api.request(url, { _skipSpinner: true });
-        auditLogs = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        const total = res?.total || res?.totalCount || auditLogs.length;
-        const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        let rows = Array.isArray(res) ? res : (res?.data || res?.items || []);
+
+        let total, totalPages;
+        if (searching) {
+            const q = userSearch.toLowerCase();
+            const filtered = rows.filter(l => `${l.performed_by_name || ''} ${l.performed_by || ''}`.toLowerCase().includes(q));
+            total = filtered.length;
+            totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+            if (auditLogPage > totalPages) auditLogPage = totalPages;
+            auditLogs = filtered.slice((auditLogPage - 1) * PAGE_SIZE, auditLogPage * PAGE_SIZE);
+        } else {
+            // ?? not || — a real total of 0 must not fall back to the page length
+            total = res?.total ?? res?.totalCount ?? rows.length;
+            totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+            // Clamp if a filter change left us past the last page (refetch once at the clamped page).
+            if (auditLogPage > totalPages) { auditLogPage = totalPages; return loadAuditLogs(); }
+            auditLogs = rows;
+        }
 
         renderAuditLogs();
         AccountsCommon.renderPagination('auditLogsPagination', auditLogPage, totalPages, (page) => {
@@ -410,7 +430,7 @@ function viewAuditLogDetail(index) {
     }
 
     if (l.entity_id && l.entity_type) {
-        body += `<div style="margin-top:1rem;"><button class="btn btn-outline" style="width:100%;" onclick="viewEntityAudit('${AccountsCommon.escapeHtml(l.entity_type)}', '${AccountsCommon.escapeHtml(l.entity_id)}')">View Full Audit Trail</button></div>`;
+        body += `<div style="margin-top:1rem;"><button class="btn btn-outline" style="width:100%;" onclick="viewEntityAudit('${AccountsCommon.escapeHtml(AccountsCommon.escJs(l.entity_type))}', '${AccountsCommon.escapeHtml(AccountsCommon.escJs(l.entity_id))}')">View Full Audit Trail</button></div>`;
     }
 
     auditLogPanel.setTitle(`${formatType(l.entity_type)} — ${formatType(l.action)}`);
@@ -515,47 +535,49 @@ async function exportAuditLogs() {
         const to = document.getElementById('auditTo')?.value || '';
         const userSearch = document.getElementById('auditUserSearch')?.value || '';
 
-        const params = { format: 'csv' };
-        if (entityFilter) params.entityType = entityFilter;
+        // Backend POST audit/export binds ONLY fromDate/toDate and always
+        // returns JSON { data: [...] } (AuditController.ExportAuditLogs) —
+        // api.request has no raw/blob mode, so the CSV is always built
+        // client-side. Entity/user filters are applied here over the export
+        // payload so the CSV matches the filtered set shown in the UI.
+        // TODO(backend): accept entityType/performedBy on audit/export and
+        // offer a real CSV format.
+        const params = {};
         if (from) params.fromDate = from;
         if (to) params.toDate = to;
-        if (userSearch) params.performedBy = userSearch;
 
         const url = AccountsCommon.buildUrl('audit/export', params);
-        const res = await api.request(url, { method: 'POST', _skipSpinner: true, _rawResponse: true });
+        const res = await api.request(url, { method: 'POST', _skipSpinner: true });
 
-        // Handle blob download
-        if (res instanceof Blob) {
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(res);
-            a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            URL.revokeObjectURL(a.href);
-        } else {
-            // If response is text/json, convert to CSV client-side
-            const data = Array.isArray(res) ? res : (res?.data || res?.items || auditLogs);
-            if (!data.length) {
-                Toast.error('No data to export');
-                return;
-            }
-            const headers = ['Timestamp', 'Entity', 'Action', 'User', 'Details'];
-            const csvRows = [headers.join(',')];
-            data.forEach(l => {
-                csvRows.push([
-                    l.timestamp || l.created_at || '',
-                    l.entity_type || '',
-                    l.action || '',
-                    l.performed_by || l.user_name || '',
-                    '"' + (l.details_summary || JSON.stringify(l.details || '')).replace(/"/g, '""') + '"'
-                ].join(','));
-            });
-            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            URL.revokeObjectURL(a.href);
+        let data = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        if (entityFilter) data = data.filter(l => l.entity_type === entityFilter);
+        if (userSearch) {
+            const q = userSearch.toLowerCase();
+            data = data.filter(l =>
+                [l.performed_by, l.performed_by_name, l.user_name].some(v => (v || '').toLowerCase().includes(q)));
         }
+        if (!data.length) {
+            Toast.error('No data to export');
+            return;
+        }
+
+        const headers = ['Timestamp', 'Entity', 'Action', 'User', 'Details'];
+        const csvRows = [headers.join(',')];
+        data.forEach(l => {
+            csvRows.push([
+                l.timestamp || l.created_at || '',
+                l.entity_type || '',
+                l.action || '',
+                l.performed_by || l.user_name || '',
+                '"' + (l.details_summary || JSON.stringify(l.details || '')).replace(/"/g, '""') + '"'
+            ].join(','));
+        });
+        const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `audit-logs-${AccountsCommon.todayLocal()}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
         Toast.success('Audit logs exported');
     } catch (err) {
         console.error('[Admin] exportAuditLogs error:', err);
@@ -594,7 +616,11 @@ async function loadPendingApprovals() {
                 type: 'Expense Claim',
                 title: c.claim_number || 'Expense Claim',
                 description: c.description || c.claim_number || 'Expense Claim',
-                requested_by: c.employee_name || c.employee_id || '-',
+                // Backend GetPendingApprovals projects only id/claim_number/
+                // total_amount/claim_date/status — no employee fields yet.
+                // TODO(backend): add employee_id/employee_name to the
+                // expense_claims projection so the real requester shows here.
+                requested_by: c.employee_name || c.claim_number || '-',
                 requested_from_service: 'HRMS',
                 amount: c.total_amount,
                 status: 'pending',
@@ -611,7 +637,9 @@ async function loadPendingApprovals() {
                 amount: null,
                 status: r.status || 'pending',
                 rejection_reason: r.rejection_reason || null,
-                created_entity_id: r.created_entity_id || null,
+                // Backend emits created_customer_id / created_vendor_id per
+                // request_type — there is no created_entity_id field.
+                created_entity_id: (r.request_type === 'client' ? r.created_customer_id : r.created_vendor_id) || null,
                 created_at: r.created_at
             }))
         ];
@@ -831,6 +859,7 @@ async function runIntegrityCheck() {
 
     resultsContainer.innerHTML = `<div class="empty-message"><p>Running integrity check...</p></div>`;
 
+    if (!AccountsCommon.beginSubmit('runIntegrityCheck')) return;
     try {
         const url = AccountsCommon.buildUrl('system/integrity-check');
         const res = await api.request(url, { method: 'POST' });
@@ -870,6 +899,8 @@ async function runIntegrityCheck() {
         console.error('[Admin] runIntegrityCheck error:', err);
         Toast.error(err.message || 'Failed to run integrity check');
         resultsContainer.innerHTML = `<div class="empty-message"><p>Integrity check failed. Please try again.</p></div>`;
+    } finally {
+        AccountsCommon.endSubmit('runIntegrityCheck');
     }
 }
 
@@ -939,9 +970,12 @@ async function loadJobLogs() {
 
         const url = AccountsCommon.buildUrl('system/job-log', params);
         const res = await api.request(url, { _skipSpinner: true });
-        jobLogs = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        const total = res?.total || res?.totalCount || jobLogs.length;
+        jobLogs = res?.data ?? (Array.isArray(res) ? res : (res?.items || []));
+        // ?? not || — a real total of 0 must not fall back to the page length
+        const total = res?.total ?? res?.totalCount ?? jobLogs.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        // Clamp if a filter change left us past the last page (refetch once at the clamped page).
+        if (jobLogPage > totalPages) { jobLogPage = totalPages; return loadJobLogs(); }
 
         renderJobLogs();
         AccountsCommon.renderPagination('jobLogsPagination', jobLogPage, totalPages, (page) => {
@@ -1148,9 +1182,18 @@ async function saveChecklist() {
     try {
         const periodsRes = await api.request(AccountsCommon.buildUrl('fiscal/periods', { fiscalYearId: fiscal_year_id }), { _skipSpinner: true });
         const periods = Array.isArray(periodsRes) ? periodsRes : (periodsRes?.data || periodsRes?.items || []);
-        const now = new Date().toISOString().split('T')[0];
-        // Pick the period that contains today, or fallback to the latest open period
-        fiscal_period_id = (periods.find(p => p.start_date <= now && p.end_date >= now) || periods.find(p => p.status === 'open') || periods[0])?.id;
+        const now = AccountsCommon.todayLocal();
+        // FiscalPeriod exposes is_open/is_locked booleans (no `status` field).
+        // Pick the period that contains today; else the latest open unlocked
+        // period; else (past FY where nothing contains today) the LAST period
+        // of that FY — never blindly periods[0] (the first month).
+        const sorted = [...periods].sort((a, b) => String(a.start_date).localeCompare(String(b.start_date)));
+        const dateOf = (d) => String(d || '').slice(0, 10);
+        fiscal_period_id = (
+            sorted.find(p => dateOf(p.start_date) <= now && dateOf(p.end_date) >= now)
+            || [...sorted].reverse().find(p => p.is_open && !p.is_locked)
+            || sorted[sorted.length - 1]
+        )?.id;
     } catch (e) { /* ignore */ }
     if (!fiscal_period_id) {
         Toast.error('No fiscal period found for the selected fiscal year');
@@ -1160,6 +1203,7 @@ async function saveChecklist() {
     const closing_type = document.getElementById('checklistClosingType')?.value || 'month_end';
     const payload = { fiscal_period_id, closing_type };
 
+    if (!AccountsCommon.beginSubmit('saveChecklist')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`closing/checklists/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -1173,6 +1217,8 @@ async function saveChecklist() {
     } catch (err) {
         console.error('[Admin] saveChecklist error:', err);
         Toast.error(err.message || 'Failed to save checklist');
+    } finally {
+        AccountsCommon.endSubmit('saveChecklist');
     }
 }
 
@@ -1241,6 +1287,7 @@ async function viewChecklist(id) {
 }
 
 async function completeChecklistItem(checklistId, itemId) {
+    if (!AccountsCommon.beginSubmit('completeChecklistItem')) return;
     try {
         const url = AccountsCommon.buildUrl(`closing/checklists/${checklistId}/items/${itemId}/complete`);
         await api.request(url, { method: 'POST' });
@@ -1249,6 +1296,8 @@ async function completeChecklistItem(checklistId, itemId) {
     } catch (err) {
         console.error('[Admin] completeChecklistItem error:', err);
         Toast.error(err.message || 'Failed to complete checklist item');
+    } finally {
+        AccountsCommon.endSubmit('completeChecklistItem');
     }
 }
 
@@ -1298,6 +1347,7 @@ async function loadYearEndPreflight(fiscalYearId) {
     area.innerHTML = `<div class="glass-card-body"><div class="empty-message"><p>Running pre-flight checks...</p></div></div>`;
     if (actionsDiv) actionsDiv.style.display = 'none';
 
+    if (!AccountsCommon.beginSubmit('loadYearEndPreflight')) return;
     try {
         // Phase 4 Tier 1 fix — was previously calling closing/checklists/{fiscalYearId}
         // which is GetChecklistById(checklistId) on the backend. Passing a fiscal year UUID
@@ -1344,6 +1394,8 @@ async function loadYearEndPreflight(fiscalYearId) {
         console.error('[Admin] loadYearEndPreflight error:', err);
         area.innerHTML = `<div class="glass-card-body"><div class="empty-message"><p>Failed to run pre-flight checks</p></div></div>`;
         if (actionsDiv) actionsDiv.style.display = 'none';
+    } finally {
+        AccountsCommon.endSubmit('loadYearEndPreflight');
     }
 }
 

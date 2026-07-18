@@ -330,7 +330,7 @@
                                     </div>
                                 </div>
                                 <div style="text-align:right; margin-top:0.5rem;">
-                                    <button type="button" class="btn btn-primary" onclick="executeTransfer()" data-admin-only>
+                                    <button type="button" id="executeTransferBtn" class="btn btn-primary" onclick="executeTransfer()" data-admin-only>
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <polyline points="17 1 21 5 17 9"></polyline>
                                             <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
@@ -542,6 +542,10 @@
                                             <strong id="reconSummaryStatement">0.00</strong>
                                         </div>
                                         <div style="display:flex; justify-content:space-between;">
+                                            <span style="color:var(--text-secondary);">Book Balance</span>
+                                            <strong id="reconSummaryBook">0.00</strong>
+                                        </div>
+                                        <div style="display:flex; justify-content:space-between;">
                                             <span style="color:var(--text-secondary);">Matched Amount</span>
                                             <strong id="reconSummaryMatched">0.00</strong>
                                         </div>
@@ -703,7 +707,7 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-outline" onclick="AccountsCommon.closeModal('bankTransactionModal')">Cancel</button>
-                    <button class="btn btn-primary" onclick="saveBankTransaction()">Save Transaction</button>
+                    <button id="saveBankTransactionBtn" class="btn btn-primary" onclick="saveBankTransaction()">Save Transaction</button>
                 </div>
             </div>
         </div>

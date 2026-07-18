@@ -269,9 +269,10 @@ async function savePlan() {
     }
 
     const billingType = document.getElementById('planBillingType')?.value || 'subscription';
-    const createPayload = { name, plan_code: code, amount, billing_type: billingType, billing_cycle: interval, description };
+    const createPayload = { name, plan_code: code, amount, billing_type: billingType, billing_cycle: interval, description, is_active: status !== 'inactive' };
     const updatePayload = { name, description, amount, is_active: status !== 'inactive' };
 
+    if (!AccountsCommon.beginSubmit('savePlan')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`billing/plans/${id}`), { method: 'PUT', body: JSON.stringify(updatePayload) });
@@ -285,6 +286,8 @@ async function savePlan() {
     } catch (err) {
         console.error('[Billing] savePlan error:', err);
         Toast.error(err.message || 'Failed to save billing plan');
+    } finally {
+        AccountsCommon.endSubmit('savePlan');
     }
 }
 
@@ -475,7 +478,7 @@ function showCreateSubscriptionModal() {
     document.getElementById('subscriptionModalTitle').textContent = 'Create Subscription';
     document.getElementById('subscriptionForm').reset();
     document.getElementById('subscriptionId').value = '';
-    document.getElementById('subStartDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('subStartDate').value = AccountsCommon.todayLocal();
     initSubscriptionCustomerDropdown();
     populateSubPlanSelect();
     AccountsCommon.openModal('subscriptionModal');
@@ -494,7 +497,9 @@ async function saveSubscription() {
 
     // Backend expects customer_id (Guid) and billing_plan_id. For now send as-is; backend may accept customer_name.
     const payload = { customer_id: customer, billing_plan_id: plan_id, start_date };
+    if (notes) payload.notes = notes;
 
+    if (!AccountsCommon.beginSubmit('saveSubscription')) return;
     try {
         await api.request(AccountsCommon.buildUrl('billing/subscriptions'), { method: 'POST', body: JSON.stringify(payload) });
         Toast.success('Subscription created');
@@ -503,6 +508,8 @@ async function saveSubscription() {
     } catch (err) {
         console.error('[Billing] saveSubscription error:', err);
         Toast.error(err.message || 'Failed to create subscription');
+    } finally {
+        AccountsCommon.endSubmit('saveSubscription');
     }
 }
 
@@ -634,8 +641,9 @@ async function saveMeter() {
     // regenerating it from the name would break usage records keyed by meter_code.
     const existingCode = document.getElementById('meterCode').value.trim();
     const meter_code = (id && existingCode) ? existingCode : name.toLowerCase().replace(/\s+/g, '_');
-    const payload = { meter_code, name, unit, rate_per_unit: rate };
+    const payload = { meter_code, name, unit, rate_per_unit: rate, is_active: status !== 'inactive' };
 
+    if (!AccountsCommon.beginSubmit('saveMeter')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`billing/usage-meters/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -649,6 +657,8 @@ async function saveMeter() {
     } catch (err) {
         console.error('[Billing] saveMeter error:', err);
         Toast.error(err.message || 'Failed to save usage meter');
+    } finally {
+        AccountsCommon.endSubmit('saveMeter');
     }
 }
 
@@ -699,16 +709,22 @@ async function recordUsage() {
         return;
     }
 
+    const usagePayload = { meter_code: usageMeters.find(m => m.id === meter_id)?.meter_code || meter_id, customer_id: customer, quantity };
+    if (date) usagePayload.usage_date = date;
+
+    if (!AccountsCommon.beginSubmit('recordUsage')) return;
     try {
         await api.request(AccountsCommon.buildUrl('billing/usage'), {
             method: 'POST',
-            body: JSON.stringify({ meter_code: usageMeters.find(m => m.id === meter_id)?.meter_code || meter_id, customer_id: customer, quantity })
+            body: JSON.stringify(usagePayload)
         });
         Toast.success('Usage recorded successfully');
         document.getElementById('recordUsageForm').reset();
     } catch (err) {
         console.error('[Billing] recordUsage error:', err);
         Toast.error(err.message || 'Failed to record usage');
+    } finally {
+        AccountsCommon.endSubmit('recordUsage');
     }
 }
 
@@ -735,6 +751,13 @@ async function loadTokenBalance() {
     }
 }
 
+// One idempotency key per token operation: a retry / double-click of the SAME purchase reuses the key
+// (backend dedupes on the Idempotency-Key header, so no double-credit), while a genuinely new purchase
+// gets a fresh key. The key is lazily minted here and rotated only after a SUCCESSFUL submit — a failed
+// submit keeps the key so a retry is recognized as the same request.
+let _purchaseTokenIdemKey = null;
+let _deductTokenIdemKey = null;
+
 async function purchaseTokens() {
     const customer = document.getElementById('tokenCustomer').value.trim();
     const amount = parseInt(document.getElementById('purchaseAmount').value);
@@ -749,17 +772,28 @@ async function purchaseTokens() {
         return;
     }
 
+    const purchasePayload = { customer_id: customer, amount };
+    if (notes) purchasePayload.notes = notes;
+
+    if (!_purchaseTokenIdemKey) _purchaseTokenIdemKey = crypto.randomUUID();
+
+    if (!AccountsCommon.beginSubmit('purchaseTokens')) return;
     try {
         await api.request(AccountsCommon.buildUrl('billing/tokens/purchase'), {
             method: 'POST',
-            body: JSON.stringify({ customer_id: customer, amount })
+            body: JSON.stringify(purchasePayload),
+            headers: { 'Content-Type': 'application/json', ...(_purchaseTokenIdemKey && { 'Idempotency-Key': _purchaseTokenIdemKey }) }
         });
+        // Success: rotate the key so the next genuine purchase is not swallowed as a replay.
+        _purchaseTokenIdemKey = null;
         Toast.success(`${amount} tokens purchased successfully`);
         document.getElementById('purchaseTokenForm').reset();
         await loadTokenBalance();
     } catch (err) {
         console.error('[Billing] purchaseTokens error:', err);
         Toast.error(err.message || 'Failed to purchase tokens');
+    } finally {
+        AccountsCommon.endSubmit('purchaseTokens');
     }
 }
 
@@ -777,16 +811,24 @@ async function deductTokens() {
         return;
     }
 
+    if (!_deductTokenIdemKey) _deductTokenIdemKey = crypto.randomUUID();
+
+    if (!AccountsCommon.beginSubmit('deductTokens')) return;
     try {
         await api.request(AccountsCommon.buildUrl('billing/tokens/deduct'), {
             method: 'POST',
-            body: JSON.stringify({ customer_id: customer, amount, reason: notes })
+            body: JSON.stringify({ customer_id: customer, amount, reason: notes }),
+            headers: { 'Content-Type': 'application/json', ...(_deductTokenIdemKey && { 'Idempotency-Key': _deductTokenIdemKey }) }
         });
+        // Success: rotate the key so the next genuine deduction is not swallowed as a replay.
+        _deductTokenIdemKey = null;
         Toast.success(`${amount} tokens deducted successfully`);
         document.getElementById('deductTokenForm').reset();
         await loadTokenBalance();
     } catch (err) {
         console.error('[Billing] deductTokens error:', err);
         Toast.error(err.message || 'Failed to deduct tokens');
+    } finally {
+        AccountsCommon.endSubmit('deductTokens');
     }
 }

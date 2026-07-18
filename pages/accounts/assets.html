@@ -201,7 +201,6 @@
                             <option value="">All Statuses</option>
                             <option value="active">Active</option>
                             <option value="disposed">Disposed</option>
-                            <option value="written_off">Written Off</option>
                         </select>
                         <div class="search-box-modern">
                             <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -339,7 +338,6 @@
                                     <option value="">Select...</option>
                                     <option value="straight_line">Straight Line</option>
                                     <option value="written_down">Written Down Value</option>
-                                    <option value="units_of_production">Units of Production</option>
                                 </select>
                             </div>
                         </div>
@@ -465,6 +463,14 @@
                             <div class="form-group">
                                 <label for="disposeSaleAmount">Sale Amount</label>
                                 <input type="number" id="disposeSaleAmount" class="form-control" placeholder="e.g., 10000" step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="disposeBankAccount">Deposit Proceeds To (optional)</label>
+                                <select id="disposeBankAccount" class="form-control">
+                                    <option value="">No bank account</option>
+                                </select>
                             </div>
                         </div>
                         <div class="form-row">

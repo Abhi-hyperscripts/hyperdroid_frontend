@@ -17,10 +17,18 @@ let recentTransfers = [];
 let currentTxnPage = 1;
 let currentReconId = null;
 let reconTransactions = [];
+// Book balance (per GL) at the moment the reconciliation started — the anchor for
+// the Difference math. See startReconciliation for how it's sourced.
+let reconBookBalance = null;
+let reconStartInFlight = false;
+let transferInFlight = false;   // double-submit guard for executeTransfer
+let bankTxnInFlight = false;    // double-submit guard for saveBankTransaction
+let matchInFlight = false;      // double-submit guard for matchSelectedTransactions
 // Matched rows are spliced out of reconTransactions after each PUT, so keep a
 // running count for the Complete Reconciliation summary (the transaction model
 // has no is_matched field).
 let reconMatchedCount = 0;
+let reconMatchedAmount = 0; // running total of already-matched amounts (survives splicing out matched rows)
 const TXN_PAGE_SIZE = 50;
 
 // Dropdown instances
@@ -403,8 +411,12 @@ async function loadBankTransactions() {
         const res = await api.request(url, { _skipSpinner: true });
         bankTransactions = Array.isArray(res) ? res : (res?.data || res?.items || []);
 
-        const total = res?.total || res?.totalCount || bankTransactions.length;
+        // ?? not ||: a legit total of 0 (or a bare-array response) must not fall
+        // through and cap pagination at the current page's row count.
+        const total = res?.total ?? res?.totalCount ?? bankTransactions.length;
         const totalPages = Math.ceil(total / TXN_PAGE_SIZE) || 1;
+        // Clamp if actioning the last row on a page left us past the end (else an empty "No … found").
+        if (currentTxnPage > totalPages) { currentTxnPage = totalPages; return loadBankTransactions(); }
 
         renderBankTransactionsTable();
         AccountsCommon.renderPagination('bankTxnPagination', currentTxnPage, totalPages, (page) => {
@@ -466,7 +478,7 @@ function renderBankTransactionsTable() {
 
 function showRecordTransactionModal() {
     document.getElementById('bankTransactionForm').reset();
-    document.getElementById('txnDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('txnDate').value = AccountsCommon.todayLocal();
 
     const bankId = txnBankFilterDropdown?.getValue?.() || '';
     document.getElementById('txnBankAccountId').value = bankId;
@@ -505,6 +517,12 @@ async function saveBankTransaction() {
         Toast.error('Bank account, date, type, amount, and counter account are required');
         return;
     }
+    // type="button" form — reportValidity never fires, so a typed negative would
+    // otherwise pass the truthiness check above and post.
+    if (amount <= 0) {
+        Toast.error('Amount must be greater than zero');
+        return;
+    }
 
     const payload = {
         bank_account_id: bankAccountId,
@@ -516,6 +534,11 @@ async function saveBankTransaction() {
         counter_account_id: counterAccountId
     };
 
+    // Guard against a double-click posting the same bank transaction (a real double ledger movement) twice.
+    if (bankTxnInFlight) return;
+    bankTxnInFlight = true;
+    const txnBtn = document.getElementById('saveBankTransactionBtn');
+    if (txnBtn) txnBtn.disabled = true;
     try {
         await api.request(AccountsCommon.buildUrl(`bank/accounts/${bankAccountId}/transactions`), { method: 'POST', body: JSON.stringify(payload) });
         Toast.success('Transaction recorded');
@@ -525,6 +548,9 @@ async function saveBankTransaction() {
     } catch (err) {
         console.error('[Banking] saveBankTransaction error:', err);
         Toast.error(err.message || 'Failed to save transaction');
+    } finally {
+        bankTxnInFlight = false;
+        if (txnBtn) txnBtn.disabled = false;
     }
 }
 
@@ -570,6 +596,12 @@ async function executeTransfer() {
         Toast.error('From Account, To Account, Amount, and Date are required');
         return;
     }
+    // type="button" form — reportValidity never fires, so a typed negative would
+    // otherwise pass the truthiness check above and post.
+    if (amount <= 0) {
+        Toast.error('Transfer amount must be greater than zero');
+        return;
+    }
     if (fromId === toId) {
         Toast.error('From and To accounts must be different');
         return;
@@ -583,11 +615,17 @@ async function executeTransfer() {
         description: description || null
     };
 
+    // Guard against a double-click / re-click during a slow response posting the transfer twice
+    // (each transfer moves money between two ledgers — a duplicate is a real double-spend).
+    if (transferInFlight) return;
+    transferInFlight = true;
+    const transferBtn = document.getElementById('executeTransferBtn');
+    if (transferBtn) transferBtn.disabled = true;
     try {
         await api.request(AccountsCommon.buildUrl('bank/transfer'), { method: 'POST', body: JSON.stringify(payload) });
         Toast.success('Transfer executed successfully');
         document.getElementById('transferForm').reset();
-        document.getElementById('transferDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('transferDate').value = AccountsCommon.todayLocal();
         transferFromDropdown?.setValue?.('');
         transferToDropdown?.setValue?.('');
         await loadRecentTransfers();
@@ -595,6 +633,9 @@ async function executeTransfer() {
     } catch (err) {
         console.error('[Banking] executeTransfer error:', err);
         Toast.error(err.message || 'Failed to execute transfer');
+    } finally {
+        transferInFlight = false;
+        if (transferBtn) transferBtn.disabled = false;
     }
 }
 
@@ -635,6 +676,14 @@ function renderRecentTransfersTable() {
 // ============================================================================
 
 async function startReconciliation() {
+    // Re-entry guard: clicking Start with a session already open would create a
+    // second backend reconciliation and orphan currentReconId's matched state.
+    if (currentReconId) {
+        Toast.error('A reconciliation is already in progress — complete it before starting another');
+        return;
+    }
+    if (reconStartInFlight) return;
+
     const bankId = reconBankDropdown?.getValue?.();
     const statementBalance = parseFloat(document.getElementById('reconStatementBalance').value);
     const statementDate = document.getElementById('reconStatementDate').value;
@@ -644,6 +693,7 @@ async function startReconciliation() {
         return;
     }
 
+    reconStartInFlight = true;
     try {
         const res = await api.request(AccountsCommon.buildUrl('bank/reconciliations'), {
             method: 'POST',
@@ -653,15 +703,27 @@ async function startReconciliation() {
         currentReconId = recon.id;
         reconTransactions = recon.transactions || recon.unmatched_transactions || [];
         reconMatchedCount = 0;
+        reconMatchedAmount = 0;
+        // BACKEND GAP: the start response is {id, status, transactions} — it does not
+        // echo the book_balance the backend just stored on bank_reconciliations.
+        // BusinessLayer_Bank.StartReconciliation uses bankAcct.current_balance as the
+        // book balance, so mirror exactly that from the already-loaded account list
+        // (prefer any book_balance the backend may add later).
+        const bank = bankAccountsList.find(b => b.id === bankId);
+        reconBookBalance = parseFloat(recon.book_balance ?? bank?.current_balance ?? bank?.balance ?? 0);
 
         document.getElementById('reconWorkspace').style.display = 'block';
         document.getElementById('reconSummaryStatement').textContent = AccountsCommon.formatCurrency(statementBalance);
+        const bookEl = document.getElementById('reconSummaryBook');
+        if (bookEl) bookEl.textContent = AccountsCommon.formatCurrency(reconBookBalance);
         renderReconTransactions();
         updateReconSummary();
         Toast.success('Reconciliation started');
     } catch (err) {
         console.error('[Banking] startReconciliation error:', err);
         Toast.error(err.message || 'Failed to start reconciliation');
+    } finally {
+        reconStartInFlight = false;
     }
 }
 
@@ -708,9 +770,19 @@ function updateReconSummary() {
         }
     });
 
-    const diff = stmtBal - matched;
+    // Reconciliation difference = statement balance − (book balance − outstanding items).
+    // The book balance already includes every recorded transaction; UNCHECKED rows are
+    // treated as outstanding (in the books but not yet on this statement), so the
+    // expected statement balance is bookBalance − Σ(unchecked signed amounts). Checked
+    // rows clear on this statement and drop out of the outstanding adjustment — as do
+    // rows already matched via Match Selected (they're spliced out of the list).
+    // (Previously: stmtBal − Σchecked, which ignored the book balance entirely.)
+    // reconBookBalance mirrors the backend's book_balance (see startReconciliation).
+    const bookBal = reconBookBalance ?? 0;
+    const diff = stmtBal - (bookBal - totalUnmatched);
     const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-    el('reconSummaryMatched', AccountsCommon.formatCurrency(Math.abs(matched)));
+    // Matched tile = already-committed matches (survive splicing) + currently-checked preview.
+    el('reconSummaryMatched', AccountsCommon.formatCurrency(Math.abs(reconMatchedAmount + matched)));
     el('reconSummaryUnmatched', AccountsCommon.formatCurrency(Math.abs(totalUnmatched)));
     el('reconSummaryDifference', AccountsCommon.formatCurrency(Math.abs(diff)));
 
@@ -722,10 +794,14 @@ async function matchSelectedTransactions() {
     if (!currentReconId) { Toast.error('No active reconciliation'); return; }
 
     const txnIds = [];
-    document.querySelectorAll('.recon-check:checked').forEach(cb => { txnIds.push(cb.dataset.txnId); });
+    let matchedSum = 0;
+    document.querySelectorAll('.recon-check:checked').forEach(cb => { txnIds.push(cb.dataset.txnId); matchedSum += parseFloat(cb.dataset.amount) || 0; });
 
     if (!txnIds.length) { Toast.error('Select at least one transaction to match'); return; }
 
+    // Guard against a double-click double-counting reconMatchedCount (inflates the completion summary).
+    if (matchInFlight) return;
+    matchInFlight = true;
     try {
         await api.request(AccountsCommon.buildUrl(`bank/reconciliations/${currentReconId}`), {
             method: 'PUT',
@@ -733,6 +809,7 @@ async function matchSelectedTransactions() {
         });
         Toast.success(`${txnIds.length} transaction(s) matched`);
         reconMatchedCount += txnIds.length;
+        reconMatchedAmount += matchedSum; // keep the matched-amount tile accurate after rows are spliced out
         // Remove matched from list
         reconTransactions = reconTransactions.filter(t => !txnIds.includes(t.id));
         renderReconTransactions();
@@ -740,6 +817,8 @@ async function matchSelectedTransactions() {
     } catch (err) {
         console.error('[Banking] matchSelectedTransactions error:', err);
         Toast.error(err.message || 'Failed to match transactions');
+    } finally {
+        matchInFlight = false;
     }
 }
 
@@ -769,6 +848,8 @@ async function completeReconciliation() {
         currentReconId = null;
         reconTransactions = [];
         reconMatchedCount = 0;
+        reconMatchedAmount = 0;
+        reconBookBalance = null;
         document.getElementById('reconWorkspace').style.display = 'none';
         await loadBankAccounts();
     } catch (err) {
@@ -859,7 +940,7 @@ function initDropdowns() {
 
     // Set default date for transfer
     const transferDate = document.getElementById('transferDate');
-    if (transferDate && !transferDate.value) transferDate.value = new Date().toISOString().split('T')[0];
+    if (transferDate && !transferDate.value) transferDate.value = AccountsCommon.todayLocal();
 }
 
 function refreshBankDropdowns() {
@@ -1072,27 +1153,49 @@ function parseExcelAndPreview(arrayBuffer) {
 
 function parseFlexibleDate(str) {
     if (!str) return null;
+    // Build a Date only from a REAL calendar date — new Date() silently rolls
+    // invalid parts over (month 15 → Mar next year, 31 Feb → 3 Mar), which used
+    // to import US-format dates a year off with no error. Reject instead.
+    const build = (y, mo, d) => {
+        if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+        const dt = new Date(y, mo - 1, d);
+        return (dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d) ? dt : null;
+    };
     // Try ISO: YYYY-MM-DD
     let m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
-    // Try DD/MM/YYYY or DD-MM-YYYY
+    if (m) return build(+m[1], +m[2], +m[3]);
+    // Slash/dash numeric: DD/MM/YYYY preferred (template convention); if the
+    // middle part can't be a month (e.g. 03/15/2026), fall back to MM/DD/YYYY.
+    // If neither reading is a valid date, fail loudly — the row gets flagged
+    // "Invalid date" instead of importing a rolled-over date a year off.
     m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
-    // Try MM/DD/YYYY
-    m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-    if (m && +m[1] <= 12) return new Date(+m[3], +m[1] - 1, +m[2]);
-    // Try Date.parse as fallback
+    if (m) {
+        const a = +m[1], b = +m[2], y = +m[3];
+        if (b >= 1 && b <= 12) {
+            const ddmm = build(y, b, a);
+            if (ddmm) return ddmm;
+        }
+        if (a >= 1 && a <= 12) return build(y, a, b); // MM/DD/YYYY
+        return null;
+    }
+    // Try Date.parse as fallback (e.g. "15 Mar 2026")
     const d = new Date(str);
     return isNaN(d.getTime()) ? null : d;
 }
 
 function parseAmount(str) {
-    if (!str) return null;
+    if (str == null) return null;
+    const s = String(str).trim();
+    if (!s) return null;
+    // Bank-statement convention: parentheses mean negative, e.g. (500) => -500.
+    const parenNegative = /^\(.*\)$/.test(s);
     // Remove currency symbols, commas, spaces
-    const cleaned = str.replace(/[^0-9.\-]/g, '');
-    if (!cleaned) return null;
+    const cleaned = s.replace(/[^0-9.\-]/g, '');
+    if (!/\d/.test(cleaned)) return null; // truly non-numeric → "No amount"
     const num = parseFloat(cleaned);
-    return isNaN(num) || num < 0 ? null : (num === 0 ? null : num);
+    if (isNaN(num)) return null;
+    // 0 and negatives are legitimate values — only non-numeric input returns null.
+    return parenNegative ? -Math.abs(num) : num;
 }
 
 function renderImportPreview() {
@@ -1122,7 +1225,9 @@ function renderImportPreview() {
         const statusBadge = r.status === 'error'
             ? `<span class="badge" style="background:var(--color-error);color:#fff;font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;" title="${AccountsCommon.escapeHtml(r.error)}">Error</span>`
             : `<span class="badge" style="background:var(--color-success);color:#fff;font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;">OK</span>`;
-        const dateStr = r.date ? r.date.toISOString().split('T')[0] : r.date_str;
+        // toDateInput (local) — toISOString() shifts local-midnight Dates back a day in IST,
+        // making the preview disagree with the (correct) import payload.
+        const dateStr = r.date ? AccountsCommon.toDateInput(r.date) : r.date_str;
         return `<tr style="${rowStyle}">
             <td>${i + 1}</td>
             <td>${statusBadge}</td>
@@ -1154,16 +1259,17 @@ async function confirmStatementImport() {
         transactions: validRows.map(r => ({
             transaction_date: r.date.getFullYear() + '-' + String(r.date.getMonth()+1).padStart(2,'0') + '-' + String(r.date.getDate()).padStart(2,'0'),
             description: r.description,
-            debit: r.debit || null,
-            credit: r.credit || null,
-            balance: r.balance || null,
+            // ?? not ||: a genuine 0 amount must survive to the payload
+            debit: r.debit ?? null,
+            credit: r.credit ?? null,
+            balance: r.balance ?? null,
             reference_number: r.reference || null
         })),
         skip_duplicates: true
     };
 
+    const btn = document.getElementById('confirmImportBtn');
     try {
-        const btn = document.getElementById('confirmImportBtn');
         btn.disabled = true;
         btn.textContent = 'Importing...';
 
@@ -1177,7 +1283,10 @@ async function confirmStatementImport() {
     } catch (err) {
         console.error('[Import] Error:', err);
         Toast.error(err.message || 'Import failed');
-        const btn = document.getElementById('confirmImportBtn');
+    } finally {
+        // Restore in finally — the success path used to leave the button stuck on
+        // "Importing..." for the next import cycle (step 2 is re-shown via
+        // "Import Another", which never reset the label).
         btn.disabled = false;
         btn.textContent = 'Confirm Import';
     }

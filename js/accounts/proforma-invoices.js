@@ -77,7 +77,6 @@ async function loadInitialData() {
         taxConfigs = Array.isArray(taxRes) ? taxRes : (taxRes?.data || taxRes?.items || []);
 
         populateSelect('proformaCustomerId', customers, 'id', 'name', 'Select customer...');
-        populateSelect('proformaTaxConfigId', taxConfigs, 'id', 'name', 'None');
 
         loadProformaInvoices();
     } catch (err) {
@@ -152,8 +151,11 @@ async function loadProformaInvoices() {
         const res = await api.request(AccountsCommon.buildUrl('proforma-invoices', params));
         const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
         proformaInvoices = items;  // cache for row action handlers
-        const total = res?.total || items.length;
+        // Backend total is the FILTERED count — ?? (not ||) so a legitimate 0 sticks
+        const total = res?.total ?? items.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        // Clamp if actioning the last row on a page left us past the end (else an empty "No … found").
+        if (proformaPage > totalPages) { proformaPage = totalPages; return loadProformaInvoices(); }
 
         // Stats — prefer backend stats, fallback to client-side
         const stats = res?.stats || {};
@@ -197,6 +199,11 @@ function proformaActions(pi) {
     // View is always available
     let html = `<button class="btn-icon" data-tooltip="View" onclick="viewProforma('${pi.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
 
+    // Mutating actions require admin (MANAGE_CUSTOMERS)
+    if (!accountsRoles.isAdmin()) {
+        return html;
+    }
+
     if (s === 'draft') {
         html += ` <button class="btn-icon" data-tooltip="Edit" onclick="editProforma('${pi.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
         html += ` <button class="btn-icon" data-tooltip="Send" onclick="sendProforma('${pi.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>`;
@@ -231,18 +238,16 @@ async function viewProforma(id) {
         const custName = pi.customer_name || customers.find(c => c.id === pi.customer_id)?.name || '-';
         const lines = pi.lines || [];
 
-        // Per-line tax derived from each line's tax_config_id. Backend doesn't
-        // currently roll these up into pi.tax_amount for proformas (tax is only
-        // computed at invoice approval time), so the view computes its own
-        // totals to stay consistent with what the user picked at save time.
-        let computedTax = 0;
+        // Per-line display uses the STORED tax_rate captured at save time,
+        // falling back to the config lookup only for legacy lines without one.
+        // Totals always come from the document's stored amounts — historical
+        // docs must show their own totals, never a live recompute against
+        // current tax-config rates.
         const lineRows = lines.map(l => {
             const cfg = taxConfigs.find(t => t.id === l.tax_config_id);
-            const rate = cfg ? Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? (cfg.name?.match(/(\d+(?:\.\d+)?)/)?.[1] ?? 0)) : 0;
             const lineAmt = Number(l.amount) || 0;
-            const lineTax = lineAmt * rate / 100;
-            computedTax += lineTax;
-            const taxLabel = cfg ? `${cfg.name || 'Tax'} (${rate}%)` : '—';
+            const lineTax = Number(l.tax_amount) || 0; // stored per-line tax; never recompute from current rates
+            const taxLabel = cfg ? `${cfg.name || 'Tax'}${lineTax ? ' ' + fmt(lineTax) : ''}` : (lineTax ? fmt(lineTax) : '—');
             return `<tr>
                 <td>${esc(l.description || '-')}</td>
                 <td>${esc(l.account_code ? l.account_code + ' — ' + (l.account_name || '') : (l.account_name || '-'))}</td>
@@ -262,8 +267,8 @@ async function viewProforma(id) {
                 </table>
             </div>`;
         }
-        const displayTax = computedTax > 0 ? computedTax : Number(pi.tax_amount || 0);
-        const displayTotal = computedTax > 0 ? (Number(pi.subtotal || 0) + computedTax) : Number(pi.total_amount || 0);
+        const displayTax = Number(pi.tax_amount || 0);
+        const displayTotal = Number(pi.total_amount || 0);
 
         let convertedHtml = '';
         if (pi.converted_invoice_id) {
@@ -337,10 +342,16 @@ async function editProforma(id) {
         const pi = await api.request(AccountsCommon.buildUrl(`proforma-invoices/${id}`));
         document.getElementById('proformaModalTitle').textContent = `Edit Proforma ${pi.proforma_number || ''}`;
         document.getElementById('proformaId').value = pi.id;
-        document.getElementById('proformaCustomerId').value = pi.customer_id || '';
+        const proformaCustSel = document.getElementById('proformaCustomerId');
+        proformaCustSel.value = pi.customer_id || '';
+        proformaCustSel.dispatchEvent(new Event('change')); // re-sync the SearchableDropdown label on repeat edits
         document.getElementById('proformaDate').value = pi.proforma_date?.split('T')[0] || '';
         document.getElementById('proformaValidUntil').value = pi.valid_until?.split('T')[0] || '';
-        document.getElementById('proformaTaxConfigId').value = pi.tax_configuration_id || '';
+        // Legacy header-level tax select — no longer in the markup (tax is
+        // per-line now) and the backend doesn't emit tax_configuration_id,
+        // so only set it when both exist to avoid breaking the edit modal.
+        const taxSel = document.getElementById('proformaTaxConfigId');
+        if (taxSel && pi.tax_configuration_id) taxSel.value = pi.tax_configuration_id;
         document.getElementById('proformaNotes').value = pi.notes || '';
 
         const lines = pi.lines || [];
@@ -376,7 +387,7 @@ function addProformaLine(data = {}) {
     row.innerHTML = `
         <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
-        <td><input type="number" class="form-control line-qty" value="${data.quantity || 1}" min="0" step="any" oninput="calculateProformaTotals()"></td>
+        <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculateProformaTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${data.unit_price || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateProformaTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
@@ -429,9 +440,11 @@ function addProformaLine(data = {}) {
 function _proformaTaxRateFor(configId) {
     const cfg = taxConfigs.find(t => t.id === configId);
     if (!cfg) return 0;
-    const r = Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? 0);
+    // Backend TaxConfiguration nests the rate at configuration.total_rate (the list
+    // endpoint doesn't populate rates[]); older/flat keys kept as fallbacks.
+    const r = Number(cfg.configuration?.total_rate ?? cfg.total_rate ?? cfg.rate ?? cfg.tax_rate ?? 0);
     if (r) return r;
-    if (Array.isArray(cfg.rates)) return cfg.rates.reduce((s, r) => s + Number(r.rate_percentage ?? r.percentage ?? 0), 0);
+    if (Array.isArray(cfg.rates)) return cfg.rates.reduce((s, x) => s + Number(x.rate ?? x.rate_percentage ?? 0), 0);
     const m = (cfg.name || '').match(/(\d+(?:\.\d+)?)/);
     return m ? Number(m[1]) : 0;
 }
@@ -495,6 +508,7 @@ async function openProformaQuickAddAccount(dropdownInstance, rebuildOptions) {
         const errEl = document.getElementById('profQaError');
         errEl.hidden = true;
         if (!code || !name || !typeId) { errEl.textContent = 'Code, Name, and Account Type are required.'; errEl.hidden = false; return; }
+        if (!AccountsCommon.beginSubmit('pfQuickAddAccount')) return;
         try {
             const created = await api.request(AccountsCommon.buildUrl('coa'), { method: 'POST', body: JSON.stringify({ account_code: code, account_name: name, account_type_id: typeId }) });
             const fresh = await api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true });
@@ -514,6 +528,7 @@ async function openProformaQuickAddAccount(dropdownInstance, rebuildOptions) {
             Toast.success(`Account ${code} created and selected.`);
             AccountsCommon.closeModal('profQuickAddAccountModal');
         } catch (err) { errEl.textContent = err?.message || 'Failed to create account.'; errEl.hidden = false; }
+        finally { AccountsCommon.endSubmit('pfQuickAddAccount'); }
     };
 }
 
@@ -549,7 +564,9 @@ function calculateProformaTotals() {
     });
     setText('proformaSubtotal', subtotal.toFixed(2));
     setText('proformaTax', totalTax.toFixed(2));
-    setText('proformaTotal', (subtotal + totalTax).toFixed(2));
+    // The proforma stores/prints the pre-tax subtotal (GST is authoritatively added when it converts to
+    // an invoice), so the Proforma Total must equal the subtotal — matching the saved + detail-view figures.
+    setText('proformaTotal', subtotal.toFixed(2));
 }
 
 // ============================================================================
@@ -558,6 +575,9 @@ function calculateProformaTotals() {
 
 async function saveProforma() {
     const form = document.getElementById('proformaForm');
+    // The customer <select> is hidden (converted to a SearchableDropdown) but keeps `required`, so
+    // reportValidity() fails silently on it with no anchorable bubble. Guard explicitly with a Toast.
+    if (!document.getElementById('proformaCustomerId').value) { Toast.error('Please select a customer'); return; }
     if (!form.reportValidity()) return;
 
     // Skip fully blank rows and require an account on any non-empty row —
@@ -600,6 +620,7 @@ async function saveProforma() {
     };
 
     const id = document.getElementById('proformaId').value;
+    if (!AccountsCommon.beginSubmit('saveProforma')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`proforma-invoices/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
@@ -612,6 +633,8 @@ async function saveProforma() {
         loadProformaInvoices();
     } catch (err) {
         Toast.error(err.message || 'Failed to save proforma invoice');
+    } finally {
+        AccountsCommon.endSubmit('saveProforma');
     }
 }
 

@@ -171,6 +171,7 @@
                             <option value="sent">Sent</option>
                             <option value="partially_paid">Partially Paid</option>
                             <option value="paid">Paid</option>
+                            <option value="credited">Credited</option>
                             <option value="overdue">Overdue</option>
                             <option value="written_off">Written Off</option>
                             <option value="cancelled">Cancelled</option>
@@ -290,12 +291,12 @@
                 <div class="tab-content" id="credit-notes">
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="cnCustomerFilterContainer"></div>
+                        <!-- Backend only ever stores credit notes as 'approved' (created pre-approved,
+                             no draft/applied/cancelled lifecycle) — offering those statuses made the
+                             filter silently return zero rows. -->
                         <select id="creditNoteStatusFilter" class="form-control" style="max-width:200px;" onchange="loadCreditNotes()">
                             <option value="">All Statuses</option>
-                            <option value="draft">Draft</option>
                             <option value="approved">Approved</option>
-                            <option value="applied">Applied</option>
-                            <option value="cancelled">Cancelled</option>
                         </select>
                         <input type="text" id="cnDateFrom" class="form-control" placeholder="From date" style="max-width: 140px;">
                         <input type="text" id="cnDateTo" class="form-control" placeholder="To date" style="max-width: 140px;">
@@ -508,7 +509,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="invoiceCurrency">Currency</label>
-                                <input type="text" id="invoiceCurrency" class="form-control" value="INR" placeholder="e.g. INR">
+                                <input type="text" id="invoiceCurrency" class="form-control" value="INR" readonly title="Invoices use the account's base currency">
+                                <small style="color: var(--text-secondary);">Base currency (per-document currency not supported)</small>
                             </div>
                         </div>
                         <div class="form-row">
@@ -554,8 +556,8 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-outline" onclick="AccountsCommon.closeModal('customerInvoiceModal')">Cancel</button>
-                    <button class="btn btn-outline" onclick="saveInvoice(false)">Save Draft</button>
-                    <button class="btn btn-primary" onclick="saveInvoice(true)">Save &amp; Approve</button>
+                    <button class="btn btn-outline" id="invoiceSaveDraftBtn" onclick="saveInvoice(false)">Save Draft</button>
+                    <button class="btn btn-primary" id="invoiceSaveApproveBtn" onclick="saveInvoice(true)">Save &amp; Approve</button>
                 </div>
             </div>
         </div>
@@ -639,7 +641,7 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-outline" onclick="AccountsCommon.closeModal('customerPaymentModal')">Cancel</button>
-                    <button class="btn btn-primary" onclick="saveCustomerPayment()">Save Payment</button>
+                    <button class="btn btn-primary" id="paymentSaveBtn" onclick="saveCustomerPayment()">Save Payment</button>
                 </div>
             </div>
         </div>
@@ -665,7 +667,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="cnInvoiceId">Invoice *</label>
-                                <select id="cnInvoiceId" class="form-control" required>
+                                <select id="cnInvoiceId" class="form-control" required onchange="syncCnAmountMax()">
                                     <option value="">Select invoice...</option>
                                 </select>
                             </div>
@@ -690,7 +692,7 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-outline" onclick="AccountsCommon.closeModal('creditNoteModal')">Cancel</button>
-                    <button class="btn btn-primary" onclick="saveCreditNote()">Create Credit Note</button>
+                    <button class="btn btn-primary" id="creditNoteSaveBtn" onclick="saveCreditNote()">Create Credit Note</button>
                 </div>
             </div>
         </div>

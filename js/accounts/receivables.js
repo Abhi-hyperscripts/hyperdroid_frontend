@@ -179,33 +179,48 @@ function initDropdowns() {
 // ============================================================================
 
 async function loadCustomerInvoices() {
-    const params = { limit: PAGE_SIZE, offset: (invoicePage - 1) * PAGE_SIZE };
     const customerId = invoiceCustomerFilterDD?.getValue?.();
     const status = document.getElementById('invoiceStatusFilter')?.value;
     const dateFrom = document.getElementById('invoiceDateFrom')?.value;
     const dateTo = document.getElementById('invoiceDateTo')?.value;
     const search = document.getElementById('invoiceSearch')?.value?.trim();
+    const searching = !!search;
 
+    // The backend invoices list has no `search` param. When searching, fetch a broad page and
+    // filter + paginate client-side so the search reaches ALL matching rows and the pager reflects
+    // the filtered count (not the server total). Otherwise use normal server-side pagination.
+    const params = searching
+        ? { limit: 1000, offset: 0 }
+        : { limit: PAGE_SIZE, offset: (invoicePage - 1) * PAGE_SIZE };
     if (customerId) params.customerId = customerId;
     if (status) params.status = status;
     if (dateFrom) params.fromDate = dateFrom;
     if (dateTo) params.toDate = dateTo;
-    // Note: the backend list endpoint has no `search` param — filtering is done
-    // client-side over the loaded page below.
 
     try {
         const res = await api.request(AccountsCommon.buildUrl('invoices', params));
         let items = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        customerInvoices = items;  // cache for row action handlers
-        if (search) {
+        customerInvoices = items;  // cache the full fetch for row action handlers
+
+        let total, totalPages;
+        if (searching) {
             const q = search.toLowerCase();
-            items = items.filter(inv => {
+            const filtered = items.filter(inv => {
                 const custName = inv.customer_name || customers.find(c => c.id === inv.customer_id)?.name || '';
                 return `${inv.invoice_number || ''} ${custName}`.toLowerCase().includes(q);
             });
+            total = filtered.length;
+            totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+            if (invoicePage > totalPages) invoicePage = totalPages;
+            items = filtered.slice((invoicePage - 1) * PAGE_SIZE, invoicePage * PAGE_SIZE);
+        } else {
+            // `total` feeds ONLY the pager below — the KPI tiles read res.stats. Backend returns the
+            // FILTERED count; ?? (not ||) so a legitimate 0 doesn't fall through to items.length.
+            total = res?.total ?? items.length;
+            totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+            // Clamp if actioning the last row on a page left us past the end (else an empty "No … found").
+            if (invoicePage > totalPages) { invoicePage = totalPages; return loadCustomerInvoices(); }
         }
-        const total = res?.total || items.length;
-        const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 
         // Stats — prefer backend stats, fallback to client-side
         const stats = res?.stats || {};
@@ -226,7 +241,7 @@ async function loadCustomerInvoices() {
                     <td>${AccountsCommon.formatDate(inv.invoice_date)}</td>
                     <td>${AccountsCommon.formatDate(inv.due_date)}</td>
                     <td class="text-right">${AccountsCommon.formatCurrency(inv.total_amount)}</td>
-                    <td class="text-right">${AccountsCommon.formatCurrency(inv.balance_due || inv.balance)}</td>
+                    <td class="text-right">${AccountsCommon.formatCurrency(inv.balance_due ?? inv.balance ?? 0)}</td>
                     <td>${AccountsCommon.statusBadge(inv.status)}</td>
                     <td class="actions-cell">${invoiceActions(inv)}</td>
                 </tr>`;
@@ -243,6 +258,10 @@ function invoiceActions(inv) {
     // View + PDF buttons always shown
     let html = `<button class="btn-icon" data-tooltip="View" onclick="viewInvoice('${inv.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
     html += ` <button class="btn-icon" data-tooltip="Download PDF" onclick="downloadInvoicePdf('${inv.id}', '${(inv.invoice_number||'').replace(/'/g,'')}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
+    // Mutating actions require admin
+    if (!accountsRoles.isAdmin()) {
+        return html;
+    }
     if (inv.status === 'draft') {
         html += ` <button class="btn-icon" data-tooltip="Edit" onclick="editInvoice('${inv.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
         html += ` <button class="btn-icon" data-tooltip="Approve" onclick="approveInvoice('${inv.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>`;
@@ -292,6 +311,43 @@ async function sendInvoiceReminder(invoiceId, invoiceNumber) {
 // BULK INVOICE IMPORT
 // ============================================================================
 
+// Quote-aware CSV → array of {header: value} objects. Local replica of the
+// parser in setup.js (_parseCsv there is not exported, and setup.js is not
+// loaded on this page). Handles quoted fields containing commas, escaped ""
+// quotes, and CRLF line endings.
+function _parseCsv(text) {
+    const rows = [];
+    let i = 0, field = '', row = [], inQuotes = false;
+    const pushField = () => { row.push(field); field = ''; };
+    const pushRow   = () => { rows.push(row); row = []; };
+    while (i < text.length) {
+        const ch = text[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+                inQuotes = false; i++; continue;
+            }
+            field += ch; i++; continue;
+        }
+        if (ch === '"') { inQuotes = true; i++; continue; }
+        if (ch === ',') { pushField(); i++; continue; }
+        if (ch === '\r') { i++; continue; }
+        if (ch === '\n') { pushField(); pushRow(); i++; continue; }
+        field += ch; i++;
+    }
+    if (field.length > 0 || row.length > 0) { pushField(); pushRow(); }
+    if (rows.length === 0) return [];
+
+    const headers = rows.shift().map(h => h.trim());
+    return rows
+        .filter(r => r.some(cell => (cell ?? '').trim() !== ''))
+        .map(r => {
+            const obj = {};
+            headers.forEach((h, idx) => { obj[h] = (r[idx] ?? '').trim(); });
+            return obj;
+        });
+}
+
 function showBulkInvoiceModal() {
     document.getElementById('bulkInvoiceData').value = '';
     const fileInput = document.getElementById('bulkInvoiceFile');
@@ -309,15 +365,10 @@ function handleBulkInvoiceFileUpload(event) {
             document.getElementById('bulkInvoiceData').value = content;
         } else if (file.name.endsWith('.csv')) {
             try {
-                const lines = content.split('\n').filter(l => l.trim());
-                if (lines.length < 2) { Toast.error('CSV must have a header row and at least one data row'); return; }
-                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-                const rows = lines.slice(1).map(line => {
-                    const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                    const obj = {};
-                    headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
-                    return obj;
-                });
+                // Quote-aware parse — a naive split(',') shifted every column after
+                // a quoted field containing a comma (e.g. "Acme, Inc.").
+                const rows = _parseCsv(content);
+                if (!rows.length) { Toast.error('CSV must have a header row and at least one data row'); return; }
                 document.getElementById('bulkInvoiceData').value = JSON.stringify(rows, null, 2);
             } catch (csvErr) {
                 Toast.error('Failed to parse CSV file');
@@ -332,6 +383,7 @@ function handleBulkInvoiceFileUpload(event) {
 async function submitBulkInvoices() {
     const text = document.getElementById('bulkInvoiceData').value.trim();
     if (!text) { Toast.error('Please paste invoice data or upload a file'); return; }
+    if (!AccountsCommon.beginSubmit('submitBulkInvoices')) return;
     try {
         const invoices = JSON.parse(text);
         if (!Array.isArray(invoices)) { Toast.error('Data must be a JSON array'); return; }
@@ -356,6 +408,8 @@ async function submitBulkInvoices() {
     } catch (err) {
         console.error('[AR] submitBulkInvoices error:', err);
         Toast.error(err.message || 'Failed to import invoices');
+    } finally {
+        AccountsCommon.endSubmit('submitBulkInvoices');
     }
 }
 
@@ -365,6 +419,9 @@ async function submitBulkInvoices() {
 
 function showCreateInvoiceModal() {
     document.getElementById('invoiceModalTitle').textContent = 'Create Invoice';
+    // The modal is shared with the read-only "view issued invoice" path; clear that state first,
+    // else after viewing an approved invoice the create form opens disabled with Save hidden.
+    _setInvoiceModalReadOnly(false);
     document.getElementById('invoiceForm').reset();
     document.getElementById('invoiceId').value = '';
     document.getElementById('invoiceLines').innerHTML = '';
@@ -466,13 +523,13 @@ function addInvoiceLine(data = {}) {
     }).join('');
 
     // Same column order as PO: Account first, then Description, HSN/SAC, Qty,
-    // Unit Price, Tax, Amount. HSN/SAC stays because India tax invoices ≥₹50K
-    // require it (backend currently drops it but Tier 3 will start using it).
+    // Unit Price, Tax, Amount. HSN/SAC is required on India tax invoices ≥₹50K
+    // and is now persisted+returned by the backend (customer_invoice_lines.hsn_sac).
     row.innerHTML = `
         <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
         <td><input type="text" class="form-control line-hsn" value="${AccountsCommon.escapeHtml(data.hsn_sac || '')}" placeholder="HSN/SAC"></td>
-        <td><input type="number" class="form-control line-qty" value="${data.quantity || 1}" min="0" step="any" oninput="calculateInvoiceTotals()"></td>
+        <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculateInvoiceTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${data.rate || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateInvoiceTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
@@ -527,7 +584,8 @@ function addInvoiceLine(data = {}) {
 function _invoiceTaxRateFor(configId) {
     const cfg = taxConfigs.find(t => t.id === configId);
     if (!cfg) return 0;
-    const r = Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? 0);
+    // Rate is nested at configuration.total_rate on the list payload; flat keys are fallbacks.
+    const r = Number(cfg.configuration?.total_rate ?? cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? 0);
     if (r) return r;
     if (Array.isArray(cfg.rates)) return cfg.rates.reduce((s, r) => s + Number(r.rate_percentage ?? r.percentage ?? 0), 0);
     const m = (cfg.name || '').match(/(\d+(?:\.\d+)?)/);
@@ -593,6 +651,7 @@ async function openInvoiceQuickAddAccount(dropdownInstance, rebuildOptions) {
         const errEl = document.getElementById('invQaError');
         errEl.hidden = true;
         if (!code || !name || !typeId) { errEl.textContent = 'Code, Name, and Account Type are required.'; errEl.hidden = false; return; }
+        if (!AccountsCommon.beginSubmit('raQuickAddAccount')) return;
         try {
             const created = await api.request(AccountsCommon.buildUrl('coa'), { method: 'POST', body: JSON.stringify({ account_code: code, account_name: name, account_type_id: typeId }) });
             const fresh = await api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true });
@@ -612,6 +671,7 @@ async function openInvoiceQuickAddAccount(dropdownInstance, rebuildOptions) {
             Toast.success(`Account ${code} created and selected.`);
             AccountsCommon.closeModal('invQuickAddAccountModal');
         } catch (err) { errEl.textContent = err?.message || 'Failed to create account.'; errEl.hidden = false; }
+        finally { AccountsCommon.endSubmit('raQuickAddAccount'); }
     };
 }
 
@@ -671,10 +731,9 @@ async function saveInvoice(approve) {
             if (!lineError) lineError = `Line ${idx + 1}: select an account for this line item`;
             return;
         }
-        // Note: backend CreateCustomerInvoiceLineRequest currently accepts
-        // {account_id, description, quantity, unit_price}. hsn_sac, tax_config_id,
-        // and tax_rate are silently dropped today but Tier 3 will start using
-        // them so the GSTR returns can split CGST/SGST/IGST per line.
+        // Backend CreateCustomerInvoiceLineRequest accepts account_id, description,
+        // quantity, unit_price, tax_config_id and hsn_sac (all persisted). tax_rate
+        // is derived server-side from the tax config, so it is not sent.
         lines.push({
             description,
             account_id: accountId,
@@ -695,11 +754,16 @@ async function saveInvoice(approve) {
         return;
     }
 
-    // The backend requires every line to share one tax configuration. Catch mixed slabs
-    // here with a clear message instead of a confusing 400 after the round-trip.
+    // The backend requires all-or-nothing tax tagging: every line the SAME config, or none (default).
+    // Catch both "mixed slabs" and "some taxed + some exempt" here with a clear message instead of a 400.
+    const taggedCount = lines.filter(l => l.tax_config_id).length;
     const distinctTaxConfigs = [...new Set(lines.map(l => l.tax_config_id).filter(Boolean))];
     if (distinctTaxConfigs.length > 1) {
         Toast.error('All line items must use the same tax rate. Set every line to the same GST/tax option before saving.');
+        return;
+    }
+    if (taggedCount > 0 && taggedCount < lines.length) {
+        Toast.error('Either apply the same tax option to every line, or set them all to "No tax". Mixing taxed and tax-exempt lines is not allowed.');
         return;
     }
 
@@ -716,32 +780,41 @@ async function saveInvoice(approve) {
     };
 
     const id = document.getElementById('invoiceId').value;
-    let savedInvoice;
+    // Disable both save buttons while the request is in flight — a double-click
+    // fired two POSTs and created duplicate invoices.
+    const saveBtns = ['invoiceSaveDraftBtn', 'invoiceSaveApproveBtn']
+        .map(bid => document.getElementById(bid)).filter(Boolean);
+    saveBtns.forEach(b => b.disabled = true);
     try {
-        if (id) {
-            savedInvoice = await api.request(AccountsCommon.buildUrl(`invoices/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
-        } else {
-            savedInvoice = await api.request(AccountsCommon.buildUrl('invoices'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
-        }
-    } catch (err) {
-        Toast.error(err.message || 'Failed to save invoice');
-        return;
-    }
-
-    // The draft now exists. Approval is a separate step — if it fails, the draft must
-    // still be surfaced (close modal + refresh) so the user doesn't re-submit and create a duplicate.
-    if (approve && savedInvoice?.id) {
+        let savedInvoice;
         try {
-            await api.request(AccountsCommon.buildUrl(`invoices/${savedInvoice.id}/approve`), { method: 'POST' });
-            Toast.success('Invoice created and approved');
+            if (id) {
+                savedInvoice = await api.request(AccountsCommon.buildUrl(`invoices/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+            } else {
+                savedInvoice = await api.request(AccountsCommon.buildUrl('invoices'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+            }
         } catch (err) {
-            Toast.error(`Saved as draft, but approval failed: ${err.message || 'unknown error'}`);
+            Toast.error(err.message || 'Failed to save invoice');
+            return;
         }
-    } else {
-        Toast.success(id ? 'Invoice updated' : 'Invoice saved as draft');
+
+        // The draft now exists. Approval is a separate step — if it fails, the draft must
+        // still be surfaced (close modal + refresh) so the user doesn't re-submit and create a duplicate.
+        if (approve && savedInvoice?.id) {
+            try {
+                await api.request(AccountsCommon.buildUrl(`invoices/${savedInvoice.id}/approve`), { method: 'POST' });
+                Toast.success('Invoice created and approved');
+            } catch (err) {
+                Toast.error(`Saved as draft, but approval failed: ${err.message || 'unknown error'}`);
+            }
+        } else {
+            Toast.success(id ? 'Invoice updated' : 'Invoice saved as draft');
+        }
+        AccountsCommon.closeModal('customerInvoiceModal');
+        loadCustomerInvoices();
+    } finally {
+        saveBtns.forEach(b => b.disabled = false);
     }
-    AccountsCommon.closeModal('customerInvoiceModal');
-    loadCustomerInvoices();
 }
 
 function _invoiceLabel(id) {
@@ -868,7 +941,13 @@ async function loadCustomerPayments() {
     }
 }
 
+// One idempotency key per modal-open: retries/double-clicks of the SAME payment
+// reuse the key (backend dedupes on the Idempotency-Key header), while a newly
+// opened modal gets a fresh key so a genuine second payment is not swallowed.
+let _paymentIdemKey = null;
+
 function showRecordPaymentModal() {
+    _paymentIdemKey = crypto.randomUUID();
     document.getElementById('paymentModalTitle').textContent = 'Record Payment';
     document.getElementById('paymentForm').reset();
     document.getElementById('paymentId').value = '';
@@ -928,36 +1007,63 @@ async function saveCustomerPayment() {
     const form = document.getElementById('paymentForm');
     if (!form.reportValidity()) return;
 
+    // min="0" on the input lets ₹0 through native validation — a zero payment
+    // posts a meaningless GL entry. Require strictly positive.
+    const amount = parseFloat(document.getElementById('paymentAmount').value);
+    if (isNaN(amount) || amount <= 0) {
+        Toast.error('Payment amount must be greater than zero');
+        return;
+    }
+
     // Backend CustomerPaymentAllocationRequest expects { customer_invoice_id, allocated_amount }
     // — NOT { invoice_id, amount }. Sending the wrong shape silently dropped allocations
     // server-side and left invoice balance_due unchanged. Fixed in Phase 4 Tier 1.
     const allocations = [];
     document.querySelectorAll('#paymentAllocations tr:not(.empty-state)').forEach(row => {
         const invoiceId = row.querySelector('.alloc-invoice-id')?.value;
-        const amount = parseFloat(row.querySelector('.alloc-amount')?.value) || 0;
-        if (invoiceId && amount > 0) allocations.push({ customer_invoice_id: invoiceId, allocated_amount: amount });
+        const allocAmt = parseFloat(row.querySelector('.alloc-amount')?.value) || 0;
+        if (invoiceId && allocAmt > 0) allocations.push({ customer_invoice_id: invoiceId, allocated_amount: allocAmt });
     });
+
+    // Over-allocation guard: the sum of invoice allocations cannot exceed the
+    // payment amount (small epsilon for float noise on 2-dp currency).
+    const allocatedTotal = allocations.reduce((s, a) => s + a.allocated_amount, 0);
+    if (allocatedTotal - amount > 0.005) {
+        Toast.error(`Allocated total (${AccountsCommon.formatCurrency(allocatedTotal)}) exceeds the payment amount (${AccountsCommon.formatCurrency(amount)})`);
+        return;
+    }
 
     // Backend RecordCustomerPaymentRequest expects `reference_number`, not `reference`.
     // Fixed in Phase 4 Tier 1 — was being silently dropped before.
     const payload = {
         customer_id: document.getElementById('paymentCustomerId').value,
         payment_date: document.getElementById('paymentDate').value,
-        amount: parseFloat(document.getElementById('paymentAmount').value) || 0,
+        amount,
         bank_account_id: document.getElementById('paymentBankAccountId').value,
         reference_number: document.getElementById('paymentReference').value,
         payment_method: document.getElementById('paymentMethod')?.value || 'bank_transfer',
         allocations
     };
 
+    // Disable the submit button for the duration of the request (double-click =
+    // duplicate POST) and send the per-modal-open Idempotency-Key so even a
+    // network-level retry can't record the payment twice (backend dedupes on it).
+    const saveBtn = document.getElementById('paymentSaveBtn');
+    if (saveBtn) saveBtn.disabled = true;
     try {
-        await api.request(AccountsCommon.buildUrl('invoices/payments'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+        await api.request(AccountsCommon.buildUrl('invoices/payments'), {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'application/json', ...(_paymentIdemKey && { 'Idempotency-Key': _paymentIdemKey }) }
+        });
         Toast.success('Payment recorded');
         AccountsCommon.closeModal('customerPaymentModal');
         loadCustomerPayments();
         loadCustomerInvoices();
     } catch (err) {
         Toast.error(err.message || 'Failed to save payment');
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
     }
 }
 
@@ -972,9 +1078,9 @@ async function loadCreditNotes() {
     const search = (document.getElementById('cnSearch')?.value || '').trim().toLowerCase();
     const statusFilter = document.getElementById('creditNoteStatusFilter')?.value;
 
-    // Backend GET invoices/credit-notes only supports customerId + limit/offset
-    // and returns a bare array with no total. Fetch up to the server cap (200)
-    // and do status/date/search filtering + pagination client-side.
+    // Backend GET invoices/credit-notes supports customerId + limit/offset and
+    // returns {data,total}. Fetch up to the server cap and do status/date/search
+    // filtering + pagination client-side.
     const params = { limit: 200 };
     if (customerId) params.customerId = customerId;
 
@@ -1026,11 +1132,18 @@ async function loadCreditNotes() {
     }
 }
 
+// One idempotency key per modal-open: retries/double-clicks of the SAME credit note
+// reuse the key (backend dedupes on the Idempotency-Key header), while a newly opened
+// modal gets a fresh key so a genuine second credit note is not swallowed.
+let _creditNoteIdemKey = null;
+
 function showCreateCreditNoteModal() {
+    _creditNoteIdemKey = crypto.randomUUID();
     document.getElementById('creditNoteModalTitle').textContent = 'Create Credit Note';
     document.getElementById('creditNoteForm').reset();
     document.getElementById('creditNoteId').value = '';
     document.getElementById('cnInvoiceId').innerHTML = '<option value="">Select invoice...</option>';
+    syncCnAmountMax(); // clear any max left over from a previous open
     AccountsCommon.openModal('creditNoteModal');
 }
 
@@ -1038,14 +1151,40 @@ async function loadCustomerInvoicesForCN() {
     const custId = document.getElementById('cnCustomerId').value;
     const sel = document.getElementById('cnInvoiceId');
     sel.innerHTML = '<option value="">Select invoice...</option>';
+    syncCnAmountMax();
     if (!custId) return;
     try {
         const res = await api.request(AccountsCommon.buildUrl('invoices', { customerId: custId, limit: 200 }));
-        const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const items = (Array.isArray(res) ? res : (res?.data || res?.items || []))
+            // Mirror the payables debit-note rule: a credit note can only be raised
+            // against an ISSUED invoice with money still open — not a draft (never
+            // issued, just edit/delete it), a cancelled one, or a fully-paid one.
+            .filter(inv => {
+                const bal = parseFloat(inv.balance_due) || 0;
+                const st = (inv.status || '').toLowerCase();
+                return bal > 0 && (st === 'approved' || st === 'sent' || st === 'partially_paid' || st === 'overdue');
+            });
         items.forEach(inv => {
-            sel.innerHTML += `<option value="${inv.id}">${AccountsCommon.escapeHtml(inv.invoice_number || inv.id)} - ${AccountsCommon.formatCurrency(inv.total_amount)}</option>`;
+            const bal = parseFloat(inv.balance_due) || 0;
+            const opt = document.createElement('option');
+            opt.value = inv.id;
+            opt.dataset.balance = bal;
+            opt.textContent = `${inv.invoice_number || inv.id} - ${AccountsCommon.formatCurrency(inv.total_amount)} (${AccountsCommon.formatCurrency(bal)} due)`;
+            sel.appendChild(opt);
         });
     } catch (err) { console.error('[AR] loadCustomerInvoicesForCN error:', err); }
+}
+
+// Cap the credit-note amount at the selected invoice's outstanding balance.
+// reportValidity() in saveCreditNote() then enforces the max natively.
+// Wired to cnInvoiceId's onchange in receivables.html.
+function syncCnAmountMax() {
+    const sel = document.getElementById('cnInvoiceId');
+    const amt = document.getElementById('cnAmount');
+    if (!amt) return;
+    const bal = parseFloat(sel?.selectedOptions?.[0]?.dataset?.balance);
+    if (!isNaN(bal) && bal > 0) amt.max = bal;
+    else amt.removeAttribute('max');
 }
 
 async function saveCreditNote() {
@@ -1060,14 +1199,19 @@ async function saveCreditNote() {
         reason: document.getElementById('cnReason').value
     };
 
+    // Disable the submit button during the request — double-click = duplicate credit note.
+    const saveBtn = document.getElementById('creditNoteSaveBtn');
+    if (saveBtn) saveBtn.disabled = true;
     try {
-        await api.request(AccountsCommon.buildUrl('invoices/credit-notes'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+        await api.request(AccountsCommon.buildUrl('invoices/credit-notes'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json', ...(_creditNoteIdemKey && { 'Idempotency-Key': _creditNoteIdemKey }) } });
         Toast.success('Credit note created');
         AccountsCommon.closeModal('creditNoteModal');
         loadCreditNotes();
         loadCustomerInvoices();
     } catch (err) {
         Toast.error(err.message || 'Failed to create credit note');
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
     }
 }
 
@@ -1167,7 +1311,9 @@ async function loadCustomerStatement() {
             html += `<div class="data-table-container"><table class="data-table"><thead><tr>
                 <th>Date</th><th>Type</th><th>Reference</th><th>Debit</th><th>Credit</th><th>Balance</th>
             </tr></thead><tbody>`;
-            let bal = 0;
+            // Seed the running balance from the backend's opening balance (net activity
+            // strictly before fromDate), mirroring the AP vendor statement. 0 when no From-date.
+            let bal = parseFloat(res?.opening_balance) || 0;
             txns.forEach(t => {
                 const dr = parseFloat(t.debit) || 0;
                 const cr = parseFloat(t.credit) || 0;

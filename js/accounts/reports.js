@@ -301,7 +301,7 @@ async function loadARAgingReport() {
     try {
         const url = AccountsCommon.buildUrl('reports/ar-aging');
         const data = await api.request(url);
-        document.getElementById('arAgingPeriod').textContent = `As of ${AccountsCommon.formatDate(new Date().toISOString())}`;
+        document.getElementById('arAgingPeriod').textContent = `As of ${AccountsCommon.formatDate(AccountsCommon.todayLocal())}`;
         renderAgingReport(data, 'ar');
     } catch (err) {
         console.error('[Reports] loadARAgingReport error:', err);
@@ -313,7 +313,7 @@ async function loadAPAgingReport() {
     try {
         const url = AccountsCommon.buildUrl('reports/ap-aging');
         const data = await api.request(url);
-        document.getElementById('apAgingPeriod').textContent = `As of ${AccountsCommon.formatDate(new Date().toISOString())}`;
+        document.getElementById('apAgingPeriod').textContent = `As of ${AccountsCommon.formatDate(AccountsCommon.todayLocal())}`;
         renderAgingReport(data, 'ap');
     } catch (err) {
         console.error('[Reports] loadAPAgingReport error:', err);
@@ -655,10 +655,15 @@ function renderBalanceSheetReport(data) {
 
     const assetsCmp = parseFloat(data.total_assets_comparison || 0);
     const liabCmp = parseFloat(data.total_liabilities_comparison || 0);
-    const equityCmp = parseFloat(data.total_equity_comparison || 0);
+    // Mirror the current column above: fold the prior period's current-year P&L into
+    // comparison Total Equity, otherwise the comparison sheet never foots.
+    const equityCmp = parseFloat(data.total_equity_comparison || 0) + parseFloat(data.current_year_pl_comparison || 0);
     const assetsVar = parseFloat(data.total_assets_variance ?? (totalAssets - assetsCmp));
     const liabVar = parseFloat(data.total_liabilities_variance ?? (totalLiabilities - liabCmp));
-    const equityVar = parseFloat(data.total_equity_variance ?? (totalEquity - equityCmp));
+    // Backend total_equity_variance(_percentage) excludes current-year P&L on both sides;
+    // compute from the displayed (P&L-inclusive) figures so Variance = Current − Comparison.
+    const equityVar = totalEquity - equityCmp;
+    const equityVarPct = equityCmp === 0 ? null : 100 * equityVar / Math.abs(equityCmp);
 
     const assetsColor = varianceColor(assetsVar, false);
     const liabColor = varianceColor(liabVar, true);
@@ -703,7 +708,7 @@ function renderBalanceSheetReport(data) {
                     ${renderSection(liabilities, 'Liabilities')}
                     ${subtotalRow('Total Liabilities', totalLiabilities, liabCmp, liabVar, data.total_liabilities_variance_percentage, liabColor)}
                     ${renderSection(equity, 'Equity')}
-                    ${subtotalRow('Total Equity', totalEquity, equityCmp, equityVar, data.total_equity_variance_percentage, equityColor)}
+                    ${subtotalRow('Total Equity', totalEquity, equityCmp, equityVar, equityVarPct, equityColor)}
                 </tbody>
                 <tfoot>
                     ${totalRow}
@@ -789,7 +794,16 @@ function renderLedgerReport(data) {
         </tr>`;
     }).join('');
 
+    // Backend closing_balance is computed from full-range aggregates, so it stays
+    // correct even when the entry list is truncated at the 10,000-row cap — prefer
+    // it over the running balance of the (possibly capped) rows.
+    const closingBalance = data?.closing_balance != null ? parseFloat(data.closing_balance) : runningBalance;
+    const truncatedBanner = data?.truncated
+        ? `<div class="report-note" style="color:var(--color-warning);">Showing the first ${items.length.toLocaleString('en-IN')} of ${(data.total_entries ?? 0).toLocaleString('en-IN')} entries — opening and closing balances cover the full range. Narrow the date range to see the remaining detail.</div>`
+        : '';
+
     container.innerHTML = `
+        ${truncatedBanner}
         ${data?.opening_balance != null ? `<div class="report-note">Opening Balance: <strong>${fmt(data.opening_balance)}</strong></div>` : ''}
         <div class="data-table-container">
             <table class="data-table report-table">
@@ -801,7 +815,7 @@ function renderLedgerReport(data) {
                     <tr class="total-row">
                         <td colspan="2"><strong>Closing Balance</strong></td>
                         <td></td><td></td>
-                        <td class="amount"><strong>${fmt(runningBalance)}</strong></td>
+                        <td class="amount"><strong>${fmt(closingBalance)}</strong></td>
                     </tr>
                 </tfoot>
             </table>
@@ -863,14 +877,17 @@ function renderCashBookReport(data) {
         return;
     }
 
-    let runningBalance = parseFloat(data?.opening_balance || 0);
+    // Backend (DatabaseLayer_Reports.cs GetCashBook) emits rows
+    // {type:'inflow'|'outflow', amount, date, description, reference, party, bank_account}
+    // plus top-level {total_deposits, total_withdrawals, net, entry_count, truncated}.
+    // There is NO opening_balance — this is a period-movement report, so the running
+    // balance starts at 0 and the footer is the period's net movement.
+    let runningBalance = 0;
     const rows = items.map(item => {
-        // Backend returns {type: 'deposit'|'withdrawal'|'transfer_in'|'transfer_out', amount}
         const amt = parseFloat(item.amount || 0);
-        const isReceipt = item.type === 'deposit' || item.type === 'transfer_in';
-        const isPayment = item.type === 'withdrawal' || item.type === 'transfer_out';
-        const receipt = isReceipt ? amt : parseFloat(item.receipt || item.debit || 0);
-        const payment = isPayment ? amt : parseFloat(item.payment || item.credit || 0);
+        const isReceipt = item.type === 'inflow';
+        const receipt = isReceipt ? amt : 0;
+        const payment = isReceipt ? 0 : amt;
         runningBalance += receipt - payment;
         return `<tr>
             <td>${AccountsCommon.formatDate(item.date || item.transaction_date)}</td>
@@ -881,8 +898,16 @@ function renderCashBookReport(data) {
         </tr>`;
     }).join('');
 
+    // total_deposits/total_withdrawals/net are full-range aggregates — accurate even
+    // when the entry list is truncated at the backend row cap.
+    const netMovement = data?.net != null ? parseFloat(data.net) : runningBalance;
+    const truncatedBanner = data?.truncated
+        ? `<div class="report-note" style="color:var(--color-warning);">Showing the first ${items.length.toLocaleString('en-IN')} of ${(data.entry_count ?? 0).toLocaleString('en-IN')} entries — totals and net movement cover the full range. Narrow the date range to see the remaining detail.</div>`
+        : '';
+
     container.innerHTML = `
-        ${data?.opening_balance != null ? `<div class="report-note">Opening Balance: <strong>${fmt(data.opening_balance)}</strong></div>` : ''}
+        ${truncatedBanner}
+        <div class="report-note">Movement for the selected period — the balance column starts at 0 (no opening balance).</div>
         <div class="data-table-container">
             <table class="data-table report-table">
                 <thead>
@@ -891,9 +916,10 @@ function renderCashBookReport(data) {
                 <tbody>${rows}</tbody>
                 <tfoot>
                     <tr class="total-row">
-                        <td colspan="2"><strong>Closing Balance</strong></td>
-                        <td></td><td></td>
-                        <td class="amount"><strong>${fmt(runningBalance)}</strong></td>
+                        <td colspan="2"><strong>Net Movement (Period)</strong></td>
+                        <td class="amount"><strong>${fmt(data?.total_deposits ?? 0)}</strong></td>
+                        <td class="amount"><strong>${fmt(data?.total_withdrawals ?? 0)}</strong></td>
+                        <td class="amount"><strong>${fmt(netMovement)}</strong></td>
                     </tr>
                 </tfoot>
             </table>

@@ -5,6 +5,10 @@
 let fiscalYearsList = [];
 let accountsList = [];
 let budgetsList = [];
+let budgetsTotal = 0;
+let budgetPage = 1;
+const BUDGET_PAGE_SIZE = 50;
+const BUDGET_FETCH_LIMIT = 2000; // matches the budgets endpoint's raised server cap so the full FY list loads
 let selectedFyId = null;
 let editingBudget = null;
 
@@ -82,17 +86,26 @@ function buildMonthlyInputs() {
 
 function autoSplitMonthly() {
     const annual = parseFloat(document.getElementById('bAnnualAmount').value) || 0;
-    const perMonth = annual / 12;
-    for (let i = 1; i <= 12; i++) {
-        document.getElementById(`bMonth${i}`).value = perMonth.toFixed(2);
+    // Paise-exact split: floor the first 11 months to 2dp, last month absorbs
+    // the remainder so the 12 values sum exactly to the annual amount
+    // (backend rejects monthly_amounts whose sum != annual_amount).
+    const perMonthPaise = Math.floor((annual * 100) / 12);
+    for (let i = 1; i <= 11; i++) {
+        document.getElementById(`bMonth${i}`).value = (perMonthPaise / 100).toFixed(2);
     }
+    const lastPaise = Math.round(annual * 100) - perMonthPaise * 11;
+    document.getElementById('bMonth12').value = (lastPaise / 100).toFixed(2);
 }
 
 async function loadBudgets() {
     if (!selectedFyId) return;
     try {
-        const res = await api.request(AccountsCommon.buildUrl('budgets', { fiscalYearId: selectedFyId }));
+        // High limit so the full FY budget list (and the Total Annual Budget
+        // sum) is loaded; pagination is applied client-side over this list.
+        const res = await api.request(AccountsCommon.buildUrl('budgets', { fiscalYearId: selectedFyId, limit: BUDGET_FETCH_LIMIT, offset: 0 }));
         budgetsList = Array.isArray(res) ? res : (res?.data || []);
+        budgetsTotal = Array.isArray(res) ? res.length : (res?.total ?? budgetsList.length);
+        budgetPage = 1;
         renderBudgets();
     } catch (err) {
         console.error('[Budgets] load error:', err);
@@ -104,16 +117,21 @@ function renderBudgets() {
     const tbody = document.getElementById('budgetsTable');
     const fmt = AccountsCommon.formatCurrency;
 
-    document.getElementById('statBudgetCount').textContent = budgetsList.length;
+    document.getElementById('statBudgetCount').textContent = budgetsTotal;
     const total = budgetsList.reduce((s, b) => s + (b.annual_amount || 0), 0);
     document.getElementById('statBudgetTotal').textContent = fmt(total);
 
     if (!budgetsList.length) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary);">No budgets for this fiscal year. Click "Add Budget" to create one.</td></tr>';
+        AccountsCommon.renderPagination('budgetsPagination', 1, 1, () => {});
         return;
     }
 
-    tbody.innerHTML = budgetsList.map(b => {
+    const totalPages = Math.ceil(budgetsList.length / BUDGET_PAGE_SIZE) || 1;
+    if (budgetPage > totalPages) budgetPage = totalPages;
+    const pageRows = budgetsList.slice((budgetPage - 1) * BUDGET_PAGE_SIZE, budgetPage * BUDGET_PAGE_SIZE);
+
+    tbody.innerHTML = pageRows.map(b => {
         const perMonth = (b.annual_amount || 0) / 12;
         return `<tr>
             <td><code>${AccountsCommon.escapeHtml(b.account_code || '-')}</code></td>
@@ -127,6 +145,8 @@ function renderBudgets() {
             </div></td>
         </tr>`;
     }).join('');
+
+    AccountsCommon.renderPagination('budgetsPagination', budgetPage, totalPages, p => { budgetPage = p; renderBudgets(); });
 }
 
 function openAddModal() {
@@ -137,6 +157,7 @@ function openAddModal() {
     document.getElementById('bNotes').value = '';
     for (let i = 1; i <= 12; i++) document.getElementById(`bMonth${i}`).value = '';
     accountDropdown?.setValue('');
+    accountDropdown?.setDisabled(false); // re-enable (edit mode locks it)
     AccountsCommon.openModal('budgetModal');
 }
 
@@ -147,9 +168,14 @@ function editBudget(id) {
     document.getElementById('budgetModalTitle').textContent = 'Edit Budget';
     document.getElementById('bAnnualAmount').value = b.annual_amount || 0;
     document.getElementById('bNotes').value = b.notes || '';
+    // Leave months blank when the budget has no stored breakdown, so saving
+    // again keeps the "annual only" (backend even-split) behaviour.
     const monthly = b.monthly_amounts || [];
-    for (let i = 1; i <= 12; i++) document.getElementById(`bMonth${i}`).value = monthly[i-1] || 0;
+    for (let i = 1; i <= 12; i++) document.getElementById(`bMonth${i}`).value = monthly[i-1] ?? '';
     accountDropdown?.setValue(b.account_id);
+    // The account is the budget's identity key (POST upserts on tenant+FY+account); changing it on edit
+    // would create a NEW row and orphan the original. Lock the field during edit.
+    accountDropdown?.setDisabled(true);
     AccountsCommon.openModal('budgetModal');
 }
 
@@ -163,19 +189,26 @@ async function saveBudget() {
         return;
     }
 
+    // Only send monthly_amounts when the user explicitly entered at least one
+    // month — with all 12 blank the backend even-splits the annual amount
+    // itself (an explicit array of zeros would be rejected as sum != annual).
     const monthly_amounts = [];
+    let anyMonthEntered = false;
     for (let i = 1; i <= 12; i++) {
-        monthly_amounts.push(parseFloat(document.getElementById(`bMonth${i}`).value) || 0);
+        const raw = document.getElementById(`bMonth${i}`).value.trim();
+        if (raw !== '') anyMonthEntered = true;
+        monthly_amounts.push(parseFloat(raw) || 0);
     }
 
     const payload = {
         fiscal_year_id: selectedFyId,
         account_id: accountId,
         annual_amount: annualAmount,
-        monthly_amounts,
         notes: notes || null
     };
+    if (anyMonthEntered) payload.monthly_amounts = monthly_amounts;
 
+    if (!AccountsCommon.beginSubmit('saveBudget')) return;
     try {
         await api.request(AccountsCommon.buildUrl('budgets'), {
             method: 'POST', body: JSON.stringify(payload)
@@ -186,6 +219,8 @@ async function saveBudget() {
     } catch (err) {
         console.error('[Budgets] save error:', err);
         Toast.error(err.message || 'Failed to save budget');
+    } finally {
+        AccountsCommon.endSubmit('saveBudget');
     }
 }
 
@@ -213,6 +248,7 @@ async function confirmCopy() {
     if (!sourceFy) { Toast.error('Please select source fiscal year'); return; }
     if (sourceFy === selectedFyId) { Toast.error('Source and target fiscal year cannot be the same'); return; }
 
+    if (!AccountsCommon.beginSubmit('confirmCopy')) return;
     try {
         const res = await api.request(AccountsCommon.buildUrl('budgets/copy'), {
             method: 'POST',
@@ -224,6 +260,8 @@ async function confirmCopy() {
     } catch (err) {
         console.error('[Budgets] copy error:', err);
         Toast.error(err.message || 'Failed to copy budgets');
+    } finally {
+        AccountsCommon.endSubmit('confirmCopy');
     }
 }
 
@@ -238,7 +276,8 @@ function switchTab(tab) {
 }
 
 async function loadAnalysis() {
-    switchTab('analysis');
+    // NB: do NOT call switchTab('analysis') here — switchTab() calls loadAnalysis(), so that would
+    // be unconditional mutual recursion (stack overflow the moment the Analysis tab is opened).
     if (!selectedFyId) {
         document.getElementById('analysisContent').innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-secondary);">Please select a fiscal year first</p>';
         return;

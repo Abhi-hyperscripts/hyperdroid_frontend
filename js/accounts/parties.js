@@ -88,11 +88,9 @@ function setupSearchListeners() {
 
 async function loadVendors() {
     try {
-        const showInactive = document.getElementById('showInactiveVendors')?.checked || false;
-        const params = {};
-        if (!showInactive) params.isActive = true;
-
-        const url = AccountsCommon.buildUrl('vendors', params);
+        // Fetch ALL vendors (active + inactive) so the stat tiles (Total/Active/Inactive) are accurate.
+        // renderVendorsTable() already filters the displayed rows by the "Show Inactive" toggle.
+        const url = AccountsCommon.buildUrl('vendors', {});
         const res = await api.request(url, { _skipSpinner: true });
         vendors = Array.isArray(res) ? res : (res?.data || res?.items || []);
         updateVendorStats();
@@ -358,6 +356,8 @@ function editVendor(id) {
     document.getElementById('vendorCountry').value = v.country || '';
     document.getElementById('vendorPostalCode').value = v.postal_code || '';
     document.getElementById('vendorTaxId').value = v.tax_id || '';
+    document.getElementById('vendorGstNumber').value = v.gst_number || '';
+    document.getElementById('vendorPanNumber').value = v.pan_number || '';
     document.getElementById('vendorPaymentTerms').value = v.payment_terms_days ?? 30;
     document.getElementById('vendorBankName').value = v.bank_name || '';
     document.getElementById('vendorBankAccount').value = v.bank_account_number || '';
@@ -385,6 +385,9 @@ async function saveVendor() {
         country: document.getElementById('vendorCountry').value.trim() || null,
         postal_code: document.getElementById('vendorPostalCode').value.trim() || null,
         tax_id: document.getElementById('vendorTaxId').value.trim() || null,
+        // Backend accepts and prefers gst_number/pan_number over tax_id for TDS
+        gst_number: document.getElementById('vendorGstNumber').value.trim() || null,
+        pan_number: document.getElementById('vendorPanNumber').value.trim() || null,
         payment_terms_days: parseInt(document.getElementById('vendorPaymentTerms').value) || 30,
         bank_name: document.getElementById('vendorBankName').value.trim() || null,
         bank_account_number: document.getElementById('vendorBankAccount').value.trim() || null,
@@ -393,6 +396,7 @@ async function saveVendor() {
         notes: document.getElementById('vendorNotes').value.trim() || null
     };
 
+    if (!AccountsCommon.beginSubmit('saveVendor')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`vendors/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -406,6 +410,8 @@ async function saveVendor() {
     } catch (err) {
         console.error('[Parties] saveVendor error:', err);
         Toast.error(err.message || 'Failed to save vendor');
+    } finally {
+        AccountsCommon.endSubmit('saveVendor');
     }
 }
 
@@ -415,14 +421,9 @@ async function saveVendor() {
 
 async function loadCustomers() {
     try {
-        const showInactive = document.getElementById('showInactiveCustomers')?.checked || false;
-        const params = {};
-        // Backend param is 'isActive' (not 'includeInactive'). When showing
-        // inactive, omit the filter so backend returns all. Otherwise filter
-        // to active only.
-        if (!showInactive) params.isActive = true;
-
-        const url = AccountsCommon.buildUrl('customers', params);
+        // Fetch ALL customers (active + inactive) so the stat tiles are accurate.
+        // renderCustomersTable() already filters the displayed rows by the "Show Inactive" toggle.
+        const url = AccountsCommon.buildUrl('customers', {});
         const res = await api.request(url, { _skipSpinner: true });
         customers = Array.isArray(res) ? res : (res?.data || res?.items || []);
         updateCustomerStats();
@@ -556,6 +557,7 @@ async function saveCustomer() {
         notes: document.getElementById('customerNotes').value.trim() || null
     };
 
+    if (!AccountsCommon.beginSubmit('saveCustomer')) return;
     try {
         if (id) {
             await api.request(AccountsCommon.buildUrl(`customers/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
@@ -569,6 +571,8 @@ async function saveCustomer() {
     } catch (err) {
         console.error('[Parties] saveCustomer error:', err);
         Toast.error(err.message || 'Failed to save customer');
+    } finally {
+        AccountsCommon.endSubmit('saveCustomer');
     }
 }
 
@@ -773,6 +777,7 @@ async function confirmApprove() {
         payment_terms_days: parseInt(document.getElementById('arPaymentTerms').value) || 30
     };
 
+    if (!AccountsCommon.beginSubmit('confirmApprove')) return;
     try {
         await api.request(AccountsCommon.buildUrl(`requests/${requestId}/review`), {
             method: 'POST',
@@ -789,6 +794,8 @@ async function confirmApprove() {
     } catch (err) {
         console.error('[Parties] confirmApprove error:', err);
         Toast.error(err.message || 'Failed to approve request');
+    } finally {
+        AccountsCommon.endSubmit('confirmApprove');
     }
 }
 
@@ -828,6 +835,7 @@ async function confirmReject() {
         rejection_reason: reason
     };
 
+    if (!AccountsCommon.beginSubmit('confirmReject')) return;
     try {
         await api.request(AccountsCommon.buildUrl(`requests/${requestId}/review`), {
             method: 'POST',
@@ -843,5 +851,7 @@ async function confirmReject() {
     } catch (err) {
         console.error('[Parties] confirmReject error:', err);
         Toast.error(err.message || 'Failed to reject request');
+    } finally {
+        AccountsCommon.endSubmit('confirmReject');
     }
 }
