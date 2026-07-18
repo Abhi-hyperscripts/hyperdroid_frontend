@@ -1411,7 +1411,7 @@ function showCreateDebitNoteModal() {
         billContainer.innerHTML = '';
         dnBillDropdown = new SearchableDropdown(billContainer, {
             id: 'dnBill',
-            options: [{ value: '', label: 'Select Bill (optional)' }],
+            options: [{ value: '', label: 'Select Bill...' }],
             placeholder: 'Select Bill'
         });
     }
@@ -1425,7 +1425,7 @@ async function loadBillsForDebitNote(vendorId) {
         const res = await api.request(AccountsCommon.buildUrl('vendor-bills', { vendorId, limit: 200 }), { _skipSpinner: true });
         const bills = (res?.data || []).filter(b => b.status !== 'cancelled' && b.status !== 'draft');
         dnBillDropdown.setOptions([
-            { value: '', label: 'Select Bill (optional)' },
+            { value: '', label: 'Select Bill...' },
             ...bills.map(b => ({ value: b.id, label: `${b.bill_number} — ${AccountsCommon.formatCurrency(b.total_amount)}` }))
         ]);
     } catch (err) { console.error('[Payables] loadBillsForDN error:', err); }

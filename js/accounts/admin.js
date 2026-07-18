@@ -24,6 +24,8 @@ const PAGE_SIZE = 50;
 // Dropdown instances
 let checklistFYDropdown = null;
 let yearEndFYDropdown = null;
+let homeStateDropdown = null;
+let fyStartDropdown = null;
 
 // ============================================================================
 // PAGE INIT
@@ -37,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // client-side toggle would still get 401/403 from the server.
     const isSuperadmin = readRolesFromJwt().includes('SUPERADMIN');
     const tabNames = {
+        'tenant-settings': 'Tenant Settings',
         'audit-logs': 'Audit Logs',
         'pending-approvals': 'Pending Approvals',
         'integrity-check': 'Integrity Check',
@@ -207,6 +210,7 @@ function escapeHtml(s) {
 
 function onTabSwitch(tabId) {
     switch (tabId) {
+        case 'tenant-settings':     loadTenantSettings(); break;
         case 'audit-logs':          loadAuditLogs(); break;
         case 'pending-approvals':   loadPendingApprovals(); break;
         case 'integrity-check':     break;
@@ -257,6 +261,99 @@ function initDropdowns() {
         options: [{ value: '', label: 'Select...' }, ...fyOptions],
         onChange: (val) => { if (val) loadYearEndPreflight(val); }
     });
+
+    homeStateDropdown = new SearchableDropdown('settingsHomeStateContainer', {
+        placeholder: 'Select your GST home state...',
+        options: [{ value: '', label: 'Select state...' }, ...IN_GST_STATES],
+        searchable: true
+    });
+
+    fyStartDropdown = new SearchableDropdown('settingsFyStartContainer', {
+        placeholder: 'Select month...',
+        options: MONTHS
+    });
+}
+
+// Indian GST state/UT codes (numeric) — the tax classifier normalises alpha↔numeric, but we store numeric.
+const IN_GST_STATES = [
+    { value: '01', label: 'Jammu & Kashmir (01)' }, { value: '02', label: 'Himachal Pradesh (02)' },
+    { value: '03', label: 'Punjab (03)' }, { value: '04', label: 'Chandigarh (04)' },
+    { value: '05', label: 'Uttarakhand (05)' }, { value: '06', label: 'Haryana (06)' },
+    { value: '07', label: 'Delhi (07)' }, { value: '08', label: 'Rajasthan (08)' },
+    { value: '09', label: 'Uttar Pradesh (09)' }, { value: '10', label: 'Bihar (10)' },
+    { value: '11', label: 'Sikkim (11)' }, { value: '12', label: 'Arunachal Pradesh (12)' },
+    { value: '13', label: 'Nagaland (13)' }, { value: '14', label: 'Manipur (14)' },
+    { value: '15', label: 'Mizoram (15)' }, { value: '16', label: 'Tripura (16)' },
+    { value: '17', label: 'Meghalaya (17)' }, { value: '18', label: 'Assam (18)' },
+    { value: '19', label: 'West Bengal (19)' }, { value: '20', label: 'Jharkhand (20)' },
+    { value: '21', label: 'Odisha (21)' }, { value: '22', label: 'Chhattisgarh (22)' },
+    { value: '23', label: 'Madhya Pradesh (23)' }, { value: '24', label: 'Gujarat (24)' },
+    { value: '26', label: 'Dadra & Nagar Haveli and Daman & Diu (26)' }, { value: '27', label: 'Maharashtra (27)' },
+    { value: '29', label: 'Karnataka (29)' }, { value: '30', label: 'Goa (30)' },
+    { value: '31', label: 'Lakshadweep (31)' }, { value: '32', label: 'Kerala (32)' },
+    { value: '33', label: 'Tamil Nadu (33)' }, { value: '34', label: 'Puducherry (34)' },
+    { value: '35', label: 'Andaman & Nicobar Islands (35)' }, { value: '36', label: 'Telangana (36)' },
+    { value: '37', label: 'Andhra Pradesh (37)' }, { value: '38', label: 'Ladakh (38)' }
+];
+const MONTHS = [
+    { value: 1, label: 'January' }, { value: 2, label: 'February' }, { value: 3, label: 'March' },
+    { value: 4, label: 'April' }, { value: 5, label: 'May' }, { value: 6, label: 'June' },
+    { value: 7, label: 'July' }, { value: 8, label: 'August' }, { value: 9, label: 'September' },
+    { value: 10, label: 'October' }, { value: 11, label: 'November' }, { value: 12, label: 'December' }
+];
+
+// ============================================================================
+// 0. TENANT SETTINGS
+// ============================================================================
+
+async function loadTenantSettings() {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('settings'), { _skipSpinner: true });
+        const s = res?.data || res || {};
+        homeStateDropdown?.setValue?.(s.state_code || '');
+        fyStartDropdown?.setValue?.(s.financial_year_start_month || 4);
+        const cur = document.getElementById('settingsBaseCurrency');
+        const cc = document.getElementById('settingsCountryCode');
+        if (cur) cur.value = s.base_currency || 'INR';
+        if (cc) cc.value = s.country_code || 'IN';
+
+        // RBAC: only admins may edit. Non-admins see the values read-only.
+        const canEdit = accountsRoles.isAdmin();
+        const saveBtn = document.getElementById('saveTenantSettingsBtn');
+        if (saveBtn) saveBtn.style.display = canEdit ? '' : 'none';
+        [cur, cc].forEach(el => { if (el) el.disabled = !canEdit; });
+        if (!canEdit) {
+            homeStateDropdown?.disable?.();
+            fyStartDropdown?.disable?.();
+        }
+    } catch (err) {
+        console.error('[Admin] loadTenantSettings error:', err);
+        Toast.error('Failed to load tenant settings');
+    }
+}
+
+async function saveTenantSettings() {
+    if (!accountsRoles.isAdmin()) { Toast.error('Only an admin can change tenant settings'); return; }
+    const stateCode = homeStateDropdown?.getValue?.() || '';
+    if (!stateCode) { Toast.error('GST Home State is required'); return; }
+
+    const payload = {
+        state_code: stateCode,
+        base_currency: (document.getElementById('settingsBaseCurrency').value || 'INR').trim().toUpperCase(),
+        country_code: (document.getElementById('settingsCountryCode').value || 'IN').trim().toUpperCase(),
+        financial_year_start_month: parseInt(fyStartDropdown?.getValue?.()) || 4
+    };
+
+    if (!AccountsCommon.beginSubmit('saveTenantSettings')) return;
+    try {
+        await api.request(AccountsCommon.buildUrl('settings'), { method: 'PUT', body: JSON.stringify(payload) });
+        Toast.success('Tenant settings saved — GST invoicing is now unblocked');
+    } catch (err) {
+        console.error('[Admin] saveTenantSettings error:', err);
+        Toast.error(err.message || 'Failed to save tenant settings');
+    } finally {
+        AccountsCommon.endSubmit('saveTenantSettings');
+    }
 }
 
 function setupSearchListeners() {

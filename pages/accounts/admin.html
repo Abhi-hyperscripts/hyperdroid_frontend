@@ -82,6 +82,25 @@
                     <h3>Administration</h3>
                 </div>
                 <nav class="sidebar-nav">
+                    <!-- Configuration Section -->
+                    <div class="nav-group" data-group="configuration">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                                Configuration
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="tenant-settings" id="tenantSettingsTab">
+                                <span class="nav-number">0</span><span class="nav-label">Tenant Settings</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Audit Section -->
                     <div class="nav-group" data-group="audit">
                         <div class="nav-group-header">
@@ -181,6 +200,44 @@
 
             <!-- Main Content Area -->
             <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 0: Tenant Settings -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="tenant-settings">
+                    <div class="info-panel" style="margin-bottom:16px;">
+                        <strong>What is this?</strong> Your business's accounting defaults. The
+                        <strong>GST Home State</strong> is required before you can approve GST invoices or bills — it
+                        tells the system whether a sale is intra-state (CGST + SGST) or inter-state (IGST). Set it once here.
+                    </div>
+                    <div class="form-card" style="max-width:640px;">
+                        <div class="form-group">
+                            <label for="settingsHomeStateContainer">GST Home State *</label>
+                            <div id="settingsHomeStateContainer"></div>
+                            <small class="form-hint">Your business's registered GST state. Required for GST invoicing.</small>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="settingsBaseCurrency">Base Currency</label>
+                                <input type="text" id="settingsBaseCurrency" class="form-control" maxlength="3" placeholder="INR" style="text-transform:uppercase;">
+                                <small class="form-hint">3-letter ISO code (e.g., INR).</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="settingsCountryCode">Country Code</label>
+                                <input type="text" id="settingsCountryCode" class="form-control" maxlength="3" placeholder="IN" style="text-transform:uppercase;">
+                                <small class="form-hint">2-letter ISO code (e.g., IN).</small>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="settingsFyStartContainer">Financial Year Starts In</label>
+                            <div id="settingsFyStartContainer"></div>
+                            <small class="form-hint">India's financial year starts in April.</small>
+                        </div>
+                        <div class="form-actions" style="margin-top:16px;">
+                            <button class="btn btn-primary" id="saveTenantSettingsBtn" onclick="saveTenantSettings()">Save Settings</button>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- ============================================================ -->
                 <!-- Tab 1: Audit Logs -->

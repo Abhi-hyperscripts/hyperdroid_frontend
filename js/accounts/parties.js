@@ -370,7 +370,29 @@ function editVendor(id) {
 async function saveVendor() {
     const id = document.getElementById('vendorId').value;
     const name = document.getElementById('vendorName').value.trim();
-    if (!name) { Toast.error('Vendor name is required'); return; }
+
+    // tax_id fallback: Indian users typically enter GST or PAN rather than a generic Tax ID.
+    // The backend requires tax_id, so fall back to GST/PAN when the dedicated field is blank.
+    const taxId = document.getElementById('vendorTaxId').value.trim()
+        || document.getElementById('vendorGstNumber').value.trim()
+        || document.getElementById('vendorPanNumber').value.trim();
+
+    // Client-side validation mirroring the backend's required master-data fields, so the
+    // user gets one clear message + focus instead of a chain of server-side 400s.
+    const required = [
+        ['vendorName', 'Vendor name'],
+        ['vendorPhone', 'Phone'],
+        ['vendorEmail', 'Email'],
+        ['vendorAddressLine1', 'Address Line 1'],
+        ['vendorCity', 'City'],
+        ['vendorState', 'State'],
+        ['vendorCountry', 'Country']
+    ];
+    for (const [fid, label] of required) {
+        const el = document.getElementById(fid);
+        if (!el || !el.value.trim()) { Toast.error(`${label} is required`); el?.focus(); return; }
+    }
+    if (!taxId) { Toast.error('Tax ID (GST / PAN / VAT) is required'); document.getElementById('vendorTaxId').focus(); return; }
 
     const payload = {
         name,
@@ -384,7 +406,7 @@ async function saveVendor() {
         state_code: document.getElementById('vendorStateCode').value.trim() || null,
         country: document.getElementById('vendorCountry').value.trim() || null,
         postal_code: document.getElementById('vendorPostalCode').value.trim() || null,
-        tax_id: document.getElementById('vendorTaxId').value.trim() || null,
+        tax_id: taxId,
         // Backend accepts and prefers gst_number/pan_number over tax_id for TDS
         gst_number: document.getElementById('vendorGstNumber').value.trim() || null,
         pan_number: document.getElementById('vendorPanNumber').value.trim() || null,
@@ -535,7 +557,23 @@ function editCustomer(id) {
 async function saveCustomer() {
     const id = document.getElementById('customerId').value;
     const name = document.getElementById('customerName').value.trim();
-    if (!name) { Toast.error('Customer name is required'); return; }
+
+    // Client-side validation mirroring the backend's required master-data fields, so the
+    // user gets one clear message + focus instead of a chain of server-side 400s.
+    const required = [
+        ['customerName', 'Customer name'],
+        ['customerPhone', 'Phone'],
+        ['customerEmail', 'Email'],
+        ['customerTaxId', 'Tax ID (GST / PAN / VAT)'],
+        ['customerAddressLine1', 'Address Line 1'],
+        ['customerCity', 'City'],
+        ['customerState', 'State'],
+        ['customerCountry', 'Country']
+    ];
+    for (const [fid, label] of required) {
+        const el = document.getElementById(fid);
+        if (!el || !el.value.trim()) { Toast.error(`${label} is required`); el?.focus(); return; }
+    }
 
     const creditVal = document.getElementById('customerCreditLimit').value;
 
