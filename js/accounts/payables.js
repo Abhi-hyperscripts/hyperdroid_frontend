@@ -382,7 +382,7 @@ function addBillLine(data) {
 
     const d = billLines[idx];
     const accountOpts = '<option value="">Select...</option>' +
-        accounts.map(a => {
+        AccountsCommon.postableAccounts(accounts).map(a => {
             const code = a.account_code || a.code || '';
             const name = a.account_name || a.name || '';
             const label = code && name ? `${code} — ${name}` : (name || code);
@@ -409,7 +409,7 @@ function addBillLine(data) {
 
     const buildAccountOptions = () => [
         { value: '', label: 'Select...' },
-        ...accounts.map(a => {
+        ...AccountsCommon.postableAccounts(accounts).map(a => {
             const code = a.account_code || a.code || '';
             const name = a.account_name || a.name || '';
             return { value: a.id, label: code && name ? `${code} — ${name}` : (name || code) };

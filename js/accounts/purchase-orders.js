@@ -406,7 +406,8 @@ async function editPO(id) {
 function addPOLine(data = {}) {
     const tbody = document.getElementById('poLines');
     const row = document.createElement('tr');
-    const acctOptions = accounts.map(a => {
+    // PO lines must post to a postable Expense account (backend enforces the class).
+    const acctOptions = AccountsCommon.postableAccounts(accounts, 'expense').map(a => {
         const code = a.account_code || a.code || '';
         const name = a.account_name || a.name || '';
         const label = code && name ? `${code} — ${name}` : (name || code);
@@ -436,7 +437,7 @@ function addPOLine(data = {}) {
     const containerEl = row.querySelector('.line-account-sd');
     const buildOptions = () => [
         { value: '', label: 'Select...' },
-        ...accounts.map(a => {
+        ...AccountsCommon.postableAccounts(accounts, 'expense').map(a => {
             const code = a.account_code || a.code || '';
             const name = a.account_name || a.name || '';
             return { value: a.id, label: code && name ? `${code} — ${name}` : (name || code) };

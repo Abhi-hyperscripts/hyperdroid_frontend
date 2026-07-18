@@ -382,6 +382,28 @@ const AccountsCommon = {
     },
 
     // ------------------------------------------------------------------
+    // Chart-of-accounts helpers
+    // ------------------------------------------------------------------
+
+    /**
+     * Filter the chart-of-accounts list to accounts valid as a document line's posting account:
+     * only leaf accounts that allow direct posting (excludes parent/group header accounts, which the
+     * backend rejects with "does not allow direct posting"), active only, and — when `typeContains` is
+     * given — restricted to an account-type class (case-insensitive substring, e.g. 'expense', 'income').
+     */
+    postableAccounts(accounts, typeContains) {
+        return (accounts || []).filter(a => {
+            if (a.allow_direct_posting === false) return false;
+            if (a.is_active === false) return false;
+            if (typeContains) {
+                const t = (a.account_type_name || '').toLowerCase();
+                if (!t.includes(typeContains.toLowerCase())) return false;
+            }
+            return true;
+        });
+    },
+
+    // ------------------------------------------------------------------
     // Formatting Helpers
     // ------------------------------------------------------------------
 
