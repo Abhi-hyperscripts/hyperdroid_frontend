@@ -9998,30 +9998,47 @@ label.toggle-switch,
 .modal .po-dialog {
     max-width: min(1400px, 96vw);
     width: min(1400px, 96vw);
-    max-height: 92vh;
+    /* Fill a consistent, spacious height (Zoho-like) so the line-items area grows instead of
+       collapsing to a cramped 2-3 row scroll box. Shrinks to content only on very short viewports. */
+    height: 94vh;
+    max-height: 94vh;
+    margin: 0 auto;
 }
 .modal .po-dialog .modal-content {
     max-width: 100%;
     width: 100%;
-    max-height: 92vh;
+    height: 100%;
+    max-height: 94vh;
     display: flex;
     flex-direction: column;
 }
+/* Compact chrome so the item table gets the room (Zoho-style). Tighter header/footer + form gap. */
+.modal .po-dialog .modal-header {
+    padding: 0.85rem 1.25rem !important;
+    flex: 0 0 auto;
+}
+.modal .po-dialog .modal-footer {
+    padding: 0.75rem 1.25rem !important;
+    flex: 0 0 auto;
+}
+.modal .po-dialog .modal-body > form { gap: 0.5rem !important; }
+/* Notes is optional — keep it a single tight line instead of a tall block. */
+.modal .po-dialog .po-notes-row { margin: 0 !important; }
+.modal .po-dialog .po-notes-row .form-group { margin-bottom: 0 !important; }
+/* The MODAL BODY is the single scroll region (Zoho page-scroll feel): with many line items the
+   body scrolls, the item table grows naturally (no cramped inner 2-row scrollbox), and the sticky
+   table header + the modal header/footer stay put. */
 .modal .po-dialog .modal-body {
-    overflow: visible !important;
+    overflow: auto !important;
     max-height: none !important;
-    display: flex;
-    flex-direction: column;
+    display: block;
     flex: 1 1 auto;
     min-height: 0;
-    padding-bottom: 0 !important;
+    padding-bottom: 0.5rem !important;
 }
 .modal .po-dialog .modal-body > form {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
+    display: block;
     min-height: 0;
-    gap: 0.75rem;
 }
 .modal .po-dialog .po-header-row,
 .modal .po-dialog .modal-body > form > .form-row,
@@ -10029,11 +10046,7 @@ label.toggle-switch,
     flex: 0 0 auto;
 }
 .modal .po-dialog .po-lines-wrap {
-    flex: 1 1 auto;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-    margin-top: 0 !important;
+    margin-top: 0.5rem !important;
 }
 .modal .po-dialog .po-header-row {
     display: grid;
@@ -10041,26 +10054,37 @@ label.toggle-switch,
     gap: 1rem;
 }
 .modal .po-dialog .po-header-row .form-group { min-width: 0; }
-.modal .po-dialog .po-lines-table thead th,
+.modal .po-dialog .po-lines-table thead th {
+    overflow: visible !important;
+    padding: 12px 8px !important;
+    vertical-align: middle;
+}
 .modal .po-dialog .po-lines-table tbody td {
     overflow: visible !important;
-    padding: 6px !important;
+    padding: 10px 8px !important;
     vertical-align: top;
+}
+/* Zebra striping + comfortable row separation for the airy, scannable Zoho-style item table. */
+.modal .po-dialog .po-lines-table tbody tr:nth-child(even) td {
+    background: var(--bg-secondary, rgba(0,0,0,0.015));
+}
+.modal .po-dialog .po-lines-table tbody tr:hover td {
+    background: var(--bg-card-hover, rgba(0,0,0,0.03));
 }
 .modal .po-dialog .po-lines-table td.line-amount {
     vertical-align: middle;
 }
 .modal .po-dialog .po-lines-container {
-    flex: 1 1 auto;
-    min-height: 100px;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    /* No inner vertical scrollbox — the item table grows with rows; the modal body scrolls instead.
+       overflow visible so the sticky thead below sticks to the scrolling modal-body. */
+    overflow: visible !important;
+    max-height: none !important;
     border: 1px solid var(--border-color);
     border-radius: 8px;
 }
 .modal .po-dialog .po-lines-table thead th {
     position: sticky;
-    top: 0;
+    top: -1px;
     background: var(--bg-card-hover);
     z-index: 3;
 }
