@@ -14,6 +14,7 @@ let vendorBills = [];
 let vendors = [];
 let accounts = [];
 let taxConfigs = [];
+let costCentres = [];
 let bankAccounts = [];
 let billLines = [];
 let currentBillPage = 1;
@@ -81,17 +82,20 @@ async function loadInitialData() {
         // instead of actual bank accounts → user couldn't select a valid bank → the
         // payment validation always failed silently. Dropped the broken coa preload and
         // assigned the real bank accounts to `bankAccounts`.
-        const [vendorRes, accountRes, bankAcctRes, taxRes] = await Promise.all([
+        const [vendorRes, accountRes, bankAcctRes, taxRes, ccRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('tax/configurations'), { _skipSpinner: true }).catch(() => [])
+            api.request(AccountsCommon.buildUrl('tax/configurations'), { _skipSpinner: true }).catch(() => []),
+            api.request(AccountsCommon.buildUrl('cost-centres'), { _skipSpinner: true }).catch(() => [])
         ]);
 
         vendors = Array.isArray(vendorRes) ? vendorRes : (vendorRes?.data || vendorRes?.items || []);
         const acctData = Array.isArray(accountRes) ? accountRes : (accountRes?.data || accountRes?.items || []);
         accounts = acctData;
         bankAccounts = Array.isArray(bankAcctRes) ? bankAcctRes : (bankAcctRes?.data || bankAcctRes?.items || []);
+        // Cost centres: optional analytical tag per bill line (active only, for new bills).
+        costCentres = (Array.isArray(ccRes) ? ccRes : (ccRes?.data || ccRes?.items || [])).filter(c => c.status !== 'inactive');
         // Tax configurations seeded by "Initialize India GST" — drives Input
         // GST per Vendor Bill line so ITC is captured correctly.
         taxConfigs = Array.isArray(taxRes) ? taxRes : (taxRes?.data || []);
@@ -393,6 +397,7 @@ function addBillLine(data) {
         <td><input type="number" class="form-control line-qty" value="${d.quantity ?? 1}" min="0" step="any" oninput="calculateBillTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${d.rate ?? 0}" min="0" step="0.01" placeholder="0.00" oninput="calculateBillTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
+        <td><div class="searchable-dropdown-container line-cc-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeBillLine(${idx})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
@@ -441,6 +446,21 @@ function addBillLine(data) {
         onChange: () => calculateBillTotals()
     });
     row._lineTaxDropdown = taxDd;
+
+    // Cost centre — optional analytical tag per line (does not affect the GL).
+    const ccOptions = [
+        { value: '', label: 'No cost centre' },
+        ...costCentres.map(c => ({ value: c.id, label: c.code ? `${c.code} — ${c.name}` : c.name }))
+    ];
+    const ccDd = new SearchableDropdown(row.querySelector('.line-cc-sd'), {
+        id: `bill-line-cc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: ccOptions,
+        value: (data?.cost_centre_id) || '',
+        placeholder: 'None',
+        searchPlaceholder: 'Search cost centres…',
+        compact: true
+    });
+    row._lineCostCentreDropdown = ccDd;
 
     calculateBillTotals();
 }
@@ -635,6 +655,7 @@ async function saveBill(approve = false) {
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
         const tax_config_id = row._lineTaxDropdown?.selectedValue || null;
         const tax_rate = _billTaxRateFor(tax_config_id);
+        const cost_centre_id = row._lineCostCentreDropdown?.selectedValue || null;
         // Skip fully-blank rows (no description, no account, no amount)
         if (!description && !account_id && rate <= 0) return;
         // Backend CreateVendorBillLineRequest.account_id is a non-nullable Guid —
@@ -649,7 +670,8 @@ async function saveBill(approve = false) {
             quantity,
             unit_price: rate,
             tax_config_id,
-            tax_rate: tax_rate || 0
+            tax_rate: tax_rate || 0,
+            cost_centre_id
         });
     });
 

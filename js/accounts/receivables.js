@@ -15,6 +15,7 @@ let customers = [];
 let accounts = [];
 let taxConfigs = [];
 let bankAccounts = [];
+let projects = [];
 
 // Module-scoped caches so row-action handlers can look up the full entity
 // by id without re-fetching. Populated by load*() functions after every API call.
@@ -78,14 +79,18 @@ function onTabSwitch(tabId) {
 
 async function loadInitialData() {
     try {
-        const [custRes, acctRes, bankRes, taxRes] = await Promise.all([
+        const [custRes, acctRes, bankRes, taxRes, projRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('customers'), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('coa', { isActive: true }), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('tax/configurations'), { _skipSpinner: true }).catch(() => [])
+            api.request(AccountsCommon.buildUrl('tax/configurations'), { _skipSpinner: true }).catch(() => []),
+            api.request(AccountsCommon.buildUrl('projects'), { _skipSpinner: true }).catch(() => [])
         ]);
         customers = Array.isArray(custRes) ? custRes : (custRes?.data || custRes?.items || []);
         accounts = Array.isArray(acctRes) ? acctRes : (acctRes?.data || acctRes?.items || []);
+        // Projects: optional per-line tag, scoped to the invoice's customer (backend enforces the match).
+        projects = (Array.isArray(projRes) ? projRes : (projRes?.data || projRes?.items || []))
+            .filter(p => p.status !== 'cancelled' && p.status !== 'completed');
         bankAccounts = Array.isArray(bankRes) ? bankRes : (bankRes?.data || bankRes?.items || []);
         // Tax configs drive Output GST per Customer Invoice line — what
         // the business owes the government.
@@ -95,6 +100,13 @@ async function loadInitialData() {
         bankAccounts.forEach(b => { window._bankAccountMap[b.id] = b.account_name || b.bank_name || b.name; });
 
         populateSelect('invoiceCustomerId', customers, 'id', 'name', 'Select customer...');
+        // When the invoice's customer changes, re-scope each line's Project dropdown to that customer
+        // (the backend rejects a project that belongs to a different customer).
+        const invCustSel = document.getElementById('invoiceCustomerId');
+        if (invCustSel && !invCustSel._projectHooked) {
+            invCustSel._projectHooked = true;
+            invCustSel.addEventListener('change', refreshLineProjectDropdowns);
+        }
         populateSelect('paymentCustomerId', customers, 'id', 'name', 'Select customer...');
         populateSelect('cnCustomerId', customers, 'id', 'name', 'Select customer...');
         populateSelect('paymentBankAccountId', bankAccounts.map(b => ({ ...b, name: b.account_name || b.name })), 'id', 'name', 'Select bank...');
@@ -532,6 +544,7 @@ function addInvoiceLine(data = {}) {
         <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculateInvoiceTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${data.rate || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateInvoiceTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
+        <td><div class="searchable-dropdown-container line-project-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeInvoiceLine(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
@@ -578,7 +591,37 @@ function addInvoiceLine(data = {}) {
     });
     row._lineTaxDropdown = taxDd;
 
+    // Project — optional analytical tag per line, scoped to the invoice's customer (no GL impact).
+    const projDd = new SearchableDropdown(row.querySelector('.line-project-sd'), {
+        id: `inv-line-project-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: invoiceProjectOptions(),
+        value: data.project_id || '',
+        placeholder: 'None',
+        searchPlaceholder: 'Search projects…',
+        compact: true
+    });
+    row._lineProjectDropdown = projDd;
+
     calculateInvoiceTotals();
+}
+
+/** Project dropdown options for the invoice's currently-selected customer (backend enforces the match). */
+function invoiceProjectOptions() {
+    const custId = document.getElementById('invoiceCustomerId')?.value || '';
+    const opts = [{ value: '', label: 'No project' }];
+    if (!custId) return opts;
+    projects.filter(p => p.customer_id === custId)
+        .forEach(p => opts.push({ value: p.id, label: p.code ? `${p.code} — ${p.name}` : p.name }));
+    return opts;
+}
+
+/** Re-scope every line's Project dropdown when the invoice customer changes. */
+function refreshLineProjectDropdowns() {
+    const opts = invoiceProjectOptions();
+    document.querySelectorAll('#invoiceLines tr').forEach(row => {
+        const dd = row._lineProjectDropdown;
+        if (dd?.setOptions) { dd.setOptions(opts, false); dd.setValue?.(''); }
+    });
 }
 
 function _invoiceTaxRateFor(configId) {
@@ -741,7 +784,8 @@ async function saveInvoice(approve) {
             quantity: parseFloat(row.querySelector('.line-qty')?.value) || 0,
             unit_price: rate,
             tax_config_id: taxConfigId,
-            tax_rate: taxRate || 0
+            tax_rate: taxRate || 0,
+            project_id: row._lineProjectDropdown?.selectedValue || null
         });
     });
 
