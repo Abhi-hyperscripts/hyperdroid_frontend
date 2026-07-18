@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Cost Centres - Accounts | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html"><img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo"></a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Cost Centres</span>
+                </nav>
+                <div class="hrms-header-row"><h1>Cost Centres</h1></div>
+            </div>
+        </div>
+
+        <div class="organization-layout" style="display:block;">
+            <main class="organization-content" style="padding:1.5rem;">
+
+                <div class="info-panel" style="margin-bottom:16px;">
+                    <strong>What is this?</strong> Cost centres are analytical tags (e.g. departments or branches)
+                    you attach to vendor-bill lines to see where money is spent. They are reporting dimensions —
+                    they do not affect the GL. Tag lines when creating a bill, then see totals in the Spend Report.
+                </div>
+
+                <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                    <button class="btn btn-sm" id="tabListBtn" onclick="showTab('list')">Cost Centres</button>
+                    <button class="btn btn-sm btn-outline" id="tabSpendBtn" onclick="showTab('spend')">Spend Report</button>
+                </div>
+
+                <!-- List view -->
+                <div id="listView">
+                    <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;">
+                        <button class="btn btn-primary" data-admin-only onclick="openCreate()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            New Cost Centre
+                        </button>
+                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;color:var(--text-secondary);">
+                            <input type="checkbox" id="ccShowInactive" onchange="renderCentres()"> Show archived
+                        </label>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead><tr><th>Code</th><th>Name</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="centresTable"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-secondary);">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Spend view -->
+                <div id="spendView" style="display:none;">
+                    <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:end;flex-wrap:wrap;">
+                        <div class="form-group" style="margin:0;">
+                            <label>From</label>
+                            <input type="date" id="spendFrom" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>To</label>
+                            <input type="date" id="spendTo" class="form-control">
+                        </div>
+                        <button class="btn btn-primary" onclick="loadSpend()">Generate</button>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead><tr><th>Cost Centre</th><th style="text-align:right;">Spend (ex-GST)</th><th style="text-align:right;">Input GST</th><th style="text-align:right;">Total Spend</th></tr></thead>
+                            <tbody id="spendTable"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary);">Click "Generate" to view spend.</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div id="ccModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ccModalTitle">New Cost Centre</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('ccModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="ccId">
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label for="ccName">Name *</label>
+                            <input type="text" id="ccName" class="form-control" placeholder="e.g., Sales Department">
+                        </div>
+                        <div class="form-group">
+                            <label for="ccCode">Code</label>
+                            <input type="text" id="ccCode" class="form-control" placeholder="e.g., CC-SALES">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ccDescription">Description</label>
+                        <input type="text" id="ccDescription" class="form-control" placeholder="Optional">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('ccModal')">Cancel</button>
+                    <button class="btn btn-primary" id="ccSaveBtn" onclick="saveCentre()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/cost-centres.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="accounts" data-title="Accounts Assistant"><\/script>');</script>
+</body>
+</html>
