@@ -748,6 +748,19 @@ textarea.form-control {
     }
 }
 
+/* Phones: 2-col KPI grid squeezes ₹ values into ellipsis. Go 1-col so the
+   number (the whole point of the card) is never truncated. */
+@media (max-width: 560px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    .stat-card .stat-value {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+}
+
 .dashboard-section {
     padding: 20px;
 }

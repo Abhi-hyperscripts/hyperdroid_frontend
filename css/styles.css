@@ -10140,11 +10140,11 @@ label.toggle-switch,
 .modal.po-fullpage.active {
     align-items: stretch !important;
     justify-content: stretch !important;
-    top: 52px !important;
+    top: 52px !important;                     /* sits below the fixed 52px app navbar (desktop) */
     bottom: 0 !important;
-    height: calc(100dvh - 52px) !important;   /* exact fill below the 52px navbar; keeps the footer on-screen */
+    height: calc(100dvh - 52px) !important;   /* exact fill below the navbar; keeps the footer on-screen */
     padding: 0 !important;
-    background: var(--bg-primary, #f4f6fb) !important;
+    background: var(--bg-card, #ffffff) !important;   /* opaque; never let the list behind show through. --bg-card is defined in BOTH themes (unlike --bg-primary which is empty in dark). */
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     overflow: hidden;
@@ -10186,6 +10186,7 @@ label.toggle-switch,
 .modal.po-fullpage .modal-header {
     padding: 1rem 1.5rem !important;
     border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card, #ffffff) !important;   /* opaque: header/footer are pinned bars; body must never show through them */
 }
 .modal.po-fullpage .modal-header .modal-title { font-size: 1.35rem; }
 /* The close control on a full-page form must NOT look like a modal dismiss (a bold blue circle).
@@ -10216,9 +10217,13 @@ label.toggle-switch,
 .modal.po-fullpage .modal-footer {
     padding: 0.85rem 1.5rem !important;
     border-top: 1px solid var(--border-color);
+    background: var(--bg-card, #ffffff) !important;   /* opaque pinned action bar; body content never shows through it */
 }
-@media (max-width: 560px) {
-    .modal.po-fullpage.active { top: 52px !important; }
+/* At <=768px the app navbar switches to position:relative (scrolls away), so the
+   below-navbar offset would expose the list in the 0-52 band. Take over the FULL
+   viewport instead — the form's own header/close-X becomes the top bar. */
+@media (max-width: 768px) {
+    .modal.po-fullpage.active { top: 0 !important; height: 100dvh !important; }
     .modal.po-fullpage .modal-header,
     .modal.po-fullpage .modal-body,
     .modal.po-fullpage .modal-footer { padding-left: 1rem !important; padding-right: 1rem !important; }

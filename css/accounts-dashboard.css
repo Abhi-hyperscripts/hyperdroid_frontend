@@ -688,3 +688,16 @@ body.accounts-dashboard::before {
         grid-template-columns: 1fr;
     }
 }
+
+/* Phones: 2-col KPI grid truncates the ₹ value into an ellipsis. Go full-width
+   single column so the figure — the entire point of the card — always shows. */
+@media (max-width: 520px) {
+    .acct-dash-container .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    .acct-dash-container .stat-value {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+}
