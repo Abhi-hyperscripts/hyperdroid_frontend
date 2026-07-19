@@ -227,6 +227,13 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
     position: relative;
     flex: 1;
     min-width: 200px;
+    /* A global styles.css `.search-box-modern` adds padding + a full border to
+       this wrapper, which double-borders the (already bordered) input and makes
+       the box 49px — 13px taller than the 36px controls beside it. Neutralize it:
+       the input carries the single border; the wrapper just positions the icon. */
+    padding: 0;
+    border: none;
+    background: transparent;
 }
 
 .search-box-modern .search-icon {
@@ -240,7 +247,14 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
 .search-box-modern input {
     width: 100%;
     padding: 10px 12px 10px 36px;
-    border: 1px solid var(--border-color);
+    /* The broad `.filters-bar/.tab-content/.glass-card-body input[type="text"]`
+       reset (specificity 0,2,1) otherwise wins and drops left padding to 12px,
+       colliding with the search icon at left:12px. Force clearance for the icon. */
+    padding-left: 36px !important;
+    /* A global styles.css `.search-box-modern input` strips the border (that design
+       put the border on the wrapper). We put it on the input instead, so the search
+       reads as a bordered control matching the dropdowns beside it. */
+    border: 1px solid var(--border-color) !important;
     border-radius: 8px;
     font-size: 0.85rem;
     background: var(--bg-card);
