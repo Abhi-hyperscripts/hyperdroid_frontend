@@ -4,6 +4,7 @@
  */
 
 let loansList = [];
+let loansPage = 1;  // client-side pagination (list fetches the full array)
 let accountsList = [];
 let bankAccountsList = [];
 let loanViewCurrent = null;
@@ -63,6 +64,7 @@ async function loadLoans() {
     try {
         const res = await api.request(AccountsCommon.buildUrl('loans'), { _skipSpinner: true });
         loansList = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        loansPage = 1;
         renderLoans();
         updateStats();
     } catch (err) {
@@ -86,10 +88,14 @@ function renderLoans() {
     if (!tb) return;
     if (!loansList.length) {
         tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary);">No loans yet. Click "New Loan" to create one.</td></tr>';
+        AccountsCommon.renderPagination('loansPagination', 1, 1, () => {});
         return;
     }
     const isAdmin = accountsRoles.isAdmin();
-    tb.innerHTML = loansList.map(l => {
+    const pg = AccountsCommon.paginate(loansList, loansPage);
+    loansPage = pg.page;
+    AccountsCommon.renderPagination('loansPagination', pg.page, pg.totalPages, (p) => { loansPage = p; renderLoans(); });
+    tb.innerHTML = pg.slice.map(l => {
         const statusClass = l.status === 'active' ? 'status-active' : (l.status === 'closed' ? 'status-pending' : 'status-rejected');
         return `<tr>
             <td>${AccountsCommon.escapeHtml(l.name || '')}</td>

@@ -622,6 +622,23 @@ const AccountsCommon = {
         });
     },
 
+    /**
+     * Client-side pagination for pages whose list endpoint returns the full
+     * array (no server limit/offset). Rendering 10k+ rows freezes the tab and
+     * balloons the DOM to 100k+ nodes; slicing to one page keeps it snappy.
+     * @param {Array} items - the full (already filtered) array
+     * @param {number} page - the requested 1-based page
+     * @param {number} [pageSize=50]
+     * @returns {{slice:Array, page:number, totalPages:number, total:number}}
+     */
+    paginate(items, page, pageSize = 50) {
+        const list = Array.isArray(items) ? items : [];
+        const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+        const p = Math.min(Math.max(1, page || 1), totalPages);
+        const start = (p - 1) * pageSize;
+        return { slice: list.slice(start, start + pageSize), page: p, totalPages, total: list.length };
+    },
+
     // ------------------------------------------------------------------
     // Modals
     // ------------------------------------------------------------------

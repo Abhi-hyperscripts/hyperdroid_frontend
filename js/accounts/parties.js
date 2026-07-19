@@ -18,6 +18,10 @@ let pendingVendorRequests = [];
 let pendingCustomerRequests = [];
 let currentApproveRequest = null;
 
+// Client-side pagination page state (these lists fetch the full array).
+let vendorPage = 1;
+let customerPage = 1;
+
 // ============================================================================
 // PAGE INIT
 // ============================================================================
@@ -76,10 +80,10 @@ function setupSearchListeners() {
     };
 
     const vendorSearch = document.getElementById('vendorSearch');
-    if (vendorSearch) vendorSearch.addEventListener('input', debounce(() => renderVendorsTable()));
+    if (vendorSearch) vendorSearch.addEventListener('input', debounce(() => { vendorPage = 1; renderVendorsTable(); }));
 
     const customerSearch = document.getElementById('customerSearch');
-    if (customerSearch) customerSearch.addEventListener('input', debounce(() => renderCustomersTable()));
+    if (customerSearch) customerSearch.addEventListener('input', debounce(() => { customerPage = 1; renderCustomersTable(); }));
 }
 
 // ============================================================================
@@ -93,6 +97,7 @@ async function loadVendors() {
         const url = AccountsCommon.buildUrl('vendors', {});
         const res = await api.request(url, { _skipSpinner: true });
         vendors = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        vendorPage = 1;
         updateVendorStats();
         renderVendorsTable();
     } catch (err) {
@@ -136,10 +141,15 @@ function renderVendorsTable() {
                 <circle cx="5.5" cy="18.5" r="2.5"></circle>
                 <circle cx="18.5" cy="18.5" r="2.5"></circle>
             </svg><p>No vendors found</p></div></td></tr>`;
+        AccountsCommon.renderPagination('vendorPagination', 1, 1, () => {});
         return;
     }
 
-    tbody.innerHTML = filtered.map(v => {
+    const pg = AccountsCommon.paginate(filtered, vendorPage);
+    vendorPage = pg.page;
+    AccountsCommon.renderPagination('vendorPagination', pg.page, pg.totalPages, (p) => { vendorPage = p; renderVendorsTable(); });
+
+    tbody.innerHTML = pg.slice.map(v => {
         const statusClass = v.is_active !== false ? 'status-active' : 'status-rejected';
         const statusText = v.is_active !== false ? 'Active' : 'Inactive';
         const viewBtn = `<button class="btn-icon" onclick="viewVendor('${v.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
@@ -448,6 +458,7 @@ async function loadCustomers() {
         const url = AccountsCommon.buildUrl('customers', {});
         const res = await api.request(url, { _skipSpinner: true });
         customers = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        customerPage = 1;
         updateCustomerStats();
         renderCustomersTable();
     } catch (err) {
@@ -491,10 +502,15 @@ function renderCustomersTable() {
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg><p>No customers found</p></div></td></tr>`;
+        AccountsCommon.renderPagination('customerPagination', 1, 1, () => {});
         return;
     }
 
-    tbody.innerHTML = filtered.map(c => {
+    const pg = AccountsCommon.paginate(filtered, customerPage);
+    customerPage = pg.page;
+    AccountsCommon.renderPagination('customerPagination', pg.page, pg.totalPages, (p) => { customerPage = p; renderCustomersTable(); });
+
+    tbody.innerHTML = pg.slice.map(c => {
         const statusClass = c.is_active !== false ? 'status-active' : 'status-rejected';
         const statusText = c.is_active !== false ? 'Active' : 'Inactive';
         const creditDisplay = c.credit_limit != null ? AccountsCommon.formatCurrency(c.credit_limit) : '-';

@@ -79,7 +79,9 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
     transition: all 0.3s ease;
 }
 
-/* Shift content + header when sidebar is open — exact HRMS pattern */
+/* Shift content + header when sidebar is open — exact HRMS pattern.
+   The header must shift with the content so the title clears the sidebar
+   panel (which overlaps the header's row otherwise). */
 .accounts-container.sidebar-open .organization-layout,
 .accounts-container.sidebar-open .hrms-header {
     margin-left: 280px;

@@ -3,6 +3,7 @@
  */
 
 let recurringList = [];
+let recurringPage = 1;  // client-side pagination (list fetches the full array)
 let customersList = [];
 let vendorsList = [];
 let accountsList = [];
@@ -122,6 +123,7 @@ async function loadRecurring() {
     try {
         const res = await api.request(AccountsCommon.buildUrl('recurring'));
         recurringList = Array.isArray(res) ? res : (res?.data || []);
+        recurringPage = 1;
         renderTable();
         updateStats();
     } catch (err) {
@@ -160,8 +162,13 @@ function renderTable() {
     const tbody = document.getElementById('recurringTable');
     if (!recurringList.length) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary);">No recurring transactions yet. Click "New Recurring" to create one.</td></tr>';
+        AccountsCommon.renderPagination('recurringPagination', 1, 1, () => {});
         return;
     }
+
+    const pg = AccountsCommon.paginate(recurringList, recurringPage);
+    recurringPage = pg.page;
+    AccountsCommon.renderPagination('recurringPagination', pg.page, pg.totalPages, (p) => { recurringPage = p; renderTable(); });
 
     const statusBadge = (s) => {
         const map = { active: 'status-active', paused: 'status-pending', completed: 'status-active', cancelled: 'status-rejected' };
@@ -173,7 +180,7 @@ function renderTable() {
     // Recurring writes require admin (MANAGE_BILLING). Managers may view the
     // list but only admins see the Pause/Resume/Cancel actions.
     const isAdmin = accountsRoles.isAdmin();
-    tbody.innerHTML = recurringList.map(r => {
+    tbody.innerHTML = pg.slice.map(r => {
         const actions = !isAdmin
             ? ''
             : r.status === 'active'
