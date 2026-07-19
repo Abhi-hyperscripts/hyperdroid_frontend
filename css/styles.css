@@ -10181,12 +10181,38 @@ label.toggle-switch,
     margin-right: auto !important;
     width: 100%;
 }
+.modal.po-fullpage .modal-header,
+.modal.po-fullpage .modal-footer { flex: 0 0 auto; }
 .modal.po-fullpage .modal-header {
     padding: 1rem 1.5rem !important;
     border-bottom: 1px solid var(--border-color);
 }
 .modal.po-fullpage .modal-header .modal-title { font-size: 1.35rem; }
-.modal.po-fullpage .modal-body { padding: 1.25rem 1.5rem !important; }
+/* The close control on a full-page form must NOT look like a modal dismiss (a bold blue circle).
+   Make it a subtle neutral icon button so the form reads as a page, not a popup. */
+.modal.po-fullpage .modal-header .close-btn,
+.modal.po-fullpage .close-btn {
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+    border-radius: 8px !important;
+    width: 36px !important;
+    height: 36px !important;
+    box-shadow: none !important;
+}
+.modal.po-fullpage .modal-header .close-btn:hover,
+.modal.po-fullpage .close-btn:hover {
+    background: var(--bg-secondary, rgba(0, 0, 0, 0.06)) !important;
+    color: var(--text-primary) !important;
+}
+/* The body is the scroll region for ANY full-page modal (incl. non-po-dialog forms). */
+.modal.po-fullpage .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    max-height: none !important;
+    padding: 1.25rem 1.5rem !important;
+}
 .modal.po-fullpage .modal-footer {
     padding: 0.85rem 1.5rem !important;
     border-top: 1px solid var(--border-color);
