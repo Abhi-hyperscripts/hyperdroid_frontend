@@ -8,17 +8,14 @@ let centresPage = 1;  // client-side pagination (list fetches the full array)
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await AccountsCommon.initPage('cost-centres', '../')) return;
+
+    const tabNames = { 'cc-list': 'Cost Centres', 'cc-spend': 'Spend Report' };
+    AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
+    AccountsCommon.setupTabs(tabNames);
+
     accountsRoles.applyRBAC();
     await loadCentres();
 });
-
-function showTab(tab) {
-    const isList = tab === 'list';
-    document.getElementById('listView').style.display = isList ? '' : 'none';
-    document.getElementById('spendView').style.display = isList ? 'none' : '';
-    document.getElementById('tabListBtn').className = 'btn btn-sm' + (isList ? '' : ' btn-outline');
-    document.getElementById('tabSpendBtn').className = 'btn btn-sm' + (isList ? ' btn-outline' : '');
-}
 
 async function loadCentres() {
     try {

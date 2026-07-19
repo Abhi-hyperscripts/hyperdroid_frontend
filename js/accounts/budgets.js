@@ -21,6 +21,10 @@ const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await AccountsCommon.initPage('budgets', '../')) return;
 
+    const tabNames = { 'budget-list': 'Budget List', 'budget-analysis': 'Budget vs Actual' };
+    AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
+    AccountsCommon.setupTabs(tabNames, (tabId) => { if (tabId === 'budget-analysis') loadAnalysis(); });
+
     await loadInitialData();
     initDropdowns();
     buildMonthlyInputs();
@@ -265,19 +269,8 @@ async function confirmCopy() {
     }
 }
 
-function switchTab(tab) {
-    document.querySelectorAll('.budget-tab-btn').forEach(b => {
-        if (b.dataset.tab === tab) b.classList.add('active');
-        else b.classList.remove('active');
-    });
-    document.getElementById('listTab').style.display = tab === 'list' ? '' : 'none';
-    document.getElementById('analysisTab').style.display = tab === 'analysis' ? '' : 'none';
-    if (tab === 'analysis') loadAnalysis();
-}
-
 async function loadAnalysis() {
-    // NB: do NOT call switchTab('analysis') here — switchTab() calls loadAnalysis(), so that would
-    // be unconditional mutual recursion (stack overflow the moment the Analysis tab is opened).
+    // Tab switching is handled by AccountsCommon.setupTabs (sidebar nav); this just loads data.
     if (!selectedFyId) {
         document.getElementById('analysisContent').innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-secondary);">Please select a fiscal year first</p>';
         return;

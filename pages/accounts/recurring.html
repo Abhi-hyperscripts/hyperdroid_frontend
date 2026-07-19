@@ -18,6 +18,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -41,13 +42,53 @@
                     <span class="current">Recurring Transactions</span>
                 </nav>
                 <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
                     <h1>Recurring Transactions</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Recurring List</span>
                 </div>
             </div>
         </div>
 
-        <div class="organization-layout" style="display:block;">
-            <main class="organization-content" style="padding:1.5rem;">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="organization-layout">
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Recurring</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <div class="nav-group" data-group="recurring">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                Recurring
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="recurring-list">
+                                <span class="nav-number">1</span><span class="nav-label">Recurring List</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="organization-content">
+                <div class="tab-content active" id="recurring-list">
 
                 <!-- Stats -->
                 <div class="stats-row" style="margin-bottom:1.5rem;">
@@ -98,6 +139,7 @@
                     </table>
                 </div>
                 <div id="recurringPagination" class="pagination-container"></div>
+                </div>
             </main>
         </div>
     </div>

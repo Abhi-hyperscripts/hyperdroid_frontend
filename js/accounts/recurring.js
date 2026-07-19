@@ -22,6 +22,10 @@ let creditAccountDropdown = null;
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await AccountsCommon.initPage('recurring', '../')) return;
 
+    const tabNames = { 'recurring-list': 'Recurring List' };
+    AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
+    AccountsCommon.setupTabs(tabNames);
+
     accountsRoles.applyRBAC();
 
     // Recurring is manager/admin-only (RecurringController). Block USER/AUDITOR up front so they don't

@@ -42,13 +42,55 @@
                     <span class="current">Budgets</span>
                 </nav>
                 <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
                     <h1>Budgets</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Budget List</span>
                 </div>
             </div>
         </div>
 
-        <div class="organization-layout" style="display:block;">
-            <main class="organization-content" style="padding:1.5rem;">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="organization-layout">
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Budgets</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <div class="nav-group" data-group="budgets">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                                Budgets
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="budget-list">
+                                <span class="nav-number">1</span><span class="nav-label">Budget List</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="budget-analysis">
+                                <span class="nav-number">2</span><span class="nav-label">Budget vs Actual</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="organization-content">
 
                 <!-- Toolbar -->
                 <div style="display:flex;gap:0.75rem;margin-bottom:1.25rem;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;">
@@ -66,18 +108,6 @@
                             Copy from Prior Year
                         </button>
                     </div>
-                </div>
-
-                <!-- Tabs (segmented control style) -->
-                <div class="budget-tab-group">
-                    <button class="budget-tab-btn active" data-tab="list" onclick="switchTab('list')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                        <span>Budget List</span>
-                    </button>
-                    <button class="budget-tab-btn" data-tab="analysis" onclick="switchTab('analysis')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        <span>Budget vs Actual</span>
-                    </button>
                 </div>
 
                 <style>
@@ -121,7 +151,7 @@
                 </style>
 
                 <!-- List Tab -->
-                <div id="listTab">
+                <div class="tab-content active" id="budget-list">
                     <div class="stats-row" style="margin-bottom:1rem;">
                         <div class="stat-card">
                             <div class="stat-value" id="statBudgetCount">0</div>
@@ -153,7 +183,7 @@
                 </div>
 
                 <!-- Analysis Tab -->
-                <div id="analysisTab" style="display:none;">
+                <div class="tab-content" id="budget-analysis">
                     <div id="analysisContent">
                         <p style="text-align:center;padding:2rem;color:var(--text-secondary);">Click "View Analysis" to load budget vs actual report</p>
                     </div>

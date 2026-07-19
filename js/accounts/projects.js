@@ -20,6 +20,11 @@ const PROJECT_STATUSES = [
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await AccountsCommon.initPage('projects', '../')) return;
+
+    const tabNames = { 'pr-list': 'Projects', 'pr-stmt': 'Project Statement' };
+    AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
+    AccountsCommon.setupTabs(tabNames);
+
     accountsRoles.applyRBAC();
     await Promise.all([loadProjects(), loadCustomers()]);
     AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
@@ -40,13 +45,6 @@ function initDropdowns() {
     });
 }
 
-function showTab(tab) {
-    const isList = tab === 'list';
-    document.getElementById('listView').style.display = isList ? '' : 'none';
-    document.getElementById('stmtView').style.display = isList ? 'none' : '';
-    document.getElementById('tabListBtn').className = 'btn btn-sm' + (isList ? '' : ' btn-outline');
-    document.getElementById('tabStmtBtn').className = 'btn btn-sm' + (isList ? ' btn-outline' : '');
-}
 
 async function loadCustomers() {
     try {

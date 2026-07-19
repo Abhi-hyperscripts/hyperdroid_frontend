@@ -18,6 +18,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -38,12 +39,56 @@
                     <span class="separator">/</span>
                     <span class="current">Projects</span>
                 </nav>
-                <div class="hrms-header-row"><h1>Projects</h1></div>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Projects</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Projects</span>
+                </div>
             </div>
         </div>
 
-        <div class="organization-layout" style="display:block;">
-            <main class="organization-content" style="padding:1.5rem;">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="organization-layout">
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Projects</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <div class="nav-group" data-group="projects">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                                Projects
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="pr-list">
+                                <span class="nav-number">1</span><span class="nav-label">Projects</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="pr-stmt">
+                                <span class="nav-number">2</span><span class="nav-label">Project Statement</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="organization-content">
 
                 <div class="info-panel" style="margin-bottom:16px;">
                     <strong>What is this?</strong> Projects are analytical tags (per customer) you attach to
@@ -51,13 +96,8 @@
                     not affect the GL. Tag invoice lines, then see billed / collected / due in the Project Statement.
                 </div>
 
-                <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
-                    <button class="btn btn-sm" id="tabListBtn" onclick="showTab('list')">Projects</button>
-                    <button class="btn btn-sm btn-outline" id="tabStmtBtn" onclick="showTab('stmt')">Project Statement</button>
-                </div>
-
                 <!-- List view -->
-                <div id="listView">
+                <div class="tab-content active" id="pr-list">
                     <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;">
                         <button class="btn btn-primary" data-admin-only onclick="openCreate()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -77,7 +117,7 @@
                 </div>
 
                 <!-- Statement view -->
-                <div id="stmtView" style="display:none;">
+                <div class="tab-content" id="pr-stmt">
                     <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:end;flex-wrap:wrap;">
                         <div class="form-group" style="margin:0;min-width:280px;">
                             <label>Customer</label>

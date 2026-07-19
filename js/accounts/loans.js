@@ -17,6 +17,10 @@ let disbursementAccountDropdown = null;
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await AccountsCommon.initPage('loans', '../')) return;
 
+    const tabNames = { 'loan-list': 'Loan List' };
+    AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
+    AccountsCommon.setupTabs(tabNames);
+
     accountsRoles.applyRBAC();
 
     document.getElementById('loanStartDate').value = AccountsCommon.todayLocal();
