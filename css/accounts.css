@@ -163,6 +163,26 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
     to { transform: rotate(360deg); }
 }
 
+/* Inline "loading…" row for tables — shown while a list is (re)fetching, so a
+   slow request (e.g. clients in India hitting servers in Germany) always gives
+   active feedback instead of stale rows or a silent gap. */
+.acct-table-loading {
+    text-align: center;
+    padding: 2.5rem;
+    color: var(--text-secondary);
+}
+.acct-inline-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: -3px;
+    margin-right: 8px;
+    border: 2px solid var(--hover-overlay-strong);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: accounts-spin 0.7s linear infinite;
+}
+
 .accounts-header {
     display: flex;
     justify-content: space-between;

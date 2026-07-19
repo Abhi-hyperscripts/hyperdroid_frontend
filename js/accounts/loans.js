@@ -66,6 +66,7 @@ async function loadLookups() {
 
 async function loadLoans() {
     try {
+        AccountsCommon.setTableLoading('loansTable', 8, 'Loading loans…');
         const res = await api.request(AccountsCommon.buildUrl('loans'), { _skipSpinner: true });
         loansList = Array.isArray(res) ? res : (res?.data || res?.items || []);
         loansPage = 1;

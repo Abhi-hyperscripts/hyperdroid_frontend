@@ -639,6 +639,18 @@ const AccountsCommon = {
         return { slice: list.slice(start, start + pageSize), page: p, totalPages, total: list.length };
     },
 
+    /**
+     * Show an inline spinner row in a table body while its list is (re)fetching.
+     * Call at the top of a load*() function, before the awaited request, so the
+     * user always gets active feedback — critical on the high-latency
+     * India→Germany link where a fetch can take seconds and re-loads would
+     * otherwise sit on stale rows with no sign anything is happening.
+     */
+    setTableLoading(tbodyId, colspan = 6, message = 'Loading…') {
+        const tb = document.getElementById(tbodyId);
+        if (tb) tb.innerHTML = `<tr><td colspan="${colspan}" class="acct-table-loading"><span class="acct-inline-spinner"></span>${this.escapeHtml(message)}</td></tr>`;
+    },
+
     // ------------------------------------------------------------------
     // Modals
     // ------------------------------------------------------------------

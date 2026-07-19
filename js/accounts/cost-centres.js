@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadCentres() {
     try {
+        AccountsCommon.setTableLoading('centresTable', 5, 'Loading cost centres…');
         const res = await api.request(AccountsCommon.buildUrl('cost-centres'), { _skipSpinner: true });
         centresList = Array.isArray(res) ? res : (res?.data || res?.items || []);
         centresPage = 1;

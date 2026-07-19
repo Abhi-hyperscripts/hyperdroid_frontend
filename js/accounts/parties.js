@@ -94,6 +94,7 @@ async function loadVendors() {
     try {
         // Fetch ALL vendors (active + inactive) so the stat tiles (Total/Active/Inactive) are accurate.
         // renderVendorsTable() already filters the displayed rows by the "Show Inactive" toggle.
+        AccountsCommon.setTableLoading('vendorsTable', 7, 'Loading vendors…');
         const url = AccountsCommon.buildUrl('vendors', {});
         const res = await api.request(url, { _skipSpinner: true });
         vendors = Array.isArray(res) ? res : (res?.data || res?.items || []);
@@ -455,6 +456,7 @@ async function loadCustomers() {
     try {
         // Fetch ALL customers (active + inactive) so the stat tiles are accurate.
         // renderCustomersTable() already filters the displayed rows by the "Show Inactive" toggle.
+        AccountsCommon.setTableLoading('customersTable', 7, 'Loading customers…');
         const url = AccountsCommon.buildUrl('customers', {});
         const res = await api.request(url, { _skipSpinner: true });
         customers = Array.isArray(res) ? res : (res?.data || res?.items || []);

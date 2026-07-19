@@ -55,6 +55,7 @@ async function loadCustomers() {
 
 async function loadProjects() {
     try {
+        AccountsCommon.setTableLoading('projectsTable', 6, 'Loading projects…');
         const res = await api.request(AccountsCommon.buildUrl('projects'), { _skipSpinner: true });
         projectsList = Array.isArray(res) ? res : (res?.data || res?.items || []);
         projectsPage = 1;

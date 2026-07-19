@@ -125,6 +125,7 @@ function accountOptionsForType(type) {
 
 async function loadRecurring() {
     try {
+        AccountsCommon.setTableLoading('recurringTable', 8, 'Loading recurring transactions…');
         const res = await api.request(AccountsCommon.buildUrl('recurring'));
         recurringList = Array.isArray(res) ? res : (res?.data || []);
         recurringPage = 1;
