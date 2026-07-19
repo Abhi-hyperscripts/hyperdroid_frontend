@@ -527,7 +527,7 @@ function addInvoiceLine(data = {}) {
     if (data.unit_price !== undefined && data.rate === undefined) data.rate = data.unit_price;
     const tbody = document.getElementById('invoiceLines');
     const row = document.createElement('tr');
-    const acctOptions = AccountsCommon.postableAccounts(accounts).map(a => {
+    const acctOptions = AccountsCommon.postableAccounts(accounts, 'income').map(a => {
         const code = a.account_code || a.code || '';
         const name = a.account_name || a.name || '';
         const label = code && name ? `${code} — ${name}` : (name || code);
@@ -556,7 +556,7 @@ function addInvoiceLine(data = {}) {
 
     const buildAccountOptions = () => [
         { value: '', label: 'Select...' },
-        ...AccountsCommon.postableAccounts(accounts).map(a => {
+        ...AccountsCommon.postableAccounts(accounts, 'income').map(a => {
             const code = a.account_code || a.code || '';
             const name = a.account_name || a.name || '';
             return { value: a.id, label: code && name ? `${code} — ${name}` : (name || code) };

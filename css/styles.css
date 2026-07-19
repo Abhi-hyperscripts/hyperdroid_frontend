@@ -10131,6 +10131,73 @@ label.toggle-switch,
     gap: 6px;
 }
 
+/* =================================================================
+   FULL-PAGE FORM MODE (invoice / bill / PO)
+   A .modal.po-fullpage fills the content area BELOW the fixed 52px app navbar instead of a
+   centered dialog — so these complex multi-line forms read like a dedicated page (Zoho-style),
+   with the app's top nav still visible. Closing it reveals the list underneath (no JS toggle needed).
+   ================================================================= */
+.modal.po-fullpage.active {
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    top: 52px !important;
+    bottom: 0 !important;
+    height: calc(100dvh - 52px) !important;   /* exact fill below the 52px navbar; keeps the footer on-screen */
+    padding: 0 !important;
+    background: var(--bg-primary, #f4f6fb) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    overflow: hidden;
+}
+.modal.po-fullpage .po-dialog,
+.modal.po-fullpage .modal-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+}
+.modal.po-fullpage .modal-content {
+    height: 100% !important;
+    max-height: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: var(--bg-card, #ffffff) !important;
+    transform: none !important;
+}
+.modal.po-fullpage .modal-content:hover {
+    box-shadow: none !important;
+    border-color: transparent !important;
+}
+/* Constrain the inner content to a comfortable page column, centred, like Zoho. */
+.modal.po-fullpage .modal-header,
+.modal.po-fullpage .modal-body > form,
+.modal.po-fullpage .modal-footer {
+    max-width: 1360px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100%;
+}
+.modal.po-fullpage .modal-header {
+    padding: 1rem 1.5rem !important;
+    border-bottom: 1px solid var(--border-color);
+}
+.modal.po-fullpage .modal-header .modal-title { font-size: 1.35rem; }
+.modal.po-fullpage .modal-body { padding: 1.25rem 1.5rem !important; }
+.modal.po-fullpage .modal-footer {
+    padding: 0.85rem 1.5rem !important;
+    border-top: 1px solid var(--border-color);
+}
+@media (max-width: 560px) {
+    .modal.po-fullpage.active { top: 52px !important; }
+    .modal.po-fullpage .modal-header,
+    .modal.po-fullpage .modal-body,
+    .modal.po-fullpage .modal-footer { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
+
 /* Responsive: stack the header fields instead of squeezing 4 columns, and go full-screen on phones. */
 @media (max-width: 900px) {
     .modal .po-dialog .po-header-row {
