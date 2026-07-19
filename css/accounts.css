@@ -289,6 +289,22 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
     overflow: hidden;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color, rgba(148,163,184,.4)) transparent;
+}
+.data-table-container::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+.data-table-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.data-table-container::-webkit-scrollbar-thumb {
+    background: var(--border-color, rgba(148,163,184,.4));
+    border-radius: 8px;
+}
+.data-table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary, rgba(148,163,184,.7));
 }
 
 .data-table {
