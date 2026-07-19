@@ -4,7 +4,9 @@
  */
 
 let loansList = [];
-let loansPage = 1;  // client-side pagination (list fetches the full array)
+let loansPage = 1;   // server-side pagination
+let loansTotal = 0;
+const PAGE_SIZE = 50;
 let accountsList = [];
 let bankAccountsList = [];
 let loanViewCurrent = null;
@@ -64,14 +66,17 @@ async function loadLookups() {
     }
 }
 
-async function loadLoans() {
+async function loadLoans(page = loansPage) {
     try {
+        loansPage = page;
         AccountsCommon.setTableLoading('loansTable', 8, 'Loading loans…');
-        const res = await api.request(AccountsCommon.buildUrl('loans'), { _skipSpinner: true });
-        loansList = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        loansPage = 1;
+        const params = { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE };
+        const res = await api.request(AccountsCommon.buildUrl('loans', params), { _skipSpinner: true });
+        const env = Array.isArray(res) ? { data: res, total: res.length, stats: null } : (res || {});
+        loansList = env.data || [];
+        loansTotal = env.total ?? loansList.length;
+        updateStats(env.stats);
         renderLoans();
-        updateStats();
     } catch (err) {
         console.error('[Loans] loadLoans error:', err);
         const tb = document.getElementById('loansTable');
@@ -79,13 +84,17 @@ async function loadLoans() {
     }
 }
 
-function updateStats() {
-    const total = loansList.length;
-    const active = loansList.filter(l => l.status === 'active').length;
-    const outstanding = loansList.reduce((s, l) => s + (parseFloat(l.outstanding_principal) || 0), 0);
-    document.getElementById('statTotal').textContent = total;
-    document.getElementById('statActive').textContent = active;
-    document.getElementById('statOutstanding').textContent = AccountsCommon.formatCurrency(outstanding);
+function updateStats(stats) {
+    const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    if (stats) {
+        el('statTotal', stats.total_count);
+        el('statActive', stats.active_count);
+        el('statOutstanding', AccountsCommon.formatCurrency(stats.total_outstanding));
+    } else {
+        el('statTotal', loansList.length);
+        el('statActive', loansList.filter(l => l.status === 'active').length);
+        el('statOutstanding', AccountsCommon.formatCurrency(loansList.reduce((s, l) => s + (parseFloat(l.outstanding_principal) || 0), 0)));
+    }
 }
 
 function renderLoans() {
@@ -97,10 +106,9 @@ function renderLoans() {
         return;
     }
     const isAdmin = accountsRoles.isAdmin();
-    const pg = AccountsCommon.paginate(loansList, loansPage);
-    loansPage = pg.page;
-    AccountsCommon.renderPagination('loansPagination', pg.page, pg.totalPages, (p) => { loansPage = p; renderLoans(); });
-    tb.innerHTML = pg.slice.map(l => {
+    const totalPages = Math.max(1, Math.ceil((loansTotal || loansList.length) / PAGE_SIZE));
+    AccountsCommon.renderPagination('loansPagination', loansPage, totalPages, (p) => loadLoans(p));
+    tb.innerHTML = loansList.map(l => {
         const statusClass = l.status === 'active' ? 'status-active' : (l.status === 'closed' ? 'status-pending' : 'status-rejected');
         return `<tr>
             <td>${AccountsCommon.escapeHtml(l.name || '')}</td>

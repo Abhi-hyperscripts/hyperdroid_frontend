@@ -153,7 +153,7 @@
                             <input type="text" id="vendorSearch" placeholder="Search vendors...">
                         </div>
                         <label class="toggle-inactive-label">
-                            <input type="checkbox" id="showInactiveVendors" onchange="renderVendorsTable()">
+                            <input type="checkbox" id="showInactiveVendors" onchange="loadVendors(1)">
                             <span>Show Inactive</span>
                         </label>
                         <button class="btn btn-primary" onclick="showCreateVendorModal()" data-admin-only>
@@ -226,7 +226,7 @@
                             <input type="text" id="customerSearch" placeholder="Search customers...">
                         </div>
                         <label class="toggle-inactive-label">
-                            <input type="checkbox" id="showInactiveCustomers" onchange="renderCustomersTable()">
+                            <input type="checkbox" id="showInactiveCustomers" onchange="loadCustomers(1)">
                             <span>Show Inactive</span>
                         </label>
                         <button class="btn btn-primary" onclick="showCreateCustomerModal()" data-admin-only>

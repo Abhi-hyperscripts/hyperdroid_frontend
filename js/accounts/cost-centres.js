@@ -4,7 +4,9 @@
  */
 
 let centresList = [];
-let centresPage = 1;  // client-side pagination (list fetches the full array)
+let centresPage = 1;   // server-side pagination
+let centresTotal = 0;
+const PAGE_SIZE = 50;
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await AccountsCommon.initPage('cost-centres', '../')) return;
@@ -17,12 +19,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadCentres();
 });
 
-async function loadCentres() {
+async function loadCentres(page = centresPage) {
     try {
+        centresPage = page;
         AccountsCommon.setTableLoading('centresTable', 5, 'Loading cost centres…');
-        const res = await api.request(AccountsCommon.buildUrl('cost-centres'), { _skipSpinner: true });
-        centresList = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        centresPage = 1;
+        const showInactive = document.getElementById('ccShowInactive')?.checked;
+        const params = { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE };
+        if (!showInactive) params.status = 'active';   // hide archived server-side
+        const res = await api.request(AccountsCommon.buildUrl('cost-centres', params), { _skipSpinner: true });
+        const env = Array.isArray(res) ? { data: res, total: res.length } : (res || {});
+        centresList = env.data || [];
+        centresTotal = env.total ?? centresList.length;
         renderCentres();
     } catch (err) {
         console.error('[CostCentres] loadCentres error:', err);
@@ -34,18 +41,15 @@ async function loadCentres() {
 function renderCentres() {
     const tb = document.getElementById('centresTable');
     if (!tb) return;
-    const showInactive = document.getElementById('ccShowInactive')?.checked;
-    const rows = centresList.filter(c => showInactive || c.status !== 'inactive');
-    if (!rows.length) {
+    if (!centresList.length) {
         tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-secondary);">No cost centres yet. Click "New Cost Centre" to create one.</td></tr>';
         AccountsCommon.renderPagination('centresPagination', 1, 1, () => {});
         return;
     }
     const isAdmin = accountsRoles.isAdmin();
-    const pg = AccountsCommon.paginate(rows, centresPage);
-    centresPage = pg.page;
-    AccountsCommon.renderPagination('centresPagination', pg.page, pg.totalPages, (p) => { centresPage = p; renderCentres(); });
-    tb.innerHTML = pg.slice.map(c => {
+    const totalPages = Math.max(1, Math.ceil((centresTotal || centresList.length) / PAGE_SIZE));
+    AccountsCommon.renderPagination('centresPagination', centresPage, totalPages, (p) => loadCentres(p));
+    tb.innerHTML = centresList.map(c => {
         const active = c.status !== 'inactive';
         const actions = isAdmin ? `
             <button class="btn-icon" onclick="editCentre('${AccountsCommon.escJs(c.id)}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>

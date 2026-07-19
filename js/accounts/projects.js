@@ -5,7 +5,9 @@
 
 let projectsList = [];
 let customersList = [];
-let projectsPage = 1;  // client-side pagination (list fetches the full array)
+let projectsPage = 1;   // server-side pagination
+let projectsTotal = 0;
+const PAGE_SIZE = 50;
 
 let prCustomerDropdown = null;
 let prStatusDropdown = null;
@@ -53,12 +55,17 @@ async function loadCustomers() {
     } catch (err) { console.error('[Projects] loadCustomers error:', err); }
 }
 
-async function loadProjects() {
+async function loadProjects(page = projectsPage) {
     try {
+        projectsPage = page;
         AccountsCommon.setTableLoading('projectsTable', 6, 'Loading projects…');
-        const res = await api.request(AccountsCommon.buildUrl('projects'), { _skipSpinner: true });
-        projectsList = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        projectsPage = 1;
+        const showArchived = document.getElementById('prShowArchived')?.checked;
+        const params = { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE };
+        if (!showArchived) params.activeOnly = true;   // hide cancelled/completed server-side
+        const res = await api.request(AccountsCommon.buildUrl('projects', params), { _skipSpinner: true });
+        const env = Array.isArray(res) ? { data: res, total: res.length } : (res || {});
+        projectsList = env.data || [];
+        projectsTotal = env.total ?? projectsList.length;
         renderProjects();
     } catch (err) {
         console.error('[Projects] loadProjects error:', err);
@@ -70,19 +77,16 @@ async function loadProjects() {
 function renderProjects() {
     const tb = document.getElementById('projectsTable');
     if (!tb) return;
-    const showArchived = document.getElementById('prShowArchived')?.checked;
-    const rows = projectsList.filter(p => showArchived || (p.status !== 'cancelled' && p.status !== 'completed'));
-    if (!rows.length) {
+    if (!projectsList.length) {
         tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary);">No projects yet. Click "New Project" to create one.</td></tr>';
         AccountsCommon.renderPagination('projectsPagination', 1, 1, () => {});
         return;
     }
     const isAdmin = accountsRoles.isAdmin();
     const statusClass = (s) => s === 'active' ? 'status-active' : (s === 'cancelled' ? 'status-rejected' : 'status-pending');
-    const pg = AccountsCommon.paginate(rows, projectsPage);
-    projectsPage = pg.page;
-    AccountsCommon.renderPagination('projectsPagination', pg.page, pg.totalPages, (p) => { projectsPage = p; renderProjects(); });
-    tb.innerHTML = pg.slice.map(p => {
+    const totalPages = Math.max(1, Math.ceil((projectsTotal || projectsList.length) / PAGE_SIZE));
+    AccountsCommon.renderPagination('projectsPagination', projectsPage, totalPages, (p) => loadProjects(p));
+    tb.innerHTML = projectsList.map(p => {
         const label = (p.status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         const actions = isAdmin ? `
             <button class="btn-icon" onclick="editProject('${AccountsCommon.escJs(p.id)}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>

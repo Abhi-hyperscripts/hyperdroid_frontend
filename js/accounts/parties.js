@@ -18,9 +18,12 @@ let pendingVendorRequests = [];
 let pendingCustomerRequests = [];
 let currentApproveRequest = null;
 
-// Client-side pagination page state (these lists fetch the full array).
+// Server-side pagination state (backend returns {data,total,stats} per page).
+const PAGE_SIZE = 50;
 let vendorPage = 1;
 let customerPage = 1;
+let vendorTotal = 0;
+let customerTotal = 0;
 
 // ============================================================================
 // PAGE INIT
@@ -80,26 +83,33 @@ function setupSearchListeners() {
     };
 
     const vendorSearch = document.getElementById('vendorSearch');
-    if (vendorSearch) vendorSearch.addEventListener('input', debounce(() => { vendorPage = 1; renderVendorsTable(); }));
+    if (vendorSearch) vendorSearch.addEventListener('input', debounce(() => loadVendors(1)));
 
     const customerSearch = document.getElementById('customerSearch');
-    if (customerSearch) customerSearch.addEventListener('input', debounce(() => { customerPage = 1; renderCustomersTable(); }));
+    if (customerSearch) customerSearch.addEventListener('input', debounce(() => loadCustomers(1)));
 }
 
 // ============================================================================
 // 1. VENDORS
 // ============================================================================
 
-async function loadVendors() {
+async function loadVendors(page = vendorPage) {
     try {
-        // Fetch ALL vendors (active + inactive) so the stat tiles (Total/Active/Inactive) are accurate.
-        // renderVendorsTable() already filters the displayed rows by the "Show Inactive" toggle.
+        // Server-side pagination: one page (50 rows) crosses the wire, not the whole table.
+        // Search + active/inactive filter run on the server; KPI tiles come from the envelope's
+        // unfiltered `stats`. (Tolerant of an older backend that returns a raw array.)
+        vendorPage = page;
         AccountsCommon.setTableLoading('vendorsTable', 7, 'Loading vendors…');
-        const url = AccountsCommon.buildUrl('vendors', {});
-        const res = await api.request(url, { _skipSpinner: true });
-        vendors = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        vendorPage = 1;
-        updateVendorStats();
+        const search = (document.getElementById('vendorSearch')?.value || '').trim();
+        const showInactive = document.getElementById('showInactiveVendors')?.checked || false;
+        const params = { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE };
+        if (search) params.search = search;
+        if (!showInactive) params.isActive = true;
+        const res = await api.request(AccountsCommon.buildUrl('vendors', params), { _skipSpinner: true });
+        const env = Array.isArray(res) ? { data: res, total: res.length, stats: null } : (res || {});
+        vendors = env.data || [];
+        vendorTotal = env.total ?? vendors.length;
+        updateVendorStats(env.stats);
         renderVendorsTable();
     } catch (err) {
         console.error('[Parties] loadVendors error:', err);
@@ -107,34 +117,25 @@ async function loadVendors() {
     }
 }
 
-function updateVendorStats() {
-    const active = vendors.filter(v => v.is_active !== false);
-    const inactive = vendors.filter(v => v.is_active === false);
+function updateVendorStats(stats) {
     const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-    el('totalVendors', vendors.length);
-    el('activeVendors', active.length);
-    el('inactiveVendors', inactive.length);
+    // Prefer the envelope's unfiltered counts; fall back to the current page (old backend).
+    if (stats) {
+        el('totalVendors', stats.total_count);
+        el('activeVendors', stats.active_count);
+        el('inactiveVendors', stats.inactive_count);
+    } else {
+        el('totalVendors', vendors.length);
+        el('activeVendors', vendors.filter(v => v.is_active !== false).length);
+        el('inactiveVendors', vendors.filter(v => v.is_active === false).length);
+    }
 }
 
 function renderVendorsTable() {
     const tbody = document.getElementById('vendorsTable');
     if (!tbody) return;
 
-    const search = (document.getElementById('vendorSearch')?.value || '').toLowerCase();
-    const showInactive = document.getElementById('showInactiveVendors')?.checked || false;
-
-    let filtered = vendors;
-    if (!showInactive) filtered = filtered.filter(v => v.is_active !== false);
-    if (search) {
-        filtered = filtered.filter(v =>
-            (v.name || '').toLowerCase().includes(search) ||
-            (v.vendor_code || v.code || '').toLowerCase().includes(search) ||
-            (v.email || '').toLowerCase().includes(search) ||
-            (v.tax_id || '').toLowerCase().includes(search)
-        );
-    }
-
-    if (!filtered.length) {
+    if (!vendors.length) {
         tbody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <rect x="1" y="3" width="15" height="13"></rect>
@@ -146,11 +147,10 @@ function renderVendorsTable() {
         return;
     }
 
-    const pg = AccountsCommon.paginate(filtered, vendorPage);
-    vendorPage = pg.page;
-    AccountsCommon.renderPagination('vendorPagination', pg.page, pg.totalPages, (p) => { vendorPage = p; renderVendorsTable(); });
+    const totalPages = Math.max(1, Math.ceil((vendorTotal || vendors.length) / PAGE_SIZE));
+    AccountsCommon.renderPagination('vendorPagination', vendorPage, totalPages, (p) => loadVendors(p));
 
-    tbody.innerHTML = pg.slice.map(v => {
+    tbody.innerHTML = vendors.map(v => {
         const statusClass = v.is_active !== false ? 'status-active' : 'status-rejected';
         const statusText = v.is_active !== false ? 'Active' : 'Inactive';
         const viewBtn = `<button class="btn-icon" onclick="viewVendor('${v.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
@@ -452,16 +452,21 @@ async function saveVendor() {
 // 2. CUSTOMERS
 // ============================================================================
 
-async function loadCustomers() {
+async function loadCustomers(page = customerPage) {
     try {
-        // Fetch ALL customers (active + inactive) so the stat tiles are accurate.
-        // renderCustomersTable() already filters the displayed rows by the "Show Inactive" toggle.
+        // Server-side pagination (one page over the wire); search + filter run on the server.
+        customerPage = page;
         AccountsCommon.setTableLoading('customersTable', 7, 'Loading customers…');
-        const url = AccountsCommon.buildUrl('customers', {});
-        const res = await api.request(url, { _skipSpinner: true });
-        customers = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        customerPage = 1;
-        updateCustomerStats();
+        const search = (document.getElementById('customerSearch')?.value || '').trim();
+        const showInactive = document.getElementById('showInactiveCustomers')?.checked || false;
+        const params = { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE };
+        if (search) params.search = search;
+        if (!showInactive) params.isActive = true;
+        const res = await api.request(AccountsCommon.buildUrl('customers', params), { _skipSpinner: true });
+        const env = Array.isArray(res) ? { data: res, total: res.length, stats: null } : (res || {});
+        customers = env.data || [];
+        customerTotal = env.total ?? customers.length;
+        updateCustomerStats(env.stats);
         renderCustomersTable();
     } catch (err) {
         console.error('[Parties] loadCustomers error:', err);
@@ -469,34 +474,24 @@ async function loadCustomers() {
     }
 }
 
-function updateCustomerStats() {
-    const active = customers.filter(c => c.is_active !== false);
-    const inactive = customers.filter(c => c.is_active === false);
+function updateCustomerStats(stats) {
     const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-    el('totalCustomers', customers.length);
-    el('activeCustomers', active.length);
-    el('inactiveCustomers', inactive.length);
+    if (stats) {
+        el('totalCustomers', stats.total_count);
+        el('activeCustomers', stats.active_count);
+        el('inactiveCustomers', stats.inactive_count);
+    } else {
+        el('totalCustomers', customers.length);
+        el('activeCustomers', customers.filter(c => c.is_active !== false).length);
+        el('inactiveCustomers', customers.filter(c => c.is_active === false).length);
+    }
 }
 
 function renderCustomersTable() {
     const tbody = document.getElementById('customersTable');
     if (!tbody) return;
 
-    const search = (document.getElementById('customerSearch')?.value || '').toLowerCase();
-    const showInactive = document.getElementById('showInactiveCustomers')?.checked || false;
-
-    let filtered = customers;
-    if (!showInactive) filtered = filtered.filter(c => c.is_active !== false);
-    if (search) {
-        filtered = filtered.filter(c =>
-            (c.name || '').toLowerCase().includes(search) ||
-            (c.customer_code || c.code || '').toLowerCase().includes(search) ||
-            (c.email || '').toLowerCase().includes(search) ||
-            (c.tax_id || '').toLowerCase().includes(search)
-        );
-    }
-
-    if (!filtered.length) {
+    if (!customers.length) {
         tbody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -508,11 +503,10 @@ function renderCustomersTable() {
         return;
     }
 
-    const pg = AccountsCommon.paginate(filtered, customerPage);
-    customerPage = pg.page;
-    AccountsCommon.renderPagination('customerPagination', pg.page, pg.totalPages, (p) => { customerPage = p; renderCustomersTable(); });
+    const totalPages = Math.max(1, Math.ceil((customerTotal || customers.length) / PAGE_SIZE));
+    AccountsCommon.renderPagination('customerPagination', customerPage, totalPages, (p) => loadCustomers(p));
 
-    tbody.innerHTML = pg.slice.map(c => {
+    tbody.innerHTML = customers.map(c => {
         const statusClass = c.is_active !== false ? 'status-active' : 'status-rejected';
         const statusText = c.is_active !== false ? 'Active' : 'Inactive';
         const creditDisplay = c.credit_limit != null ? AccountsCommon.formatCurrency(c.credit_limit) : '-';

@@ -3,7 +3,9 @@
  */
 
 let recurringList = [];
-let recurringPage = 1;  // client-side pagination (list fetches the full array)
+let recurringPage = 1;   // server-side pagination
+let recurringTotal = 0;
+const PAGE_SIZE = 50;
 let customersList = [];
 let vendorsList = [];
 let accountsList = [];
@@ -123,14 +125,17 @@ function accountOptionsForType(type) {
         .map(a => ({ value: a.id, label: `${a.account_code} - ${a.account_name}` }))];
 }
 
-async function loadRecurring() {
+async function loadRecurring(page = recurringPage) {
     try {
+        recurringPage = page;
         AccountsCommon.setTableLoading('recurringTable', 8, 'Loading recurring transactions…');
-        const res = await api.request(AccountsCommon.buildUrl('recurring'));
-        recurringList = Array.isArray(res) ? res : (res?.data || []);
-        recurringPage = 1;
+        const params = { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE };
+        const res = await api.request(AccountsCommon.buildUrl('recurring', params), { _skipSpinner: true });
+        const env = Array.isArray(res) ? { data: res, total: res.length, stats: null } : (res || {});
+        recurringList = env.data || [];
+        recurringTotal = env.total ?? recurringList.length;
+        updateStats(env.stats);
         renderTable();
-        updateStats();
     } catch (err) {
         console.error('[Recurring] load error:', err);
         Toast.error('Failed to load recurring transactions');
@@ -154,13 +159,17 @@ async function loadLookups() {
     }
 }
 
-function updateStats() {
-    const active = recurringList.filter(r => r.status === 'active').length;
-    const paused = recurringList.filter(r => r.status === 'paused').length;
-    const total = recurringList.reduce((sum, r) => sum + (r.total_generated || 0), 0);
-    document.getElementById('statActive').textContent = active;
-    document.getElementById('statPaused').textContent = paused;
-    document.getElementById('statTotal').textContent = total;
+function updateStats(stats) {
+    const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    if (stats) {
+        el('statActive', stats.active_count);
+        el('statPaused', stats.paused_count);
+        el('statTotal', stats.total_generated);
+    } else {
+        el('statActive', recurringList.filter(r => r.status === 'active').length);
+        el('statPaused', recurringList.filter(r => r.status === 'paused').length);
+        el('statTotal', recurringList.reduce((sum, r) => sum + (r.total_generated || 0), 0));
+    }
 }
 
 function renderTable() {
@@ -171,9 +180,8 @@ function renderTable() {
         return;
     }
 
-    const pg = AccountsCommon.paginate(recurringList, recurringPage);
-    recurringPage = pg.page;
-    AccountsCommon.renderPagination('recurringPagination', pg.page, pg.totalPages, (p) => { recurringPage = p; renderTable(); });
+    const totalPages = Math.max(1, Math.ceil((recurringTotal || recurringList.length) / PAGE_SIZE));
+    AccountsCommon.renderPagination('recurringPagination', recurringPage, totalPages, (p) => loadRecurring(p));
 
     const statusBadge = (s) => {
         const map = { active: 'status-active', paused: 'status-pending', completed: 'status-active', cancelled: 'status-rejected' };
@@ -185,7 +193,7 @@ function renderTable() {
     // Recurring writes require admin (MANAGE_BILLING). Managers may view the
     // list but only admins see the Pause/Resume/Cancel actions.
     const isAdmin = accountsRoles.isAdmin();
-    tbody.innerHTML = pg.slice.map(r => {
+    tbody.innerHTML = recurringList.map(r => {
         const actions = !isAdmin
             ? ''
             : r.status === 'active'
