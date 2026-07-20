@@ -332,6 +332,26 @@ const Navigation = {
                 }
             });
         }
+
+        // Subscription-expired banner. When the license has lapsed the backend
+        // issues a token with NO licensed services (every feature is locked
+        // server-side), so the app would otherwise look empty with no explanation.
+        // Surface a clear notice. license_features.expired is set by Auth only for
+        // an expired non-unlocked (SaaS tenant) license.
+        try {
+            const lf = (typeof getLicenseFeatures === 'function') ? getLicenseFeatures() : null;
+            if (lf && lf.expired && !document.getElementById('licenseExpiredBanner')) {
+                const banner = document.createElement('div');
+                banner.id = 'licenseExpiredBanner';
+                banner.style.cssText = 'position:sticky;top:0;z-index:99999;background:#b91c1c;color:#fff;' +
+                    'padding:10px 16px;text-align:center;font-size:14px;font-weight:600;line-height:1.4;';
+                let expiry = '';
+                try { if (lf.expiry) expiry = new Date(lf.expiry).toLocaleDateString(); } catch (_e) {}
+                banner.textContent = 'Your subscription has expired' + (expiry ? ' on ' + expiry : '') +
+                    '. Access to features is disabled — please renew to restore access.';
+                document.body.prepend(banner);
+            }
+        } catch (e) { /* non-fatal — enforcement is server-side regardless */ }
     },
 
     /**
