@@ -354,6 +354,26 @@ function populateBillVendorSelect(selectedId) {
     if (!sel) return;
     sel.innerHTML = '<option value="">Select Vendor...</option>' +
         vendors.map(v => `<option value="${v.id}" ${v.id === selectedId ? 'selected' : ''}>${AccountsCommon.escapeHtml(v.name || v.vendor_name)}</option>`).join('');
+    if (!sel._treatmentHooked) { sel._treatmentHooked = true; sel.addEventListener('change', onBillVendorChange); }
+    onBillVendorChange();
+}
+
+/** Flag when the selected vendor charges no GST (unregistered / composition / overseas → no input tax credit). */
+function onBillVendorChange() {
+    const banner = document.getElementById('billTreatmentBanner');
+    if (!banner) return;
+    const vid = document.getElementById('billVendor')?.value;
+    const v = vendors.find(x => x.id === vid);
+    const t = v?.gst_treatment;
+    if (v && t && t !== 'registered') {
+        const label = t === 'overseas'
+            ? 'Overseas vendor — the bill carries no Indian GST (import IGST is paid separately at customs).'
+            : (t === 'composition' ? 'Composition vendor — issues a bill of supply.' : 'Unregistered vendor.');
+        banner.style.display = '';
+        banner.innerHTML = '🚫 <strong>No input GST</strong> — ' + label + ' No input tax credit is recognised; lines post at their net amount on approval.';
+    } else {
+        banner.style.display = 'none';
+    }
 }
 
 // ============================================================================

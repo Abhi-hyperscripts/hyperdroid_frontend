@@ -423,6 +423,19 @@
                             <div class="form-group"></div>
                             <div class="form-group"></div>
                         </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="vendorGstTreatment">GST Treatment *</label>
+                                <select id="vendorGstTreatment" class="form-control" onchange="onVendorTreatmentChange()">
+                                    <option value="registered">Registered (has GSTIN)</option>
+                                    <option value="unregistered">Unregistered (no GSTIN)</option>
+                                    <option value="composition">Composition dealer</option>
+                                    <option value="overseas">Overseas / Import</option>
+                                </select>
+                                <small id="vendorTreatmentHint" class="form-hint" style="color:var(--text-secondary);"></small>
+                            </div>
+                            <div class="form-group"></div>
+                        </div>
                         <div class="form-row three-col">
                             <div class="form-group">
                                 <label for="vendorName">Name *</label>
@@ -443,7 +456,7 @@
                                 <input type="text" id="vendorPhone" class="form-control" placeholder="Phone number">
                             </div>
                             <div class="form-group">
-                                <label for="vendorTaxId">GSTIN / Tax ID *</label>
+                                <label for="vendorTaxId">GSTIN / Tax ID <span id="vendorTaxIdReq">*</span></label>
                                 <input type="text" id="vendorTaxId" class="form-control" placeholder="GST / PAN / VAT — or fill GST/PAN below">
                             </div>
                             <div class="form-group">
@@ -555,6 +568,19 @@
                             <div class="form-group"></div>
                             <div class="form-group"></div>
                         </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="customerGstTreatment">GST Treatment *</label>
+                                <select id="customerGstTreatment" class="form-control" onchange="onCustomerTreatmentChange()">
+                                    <option value="registered">Registered (has GSTIN)</option>
+                                    <option value="unregistered">Unregistered / B2C (no GSTIN)</option>
+                                    <option value="composition">Composition dealer</option>
+                                    <option value="overseas">Overseas / Export</option>
+                                </select>
+                                <small id="customerTreatmentHint" class="form-hint" style="color:var(--text-secondary);"></small>
+                            </div>
+                            <div class="form-group"></div>
+                        </div>
                         <div class="form-row three-col">
                             <div class="form-group">
                                 <label for="customerName">Name *</label>
@@ -575,8 +601,8 @@
                                 <input type="text" id="customerPhone" class="form-control" required maxlength="50" placeholder="Phone number">
                             </div>
                             <div class="form-group">
-                                <label for="customerTaxId">GSTIN / Tax ID *</label>
-                                <input type="text" id="customerTaxId" class="form-control" required maxlength="50" placeholder="Tax identification number">
+                                <label for="customerTaxId">GSTIN / Tax ID <span id="customerTaxIdReq">*</span></label>
+                                <input type="text" id="customerTaxId" class="form-control" maxlength="50" placeholder="Tax identification number">
                             </div>
                             <div class="form-group">
                                 <label for="customerPaymentTerms">Payment Terms (Days)</label>

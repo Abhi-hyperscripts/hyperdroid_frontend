@@ -105,7 +105,7 @@ async function loadInitialData() {
         const invCustSel = document.getElementById('invoiceCustomerId');
         if (invCustSel && !invCustSel._projectHooked) {
             invCustSel._projectHooked = true;
-            invCustSel.addEventListener('change', refreshLineProjectDropdowns);
+            invCustSel.addEventListener('change', onInvoiceCustomerChange);
         }
         populateSelect('paymentCustomerId', customers, 'id', 'name', 'Select customer...');
         populateSelect('cnCustomerId', customers, 'id', 'name', 'Select customer...');
@@ -613,6 +613,21 @@ function invoiceProjectOptions() {
     projects.filter(p => p.customer_id === custId)
         .forEach(p => opts.push({ value: p.id, label: p.code ? `${p.code} — ${p.name}` : p.name }));
     return opts;
+}
+
+/** On customer change: re-scope project dropdowns AND flag a zero-rated export for an overseas customer. */
+function onInvoiceCustomerChange() {
+    refreshLineProjectDropdowns();
+    const banner = document.getElementById('invoiceTreatmentBanner');
+    if (!banner) return;
+    const custId = document.getElementById('invoiceCustomerId')?.value;
+    const cust = customers.find(c => c.id === custId);
+    if (cust && cust.gst_treatment === 'overseas') {
+        banner.style.display = '';
+        banner.innerHTML = '🌐 <strong>Overseas customer</strong> — this is a zero-rated export. No GST is applied on approval, whatever tax option a line shows. Set lines to “No tax” so the preview matches.';
+    } else {
+        banner.style.display = 'none';
+    }
 }
 
 /** Re-scope every line's Project dropdown when the invoice customer changes. */

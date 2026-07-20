@@ -344,6 +344,7 @@ function showCreateVendorModal() {
     document.getElementById('vendorId').value = '';
     document.getElementById('vendorPaymentTerms').value = '30';
     document.getElementById('vendorCodeRow').style.display = 'none';
+    if (document.getElementById('vendorGstTreatment')) { document.getElementById('vendorGstTreatment').value = 'registered'; onVendorTreatmentChange(); }
     AccountsCommon.openModal('vendorModal');
 }
 
@@ -369,6 +370,7 @@ function editVendor(id) {
     document.getElementById('vendorTaxId').value = v.tax_id || '';
     document.getElementById('vendorGstNumber').value = v.gst_number || '';
     document.getElementById('vendorPanNumber').value = v.pan_number || '';
+    if (document.getElementById('vendorGstTreatment')) { document.getElementById('vendorGstTreatment').value = v.gst_treatment || 'registered'; onVendorTreatmentChange(); }
     document.getElementById('vendorPaymentTerms').value = v.payment_terms_days ?? 30;
     document.getElementById('vendorBankName').value = v.bank_name || '';
     document.getElementById('vendorBankAccount').value = v.bank_account_number || '';
@@ -378,12 +380,39 @@ function editVendor(id) {
     AccountsCommon.openModal('vendorModal');
 }
 
+// Update the GSTIN required-marker + an explanatory hint when the GST treatment changes.
+function onVendorTreatmentChange() {
+    const t = document.getElementById('vendorGstTreatment')?.value || 'registered';
+    const req = document.getElementById('vendorTaxIdReq');
+    if (req) req.style.visibility = (t === 'registered') ? 'visible' : 'hidden';
+    const hint = document.getElementById('vendorTreatmentHint');
+    if (hint) hint.textContent = ({
+        registered: '',
+        unregistered: 'Unregistered vendor — its bills carry no input GST (no input tax credit).',
+        composition: 'Composition dealer — issues a bill of supply; no input GST (no ITC).',
+        overseas: 'Overseas vendor — bill has no Indian GST (import IGST is paid separately at customs).'
+    })[t] || '';
+}
+
+function onCustomerTreatmentChange() {
+    const t = document.getElementById('customerGstTreatment')?.value || 'registered';
+    const req = document.getElementById('customerTaxIdReq');
+    if (req) req.style.visibility = (t === 'registered') ? 'visible' : 'hidden';
+    const hint = document.getElementById('customerTreatmentHint');
+    if (hint) hint.textContent = ({
+        registered: '',
+        unregistered: 'Unregistered (B2C) — you still charge GST by the customer’s state.',
+        composition: 'Composition dealer — you still charge normal GST on your sale to them.',
+        overseas: 'Overseas — invoices are zero-rated exports (no GST); state not required.'
+    })[t] || '';
+}
+
 async function saveVendor() {
     const id = document.getElementById('vendorId').value;
     const name = document.getElementById('vendorName').value.trim();
+    const treatment = document.getElementById('vendorGstTreatment')?.value || 'registered';
 
     // tax_id fallback: Indian users typically enter GST or PAN rather than a generic Tax ID.
-    // The backend requires tax_id, so fall back to GST/PAN when the dedicated field is blank.
     const taxId = document.getElementById('vendorTaxId').value.trim()
         || document.getElementById('vendorGstNumber').value.trim()
         || document.getElementById('vendorPanNumber').value.trim();
@@ -403,10 +432,13 @@ async function saveVendor() {
         const el = document.getElementById(fid);
         if (!el || !el.value.trim()) { Toast.error(`${label} is required`); el?.focus(); return; }
     }
-    if (!taxId) { Toast.error('Tax ID (GST / PAN / VAT) is required'); document.getElementById('vendorTaxId').focus(); return; }
+    // GSTIN / Tax ID + state code are mandatory only for a GST-registered vendor.
+    if (treatment === 'registered' && !taxId) { Toast.error('GSTIN / Tax ID is required for a GST-registered vendor (pick Unregistered or Overseas if it has none)'); document.getElementById('vendorTaxId').focus(); return; }
+    if (treatment === 'registered' && !document.getElementById('vendorStateCode').value.trim()) { Toast.error('State code is required for a GST-registered vendor (place of supply for input GST)'); document.getElementById('vendorStateCode').focus(); return; }
 
     const payload = {
         name,
+        gst_treatment: treatment,
         display_name: document.getElementById('vendorDisplayName').value.trim() || null,
         email: document.getElementById('vendorEmail').value.trim() || null,
         phone: document.getElementById('vendorPhone').value.trim() || null,
@@ -417,7 +449,7 @@ async function saveVendor() {
         state_code: document.getElementById('vendorStateCode').value.trim() || null,
         country: document.getElementById('vendorCountry').value.trim() || null,
         postal_code: document.getElementById('vendorPostalCode').value.trim() || null,
-        tax_id: taxId,
+        tax_id: taxId || null,
         // Backend accepts and prefers gst_number/pan_number over tax_id for TDS
         gst_number: document.getElementById('vendorGstNumber').value.trim() || null,
         pan_number: document.getElementById('vendorPanNumber').value.trim() || null,
@@ -537,6 +569,7 @@ function showCreateCustomerModal() {
     document.getElementById('customerId').value = '';
     document.getElementById('customerPaymentTerms').value = '30';
     document.getElementById('customerCodeRow').style.display = 'none';
+    if (document.getElementById('customerGstTreatment')) { document.getElementById('customerGstTreatment').value = 'registered'; onCustomerTreatmentChange(); }
     AccountsCommon.openModal('customerModal');
 }
 
@@ -560,6 +593,7 @@ function editCustomer(id) {
     document.getElementById('customerCountry').value = c.country || '';
     document.getElementById('customerPostalCode').value = c.postal_code || '';
     document.getElementById('customerTaxId').value = c.tax_id || '';
+    if (document.getElementById('customerGstTreatment')) { document.getElementById('customerGstTreatment').value = c.gst_treatment || 'registered'; onCustomerTreatmentChange(); }
     document.getElementById('customerPaymentTerms').value = c.payment_terms_days ?? 30;
     document.getElementById('customerCreditLimit').value = c.credit_limit ?? '';
     document.getElementById('customerNotes').value = c.notes || '';
@@ -569,6 +603,7 @@ function editCustomer(id) {
 async function saveCustomer() {
     const id = document.getElementById('customerId').value;
     const name = document.getElementById('customerName').value.trim();
+    const treatment = document.getElementById('customerGstTreatment')?.value || 'registered';
 
     // Client-side validation mirroring the backend's required master-data fields, so the
     // user gets one clear message + focus instead of a chain of server-side 400s.
@@ -576,7 +611,6 @@ async function saveCustomer() {
         ['customerName', 'Customer name'],
         ['customerPhone', 'Phone'],
         ['customerEmail', 'Email'],
-        ['customerTaxId', 'Tax ID (GST / PAN / VAT)'],
         ['customerAddressLine1', 'Address Line 1'],
         ['customerCity', 'City'],
         ['customerState', 'State'],
@@ -586,11 +620,16 @@ async function saveCustomer() {
         const el = document.getElementById(fid);
         if (!el || !el.value.trim()) { Toast.error(`${label} is required`); el?.focus(); return; }
     }
+    // GSTIN is mandatory only for a GST-registered customer; a domestic customer needs a state code
+    // (place of supply — GST is always charged on a domestic sale, whatever the buyer's registration).
+    if (treatment === 'registered' && !document.getElementById('customerTaxId').value.trim()) { Toast.error('GSTIN / Tax ID is required for a GST-registered customer (pick Unregistered or Overseas if it has none)'); document.getElementById('customerTaxId').focus(); return; }
+    if (treatment !== 'overseas' && !document.getElementById('customerStateCode').value.trim()) { Toast.error('State code is required for a domestic customer (place of supply)'); document.getElementById('customerStateCode').focus(); return; }
 
     const creditVal = document.getElementById('customerCreditLimit').value;
 
     const payload = {
         name,
+        gst_treatment: treatment,
         display_name: document.getElementById('customerDisplayName').value.trim() || null,
         email: document.getElementById('customerEmail').value.trim() || null,
         phone: document.getElementById('customerPhone').value.trim() || null,
