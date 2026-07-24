@@ -203,19 +203,86 @@ async function loadStatement() {
             tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary);">No billing for this customer yet.</td></tr>';
             return;
         }
-        tb.innerHTML = rows.map(r => `<tr>
-            <td>${AccountsCommon.escapeHtml(r.project_name || 'Unassigned')}${r.project_code ? ' <span style="color:var(--text-secondary);font-size:0.8rem;">(' + AccountsCommon.escapeHtml(r.project_code) + ')</span>' : ''}</td>
+        // Each project row is clickable → reveals a nested detail row of its individual invoice lines
+        // (fetched lazily via the shared breakdown helper). project_id may be null for untagged lines.
+        tb._stmtCustomerId = customerId;
+        tb.innerHTML = rows.map(r => {
+            const pid = r.project_id || '_none';
+            return `<tr class="stmt-project-row" data-pid="${AccountsCommon.escapeHtml(String(pid))}" style="cursor:pointer;">
+            <td><span class="stmt-caret" style="display:inline-block;width:1.1em;color:var(--text-secondary);">▸</span>${AccountsCommon.escapeHtml(r.project_name || 'Unassigned')}${r.project_code ? ' <span style="color:var(--text-secondary);font-size:0.8rem;">(' + AccountsCommon.escapeHtml(r.project_code) + ')</span>' : ''}</td>
             <td style="text-align:right;">${AccountsCommon.formatCurrency(r.billed)}</td>
             <td style="text-align:right;">${AccountsCommon.formatCurrency(r.collected)}</td>
             <td style="text-align:right;font-weight:600;">${AccountsCommon.formatCurrency(r.due)}</td>
-        </tr>`).join('') + `<tr style="border-top:2px solid var(--border-color);">
-            <td style="font-weight:700;">Total</td>
+        </tr>
+        <tr class="stmt-detail-row" data-detail="${AccountsCommon.escapeHtml(String(pid))}" style="display:none;">
+            <td colspan="4" style="padding:0;background:var(--bg-secondary,#f8fafc);">
+                <div class="stmt-detail-body" style="padding:0.75rem 1.25rem;">Loading…</div>
+            </td>
+        </tr>`;
+        }).join('') + `<tr style="border-top:2px solid var(--border-color);">
+            <td style="font-weight:700;padding-left:1.1em;">Total</td>
             <td style="text-align:right;font-weight:700;">${AccountsCommon.formatCurrency(data.total_billed)}</td>
             <td style="text-align:right;font-weight:700;">${AccountsCommon.formatCurrency(data.total_collected)}</td>
             <td style="text-align:right;font-weight:700;">${AccountsCommon.formatCurrency(data.total_due)}</td>
         </tr>`;
+
+        // One-time delegated toggle: expand a project row to load + show its line items.
+        if (!tb._stmtDelegated) {
+            tb._stmtDelegated = true;
+            tb.addEventListener('click', onStmtRowClick);
+        }
     } catch (err) {
         console.error('[Projects] loadStatement error:', err);
         tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-error);">Failed to load statement.</td></tr>';
     }
+}
+
+async function onStmtRowClick(e) {
+    const tb = e.currentTarget;
+    const row = e.target.closest('.stmt-project-row');
+    if (!row || !tb.contains(row)) return;
+    const pid = row.getAttribute('data-pid');
+    const detail = tb.querySelector(`.stmt-detail-row[data-detail="${(window.CSS && CSS.escape) ? CSS.escape(pid) : pid}"]`);
+    if (!detail) return;
+    const caret = row.querySelector('.stmt-caret');
+    const isOpen = detail.style.display !== 'none';
+    if (isOpen) { detail.style.display = 'none'; if (caret) caret.textContent = '▸'; return; }
+    detail.style.display = '';
+    if (caret) caret.textContent = '▾';
+    const body = detail.querySelector('.stmt-detail-body');
+    if (!body || body._loaded) return;
+    try {
+        const bd = await AccountsCommon.getProjectInvoiceBreakdown(tb._stmtCustomerId);
+        const lines = (bd.byProject[pid] || []).slice()
+            .sort((a, b) => new Date(a.invoice_date) - new Date(b.invoice_date));
+        body._loaded = true;
+        body.innerHTML = renderStmtDetail(lines);
+    } catch (err) {
+        console.error('[Projects] statement detail error:', err);
+        body.innerHTML = '<div style="color:var(--color-error);">Failed to load line items.</div>';
+    }
+}
+
+function renderStmtDetail(lines) {
+    if (!lines.length) return '<div style="color:var(--text-secondary);">No line items.</div>';
+    const rows = lines.map(l => `<tr>
+        <td>${AccountsCommon.escapeHtml(l.invoice_number || '-')}</td>
+        <td>${AccountsCommon.formatDate(l.invoice_date)}</td>
+        <td>${AccountsCommon.escapeHtml(l.description || '-')}</td>
+        <td style="text-align:right;">${AccountsCommon.formatCurrency(l.amount)}</td>
+        <td>${AccountsCommon.statusBadge(l.invoice_status)}</td>
+    </tr>`).join('');
+    const total = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
+    return `<table class="data-table" style="margin:0;width:100%;font-size:0.9rem;">
+        <thead><tr>
+            <th>Invoice</th><th>Date</th><th>Item</th>
+            <th style="text-align:right;">Amount</th><th>Status</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr style="font-weight:700;border-top:1px solid var(--border-color);">
+            <td colspan="3" style="text-align:right;">Total billed (ex-tax)</td>
+            <td style="text-align:right;">${AccountsCommon.formatCurrency(total)}</td>
+            <td></td>
+        </tr></tfoot>
+    </table>`;
 }

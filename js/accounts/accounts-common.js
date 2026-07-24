@@ -366,6 +366,44 @@ const AccountsCommon = {
     },
 
     /**
+     * Per-project breakdown of a customer's invoice LINES. The backend invoice list is header-only and the
+     * project-statement endpoint returns per-project TOTALS, so to itemise a project we fetch each of the
+     * customer's invoices and read its lines (which carry project_id). Result is cached per customer.
+     * @returns {Promise<{byProject:Object, invoiceIdsByProject:Object}>} keyed by project_id ('_none' for untagged).
+     */
+    async getProjectInvoiceBreakdown(customerId, { force = false } = {}) {
+        this._projBreakdown = this._projBreakdown || {};
+        if (!customerId) return { byProject: {}, invoiceIdsByProject: {} };
+        if (!force && this._projBreakdown[customerId]) return this._projBreakdown[customerId];
+        const listRes = await api.request(this.buildUrl('invoices', { customerId, limit: 1000, offset: 0 }), { _skipSpinner: true });
+        const invoices = Array.isArray(listRes) ? listRes : (listRes?.data || listRes?.items || []);
+        const details = await Promise.all(invoices.map(inv =>
+            api.request(this.buildUrl('invoices/' + inv.id), { _skipSpinner: true }).catch(() => null)));
+        const byProject = {}, invoiceIdsByProject = {};
+        details.forEach((d, i) => {
+            if (!d) return;
+            const inv = invoices[i];
+            (d.lines || d.line_items || []).forEach(ln => {
+                const key = ln.project_id || '_none';
+                (byProject[key] = byProject[key] || []).push({
+                    invoice_id: inv.id, invoice_number: inv.invoice_number, invoice_date: inv.invoice_date,
+                    invoice_status: inv.status, invoice_balance: inv.balance_due ?? inv.balance ?? 0,
+                    description: ln.description, amount: parseFloat(ln.amount || 0)
+                });
+                (invoiceIdsByProject[key] = invoiceIdsByProject[key] || new Set()).add(inv.id);
+            });
+        });
+        const result = { byProject, invoiceIdsByProject };
+        this._projBreakdown[customerId] = result;
+        return result;
+    },
+    /** Drop the cached breakdown (call after creating/editing an invoice so the project views refresh). */
+    invalidateProjectBreakdown(customerId) {
+        if (!this._projBreakdown) return;
+        if (customerId) delete this._projBreakdown[customerId]; else this._projBreakdown = {};
+    },
+
+    /**
      * Build a query string that always includes tenantId.
      * @param {Object} params - Additional key/value pairs
      * @returns {string} e.g. '?tenantId=xxx&page=1'

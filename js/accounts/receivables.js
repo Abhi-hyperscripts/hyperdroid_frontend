@@ -30,6 +30,7 @@ const PAGE_SIZE = 50;
 
 // Dropdown instances
 let invoiceCustomerFilterDD = null;
+let invoiceProjectFilterDD = null;
 let paymentCustomerFilterDD = null;
 let cnCustomerFilterDD = null;
 let statementCustomerDD = null;
@@ -170,6 +171,18 @@ function initDropdowns() {
         searchPlaceholder: 'Search customers...', compact: true,
         onChange: () => { invoicePage = 1; loadCustomerInvoices(); }
     });
+    // Project filter: narrows the list to invoices that touch the chosen project (label carries the
+    // owning customer so identically-named projects are distinguishable).
+    const projFilterOpts = (projects || []).map(p => ({
+        value: p.id,
+        label: (p.code ? p.code + ' — ' : '') + (p.name || 'Untitled')
+            + (p.customer_name ? '  ·  ' + p.customer_name : '')
+    }));
+    invoiceProjectFilterDD = new SearchableDropdown(document.getElementById('invoiceProjectFilterContainer'), {
+        id: 'invoiceProjectFilter', options: projFilterOpts, placeholder: 'All Projects',
+        searchPlaceholder: 'Search projects...', compact: true,
+        onChange: () => { invoicePage = 1; loadCustomerInvoices(); }
+    });
     paymentCustomerFilterDD = new SearchableDropdown(document.getElementById('paymentCustomerFilterContainer'), {
         id: 'paymentCustomerFilter', options: custOpts, placeholder: 'All Customers',
         searchPlaceholder: 'Search customers...', compact: true,
@@ -191,17 +204,31 @@ function initDropdowns() {
 // ============================================================================
 
 async function loadCustomerInvoices() {
-    const customerId = invoiceCustomerFilterDD?.getValue?.();
+    let customerId = invoiceCustomerFilterDD?.getValue?.();
     const status = document.getElementById('invoiceStatusFilter')?.value;
     const dateFrom = document.getElementById('invoiceDateFrom')?.value;
     const dateTo = document.getElementById('invoiceDateTo')?.value;
     const search = document.getElementById('invoiceSearch')?.value?.trim();
     const searching = !!search;
+    const projectId = invoiceProjectFilterDD?.getValue?.();
 
-    // The backend invoices list has no `search` param. When searching, fetch a broad page and
-    // filter + paginate client-side so the search reaches ALL matching rows and the pager reflects
-    // the filtered count (not the server total). Otherwise use normal server-side pagination.
-    const params = searching
+    // A project filter forces the fetch to that project's owning customer, then keeps only invoices that
+    // carry a line tagged to the project (invoice_id set comes from the shared line-level breakdown).
+    let projInvoiceIds = null;
+    if (projectId) {
+        const proj = (projects || []).find(p => p.id === projectId);
+        if (proj?.customer_id) customerId = proj.customer_id;  // scope to the project's customer
+        try {
+            const bd = await AccountsCommon.getProjectInvoiceBreakdown(customerId);
+            projInvoiceIds = bd.invoiceIdsByProject[projectId] || new Set();
+        } catch (e) { projInvoiceIds = new Set(); }
+    }
+
+    // The backend invoices list has no `search`/`project` param. When either client-only filter is active,
+    // fetch a broad page and filter + paginate client-side so the filter reaches ALL matching rows and the
+    // pager/tiles reflect the filtered count (not the server total). Otherwise use server-side pagination.
+    const clientFilter = searching || !!projectId;
+    const params = clientFilter
         ? { limit: 1000, offset: 0 }
         : { limit: PAGE_SIZE, offset: (invoicePage - 1) * PAGE_SIZE };
     if (customerId) params.customerId = customerId;
@@ -215,12 +242,18 @@ async function loadCustomerInvoices() {
         customerInvoices = items;  // cache the full fetch for row action handlers
 
         let total, totalPages;
-        if (searching) {
-            const q = search.toLowerCase();
-            const filtered = items.filter(inv => {
-                const custName = inv.customer_name || customers.find(c => c.id === inv.customer_id)?.name || '';
-                return `${inv.invoice_number || ''} ${custName}`.toLowerCase().includes(q);
-            });
+        let statsSource = null;  // when set, KPI tiles are computed from this filtered set, not res.stats
+        if (clientFilter) {
+            let filtered = items;
+            if (projInvoiceIds) filtered = filtered.filter(inv => projInvoiceIds.has(inv.id));
+            if (searching) {
+                const q = search.toLowerCase();
+                filtered = filtered.filter(inv => {
+                    const custName = inv.customer_name || customers.find(c => c.id === inv.customer_id)?.name || '';
+                    return `${inv.invoice_number || ''} ${custName}`.toLowerCase().includes(q);
+                });
+            }
+            statsSource = filtered;  // tiles must reflect only the filtered rows, across all pages
             total = filtered.length;
             totalPages = Math.ceil(total / PAGE_SIZE) || 1;
             if (invoicePage > totalPages) invoicePage = totalPages;
@@ -234,12 +267,20 @@ async function loadCustomerInvoices() {
             if (invoicePage > totalPages) { invoicePage = totalPages; return loadCustomerInvoices(); }
         }
 
-        // Stats — prefer backend stats, fallback to client-side
+        // Stats — when a client-side filter is active, compute from the FULL filtered set so the tiles
+        // match the list; otherwise prefer backend stats with a client-side fallback.
         const stats = res?.stats || {};
-        setText('totalInvoices', stats.total_count ?? total);
-        setText('draftInvoices', stats.draft_count ?? items.filter(i => i.status === 'draft').length);
-        setText('approvedInvoices', stats.approved_count ?? items.filter(i => i.status === 'approved').length);
-        setText('totalReceivable', stats.total_receivable != null ? AccountsCommon.formatCurrency(stats.total_receivable) : AccountsCommon.formatCurrency(items.reduce((s, i) => s + parseFloat(i.balance_due || i.balance || 0), 0)));
+        if (statsSource) {
+            setText('totalInvoices', statsSource.length);
+            setText('draftInvoices', statsSource.filter(i => i.status === 'draft').length);
+            setText('approvedInvoices', statsSource.filter(i => i.status === 'approved').length);
+            setText('totalReceivable', AccountsCommon.formatCurrency(statsSource.reduce((s, i) => s + parseFloat(i.balance_due || i.balance || 0), 0)));
+        } else {
+            setText('totalInvoices', stats.total_count ?? total);
+            setText('draftInvoices', stats.draft_count ?? items.filter(i => i.status === 'draft').length);
+            setText('approvedInvoices', stats.approved_count ?? items.filter(i => i.status === 'approved').length);
+            setText('totalReceivable', stats.total_receivable != null ? AccountsCommon.formatCurrency(stats.total_receivable) : AccountsCommon.formatCurrency(items.reduce((s, i) => s + parseFloat(i.balance_due || i.balance || 0), 0)));
+        }
 
         const tbody = document.getElementById('customerInvoicesTable');
         if (!items.length) {
@@ -882,6 +923,9 @@ async function saveInvoice(approve) {
             Toast.success(id ? 'Invoice updated' : 'Invoice saved as draft');
         }
         AccountsCommon.closeModal('customerInvoiceModal');
+        // The invoice's lines changed — drop the cached project breakdown so the Project filter and the
+        // Project Statement drill-down pick up the new/edited lines on their next read.
+        AccountsCommon.invalidateProjectBreakdown(payload.customer_id);
         loadCustomerInvoices();
     } finally {
         saveBtns.forEach(b => b.disabled = false);
