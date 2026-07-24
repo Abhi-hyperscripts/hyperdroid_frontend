@@ -26,6 +26,17 @@ let checklistFYDropdown = null;
 let yearEndFYDropdown = null;
 let homeStateDropdown = null;
 let fyStartDropdown = null;
+let cfEntityDropdown = null;
+let customFieldDefs = [];
+
+// Documents that support custom fields (value must match the backend entity_type enum).
+const CF_ENTITY_TYPES = [
+    { value: 'customer_invoice', label: 'Customer Invoice' },
+    { value: 'vendor_bill', label: 'Vendor Bill' },
+    { value: 'purchase_order', label: 'Purchase Order' },
+    { value: 'proforma_invoice', label: 'Proforma Invoice' },
+    { value: 'expense_claim', label: 'Expense Claim' }
+];
 
 // ============================================================================
 // PAGE INIT
@@ -45,7 +56,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         'integrity-check': 'Integrity Check',
         'job-log': 'Job Log',
         'closing-checklists': 'Closing Checklists',
-        'year-end': 'Year-End Closing'
+        'year-end': 'Year-End Closing',
+        'custom-fields': 'Custom Fields'
     };
     if (isSuperadmin) {
         const grp = document.getElementById('superadminNavGroup');
@@ -217,6 +229,7 @@ function onTabSwitch(tabId) {
         case 'job-log':             loadJobLogs(); break;
         case 'closing-checklists':  loadChecklists(); break;
         case 'year-end':            break;
+        case 'custom-fields':       loadCustomFields(); break;
     }
 }
 
@@ -272,6 +285,154 @@ function initDropdowns() {
         placeholder: 'Select month...',
         options: MONTHS
     });
+
+    cfEntityDropdown = new SearchableDropdown('cfEntityContainer', {
+        placeholder: 'Select document type...',
+        options: CF_ENTITY_TYPES,
+        onChange: () => loadCustomFields()
+    });
+}
+
+// ============================================================================
+// CUSTOM FIELDS (admin-managed definitions)
+// ============================================================================
+
+async function loadCustomFields() {
+    const tbody = document.getElementById('customFieldsTable');
+    if (!tbody) return;
+    const entityType = cfEntityDropdown?.getValue?.();
+    if (!entityType) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">Select a document type to manage its fields.</td></tr>';
+        return;
+    }
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('custom-fields', { entityType }), { _skipSpinner: true });
+        customFieldDefs = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        renderCustomFieldsTable();
+    } catch (err) {
+        console.error('[Admin] loadCustomFields error:', err);
+        Toast.error('Failed to load custom fields');
+    }
+}
+
+const CF_TYPE_LABELS = { text: 'Text', textarea: 'Multi-line', number: 'Number', date: 'Date', dropdown: 'Dropdown' };
+
+function renderCustomFieldsTable() {
+    const tbody = document.getElementById('customFieldsTable');
+    if (!tbody) return;
+    if (!customFieldDefs.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">No custom fields yet. Click “+ Add Field”.</td></tr>';
+        return;
+    }
+    const admin = accountsRoles.isAdmin();
+    tbody.innerHTML = customFieldDefs.map(d => {
+        const actions = admin
+            ? `<button class="btn-icon" data-tooltip="Edit" onclick="editCustomField('${d.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+               <button class="btn-icon btn-icon-danger" data-tooltip="Delete" onclick="deleteCustomField('${d.id}', '${AccountsCommon.escapeHtml(d.label).replace(/'/g, "\\'")}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`
+            : '-';
+        return `<tr>
+            <td>${AccountsCommon.escapeHtml(d.label)}</td>
+            <td><code style="font-size:0.8rem;">${AccountsCommon.escapeHtml(d.field_key)}</code></td>
+            <td>${AccountsCommon.escapeHtml(CF_TYPE_LABELS[d.field_type] || d.field_type)}${d.field_type === 'dropdown' && d.options?.length ? ` <span style="color:var(--text-secondary);font-size:0.8rem;">(${d.options.length})</span>` : ''}</td>
+            <td style="text-align:center;">${d.is_required ? '✓' : ''}</td>
+            <td style="text-align:center;">${d.display_order ?? 0}</td>
+            <td class="actions-cell">${actions}</td>
+        </tr>`;
+    }).join('');
+}
+
+function onCfTypeChange() {
+    const type = document.getElementById('cfType')?.value;
+    const grp = document.getElementById('cfOptionsGroup');
+    if (grp) grp.style.display = (type === 'dropdown') ? '' : 'none';
+}
+
+function openCustomFieldModal() {
+    if (!cfEntityDropdown?.getValue?.()) { Toast.error('Pick a document type first'); return; }
+    document.getElementById('cfModalTitle').textContent = 'Add Custom Field';
+    document.getElementById('cfId').value = '';
+    document.getElementById('cfLabel').value = '';
+    document.getElementById('cfType').value = 'text';
+    document.getElementById('cfOptions').value = '';
+    document.getElementById('cfOrder').value = customFieldDefs.length;
+    document.getElementById('cfRequired').checked = false;
+    onCfTypeChange();
+    AccountsCommon.openModal('customFieldModal');
+}
+
+function editCustomField(id) {
+    const d = customFieldDefs.find(x => x.id === id);
+    if (!d) return;
+    document.getElementById('cfModalTitle').textContent = 'Edit Custom Field';
+    document.getElementById('cfId').value = d.id;
+    document.getElementById('cfLabel').value = d.label || '';
+    document.getElementById('cfType').value = d.field_type || 'text';
+    document.getElementById('cfOptions').value = (d.options || []).join('\n');
+    document.getElementById('cfOrder').value = d.display_order ?? 0;
+    document.getElementById('cfRequired').checked = !!d.is_required;
+    onCfTypeChange();
+    AccountsCommon.openModal('customFieldModal');
+}
+
+async function saveCustomField() {
+    const id = document.getElementById('cfId').value;
+    const entityType = cfEntityDropdown?.getValue?.();
+    const label = document.getElementById('cfLabel').value.trim();
+    const fieldType = document.getElementById('cfType').value;
+    const isRequired = document.getElementById('cfRequired').checked;
+    const order = parseInt(document.getElementById('cfOrder').value) || 0;
+    const options = fieldType === 'dropdown'
+        ? document.getElementById('cfOptions').value.split('\n').map(s => s.trim()).filter(Boolean)
+        : [];
+
+    if (!label) { Toast.error('Field label is required'); return; }
+    if (fieldType === 'dropdown' && options.length === 0) { Toast.error('A dropdown needs at least one option'); return; }
+
+    const btn = document.getElementById('saveCustomFieldBtn');
+    if (btn) btn.disabled = true;
+    try {
+        if (id) {
+            await api.request(AccountsCommon.buildUrl(`custom-fields/${id}`), {
+                method: 'PUT',
+                body: JSON.stringify({ label, field_type: fieldType, options, is_required: isRequired, display_order: order }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            Toast.success('Custom field updated');
+        } else {
+            await api.request(AccountsCommon.buildUrl('custom-fields'), {
+                method: 'POST',
+                body: JSON.stringify({ entity_type: entityType, label, field_type: fieldType, options, is_required: isRequired, display_order: order }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            Toast.success('Custom field added');
+        }
+        AccountsCommon.invalidateCustomFieldDefs(entityType);
+        AccountsCommon.closeModal('customFieldModal');
+        await loadCustomFields();
+    } catch (err) {
+        console.error('[Admin] saveCustomField error:', err);
+        Toast.error(err.message || 'Failed to save custom field');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function deleteCustomField(id, label) {
+    const ok = await Confirm.show({
+        title: 'Delete custom field?',
+        message: `“${label}” will stop appearing on new documents. Values already saved on existing documents are kept.`,
+        confirmText: 'Delete', type: 'danger'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`custom-fields/${id}`), { method: 'DELETE' });
+        AccountsCommon.invalidateCustomFieldDefs(cfEntityDropdown?.getValue?.());
+        Toast.success('Custom field deleted');
+        await loadCustomFields();
+    } catch (err) {
+        console.error('[Admin] deleteCustomField error:', err);
+        Toast.error(err.message || 'Failed to delete custom field');
+    }
 }
 
 // Indian GST state/UT codes (numeric) — the tax classifier normalises alpha↔numeric, but we store numeric.

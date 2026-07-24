@@ -98,6 +98,9 @@
                             <button class="sidebar-btn" data-tab="tenant-settings" id="tenantSettingsTab">
                                 <span class="nav-number">0</span><span class="nav-label">Tenant Settings</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="custom-fields" id="customFieldsTab">
+                                <span class="nav-number">0</span><span class="nav-label">Custom Fields</span>
+                            </button>
                         </div>
                     </div>
 
@@ -236,6 +239,37 @@
                         <div class="form-actions" style="margin-top:16px;">
                             <button class="btn btn-primary" id="saveTenantSettingsBtn" onclick="saveTenantSettings()">Save Settings</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Custom Fields -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="custom-fields">
+                    <div class="info-panel" style="margin-bottom:16px;">
+                        <strong>What is this?</strong> Add your own fields (text, number, date, dropdown) to documents.
+                        They show on the create/edit form and on the PDF, and are purely informational — they never
+                        affect a total or the ledger. Pick a document type, then add fields.
+                    </div>
+                    <div class="filters-bar" style="align-items:flex-end; gap:12px;">
+                        <div class="form-group" style="max-width:300px; margin:0;">
+                            <label for="cfEntityContainer">Document type</label>
+                            <div id="cfEntityContainer"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="openCustomFieldModal()" data-admin-only>+ Add Field</button>
+                    </div>
+                    <div class="data-table-container" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Label</th><th>Key</th><th>Type</th><th style="text-align:center;">Required</th>
+                                    <th style="text-align:center;">Order</th><th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customFieldsTable">
+                                <tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">Select a document type to manage its fields.</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -635,6 +669,54 @@
             <div class="modal-body" id="checklistDetailBody"></div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="AccountsCommon.closeModal('checklistDetailModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add / Edit Custom Field -->
+    <div id="customFieldModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cfModalTitle">Add Custom Field</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('customFieldModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="cfId">
+                    <div class="form-group">
+                        <label for="cfLabel">Field Label *</label>
+                        <input type="text" id="cfLabel" class="form-control" maxlength="120" placeholder="e.g. PO Number">
+                    </div>
+                    <div class="form-group">
+                        <label for="cfType">Field Type *</label>
+                        <select id="cfType" class="form-control" onchange="onCfTypeChange()">
+                            <option value="text">Text</option>
+                            <option value="textarea">Multi-line Text</option>
+                            <option value="number">Number</option>
+                            <option value="date">Date</option>
+                            <option value="dropdown">Dropdown</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="cfOptionsGroup" style="display:none;">
+                        <label for="cfOptions">Dropdown Options *</label>
+                        <textarea id="cfOptions" class="form-control" rows="4" placeholder="One option per line"></textarea>
+                        <small class="form-hint">Enter one option per line.</small>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cfOrder">Display Order</label>
+                            <input type="number" id="cfOrder" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:26px;">
+                            <input type="checkbox" id="cfRequired" style="width:auto; margin:0;">
+                            <label for="cfRequired" style="margin:0;">Required</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('customFieldModal')">Cancel</button>
+                    <button class="btn btn-primary" id="saveCustomFieldBtn" onclick="saveCustomField()">Save</button>
+                </div>
             </div>
         </div>
     </div>

@@ -29,6 +29,16 @@ const PAGE_SIZE = 50;
 
 // Dropdown instances
 let proformaCustomerFilterDD = null;
+let proformaCfController = null;   // custom-fields section controller for the open proforma form
+
+// Render the proforma's Custom Fields section (create → empty; edit → prefilled from stored values).
+async function renderProformaCustomFields(proformaId) {
+    const host = document.getElementById('proformaCustomFields');
+    if (!host) return;
+    const defs = await AccountsCommon.getCustomFieldDefs('proforma_invoice');
+    const values = proformaId ? await AccountsCommon.loadCustomFieldValues('proforma_invoice', proformaId) : {};
+    proformaCfController = AccountsCommon.renderCustomFieldsSection(host, defs, values);
+}
 
 // ============================================================================
 // PAGE INIT
@@ -359,6 +369,7 @@ function showCreateProformaModal() {
     document.getElementById('proformaLines').innerHTML = '';
     addProformaLine();
     calculateProformaTotals();
+    renderProformaCustomFields(null);
     AccountsCommon.showFormPage('proformaInvoiceModal');
 }
 
@@ -388,6 +399,7 @@ async function editProforma(id) {
             addProformaLine();
         }
         calculateProformaTotals();
+        await renderProformaCustomFields(pi.id);
         AccountsCommon.showFormPage('proformaInvoiceModal');
     } catch (err) {
         Toast.error('Failed to load proforma invoice');
@@ -605,6 +617,10 @@ async function saveProforma() {
     if (!document.getElementById('proformaCustomerId').value) { Toast.error('Please select a customer'); return; }
     if (!form.reportValidity()) return;
 
+    // Block early if a required custom field is empty — avoids creating the proforma then failing its values write.
+    const cfErr = AccountsCommon.validateRequiredCustomFields(proformaCfController);
+    if (cfErr) { Toast.error(cfErr); return; }
+
     // Skip fully blank rows and require an account on any non-empty row —
     // backend line account_id is a non-nullable Guid (null → 400).
     const lines = [];
@@ -647,12 +663,19 @@ async function saveProforma() {
     const id = document.getElementById('proformaId').value;
     if (!AccountsCommon.beginSubmit('saveProforma')) return;
     try {
+        let savedProforma;
         if (id) {
-            await api.request(AccountsCommon.buildUrl(`proforma-invoices/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+            savedProforma = await api.request(AccountsCommon.buildUrl(`proforma-invoices/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
             Toast.success('Proforma invoice updated');
         } else {
-            await api.request(AccountsCommon.buildUrl('proforma-invoices'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+            savedProforma = await api.request(AccountsCommon.buildUrl('proforma-invoices'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
             Toast.success('Proforma invoice saved as draft');
+        }
+        // The document now exists — persist its custom-field values.
+        const savedProformaId = savedProforma?.id || id;
+        if (savedProformaId) {
+            try { await AccountsCommon.saveCustomFieldValues('proforma_invoice', savedProformaId, proformaCfController?.getValues?.() || {}); }
+            catch (e) { Toast.error(e.message || 'Some custom fields were not saved'); }
         }
         AccountsCommon.hideFormPage('proformaInvoiceModal');
         loadProformaInvoices();

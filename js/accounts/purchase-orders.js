@@ -33,6 +33,16 @@ const PAGE_SIZE = 50;
 
 // Dropdown instances
 let poVendorFilterDD = null;
+let poCfController = null;   // custom-fields section controller for the open purchase-order form
+
+// Render the PO's Custom Fields section (create → empty; edit → prefilled from stored values).
+async function renderPOCustomFields(poId) {
+    const host = document.getElementById('poCustomFields');
+    if (!host) return;
+    const defs = await AccountsCommon.getCustomFieldDefs('purchase_order');
+    const values = poId ? await AccountsCommon.loadCustomFieldValues('purchase_order', poId) : {};
+    poCfController = AccountsCommon.renderCustomFieldsSection(host, defs, values);
+}
 
 // ============================================================================
 // PAGE INIT
@@ -374,6 +384,7 @@ function showCreatePOModal() {
     document.getElementById('poLines').innerHTML = '';
     addPOLine();
     calculatePOTotals();
+    renderPOCustomFields(null);
     AccountsCommon.showFormPage('purchaseOrderModal');
 }
 
@@ -399,6 +410,7 @@ async function editPO(id) {
             addPOLine();
         }
         calculatePOTotals();
+        await renderPOCustomFields(po.id);
         AccountsCommon.showFormPage('purchaseOrderModal');
     } catch (err) {
         Toast.error('Failed to load purchase order');
@@ -696,6 +708,10 @@ async function savePO() {
     if (!document.getElementById('poVendorId').value) { Toast.error('Please select a vendor'); return; }
     if (!form.reportValidity()) return;
 
+    // Block early if a required custom field is empty — avoids creating the PO then failing its values write.
+    const cfErr = AccountsCommon.validateRequiredCustomFields(poCfController);
+    if (cfErr) { Toast.error(cfErr); return; }
+
     // Skip fully blank rows and require an account on any non-empty row —
     // backend line account_id is a non-nullable Guid (null → 400).
     const lines = [];
@@ -735,12 +751,19 @@ async function savePO() {
     const id = document.getElementById('poId').value;
     if (!AccountsCommon.beginSubmit('savePO')) return;
     try {
+        let savedPO;
         if (id) {
-            await api.request(AccountsCommon.buildUrl(`purchase-orders/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+            savedPO = await api.request(AccountsCommon.buildUrl(`purchase-orders/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
             Toast.success('Purchase order updated');
         } else {
-            await api.request(AccountsCommon.buildUrl('purchase-orders'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+            savedPO = await api.request(AccountsCommon.buildUrl('purchase-orders'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
             Toast.success('Purchase order saved as draft');
+        }
+        // The document now exists — persist its custom-field values.
+        const savedPoId = savedPO?.id || id;
+        if (savedPoId) {
+            try { await AccountsCommon.saveCustomFieldValues('purchase_order', savedPoId, poCfController?.getValues?.() || {}); }
+            catch (e) { Toast.error(e.message || 'Some custom fields were not saved'); }
         }
         AccountsCommon.hideFormPage('purchaseOrderModal');
         loadPurchaseOrders();

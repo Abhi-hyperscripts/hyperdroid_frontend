@@ -27,6 +27,17 @@ let categorySaveInFlight = false;  // double-submit guard for saveExpenseCategor
 let policySaveInFlight = false;    // double-submit guard for saveExpensePolicy
 
 // Pagination
+let claimCfController = null;   // custom-fields section controller for the open expense-claim form
+
+// Render the claim's Custom Fields section (create → empty; edit → prefilled from stored values).
+async function renderClaimCustomFields(claimId) {
+    const host = document.getElementById('claimCustomFields');
+    if (!host) return;
+    const defs = await AccountsCommon.getCustomFieldDefs('expense_claim');
+    const values = claimId ? await AccountsCommon.loadCustomFieldValues('expense_claim', claimId) : {};
+    claimCfController = AccountsCommon.renderCustomFieldsSection(host, defs, values);
+}
+
 let claimsPage = 1;
 const claimsLimit = 20;
 let claimsTotalPages = 1;
@@ -542,6 +553,7 @@ function showSubmitClaimModal() {
     document.getElementById('claimItemsBody').innerHTML = '';
     document.getElementById('claimTotal').textContent = '0.00';
     addClaimItem();
+    renderClaimCustomFields(null);
     AccountsCommon.showFormPage('submitClaimModal');
 }
 
@@ -590,6 +602,10 @@ async function saveExpenseClaim() {
     if (!claimDate) { Toast.error('Claim date is required'); return; }
     if (!description) { Toast.error('Description is required'); return; }
 
+    // Block early if a required custom field is empty — avoids creating the claim then failing its values write.
+    const cfErr = AccountsCommon.validateRequiredCustomFields(claimCfController);
+    if (cfErr) { Toast.error(cfErr); return; }
+
     const rows = document.querySelectorAll('#claimItemsBody tr');
     if (!rows.length) { Toast.error('Add at least one expense item'); return; }
 
@@ -616,8 +632,13 @@ async function saveExpenseClaim() {
     const claimBtn = document.getElementById('saveExpenseClaimBtn');
     if (claimBtn) claimBtn.disabled = true;
     try {
-        await api.request(AccountsCommon.buildUrl('expenses/claims'), { method: 'POST', body: JSON.stringify(payload) });
+        const savedClaim = await api.request(AccountsCommon.buildUrl('expenses/claims'), { method: 'POST', body: JSON.stringify(payload) });
         Toast.success('Expense claim submitted');
+        // The document now exists — persist its custom-field values.
+        if (savedClaim?.id) {
+            try { await AccountsCommon.saveCustomFieldValues('expense_claim', savedClaim.id, claimCfController?.getValues?.() || {}); }
+            catch (e) { Toast.error(e.message || 'Some custom fields were not saved'); }
+        }
         AccountsCommon.hideFormPage('submitClaimModal');
         await loadExpenseClaims();
     } catch (err) {

@@ -31,6 +31,16 @@ const PAGE_SIZE = 50;
 // Dropdown instances
 let invoiceCustomerFilterDD = null;
 let invoiceProjectFilterDD = null;
+let invoiceCfController = null;   // custom-fields section controller for the open invoice form
+
+// Render the invoice's Custom Fields section (create → empty; edit → prefilled from stored values).
+async function renderInvoiceCustomFields(invoiceId) {
+    const host = document.getElementById('invoiceCustomFields');
+    if (!host) return;
+    const defs = await AccountsCommon.getCustomFieldDefs('customer_invoice');
+    const values = invoiceId ? await AccountsCommon.loadCustomFieldValues('customer_invoice', invoiceId) : {};
+    invoiceCfController = AccountsCommon.renderCustomFieldsSection(host, defs, values);
+}
 let paymentCustomerFilterDD = null;
 let cnCustomerFilterDD = null;
 let statementCustomerDD = null;
@@ -480,6 +490,7 @@ function showCreateInvoiceModal() {
     document.getElementById('invoiceLines').innerHTML = '';
     addInvoiceLine();
     calculateInvoiceTotals();
+    renderInvoiceCustomFields(null);
     AccountsCommon.showFormPage('customerInvoiceModal');
 }
 
@@ -514,6 +525,7 @@ async function editInvoice(id) {
             addInvoiceLine();
         }
         calculateInvoiceTotals();
+        await renderInvoiceCustomFields(inv.id);
 
         // GST law: an issued tax invoice (status != 'draft') CANNOT be
         // edited — would break GSTR-1 immutability and the customer's
@@ -826,6 +838,10 @@ async function saveInvoice(approve) {
     const form = document.getElementById('invoiceForm');
     if (!form.reportValidity()) return;
 
+    // Block early if a required custom field is empty — avoids creating the invoice then failing its values write.
+    const cfErr = AccountsCommon.validateRequiredCustomFields(invoiceCfController);
+    if (cfErr) { Toast.error(cfErr); return; }
+
     const lines = [];
     let lineError = null;
     document.querySelectorAll('#invoiceLines tr').forEach((row, idx) => {
@@ -921,6 +937,11 @@ async function saveInvoice(approve) {
             }
         } else {
             Toast.success(id ? 'Invoice updated' : 'Invoice saved as draft');
+        }
+        // The document now exists — persist its custom-field values.
+        if (savedInvoice?.id) {
+            try { await AccountsCommon.saveCustomFieldValues('customer_invoice', savedInvoice.id, invoiceCfController?.getValues?.() || {}); }
+            catch (e) { Toast.error(e.message || 'Some custom fields were not saved'); }
         }
         AccountsCommon.hideFormPage('customerInvoiceModal');
         // The invoice's lines changed — drop the cached project breakdown so the Project filter and the

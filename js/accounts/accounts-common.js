@@ -421,6 +421,115 @@ const AccountsCommon = {
         window.scrollTo(0, 0);
     },
 
+    // ── Custom fields (Zoho-style) ───────────────────────────────────────────────────────────────
+    // Definitions are per (entity_type); values are stored per document via their own endpoints, so the
+    // document create/read paths are untouched. field_key is always a safe slug (^[a-z][a-z0-9_]*$),
+    // so it's safe in attribute selectors without escaping.
+
+    /** Active field definitions for an entity type (cached per type). */
+    async getCustomFieldDefs(entityType, { force = false } = {}) {
+        this._cfDefs = this._cfDefs || {};
+        if (!force && this._cfDefs[entityType]) return this._cfDefs[entityType];
+        const res = await api.request(this.buildUrl('custom-fields', { entityType }), { _skipSpinner: true }).catch(() => []);
+        const defs = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        this._cfDefs[entityType] = defs;
+        return defs;
+    },
+    invalidateCustomFieldDefs(entityType) {
+        if (!this._cfDefs) return;
+        if (entityType) delete this._cfDefs[entityType]; else this._cfDefs = {};
+    },
+
+    /** The stored custom-field values for one document → { field_key: value } ({} if none/new). */
+    async loadCustomFieldValues(entityType, entityId) {
+        if (!entityId) return {};
+        const res = await api.request(this.buildUrl('custom-fields/values', { entityType, entityId }), { _skipSpinner: true }).catch(() => null);
+        return res?.field_values || {};
+    },
+
+    /** Persist a document's custom-field values (call AFTER the document exists / has an id). */
+    saveCustomFieldValues(entityType, entityId, values) {
+        return api.request(this.buildUrl('custom-fields/values'), {
+            method: 'PUT',
+            body: JSON.stringify({ entity_type: entityType, entity_id: entityId, field_values: values || {} }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+    },
+
+    /**
+     * Render a "Custom Fields" section card into hostEl from defs + values. Returns a controller with
+     * getValues() → { field_key: value }. Empty defs clears the host and returns a no-op controller.
+     */
+    renderCustomFieldsSection(hostEl, defs, values = {}) {
+        const host = typeof hostEl === 'string' ? document.getElementById(hostEl) : hostEl;
+        const noop = { getValues: () => ({}), defs: defs || [] };
+        if (!host) return noop;
+        if (!defs || !defs.length) { host.innerHTML = ''; return noop; }
+        const v = (x) => this.escapeHtml(x == null ? '' : String(x));
+        const dropdowns = {};
+
+        const cells = defs.map(d => {
+            const req = d.is_required ? ' <span class="req">*</span>' : ' <span class="opt">(optional)</span>';
+            const wide = d.field_type === 'textarea' ? ' pf-wide' : '';
+            const val = values[d.field_key];
+            let control;
+            if (d.field_type === 'textarea')
+                control = `<textarea class="form-control" data-cf="${v(d.field_key)}" rows="2">${v(val)}</textarea>`;
+            else if (d.field_type === 'number')
+                control = `<input type="number" step="any" class="form-control" data-cf="${v(d.field_key)}" value="${v(val)}">`;
+            else if (d.field_type === 'date')
+                control = `<input type="date" class="form-control" data-cf="${v(d.field_key)}" value="${v(val)}">`;
+            else if (d.field_type === 'dropdown')
+                control = `<div class="searchable-dropdown-container" data-cf-dd="${v(d.field_key)}"></div><input type="hidden" data-cf="${v(d.field_key)}" value="${v(val)}">`;
+            else
+                control = `<input type="text" class="form-control" data-cf="${v(d.field_key)}" value="${v(val)}">`;
+            return `<div class="form-group${wide}"><label>${v(d.label)}${req}</label>${control}</div>`;
+        }).join('');
+
+        host.innerHTML = `<div class="form-section">
+            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg> Custom Fields</div>
+            <div class="pgrid">${cells}</div>
+        </div>`;
+
+        if (typeof SearchableDropdown !== 'undefined') {
+            defs.filter(d => d.field_type === 'dropdown').forEach(d => {
+                const cont = host.querySelector(`[data-cf-dd="${d.field_key}"]`);
+                const hidden = host.querySelector(`input[type=hidden][data-cf="${d.field_key}"]`);
+                if (!cont) return;
+                const opts = [{ value: '', label: '— Select —' }].concat((d.options || []).map(o => ({ value: o, label: o })));
+                dropdowns[d.field_key] = new SearchableDropdown(cont, {
+                    options: opts, value: values[d.field_key] ?? '', placeholder: 'Select…',
+                    searchPlaceholder: 'Search…', onChange: (val) => { if (hidden) hidden.value = val || ''; }
+                });
+            });
+        }
+
+        return {
+            defs,
+            getValues() {
+                const out = {};
+                defs.forEach(d => {
+                    let val;
+                    if (dropdowns[d.field_key]) val = dropdowns[d.field_key].getValue?.() ?? '';
+                    else { const el = host.querySelector(`[data-cf="${d.field_key}"]`); val = el ? el.value : ''; }
+                    if (val !== '' && val != null) out[d.field_key] = val;
+                });
+                return out;
+            }
+        };
+    },
+
+    /** Client-side required check so we don't create a document then fail its values write. Returns error msg or null. */
+    validateRequiredCustomFields(controller) {
+        if (!controller || !controller.defs) return null;
+        const vals = controller.getValues();
+        for (const d of controller.defs) {
+            if (d.is_required && (vals[d.field_key] == null || vals[d.field_key] === ''))
+                return `${d.label} is required`;
+        }
+        return null;
+    },
+
     // ── India GST state codes (canonical, current jurisdictions) ─────────────────────────────────
     // The 2-digit code is the place-of-supply signal that drives CGST+SGST (intra-state) vs IGST
     // (inter-state). Kept here so nobody has to memorise "Delhi = 07". Sorted by name for the picker.

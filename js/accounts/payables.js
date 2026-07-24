@@ -27,6 +27,16 @@ let stmtVendorDropdown = null;
 let dnVendorFilterDropdown = null;
 let dnVendorDropdown = null;
 let dnBillDropdown = null;
+let billCfController = null;   // custom-fields section controller for the open vendor-bill form
+
+// Render the bill's Custom Fields section (create → empty; edit → prefilled from stored values).
+async function renderBillCustomFields(billId) {
+    const host = document.getElementById('billCustomFields');
+    if (!host) return;
+    const defs = await AccountsCommon.getCustomFieldDefs('vendor_bill');
+    const values = billId ? await AccountsCommon.loadCustomFieldValues('vendor_bill', billId) : {};
+    billCfController = AccountsCommon.renderCustomFieldsSection(host, defs, values);
+}
 let debitNotes = [];
 let dnPage = 1;
 
@@ -225,6 +235,7 @@ function showCreateBillModal() {
     clearBillLines();
     addBillLine();
     setBillModalMode('create');
+    renderBillCustomFields(null);
     AccountsCommon.showFormPage('vendorBillModal');
 }
 
@@ -338,6 +349,7 @@ async function loadBillIntoModal(id, mode) {
             addBillLine();
         }
         calculateBillTotals();
+        await renderBillCustomFields(bill.id);
         setBillModalMode(effectiveMode, bill);
         AccountsCommon.showFormPage('vendorBillModal');
     } catch (err) {
@@ -671,6 +683,10 @@ async function saveBill(approve = false) {
     const form = document.getElementById('billForm');
     if (form && !form.reportValidity()) return;
 
+    // Block early if a required custom field is empty — avoids creating the bill then failing its values write.
+    const cfErr = AccountsCommon.validateRequiredCustomFields(billCfController);
+    if (cfErr) { Toast.error(cfErr); return; }
+
     const id = document.getElementById('billId').value;
     const vendorId = document.getElementById('billVendor').value;
     const billDate = document.getElementById('billDate').value;
@@ -777,6 +793,11 @@ async function saveBill(approve = false) {
             }
         } else {
             Toast.success(id ? 'Bill updated' : 'Bill saved as draft');
+        }
+        // The document now exists — persist its custom-field values.
+        if (savedBill?.id) {
+            try { await AccountsCommon.saveCustomFieldValues('vendor_bill', savedBill.id, billCfController?.getValues?.() || {}); }
+            catch (e) { Toast.error(e.message || 'Some custom fields were not saved'); }
         }
         AccountsCommon.hideFormPage('vendorBillModal');
         await loadVendorBills();
