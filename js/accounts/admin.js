@@ -440,7 +440,7 @@ function renderAuditLogs() {
             : 'status-pending';
 
         return `<tr>
-            <td>${AccountsCommon.formatDate(l.timestamp || l.created_at, true)}</td>
+            <td>${AccountsCommon.formatDateTime(l.timestamp || l.created_at)}</td>
             <td>${AccountsCommon.escapeHtml(l.entity_type || '-')}</td>
             <td><span class="badge ${actionBadge}">${AccountsCommon.escapeHtml(l.action || '-')}</span></td>
             <td>${AccountsCommon.escapeHtml(l.performed_by_name || l.user_name || (l.performed_by === 'system' ? 'System' : l.performed_by ? l.performed_by.substring(0, 8) + '...' : '-'))}</td>
@@ -499,7 +499,7 @@ function viewAuditLogDetail(index) {
     let body = SlidePanel.createHeaderCard({
         avatar: { initials: escapeHtml(formatType(l.entity_type)?.[0] || 'A') },
         title: escapeHtml(formatType(l.entity_type)),
-        subtitle: AccountsCommon.formatDate(l.timestamp || l.created_at, true),
+        subtitle: AccountsCommon.formatDateTime(l.timestamp || l.created_at),
         badges: [{ text: escapeHtml(l.action || '-'), class: actionBadge }]
     });
 
@@ -515,7 +515,7 @@ function viewAuditLogDetail(index) {
             { label: 'Reference', value: entityDisplay },
             { label: 'Performed By', value: escapeHtml(l.performed_by_name || l.user_name || (l.performed_by === 'system' ? 'System' : l.performed_by || '-')) },
             { label: 'IP Address', value: escapeHtml(l.ip_address || '-') },
-            { label: 'Timestamp', value: AccountsCommon.formatDate(l.timestamp || l.created_at, true) }
+            { label: 'Timestamp', value: AccountsCommon.formatDateTime(l.timestamp || l.created_at) }
         ]
     });
 
@@ -608,7 +608,7 @@ async function viewEntityAudit(entityType, entityId) {
                     return `
                     <div class="audit-timeline-item" style="display: flex; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border-primary);">
                         <div style="min-width: 120px; color: var(--text-secondary); font-size: 0.8rem;">
-                            ${AccountsCommon.formatDate(l.timestamp || l.created_at, true)}
+                            ${AccountsCommon.formatDateTime(l.timestamp || l.created_at)}
                         </div>
                         <div style="flex: 1; min-width: 0;">
                             <span class="badge ${badgeClass}">${AccountsCommon.escapeHtml(l.action || '-')}</span>
@@ -1026,7 +1026,7 @@ async function loadIntegrityCheckResults() {
                     const label = integrityCheckLabel(c);
                     const details = formatIntegrityDetails(c);
                     return `<tr>
-                        <td>${AccountsCommon.formatDate(r.checked_at || r.run_date || r.timestamp || r.created_at, true)}</td>
+                        <td>${AccountsCommon.formatDateTime(r.checked_at || r.run_date || r.timestamp || r.created_at)}</td>
                         <td>${AccountsCommon.escapeHtml(label)}</td>
                         <td><span class="badge ${passed ? 'status-active' : 'status-rejected'}">${passed ? 'PASS' : 'FAIL'}</span></td>
                         <td>${AccountsCommon.escapeHtml(details)}</td>
@@ -1113,7 +1113,7 @@ function renderJobLogs() {
     const formatType = (type) => (type || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
     tbody.innerHTML = jobLogs.map((j, i) => `<tr>
-            <td>${AccountsCommon.formatDate(j.timestamp || j.created_at, true)}</td>
+            <td>${AccountsCommon.formatDateTime(j.timestamp || j.created_at)}</td>
             <td>${AccountsCommon.escapeHtml(formatType(j.entity_type || j.job_type || '-'))}</td>
             <td><span class="badge ${actionBadge(j.action || j.status)}">${AccountsCommon.escapeHtml(j.action || j.status || '-')}</span></td>
             <td>${AccountsCommon.escapeHtml(j.performed_by_name || j.performed_by?.substring(0, 8) || '-')}</td>
@@ -1161,7 +1161,7 @@ function viewJobLogDetail(index) {
     let body = SlidePanel.createHeaderCard({
         avatar: { initials: escapeHtml(formatType(j.entity_type)?.[0] || 'J') },
         title: escapeHtml(formatType(j.entity_type)),
-        subtitle: AccountsCommon.formatDate(j.created_at || j.timestamp, true),
+        subtitle: AccountsCommon.formatDateTime(j.created_at || j.timestamp),
         badges: [{ text: escapeHtml(j.action || j.status || '-'), class: actionBadge(j.action || j.status) }]
     });
 
@@ -1177,7 +1177,7 @@ function viewJobLogDetail(index) {
             { label: 'Entity Type', value: escapeHtml(formatType(j.entity_type || j.job_type)) },
             { label: 'Reference', value: entityDisplay },
             { label: 'Performed By', value: escapeHtml(j.performed_by_name || j.performed_by || '-') },
-            { label: 'Timestamp', value: AccountsCommon.formatDate(j.created_at || j.timestamp, true) }
+            { label: 'Timestamp', value: AccountsCommon.formatDateTime(j.created_at || j.timestamp) }
         ]
     });
 

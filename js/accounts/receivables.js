@@ -310,7 +310,7 @@ async function sendInvoiceReminder(invoiceId, invoiceNumber) {
         if (res && res.success === false) {
             Toast.warning(res.message || 'Reminder was recorded but the email could not be delivered.');
         } else {
-            const sentAt = res?.sent_at ? AccountsCommon.formatDate(res.sent_at, true) : 'now';
+            const sentAt = res?.sent_at ? AccountsCommon.formatDateTime(res.sent_at) : 'now';
             Toast.success(`Reminder sent at ${sentAt}`);
         }
     } catch (err) {
@@ -579,7 +579,9 @@ function addInvoiceLine(data = {}) {
         { value: '', label: 'No tax (0%)' },
         ...taxConfigs.map(t => ({ value: t.id, label: `${t.name || t.tax_type || 'Tax'} (${_invoiceTaxRateFor(t.id)}%)` }))
     ];
-    const initialTaxId = data.tax_config_id !== undefined ? (data.tax_config_id || '') : _invoiceDefaultTaxConfigId();
+    // A new line defaults to No-tax when the customer is a zero-rated export (else GST 18%), so the preview
+    // never overstates an export total; an edited line keeps its persisted tax_config_id.
+    const initialTaxId = data.tax_config_id !== undefined ? (data.tax_config_id || '') : (_invoiceCustomerIsZeroRated() ? '' : _invoiceDefaultTaxConfigId());
     const taxDd = new SearchableDropdown(row.querySelector('.line-tax-sd'), {
         id: `inv-line-tax-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         options: taxOptions,
@@ -615,16 +617,26 @@ function invoiceProjectOptions() {
     return opts;
 }
 
-/** On customer change: re-scope project dropdowns AND flag a zero-rated export for an overseas customer. */
+/** True when the selected invoice customer is an overseas (zero-rated export) party. */
+function _invoiceCustomerIsZeroRated() {
+    const custId = document.getElementById('invoiceCustomerId')?.value;
+    return customers.find(c => c.id === custId)?.gst_treatment === 'overseas';
+}
+
+/** On customer change: re-scope project dropdowns AND, for a zero-rated export, force every line to
+ *  "No tax" and recalc so the preview total matches what the backend actually posts (no GST). */
 function onInvoiceCustomerChange() {
     refreshLineProjectDropdowns();
+    const zeroRated = _invoiceCustomerIsZeroRated();
+    if (zeroRated) {
+        document.querySelectorAll('#invoiceLines tr').forEach(row => row._lineTaxDropdown?.setValue?.(''));
+        calculateInvoiceTotals();
+    }
     const banner = document.getElementById('invoiceTreatmentBanner');
     if (!banner) return;
-    const custId = document.getElementById('invoiceCustomerId')?.value;
-    const cust = customers.find(c => c.id === custId);
-    if (cust && cust.gst_treatment === 'overseas') {
+    if (zeroRated) {
         banner.style.display = '';
-        banner.innerHTML = '🌐 <strong>Overseas customer</strong> — this is a zero-rated export. No GST is applied on approval, whatever tax option a line shows. Set lines to “No tax” so the preview matches.';
+        banner.innerHTML = '🌐 <strong>Overseas customer</strong> — this is a zero-rated export. No GST is applied on approval; every line has been set to “No tax” so the preview matches the posted amount.';
     } else {
         banner.style.display = 'none';
     }

@@ -24,6 +24,7 @@ let reconStartInFlight = false;
 let transferInFlight = false;   // double-submit guard for executeTransfer
 let bankTxnInFlight = false;    // double-submit guard for saveBankTransaction
 let matchInFlight = false;      // double-submit guard for matchSelectedTransactions
+let bankAccountSaveInFlight = false;  // double-submit guard for saveBankAccount
 // Matched rows are spliced out of reconTransactions after each PUT, so keep a
 // running count for the Complete Reconciliation summary (the transaction model
 // has no is_matched field).
@@ -118,10 +119,15 @@ async function loadBankDashboard() {
         if (!container) return;
 
         const fmt = AccountsCommon.formatCurrency;
-        const totalBalance = dashboard.total_balance ?? dashboard.totalBalance;
-        const accountCount = dashboard.account_count ?? dashboard.accountCount ?? bankAccountsList.length;
-        const totalDeposits = dashboard.total_deposits ?? dashboard.totalDeposits;
-        const totalWithdrawals = dashboard.total_withdrawals ?? dashboard.totalWithdrawals;
+        // Backend BankDashboardSummary emits total_bank_balance, total_cash_balance and accounts[]
+        // (there is NO total_balance / account_count / deposits / withdrawals field). Reading the old
+        // names left every stat card blank except a fallback account count.
+        const bankBalance = dashboard.total_bank_balance;
+        const cashBalance = dashboard.total_cash_balance;
+        const totalBalance = (bankBalance != null || cashBalance != null)
+            ? (Number(bankBalance) || 0) + (Number(cashBalance) || 0)
+            : null;
+        const accountCount = dashboard.accounts?.length ?? bankAccountsList.length;
 
         let statsHtml = '';
         if (totalBalance != null) {
@@ -130,11 +136,11 @@ async function loadBankDashboard() {
         if (accountCount != null) {
             statsHtml += `<div class="stat-card"><div class="stat-value">${accountCount}</div><div class="stat-label">Accounts</div></div>`;
         }
-        if (totalDeposits != null) {
-            statsHtml += `<div class="stat-card"><div class="stat-value">${fmt(totalDeposits)}</div><div class="stat-label">Total Deposits</div></div>`;
+        if (bankBalance != null) {
+            statsHtml += `<div class="stat-card"><div class="stat-value">${fmt(bankBalance)}</div><div class="stat-label">Bank Balance</div></div>`;
         }
-        if (totalWithdrawals != null) {
-            statsHtml += `<div class="stat-card"><div class="stat-value">${fmt(totalWithdrawals)}</div><div class="stat-label">Total Withdrawals</div></div>`;
+        if (cashBalance != null) {
+            statsHtml += `<div class="stat-card"><div class="stat-value">${fmt(cashBalance)}</div><div class="stat-label">Cash Balance</div></div>`;
         }
 
         if (statsHtml) {
@@ -356,6 +362,9 @@ async function saveBankAccount() {
         return;
     }
 
+    if (bankAccountSaveInFlight) return;
+    bankAccountSaveInFlight = true;
+
     const payload = {
         account_name: accountName,
         bank_name: bankName,
@@ -382,6 +391,8 @@ async function saveBankAccount() {
     } catch (err) {
         console.error('[Banking] saveBankAccount error:', err);
         Toast.error(err.message || 'Failed to save bank account');
+    } finally {
+        bankAccountSaveInFlight = false;
     }
 }
 

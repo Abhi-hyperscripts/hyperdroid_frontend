@@ -254,7 +254,7 @@ function openDetailPanel(item, type) {
             </div>
             <div class="panel-detail-grid">
                 <div class="panel-detail-row"><span class="panel-detail-label">Address Line 1</span><span class="panel-detail-value">${esc(item.address_line1 || item.billing_address_line1 || '-')}</span></div>
-                <div class="panel-detail-row"><span class="panel-detail-label">Address Line 2</span><span class="panel-detail-value">${esc(item.address_line2 || '-')}</span></div>
+                <div class="panel-detail-row"><span class="panel-detail-label">Address Line 2</span><span class="panel-detail-value">${esc(item.address_line2 || item.billing_address_line2 || '-')}</span></div>
                 <div class="panel-detail-row"><span class="panel-detail-label">City</span><span class="panel-detail-value">${esc(item.city || '-')}</span></div>
                 <div class="panel-detail-row"><span class="panel-detail-label">State</span><span class="panel-detail-value">${esc(item.state || '-')}${item.state_code ? ' (' + esc(item.state_code) + ')' : ''}</span></div>
                 <div class="panel-detail-row"><span class="panel-detail-label">Country</span><span class="panel-detail-value">${esc(item.country || '-')}</span></div>

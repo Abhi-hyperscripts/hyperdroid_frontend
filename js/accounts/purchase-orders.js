@@ -227,7 +227,7 @@ function poActions(po) {
 
     // View + PDF are always available
     let html = `<button class="btn-icon" data-tooltip="View" onclick="viewPO('${po.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
-    html += ` <button class="btn-icon" data-tooltip="Download PDF" onclick="downloadPoPdf('${po.id}', '${(po.po_number||'').replace(/'/g,'')}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
+    html += ` <button class="btn-icon" data-tooltip="Download PDF" onclick="downloadPoPdf('${po.id}', '${AccountsCommon.escapeHtml(AccountsCommon.escJs(po.po_number || ''))}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
 
     // Mutating actions require admin (MANAGE_VENDORS)
     if (!accountsRoles.isAdmin()) {
@@ -364,6 +364,12 @@ function showCreatePOModal() {
     document.getElementById('poModalTitle').textContent = 'Create Purchase Order';
     document.getElementById('poForm').reset();
     document.getElementById('poId').value = '';
+    // form.reset() clears poVendorId.value but does NOT notify the SearchableDropdown, so after an
+    // edit the SD label would still show the previously-edited vendor while the hidden value is ''
+    // (savePO then falsely rejects with "Please select a vendor"). Dispatch change to re-sync the label.
+    const poVendorSel = document.getElementById('poVendorId');
+    poVendorSel.value = '';
+    poVendorSel.dispatchEvent(new Event('change'));
     document.getElementById('poCurrency').value = 'INR';
     document.getElementById('poLines').innerHTML = '';
     addPOLine();
@@ -720,7 +726,7 @@ async function savePO() {
     const payload = {
         vendor_id: document.getElementById('poVendorId').value,
         po_date: document.getElementById('poDate').value,
-        expected_date: document.getElementById('poExpectedDate').value,
+        expected_date: document.getElementById('poExpectedDate').value || null, // blank "" can't bind to backend DateTime? (JsonException -> 400); send null
         currency: document.getElementById('poCurrency').value || 'INR',
         notes: document.getElementById('poNotes').value,
         lines

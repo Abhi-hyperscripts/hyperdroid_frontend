@@ -703,7 +703,7 @@ async function loadJournalEntries() {
         const url = AccountsCommon.buildUrl('journals/entries', params);
         const res = await api.request(url, { _skipSpinner: true });
         const entries = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        const total = res?.total ?? entries.length;
+        const total = res?.total ?? res?.totalCount ?? entries.length;
         const totalPages = Math.ceil(total / GL_PAGE_SIZE) || 1;
         if (journalPage > totalPages) { journalPage = totalPages; return loadJournalEntries(); }
         renderJournalEntriesTable(entries);

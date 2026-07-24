@@ -358,19 +358,31 @@ function populateBillVendorSelect(selectedId) {
     onBillVendorChange();
 }
 
-/** Flag when the selected vendor charges no GST (unregistered / composition / overseas → no input tax credit). */
+/** True when the selected bill vendor charges no GST (unregistered / composition / overseas → no ITC). */
+function _billVendorIsExempt() {
+    const vid = document.getElementById('billVendor')?.value;
+    const t = vendors.find(x => x.id === vid)?.gst_treatment;
+    return !!(t && t !== 'registered');
+}
+
+/** Flag when the selected vendor charges no GST AND force lines to "No tax" + recalc, so the preview total
+ *  matches what the backend posts (no input tax credit is recognised for an exempt vendor). */
 function onBillVendorChange() {
+    const exempt = _billVendorIsExempt();
+    if (exempt) {
+        document.querySelectorAll('#billLinesBody tr').forEach(row => row._lineTaxDropdown?.setValue?.(''));
+        calculateBillTotals();
+    }
     const banner = document.getElementById('billTreatmentBanner');
     if (!banner) return;
     const vid = document.getElementById('billVendor')?.value;
-    const v = vendors.find(x => x.id === vid);
-    const t = v?.gst_treatment;
-    if (v && t && t !== 'registered') {
+    const t = vendors.find(x => x.id === vid)?.gst_treatment;
+    if (exempt) {
         const label = t === 'overseas'
             ? 'Overseas vendor — the bill carries no Indian GST (import IGST is paid separately at customs).'
             : (t === 'composition' ? 'Composition vendor — issues a bill of supply.' : 'Unregistered vendor.');
         banner.style.display = '';
-        banner.innerHTML = '🚫 <strong>No input GST</strong> — ' + label + ' No input tax credit is recognised; lines post at their net amount on approval.';
+        banner.innerHTML = '🚫 <strong>No input GST</strong> — ' + label + ' No input tax credit is recognised; every line has been set to “No tax” and the preview posts at the net amount.';
     } else {
         banner.style.display = 'none';
     }
@@ -455,7 +467,9 @@ function addBillLine(data) {
         { value: '', label: 'No tax (0%)' },
         ...taxConfigs.map(t => ({ value: t.id, label: `${t.name || t.tax_type || 'Tax'} (${_billTaxRateFor(t.id)}%)` }))
     ];
-    const initialTaxId = data?.tax_config_id !== undefined ? (data.tax_config_id || '') : _billDefaultTaxConfigId();
+    // A new line defaults to No-tax when the vendor is GST-exempt (else GST 18%), so the preview never
+    // overstates a no-ITC bill; an edited line keeps its persisted tax_config_id.
+    const initialTaxId = data?.tax_config_id !== undefined ? (data.tax_config_id || '') : (_billVendorIsExempt() ? '' : _billDefaultTaxConfigId());
     const taxDd = new SearchableDropdown(row.querySelector('.line-tax-sd'), {
         id: `bill-line-tax-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         options: taxOptions,
@@ -652,6 +666,11 @@ function calculateBillTotals() {
 // ============================================================================
 
 async function saveBill(approve = false) {
+    // Enforce native input constraints (line qty/rate min="0") like saveInvoice does — without this a
+    // negative quantity/rate reaches the backend and bounces with a raw 400 instead of a friendly hint.
+    const form = document.getElementById('billForm');
+    if (form && !form.reportValidity()) return;
+
     const id = document.getElementById('billId').value;
     const vendorId = document.getElementById('billVendor').value;
     const billDate = document.getElementById('billDate').value;

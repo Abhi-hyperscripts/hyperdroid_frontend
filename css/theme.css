@@ -40,6 +40,11 @@
   --color-danger-light: #fee2e2;
   --color-danger-dark: #dc2626;
   --color-danger-text: #991b1b;
+  /* Alias: many screens (reports/budgets/banking/loans/issues panels) use --color-error for the danger
+     signal, but it was never defined — an undefined var() with no fallback resolves to the inherited text
+     colour, so loss/over-budget/unfavourable figures rendered black instead of red. Alias it to danger. */
+  --color-error: var(--color-danger);
+  --color-error-rgb: 239, 68, 68;
 
   --color-warning: #f59e0b;
   --color-warning-light: #fef3c7;

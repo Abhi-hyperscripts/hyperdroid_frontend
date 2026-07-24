@@ -708,6 +708,10 @@ async function recordUsage() {
         Toast.error('Meter, Customer, and Quantity are required');
         return;
     }
+    if (quantity <= 0) {
+        Toast.error('Quantity must be greater than zero');
+        return;
+    }
 
     const usagePayload = { meter_code: usageMeters.find(m => m.id === meter_id)?.meter_code || meter_id, customer_id: customer, quantity };
     if (date) usagePayload.usage_date = date;

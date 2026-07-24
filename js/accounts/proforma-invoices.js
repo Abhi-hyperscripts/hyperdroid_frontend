@@ -134,28 +134,47 @@ function initDropdowns() {
 // ============================================================================
 
 async function loadProformaInvoices() {
-    const params = { limit: PAGE_SIZE, offset: (proformaPage - 1) * PAGE_SIZE };
     const customerId = proformaCustomerFilterDD?.getValue?.();
     const status = document.getElementById('proformaStatusFilter')?.value;
     const dateFrom = document.getElementById('proformaDateFrom')?.value;
     const dateTo = document.getElementById('proformaDateTo')?.value;
     const search = document.getElementById('proformaSearch')?.value?.trim();
+    const searching = !!search;
 
+    // The backend proforma-invoices list has NO `search` param (it only binds customerId/status/dates/
+    // limit/offset). When searching, fetch a broad page and filter + paginate client-side (mirrors
+    // receivables.js) so the box actually filters instead of silently returning the full list.
+    const params = searching
+        ? { limit: 1000, offset: 0 }
+        : { limit: PAGE_SIZE, offset: (proformaPage - 1) * PAGE_SIZE };
     if (customerId) params.customerId = customerId;
     if (status) params.status = status;
     if (dateFrom) params.fromDate = dateFrom;
     if (dateTo) params.toDate = dateTo;
-    if (search) params.search = search;
 
     try {
         const res = await api.request(AccountsCommon.buildUrl('proforma-invoices', params));
-        const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        let items = Array.isArray(res) ? res : (res?.data || res?.items || []);
         proformaInvoices = items;  // cache for row action handlers
-        // Backend total is the FILTERED count — ?? (not ||) so a legitimate 0 sticks
-        const total = res?.total ?? items.length;
-        const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-        // Clamp if actioning the last row on a page left us past the end (else an empty "No … found").
-        if (proformaPage > totalPages) { proformaPage = totalPages; return loadProformaInvoices(); }
+
+        let total, totalPages;
+        if (searching) {
+            const q = search.toLowerCase();
+            const filtered = items.filter(pi => {
+                const custName = pi.customer_name || customers.find(c => c.id === pi.customer_id)?.name || '';
+                return `${pi.proforma_number || ''} ${custName}`.toLowerCase().includes(q);
+            });
+            total = filtered.length;
+            totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+            if (proformaPage > totalPages) proformaPage = totalPages;
+            items = filtered.slice((proformaPage - 1) * PAGE_SIZE, proformaPage * PAGE_SIZE);
+        } else {
+            // Backend total is the FILTERED count — ?? (not ||) so a legitimate 0 sticks
+            total = res?.total ?? items.length;
+            totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+            // Clamp if actioning the last row on a page left us past the end (else an empty "No … found").
+            if (proformaPage > totalPages) { proformaPage = totalPages; return loadProformaInvoices(); }
+        }
 
         // Stats — prefer backend stats, fallback to client-side
         const stats = res?.stats || {};
@@ -331,6 +350,12 @@ function showCreateProformaModal() {
     document.getElementById('proformaModalTitle').textContent = 'Create Proforma Invoice';
     document.getElementById('proformaForm').reset();
     document.getElementById('proformaId').value = '';
+    // form.reset() clears the value but doesn't notify the SearchableDropdown, so after an edit the SD
+    // label would still show the previous customer while the hidden value is '' (saveProforma then
+    // falsely rejects with "Please select a customer"). Dispatch change to re-sync the label.
+    const proformaCustSel = document.getElementById('proformaCustomerId');
+    proformaCustSel.value = '';
+    proformaCustSel.dispatchEvent(new Event('change'));
     document.getElementById('proformaLines').innerHTML = '';
     addProformaLine();
     calculateProformaTotals();

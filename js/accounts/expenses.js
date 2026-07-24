@@ -23,6 +23,8 @@ let policyCategoryDropdown = null;
 let reimburseBankDropdown = null;
 let reimburseInFlight = false;  // double-submit guard for reimburseClaim (posts a bank payment + GL)
 let claimSaveInFlight = false;  // double-submit guard for saveExpenseClaim
+let categorySaveInFlight = false;  // double-submit guard for saveExpenseCategory
+let policySaveInFlight = false;    // double-submit guard for saveExpensePolicy
 
 // Pagination
 let claimsPage = 1;
@@ -233,6 +235,9 @@ async function saveExpenseCategory() {
     const name = document.getElementById('categoryName').value.trim();
     if (!name) { Toast.error('Category name is required'); return; }
 
+    if (categorySaveInFlight) return;
+    categorySaveInFlight = true;
+
     const payload = {
         name,
         description: document.getElementById('categoryDescription').value.trim() || null,
@@ -252,6 +257,8 @@ async function saveExpenseCategory() {
     } catch (err) {
         console.error('[Expenses] saveExpenseCategory error:', err);
         Toast.error(err.message || 'Failed to save category');
+    } finally {
+        categorySaveInFlight = false;
     }
 }
 
@@ -382,6 +389,9 @@ async function saveExpensePolicy() {
     const name = document.getElementById('policyName').value.trim();
     if (!name) { Toast.error('Policy name is required'); return; }
 
+    if (policySaveInFlight) return;
+    policySaveInFlight = true;
+
     const maxVal = document.getElementById('policyMaxAmount').value;
     const receiptVal = document.getElementById('policyReceiptAbove').value;
 
@@ -407,6 +417,8 @@ async function saveExpensePolicy() {
     } catch (err) {
         console.error('[Expenses] saveExpensePolicy error:', err);
         Toast.error(err.message || 'Failed to save policy');
+    } finally {
+        policySaveInFlight = false;
     }
 }
 
@@ -447,8 +459,12 @@ async function loadExpenseClaims() {
             if (claimsPage > claimsTotalPages) claimsPage = claimsTotalPages;
             expenseClaims = filtered.slice((claimsPage - 1) * claimsLimit, claimsPage * claimsLimit);
         } else {
-            const total = res?.total || res?.totalCount || all.length;
+            const total = res?.total ?? res?.totalCount ?? all.length;
             claimsTotalPages = Math.max(1, Math.ceil(total / claimsLimit));
+            // Clamp-and-refetch like every sibling list (ledger/PO/proforma/banking): actioning the last
+            // rows on the last page (reimburse/approve → count drops) can leave claimsPage past the end,
+            // which requests an empty offset and strands the user on a "No claims found" page.
+            if (claimsPage > claimsTotalPages) { claimsPage = claimsTotalPages; return loadExpenseClaims(); }
             expenseClaims = all;
         }
         renderClaimsTable();

@@ -238,12 +238,18 @@ const SearchableDropdown = (function() {
                 this.optionsEl.addEventListener('scroll', () => this.handleVirtualScroll());
             }
 
-            // Close on outside click
-            document.addEventListener('click', (e) => {
+            // Close on outside click. bindEvents() re-runs on every render()/refreshOptions(); the trigger/
+            // search/options listeners live on freshly-rebuilt DOM (GC'd with the old innerHTML), but this one
+            // is on the persistent `document`. Track it and remove the prior handler before re-adding, else
+            // each refresh (quick-add refreshes every line dropdown) permanently stacks another document
+            // listener → unbounded memory + per-click CPU growth within a session.
+            if (this._docClickHandler) document.removeEventListener('click', this._docClickHandler);
+            this._docClickHandler = (e) => {
                 if (this.isOpen && !this.container.contains(e.target)) {
                     this.close();
                 }
-            });
+            };
+            document.addEventListener('click', this._docClickHandler);
         }
 
         handleKeydown(e) {
@@ -662,6 +668,10 @@ const SearchableDropdown = (function() {
 
         destroy() {
             instances.delete(this.id);
+            // Tear down the persistent listeners this instance attached outside its own container, so a
+            // destroyed dropdown leaves nothing behind on document/window.
+            if (this._docClickHandler) { document.removeEventListener('click', this._docClickHandler); this._docClickHandler = null; }
+            this._detachReposition();
             // Restore the original select element visibility
             if (this.linkedSelect) {
                 this.linkedSelect.style.display = '';

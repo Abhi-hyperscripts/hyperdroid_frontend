@@ -161,7 +161,7 @@ function editCategory(id) {
     if (methodSel._searchableDropdown) methodSel._searchableDropdown.setValue(cat.depreciation_method || '');
     document.getElementById('categoryUsefulLife').value = cat.useful_life_years ?? '';
     document.getElementById('categoryRate').value = cat.depreciation_rate ?? '';
-    populateCategoryAccountSelects(cat.asset_account_id || cat.gl_account_id, cat.depreciation_account_id || cat.depreciation_expense_account_id);
+    populateCategoryAccountSelects(cat.asset_account_id || cat.gl_account_id, cat.depreciation_account_id || cat.depreciation_expense_account_id, cat.accumulated_dep_account_id);
     AccountsCommon.openModal('assetCategoryModal');
 }
 
@@ -173,13 +173,16 @@ async function saveCategory() {
     const depreciation_rate = document.getElementById('categoryRate').value ? parseFloat(document.getElementById('categoryRate').value) : null;
     const gl_account_id = document.getElementById('categoryGlAccount').value || null;
     const depreciation_expense_account_id = document.getElementById('categoryDepAccount').value || null;
+    const accumulated_dep_account_id = document.getElementById('categoryAccumDep')?.value || null;
 
     if (!name || !depreciation_method || isNaN(useful_life_years)) {
         Toast.error('Name, Depreciation Method, and Useful Life are required');
         return;
     }
 
-    const payload = { name, depreciation_method, useful_life_years, depreciation_rate, asset_account_id: gl_account_id, depreciation_account_id: depreciation_expense_account_id };
+    // Include accumulated_dep_account_id — UpdateAssetCategory does a full-record replace, so omitting it
+    // on edit silently blanks a previously-set accumulated-depreciation account.
+    const payload = { name, depreciation_method, useful_life_years, depreciation_rate, asset_account_id: gl_account_id, depreciation_account_id: depreciation_expense_account_id, accumulated_dep_account_id };
 
     if (!AccountsCommon.beginSubmit('saveCategory')) return;
     try {
@@ -213,7 +216,7 @@ async function deleteCategory(id) {
     }
 }
 
-async function populateCategoryAccountSelects(glAccountId, depAccountId) {
+async function populateCategoryAccountSelects(glAccountId, depAccountId, accumDepAccountId) {
     try {
         const url = AccountsCommon.buildUrl('coa', { pageSize: 500 });
         const res = await api.request(url, { _skipSpinner: true });
@@ -221,15 +224,17 @@ async function populateCategoryAccountSelects(glAccountId, depAccountId) {
 
         const glSel = document.getElementById('categoryGlAccount');
         const depSel = document.getElementById('categoryDepAccount');
+        const accumSel = document.getElementById('categoryAccumDep');
 
         const sdOptions = [{ value: '', label: 'Select account...' }].concat(accounts.map(a => ({
             value: a.id,
             label: a.account_code ? a.account_code + ' - ' + (a.account_name || a.name) : (a.account_name || a.name)
         })));
 
-        [glSel, depSel].forEach((sel, i) => {
+        const selectedById = [glAccountId, depAccountId, accumDepAccountId];
+        [glSel, depSel, accumSel].forEach((sel, i) => {
             if (!sel) return;
-            const selectedId = i === 0 ? glAccountId : depAccountId;
+            const selectedId = selectedById[i];
             if (sel._searchableDropdown) {
                 sel._searchableDropdown.setOptions(sdOptions, false);
                 if (selectedId) sel._searchableDropdown.setValue(selectedId);

@@ -692,7 +692,12 @@ const AccountsCommon = {
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.classList.remove('active');
-            document.body.classList.remove('modal-open');
+            // Only drop the body scroll-lock when NO other modal is still open. A quick-add modal opened
+            // over an invoice/PO modal must not unlock the body when it closes, else the page scrolls behind
+            // the still-open outer modal.
+            if (!document.querySelector('.modal.active')) {
+                document.body.classList.remove('modal-open');
+            }
         }
     },
 
@@ -736,13 +741,17 @@ const AccountsCommon = {
 
     /**
      * Simple promise-based confirm dialog.
-     * Falls back to window.confirm if no custom modal exists.
+     * Uses the app's themed Confirm modal (repo rule: never the native window.confirm).
      */
     async confirm(message, title = 'Confirm') {
-        // If a global confirmDialog helper exists (e.g. from a shared UI lib), use it
+        // Prefer the shared themed Confirm modal used across the app.
+        if (window.Confirm && typeof window.Confirm.show === 'function') {
+            return window.Confirm.show({ title, message });
+        }
         if (typeof showConfirmDialog === 'function') {
             return showConfirmDialog(message, title);
         }
+        // Last-resort fallback only if no themed modal is loaded at all.
         return window.confirm(message);
     }
 };

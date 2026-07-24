@@ -271,8 +271,19 @@ class API {
                             }
                             return { message: await retryResponse.text() };
                         }
+                        // The retry (with a fresh, valid token) came back with a real error. Only a REPEAT 401
+                        // means the session is genuinely dead — a 403/404/500 is a legitimate app error on the
+                        // retried call and must surface as itself, not a misleading "Session expired" logout.
+                        if (retryResponse.status !== 401) {
+                            let retryData = {};
+                            try { retryData = await retryResponse.json(); }
+                            catch { try { retryData = { message: await retryResponse.text() }; } catch { /* ignore */ } }
+                            const retryErr = new Error(retryData.message || retryData.error || retryData.title || `Request failed (${retryResponse.status})`);
+                            retryErr.status = retryResponse.status;
+                            throw retryErr;
+                        }
                     }
-                    // If refresh failed, logout
+                    // Refresh failed, or the retry still returned 401 → the session is genuinely dead.
                     this.logout();
                     throw new Error('Session expired. Please log in again.');
                 }
