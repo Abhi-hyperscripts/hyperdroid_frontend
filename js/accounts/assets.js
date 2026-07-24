@@ -354,7 +354,7 @@ function showRegisterAssetModal() {
     document.getElementById('assetId').value = '';
     setAssetEditMode(false);
     populateAssetCategorySelect();
-    AccountsCommon.openModal('assetModal');
+    AccountsCommon.showFormPage('assetModal');
 }
 
 function editAsset(id) {
@@ -373,7 +373,7 @@ function editAsset(id) {
     document.getElementById('assetDescription').value = asset.description || '';
     setAssetEditMode(true);
     populateAssetCategorySelect(asset.asset_category_id || asset.category_id);
-    AccountsCommon.openModal('assetModal');
+    AccountsCommon.showFormPage('assetModal');
 }
 
 async function saveAsset() {
@@ -406,7 +406,7 @@ async function saveAsset() {
             await api.request(AccountsCommon.buildUrl('assets'), { method: 'POST', body: JSON.stringify(createPayload) });
             Toast.success('Asset registered');
         }
-        AccountsCommon.closeModal('assetModal');
+        AccountsCommon.hideFormPage('assetModal');
         await loadAssets();
     } catch (err) {
         console.error('[Assets] saveAsset error:', err);

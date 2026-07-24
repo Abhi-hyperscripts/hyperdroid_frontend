@@ -455,8 +455,12 @@ const SearchableDropdown = (function() {
             // the footer crashes the menu over scrolling content + the
             // action buttons, which looks unfinished. Falls back to the
             // viewport bottom when not in a modal.
-            const modal = this.dropdownEl.closest('.gm-modal');
-            const footer = modal ? modal.querySelector('.gm-footer') : null;
+            // A modal's pinned footer bar is the real bottom limit — opening a menu down into it
+            // crashes the list over the action buttons (or off-screen, past a full-page modal's
+            // footer). Handle both the glassmorphic (.gm-modal/.gm-footer) and the standard/full-page
+            // (.modal/.modal-footer) shells.
+            const modal = this.dropdownEl.closest('.gm-modal, .modal');
+            const footer = modal ? modal.querySelector('.gm-footer, .modal-footer') : null;
             const bottomLimit = footer
                 ? footer.getBoundingClientRect().top
                 : window.innerHeight;

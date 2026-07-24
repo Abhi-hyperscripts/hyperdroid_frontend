@@ -403,6 +403,163 @@ const AccountsCommon = {
         if (customerId) delete this._projBreakdown[customerId]; else this._projBreakdown = {};
     },
 
+    // ── Full-page create/edit form (Accounts): swap the list view for the form view in normal
+    //    document flow, so the window scrolls naturally (no fixed-overlay footer overlap / clipped
+    //    dropdowns). The form view must be a sibling OUTSIDE `.accounts-container`.
+    showFormPage(viewId) {
+        const container = document.querySelector('.accounts-container');
+        if (container) container.style.display = 'none';
+        const view = document.getElementById(viewId);
+        if (view) view.style.display = 'block';
+        window.scrollTo(0, 0);
+    },
+    hideFormPage(viewId) {
+        const view = document.getElementById(viewId);
+        if (view) view.style.display = 'none';
+        const container = document.querySelector('.accounts-container');
+        if (container) container.style.display = '';
+        window.scrollTo(0, 0);
+    },
+
+    // ── India GST state codes (canonical, current jurisdictions) ─────────────────────────────────
+    // The 2-digit code is the place-of-supply signal that drives CGST+SGST (intra-state) vs IGST
+    // (inter-state). Kept here so nobody has to memorise "Delhi = 07". Sorted by name for the picker.
+    INDIA_STATES: [
+        { name: 'Andaman & Nicobar Islands', code: '35' },
+        { name: 'Andhra Pradesh', code: '37' },
+        { name: 'Arunachal Pradesh', code: '12' },
+        { name: 'Assam', code: '18' },
+        { name: 'Bihar', code: '10' },
+        { name: 'Chandigarh', code: '04' },
+        { name: 'Chhattisgarh', code: '22' },
+        { name: 'Dadra & Nagar Haveli and Daman & Diu', code: '26' },
+        { name: 'Delhi', code: '07' },
+        { name: 'Goa', code: '30' },
+        { name: 'Gujarat', code: '24' },
+        { name: 'Haryana', code: '06' },
+        { name: 'Himachal Pradesh', code: '02' },
+        { name: 'Jammu & Kashmir', code: '01' },
+        { name: 'Jharkhand', code: '20' },
+        { name: 'Karnataka', code: '29' },
+        { name: 'Kerala', code: '32' },
+        { name: 'Ladakh', code: '38' },
+        { name: 'Lakshadweep', code: '31' },
+        { name: 'Madhya Pradesh', code: '23' },
+        { name: 'Maharashtra', code: '27' },
+        { name: 'Manipur', code: '14' },
+        { name: 'Meghalaya', code: '17' },
+        { name: 'Mizoram', code: '15' },
+        { name: 'Nagaland', code: '13' },
+        { name: 'Odisha', code: '21' },
+        { name: 'Puducherry', code: '34' },
+        { name: 'Punjab', code: '03' },
+        { name: 'Rajasthan', code: '08' },
+        { name: 'Sikkim', code: '11' },
+        { name: 'Tamil Nadu', code: '33' },
+        { name: 'Telangana', code: '36' },
+        { name: 'Tripura', code: '16' },
+        { name: 'Uttar Pradesh', code: '09' },
+        { name: 'Uttarakhand', code: '05' },
+        { name: 'West Bengal', code: '19' },
+        { name: 'Other Territory', code: '97' }
+    ],
+
+    // Country list — India first (default), then the rest alphabetically. Covers the markets a software
+    // firm actually bills; GST/state-code logic only applies when Country === 'India'.
+    COUNTRIES: [
+        'India', 'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Australia', 'Austria', 'Bahrain',
+        'Bangladesh', 'Belgium', 'Bhutan', 'Brazil', 'Bulgaria', 'Cambodia', 'Canada', 'Chile', 'China',
+        'Colombia', 'Croatia', 'Cyprus', 'Czechia', 'Denmark', 'Egypt', 'Estonia', 'Ethiopia', 'Finland',
+        'France', 'Germany', 'Ghana', 'Greece', 'Hong Kong', 'Hungary', 'Iceland', 'Indonesia', 'Iran',
+        'Iraq', 'Ireland', 'Israel', 'Italy', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kuwait', 'Latvia',
+        'Lebanon', 'Lithuania', 'Luxembourg', 'Malaysia', 'Maldives', 'Malta', 'Mauritius', 'Mexico',
+        'Morocco', 'Myanmar', 'Nepal', 'Netherlands', 'New Zealand', 'Nigeria', 'Norway', 'Oman', 'Pakistan',
+        'Philippines', 'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Saudi Arabia', 'Singapore',
+        'Slovakia', 'Slovenia', 'South Africa', 'South Korea', 'Spain', 'Sri Lanka', 'Sweden', 'Switzerland',
+        'Taiwan', 'Tanzania', 'Thailand', 'Turkey', 'Uganda', 'Ukraine', 'United Arab Emirates',
+        'United Kingdom', 'United States', 'Vietnam', 'Zambia', 'Zimbabwe', 'Other'
+    ],
+
+    /** GST state code for a state name (case-insensitive), or '' if not an Indian state. */
+    stateCodeFor(name) {
+        if (!name) return '';
+        const s = this.INDIA_STATES.find(x => x.name.toLowerCase() === String(name).trim().toLowerCase());
+        return s ? s.code : '';
+    },
+
+    /**
+     * Wire a Country + State region picker (Zoho-style). Country is a dropdown defaulting to India; when
+     * India is chosen the State becomes a dropdown that auto-derives the (hidden) GST state code, otherwise
+     * State falls back to a free-text box and the code is dropped. Canonical values live in the three hidden
+     * inputs so existing save/read code keeps working unchanged.
+     * @param o {countryContainer, stateContainer, stateTextInput, hiddenCountry, hiddenState, hiddenStateCode, defaultCountry?}
+     * @returns controller with reset(country?) and set({country,state,stateCode})
+     */
+    createRegionPicker(o) {
+        const self = this;
+        const el = x => (typeof x === 'string' ? document.getElementById(x) : x);
+        const countryContainer = el(o.countryContainer), stateContainer = el(o.stateContainer);
+        const stateText = el(o.stateTextInput);
+        const hCountry = el(o.hiddenCountry), hState = el(o.hiddenState), hCode = el(o.hiddenStateCode);
+        const isIndia = c => String(c || '').trim().toLowerCase() === 'india';
+
+        const stateDD = new SearchableDropdown(stateContainer, {
+            options: self.INDIA_STATES.map(s => ({ value: s.name, label: `${s.name} · ${s.code}` })),
+            placeholder: 'Select state', searchPlaceholder: 'Search states…',
+            onChange: (val) => { hState.value = val || ''; hCode.value = self.stateCodeFor(val); }
+        });
+
+        const applyCountry = (country) => {
+            hCountry.value = country || '';
+            if (isIndia(country)) {
+                stateContainer.style.display = '';
+                stateText.style.display = 'none';
+            } else {
+                stateContainer.style.display = 'none';
+                stateText.style.display = '';
+                hCode.value = '';                       // GST codes are India-only
+                hState.value = (stateText.value || '').trim();
+            }
+        };
+
+        const countryDD = new SearchableDropdown(countryContainer, {
+            options: self.COUNTRIES.map(c => ({ value: c, label: c })),
+            placeholder: 'Select country', searchPlaceholder: 'Search countries…',
+            onChange: (val) => applyCountry(val)
+        });
+
+        stateText.addEventListener('input', () => {
+            if (!isIndia(countryDD.getValue())) { hState.value = stateText.value.trim(); hCode.value = ''; }
+        });
+
+        const controller = {
+            reset(country) {
+                const c = country || o.defaultCountry || 'India';
+                countryDD.setValue(c, false);
+                stateDD.setValue('', false);
+                stateText.value = '';
+                hState.value = ''; hCode.value = '';
+                applyCountry(c);
+            },
+            set({ country, state, stateCode }) {
+                const c = country || o.defaultCountry || 'India';
+                countryDD.setValue(c, false);
+                applyCountry(c);
+                if (isIndia(c)) {
+                    stateDD.setValue(state || '', false);
+                    hState.value = state || '';
+                    hCode.value = stateCode || self.stateCodeFor(state);
+                } else {
+                    stateText.value = state || '';
+                    hState.value = state || '';
+                    hCode.value = '';
+                }
+            }
+        };
+        controller.reset();
+        return controller;
+    },
+
     /**
      * Build a query string that always includes tenantId.
      * @param {Object} params - Additional key/value pairs

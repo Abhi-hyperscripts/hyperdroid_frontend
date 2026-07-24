@@ -402,145 +402,151 @@
         </div>
     </div>
 
+
     <!-- ================================================================== -->
     <!-- Vendor Modal -->
     <!-- ================================================================== -->
-    <div id="vendorModal" class="modal po-fullpage">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="vendorModalTitle">Create Vendor</h5>
-                    <button class="close-btn" onclick="AccountsCommon.closeModal('vendorModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <form id="vendorForm">
+    <div id="vendorModal" class="acc-form-page" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('vendorModal'); return false;">Vendors &amp; Customers</a>
+                </nav>
+                <h1 class="acc-form-page__title" id="vendorModalTitle">Create Vendor</h1>
+            </div>
+            <form id="vendorForm" class="acc-form">
                         <input type="hidden" id="vendorId">
-                        <div class="form-row three-col" id="vendorCodeRow" style="display:none;">
-                            <div class="form-group" id="vendorCodeGroup">
-                                <label for="vendorCode">Vendor Code</label>
-                                <input type="text" id="vendorCode" class="form-control" readonly placeholder="Auto-generated">
-                            </div>
-                            <div class="form-group"></div>
-                            <div class="form-group"></div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="vendorGstTreatment">GST Treatment *</label>
-                                <select id="vendorGstTreatment" class="form-control" onchange="onVendorTreatmentChange()">
-                                    <option value="registered">Registered (has GSTIN)</option>
-                                    <option value="unregistered">Unregistered (no GSTIN)</option>
-                                    <option value="composition">Composition dealer</option>
-                                    <option value="overseas">Overseas / Import</option>
-                                </select>
-                                <small id="vendorTreatmentHint" class="form-hint" style="color:var(--text-secondary);"></small>
-                            </div>
-                            <div class="form-group"></div>
-                        </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="vendorName">Name *</label>
-                                <input type="text" id="vendorName" class="form-control" required placeholder="Vendor name">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorDisplayName">Display Name</label>
-                                <input type="text" id="vendorDisplayName" class="form-control" placeholder="Display name (optional)">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorEmail">Email *</label>
-                                <input type="email" id="vendorEmail" class="form-control" placeholder="vendor@example.com">
-                            </div>
-                        </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="vendorPhone">Phone *</label>
-                                <input type="text" id="vendorPhone" class="form-control" placeholder="Phone number">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorTaxId">GSTIN / Tax ID <span id="vendorTaxIdReq">*</span></label>
-                                <input type="text" id="vendorTaxId" class="form-control" placeholder="GST / PAN / VAT — or fill GST/PAN below">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorPaymentTerms">Payment Terms (Days)</label>
-                                <input type="number" id="vendorPaymentTerms" class="form-control" value="30" min="0" placeholder="30">
+
+                        <div class="form-section">
+                            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Basic Information</div>
+                            <div class="pgrid">
+                                <div class="form-group pf-wide" id="vendorCodeRow" style="display:none;">
+                                    <label for="vendorCode">Vendor Code</label>
+                                    <input type="text" id="vendorCode" class="form-control" readonly placeholder="Auto-generated">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorGstTreatment">GST Treatment <span class="req">*</span></label>
+                                    <select id="vendorGstTreatment" class="form-control" onchange="onVendorTreatmentChange()">
+                                        <option value="registered">Registered (has GSTIN)</option>
+                                        <option value="unregistered">Unregistered (no GSTIN)</option>
+                                        <option value="composition">Composition dealer</option>
+                                        <option value="overseas">Overseas / Import</option>
+                                    </select>
+                                    <small id="vendorTreatmentHint" class="field-hint"></small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorName">Name <span class="req">*</span></label>
+                                    <input type="text" id="vendorName" class="form-control" required placeholder="Vendor name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorDisplayName">Display Name <span class="opt">(optional)</span></label>
+                                    <input type="text" id="vendorDisplayName" class="form-control" placeholder="Shown on documents">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorEmail">Email <span class="req">*</span></label>
+                                    <input type="email" id="vendorEmail" class="form-control" placeholder="vendor@example.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorPhone">Phone <span class="req">*</span></label>
+                                    <input type="text" id="vendorPhone" class="form-control" placeholder="Phone number">
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="vendorGstNumber">GST Number</label>
-                                <input type="text" id="vendorGstNumber" class="form-control" placeholder="GSTIN (e.g., 29ABCDE1234F1Z5)">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorPanNumber">PAN Number</label>
-                                <input type="text" id="vendorPanNumber" class="form-control" placeholder="PAN (e.g., ABCDE1234F) — used for TDS">
-                            </div>
-                            <div class="form-group"></div>
-                        </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="vendorAddressLine1">Address Line 1 *</label>
-                                <input type="text" id="vendorAddressLine1" class="form-control" placeholder="Street address">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorAddressLine2">Address Line 2</label>
-                                <input type="text" id="vendorAddressLine2" class="form-control" placeholder="Apt, suite, etc.">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorCity">City *</label>
-                                <input type="text" id="vendorCity" class="form-control" placeholder="City">
+
+                        <div class="form-section">
+                            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Tax &amp; Compliance</div>
+                            <div class="pgrid">
+                                <div class="form-group">
+                                    <label for="vendorTaxId">GSTIN / Tax ID <span id="vendorTaxIdReq" class="req">*</span></label>
+                                    <input type="text" id="vendorTaxId" class="form-control" placeholder="GST / PAN / VAT — or fill GST/PAN below">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorGstNumber">GST Number <span class="opt">(optional)</span></label>
+                                    <input type="text" id="vendorGstNumber" class="form-control" placeholder="e.g. 29ABCDE1234F1Z5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorPanNumber">PAN Number <span class="opt">(for TDS)</span></label>
+                                    <input type="text" id="vendorPanNumber" class="form-control" placeholder="e.g. ABCDE1234F">
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="vendorState">State *</label>
-                                <input type="text" id="vendorState" class="form-control" placeholder="State / Province">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorStateCode">State Code</label>
-                                <input type="text" id="vendorStateCode" class="form-control" placeholder="e.g., 29">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorCountry">Country *</label>
-                                <input type="text" id="vendorCountry" class="form-control" placeholder="Country">
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="vendorPostalCode">Postal Code</label>
-                                <input type="text" id="vendorPostalCode" class="form-control" placeholder="Postal / ZIP code">
-                            </div>
-                            <div class="form-group"></div>
-                        </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="vendorBankName">Bank Name</label>
-                                <input type="text" id="vendorBankName" class="form-control" placeholder="Bank name">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorBankAccount">Account Number</label>
-                                <input type="text" id="vendorBankAccount" class="form-control" placeholder="Account number">
-                            </div>
-                            <div class="form-group">
-                                <label for="vendorBankIfsc">Bank IFSC</label>
-                                <input type="text" id="vendorBankIfsc" class="form-control" placeholder="IFSC code">
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="vendorBankSwift">Bank SWIFT</label>
-                                <input type="text" id="vendorBankSwift" class="form-control" placeholder="SWIFT code">
-                            </div>
-                            <div class="form-group"></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="vendorNotes">Notes</label>
-                                <textarea id="vendorNotes" class="form-control" rows="2" placeholder="Additional notes"></textarea>
+
+                        <div class="form-section">
+                            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Address</div>
+                            <div class="pgrid">
+                                <div class="form-group pf-wide">
+                                    <label for="vendorAddressLine1">Address Line 1 <span class="req">*</span></label>
+                                    <input type="text" id="vendorAddressLine1" class="form-control" placeholder="Street address">
+                                </div>
+                                <div class="form-group pf-wide">
+                                    <label for="vendorAddressLine2">Address Line 2 <span class="opt">(optional)</span></label>
+                                    <input type="text" id="vendorAddressLine2" class="form-control" placeholder="Apt, suite, etc.">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorCountryContainer">Country <span class="req">*</span></label>
+                                    <div class="searchable-dropdown-container" id="vendorCountryContainer"></div>
+                                    <input type="hidden" id="vendorCountry">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorStateContainer">State <span class="req">*</span></label>
+                                    <div class="searchable-dropdown-container" id="vendorStateContainer"></div>
+                                    <input type="text" id="vendorStateText" class="form-control" placeholder="State / Province" style="display:none;">
+                                    <input type="hidden" id="vendorState">
+                                    <input type="hidden" id="vendorStateCode">
+                                    <small class="field-hint">GST state code is filled automatically from the state.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorCity">City <span class="req">*</span></label>
+                                    <input type="text" id="vendorCity" class="form-control" placeholder="City">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorPostalCode">Postal Code <span class="opt">(optional)</span></label>
+                                    <input type="text" id="vendorPostalCode" class="form-control" placeholder="Postal / ZIP code">
+                                </div>
                             </div>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('vendorModal')">Cancel</button>
+
+                        <div class="form-section">
+                            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Payment &amp; Banking</div>
+                            <div class="pgrid">
+                                <div class="form-group">
+                                    <label for="vendorPaymentTerms">Payment Terms <span class="opt">(days)</span></label>
+                                    <input type="number" id="vendorPaymentTerms" class="form-control" value="30" min="0" placeholder="30">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorBankName">Bank Name <span class="opt">(optional)</span></label>
+                                    <input type="text" id="vendorBankName" class="form-control" placeholder="Bank name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorBankAccount">Account Number <span class="opt">(optional)</span></label>
+                                    <input type="text" id="vendorBankAccount" class="form-control" placeholder="Account number">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorBankIfsc">Bank IFSC <span class="opt">(optional)</span></label>
+                                    <input type="text" id="vendorBankIfsc" class="form-control" placeholder="IFSC code">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vendorBankSwift">Bank SWIFT <span class="opt">(optional)</span></label>
+                                    <input type="text" id="vendorBankSwift" class="form-control" placeholder="SWIFT code">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Notes</div>
+                            <div class="pgrid">
+                                <div class="form-group pf-wide">
+                                    <label for="vendorNotes">Notes <span class="opt">(optional)</span></label>
+                                    <textarea id="vendorNotes" class="form-control" rows="3" placeholder="Additional notes"></textarea>
+                                </div>
+                            </div>
+                        </div>
+            </form>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('vendorModal')">Cancel</button>
                     <button class="btn btn-primary" onclick="saveVendor()">Save</button>
                 </div>
             </div>
@@ -548,115 +554,130 @@
     </div>
 
     <!-- ================================================================== -->
-    <!-- Customer Modal -->
+    <!-- Customer create/edit — full page view -->
     <!-- ================================================================== -->
-    <div id="customerModal" class="modal po-fullpage">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="customerModalTitle">Create Customer</h5>
-                    <button class="close-btn" onclick="AccountsCommon.closeModal('customerModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <form id="customerForm">
+    <div id="customerModal" class="acc-form-page" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('customerModal'); return false;">Vendors &amp; Customers</a>
+                </nav>
+                <h1 class="acc-form-page__title" id="customerModalTitle">Create Customer</h1>
+            </div>
+            <form id="customerForm" class="acc-form">
                         <input type="hidden" id="customerId">
-                        <div class="form-row three-col" id="customerCodeRow" style="display:none;">
-                            <div class="form-group" id="customerCodeGroup">
-                                <label for="customerCode">Customer Code</label>
-                                <input type="text" id="customerCode" class="form-control" readonly placeholder="Auto-generated">
-                            </div>
-                            <div class="form-group"></div>
-                            <div class="form-group"></div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="customerGstTreatment">GST Treatment *</label>
-                                <select id="customerGstTreatment" class="form-control" onchange="onCustomerTreatmentChange()">
-                                    <option value="registered">Registered (has GSTIN)</option>
-                                    <option value="unregistered">Unregistered / B2C (no GSTIN)</option>
-                                    <option value="composition">Composition dealer</option>
-                                    <option value="overseas">Overseas / Export</option>
-                                </select>
-                                <small id="customerTreatmentHint" class="form-hint" style="color:var(--text-secondary);"></small>
-                            </div>
-                            <div class="form-group"></div>
-                        </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="customerName">Name *</label>
-                                <input type="text" id="customerName" class="form-control" required maxlength="200" placeholder="Customer name">
-                            </div>
-                            <div class="form-group">
-                                <label for="customerDisplayName">Display Name</label>
-                                <input type="text" id="customerDisplayName" class="form-control" maxlength="200" placeholder="Display name (optional)">
-                            </div>
-                            <div class="form-group">
-                                <label for="customerEmail">Email *</label>
-                                <input type="email" id="customerEmail" class="form-control" required maxlength="200" placeholder="customer@example.com">
-                            </div>
-                        </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="customerPhone">Phone *</label>
-                                <input type="text" id="customerPhone" class="form-control" required maxlength="50" placeholder="Phone number">
-                            </div>
-                            <div class="form-group">
-                                <label for="customerTaxId">GSTIN / Tax ID <span id="customerTaxIdReq">*</span></label>
-                                <input type="text" id="customerTaxId" class="form-control" maxlength="50" placeholder="Tax identification number">
-                            </div>
-                            <div class="form-group">
-                                <label for="customerPaymentTerms">Payment Terms (Days)</label>
-                                <input type="number" id="customerPaymentTerms" class="form-control" value="30" min="0" placeholder="30">
+
+                        <div class="form-section">
+                            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Basic Information</div>
+                            <div class="pgrid">
+                                <div class="form-group pf-wide" id="customerCodeRow" style="display:none;">
+                                    <label for="customerCode">Customer Code</label>
+                                    <input type="text" id="customerCode" class="form-control" readonly placeholder="Auto-generated">
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerGstTreatment">GST Treatment <span class="req">*</span></label>
+                                    <select id="customerGstTreatment" class="form-control" onchange="onCustomerTreatmentChange()">
+                                        <option value="registered">Registered (has GSTIN)</option>
+                                        <option value="unregistered">Unregistered / B2C (no GSTIN)</option>
+                                        <option value="composition">Composition dealer</option>
+                                        <option value="overseas">Overseas / Export</option>
+                                    </select>
+                                    <small id="customerTreatmentHint" class="field-hint"></small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerName">Name <span class="req">*</span></label>
+                                    <input type="text" id="customerName" class="form-control" required maxlength="200" placeholder="Customer name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerDisplayName">Display Name <span class="opt">(optional)</span></label>
+                                    <input type="text" id="customerDisplayName" class="form-control" maxlength="200" placeholder="Shown on documents">
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerEmail">Email <span class="req">*</span></label>
+                                    <input type="email" id="customerEmail" class="form-control" required maxlength="200" placeholder="customer@example.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerPhone">Phone <span class="req">*</span></label>
+                                    <input type="text" id="customerPhone" class="form-control" required maxlength="50" placeholder="Phone number">
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="customerAddressLine1">Address Line 1 *</label>
-                                <input type="text" id="customerAddressLine1" class="form-control" required maxlength="500" placeholder="Street address">
-                            </div>
-                            <div class="form-group">
-                                <label for="customerAddressLine2">Address Line 2</label>
-                                <input type="text" id="customerAddressLine2" class="form-control" maxlength="500" placeholder="Apt, suite, etc.">
-                            </div>
-                            <div class="form-group">
-                                <label for="customerCity">City *</label>
-                                <input type="text" id="customerCity" class="form-control" required maxlength="100" placeholder="City">
+
+                        <div class="form-section">
+                            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Tax &amp; Compliance</div>
+                            <div class="pgrid">
+                                <div class="form-group">
+                                    <label for="customerTaxId">GSTIN / Tax ID <span id="customerTaxIdReq" class="req">*</span></label>
+                                    <input type="text" id="customerTaxId" class="form-control" maxlength="50" placeholder="e.g. 07AABCP7777Q1Z5">
+                                    <small class="field-hint">Their 15-digit GSTIN. The first two digits are the state code.</small>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row three-col">
-                            <div class="form-group">
-                                <label for="customerState">State *</label>
-                                <input type="text" id="customerState" class="form-control" required maxlength="100" placeholder="State / Province">
-                            </div>
-                            <div class="form-group">
-                                <label for="customerStateCode">State Code <span style="color:var(--text-muted);font-weight:400;font-size:0.7rem;">(short code, e.g. 09 or MH)</span></label>
-                                <input type="text" id="customerStateCode" class="form-control" maxlength="10" placeholder="e.g., 09 or MH">
-                            </div>
-                            <div class="form-group">
-                                <label for="customerCountry">Country *</label>
-                                <input type="text" id="customerCountry" class="form-control" required maxlength="100" placeholder="Country">
+
+                        <div class="form-section">
+                            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Billing Address</div>
+                            <div class="pgrid">
+                                <div class="form-group pf-wide">
+                                    <label for="customerAddressLine1">Address Line 1 <span class="req">*</span></label>
+                                    <input type="text" id="customerAddressLine1" class="form-control" required maxlength="500" placeholder="Street address">
+                                </div>
+                                <div class="form-group pf-wide">
+                                    <label for="customerAddressLine2">Address Line 2 <span class="opt">(optional)</span></label>
+                                    <input type="text" id="customerAddressLine2" class="form-control" maxlength="500" placeholder="Apt, suite, etc.">
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerCountryContainer">Country <span class="req">*</span></label>
+                                    <div class="searchable-dropdown-container" id="customerCountryContainer"></div>
+                                    <input type="hidden" id="customerCountry">
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerStateContainer">State <span class="req">*</span></label>
+                                    <div class="searchable-dropdown-container" id="customerStateContainer"></div>
+                                    <input type="text" id="customerStateText" class="form-control" maxlength="100" placeholder="State / Province" style="display:none;">
+                                    <input type="hidden" id="customerState">
+                                    <input type="hidden" id="customerStateCode">
+                                    <small class="field-hint">GST state code is filled automatically from the state.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerCity">City <span class="req">*</span></label>
+                                    <input type="text" id="customerCity" class="form-control" required maxlength="100" placeholder="City">
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerPostalCode">Postal Code <span class="opt">(optional)</span></label>
+                                    <input type="text" id="customerPostalCode" class="form-control" maxlength="20" placeholder="Postal / ZIP code">
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="customerPostalCode">Postal Code</label>
-                                <input type="text" id="customerPostalCode" class="form-control" maxlength="20" placeholder="Postal / ZIP code">
-                            </div>
-                            <div class="form-group">
-                                <label for="customerCreditLimit">Credit Limit</label>
-                                <input type="number" id="customerCreditLimit" class="form-control" min="0" step="0.01" placeholder="0.00">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="customerNotes">Notes</label>
-                                <textarea id="customerNotes" class="form-control" rows="2" placeholder="Additional notes"></textarea>
+
+                        <div class="form-section">
+                            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Payment</div>
+                            <div class="pgrid">
+                                <div class="form-group">
+                                    <label for="customerPaymentTerms">Payment Terms <span class="opt">(days)</span></label>
+                                    <input type="number" id="customerPaymentTerms" class="form-control" value="30" min="0" placeholder="30">
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerCreditLimit">Credit Limit <span class="opt">(optional)</span></label>
+                                    <input type="number" id="customerCreditLimit" class="form-control" min="0" step="0.01" placeholder="0.00">
+                                </div>
                             </div>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('customerModal')">Cancel</button>
+
+                        <div class="form-section">
+                            <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Notes</div>
+                            <div class="pgrid">
+                                <div class="form-group pf-wide">
+                                    <label for="customerNotes">Notes <span class="opt">(optional)</span></label>
+                                    <textarea id="customerNotes" class="form-control" rows="3" placeholder="Additional notes"></textarea>
+                                </div>
+                            </div>
+                        </div>
+            </form>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('customerModal')">Cancel</button>
                     <button class="btn btn-primary" onclick="saveCustomer()">Save</button>
                 </div>
             </div>

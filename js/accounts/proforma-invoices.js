@@ -359,7 +359,7 @@ function showCreateProformaModal() {
     document.getElementById('proformaLines').innerHTML = '';
     addProformaLine();
     calculateProformaTotals();
-    AccountsCommon.openModal('proformaInvoiceModal');
+    AccountsCommon.showFormPage('proformaInvoiceModal');
 }
 
 async function editProforma(id) {
@@ -388,7 +388,7 @@ async function editProforma(id) {
             addProformaLine();
         }
         calculateProformaTotals();
-        AccountsCommon.openModal('proformaInvoiceModal');
+        AccountsCommon.showFormPage('proformaInvoiceModal');
     } catch (err) {
         Toast.error('Failed to load proforma invoice');
     }
@@ -654,7 +654,7 @@ async function saveProforma() {
             await api.request(AccountsCommon.buildUrl('proforma-invoices'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
             Toast.success('Proforma invoice saved as draft');
         }
-        AccountsCommon.closeModal('proformaInvoiceModal');
+        AccountsCommon.hideFormPage('proformaInvoiceModal');
         loadProformaInvoices();
     } catch (err) {
         Toast.error(err.message || 'Failed to save proforma invoice');

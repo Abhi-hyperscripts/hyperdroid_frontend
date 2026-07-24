@@ -25,6 +25,10 @@ let customerPage = 1;
 let vendorTotal = 0;
 let customerTotal = 0;
 
+// Country + State region pickers (Zoho-style; country defaults to India, state auto-fills GST code).
+let customerRegion = null;
+let vendorRegion = null;
+
 // ============================================================================
 // PAGE INIT
 // ============================================================================
@@ -45,7 +49,27 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     await loadInitialData();
     setupSearchListeners();
+    initRegionPickers();
 });
+
+// Build the Country/State pickers once (their containers live in the static modals).
+function initRegionPickers() {
+    if (typeof SearchableDropdown === 'undefined') return;
+    if (document.getElementById('customerCountryContainer') && !customerRegion) {
+        customerRegion = AccountsCommon.createRegionPicker({
+            countryContainer: 'customerCountryContainer', stateContainer: 'customerStateContainer',
+            stateTextInput: 'customerStateText', hiddenCountry: 'customerCountry',
+            hiddenState: 'customerState', hiddenStateCode: 'customerStateCode', defaultCountry: 'India'
+        });
+    }
+    if (document.getElementById('vendorCountryContainer') && !vendorRegion) {
+        vendorRegion = AccountsCommon.createRegionPicker({
+            countryContainer: 'vendorCountryContainer', stateContainer: 'vendorStateContainer',
+            stateTextInput: 'vendorStateText', hiddenCountry: 'vendorCountry',
+            hiddenState: 'vendorState', hiddenStateCode: 'vendorStateCode', defaultCountry: 'India'
+        });
+    }
+}
 
 // ============================================================================
 // TAB SWITCH HANDLER
@@ -345,7 +369,8 @@ function showCreateVendorModal() {
     document.getElementById('vendorPaymentTerms').value = '30';
     document.getElementById('vendorCodeRow').style.display = 'none';
     if (document.getElementById('vendorGstTreatment')) { document.getElementById('vendorGstTreatment').value = 'registered'; onVendorTreatmentChange(); }
-    AccountsCommon.openModal('vendorModal');
+    if (vendorRegion) vendorRegion.reset('India');   // country defaults to India, state cleared
+    AccountsCommon.showFormPage('vendorModal');
 }
 
 function editVendor(id) {
@@ -363,9 +388,7 @@ function editVendor(id) {
     document.getElementById('vendorAddressLine1').value = v.address_line1 || '';
     document.getElementById('vendorAddressLine2').value = v.address_line2 || '';
     document.getElementById('vendorCity').value = v.city || '';
-    document.getElementById('vendorState').value = v.state || '';
-    document.getElementById('vendorStateCode').value = v.state_code || '';
-    document.getElementById('vendorCountry').value = v.country || '';
+    if (vendorRegion) vendorRegion.set({ country: v.country || 'India', state: v.state || '', stateCode: v.state_code || '' });
     document.getElementById('vendorPostalCode').value = v.postal_code || '';
     document.getElementById('vendorTaxId').value = v.tax_id || '';
     document.getElementById('vendorGstNumber').value = v.gst_number || '';
@@ -377,7 +400,7 @@ function editVendor(id) {
     document.getElementById('vendorBankIfsc').value = v.bank_ifsc || '';
     document.getElementById('vendorBankSwift').value = v.bank_swift || '';
     document.getElementById('vendorNotes').value = v.notes || '';
-    AccountsCommon.openModal('vendorModal');
+    AccountsCommon.showFormPage('vendorModal');
 }
 
 // Update the GSTIN required-marker + an explanatory hint when the GST treatment changes.
@@ -434,7 +457,9 @@ async function saveVendor() {
     }
     // GSTIN / Tax ID + state code are mandatory only for a GST-registered vendor.
     if (treatment === 'registered' && !taxId) { Toast.error('GSTIN / Tax ID is required for a GST-registered vendor (pick Unregistered or Overseas if it has none)'); document.getElementById('vendorTaxId').focus(); return; }
-    if (treatment === 'registered' && !document.getElementById('vendorStateCode').value.trim()) { Toast.error('State code is required for a GST-registered vendor (place of supply for input GST)'); document.getElementById('vendorStateCode').focus(); return; }
+    // State code is derived from the state picker; only an Indian GST-registered vendor needs it.
+    const venCountry = (document.getElementById('vendorCountry').value || '').trim().toLowerCase();
+    if (venCountry === 'india' && treatment === 'registered' && !document.getElementById('vendorStateCode').value.trim()) { Toast.error('Please select the vendor’s state (place of supply for input GST)'); return; }
 
     const payload = {
         name,
@@ -470,7 +495,7 @@ async function saveVendor() {
             await api.request(AccountsCommon.buildUrl('vendors'), { method: 'POST', body: JSON.stringify(payload) });
             Toast.success('Vendor created');
         }
-        AccountsCommon.closeModal('vendorModal');
+        AccountsCommon.hideFormPage('vendorModal');
         await loadVendors();
     } catch (err) {
         console.error('[Parties] saveVendor error:', err);
@@ -570,7 +595,8 @@ function showCreateCustomerModal() {
     document.getElementById('customerPaymentTerms').value = '30';
     document.getElementById('customerCodeRow').style.display = 'none';
     if (document.getElementById('customerGstTreatment')) { document.getElementById('customerGstTreatment').value = 'registered'; onCustomerTreatmentChange(); }
-    AccountsCommon.openModal('customerModal');
+    if (customerRegion) customerRegion.reset('India');   // country defaults to India, state cleared
+    AccountsCommon.showFormPage('customerModal');
 }
 
 function editCustomer(id) {
@@ -588,16 +614,14 @@ function editCustomer(id) {
     document.getElementById('customerAddressLine1').value = c.billing_address_line1 || c.address_line1 || '';
     document.getElementById('customerAddressLine2').value = c.billing_address_line2 || c.address_line2 || '';
     document.getElementById('customerCity').value = c.city || '';
-    document.getElementById('customerState').value = c.state || '';
-    document.getElementById('customerStateCode').value = c.state_code || '';
-    document.getElementById('customerCountry').value = c.country || '';
+    if (customerRegion) customerRegion.set({ country: c.country || 'India', state: c.state || '', stateCode: c.state_code || '' });
     document.getElementById('customerPostalCode').value = c.postal_code || '';
     document.getElementById('customerTaxId').value = c.tax_id || '';
     if (document.getElementById('customerGstTreatment')) { document.getElementById('customerGstTreatment').value = c.gst_treatment || 'registered'; onCustomerTreatmentChange(); }
     document.getElementById('customerPaymentTerms').value = c.payment_terms_days ?? 30;
     document.getElementById('customerCreditLimit').value = c.credit_limit ?? '';
     document.getElementById('customerNotes').value = c.notes || '';
-    AccountsCommon.openModal('customerModal');
+    AccountsCommon.showFormPage('customerModal');
 }
 
 async function saveCustomer() {
@@ -623,7 +647,9 @@ async function saveCustomer() {
     // GSTIN is mandatory only for a GST-registered customer; a domestic customer needs a state code
     // (place of supply — GST is always charged on a domestic sale, whatever the buyer's registration).
     if (treatment === 'registered' && !document.getElementById('customerTaxId').value.trim()) { Toast.error('GSTIN / Tax ID is required for a GST-registered customer (pick Unregistered or Overseas if it has none)'); document.getElementById('customerTaxId').focus(); return; }
-    if (treatment !== 'overseas' && !document.getElementById('customerStateCode').value.trim()) { Toast.error('State code is required for a domestic customer (place of supply)'); document.getElementById('customerStateCode').focus(); return; }
+    // State code is derived from the state picker; only a domestic (India) customer needs a place of supply.
+    const custCountry = (document.getElementById('customerCountry').value || '').trim().toLowerCase();
+    if (custCountry === 'india' && treatment !== 'overseas' && !document.getElementById('customerStateCode').value.trim()) { Toast.error('Please select the customer’s state (place of supply for GST)'); return; }
 
     const creditVal = document.getElementById('customerCreditLimit').value;
 
@@ -655,7 +681,7 @@ async function saveCustomer() {
             await api.request(AccountsCommon.buildUrl('customers'), { method: 'POST', body: JSON.stringify(payload) });
             Toast.success('Customer created');
         }
-        AccountsCommon.closeModal('customerModal');
+        AccountsCommon.hideFormPage('customerModal');
         await loadCustomers();
     } catch (err) {
         console.error('[Parties] saveCustomer error:', err);

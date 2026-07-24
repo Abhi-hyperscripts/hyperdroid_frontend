@@ -480,7 +480,7 @@ function showCreateInvoiceModal() {
     document.getElementById('invoiceLines').innerHTML = '';
     addInvoiceLine();
     calculateInvoiceTotals();
-    AccountsCommon.openModal('customerInvoiceModal');
+    AccountsCommon.showFormPage('customerInvoiceModal');
 }
 
 // Alias: the row template binds the View action to viewInvoice(), but
@@ -522,7 +522,7 @@ async function editInvoice(id) {
         // a fresh invoice.
         _setInvoiceModalReadOnly(!isDraft);
 
-        AccountsCommon.openModal('customerInvoiceModal');
+        AccountsCommon.showFormPage('customerInvoiceModal');
     } catch (err) {
         Toast.error('Failed to load invoice');
     }
@@ -922,7 +922,7 @@ async function saveInvoice(approve) {
         } else {
             Toast.success(id ? 'Invoice updated' : 'Invoice saved as draft');
         }
-        AccountsCommon.closeModal('customerInvoiceModal');
+        AccountsCommon.hideFormPage('customerInvoiceModal');
         // The invoice's lines changed — drop the cached project breakdown so the Project filter and the
         // Project Statement drill-down pick up the new/edited lines on their next read.
         AccountsCommon.invalidateProjectBreakdown(payload.customer_id);

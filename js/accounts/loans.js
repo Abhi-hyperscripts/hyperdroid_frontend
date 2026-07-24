@@ -133,7 +133,7 @@ function openCreateLoan() {
     interestAccountDropdown?.setValue?.('');
     bankAccountDropdown?.setValue?.('');
     disbursementAccountDropdown?.setValue?.('');
-    AccountsCommon.openModal('loanModal');
+    AccountsCommon.showFormPage('loanModal');
 }
 
 async function saveLoan() {
@@ -179,7 +179,7 @@ async function saveLoan() {
     try {
         await api.request(AccountsCommon.buildUrl('loans'), { method: 'POST', body: JSON.stringify(payload) });
         Toast.success('Loan created — disbursement posted and EMI schedule generated');
-        AccountsCommon.closeModal('loanModal');
+        AccountsCommon.hideFormPage('loanModal');
         await loadLoans();
     } catch (err) {
         console.error('[Loans] saveLoan error:', err);
@@ -194,7 +194,7 @@ async function viewLoan(id) {
         const loan = await api.request(AccountsCommon.buildUrl(`loans/${encodeURIComponent(id)}`), { _skipSpinner: true });
         loanViewCurrent = loan;
         renderLoanView(loan);
-        AccountsCommon.openModal('loanViewModal');
+        AccountsCommon.showFormPage('loanViewModal');
     } catch (err) {
         console.error('[Loans] viewLoan error:', err);
         Toast.error(err.message || 'Failed to load loan');

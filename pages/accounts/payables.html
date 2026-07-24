@@ -443,84 +443,85 @@
     <!-- ================================================================== -->
 
     <!-- Vendor Bill Modal -->
-    <div id="vendorBillModal" class="modal po-fullpage">
-        <div class="modal-dialog modal-dialog-centered po-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="billModalTitle">Create Vendor Bill</h5>
-                    <button class="close-btn" onclick="AccountsCommon.closeModal('vendorBillModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <form id="billForm">
-                        <input type="hidden" id="billId">
-                        <!-- Compact header: Vendor / Bill Date / Due Date / PO Reference all on one row -->
-                        <div class="form-row po-header-row">
-                            <div class="form-group">
-                                <label for="billVendor">Vendor *</label>
-                                <select id="billVendor" class="form-control" required>
-                                    <option value="">Select Vendor...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="billDate">Bill Date *</label>
-                                <input type="date" id="billDate" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="billDueDate">Due Date *</label>
-                                <input type="date" id="billDueDate" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="billPoReference">PO Reference</label>
-                                <input type="text" id="billPoReference" class="form-control" placeholder="PO-2026-001">
-                            </div>
-                        </div>
-                        <div id="billTreatmentBanner" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:8px;background:var(--bg-tertiary,rgba(59,130,246,0.08));border:1px solid var(--border-color);color:var(--text-secondary);font-size:0.85rem;"></div>
-                        <!-- Notes on its own full-width row -->
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="billNotes">Notes</label>
-                                <input type="text" id="billNotes" class="form-control" placeholder="Optional notes / TDS section reference (e.g., 194C, 194J)">
-                            </div>
-                        </div>
+    <div id="vendorBillModal" class="acc-form-page acc-form-page--wide" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('vendorBillModal'); return false;">Accounts Payable</a>
+                </nav>
+                <h1 class="acc-form-page__title" id="billModalTitle">Create Vendor Bill</h1>
+            </div>
+            <form id="billForm" class="acc-form">
+                <input type="hidden" id="billId">
 
-                        <!-- Line Items: Account first, then Description, Qty, Unit Price, Tax, Amount -->
-                        <div class="form-group po-lines-wrap" style="margin-top: 1rem;">
-                            <label>Line Items</label>
-                            <div class="data-table-container po-lines-container" style="margin-top: 0.5rem;">
-                                <table class="data-table po-lines-table" id="billLinesTable">
-                                    <thead>
-                                        <tr>
-                                            <th style="width:220px;">Account *</th>
-                                            <th>Description</th>
-                                            <th style="width:130px;">Qty</th>
-                                            <th style="width:150px;">Unit Price</th>
-                                            <th style="width:160px;">Tax (Input GST)</th>
-                                            <th style="width:150px;">Cost Centre</th>
-                                            <th style="width:150px; text-align:right;">Amount</th>
-                                            <th style="width:40px;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="billLinesBody"></tbody>
-                                </table>
-                            </div>
-                            <button type="button" class="btn btn-outline po-add-line-btn" onclick="addBillLine()" style="margin-top: 0.5rem;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                Add Line
-                            </button>
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Bill Details</div>
+                    <div class="pgrid">
+                        <div class="form-group">
+                            <label for="billVendor">Vendor <span class="req">*</span></label>
+                            <select id="billVendor" class="form-control" required>
+                                <option value="">Select Vendor…</option>
+                            </select>
                         </div>
-
-                        <!-- Totals — pinned with the same styled box as PO -->
-                        <div class="po-totals">
-                            <div class="po-totals-inner">
-                                <div class="po-totals-row"><span>Subtotal:</span><span id="billSubtotal">0.00</span></div>
-                                <div class="po-totals-row"><span>Tax (Input GST):</span><span id="billTax">0.00</span></div>
-                                <div class="po-totals-row po-totals-grand"><span>Total:</span><span id="billTotal">0.00</span></div>
-                            </div>
+                        <div class="form-group">
+                            <label for="billPoReference">PO Reference <span class="opt">(optional)</span></label>
+                            <input type="text" id="billPoReference" class="form-control" placeholder="PO-2026-001">
                         </div>
-                    </form>
+                        <div class="form-group">
+                            <label for="billDate">Bill Date <span class="req">*</span></label>
+                            <input type="date" id="billDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="billDueDate">Due Date <span class="req">*</span></label>
+                            <input type="date" id="billDueDate" class="form-control" required>
+                        </div>
+                        <div class="form-group pf-wide">
+                            <label for="billNotes">Notes <span class="opt">(optional)</span></label>
+                            <input type="text" id="billNotes" class="form-control" placeholder="Optional notes / TDS section reference (e.g. 194C, 194J)">
+                        </div>
+                        <div class="pf-wide" id="billTreatmentBanner" style="display:none;padding:10px 14px;border-radius:8px;background:var(--bg-tertiary,rgba(59,130,246,0.08));border:1px solid var(--border-color);color:var(--text-secondary);font-size:0.85rem;"></div>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('vendorBillModal')">Cancel</button>
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Line Items</div>
+                    <div class="po-lines-wrap">
+                        <div class="data-table-container po-lines-container">
+                            <table class="data-table po-lines-table" id="billLinesTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:220px;">Account *</th>
+                                        <th>Description</th>
+                                        <th style="width:130px;">Qty</th>
+                                        <th style="width:150px;">Unit Price</th>
+                                        <th style="width:160px;">Tax (Input GST)</th>
+                                        <th style="width:150px;">Cost Centre</th>
+                                        <th style="width:150px; text-align:right;">Amount</th>
+                                        <th style="width:40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="billLinesBody"></tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-outline po-add-line-btn" onclick="addBillLine()" style="margin-top: 0.75rem;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Add Line
+                        </button>
+                    </div>
+                    <div class="po-totals">
+                        <div class="po-totals-inner">
+                            <div class="po-totals-row"><span>Subtotal:</span><span id="billSubtotal">0.00</span></div>
+                            <div class="po-totals-row"><span>Tax (Input GST):</span><span id="billTax">0.00</span></div>
+                            <div class="po-totals-row po-totals-grand"><span>Total:</span><span id="billTotal">0.00</span></div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('vendorBillModal')">Cancel</button>
                     <button class="btn btn-outline" id="billSaveDraftBtn" onclick="saveBill(false)">Save Draft</button>
                     <button class="btn btn-primary" id="billSaveApproveBtn" onclick="saveBill(true)">Save &amp; Approve</button>
                 </div>

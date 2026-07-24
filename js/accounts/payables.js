@@ -225,7 +225,7 @@ function showCreateBillModal() {
     clearBillLines();
     addBillLine();
     setBillModalMode('create');
-    AccountsCommon.openModal('vendorBillModal');
+    AccountsCommon.showFormPage('vendorBillModal');
 }
 
 function setBillModalMode(mode, bill) {
@@ -339,7 +339,7 @@ async function loadBillIntoModal(id, mode) {
         }
         calculateBillTotals();
         setBillModalMode(effectiveMode, bill);
-        AccountsCommon.openModal('vendorBillModal');
+        AccountsCommon.showFormPage('vendorBillModal');
     } catch (err) {
         console.error('[Payables] loadBillIntoModal error:', err);
         Toast.error('Failed to load bill details');
@@ -778,7 +778,7 @@ async function saveBill(approve = false) {
         } else {
             Toast.success(id ? 'Bill updated' : 'Bill saved as draft');
         }
-        AccountsCommon.closeModal('vendorBillModal');
+        AccountsCommon.hideFormPage('vendorBillModal');
         await loadVendorBills();
     } finally {
         saveBtns.forEach(b => b.disabled = false);

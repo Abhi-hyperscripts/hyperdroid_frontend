@@ -2165,3 +2165,90 @@ textarea.form-control {
     overflow-x: auto;
     white-space: pre-wrap;
 }
+
+/* =================================================================
+   FULL-PAGE CREATE/EDIT FORM (Accounts) — shared page shell
+   A real in-flow page (not a fixed modal): breadcrumb + big title,
+   soft canvas with white section cards, fixed bottom action bar,
+   natural window scrolling. Used by every Accounts create/edit form.
+   Show/hide via AccountsCommon.showFormPage()/hideFormPage().
+   ================================================================= */
+.acc-form-page {
+    padding: 76px 16px 104px;      /* top clears the fixed 76px navbar; bottom clears the fixed footer */
+    min-height: 100vh;
+    background: var(--bg-secondary, #f4f6f9);
+}
+.acc-form-page__inner { max-width: 1080px; margin: 0 auto; }
+.acc-form-page__head { padding: 1.4rem 0 1.2rem; }
+.acc-form-page__head .breadcrumb-nav { margin-bottom: 6px; }
+.acc-form-page__title {
+    font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; color: var(--text-primary);
+}
+.acc-form-page__actions {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    background: var(--bg-card, #fff);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -2px 12px rgba(16, 24, 40, 0.08);
+}
+.acc-form-page__actions-inner {
+    max-width: 1080px; margin: 0 auto;
+    display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem;
+    padding: 0.8rem 16px;
+}
+
+/* Sectioned white cards + comfortable 2-col grid inside the form */
+.acc-form .form-section {
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 1.5rem 1.75rem 1.75rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+}
+.acc-form .form-section:last-child { margin-bottom: 0; }
+.acc-form .section-head {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-size: 0.92rem; font-weight: 700; color: var(--text-primary);
+    padding-bottom: 1rem; margin-bottom: 1.4rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.acc-form .section-head svg { width: 18px; height: 18px; color: var(--brand-primary); flex: none; }
+.acc-form .pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.35rem 2rem; }
+.acc-form .pgrid .pf-wide { grid-column: 1 / -1; }
+.acc-form .form-group { margin: 0; display: flex; flex-direction: column; }
+.acc-form label { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.45rem; display: block; }
+.acc-form label .req { color: var(--color-error); margin-left: 2px; }
+.acc-form label .opt { color: var(--text-muted); font-weight: 400; font-size: 0.72rem; margin-left: 4px; }
+.acc-form .form-control { width: 100%; }
+.acc-form .field-hint { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4; }
+.acc-form .searchable-dropdown-container .searchable-dropdown-trigger { min-height: 40px; }
+@media (max-width: 720px) {
+    .acc-form-page { padding: 68px 12px 100px; }
+    .acc-form-page__actions-inner { padding: 0.75rem 12px; }
+    .acc-form .form-section { padding: 1.15rem 1.15rem 1.35rem; }
+    .acc-form .pgrid { grid-template-columns: 1fr; gap: 1.1rem; }
+}
+
+/* Wide variant — transaction forms with line-item tables (invoice/bill/PO/proforma) use more of the
+   screen so the line grid isn't cramped. Master-data forms stay at the default 1080px. */
+.acc-form-page--wide .acc-form-page__inner,
+.acc-form-page--wide .acc-form-page__actions-inner { max-width: 1440px; }
+
+/* Compact field density — shorter inputs so more content fits on screen (Accounts forms). */
+.acc-form .form-control,
+.acc-form select.form-control,
+.acc-form .searchable-dropdown-container .searchable-dropdown-trigger {
+    min-height: 36px; padding: 0.4rem 0.7rem; font-size: 0.875rem;
+}
+.acc-form textarea.form-control { min-height: 64px; }
+.acc-form label { margin-bottom: 0.35rem; }
+.acc-form .pgrid { gap: 1.05rem 1.75rem; }
+.acc-form .form-section { padding: 1.35rem 1.5rem 1.5rem; margin-bottom: 1rem; }
+.acc-form .section-head { padding-bottom: 0.8rem; margin-bottom: 1.1rem; }
+/* Line-item grid: even more compact so rows are dense */
+.acc-form .po-lines-table .form-control,
+.acc-form .po-lines-table input,
+.acc-form .po-lines-table select,
+.acc-form .po-lines-table .searchable-dropdown-trigger {
+    min-height: 32px; padding: 0.3rem 0.5rem; font-size: 0.82rem;
+}

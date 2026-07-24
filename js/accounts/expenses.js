@@ -542,7 +542,7 @@ function showSubmitClaimModal() {
     document.getElementById('claimItemsBody').innerHTML = '';
     document.getElementById('claimTotal').textContent = '0.00';
     addClaimItem();
-    AccountsCommon.openModal('submitClaimModal');
+    AccountsCommon.showFormPage('submitClaimModal');
 }
 
 let claimItemIndex = 0;
@@ -618,7 +618,7 @@ async function saveExpenseClaim() {
     try {
         await api.request(AccountsCommon.buildUrl('expenses/claims'), { method: 'POST', body: JSON.stringify(payload) });
         Toast.success('Expense claim submitted');
-        AccountsCommon.closeModal('submitClaimModal');
+        AccountsCommon.hideFormPage('submitClaimModal');
         await loadExpenseClaims();
     } catch (err) {
         console.error('[Expenses] saveExpenseClaim error:', err);

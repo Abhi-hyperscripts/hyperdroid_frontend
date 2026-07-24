@@ -148,92 +148,101 @@
     </div>
 
     <!-- Create Loan Modal -->
-    <div id="loanModal" class="modal po-fullpage">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">New Loan</h5>
-                    <button class="close-btn" onclick="AccountsCommon.closeModal('loanModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-row two-col">
+    <div id="loanModal" class="acc-form-page" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('loanModal'); return false;">Loans</a>
+                </nav>
+                <h1 class="acc-form-page__title">New Loan</h1>
+            </div>
+            <div class="acc-form">
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Loan Details</div>
+                    <div class="pgrid">
                         <div class="form-group">
-                            <label for="loanName">Loan Name *</label>
-                            <input type="text" id="loanName" class="form-control" placeholder="e.g., Delivery Van Loan">
+                            <label for="loanName">Loan Name <span class="req">*</span></label>
+                            <input type="text" id="loanName" class="form-control" placeholder="e.g. Delivery Van Loan">
                         </div>
                         <div class="form-group">
-                            <label for="loanLender">Lender</label>
-                            <input type="text" id="loanLender" class="form-control" placeholder="e.g., HDFC Bank">
+                            <label for="loanLender">Lender <span class="opt">(optional)</span></label>
+                            <input type="text" id="loanLender" class="form-control" placeholder="e.g. HDFC Bank">
                         </div>
-                    </div>
-                    <div class="form-row two-col">
                         <div class="form-group">
-                            <label for="loanPrincipal">Principal Amount *</label>
+                            <label for="loanPrincipal">Principal Amount <span class="req">*</span></label>
                             <input type="number" id="loanPrincipal" class="form-control" min="0" step="0.01" placeholder="0.00">
                         </div>
                         <div class="form-group">
-                            <label for="loanRate">Annual Interest Rate (%) *</label>
-                            <input type="number" id="loanRate" class="form-control" min="0" step="0.01" placeholder="e.g., 9.5">
-                        </div>
-                    </div>
-                    <div class="form-row two-col">
-                        <div class="form-group">
-                            <label for="loanTenure">Tenure (Months) *</label>
-                            <input type="number" id="loanTenure" class="form-control" min="1" step="1" placeholder="e.g., 36">
+                            <label for="loanRate">Annual Interest Rate (%) <span class="req">*</span></label>
+                            <input type="number" id="loanRate" class="form-control" min="0" step="0.01" placeholder="e.g. 9.5">
                         </div>
                         <div class="form-group">
-                            <label for="loanStartDate">Start Date *</label>
+                            <label for="loanTenure">Tenure (Months) <span class="req">*</span></label>
+                            <input type="number" id="loanTenure" class="form-control" min="1" step="1" placeholder="e.g. 36">
+                        </div>
+                        <div class="form-group">
+                            <label for="loanStartDate">Start Date <span class="req">*</span></label>
                             <input type="date" id="loanStartDate" class="form-control">
-                            <small class="form-hint">First EMI is due one month after this.</small>
+                            <small class="field-hint">First EMI is due one month after this.</small>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="loanEmi">EMI Amount (optional)</label>
-                        <input type="number" id="loanEmi" class="form-control" min="0" step="0.01" placeholder="Leave blank to auto-compute from the reducing-balance formula">
-                    </div>
-                    <div class="form-row two-col">
-                        <div class="form-group">
-                            <label>Loan Liability Account *</label>
-                            <div class="searchable-dropdown-container" id="loanAccountContainer"></div>
-                            <small class="form-hint">The liability account the loan is booked to (e.g., 2210 Long-term Loans).</small>
-                        </div>
-                        <div class="form-group">
-                            <label>Interest Expense Account *</label>
-                            <div class="searchable-dropdown-container" id="interestAccountContainer"></div>
-                            <small class="form-hint">Where interest is expensed (e.g., 5420 Interest on Loans).</small>
-                        </div>
-                    </div>
-                    <div class="form-row two-col">
-                        <div class="form-group">
-                            <label>Bank Account (EMIs paid from) *</label>
-                            <div class="searchable-dropdown-container" id="bankAccountContainer"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>Disbursement Account *</label>
-                            <div class="searchable-dropdown-container" id="disbursementAccountContainer"></div>
-                            <small class="form-hint">Where the disbursed money landed — usually the bank's GL account (e.g., 1121), or a fixed-asset account if the loan bought the asset directly.</small>
+                        <div class="form-group pf-wide">
+                            <label for="loanEmi">EMI Amount <span class="opt">(optional)</span></label>
+                            <input type="number" id="loanEmi" class="form-control" min="0" step="0.01" placeholder="Leave blank to auto-compute from the reducing-balance formula">
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('loanModal')">Cancel</button>
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Accounts</div>
+                    <div class="pgrid">
+                        <div class="form-group">
+                            <label>Loan Liability Account <span class="req">*</span></label>
+                            <div class="searchable-dropdown-container" id="loanAccountContainer"></div>
+                            <small class="field-hint">The liability account the loan is booked to (e.g. 2210 Long-term Loans).</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Interest Expense Account <span class="req">*</span></label>
+                            <div class="searchable-dropdown-container" id="interestAccountContainer"></div>
+                            <small class="field-hint">Where interest is expensed (e.g. 5420 Interest on Loans).</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Bank Account (EMIs paid from) <span class="req">*</span></label>
+                            <div class="searchable-dropdown-container" id="bankAccountContainer"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Disbursement Account <span class="req">*</span></label>
+                            <div class="searchable-dropdown-container" id="disbursementAccountContainer"></div>
+                            <small class="field-hint">Where the disbursed money landed — usually the bank's GL account (e.g. 1121), or a fixed-asset account if the loan bought the asset directly.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('loanModal')">Cancel</button>
                     <button class="btn btn-primary" id="saveLoanBtn" onclick="saveLoan()">Create Loan</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- View Loan / Schedule Modal -->
-    <div id="loanViewModal" class="modal po-fullpage">
-        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width:min(1040px,95vw);width:min(1040px,95vw);">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="loanViewTitle">Loan Schedule</h5>
-                    <button class="close-btn" onclick="AccountsCommon.closeModal('loanViewModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
+    <!-- View Loan / Schedule -->
+    <div id="loanViewModal" class="acc-form-page acc-form-page--wide" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('loanViewModal'); return false;">Loans</a>
+                </nav>
+                <h1 class="acc-form-page__title" id="loanViewTitle">Loan Schedule</h1>
+            </div>
+            <div class="acc-form">
+                <div class="form-section">
                     <div id="loanViewSummary" style="margin-bottom:1rem;"></div>
-                    <div class="data-table-container" style="max-height:420px;overflow:auto;">
+                    <div class="data-table-container" style="max-height:520px;overflow:auto;">
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -252,8 +261,10 @@
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('loanViewModal')">Close</button>
+            </div>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('loanViewModal')">Close</button>
                 </div>
             </div>
         </div>

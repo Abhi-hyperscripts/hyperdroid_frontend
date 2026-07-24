@@ -374,7 +374,7 @@ function showCreatePOModal() {
     document.getElementById('poLines').innerHTML = '';
     addPOLine();
     calculatePOTotals();
-    AccountsCommon.openModal('purchaseOrderModal');
+    AccountsCommon.showFormPage('purchaseOrderModal');
 }
 
 async function editPO(id) {
@@ -399,7 +399,7 @@ async function editPO(id) {
             addPOLine();
         }
         calculatePOTotals();
-        AccountsCommon.openModal('purchaseOrderModal');
+        AccountsCommon.showFormPage('purchaseOrderModal');
     } catch (err) {
         Toast.error('Failed to load purchase order');
     }
@@ -742,7 +742,7 @@ async function savePO() {
             await api.request(AccountsCommon.buildUrl('purchase-orders'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
             Toast.success('Purchase order saved as draft');
         }
-        AccountsCommon.closeModal('purchaseOrderModal');
+        AccountsCommon.hideFormPage('purchaseOrderModal');
         loadPurchaseOrders();
     } catch (err) {
         Toast.error(err.message || 'Failed to save purchase order');

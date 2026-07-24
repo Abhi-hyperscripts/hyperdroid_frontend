@@ -384,68 +384,78 @@
     </div>
 
     <!-- Register Asset Modal -->
-    <div id="assetModal" class="modal po-fullpage">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="assetModalTitle">Register Asset</h5>
-                    <button class="close-btn" onclick="AccountsCommon.closeModal('assetModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div id="assetModal" class="acc-form-page" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('assetModal'); return false;">Fixed Assets</a>
+                </nav>
+                <h1 class="acc-form-page__title" id="assetModalTitle">Register Asset</h1>
+            </div>
+            <form id="assetForm" class="acc-form">
+                <input type="hidden" id="assetId">
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Asset Details</div>
+                    <div class="pgrid">
+                        <div class="form-group">
+                            <label for="assetCode">Asset Code <span class="req">*</span></label>
+                            <input type="text" id="assetCode" class="form-control" required placeholder="e.g. FA-001">
+                        </div>
+                        <div class="form-group">
+                            <label for="assetName">Name <span class="req">*</span></label>
+                            <input type="text" id="assetName" class="form-control" required placeholder="e.g. Dell Laptop">
+                        </div>
+                        <div class="form-group">
+                            <label for="assetCategory">Category <span class="req">*</span></label>
+                            <select id="assetCategory" class="form-control" required>
+                                <option value="">Select…</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="assetPurchaseDate">Purchase Date <span class="req">*</span></label>
+                            <input type="date" id="assetPurchaseDate" class="form-control" required>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <form id="assetForm">
-                        <input type="hidden" id="assetId">
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="assetCode">Asset Code *</label>
-                                <input type="text" id="assetCode" class="form-control" required placeholder="e.g., FA-001">
-                            </div>
-                            <div class="form-group">
-                                <label for="assetName">Name *</label>
-                                <input type="text" id="assetName" class="form-control" required placeholder="e.g., Dell Laptop">
-                            </div>
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Valuation</div>
+                    <div class="pgrid">
+                        <div class="form-group">
+                            <label for="assetCost">Cost <span class="req">*</span></label>
+                            <input type="number" id="assetCost" class="form-control" required placeholder="e.g. 50000" step="0.01" min="0">
                         </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="assetCategory">Category *</label>
-                                <select id="assetCategory" class="form-control" required>
-                                    <option value="">Select...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="assetPurchaseDate">Purchase Date *</label>
-                                <input type="date" id="assetPurchaseDate" class="form-control" required>
-                            </div>
+                        <div class="form-group">
+                            <label for="assetResidualValue">Residual Value <span class="opt">(optional)</span></label>
+                            <input type="number" id="assetResidualValue" class="form-control" placeholder="e.g. 5000" step="0.01" min="0">
                         </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="assetCost">Cost *</label>
-                                <input type="number" id="assetCost" class="form-control" required placeholder="e.g., 50000" step="0.01" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label for="assetResidualValue">Residual Value</label>
-                                <input type="number" id="assetResidualValue" class="form-control" placeholder="e.g., 5000" step="0.01" min="0">
-                            </div>
-                        </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="assetLocation">Location</label>
-                                <input type="text" id="assetLocation" class="form-control" placeholder="e.g., Mumbai Office - Floor 3">
-                            </div>
-                            <div class="form-group">
-                                <label for="assetDepartment">Department</label>
-                                <input type="text" id="assetDepartment" class="form-control" placeholder="e.g., IT">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="assetDescription">Description</label>
-                                <textarea id="assetDescription" class="form-control" rows="2" placeholder="Asset description"></textarea>
-                            </div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('assetModal')">Cancel</button>
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Placement &amp; Notes</div>
+                    <div class="pgrid">
+                        <div class="form-group">
+                            <label for="assetLocation">Location <span class="opt">(optional)</span></label>
+                            <input type="text" id="assetLocation" class="form-control" placeholder="e.g. Mumbai Office — Floor 3">
+                        </div>
+                        <div class="form-group">
+                            <label for="assetDepartment">Department <span class="opt">(optional)</span></label>
+                            <input type="text" id="assetDepartment" class="form-control" placeholder="e.g. IT">
+                        </div>
+                        <div class="form-group pf-wide">
+                            <label for="assetDescription">Description <span class="opt">(optional)</span></label>
+                            <textarea id="assetDescription" class="form-control" rows="3" placeholder="Asset description"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('assetModal')">Cancel</button>
                     <button class="btn btn-primary" onclick="saveAsset()">Save</button>
                 </div>
             </div>
