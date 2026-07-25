@@ -154,9 +154,14 @@ async function renderProformaCharts(baseParams) {
         all.forEach(pi => { const amt = parseFloat(pi.total_amount || 0); if (amt > 0) { const s = pi.status || 'draft'; byStatus[s] = (byStatus[s] || 0) + amt; } });
         const st = Object.keys(byStatus);
         acDonut('pfStatusChart', st.map(s => s.replace(/_/g, ' ')), st.map(s => Math.round(byStatus[s] * 100) / 100), st.map(s => _PF_STATUS_COLOR[s] || '#64748b'));
-        const rank = _acRank(all.map(pi => ({ name: pi.customer_name || '—', amt: parseFloat(pi.total_amount || 0) })), 'name', 'amt', 6);
+        const rank = _acRank(all.map(pi => ({ name: _proformaPartyName(pi) || '—', amt: parseFloat(pi.total_amount || 0) })), 'name', 'amt', 6);
         acBarH('pfCustomerChart', rank.labels, rank.data);
     } catch (e) { _acEmpty('pfStatusChart'); _acEmpty('pfCustomerChart'); }
+}
+
+// The party a proforma is billed to: the linked customer's name, else the ad-hoc recipient (prospect) name.
+function _proformaPartyName(pi) {
+    return pi.customer_name || customers.find(c => c.id === pi.customer_id)?.name || pi.recipient_name || '';
 }
 
 async function loadProformaInvoices() {
@@ -192,7 +197,7 @@ async function loadProformaInvoices() {
         if (searching) {
             const q = search.toLowerCase();
             const filtered = items.filter(pi => {
-                const custName = pi.customer_name || customers.find(c => c.id === pi.customer_id)?.name || '';
+                const custName = _proformaPartyName(pi);
                 return `${pi.proforma_number || ''} ${custName}`.toLowerCase().includes(q);
             });
             total = filtered.length;
@@ -220,10 +225,12 @@ async function loadProformaInvoices() {
             tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><div class="empty-message"><p>No proforma invoices found</p></div></td></tr>';
         } else {
             tbody.innerHTML = items.map(pi => {
-                const custName = pi.customer_name || customers.find(c => c.id === pi.customer_id)?.name || '-';
+                const custName = _proformaPartyName(pi) || '-';
+                // Tag prospect (recipient-only) rows so the user can tell them apart from real customers.
+                const partyTag = !pi.customer_id && pi.recipient_name ? ' <span class="acc-pill">Prospect</span>' : '';
                 return `<tr>
                     <td>${AccountsCommon.escapeHtml(pi.proforma_number || '-')}</td>
-                    <td>${AccountsCommon.escapeHtml(custName)}</td>
+                    <td>${AccountsCommon.escapeHtml(custName)}${partyTag}</td>
                     <td>${AccountsCommon.formatDate(pi.proforma_date)}</td>
                     <td>${AccountsCommon.formatDate(pi.valid_until)}</td>
                     <td class="text-right">${AccountsCommon.formatCurrency(pi.total_amount)}</td>
@@ -285,7 +292,8 @@ async function viewProforma(id) {
 
         document.getElementById('proformaViewTitle').textContent = `Proforma ${esc(pi.proforma_number || '')}`;
 
-        const custName = pi.customer_name || customers.find(c => c.id === pi.customer_id)?.name || '-';
+        const custName = _proformaPartyName(pi) || '-';
+        const isProspect = !pi.customer_id && pi.recipient_name;
         const lines = pi.lines || [];
 
         // Per-line display uses the STORED tax_rate captured at save time,
@@ -331,8 +339,8 @@ async function viewProforma(id) {
         document.getElementById('proformaViewBody').innerHTML = `
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                 <div>
-                    <div style="color:var(--text-secondary);font-size:0.85rem;">Customer</div>
-                    <div style="font-weight:500;">${esc(custName)}</div>
+                    <div style="color:var(--text-secondary);font-size:0.85rem;">${isProspect ? 'Recipient (prospect)' : 'Customer'}</div>
+                    <div style="font-weight:500;">${esc(custName)}${isProspect ? ' <span class="acc-pill">Prospect</span>' : ''}</div>
                 </div>
                 <div>
                     <div style="color:var(--text-secondary);font-size:0.85rem;">Status</div>
@@ -377,10 +385,24 @@ async function viewProforma(id) {
 // PROFORMA MODAL — CREATE / EDIT
 // ============================================================================
 
+// Bill-To mode: 'customer' (existing client) or 'recipient' (ad-hoc prospect). Toggles which fields show
+// and which are required. The backend accepts EITHER a customer_id OR a recipient_name.
+let _proformaBillTo = 'customer';
+function setProformaBillTo(mode) {
+    _proformaBillTo = mode === 'recipient' ? 'recipient' : 'customer';
+    document.querySelectorAll('#proformaBillToToggle .acc-seg-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.mode === _proformaBillTo));
+    const isRecipient = _proformaBillTo === 'recipient';
+    const custGroup = document.getElementById('proformaCustomerGroup');
+    if (custGroup) custGroup.style.display = isRecipient ? 'none' : '';
+    document.querySelectorAll('.proforma-recipient-field').forEach(el => el.style.display = isRecipient ? '' : 'none');
+}
+
 function showCreateProformaModal() {
     document.getElementById('proformaModalTitle').textContent = 'Create Proforma Invoice';
     document.getElementById('proformaForm').reset();
     document.getElementById('proformaId').value = '';
+    setProformaBillTo('customer');
     // form.reset() clears the value but doesn't notify the SearchableDropdown, so after an edit the SD
     // label would still show the previous customer while the hidden value is '' (saveProforma then
     // falsely rejects with "Please select a customer"). Dispatch change to re-sync the label.
@@ -399,9 +421,17 @@ async function editProforma(id) {
         const pi = await api.request(AccountsCommon.buildUrl(`proforma-invoices/${id}`));
         document.getElementById('proformaModalTitle').textContent = `Edit Proforma ${pi.proforma_number || ''}`;
         document.getElementById('proformaId').value = pi.id;
+        // Recipient-only proforma (no customer) → recipient mode; else existing-customer mode.
+        const isRecipient = !pi.customer_id;
+        setProformaBillTo(isRecipient ? 'recipient' : 'customer');
         const proformaCustSel = document.getElementById('proformaCustomerId');
         proformaCustSel.value = pi.customer_id || '';
         proformaCustSel.dispatchEvent(new Event('change')); // re-sync the SearchableDropdown label on repeat edits
+        document.getElementById('proformaRecipientName').value = pi.recipient_name || '';
+        document.getElementById('proformaRecipientEmail').value = pi.recipient_email || '';
+        document.getElementById('proformaRecipientPhone').value = pi.recipient_phone || '';
+        document.getElementById('proformaRecipientGstin').value = pi.recipient_gstin || '';
+        document.getElementById('proformaRecipientAddress').value = pi.recipient_address || '';
         document.getElementById('proformaDate').value = pi.proforma_date?.split('T')[0] || '';
         document.getElementById('proformaValidUntil').value = pi.valid_until?.split('T')[0] || '';
         // Legacy header-level tax select — no longer in the markup (tax is
@@ -633,9 +663,11 @@ function calculateProformaTotals() {
 
 async function saveProforma() {
     const form = document.getElementById('proformaForm');
-    // The customer <select> is hidden (converted to a SearchableDropdown) but keeps `required`, so
-    // reportValidity() fails silently on it with no anchorable bubble. Guard explicitly with a Toast.
-    if (!document.getElementById('proformaCustomerId').value) { Toast.error('Please select a customer'); return; }
+    const isRecipient = _proformaBillTo === 'recipient';
+    // Mode-aware guard: existing-customer mode needs a selected customer; recipient mode needs a name.
+    // (The customer <select> is hidden behind a SearchableDropdown, so validate explicitly with a Toast.)
+    if (!isRecipient && !document.getElementById('proformaCustomerId').value) { Toast.error('Please select a customer'); return; }
+    if (isRecipient && !document.getElementById('proformaRecipientName').value.trim()) { Toast.error('Please enter a recipient name'); return; }
     if (!form.reportValidity()) return;
 
     // Block early if a required custom field is empty — avoids creating the proforma then failing its values write.
@@ -673,7 +705,13 @@ async function saveProforma() {
     // keeping a no-op default so the existing backend still parses, but tax
     // is now per-line via the lines[*].tax_config_id field above.
     const payload = {
-        customer_id: document.getElementById('proformaCustomerId').value,
+        // Existing-customer mode sends customer_id; recipient mode sends the recipient_* fields (customer_id null).
+        customer_id: isRecipient ? null : (document.getElementById('proformaCustomerId').value || null),
+        recipient_name: isRecipient ? (document.getElementById('proformaRecipientName').value.trim() || null) : null,
+        recipient_email: isRecipient ? (document.getElementById('proformaRecipientEmail').value.trim() || null) : null,
+        recipient_phone: isRecipient ? (document.getElementById('proformaRecipientPhone').value.trim() || null) : null,
+        recipient_gstin: isRecipient ? (document.getElementById('proformaRecipientGstin').value.trim() || null) : null,
+        recipient_address: isRecipient ? (document.getElementById('proformaRecipientAddress').value.trim() || null) : null,
         proforma_date: document.getElementById('proformaDate').value,
         valid_until: document.getElementById('proformaValidUntil').value,
         notes: document.getElementById('proformaNotes').value,
@@ -716,7 +754,7 @@ function _proformaLabel(id) {
     if (!pi) return { label: 'this proforma invoice', piNo: '', customerName: '' };
     const fmt = AccountsCommon.formatCurrency;
     const piNo = pi.proforma_number || '';
-    const customerName = pi.customer_name || customers?.find(c => c.id === pi.customer_id)?.name || 'the customer';
+    const customerName = _proformaPartyName(pi) || 'the customer';
     const amount = pi.total_amount != null ? fmt(pi.total_amount) : '';
     const dateStr = pi.proforma_date ? new Date(pi.proforma_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
     const label = `${piNo ? piNo + ' ' : ''}for ${customerName}${amount ? ' totalling ' + amount : ''}${dateStr ? ' dated ' + dateStr : ''}`;
@@ -777,6 +815,11 @@ async function rejectProforma(id) {
 }
 
 async function convertToInvoice(id) {
+    const pi = proformaInvoices.find(x => x.id === id);
+    // Recipient-only (prospect) proforma: we can't bill an AR invoice without a real customer, so collect
+    // the customer details first (pre-filled from the quote) and convert with that payload.
+    if (pi && !pi.customer_id && pi.recipient_name) { openProformaConvertModal(pi); return; }
+
     const { label } = _proformaLabel(id);
     const ok = await Confirm.show({
         title: 'Convert to Customer Invoice',
@@ -792,6 +835,89 @@ async function convertToInvoice(id) {
         // Navigate to receivables page so user can see the new invoice
         window.location.href = 'receivables.html';
     } catch (err) { Toast.error(err.message || 'Failed to convert to invoice'); }
+}
+
+// ── Convert a recipient-only proforma: create the customer, then convert ──────────────────────────
+let _convertGstDd = null;
+let _proformaConverting = false;
+
+function openProformaConvertModal(pi) {
+    const set = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v || ''; };
+    document.getElementById('convertProformaId').value = pi.id;
+    set('convName', pi.recipient_name);
+    set('convEmail', pi.recipient_email);
+    set('convPhone', pi.recipient_phone);
+    set('convTaxId', pi.recipient_gstin);
+    set('convAddress', pi.recipient_address);
+    set('convCity', '');
+    set('convState', '');
+    set('convStateCode', (pi.recipient_gstin || '').trim().slice(0, 2)); // GSTIN first 2 digits = state code
+    set('convCountry', 'India');
+
+    const initialTreatment = pi.recipient_gstin ? 'registered' : 'unregistered';
+    if (!_convertGstDd && typeof SearchableDropdown !== 'undefined') {
+        _convertGstDd = new SearchableDropdown(document.getElementById('convGstTreatmentContainer'), {
+            options: [
+                { value: 'registered', label: 'Registered (has GSTIN)' },
+                { value: 'unregistered', label: 'Unregistered' },
+                { value: 'composition', label: 'Composition' },
+                { value: 'overseas', label: 'Overseas (export, zero-rated)' }
+            ],
+            value: initialTreatment,
+            onChange: onConvertTreatmentChange
+        });
+    } else if (_convertGstDd) {
+        _convertGstDd.setValue ? _convertGstDd.setValue(initialTreatment) : (_convertGstDd.selectedValue = initialTreatment);
+    }
+    onConvertTreatmentChange();
+    AccountsCommon.openModal('proformaConvertModal');
+}
+
+function _convertTreatment() { return _convertGstDd?.getValue?.() || _convertGstDd?.selectedValue || 'registered'; }
+
+// GSTIN is required only for a registered customer; state code is needed for every domestic (non-overseas) one.
+function onConvertTreatmentChange() {
+    const t = _convertTreatment();
+    const taxGrp = document.getElementById('convTaxIdGroup');
+    const stateGrp = document.getElementById('convStateCodeGroup');
+    if (taxGrp) taxGrp.style.display = t === 'registered' ? '' : 'none';
+    if (stateGrp) stateGrp.style.display = t === 'overseas' ? 'none' : '';
+}
+
+async function submitProformaConvert() {
+    if (_proformaConverting) return;
+    const id = document.getElementById('convertProformaId').value;
+    const val = elId => (document.getElementById(elId)?.value || '').trim();
+    const treatment = _convertTreatment();
+    const customer = {
+        name: val('convName'), phone: val('convPhone'), email: val('convEmail'),
+        gst_treatment: treatment,
+        tax_id: val('convTaxId') || null,
+        billing_address_line1: val('convAddress'), city: val('convCity'), state: val('convState'),
+        state_code: val('convStateCode') || null, country: val('convCountry') || 'India'
+    };
+    // Client-side guards mirroring CreateCustomer (surface a clean message before the round-trip).
+    if (!customer.name) return Toast.error('Name is required');
+    if (!customer.phone) return Toast.error('Phone is required');
+    if (!customer.email) return Toast.error('Email is required');
+    if (treatment === 'registered' && !customer.tax_id) return Toast.error('GSTIN is required for a registered customer');
+    if (treatment !== 'overseas' && !customer.state_code) return Toast.error('State code (place of supply) is required');
+    if (!customer.billing_address_line1 || !customer.city || !customer.state || !customer.country) return Toast.error('Address, city, state and country are required');
+
+    _proformaConverting = true;
+    try {
+        const result = await api.request(AccountsCommon.buildUrl(`proforma-invoices/${id}/convert-to-invoice`), {
+            method: 'POST', body: JSON.stringify({ customer }), headers: { 'Content-Type': 'application/json' }
+        });
+        const invoiceNo = result?.invoice_number || result?.id || '';
+        Toast.success(`Customer created and proforma converted${invoiceNo ? ' to ' + invoiceNo : ''}`);
+        AccountsCommon.closeModal('proformaConvertModal');
+        window.location.href = 'receivables.html';
+    } catch (err) {
+        Toast.error(err.message || 'Failed to convert to invoice');
+    } finally {
+        _proformaConverting = false;
+    }
 }
 
 async function deleteProforma(id) {

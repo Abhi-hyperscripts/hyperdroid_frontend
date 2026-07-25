@@ -2357,6 +2357,25 @@ textarea.form-control {
 .acc-form label .opt { color: var(--text-muted); font-weight: 400; font-size: 0.72rem; margin-left: 4px; }
 .acc-form .form-control { width: 100%; }
 .acc-form .field-hint { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4; }
+/* Segmented toggle (e.g. Bill To: existing customer vs new recipient) */
+.acc-segmented { display: inline-flex; padding: 3px; gap: 3px; background: var(--bg-tertiary, rgba(255,255,255,0.04)); border: 1px solid var(--border-color); border-radius: 9px; }
+.acc-segmented .acc-seg-btn {
+    appearance: none; border: 0; background: transparent; color: var(--text-secondary);
+    font-size: 0.85rem; font-weight: 600; padding: 7px 14px; border-radius: 7px; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.acc-segmented .acc-seg-btn:hover { color: var(--text-primary); }
+.acc-segmented .acc-seg-btn.active { background: var(--brand-primary); color: #fff; }
+
+/* Small inline pill (e.g. a "Prospect" tag next to a recipient-only proforma's name) */
+.acc-pill {
+    display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.02em; vertical-align: middle;
+    color: var(--color-warning, #b26a00);
+    background: color-mix(in srgb, var(--color-warning, #ed6c02) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-warning, #ed6c02) 35%, transparent);
+}
+
 /* Read-only value shown in place of an input on full-page detail views (PO/invoice view) */
 .acc-form .acc-view-value { font-size: 0.95rem; font-weight: 500; color: var(--text-primary); line-height: 1.4; min-height: 22px; }
 .acc-form .acc-view-value .status-badge { font-weight: 600; }

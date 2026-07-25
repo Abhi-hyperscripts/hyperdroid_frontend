@@ -236,11 +236,41 @@
                 <div class="form-section">
                     <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Proforma Details</div>
                     <div class="pgrid">
-                        <div class="form-group">
+                        <div class="form-group pf-wide">
+                            <label>Bill To</label>
+                            <div class="acc-segmented" id="proformaBillToToggle">
+                                <button type="button" class="acc-seg-btn active" data-mode="customer" onclick="setProformaBillTo('customer')">Existing customer</button>
+                                <button type="button" class="acc-seg-btn" data-mode="recipient" onclick="setProformaBillTo('recipient')">New recipient (prospect)</button>
+                            </div>
+                            <small class="field-hint">A quote can go to a prospect who isn't a customer yet — you'll create the customer when it's accepted &amp; converted.</small>
+                        </div>
+                        <!-- Existing-customer mode -->
+                        <div class="form-group" id="proformaCustomerGroup">
                             <label for="proformaCustomerId">Customer <span class="req">*</span></label>
-                            <select id="proformaCustomerId" class="form-control" required>
+                            <select id="proformaCustomerId" class="form-control">
                                 <option value="">Select customer…</option>
                             </select>
+                        </div>
+                        <!-- Recipient (prospect) mode -->
+                        <div class="form-group proforma-recipient-field" id="proformaRecipientNameGroup" style="display:none;">
+                            <label for="proformaRecipientName">Recipient name <span class="req">*</span></label>
+                            <input type="text" id="proformaRecipientName" class="form-control" placeholder="e.g. Acme Corp (prospect)">
+                        </div>
+                        <div class="form-group proforma-recipient-field" style="display:none;">
+                            <label for="proformaRecipientEmail">Recipient email <span class="opt">(optional)</span></label>
+                            <input type="text" id="proformaRecipientEmail" class="form-control" placeholder="name@company.com">
+                        </div>
+                        <div class="form-group proforma-recipient-field" style="display:none;">
+                            <label for="proformaRecipientPhone">Recipient phone <span class="opt">(optional)</span></label>
+                            <input type="text" id="proformaRecipientPhone" class="form-control" placeholder="+91-…">
+                        </div>
+                        <div class="form-group proforma-recipient-field" style="display:none;">
+                            <label for="proformaRecipientGstin">Recipient GSTIN <span class="opt">(optional)</span></label>
+                            <input type="text" id="proformaRecipientGstin" class="form-control" placeholder="GSTIN if known (sets place of supply)">
+                        </div>
+                        <div class="form-group pf-wide proforma-recipient-field" style="display:none;">
+                            <label for="proformaRecipientAddress">Recipient address <span class="opt">(optional)</span></label>
+                            <input type="text" id="proformaRecipientAddress" class="form-control" placeholder="Address">
                         </div>
                         <div class="form-group">
                             <label for="proformaCurrency">Currency</label>
@@ -319,6 +349,70 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-outline" onclick="AccountsCommon.closeModal('proformaViewModal')">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Convert a recipient-only (prospect) proforma: create the customer to bill the invoice to -->
+    <div id="proformaConvertModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="max-width:660px;">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create customer &amp; convert</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('proformaConvertModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <p class="field-hint" style="margin-bottom:1rem;">This quote was issued to a prospect. Create the customer to bill the invoice to — fields are pre-filled from the quote.</p>
+                    <input type="hidden" id="convertProformaId">
+                    <div class="acc-form">
+                        <div class="pgrid">
+                            <div class="form-group">
+                                <label for="convName">Name <span class="req">*</span></label>
+                                <input type="text" id="convName" class="form-control" placeholder="Legal name">
+                            </div>
+                            <div class="form-group">
+                                <label for="convPhone">Phone <span class="req">*</span></label>
+                                <input type="text" id="convPhone" class="form-control" placeholder="+91-…">
+                            </div>
+                            <div class="form-group">
+                                <label for="convEmail">Email <span class="req">*</span></label>
+                                <input type="text" id="convEmail" class="form-control" placeholder="name@company.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="convGstTreatment">GST treatment <span class="req">*</span></label>
+                                <div class="searchable-dropdown-container" id="convGstTreatmentContainer"></div>
+                            </div>
+                            <div class="form-group" id="convTaxIdGroup">
+                                <label for="convTaxId">GSTIN / Tax ID <span class="req">*</span></label>
+                                <input type="text" id="convTaxId" class="form-control" placeholder="GSTIN (required if registered)">
+                            </div>
+                            <div class="form-group" id="convStateCodeGroup">
+                                <label for="convStateCode">State code <span class="req">*</span></label>
+                                <input type="text" id="convStateCode" class="form-control" placeholder="e.g. 27 (place of supply)">
+                            </div>
+                            <div class="form-group pf-wide">
+                                <label for="convAddress">Address <span class="req">*</span></label>
+                                <input type="text" id="convAddress" class="form-control" placeholder="Billing address">
+                            </div>
+                            <div class="form-group">
+                                <label for="convCity">City <span class="req">*</span></label>
+                                <input type="text" id="convCity" class="form-control" placeholder="City">
+                            </div>
+                            <div class="form-group">
+                                <label for="convState">State <span class="req">*</span></label>
+                                <input type="text" id="convState" class="form-control" placeholder="State/Province">
+                            </div>
+                            <div class="form-group">
+                                <label for="convCountry">Country <span class="req">*</span></label>
+                                <input type="text" id="convCountry" class="form-control" value="India" placeholder="Country">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('proformaConvertModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitProformaConvert()">Create &amp; Convert</button>
                 </div>
             </div>
         </div>
