@@ -1088,7 +1088,18 @@ function showRecordPaymentModal() {
     document.getElementById('paymentForm').reset();
     document.getElementById('paymentId').value = '';
     document.getElementById('paymentAllocations').innerHTML = '<tr class="empty-state"><td colspan="3"><div class="empty-message"><p>Select a customer to see outstanding invoices</p></div></td></tr>';
+    updatePaymentGross();
     AccountsCommon.openModal('customerPaymentModal');
+}
+
+// Gross applied to invoices = net cash received + TDS withheld by the customer. The invoice clears at
+// the gross; only the net cash hits the bank, and the TDS is booked to TDS Receivable. Kept as a
+// read-only display so the user can see what their allocations must sum to.
+function updatePaymentGross() {
+    const amount = parseFloat(document.getElementById('paymentAmount')?.value) || 0;
+    const tds = parseFloat(document.getElementById('paymentTds')?.value) || 0;
+    const disp = document.getElementById('paymentGrossDisplay');
+    if (disp) disp.value = AccountsCommon.formatCurrency(amount + tds);
 }
 
 // Open the Record Payment modal pre-filled with the invoice's customer.
@@ -1145,11 +1156,19 @@ async function saveCustomerPayment() {
 
     // min="0" on the input lets ₹0 through native validation — a zero payment
     // posts a meaningless GL entry. Require strictly positive.
-    const amount = parseFloat(document.getElementById('paymentAmount').value);
-    if (isNaN(amount) || amount <= 0) {
-        Toast.error('Payment amount must be greater than zero');
+    // 'amount' here is the NET cash received into the bank. When the customer withheld TDS at source,
+    // the GROSS settled against the invoices (and sent to the backend as `amount`) is netCash + tds.
+    const netCash = parseFloat(document.getElementById('paymentAmount').value);
+    if (isNaN(netCash) || netCash <= 0) {
+        Toast.error('Amount received must be greater than zero');
         return;
     }
+    const tds = parseFloat(document.getElementById('paymentTds')?.value) || 0;
+    if (tds < 0) {
+        Toast.error('TDS withheld cannot be negative');
+        return;
+    }
+    const gross = Math.round((netCash + tds) * 100) / 100;
 
     // Backend CustomerPaymentAllocationRequest expects { customer_invoice_id, allocated_amount }
     // — NOT { invoice_id, amount }. Sending the wrong shape silently dropped allocations
@@ -1161,20 +1180,23 @@ async function saveCustomerPayment() {
         if (invoiceId && allocAmt > 0) allocations.push({ customer_invoice_id: invoiceId, allocated_amount: allocAmt });
     });
 
-    // Over-allocation guard: the sum of invoice allocations cannot exceed the
-    // payment amount (small epsilon for float noise on 2-dp currency).
+    // Over-allocation guard: the sum of invoice allocations cannot exceed the GROSS settled amount
+    // (net cash + TDS), since the invoice clears at the gross (small epsilon for 2-dp float noise).
     const allocatedTotal = allocations.reduce((s, a) => s + a.allocated_amount, 0);
-    if (allocatedTotal - amount > 0.005) {
-        Toast.error(`Allocated total (${AccountsCommon.formatCurrency(allocatedTotal)}) exceeds the payment amount (${AccountsCommon.formatCurrency(amount)})`);
+    if (allocatedTotal - gross > 0.005) {
+        Toast.error(`Allocated total (${AccountsCommon.formatCurrency(allocatedTotal)}) exceeds the amount applied to invoices (${AccountsCommon.formatCurrency(gross)})`);
         return;
     }
 
     // Backend RecordCustomerPaymentRequest expects `reference_number`, not `reference`.
     // Fixed in Phase 4 Tier 1 — was being silently dropped before.
+    // `amount` = GROSS (what clears the invoices = allocations sum); `tds_amount` = TDS withheld. The
+    // bank receives amount - tds_amount. With tds 0, gross == net cash → identical to the legacy payload.
     const payload = {
         customer_id: document.getElementById('paymentCustomerId').value,
         payment_date: document.getElementById('paymentDate').value,
-        amount,
+        amount: gross,
+        tds_amount: tds,
         bank_account_id: document.getElementById('paymentBankAccountId').value,
         reference_number: document.getElementById('paymentReference').value,
         payment_method: document.getElementById('paymentMethod')?.value || 'bank_transfer',

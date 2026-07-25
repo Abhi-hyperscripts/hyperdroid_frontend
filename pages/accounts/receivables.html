@@ -598,8 +598,21 @@
                         </div>
                         <div class="form-row two-col">
                             <div class="form-group">
-                                <label for="paymentAmount">Amount *</label>
-                                <input type="number" id="paymentAmount" class="form-control" required step="0.01" min="0" placeholder="0.00">
+                                <label for="paymentAmount">Amount Received (Bank) *</label>
+                                <input type="number" id="paymentAmount" class="form-control" required step="0.01" min="0" placeholder="0.00" oninput="updatePaymentGross()">
+                                <small class="form-hint">Net cash that actually reached your bank.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentTds">TDS Withheld by Customer</label>
+                                <input type="number" id="paymentTds" class="form-control" step="0.01" min="0" value="0" placeholder="0.00" oninput="updatePaymentGross()">
+                                <small class="form-hint">Tax deducted at source. Booked to TDS Receivable; the invoice still clears in full.</small>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="paymentGrossDisplay">Applied to Invoices (Gross)</label>
+                                <input type="text" id="paymentGrossDisplay" class="form-control" readonly value="0.00" tabindex="-1">
+                                <small class="form-hint">Amount Received + TDS. Your allocations below must sum to this.</small>
                             </div>
                             <div class="form-group">
                                 <label for="paymentBankAccountId">Bank Account *</label>
