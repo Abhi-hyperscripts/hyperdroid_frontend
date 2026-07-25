@@ -478,7 +478,9 @@ const AccountsCommon = {
             else if (d.field_type === 'number')
                 control = `<input type="number" step="any" class="form-control" data-cf="${v(d.field_key)}" value="${v(val)}">`;
             else if (d.field_type === 'date')
-                control = `<input type="date" class="form-control" data-cf="${v(d.field_key)}" value="${v(val)}">`;
+                // flatpickr text input (matches the rest of the Accounts forms). dateFormat 'Y-m-d'
+                // keeps .value as YYYY-MM-DD, identical to the old native date input the backend expects.
+                control = `<input type="text" class="form-control" data-cf="${v(d.field_key)}" data-cf-date="1" value="${v(val)}" placeholder="Select date">`;
             else if (d.field_type === 'dropdown')
                 control = `<div class="searchable-dropdown-container" data-cf-dd="${v(d.field_key)}"></div><input type="hidden" data-cf="${v(d.field_key)}" value="${v(val)}">`;
             else
@@ -501,6 +503,13 @@ const AccountsCommon = {
                     options: opts, value: values[d.field_key] ?? '', placeholder: 'Select…',
                     searchPlaceholder: 'Search…', onChange: (val) => { if (hidden) hidden.value = val || ''; }
                 });
+            });
+        }
+
+        // Fold date custom fields into flatpickr (matches the main form date pickers).
+        if (typeof flatpickr === 'function') {
+            host.querySelectorAll('input[data-cf-date="1"]').forEach(el => {
+                flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true });
             });
         }
 
