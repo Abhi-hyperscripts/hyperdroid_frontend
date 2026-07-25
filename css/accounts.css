@@ -2252,3 +2252,8 @@ textarea.form-control {
 .acc-form .po-lines-table .searchable-dropdown-trigger {
     min-height: 32px; padding: 0.3rem 0.5rem; font-size: 0.82rem;
 }
+
+/* The Custom Fields section is injected inside its own host div (#…CustomFields), so it always matches
+   .form-section:last-child and loses its bottom margin — restoring the inter-card gap (it's always
+   followed by another section, e.g. Line Items). */
+.acc-form [id$="CustomFields"] > .form-section { margin-bottom: 1rem; }
