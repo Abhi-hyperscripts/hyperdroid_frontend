@@ -163,6 +163,19 @@
                         </div>
                     </div>
 
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Payable by status</h4>
+                            <div class="acc-chart-sub">Outstanding balance grouped by bill status</div>
+                            <div id="billStatusChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Top vendors by outstanding</h4>
+                            <div class="acc-chart-sub">Who we owe the most right now</div>
+                            <div id="billVendorChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="billVendorFilterContainer"></div>
                         <select id="billStatusFilter" class="form-control" style="width:auto; min-width:140px;" onchange="currentBillPage=1; loadVendorBills()">
@@ -234,6 +247,19 @@
                 <!-- Tab 2: Vendor Payments -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="vendor-payments">
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Payments over time</h4>
+                            <div class="acc-chart-sub">Cash paid to vendors per month (last 6 months)</div>
+                            <div id="vpayTrendChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>By payment method</h4>
+                            <div class="acc-chart-sub">How we're paying vendors</div>
+                            <div id="vpayMethodChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="paymentVendorFilterContainer"></div>
                         <button class="btn btn-primary" onclick="showRecordPaymentModal()" data-admin-only>
@@ -279,8 +305,21 @@
                 <!-- Tab 3: Debit Notes -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="debit-notes">
-                    <div class="filter-toolbar" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem;">
-                        <div id="dnVendorFilterContainer"></div>
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Debit notes over time</h4>
+                            <div class="acc-chart-sub">Value debited back per month (last 6 months)</div>
+                            <div id="dnTrendChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Top vendors by debits</h4>
+                            <div class="acc-chart-sub">Where debit notes concentrate</div>
+                            <div id="dnVendorChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="dnVendorFilterContainer"></div>
                         <button class="btn btn-primary" onclick="showCreateDebitNoteModal()">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             Create Debit Note
@@ -372,6 +411,14 @@
                         <div class="stat-card">
                             <div class="stat-value" id="ap90Plus">0.00</div>
                             <div class="stat-label">90+ Days</div>
+                        </div>
+                    </div>
+
+                    <div class="acc-charts" style="grid-template-columns: 1fr;">
+                        <div class="acc-chart-card">
+                            <h4>Payable by age</h4>
+                            <div class="acc-chart-sub">How much you owe in each ageing band — the further right, the more overdue</div>
+                            <div id="apAgingBucketChart" class="acc-chart"></div>
                         </div>
                     </div>
 
@@ -663,11 +710,13 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/payables.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 
     <!-- Flatpickr for Date/Time Picker -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="accounts" data-title="Accounts Assistant"><\/script>');</script>
 </body>
 </html>

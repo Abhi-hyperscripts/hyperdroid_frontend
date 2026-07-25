@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 // ============================================================================
 
 function onTabSwitch(tabId) {
+    _acActiveRender = null;  // each tab's loader re-arms this for theme-toggle redraws
     switch (tabId) {
         case 'vendor-bills':      loadVendorBills(); break;
         case 'vendor-payments':   loadVendorPayments(); break;
@@ -76,6 +77,46 @@ function onTabSwitch(tabId) {
         case 'ap-aging':          loadAPAging(); break;
         case 'vendor-statements': break; // user-triggered
     }
+}
+
+// ============================================================================
+// CHARTS — per-subsection renderers (mirror of receivables; shared helpers live
+// in accounts-charts.js). Each sets _acActiveRender so a theme toggle redraws.
+// ============================================================================
+const _AP_STATUS_COLOR = { approved: '#3b82f6', partially_paid: '#f59e0b', overdue: '#ef4444', draft: '#64748b', paid: '#10b981' };
+function _vendorName(o) { return o.vendor_name || (vendors || []).find(v => v.id === o.vendor_id)?.name || '—'; }
+async function renderBillCharts(baseParams) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('vendor-bills', { ...baseParams, limit: 1000, offset: 0 }), { _skipSpinner: true });
+        const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const byStatus = {};
+        all.forEach(b => { const bal = parseFloat(b.balance_due ?? b.balance ?? 0); if (bal > 0) { const s = b.status || 'approved'; byStatus[s] = (byStatus[s] || 0) + bal; } });
+        const st = Object.keys(byStatus);
+        acDonut('billStatusChart', st.map(s => s.replace(/_/g, ' ')), st.map(s => Math.round(byStatus[s] * 100) / 100), st.map(s => _AP_STATUS_COLOR[s] || '#64748b'));
+        const rank = _acRank(all.map(b => ({ name: _vendorName(b), bal: parseFloat(b.balance_due ?? b.balance ?? 0) })), 'name', 'bal', 6);
+        acBarH('billVendorChart', rank.labels, rank.data);
+    } catch (e) { _acEmpty('billStatusChart'); _acEmpty('billVendorChart'); }
+}
+function renderVendorPaymentCharts(list) {
+    const rows = (list || []).map(p => ({ ...p, _cash: parseFloat(p.amount || 0) }));
+    const m = _acMonthly(rows, 'payment_date', '_cash', 6);
+    acArea('vpayTrendChart', m.categories, m.data, 'Paid');
+    const methods = {};
+    rows.forEach(p => { const k = (p.payment_method || 'other').replace(/_/g, ' '); methods[k] = (methods[k] || 0) + p._cash; });
+    const mk = Object.keys(methods).filter(k => methods[k] > 0);
+    acDonut('vpayMethodChart', mk.map(k => k.replace(/\b\w/g, c => c.toUpperCase())), mk.map(k => Math.round(methods[k] * 100) / 100));
+}
+function renderDebitNoteCharts(list) {
+    const m = _acMonthly(list || [], 'debit_date', 'amount', 6);
+    acBarV('dnTrendChart', m.categories, m.data);
+    const rank = _acRank((list || []).map(dn => ({ name: _vendorName(dn), amt: parseFloat(dn.amount || 0) })), 'name', 'amt', 6);
+    acBarH('dnVendorChart', rank.labels, rank.data);
+}
+function renderAPAgingChart(normalized) {
+    const sum = (f) => (normalized || []).reduce((s, r) => s + (parseFloat(r[f]) || 0), 0);
+    acBarV('apAgingBucketChart', ['Current', '1-30', '31-60', '61-90', '90+'],
+        [sum('current'), sum('days_1_30'), sum('days_31_60'), sum('days_61_90'), sum('days_90_plus')].map(v => Math.round(v * 100) / 100),
+        ['#10b981', '#3b82f6', '#f59e0b', '#f97316', '#ef4444']);
 }
 
 // ============================================================================
@@ -156,6 +197,11 @@ async function loadVendorBills() {
         const res = await api.request(url, { _skipSpinner: true });
         const data = res?.data || res?.items || (Array.isArray(res) ? res : []);
         vendorBills = data;
+
+        // Charts read the full matching set (vendor + date; ignore status so the status split stays meaningful).
+        const _billChartParams = { ...(vendorId ? { vendorId } : {}), ...(fromDate ? { fromDate } : {}), ...(toDate ? { toDate } : {}) };
+        renderBillCharts(_billChartParams);
+        _acActiveRender = () => renderBillCharts(_billChartParams);
 
         // `total` feeds ONLY the pager below — the KPI tiles read res.stats.
         // Backend now returns the FILTERED count in `total`; use ?? (not ||) so a
@@ -979,6 +1025,8 @@ async function loadVendorPayments() {
         const res = await api.request(url, { _skipSpinner: true });
         const payments = Array.isArray(res) ? res : (res?.data || res?.items || []);
         renderPaymentsTable(payments);
+        renderVendorPaymentCharts(payments);
+        _acActiveRender = () => renderVendorPaymentCharts(payments);
     } catch (err) {
         console.error('[Payables] loadVendorPayments error:', err);
         Toast.error('Failed to load payments');
@@ -1224,6 +1272,9 @@ async function loadAPAging() {
         el('ap90', fmt(summary.days_61_90 ?? sumField('days_61_90')));
         el('ap90Plus', fmt(summary.days_90_plus ?? sumField('days_90_plus')));
 
+        renderAPAgingChart(data);
+        _acActiveRender = () => renderAPAgingChart(data);
+
         renderAPAgingTable(data);
     } catch (err) {
         console.error('[Payables] loadAPAging error:', err);
@@ -1327,10 +1378,13 @@ async function loadVendorStatement() {
         const vendorName = stmt.vendor_name || (vendor ? (vendor.name || vendor.vendor_name) : 'Vendor');
         const fmt = AccountsCommon.formatCurrency, esc = AccountsCommon.escapeHtml, fmtD = AccountsCommon.formatDate;
         let bal = parseFloat(stmt.opening_balance) || 0;
+        const balLabels = [], balData = [];
         const rows = txns.map(t => {
             const dr = parseFloat(t.debit) || parseFloat(t.bill_amount) || 0;
             const cr = parseFloat(t.credit) || parseFloat(t.payment_amount) || 0;
             bal += dr - cr;
+            balLabels.push(fmtD(t.date || t.bill_date || t.payment_date));
+            balData.push(Math.round(bal * 100) / 100);
             return `<tr><td>${fmtD(t.date || t.bill_date || t.payment_date)}</td>
                 <td>${esc(t.reference || t.bill_number || t.payment_number || '-')}</td>
                 <td>${esc(t.description || t.type || '-')}</td>
@@ -1339,17 +1393,32 @@ async function loadVendorStatement() {
         }).join('');
 
         const closingBal = bal;
-        const totalBilled = fmt(stmt.total_billed || bills.reduce((s, b) => s + b.debit, 0));
-        const totalPaid = fmt(stmt.total_paid || payments.reduce((s, p) => s + p.credit, 0));
+        const totalBilled = stmt.total_billed || bills.reduce((s, b) => s + b.debit, 0);
+        const totalPaid = stmt.total_paid || payments.reduce((s, p) => s + p.credit, 0);
+        const outstanding = stmt.total_outstanding ?? closingBal;
 
-        container.innerHTML = `<div class="glass-card" style="margin-bottom:1rem;"><div class="glass-card-body">
-            <h4>${esc(vendorName)} — Statement</h4>
-            <p style="color:var(--text-secondary);margin:0;">${fromDate ? fmtD(fromDate) : 'Start'} to ${toDate ? fmtD(toDate) : 'Today'} | Total Billed: ${totalBilled} | Total Paid: ${totalPaid} | Outstanding: <strong>${fmt(stmt.total_outstanding || closingBal)}</strong></p>
-            </div></div>
+        container.innerHTML = `<h3 class="stmt-title">${esc(vendorName)} — Statement</h3>
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-value">${fmt(totalBilled)}</div><div class="stat-label">Total Billed</div></div>
+                <div class="stat-card"><div class="stat-value">${fmt(totalPaid)}</div><div class="stat-label">Total Paid</div></div>
+                <div class="stat-card"><div class="stat-value stmt-outstanding">${fmt(outstanding)}</div><div class="stat-label">Outstanding</div></div>
+            </div>
+            <div class="acc-charts" style="grid-template-columns: 1fr;">
+                <div class="acc-chart-card">
+                    <h4>Outstanding balance over time</h4>
+                    <div class="acc-chart-sub">Running balance owed after each bill, payment and debit note</div>
+                    <div id="vstmtBalanceChart" class="acc-chart"></div>
+                </div>
+            </div>
             <div class="data-table-container"><table class="data-table">
             <thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>Debit</th><th>Credit</th><th>Balance</th></tr></thead>
             <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:1rem;">No transactions</td></tr>'}</tbody>
             </table></div>`;
+        if (balData.length) {
+            const draw = () => acArea('vstmtBalanceChart', balLabels, balData, 'Balance');
+            draw();
+            _acActiveRender = draw;
+        }
     } catch (err) {
         console.error('[Payables] loadVendorStatement error:', err);
         Toast.error('Failed to load vendor statement');
@@ -1424,6 +1493,8 @@ async function loadDebitNotes() {
 
         const res = await api.request(AccountsCommon.buildUrl('debit-notes', params), { _skipSpinner: true });
         debitNotes = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        renderDebitNoteCharts(debitNotes);
+        _acActiveRender = () => renderDebitNoteCharts(debitNotes);
         const total = res?.total ?? debitNotes.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
         if (dnPage > totalPages) { dnPage = totalPages; return loadDebitNotes(); }
