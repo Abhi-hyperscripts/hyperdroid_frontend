@@ -2317,6 +2317,8 @@ textarea.form-control {
     display: flex; align-items: center; justify-content: center; min-height: 210px;
     color: var(--text-secondary); font-size: 0.85rem;
 }
+.stmt-title { margin: 0 0 14px; font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
+.stmt-outstanding { color: var(--brand-primary); }
 
 #tds-receivable .tds-hero {
     display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;

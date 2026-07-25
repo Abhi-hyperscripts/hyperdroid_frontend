@@ -191,7 +191,7 @@ function acBarV(id, categories, data, colors) {
         tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }
     });
 }
-function acArea(id, categories, data) {
+function acArea(id, categories, data, name) {
     if (!data.length || data.every(v => !v)) return _acEmpty(id);
     const t = _acTheme();
     _acMount(id, {
@@ -199,7 +199,7 @@ function acArea(id, categories, data) {
         theme: { mode: t.isDark ? 'dark' : 'light' },
         stroke: { curve: 'smooth', width: 2.5 }, colors: [t.brand],
         fill: { type: 'gradient', gradient: { shadeIntensity: 0.4, opacityFrom: 0.35, opacityTo: 0.03, stops: [0, 100] } },
-        series: [{ name: 'Collected', data }], dataLabels: { enabled: false },
+        series: [{ name: name || 'Amount', data }], dataLabels: { enabled: false },
         xaxis: { categories, labels: { style: { colors: t.text, fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
         yaxis: { labels: { formatter: _inr, style: { colors: t.text, fontSize: '11px' } } },
         grid: { borderColor: t.grid, strokeDashArray: 4 },
@@ -1735,25 +1735,28 @@ async function loadCustomerStatement() {
         const txns = res?.transactions || [...invoices, ...payments, ...credits].sort((a, b) => new Date(a.date) - new Date(b.date));
 
         const custName = res?.customer_name || res?.customer?.name || 'Customer Statement';
-        let html = `<div class="glass-card" style="margin-bottom: 1rem;"><div class="glass-card-body">
-            <h4>${esc(custName)} — Statement</h4>
-            <p style="color: var(--text-secondary); margin: 0;">Total Invoiced: ${fmt(res?.total_invoiced ?? 0)} | Total Received: ${fmt(res?.total_received ?? 0)} | Outstanding: <strong>${fmt(res?.total_outstanding ?? 0)}</strong></p>
-        </div></div>`;
+        // Header + KPI cards (replaces the old single-line summary).
+        let html = `<h3 class="stmt-title">${esc(custName)} — Statement</h3>
+        <div class="stats-row">
+            <div class="stat-card"><div class="stat-value">${fmt(res?.total_invoiced ?? 0)}</div><div class="stat-label">Total Invoiced</div></div>
+            <div class="stat-card"><div class="stat-value">${fmt(res?.total_received ?? 0)}</div><div class="stat-label">Total Received</div></div>
+            <div class="stat-card"><div class="stat-value stmt-outstanding">${fmt(res?.total_outstanding ?? 0)}</div><div class="stat-label">Outstanding</div></div>
+        </div>`;
 
+        const balLabels = [], balData = [];
         if (!txns.length) {
             html += '<div class="empty-message" style="padding: 2rem; text-align: center;"><p>No transactions in selected period</p></div>';
         } else {
-            html += `<div class="data-table-container"><table class="data-table"><thead><tr>
-                <th>Date</th><th>Type</th><th>Reference</th><th>Debit</th><th>Credit</th><th>Balance</th>
-            </tr></thead><tbody>`;
-            // Seed the running balance from the backend's opening balance (net activity
-            // strictly before fromDate), mirroring the AP vendor statement. 0 when no From-date.
+            // Running balance for both the chart and the table (seeded from the backend opening balance).
             let bal = parseFloat(res?.opening_balance) || 0;
+            let rows = '';
             txns.forEach(t => {
                 const dr = parseFloat(t.debit) || 0;
                 const cr = parseFloat(t.credit) || 0;
                 bal += dr - cr;
-                html += `<tr>
+                balLabels.push(fmtD(t.date));
+                balData.push(Math.round(bal * 100) / 100);
+                rows += `<tr>
                     <td>${fmtD(t.date)}</td>
                     <td>${esc(t.type || '-')}</td>
                     <td>${esc(t.reference || '-')}</td>
@@ -1762,9 +1765,24 @@ async function loadCustomerStatement() {
                     <td class="text-right">${fmt(bal)}</td>
                 </tr>`;
             });
-            html += '</tbody></table></div>';
+            html += `<div class="acc-charts" style="grid-template-columns: 1fr;">
+                <div class="acc-chart-card">
+                    <h4>Outstanding balance over time</h4>
+                    <div class="acc-chart-sub">Running balance after each invoice, payment and credit note</div>
+                    <div id="stmtBalanceChart" class="acc-chart"></div>
+                </div>
+            </div>`;
+            html += `<div class="data-table-container"><table class="data-table"><thead><tr>
+                <th>Date</th><th>Type</th><th>Reference</th><th>Debit</th><th>Credit</th><th>Balance</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>`;
         }
         container.innerHTML = html;
+        // Chart mounts after the container HTML exists; re-arm for theme-toggle redraws.
+        if (balData.length) {
+            const draw = () => acArea('stmtBalanceChart', balLabels, balData, 'Balance');
+            draw();
+            _acActiveRender = draw;
+        }
     } catch (err) {
         container.innerHTML = '<div class="empty-message" style="padding: 2rem; text-align: center;"><p>Failed to generate statement</p></div>';
         Toast.error('Failed to generate statement');
