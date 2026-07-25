@@ -611,6 +611,13 @@ function renderProfitLossReport(data) {
 
     container.innerHTML = `
         ${comparisonBanner}
+        <div class="acc-charts" style="grid-template-columns: 1fr;">
+            <div class="acc-chart-card">
+                <h4>Monthly profit &amp; loss</h4>
+                <div class="acc-chart-sub">Revenue, expenses and net result for each month of the year</div>
+                <div id="plMonthlyTrendChart" class="acc-chart"></div>
+            </div>
+        </div>
         <div class="acc-charts">
             <div class="acc-chart-card">
                 <h4>Income vs Expenses</h4>
@@ -644,15 +651,35 @@ function renderProfitLossReport(data) {
         const expRows = (expenses || [])
             .map(a => ({ name: a.account_name || a.account_code || '—', bal: Math.abs(parseFloat(a.balance || 0)) }))
             .filter(r => r.bal > 0).sort((a, b) => b.bal - a.bal).slice(0, 6);
+        // Monthly trend points fetched once (below) and cached so a theme-toggle redraw doesn't re-fetch.
+        let monthlyPts = null;
         const drawPL = () => {
             acColumns('plIncomeExpenseChart', ['This period'],
                 [{ name: 'Revenue', data: [Math.round(totalRevenue * 100) / 100] }, { name: 'Expenses', data: [Math.round(totalExpenses * 100) / 100] }],
                 ['#10b981', '#ef4444']);
             if (expRows.length) acDonut('plExpenseChart', expRows.map(r => r.name), expRows.map(r => Math.round(r.bal * 100) / 100));
             else _acEmpty('plExpenseChart', 'No expenses in this period');
+            if (monthlyPts && typeof acLines === 'function') {
+                const r2 = v => Math.round((Number(v) || 0) * 100) / 100;
+                acLines('plMonthlyTrendChart', monthlyPts.map(p => p.label), [
+                    { name: 'Revenue', data: monthlyPts.map(p => r2(p.revenue)) },
+                    { name: 'Expenses', data: monthlyPts.map(p => r2(p.expenses)) },
+                    { name: 'Net profit', data: monthlyPts.map(p => r2(p.net_profit)) }
+                ], ['#10b981', '#ef4444', '#3b82f6']);
+            }
         };
         drawPL();
         _acActiveRender = drawPL;
+
+        // Fetch the FY monthly series for the trend line, then redraw once it lands.
+        const fyId = (typeof plFiscalYearDropdown !== 'undefined') ? plFiscalYearDropdown?.getValue?.() : null;
+        api.request(AccountsCommon.buildUrl('reports/profit-loss-monthly', fyId ? { fiscalYearId: fyId } : {}), { _skipSpinner: true })
+            .then(res => {
+                monthlyPts = Array.isArray(res) ? res : (res?.data || res?.items || []);
+                if (monthlyPts.length) drawPL();
+                else _acEmpty('plMonthlyTrendChart', 'No monthly data for this year');
+            })
+            .catch(() => _acEmpty('plMonthlyTrendChart', 'Monthly trend unavailable'));
     }
 }
 

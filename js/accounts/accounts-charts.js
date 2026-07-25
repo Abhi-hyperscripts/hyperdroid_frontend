@@ -141,3 +141,22 @@ function acArea(id, categories, data, name) {
         tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }
     });
 }
+// Multi-series line chart (e.g. monthly Revenue vs Expenses vs Net across a fiscal year).
+// series = [{ name, data:[…] }, …]; categories = month labels. Handles negatives (loss months).
+function acLines(id, categories, series, colors) {
+    if (!series || !series.length || series.every(s => (s.data || []).every(v => !v))) return _acEmpty(id);
+    const t = _acTheme();
+    _acMount(id, {
+        chart: { type: 'line', height: 300, background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false } },
+        theme: { mode: t.isDark ? 'dark' : 'light' },
+        colors: colors || _acPalette,
+        series, dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: 3 },
+        markers: { size: 3, strokeWidth: 0, hover: { size: 5 } },
+        legend: { position: 'top', horizontalAlign: 'left', labels: { colors: t.text }, fontSize: '12px', markers: { width: 10, height: 10 } },
+        xaxis: { categories, labels: { style: { colors: t.text, fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { formatter: _inr, style: { colors: t.text, fontSize: '11px' } } },
+        grid: { borderColor: t.grid, strokeDashArray: 4 },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', shared: true, intersect: false, y: { formatter: _inr } }
+    });
+}
