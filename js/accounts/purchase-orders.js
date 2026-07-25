@@ -288,7 +288,7 @@ function poActions(po) {
 }
 
 // ============================================================================
-// VIEW PURCHASE ORDER (read-only detail modal)
+// VIEW PURCHASE ORDER (read-only detail — full page, matches invoice view)
 // ============================================================================
 
 async function viewPO(id) {
@@ -380,7 +380,7 @@ async function viewPO(id) {
                 </div>
             </div>`;
 
-        AccountsCommon.openModal('poViewModal');
+        AccountsCommon.showFormPage('poViewModal');
     } catch (err) {
         Toast.error('Failed to load purchase order');
     }

@@ -322,19 +322,23 @@
         </div>
     </div>
 
-    <!-- View Purchase Order Detail Modal -->
-    <div id="poViewModal" class="modal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="poViewTitle">Purchase Order</h5>
-                    <button class="close-btn" onclick="AccountsCommon.closeModal('poViewModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body" id="poViewBody">
-                    <!-- Populated by JS -->
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('poViewModal')">Close</button>
+    <!-- View Purchase Order Detail (full page, mirrors the create/edit form + invoice view) -->
+    <div id="poViewModal" class="acc-form-page acc-form-page--wide" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('poViewModal'); return false;">Purchase Orders</a>
+                </nav>
+                <h1 class="acc-form-page__title" id="poViewTitle">Purchase Order</h1>
+            </div>
+            <div class="acc-form" id="poViewBody">
+                <!-- Populated by JS -->
+            </div>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('poViewModal')">Close</button>
                 </div>
             </div>
         </div>
