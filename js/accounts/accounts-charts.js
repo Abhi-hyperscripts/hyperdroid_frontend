@@ -108,6 +108,24 @@ function acBarV(id, categories, data, colors) {
         tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }
     });
 }
+// Multi-series grouped columns (e.g. Revenue vs Expenses). series = [{ name, data:[…] }, …].
+function acColumns(id, categories, series, colors) {
+    if (!series || !series.length || series.every(s => (s.data || []).every(v => !v))) return _acEmpty(id);
+    const t = _acTheme();
+    _acMount(id, {
+        chart: { type: 'bar', height: 300, background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
+        theme: { mode: t.isDark ? 'dark' : 'light' },
+        plotOptions: { bar: { horizontal: false, borderRadius: 4, columnWidth: '58%' } },
+        colors: colors || _acPalette,
+        series, dataLabels: { enabled: false },
+        legend: { position: 'top', horizontalAlign: 'left', labels: { colors: t.text }, fontSize: '12px', markers: { width: 10, height: 10 } },
+        stroke: { show: true, width: 2, colors: ['transparent'] },
+        xaxis: { categories, labels: { style: { colors: t.text, fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { formatter: _inr, style: { colors: t.text, fontSize: '11px' } } },
+        grid: { borderColor: t.grid, strokeDashArray: 4 },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', shared: true, intersect: false, y: { formatter: _inr } }
+    });
+}
 function acArea(id, categories, data, name) {
     if (!data.length || data.every(v => !v)) return _acEmpty(id);
     const t = _acTheme();
