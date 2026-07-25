@@ -495,15 +495,19 @@ async function editAccount(id) {
 
     populateAccountTypeSelect(acct.account_type_id);
     populateAccountGroupSelect(acct.account_group_id, acct.account_type_id);
-    populateAccountParentSelect(acct.parent_account_id, acct.id);
+    // Parent list is same-type and excludes this account's own subtree.
+    populateAccountParentSelect(acct.parent_account_id, acct.id, acct.account_type_id);
 
-    // Disable immutable fields in edit mode (backend UpdateAccountRequest ignores them)
+    // Code, type and normal-balance stay immutable on edit (backend UpdateAccountRequest ignores them),
+    // but the PARENT is now editable — re-parenting is supported (reparent flag + subtree cascade).
     document.getElementById('accountCode').disabled = true;
     document.getElementById('accountType').disabled = true;
-    document.getElementById('accountParent').disabled = true;
+    document.getElementById('accountParent').disabled = false;
     document.getElementById('accountNormalBalance').disabled = true;
 
     AccountsCommon.openModal('accountModal');
+    // Resync the SearchableDropdown wrappers to the freshly-set values (parent especially).
+    ['accountGroup', 'accountParent'].forEach(id => document.getElementById(id)?.dispatchEvent(new Event('change', { bubbles: true })));
 }
 
 async function saveAccount() {
@@ -532,7 +536,10 @@ async function saveAccount() {
         parent_account_id: parentAccountId,
         normal_balance: normalBalance,
         description,
-        allow_direct_posting: allowDirectPosting
+        allow_direct_posting: allowDirectPosting,
+        // On EDIT, opt in to re-parenting so the backend applies parent_account_id (create uses it directly).
+        // Without this flag a partial update that omits the parent would be read as "move to top level".
+        ...(id ? { reparent: true } : {})
     };
 
     if (!AccountsCommon.beginSubmit('saveAccount')) return;
@@ -746,10 +753,24 @@ function populateAccountGroupSelect(selectedValue, filterByTypeId) {
         filtered.map(g => `<option value="${g.id}" ${g.id === selectedValue ? 'selected' : ''}>${AccountsCommon.escapeHtml(g.name)}</option>`).join('');
 }
 
-function populateAccountParentSelect(selectedValue, excludeId) {
+function populateAccountParentSelect(selectedValue, excludeId, typeId) {
     const sel = document.getElementById('accountParent');
     if (!sel) return;
-    const filtered = excludeId ? accounts.filter(a => a.id !== excludeId) : accounts;
+    // A parent must be the SAME type, and can't be the account itself or one of its own descendants
+    // (that would make a cycle — the backend rejects it too). Build the banned set (self + subtree).
+    const banned = new Set();
+    if (excludeId) {
+        banned.add(excludeId);
+        let frontier = [excludeId];
+        while (frontier.length) {
+            const next = [];
+            accounts.forEach(a => {
+                if (a.parent_account_id && frontier.includes(a.parent_account_id) && !banned.has(a.id)) { banned.add(a.id); next.push(a.id); }
+            });
+            frontier = next;
+        }
+    }
+    const filtered = accounts.filter(a => !banned.has(a.id) && (!typeId || a.account_type_id === typeId));
     sel.innerHTML = '<option value="">None (Top Level)</option>' +
         filtered.map(a => { const c = a.account_code || a.code || ''; const n = a.account_name || a.name || ''; return `<option value="${a.id}" ${a.id === selectedValue ? 'selected' : ''}>${AccountsCommon.escapeHtml(c ? c + ' - ' + n : n)}</option>`; }).join('');
 }
