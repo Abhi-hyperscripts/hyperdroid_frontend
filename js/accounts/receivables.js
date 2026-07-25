@@ -1328,10 +1328,15 @@ async function loadCreditNotes() {
         if (!pageItems.length) {
             tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><div class="empty-message"><p>No credit notes found</p></div></td></tr>';
         } else {
+            const canReverse = accountsRoles.isAdmin();
+            const reverseSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
             tbody.innerHTML = pageItems.map(cn => {
                 const custName = cn.customer_name || customers.find(c => c.id === cn.customer_id)?.name || '-';
-                // No row action: the old "View" button had no click handler and
-                // there is no credit-note detail endpoint to wire it to.
+                const num = (cn.credit_note_number || '').replace(/'/g, '');
+                // Approved credit notes can be reversed (admin only); a reversed one shows its status badge.
+                const actions = (canReverse && cn.status === 'approved')
+                    ? `<button class="btn-icon danger" data-tooltip="Reverse" onclick="reverseCreditNote('${cn.id}','${num}')">${reverseSvg}</button>`
+                    : `<span class="text-secondary">${cn.status && cn.status !== 'approved' ? AccountsCommon.escapeHtml(cn.status) : '-'}</span>`;
                 return `<tr>
                     <td>${AccountsCommon.escapeHtml(cn.credit_note_number || '-')}</td>
                     <td>${AccountsCommon.escapeHtml(custName)}</td>
@@ -1339,7 +1344,7 @@ async function loadCreditNotes() {
                     <td>${AccountsCommon.formatDate(cn.credit_date)}</td>
                     <td>${AccountsCommon.formatCurrency(cn.amount)}</td>
                     <td>${AccountsCommon.escapeHtml(cn.reason || '-')}</td>
-                    <td><span class="text-secondary">-</span></td>
+                    <td class="actions-cell">${actions}</td>
                 </tr>`;
             }).join('');
         }
@@ -1347,6 +1352,30 @@ async function loadCreditNotes() {
     } catch (err) {
         console.error('[AR] loadCreditNotes error:', err);
         Toast.error('Failed to load credit notes');
+    }
+}
+
+// Reverse an approved credit note (admin only): reverses its GL entry + tax-ledger row and restores the
+// invoice balance it reduced. Refreshes both the credit-note list and the invoices/charts afterwards.
+async function reverseCreditNote(id, number) {
+    const ok = await Confirm.show({
+        title: 'Reverse Credit Note',
+        message: `Reverse ${number}? This reverses its journal entry (Dr Accounts Receivable, Cr Sales Revenue) and restores the invoice balance it reduced. This cannot be undone.`,
+        confirmText: 'Reverse',
+        type: 'danger'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`invoices/credit-notes/${id}/reverse`), {
+            method: 'POST',
+            body: JSON.stringify({ reason: 'Reversed via Accounts UI' }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        Toast.success('Credit note reversed');
+        loadCreditNotes();
+        loadCustomerInvoices();
+    } catch (err) {
+        Toast.error(err.message || 'Failed to reverse credit note');
     }
 }
 
