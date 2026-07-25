@@ -151,6 +151,12 @@
                         </div>
                     </div>
 
+                    <div class="acc-tabs" id="proformaAudienceTabs">
+                        <button type="button" class="acc-tab active" data-audience="" onclick="setProformaAudience('')">All <span class="acc-tab-count" id="pfTabCountAll">0</span></button>
+                        <button type="button" class="acc-tab" data-audience="customer" onclick="setProformaAudience('customer')">Customers <span class="acc-tab-count" id="pfTabCountCustomer">0</span></button>
+                        <button type="button" class="acc-tab" data-audience="prospect" onclick="setProformaAudience('prospect')">Prospects <span class="acc-tab-count" id="pfTabCountProspect">0</span></button>
+                    </div>
+
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="proformaCustomerFilterContainer"></div>
                         <select id="proformaStatusFilter" class="form-control" style="max-width: 160px;">

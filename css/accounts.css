@@ -2367,6 +2367,23 @@ textarea.form-control {
 .acc-segmented .acc-seg-btn:hover { color: var(--text-primary); }
 .acc-segmented .acc-seg-btn.active { background: var(--brand-primary); color: #fff; }
 
+/* Underline tab bar (e.g. proforma All / Customers / Prospects audience split) */
+.acc-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
+.acc-tabs .acc-tab {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    padding: 10px 16px; margin-bottom: -1px;
+    font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);
+    border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+}
+.acc-tabs .acc-tab:hover { color: var(--text-primary); }
+.acc-tabs .acc-tab.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); }
+.acc-tabs .acc-tab-count {
+    font-size: 0.72rem; font-weight: 700; line-height: 1; padding: 3px 7px; border-radius: 999px;
+    color: var(--text-secondary); background: var(--bg-tertiary, rgba(255,255,255,0.06));
+}
+.acc-tabs .acc-tab.active .acc-tab-count { color: #fff; background: var(--brand-primary); }
+
 /* Small inline pill (e.g. a "Prospect" tag next to a recipient-only proforma's name) */
 .acc-pill {
     display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px;

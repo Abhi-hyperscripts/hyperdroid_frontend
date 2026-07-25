@@ -164,6 +164,16 @@ function _proformaPartyName(pi) {
     return pi.customer_name || customers.find(c => c.id === pi.customer_id)?.name || pi.recipient_name || '';
 }
 
+// Audience tab: '' (All), 'customer' (issued to an existing client), 'prospect' (ad-hoc recipient).
+let _proformaAudience = '';
+function setProformaAudience(a) {
+    _proformaAudience = (a === 'customer' || a === 'prospect') ? a : '';
+    document.querySelectorAll('#proformaAudienceTabs .acc-tab').forEach(t =>
+        t.classList.toggle('active', (t.dataset.audience || '') === _proformaAudience));
+    proformaPage = 1;
+    loadProformaInvoices();
+}
+
 async function loadProformaInvoices() {
     const customerId = proformaCustomerFilterDD?.getValue?.();
     const status = document.getElementById('proformaStatusFilter')?.value;
@@ -182,6 +192,7 @@ async function loadProformaInvoices() {
     if (status) params.status = status;
     if (dateFrom) params.fromDate = dateFrom;
     if (dateTo) params.toDate = dateTo;
+    if (_proformaAudience) params.audience = _proformaAudience;
 
     try {
         const res = await api.request(AccountsCommon.buildUrl('proforma-invoices', params));
@@ -219,6 +230,13 @@ async function loadProformaInvoices() {
         setText('sentProformas', stats.sent_count ?? items.filter(i => i.status === 'sent').length);
         setText('acceptedProformas', stats.accepted_count ?? items.filter(i => i.status === 'accepted').length);
         setText('totalProformaValue', stats.total_value != null ? AccountsCommon.formatCurrency(stats.total_value) : AccountsCommon.formatCurrency(items.reduce((s, i) => s + parseFloat(i.total_amount || 0), 0)));
+
+        // Audience tab counts (whole-tenant, independent of the active tab — same as the KPI tiles).
+        if (stats.customer_count != null || stats.prospect_count != null) {
+            setText('pfTabCountAll', stats.total_count ?? '');
+            setText('pfTabCountCustomer', stats.customer_count ?? '');
+            setText('pfTabCountProspect', stats.prospect_count ?? '');
+        }
 
         const tbody = document.getElementById('proformaInvoicesTable');
         if (!items.length) {
