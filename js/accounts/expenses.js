@@ -68,6 +68,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 // ============================================================================
 
 function onTabSwitch(tabId) {
+    _acActiveRender = null;  // re-armed by the claims loader for theme-toggle redraws
     switch (tabId) {
         case 'expense-categories': loadExpenseCategories(); break;
         case 'expense-policies':   loadExpensePolicies(); break;
@@ -437,6 +438,22 @@ async function saveExpensePolicy() {
 // 3. EXPENSE CLAIMS
 // ============================================================================
 
+// Expense-claim charts — claimed value by status + top employees. Shared helpers; full set (ignores
+// the status filter so the by-status split stays meaningful).
+const _CLAIM_STATUS_COLOR = { draft: '#64748b', submitted: '#3b82f6', approved: '#10b981', rejected: '#ef4444', reimbursed: '#06b6d4', cancelled: '#94a3b8' };
+async function renderClaimCharts() {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('expenses/claims', { limit: 1000, offset: 0 }), { _skipSpinner: true });
+        const all = (res?.data || res?.items || (Array.isArray(res) ? res : []));
+        const byStatus = {};
+        all.forEach(c => { const amt = parseFloat(c.total_amount || 0); if (amt > 0 && (c.status || 'draft') !== 'cancelled') { const s = c.status || 'draft'; byStatus[s] = (byStatus[s] || 0) + amt; } });
+        const st = Object.keys(byStatus);
+        acDonut('claimStatusChart', st.map(s => s.replace(/_/g, ' ')), st.map(s => Math.round(byStatus[s] * 100) / 100), st.map(s => _CLAIM_STATUS_COLOR[s] || '#64748b'));
+        const rank = _acRank(all.filter(c => (c.status || 'draft') !== 'cancelled').map(c => ({ name: c.employee_name || '—', amt: parseFloat(c.total_amount || 0) })), 'name', 'amt', 6);
+        acBarH('claimEmployeeChart', rank.labels, rank.data);
+    } catch (e) { _acEmpty('claimStatusChart'); _acEmpty('claimEmployeeChart'); }
+}
+
 async function loadExpenseClaims() {
     try {
         const status = document.getElementById('claimStatusFilter')?.value || '';
@@ -458,6 +475,9 @@ async function loadExpenseClaims() {
         } else {
             all = Array.isArray(res) ? res : [];
         }
+
+        renderClaimCharts(status);
+        _acActiveRender = () => renderClaimCharts(status);
 
         if (searching) {
             const q = search.toLowerCase();

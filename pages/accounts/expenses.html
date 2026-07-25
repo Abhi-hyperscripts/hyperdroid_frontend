@@ -257,6 +257,19 @@
                         </div>
                     </div>
 
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Claims by status</h4>
+                            <div class="acc-chart-sub">Claimed value in each stage</div>
+                            <div id="claimStatusChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Top employees by claims</h4>
+                            <div class="acc-chart-sub">Who is claiming the most</div>
+                            <div id="claimEmployeeChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+
                     <div class="filters-bar">
                         <select class="form-control" id="claimStatusFilter" onchange="claimsPage = 1; loadExpenseClaims()" style="max-width:180px;">
                             <option value="">All Statuses</option>
@@ -566,6 +579,8 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/expenses.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 
