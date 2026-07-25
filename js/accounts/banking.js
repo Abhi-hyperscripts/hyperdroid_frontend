@@ -75,8 +75,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 // ============================================================================
 
 function onTabSwitch(tabId) {
+    _acActiveRender = null;  // re-armed by loadBankDashboard on the accounts tab
     switch (tabId) {
-        case 'bank-accounts':      loadBankAccounts(); break;
+        case 'bank-accounts':      loadBankAccounts(); loadBankDashboard(); break;
         case 'bank-transactions':  loadBankTransactions(); break;
         case 'bank-transfers':     loadRecentTransfers(); break;
         case 'statement-import':   initImportTab(); break;
@@ -101,9 +102,9 @@ async function loadInitialData() {
         updateBankAccountStats();
         renderBankAccountsTable();
 
-        // Dashboard stats are already shown by updateBankAccountStats() above.
-        // loadBankDashboard() was duplicating the same info — disabled.
-        // loadBankDashboard();
+        // Summary tiles come from updateBankAccountStats(); loadBankDashboard() now only renders the
+        // Balance-by-account chart (no duplicate tiles), so it's safe to run on load.
+        loadBankDashboard();
     } catch (err) {
         console.error('[Banking] loadInitialData error:', err);
     }
@@ -114,39 +115,21 @@ async function loadBankDashboard() {
         const res = await api.request(AccountsCommon.buildUrl('bank/dashboard'), { _skipSpinner: true });
         const dashboard = res?.data || res;
         if (!dashboard) return;
+        // The summary tiles (bank/cash/total balance) are already covered by the static stats-row on this
+        // tab, so we only use the dashboard here for the Balance-by-account chart — no duplicate tiles.
 
-        const container = document.getElementById('bankDashboardStats');
-        if (!container) return;
-
-        const fmt = AccountsCommon.formatCurrency;
-        // Backend BankDashboardSummary emits total_bank_balance, total_cash_balance and accounts[]
-        // (there is NO total_balance / account_count / deposits / withdrawals field). Reading the old
-        // names left every stat card blank except a fallback account count.
-        const bankBalance = dashboard.total_bank_balance;
-        const cashBalance = dashboard.total_cash_balance;
-        const totalBalance = (bankBalance != null || cashBalance != null)
-            ? (Number(bankBalance) || 0) + (Number(cashBalance) || 0)
-            : null;
-        const accountCount = dashboard.accounts?.length ?? bankAccountsList.length;
-
-        let statsHtml = '';
-        if (totalBalance != null) {
-            statsHtml += `<div class="stat-card"><div class="stat-value">${fmt(totalBalance)}</div><div class="stat-label">Total Balance</div></div>`;
-        }
-        if (accountCount != null) {
-            statsHtml += `<div class="stat-card"><div class="stat-value">${accountCount}</div><div class="stat-label">Accounts</div></div>`;
-        }
-        if (bankBalance != null) {
-            statsHtml += `<div class="stat-card"><div class="stat-value">${fmt(bankBalance)}</div><div class="stat-label">Bank Balance</div></div>`;
-        }
-        if (cashBalance != null) {
-            statsHtml += `<div class="stat-card"><div class="stat-value">${fmt(cashBalance)}</div><div class="stat-label">Cash Balance</div></div>`;
-        }
-
-        if (statsHtml) {
-            container.innerHTML = statsHtml;
-            container.style.display = '';
-        }
+        // Balance-by-account chart (all accounts, sorted by balance; keeps sign so overdrafts show).
+        const accts = dashboard.accounts || [];
+        const rows = accts
+            .map(a => ({ name: a.account_name || a.name || a.bank_name || '—', bal: parseFloat(a.current_balance ?? a.balance ?? 0) }))
+            .sort((x, y) => y.bal - x.bal).slice(0, 10);
+        const drawBank = () => {
+            if (typeof acBarH !== 'function') return;
+            if (!rows.length) return _acEmpty('bankBalanceChart', 'No bank or cash accounts yet');
+            acBarH('bankBalanceChart', rows.map(r => r.name), rows.map(r => Math.round(r.bal * 100) / 100));
+        };
+        drawBank();
+        _acActiveRender = drawBank;
     } catch (err) {
         // Silently ignore - dashboard data is supplementary
         console.debug('[Banking] loadBankDashboard not available:', err.message);

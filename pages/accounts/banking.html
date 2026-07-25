@@ -193,6 +193,14 @@
                         </div>
                     </div>
 
+                    <div class="acc-charts" style="grid-template-columns: 1fr;">
+                        <div class="acc-chart-card">
+                            <h4>Balance by account</h4>
+                            <div class="acc-chart-sub">Where your cash sits across bank and cash accounts</div>
+                            <div id="bankBalanceChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+
                     <div class="filters-bar">
                         <button class="btn btn-primary" onclick="showCreateBankAccountModal()" data-admin-only>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -726,6 +734,8 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/banking.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 
