@@ -322,60 +322,55 @@ async function viewPO(id) {
 
         let linesHtml = '';
         if (lines.length) {
-            linesHtml = `<div class="data-table-container" style="margin-top: 1rem;">
-                <table class="data-table">
-                    <thead><tr><th>Description</th><th>Account</th><th style="width:80px;">Qty</th><th style="width:100px;">Unit Price</th><th style="width:140px;">Tax</th><th style="width:110px;">Amount</th></tr></thead>
+            linesHtml = `<div class="data-table-container po-lines-container">
+                <table class="data-table po-lines-table">
+                    <thead><tr><th>Description</th><th>Account</th><th style="width:80px;">Qty</th><th style="width:120px; text-align:right;">Unit Price</th><th style="width:140px;">Tax</th><th style="width:130px; text-align:right;">Amount</th></tr></thead>
                     <tbody>${lineRows}</tbody>
                 </table>
             </div>`;
+        } else {
+            linesHtml = `<div class="empty-message" style="padding:1.5rem 0;"><p>No line items on this purchase order.</p></div>`;
         }
         const displayTax = Number(po.tax_amount || 0);
         const displayTotal = Number(po.total_amount || 0);
 
-        let approvedHtml = '';
-        if (po.approved_by) {
-            approvedHtml = `<div>
-                <div style="color:var(--text-secondary);font-size:0.85rem;">Approved At</div>
-                <div>${po.approved_at ? fmtD(po.approved_at) : '-'}</div>
-            </div>`;
-        }
+        // Read-only "field" — mirrors the .acc-form label + value look without an input.
+        const field = (label, valueHtml, wide = false) => `<div class="form-group${wide ? ' pf-wide' : ''}">
+            <label>${esc(label)}</label>
+            <div class="acc-view-value">${valueHtml}</div>
+        </div>`;
+
+        const approvedField = po.approved_by
+            ? field('Approved At', po.approved_at ? fmtD(po.approved_at) : '-')
+            : '';
 
         document.getElementById('poViewBody').innerHTML = `
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-                <div>
-                    <div style="color:var(--text-secondary);font-size:0.85rem;">Vendor</div>
-                    <div style="font-weight:500;">${esc(vendName)}</div>
+            <div class="form-section">
+                <div class="section-head">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    Order Details
                 </div>
-                <div>
-                    <div style="color:var(--text-secondary);font-size:0.85rem;">Status</div>
-                    <div>${AccountsCommon.statusBadge(po.status)}</div>
+                <div class="pgrid">
+                    ${field('Vendor', esc(vendName))}
+                    ${field('Status', AccountsCommon.statusBadge(po.status))}
+                    ${field('PO Date', fmtD(po.po_date))}
+                    ${field('Expected Date', fmtD(po.expected_date))}
+                    ${field('Currency', esc(po.currency || 'INR'))}
+                    ${approvedField}
+                    ${po.notes ? field('Notes', esc(po.notes), true) : ''}
                 </div>
-                <div>
-                    <div style="color:var(--text-secondary);font-size:0.85rem;">PO Date</div>
-                    <div>${fmtD(po.po_date)}</div>
-                </div>
-                <div>
-                    <div style="color:var(--text-secondary);font-size:0.85rem;">Expected Date</div>
-                    <div>${fmtD(po.expected_date)}</div>
-                </div>
-                <div>
-                    <div style="color:var(--text-secondary);font-size:0.85rem;">Currency</div>
-                    <div>${esc(po.currency || 'INR')}</div>
-                </div>
-                ${approvedHtml}
             </div>
-            ${po.notes ? `<div style="margin-top:1rem;color:var(--text-secondary);font-size:0.9rem;"><strong>Notes:</strong> ${esc(po.notes)}</div>` : ''}
-            ${linesHtml}
-            <div style="display:flex;justify-content:flex-end;margin-top:1rem;">
-                <div style="min-width:250px;">
-                    <div style="display:flex;justify-content:space-between;padding:0.4rem 0;color:var(--text-secondary);">
-                        <span>Subtotal:</span><span>${fmt(po.subtotal)}</span>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;padding:0.4rem 0;color:var(--text-secondary);">
-                        <span>Tax:</span><span>${fmt(displayTax)}</span>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;padding:0.5rem 0;font-weight:600;border-top:1px solid var(--border-primary);color:var(--text-primary);">
-                        <span>Total:</span><span>${fmt(displayTotal)}</span>
+            <div class="form-section">
+                <div class="section-head">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    Line Items
+                </div>
+                ${linesHtml}
+                <div class="po-totals">
+                    <div class="po-totals-inner">
+                        <div class="po-totals-row"><span>Subtotal:</span><span>${fmt(po.subtotal)}</span></div>
+                        <div class="po-totals-row"><span>Tax:</span><span>${fmt(displayTax)}</span></div>
+                        <div class="po-totals-row po-totals-grand"><span>Total:</span><span>${fmt(displayTotal)}</span></div>
                     </div>
                 </div>
             </div>`;
