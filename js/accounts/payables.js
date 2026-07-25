@@ -62,7 +62,19 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadInitialData();
     AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
     setupSearchListeners();
+    initDatePickers();
 });
+
+// Flatpickr on every date field (matches the Receivables date control — no native <input type=date>).
+function initDatePickers() {
+    if (typeof flatpickr !== 'function') { setTimeout(initDatePickers, 300); return; }
+    const opts = { dateFormat: 'Y-m-d', allowInput: true };
+    // Filter-bar dates reload their list on change (mirrors the old inline onchange).
+    flatpickr('#billFromDate', { ...opts, onChange: () => { currentBillPage = 1; loadVendorBills(); } });
+    flatpickr('#billToDate', { ...opts, onChange: () => { currentBillPage = 1; loadVendorBills(); } });
+    // Statement + modal dates: plain pickers (statement uses its Generate button).
+    ['#stmtFromDate', '#stmtToDate', '#dnDate', '#billDate', '#billDueDate', '#paymentDate'].forEach(sel => flatpickr(sel, opts));
+}
 
 // ============================================================================
 // TAB SWITCH HANDLER
@@ -84,16 +96,20 @@ function onTabSwitch(tabId) {
 // in accounts-charts.js). Each sets _acActiveRender so a theme toggle redraws.
 // ============================================================================
 const _AP_STATUS_COLOR = { approved: '#3b82f6', partially_paid: '#f59e0b', overdue: '#ef4444', draft: '#64748b', paid: '#10b981' };
+const _AP_OUTSTANDING = new Set(['approved', 'sent', 'partially_paid', 'overdue']);
 function _vendorName(o) { return o.vendor_name || (vendors || []).find(v => v.id === o.vendor_id)?.name || '—'; }
 async function renderBillCharts(baseParams) {
     try {
         const res = await api.request(AccountsCommon.buildUrl('vendor-bills', { ...baseParams, limit: 1000, offset: 0 }), { _skipSpinner: true });
         const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        // Only truly-outstanding bills count toward "payable" — exclude draft/cancelled/paid/credited so
+        // the donut total matches the Total Outstanding KPI (a cancelled bill can retain balance_due>0).
+        const outstanding = all.filter(b => _AP_OUTSTANDING.has(b.status || 'approved') && parseFloat(b.balance_due ?? b.balance ?? 0) > 0);
         const byStatus = {};
-        all.forEach(b => { const bal = parseFloat(b.balance_due ?? b.balance ?? 0); if (bal > 0) { const s = b.status || 'approved'; byStatus[s] = (byStatus[s] || 0) + bal; } });
+        outstanding.forEach(b => { const s = b.status || 'approved'; byStatus[s] = (byStatus[s] || 0) + parseFloat(b.balance_due ?? b.balance ?? 0); });
         const st = Object.keys(byStatus);
         acDonut('billStatusChart', st.map(s => s.replace(/_/g, ' ')), st.map(s => Math.round(byStatus[s] * 100) / 100), st.map(s => _AP_STATUS_COLOR[s] || '#64748b'));
-        const rank = _acRank(all.map(b => ({ name: _vendorName(b), bal: parseFloat(b.balance_due ?? b.balance ?? 0) })), 'name', 'bal', 6);
+        const rank = _acRank(outstanding.map(b => ({ name: _vendorName(b), bal: parseFloat(b.balance_due ?? b.balance ?? 0) })), 'name', 'bal', 6);
         acBarH('billVendorChart', rank.labels, rank.data);
     } catch (e) { _acEmpty('billStatusChart'); _acEmpty('billVendorChart'); }
 }

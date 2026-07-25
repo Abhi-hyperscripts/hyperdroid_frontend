@@ -187,8 +187,8 @@
                             <option value="credited">Credited</option>
                             <option value="cancelled">Cancelled</option>
                         </select>
-                        <input type="date" id="billFromDate" class="form-control" style="width:auto;" onchange="currentBillPage=1; loadVendorBills()" placeholder="From Date">
-                        <input type="date" id="billToDate" class="form-control" style="width:auto;" onchange="currentBillPage=1; loadVendorBills()" placeholder="To Date">
+                        <input type="text" id="billFromDate" class="form-control" style="max-width:140px;" placeholder="From date" aria-label="From date">
+                        <input type="text" id="billToDate" class="form-control" style="max-width:140px;" placeholder="To date" aria-label="To date">
                         <div class="search-box-modern">
                             <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"/>
@@ -368,7 +368,7 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Debit Date *</label>
-                                    <input type="date" id="dnDate" class="form-control" required>
+                                    <input type="text" id="dnDate" class="form-control" required placeholder="Select date">
                                 </div>
                                 <div class="form-group">
                                     <label>Amount *</label>
@@ -459,8 +459,8 @@
                 <div class="tab-content" id="vendor-statements">
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="stmtVendorContainer"></div>
-                        <input type="date" id="stmtFromDate" class="form-control" style="width:auto;">
-                        <input type="date" id="stmtToDate" class="form-control" style="width:auto;">
+                        <input type="text" id="stmtFromDate" class="form-control" style="max-width:140px;" placeholder="From date" aria-label="From date">
+                        <input type="text" id="stmtToDate" class="form-control" style="max-width:140px;" placeholder="To date" aria-label="To date">
                         <button class="btn btn-primary" onclick="loadVendorStatement()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="1 4 1 10 7 10"></polyline>
@@ -518,11 +518,11 @@
                         </div>
                         <div class="form-group">
                             <label for="billDate">Bill Date <span class="req">*</span></label>
-                            <input type="date" id="billDate" class="form-control" required>
+                            <input type="text" id="billDate" class="form-control" required placeholder="Select date">
                         </div>
                         <div class="form-group">
                             <label for="billDueDate">Due Date <span class="req">*</span></label>
-                            <input type="date" id="billDueDate" class="form-control" required>
+                            <input type="text" id="billDueDate" class="form-control" required placeholder="Select date">
                         </div>
                         <div class="form-group pf-wide">
                             <label for="billNotes">Notes <span class="opt">(optional)</span></label>
@@ -635,7 +635,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="paymentDate">Payment Date *</label>
-                                <input type="date" id="paymentDate" class="form-control" required>
+                                <input type="text" id="paymentDate" class="form-control" required placeholder="Select date">
                             </div>
                         </div>
                         <div class="form-row two-col">

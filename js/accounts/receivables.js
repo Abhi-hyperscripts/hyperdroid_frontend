@@ -91,17 +91,20 @@ function onTabSwitch(tabId) {
 
 // Per-subsection chart renderers (each pulls the full matching set so charts aren't limited to one page).
 const _STATUS_COLOR = { approved: '#3b82f6', sent: '#06b6d4', partially_paid: '#f59e0b', overdue: '#ef4444', draft: '#64748b', paid: '#10b981' };
+const _AR_OUTSTANDING = new Set(['approved', 'sent', 'partially_paid', 'overdue']);
 async function renderInvoiceCharts(baseParams) {
     try {
         const res = await api.request(AccountsCommon.buildUrl('invoices', { ...baseParams, limit: 1000, offset: 0 }), { _skipSpinner: true });
         const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        // Receivable (outstanding) by status — only rows with a balance contribute.
+        // Receivable (outstanding) by status — only truly-outstanding invoices (exclude draft/cancelled/
+        // paid/credited/written_off) so the donut total matches the Total Receivable KPI.
+        const outstanding = all.filter(i => _AR_OUTSTANDING.has(i.status || 'approved') && parseFloat(i.balance_due ?? i.balance ?? 0) > 0);
         const byStatus = {};
-        all.forEach(i => { const bal = parseFloat(i.balance_due ?? i.balance ?? 0); if (bal > 0) { const s = i.status || 'approved'; byStatus[s] = (byStatus[s] || 0) + bal; } });
+        outstanding.forEach(i => { const s = i.status || 'approved'; byStatus[s] = (byStatus[s] || 0) + parseFloat(i.balance_due ?? i.balance ?? 0); });
         const statuses = Object.keys(byStatus);
         acDonut('invStatusChart', statuses.map(s => s.replace(/_/g, ' ')), statuses.map(s => Math.round(byStatus[s] * 100) / 100), statuses.map(s => _STATUS_COLOR[s] || '#64748b'));
         // Top customers by outstanding balance.
-        const rank = _acRank(all.map(i => ({ name: i.customer_name || '—', bal: parseFloat(i.balance_due ?? i.balance ?? 0) })), 'name', 'bal', 6);
+        const rank = _acRank(outstanding.map(i => ({ name: i.customer_name || '—', bal: parseFloat(i.balance_due ?? i.balance ?? 0) })), 'name', 'bal', 6);
         acBarH('invCustomerChart', rank.labels, rank.data);
     } catch (e) { _acEmpty('invStatusChart'); _acEmpty('invCustomerChart'); }
 }
