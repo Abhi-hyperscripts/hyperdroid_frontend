@@ -65,7 +65,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 // ============================================================================
 
 function onTabSwitch(tabId) {
-    // Tabs load on-demand via Generate button; no auto-load needed
+    // Tabs load on-demand via Generate button; no auto-load needed.
+    _acActiveRender = null;  // the P&L chart re-arms this when generated
 }
 
 // ============================================================================
@@ -573,6 +574,18 @@ function renderProfitLossReport(data) {
 
     container.innerHTML = `
         ${comparisonBanner}
+        <div class="acc-charts">
+            <div class="acc-chart-card">
+                <h4>Income vs Expenses</h4>
+                <div class="acc-chart-sub">Revenue against costs for the period</div>
+                <div id="plIncomeExpenseChart" class="acc-chart"></div>
+            </div>
+            <div class="acc-chart-card">
+                <h4>Where the money goes</h4>
+                <div class="acc-chart-sub">Top expense heads by amount</div>
+                <div id="plExpenseChart" class="acc-chart"></div>
+            </div>
+        </div>
         <div class="data-table-container">
             <table class="data-table report-table">
                 <thead>${headerRow}</thead>
@@ -587,6 +600,23 @@ function renderProfitLossReport(data) {
                 </tfoot>
             </table>
         </div>`;
+
+    // Charts (theme-aware; redraw on theme toggle). Income vs Expenses as two coloured columns +
+    // a donut of the largest expense heads — a CA sees profitability and cost mix at a glance.
+    if (typeof acColumns === 'function') {
+        const expRows = (expenses || [])
+            .map(a => ({ name: a.account_name || a.account_code || '—', bal: Math.abs(parseFloat(a.balance || 0)) }))
+            .filter(r => r.bal > 0).sort((a, b) => b.bal - a.bal).slice(0, 6);
+        const drawPL = () => {
+            acColumns('plIncomeExpenseChart', ['This period'],
+                [{ name: 'Revenue', data: [Math.round(totalRevenue * 100) / 100] }, { name: 'Expenses', data: [Math.round(totalExpenses * 100) / 100] }],
+                ['#10b981', '#ef4444']);
+            if (expRows.length) acDonut('plExpenseChart', expRows.map(r => r.name), expRows.map(r => Math.round(r.bal * 100) / 100));
+            else _acEmpty('plExpenseChart', 'No expenses in this period');
+        };
+        drawPL();
+        _acActiveRender = drawPL;
+    }
 }
 
 // ---- Balance Sheet ----
