@@ -131,6 +131,9 @@
                             <button class="sidebar-btn" data-tab="customer-statements" id="customerStatementsTab">
                                 <span class="nav-number">5</span><span class="nav-label">Customer Statements</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="tds-receivable" id="tdsReceivableTab">
+                                <span class="nav-number">6</span><span class="nav-label">TDS Receivable</span>
+                            </button>
                         </div>
                     </div>
                 </nav>
@@ -159,6 +162,19 @@
                         <div class="stat-card">
                             <div class="stat-value" id="totalReceivable">-</div>
                             <div class="stat-label">Total Receivable</div>
+                        </div>
+                    </div>
+
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Receivable by status</h4>
+                            <div class="acc-chart-sub">Outstanding balance grouped by invoice status</div>
+                            <div id="invStatusChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Top customers by outstanding</h4>
+                            <div class="acc-chart-sub">Who owes the most right now</div>
+                            <div id="invCustomerChart" class="acc-chart"></div>
                         </div>
                     </div>
 
@@ -235,6 +251,19 @@
                 <!-- Tab 2: Customer Payments -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="customer-payments">
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Collections over time</h4>
+                            <div class="acc-chart-sub">Cash received per month (last 6 months)</div>
+                            <div id="payTrendChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>By payment method</h4>
+                            <div class="acc-chart-sub">How customers are paying</div>
+                            <div id="payMethodChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="paymentCustomerFilterContainer"></div>
                         <input type="text" id="paymentDateFrom" class="form-control" placeholder="From date" style="max-width: 140px;">
@@ -290,6 +319,19 @@
                 <!-- Tab 3: Credit Notes -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="credit-notes">
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Credit notes over time</h4>
+                            <div class="acc-chart-sub">Value credited back per month (last 6 months)</div>
+                            <div id="cnTrendChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Top customers by credits</h4>
+                            <div class="acc-chart-sub">Where credit notes concentrate</div>
+                            <div id="cnCustomerChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="cnCustomerFilterContainer"></div>
                         <!-- Backend only ever stores credit notes as 'approved' (created pre-approved,
@@ -376,6 +418,14 @@
                         </div>
                     </div>
 
+                    <div class="acc-charts" style="grid-template-columns: 1fr;">
+                        <div class="acc-chart-card">
+                            <h4>Outstanding by age</h4>
+                            <div class="acc-chart-sub">How much of your receivable sits in each ageing band — the further right, the higher the collection risk</div>
+                            <div id="agingBucketChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+
                     <div class="data-table-container">
                         <table class="data-table">
                             <thead>
@@ -433,6 +483,50 @@
                             </svg>
                             <p>Select a customer and date range to generate a statement</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 6: TDS Receivable -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="tds-receivable">
+                    <div class="filters-bar">
+                        <input type="text" id="tdsFromDate" class="form-control" placeholder="From date" style="max-width: 140px;" aria-label="From date">
+                        <input type="text" id="tdsToDate" class="form-control" placeholder="To date" style="max-width: 140px;" aria-label="To date">
+                        <button class="btn btn-primary" onclick="loadTdsReceivable()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                            </svg>
+                            Generate
+                        </button>
+                    </div>
+
+                    <!-- Hero: total withheld across the period -->
+                    <div class="tds-hero">
+                        <div>
+                            <div class="tds-hero-label">Total TDS withheld by customers</div>
+                            <div class="tds-hero-value" id="tdsTotal">₹0.00</div>
+                        </div>
+                        <div class="tds-hero-meta" id="tdsHeroMeta">Deductee side · Form 26AS credit</div>
+                    </div>
+                    <p class="tds-note">
+                        Per-invoice and per-project figures split each receipt's TDS proportionally, so they
+                        can differ from the client total by a few paise after rounding.
+                    </p>
+
+                    <!-- One table, three groupings -->
+                    <div class="tds-seg" role="tablist" aria-label="Group TDS by">
+                        <button type="button" class="active" data-view="client" role="tab" onclick="setTdsView('client')">By client</button>
+                        <button type="button" data-view="invoice" role="tab" onclick="setTdsView('invoice')">By invoice</button>
+                        <button type="button" data-view="project" role="tab" onclick="setTdsView('project')">By project</button>
+                    </div>
+                    <div class="tds-breakdown-head" id="tdsBreakdownHead" style="display:none;">
+                        <span id="tdsBreakdownCol">Client</span>
+                        <span>Share of total TDS</span>
+                    </div>
+                    <div class="tds-breakdown" id="tdsBreakdown">
+                        <div class="tds-empty">Pick a date range and Generate</div>
                     </div>
                 </div>
 
@@ -739,6 +833,8 @@
 
     <!-- Flatpickr for Date/Time Picker -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- ApexCharts — app-standard charting (research/CRM analytics use the same version) -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="accounts" data-title="Accounts Assistant"><\/script>');</script>
 </body>
 </html>

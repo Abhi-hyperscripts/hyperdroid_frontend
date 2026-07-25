@@ -621,8 +621,13 @@ textarea.form-control {
 .btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 10px 16px;
+    /* Fixed 40px height so a button lines up exactly with .form-control inputs and dropdown triggers
+       (also 40px) when they sit together in a toolbar/filter row. box-sizing keeps padding inside. */
+    height: 40px;
+    box-sizing: border-box;
+    padding: 0 16px;
     border-radius: 8px;
     font-size: 0.85rem;
     font-weight: 500;
@@ -660,8 +665,17 @@ textarea.form-control {
 }
 
 .btn-sm {
-    padding: 6px 10px;
+    height: 32px;
+    padding: 0 10px;
     font-size: 0.8rem;
+}
+
+/* Control-height symmetry (accounts-wide): SearchableDropdown triggers match the 40px of .form-control
+   inputs and .btn buttons so anything sharing a toolbar/filter row lines up. The .acc-form-scoped rule
+   (higher specificity) still governs in-form dropdowns; this is the default everywhere else. */
+.searchable-dropdown-container .searchable-dropdown-trigger {
+    min-height: 40px;
+    box-sizing: border-box;
 }
 
 .btn svg {
@@ -1971,7 +1985,8 @@ textarea.form-control {
     flex-wrap: wrap;
 }
 
-/* ALL form controls in accounts — uniform 36px height */
+/* ALL form controls in accounts filter bars — one unified 40px control (matches inputs, dropdowns,
+   search and buttons so a filter/toolbar row is perfectly symmetric on every page). */
 .tab-content .form-control,
 .tab-content select,
 .tab-content input[type="text"],
@@ -1986,12 +2001,12 @@ textarea.form-control {
 .glass-card-body select,
 .glass-card-body input[type="text"],
 .glass-card-body input[type="date"] {
-    height: 36px;
-    padding: 6px 12px;
-    font-size: 13px;
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    background: var(--bg-secondary);
+    height: 40px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
     color: var(--text-primary);
     box-sizing: border-box;
 }
@@ -2006,32 +2021,48 @@ textarea.form-control {
     min-width: 160px;
 }
 
+/* The inner trigger is the visible control, so it (not the wrapper) carries the single border — else
+   the wrapper border + the trigger's own border stack into a double outline. Wrapper = 40px container. */
 .tab-content .searchable-dropdown,
 .filters-bar .searchable-dropdown,
 .glass-card-body .searchable-dropdown {
-    height: 36px !important;
-    min-height: 36px !important;
-    padding: 6px 12px;
-    font-size: 13px;
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    background: var(--bg-secondary);
+    height: 40px !important;
+    min-height: 40px !important;
+    display: flex;
+    align-items: stretch;
+    box-sizing: border-box;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+.tab-content .searchable-dropdown .searchable-dropdown-trigger,
+.filters-bar .searchable-dropdown .searchable-dropdown-trigger,
+.glass-card-body .searchable-dropdown .searchable-dropdown-trigger {
+    height: 40px;
+    min-height: 40px;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
+    box-sizing: border-box;
     display: flex;
     align-items: center;
-    box-sizing: border-box;
 }
 
-/* ALL buttons in filter bars — uniform 36px height */
+/* ALL buttons in filter bars — uniform 40px height (matches the inputs beside them) */
 .glass-card-body .btn,
 .filters-bar .btn,
 .tab-content .filters-bar .btn,
 .tab-content .glass-card-body .btn {
-    height: 36px;
-    padding: 6px 14px;
-    font-size: 13px;
-    border-radius: 6px;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 0.85rem;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     box-sizing: border-box;
     white-space: nowrap;
@@ -2257,3 +2288,109 @@ textarea.form-control {
    .form-section:last-child and loses its bottom margin — restoring the inter-card gap (it's always
    followed by another section, e.g. Line Items). */
 .acc-form [id$="CustomFields"] > .form-section { margin-bottom: 1rem; }
+
+/* =============================================================
+   TDS RECEIVABLE report tab — hero metric + segmented grouping
+   Scoped to #tds-receivable so nothing bleeds into other tabs.
+   ============================================================= */
+/* =============================================================
+   ACCOUNTS CHARTS — shared chart cards/rows across subsections
+   ============================================================= */
+.acc-charts {
+    display: grid; gap: 16px; margin: 0 0 22px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+.acc-chart-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--hover-overlay-strong);
+    border-radius: var(--border-radius-lg);
+    padding: 16px 18px 8px;
+    min-width: 0;
+}
+.acc-chart-card > h4 {
+    margin: 0 0 2px; font-size: 0.78rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);
+}
+.acc-chart-card .acc-chart-sub { font-size: 0.75rem; color: var(--text-secondary); opacity: .8; margin-bottom: 6px; }
+.acc-chart { min-height: 240px; }
+.acc-chart-empty {
+    display: flex; align-items: center; justify-content: center; min-height: 210px;
+    color: var(--text-secondary); font-size: 0.85rem;
+}
+
+#tds-receivable .tds-hero {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    background: var(--glass-bg);
+    border: 1px solid var(--hover-overlay-strong);
+    border-radius: var(--border-radius-lg);
+    padding: 20px 24px;
+    margin-top: 18px;
+}
+#tds-receivable .tds-hero-label {
+    font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary); margin-bottom: 8px;
+}
+#tds-receivable .tds-hero-value {
+    font-size: 2.2rem; font-weight: 700; line-height: 1;
+    font-variant-numeric: tabular-nums; color: var(--text-primary);
+}
+#tds-receivable .tds-hero-meta { font-size: 0.82rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+#tds-receivable .tds-note { font-size: 0.8rem; color: var(--text-secondary); margin: 12px 2px 0; max-width: 74ch; line-height: 1.5; }
+
+#tds-receivable .tds-seg {
+    display: inline-flex; gap: 4px; margin-top: 20px; padding: 4px;
+    background: var(--glass-bg);
+    border: 1px solid var(--hover-overlay-strong);
+    border-radius: 12px;
+}
+#tds-receivable .tds-seg button {
+    border: none; background: transparent; color: var(--text-secondary);
+    font-size: 0.85rem; font-weight: 600; padding: 7px 18px; border-radius: 9px;
+    cursor: pointer; transition: background .15s ease, color .15s ease; white-space: nowrap;
+}
+#tds-receivable .tds-seg button:hover { color: var(--text-primary); }
+#tds-receivable .tds-seg button.active { background: var(--brand-primary); color: var(--text-inverse); }
+
+/* Ranked bar-list: each row is the bar (label, proportional fill, amount, share%). This is the
+   graph AND the data in one element — reads top-down as where the TDS credit concentrates. */
+#tds-receivable .tds-breakdown-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 20px 4px 2px;
+    font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-secondary);
+}
+#tds-receivable .tds-breakdown {
+    display: flex; flex-direction: column; gap: 20px;
+    background: var(--glass-bg);
+    border: 1px solid var(--hover-overlay-strong);
+    border-radius: var(--border-radius-lg);
+    padding: 20px 22px;
+    margin-top: 10px;
+}
+#tds-receivable .tds-empty {
+    padding: 44px 12px; text-align: center;
+    color: var(--text-secondary); font-size: 0.9rem;
+}
+#tds-receivable .tds-bar-head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 9px;
+}
+#tds-receivable .tds-bar-label {
+    display: flex; flex-direction: column; gap: 2px; min-width: 0;
+    font-size: 0.95rem; font-weight: 600; color: var(--text-primary);
+}
+#tds-receivable .tds-bar-label > :first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#tds-receivable .tds-bar-sub { font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); }
+#tds-receivable .tds-bar-amt {
+    font-size: 1rem; font-weight: 700; color: var(--text-primary);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+#tds-receivable .tds-bar-pct { font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); margin-left: 8px; }
+#tds-receivable .tds-bar-track {
+    height: 10px; border-radius: 6px; overflow: hidden;
+    background: var(--hover-overlay-strong);
+}
+#tds-receivable .tds-bar-fill {
+    height: 100%; border-radius: 6px;
+    background: linear-gradient(90deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 62%, #7db3ff));
+    transition: width .55s cubic-bezier(.22, 1, .36, 1);
+}

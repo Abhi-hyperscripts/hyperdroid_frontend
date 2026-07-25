@@ -75,13 +75,175 @@ document.addEventListener('DOMContentLoaded', async function () {
 // ============================================================================
 
 function onTabSwitch(tabId) {
+    _acActiveRender = null;  // each tab's loader re-arms this for theme-toggle redraws
     switch (tabId) {
         case 'customer-invoices':   loadCustomerInvoices(); break;
         case 'customer-payments':   loadCustomerPayments(); break;
         case 'credit-notes':        loadCreditNotes(); break;
         case 'ar-aging':            loadARAging(); break;
         case 'customer-statements': break; // user-triggered
+        case 'tds-receivable':      initTdsReceivable(); break;
     }
+}
+
+// ============================================================================
+// CHARTS — shared ApexCharts helpers (theme-aware), used by every subsection
+// ============================================================================
+const _acCharts = {};
+// Brand + status palette; stable order so the same category keeps its colour across charts.
+const _acPalette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#64748b'];
+function _acTheme() {
+    const css = getComputedStyle(document.documentElement);
+    const brand = css.getPropertyValue('--brand-primary').trim() || '#3b82f6';
+    const text = css.getPropertyValue('--text-secondary').trim() || '#94a3b8';
+    // Match the app's canonical detection (theme.js): default is DARK; only an explicit 'light' is light.
+    const isDark = (document.documentElement.getAttribute('data-theme') || 'dark') !== 'light';
+    return { brand, text, grid: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)', isDark };
+}
+// Re-render the active tab's charts when the user toggles the theme (ApexCharts bakes colours in at
+// render time, so a light-rendered chart stays light after switching to dark until we redraw it).
+let _acActiveRender = null;
+if (!window._acThemeWatched) {
+    window._acThemeWatched = true;
+    try {
+        new MutationObserver(() => { if (typeof _acActiveRender === 'function') _acActiveRender(); })
+            .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    } catch (e) { /* no-op */ }
+}
+const _inr = (v) => AccountsCommon.formatCurrency(v);
+function _acMount(id, options) {
+    const el = document.getElementById(id);
+    if (!el || typeof ApexCharts === 'undefined') return;
+    if (_acCharts[id]) { _acCharts[id].destroy(); delete _acCharts[id]; }
+    el.innerHTML = '';
+    _acCharts[id] = new ApexCharts(el, options);
+    _acCharts[id].render();
+}
+function _acEmpty(id, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (_acCharts[id]) { _acCharts[id].destroy(); delete _acCharts[id]; }
+    el.innerHTML = `<div class="acc-chart-empty">${msg || 'No data for this period'}</div>`;
+}
+// Bucket a list of {dateKey, amtKey} into the last N calendar months.
+function _acMonthly(items, dateKey, amtKey, months = 6) {
+    const now = new Date();
+    const buckets = [];
+    for (let i = months - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        buckets.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: d.toLocaleString('en', { month: 'short' }), total: 0 });
+    }
+    const idx = Object.fromEntries(buckets.map((b, i) => [b.key, i]));
+    items.forEach(it => { const ds = (it[dateKey] || '').substring(0, 7); if (idx[ds] != null) buckets[idx[ds]].total += parseFloat(it[amtKey] || 0); });
+    return { categories: buckets.map(b => b.label), data: buckets.map(b => Math.round(b.total * 100) / 100) };
+}
+// Sum `amtKey` grouped by `labelKey`, ranked desc, top N.
+function _acRank(items, labelKey, amtKey, topN = 6) {
+    const m = {};
+    items.forEach(it => { const k = it[labelKey] || '—'; m[k] = (m[k] || 0) + parseFloat(it[amtKey] || 0); });
+    const rows = Object.entries(m).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, topN);
+    return { labels: rows.map(r => r[0]), data: rows.map(r => Math.round(r[1] * 100) / 100) };
+}
+function acDonut(id, labels, series, colors) {
+    if (!series.length || series.every(v => !v)) return _acEmpty(id);
+    const t = _acTheme();
+    _acMount(id, {
+        chart: { type: 'donut', height: 250, background: 'transparent', fontFamily: 'inherit' },
+        theme: { mode: t.isDark ? 'dark' : 'light' },
+        labels, series, colors: colors || _acPalette.slice(0, series.length),
+        stroke: { colors: ['transparent'] }, dataLabels: { enabled: false },
+        legend: { position: 'bottom', labels: { colors: t.text }, fontSize: '12px', markers: { width: 9, height: 9 }, itemMargin: { horizontal: 8, vertical: 3 } },
+        plotOptions: { pie: { donut: { size: '70%', labels: { show: true,
+            name: { color: t.text, fontSize: '12px' },
+            value: { color: t.isDark ? '#f1f5f9' : '#0f172a', fontSize: '18px', fontWeight: 700, formatter: _inr },
+            total: { show: true, label: 'Total', fontSize: '12px', color: t.text, formatter: () => _inr(series.reduce((a, b) => a + b, 0)) } } } } },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }
+    });
+}
+function acBarH(id, labels, data) {
+    if (!data.length) return _acEmpty(id);
+    const t = _acTheme();
+    _acMount(id, {
+        chart: { type: 'bar', height: Math.max(data.length * 44, 170), background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
+        theme: { mode: t.isDark ? 'dark' : 'light' },
+        plotOptions: { bar: { horizontal: true, borderRadius: 5, barHeight: '56%' } }, colors: [t.brand],
+        series: [{ name: 'Amount', data }],
+        dataLabels: { enabled: true, formatter: _inr, style: { fontSize: '11px', fontWeight: 600, colors: ['#fff'] } },
+        xaxis: { categories: labels, labels: { formatter: _inr, style: { colors: t.text, fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { style: { colors: t.text, fontSize: '12px' }, maxWidth: 170 } },
+        grid: { borderColor: t.grid, strokeDashArray: 4, yaxis: { lines: { show: false } } },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }
+    });
+}
+function acBarV(id, categories, data, colors) {
+    if (!data.length || data.every(v => !v)) return _acEmpty(id);
+    const t = _acTheme();
+    _acMount(id, {
+        chart: { type: 'bar', height: 250, background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
+        theme: { mode: t.isDark ? 'dark' : 'light' },
+        plotOptions: { bar: { horizontal: false, borderRadius: 5, columnWidth: '52%', distributed: !!colors } },
+        colors: colors || [t.brand], legend: { show: false },
+        series: [{ name: 'Amount', data }],
+        dataLabels: { enabled: false },
+        xaxis: { categories, labels: { style: { colors: t.text, fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { formatter: _inr, style: { colors: t.text, fontSize: '11px' } } },
+        grid: { borderColor: t.grid, strokeDashArray: 4 },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }
+    });
+}
+function acArea(id, categories, data) {
+    if (!data.length || data.every(v => !v)) return _acEmpty(id);
+    const t = _acTheme();
+    _acMount(id, {
+        chart: { type: 'area', height: 250, background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
+        theme: { mode: t.isDark ? 'dark' : 'light' },
+        stroke: { curve: 'smooth', width: 2.5 }, colors: [t.brand],
+        fill: { type: 'gradient', gradient: { shadeIntensity: 0.4, opacityFrom: 0.35, opacityTo: 0.03, stops: [0, 100] } },
+        series: [{ name: 'Collected', data }], dataLabels: { enabled: false },
+        xaxis: { categories, labels: { style: { colors: t.text, fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { formatter: _inr, style: { colors: t.text, fontSize: '11px' } } },
+        grid: { borderColor: t.grid, strokeDashArray: 4 },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }
+    });
+}
+
+// Per-subsection chart renderers (each pulls the full matching set so charts aren't limited to one page).
+const _STATUS_COLOR = { approved: '#3b82f6', sent: '#06b6d4', partially_paid: '#f59e0b', overdue: '#ef4444', draft: '#64748b', paid: '#10b981' };
+async function renderInvoiceCharts(baseParams) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('invoices', { ...baseParams, limit: 1000, offset: 0 }), { _skipSpinner: true });
+        const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        // Receivable (outstanding) by status — only rows with a balance contribute.
+        const byStatus = {};
+        all.forEach(i => { const bal = parseFloat(i.balance_due ?? i.balance ?? 0); if (bal > 0) { const s = i.status || 'approved'; byStatus[s] = (byStatus[s] || 0) + bal; } });
+        const statuses = Object.keys(byStatus);
+        acDonut('invStatusChart', statuses.map(s => s.replace(/_/g, ' ')), statuses.map(s => Math.round(byStatus[s] * 100) / 100), statuses.map(s => _STATUS_COLOR[s] || '#64748b'));
+        // Top customers by outstanding balance.
+        const rank = _acRank(all.map(i => ({ name: i.customer_name || '—', bal: parseFloat(i.balance_due ?? i.balance ?? 0) })), 'name', 'bal', 6);
+        acBarH('invCustomerChart', rank.labels, rank.data);
+    } catch (e) { _acEmpty('invStatusChart'); _acEmpty('invCustomerChart'); }
+}
+function renderPaymentCharts(list) {
+    const rows = (list || []).map(p => ({ ...p, _cash: parseFloat(p.amount || 0) }));
+    const m = _acMonthly(rows, 'payment_date', '_cash', 6);
+    acArea('payTrendChart', m.categories, m.data);
+    const methods = {};
+    rows.forEach(p => { const k = (p.payment_method || 'other').replace(/_/g, ' '); methods[k] = (methods[k] || 0) + p._cash; });
+    const mk = Object.keys(methods).filter(k => methods[k] > 0);
+    acDonut('payMethodChart', mk.map(k => k.replace(/\b\w/g, c => c.toUpperCase())), mk.map(k => Math.round(methods[k] * 100) / 100));
+}
+function renderCreditNoteCharts(list) {
+    const m = _acMonthly(list || [], 'credit_date', 'amount', 6);
+    acBarV('cnTrendChart', m.categories, m.data);
+    const rank = _acRank((list || []).map(cn => ({ name: cn.customer_name || '—', amt: parseFloat(cn.amount || 0) })), 'name', 'amt', 6);
+    acBarH('cnCustomerChart', rank.labels, rank.data);
+}
+function renderAgingChart(normalized) {
+    const sum = (f) => (normalized || []).reduce((s, r) => s + (parseFloat(r[f]) || 0), 0);
+    const cats = ['Current', '1-30', '31-60', '61-90', '90+'];
+    const data = [sum('current'), sum('days_1_30'), sum('days_31_60'), sum('days_61_90'), sum('days_90_plus')];
+    // Green (current) → red (90+): the visual reads as rising collection risk left-to-right.
+    acBarV('agingBucketChart', cats, data.map(v => Math.round(v * 100) / 100), ['#10b981', '#3b82f6', '#f59e0b', '#f97316', '#ef4444']);
 }
 
 // ============================================================================
@@ -163,6 +325,8 @@ function initDatePickers() {
     flatpickr('#cnDateTo', { ...opts, onChange: () => { cnPage = 1; loadCreditNotes(); } });
     flatpickr('#statementDateFrom', opts);
     flatpickr('#statementDateTo', opts);
+    flatpickr('#tdsFromDate', opts);
+    flatpickr('#tdsToDate', opts);
     flatpickr('#invoiceDate', opts);
     flatpickr('#invoiceDueDate', opts);
     flatpickr('#paymentDate', opts);
@@ -291,6 +455,12 @@ async function loadCustomerInvoices() {
             setText('approvedInvoices', stats.approved_count ?? items.filter(i => i.status === 'approved').length);
             setText('totalReceivable', stats.total_receivable != null ? AccountsCommon.formatCurrency(stats.total_receivable) : AccountsCommon.formatCurrency(items.reduce((s, i) => s + parseFloat(i.balance_due || i.balance || 0), 0)));
         }
+
+        // Charts read the full matching set (respecting customer + date, ignoring the status filter so the
+        // status composition stays meaningful) — independent of the list's pagination.
+        const _invChartParams = { ...(customerId ? { customerId } : {}), ...(dateFrom ? { fromDate: dateFrom } : {}), ...(dateTo ? { toDate: dateTo } : {}) };
+        renderInvoiceCharts(_invChartParams);
+        _acActiveRender = () => renderInvoiceCharts(_invChartParams);
 
         const tbody = document.getElementById('customerInvoicesTable');
         if (!items.length) {
@@ -1037,6 +1207,8 @@ async function loadCustomerPayments() {
         const res = await api.request(AccountsCommon.buildUrl('invoices/payments', params));
         const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
         customerPayments = all;
+        renderPaymentCharts(all);
+        _acActiveRender = () => renderPaymentCharts(all);
 
         const items = all.filter(p => {
             const d = (p.payment_date || '').substring(0, 10);
@@ -1250,6 +1422,8 @@ async function loadCreditNotes() {
         const res = await api.request(AccountsCommon.buildUrl('invoices/credit-notes', params));
         const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
         creditNotes = all;
+        renderCreditNoteCharts(all);
+        _acActiveRender = () => renderCreditNoteCharts(all);
 
         const items = all.filter(cn => {
             if (statusFilter && (cn.status || '') !== statusFilter) return false;
@@ -1407,6 +1581,9 @@ async function loadARAging() {
         setText('aging61to90', fmt(sumField('days_61_90')));
         setText('aging90plus', fmt(sumField('days_90_plus')));
 
+        renderAgingChart(normalized);
+        _acActiveRender = () => renderAgingChart(normalized);
+
         const tbody = document.getElementById('arAgingTable');
         if (!normalized.length) {
             tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><div class="empty-message"><p>No aging data available</p></div></td></tr>';
@@ -1425,6 +1602,102 @@ async function loadARAging() {
         console.error('[AR] loadARAging error:', err);
         Toast.error('Failed to load aging data');
     }
+}
+
+// ============================================================================
+// TDS RECEIVABLE (deductee side / Form 26AS) — by client / invoice / project
+// ============================================================================
+
+// On first open, default the range to the current financial year (Apr 1 → today,
+// India FY) so there's something to show without the user touching the pickers.
+let _tdsReceivableInited = false;
+let _tdsData = null;          // last report response (cached so view-switching is instant)
+let _tdsView = 'client';      // client | invoice | project
+
+function initTdsReceivable() {
+    const now = new Date();
+    const fyStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1; // Apr = month 3
+    // Set through the flatpickr instance so the calendar opens on the right month (falls back to
+    // the raw value if flatpickr hasn't attached yet).
+    const setD = (id, val) => {
+        const el = document.getElementById(id);
+        if (!el || el.value) return;
+        if (el._flatpickr) el._flatpickr.setDate(val, false); else el.value = val;
+    };
+    setD('tdsFromDate', `${fyStartYear}-04-01`);
+    setD('tdsToDate', now.toISOString().split('T')[0]);
+    if (!_tdsReceivableInited) { _tdsReceivableInited = true; loadTdsReceivable(); }
+}
+
+async function loadTdsReceivable() {
+    const from = document.getElementById('tdsFromDate')?.value;
+    const to = document.getElementById('tdsToDate')?.value;
+    if (!from || !to) { Toast.error('Pick a From and To date'); return; }
+    if (from > to) { Toast.error('From date must be on or before To date'); return; }
+    try {
+        _tdsData = await api.request(AccountsCommon.buildUrl('tax/reports/tds-receivable', { fromDate: from, toDate: to }));
+        setText('tdsTotal', AccountsCommon.formatCurrency(_tdsData?.total_tds || 0));
+        const clients = (_tdsData?.by_client || []).length;
+        const meta = document.getElementById('tdsHeroMeta');
+        if (meta) meta.textContent = clients
+            ? `${AccountsCommon.formatDate ? AccountsCommon.formatDate(from) : from} – ${AccountsCommon.formatDate ? AccountsCommon.formatDate(to) : to} · ${clients} client${clients === 1 ? '' : 's'}`
+            : 'No TDS withheld in this period';
+        renderTdsView();
+    } catch (err) {
+        console.error('[TDS] loadTdsReceivable error:', err);
+        Toast.error('Failed to load TDS receivable report');
+    }
+}
+
+// Switch grouping without re-fetching — the report already holds all three cuts.
+function setTdsView(view) {
+    _tdsView = view;
+    document.querySelectorAll('#tds-receivable .tds-seg button').forEach(b =>
+        b.classList.toggle('active', b.dataset.view === view));
+    renderTdsView();
+}
+
+function renderTdsView() {
+    if (!_tdsData) return;
+    const fmt = AccountsCommon.formatCurrency;
+    const esc = AccountsCommon.escapeHtml;
+    const host = document.getElementById('tdsBreakdown');
+    const head = document.getElementById('tdsBreakdownHead');
+
+    // One integrated component per grouping: a ranked bar-list. Each row IS the bar — label
+    // (+ a sub-label for the deductor on invoice/project cuts), a fill sized to its share of the
+    // period's total TDS, the amount, and that share %. Ranked so the biggest credit reads first.
+    const views = {
+        client:  { col: 'Client',  src: _tdsData.by_client || [],  label: r => r.customer_name || '—', sub: () => null },
+        invoice: { col: 'Invoice', src: _tdsData.by_invoice || [], label: r => r.invoice_number || '—', sub: r => r.customer_name },
+        project: { col: 'Project', src: _tdsData.by_project || [], label: r => r.project_name || '(No project)', sub: r => r.customer_name }
+    };
+    const v = views[_tdsView] || views.client;
+    setText('tdsBreakdownCol', v.col);
+
+    const rows = [...v.src].sort((a, b) => (b.tds || 0) - (a.tds || 0));
+    const total = Number(_tdsData.total_tds) || rows.reduce((s, r) => s + (Number(r.tds) || 0), 0);
+
+    if (!rows.length) {
+        head.style.display = 'none';
+        host.innerHTML = '<div class="tds-empty">No TDS withheld in this period</div>';
+        return;
+    }
+    head.style.display = '';
+    host.innerHTML = rows.map(r => {
+        const val = Number(r.tds) || 0;
+        const shareNum = total > 0 ? (val / total) * 100 : 0;
+        const width = Math.max(2, Math.min(100, shareNum));        // floor 2% so tiny slivers still register
+        const share = shareNum >= 10 ? Math.round(shareNum) : shareNum.toFixed(1);
+        const subVal = v.sub(r);
+        return `<div class="tds-bar-row">
+            <div class="tds-bar-head">
+                <div class="tds-bar-label">${esc(v.label(r))}${subVal ? `<span class="tds-bar-sub">${esc(subVal)}</span>` : ''}</div>
+                <div class="tds-bar-amt">${fmt(val)}<span class="tds-bar-pct">${share}%</span></div>
+            </div>
+            <div class="tds-bar-track"><div class="tds-bar-fill" style="width:${width}%"></div></div>
+        </div>`;
+    }).join('');
 }
 
 // ============================================================================
