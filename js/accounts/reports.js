@@ -409,7 +409,30 @@ function renderTrialBalanceReport(data) {
     }).join('');
 
     const balanced = Math.abs(totalDebit - totalCredit) < 0.01;
+    // Top account balances (by absolute size) for a quick "where's the weight" bar.
+    const topAccounts = items
+        .map(item => ({
+            name: item.account_name || item.name || '',
+            value: Math.max(parseFloat(item.debit_balance || item.debit || 0), parseFloat(item.credit_balance || item.credit || 0)),
+            isDebit: parseFloat(item.debit_balance || item.debit || 0) >= parseFloat(item.credit_balance || item.credit || 0)
+        }))
+        .filter(a => a.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8);
+
     container.innerHTML = `
+        <div class="acc-charts">
+            <div class="acc-chart-card">
+                <h4>Debit vs credit control</h4>
+                <div class="acc-chart-sub">Totals must match for the books to balance</div>
+                <div id="tbBalanceChart" class="acc-chart"></div>
+            </div>
+            <div class="acc-chart-card">
+                <h4>Largest account balances</h4>
+                <div class="acc-chart-sub">Top accounts by closing balance</div>
+                <div id="tbTopAccountsChart" class="acc-chart"></div>
+            </div>
+        </div>
         <div class="data-table-container">
             <table class="data-table report-table">
                 <thead>
@@ -428,6 +451,20 @@ function renderTrialBalanceReport(data) {
         <div class="report-footer ${balanced ? 'balanced' : 'unbalanced'}">
             ${balanced ? 'Trial Balance is balanced' : 'WARNING: Trial Balance is NOT balanced (difference: ' + fmt(Math.abs(totalDebit - totalCredit)) + ')'}
         </div>`;
+
+    const draw = () => {
+        if (typeof acBarV === 'function') {
+            acBarV('tbBalanceChart', ['Total debit', 'Total credit'],
+                [Math.round(totalDebit * 100) / 100, Math.round(totalCredit * 100) / 100],
+                [balanced ? '#10b981' : '#ef4444', balanced ? '#3b82f6' : '#f59e0b']);
+        }
+        if (typeof acBarH === 'function' && topAccounts.length) {
+            acBarH('tbTopAccountsChart', topAccounts.map(a => a.name),
+                topAccounts.map(a => Math.round(a.value * 100) / 100), '#6366f1');
+        }
+    };
+    draw();
+    _acActiveRender = draw;
 }
 
 // ---- Profit & Loss ----
@@ -729,6 +766,18 @@ function renderBalanceSheetReport(data) {
     const balanced = Math.abs(totalAssets - liabEquity) < 0.01;
     container.innerHTML = `
         ${comparisonBanner}
+        <div class="acc-charts">
+            <div class="acc-chart-card">
+                <h4>Assets vs Liabilities + Equity</h4>
+                <div class="acc-chart-sub">The two sides of the balance sheet — they should match</div>
+                <div id="bsBalanceChart" class="acc-chart"></div>
+            </div>
+            <div class="acc-chart-card">
+                <h4>How assets are financed</h4>
+                <div class="acc-chart-sub">Split of funding between liabilities and equity</div>
+                <div id="bsFinancingChart" class="acc-chart"></div>
+            </div>
+        </div>
         <div class="data-table-container">
             <table class="data-table report-table">
                 <thead>${headerRow}</thead>
@@ -748,6 +797,19 @@ function renderBalanceSheetReport(data) {
         <div class="report-footer ${balanced ? 'balanced' : 'unbalanced'}">
             ${balanced ? 'Assets = Liabilities + Equity (Balanced)' : 'WARNING: Assets (' + fmt(totalAssets) + ') != Liabilities + Equity (' + fmt(liabEquity) + ')'}
         </div>`;
+
+    if (typeof acColumns === 'function') {
+        const draw = () => {
+            acColumns('bsBalanceChart', ['Balance sheet'],
+                [{ name: 'Assets', data: [Math.round(totalAssets * 100) / 100] }, { name: 'Liabilities + Equity', data: [Math.round(liabEquity * 100) / 100] }],
+                ['#3b82f6', '#8b5cf6']);
+            const fin = [{ n: 'Liabilities', v: Math.abs(totalLiabilities) }, { n: 'Equity', v: Math.abs(totalEquity) }].filter(x => x.v > 0);
+            if (fin.length) acDonut('bsFinancingChart', fin.map(x => x.n), fin.map(x => Math.round(x.v * 100) / 100), ['#f59e0b', '#10b981']);
+            else _acEmpty('bsFinancingChart', 'No liabilities or equity yet');
+        };
+        draw();
+        _acActiveRender = draw;
+    }
 }
 
 // ---- Cash Flow ----
@@ -768,9 +830,15 @@ function renderCashFlowReport(data) {
     const totalFinancing = parseFloat(finSection.total || data.total_financing || 0);
     const netChange = parseFloat(data.net_cash_change ?? data.net_change ?? (totalOperating + totalInvesting + totalFinancing));
 
+    // Humanize raw snake_case reference types (e.g. "customer_invoice" → "Customer Invoice")
+    // so the statement reads like an accountant expects rather than a database column.
+    const humanize = s => String(s || '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+
     const renderSection = (items, label, total) => {
         const rows = items.map(i => `<tr>
-            <td style="padding-left:2rem;">${esc(i.reference_type || i.description || i.name || '')}</td>
+            <td style="padding-left:2rem;">${esc(i.description || i.name || humanize(i.reference_type) || '')}</td>
             <td class="amount">${fmt(i.cash_impact || i.amount || 0)}</td>
         </tr>`).join('');
         return `<tr class="section-header"><td colspan="2"><strong>${esc(label)}</strong></td></tr>
@@ -779,6 +847,13 @@ function renderCashFlowReport(data) {
     };
 
     container.innerHTML = `
+        <div class="acc-charts" style="grid-template-columns: 1fr;">
+            <div class="acc-chart-card">
+                <h4>Cash flow by activity</h4>
+                <div class="acc-chart-sub">Net cash from operating, investing and financing (green = inflow, red = outflow)</div>
+                <div id="cfActivityChart" class="acc-chart"></div>
+            </div>
+        </div>
         <div class="data-table-container">
             <table class="data-table report-table">
                 <thead><tr><th>Particulars</th><th class="amount">Amount</th></tr></thead>
@@ -795,6 +870,16 @@ function renderCashFlowReport(data) {
                 </tfoot>
             </table>
         </div>`;
+
+    if (typeof acBarV === 'function') {
+        const cats = ['Operating', 'Investing', 'Financing', 'Net change'];
+        const vals = [totalOperating, totalInvesting, totalFinancing, netChange].map(v => Math.round((Number(v) || 0) * 100) / 100);
+        // Colour each bar by sign: inflow green, outflow red; the Net-change bar in brand blue.
+        const colors = vals.map((v, i) => i === 3 ? '#3b82f6' : (v >= 0 ? '#10b981' : '#ef4444'));
+        const draw = () => acBarV('cfActivityChart', cats, vals, colors);
+        draw();
+        _acActiveRender = draw;
+    }
 }
 
 // ---- Account Ledger ----
@@ -809,12 +894,17 @@ function renderLedgerReport(data) {
     }
 
     let runningBalance = parseFloat(data?.opening_balance || 0);
+    const balanceSeries = [];
     const rows = items.map(item => {
         const debit = parseFloat(item.debit_amount || item.debit || 0);
         const credit = parseFloat(item.credit_amount || item.credit || 0);
         // Use backend running_balance if available, otherwise compute
         if (item.running_balance != null) runningBalance = parseFloat(item.running_balance);
         else runningBalance += debit - credit;
+        balanceSeries.push({
+            date: AccountsCommon.formatDate(item.entry_date || item.date || item.transaction_date),
+            balance: Math.round(runningBalance * 100) / 100
+        });
         return `<tr>
             <td>${AccountsCommon.formatDate(item.entry_date || item.date || item.transaction_date)}</td>
             <td>${esc(item.description || item.narration || item.entry_number || '')}</td>
@@ -832,9 +922,25 @@ function renderLedgerReport(data) {
         ? `<div class="report-note" style="color:var(--color-warning);">Showing the first ${items.length.toLocaleString('en-IN')} of ${(data.total_entries ?? 0).toLocaleString('en-IN')} entries — opening and closing balances cover the full range. Narrow the date range to see the remaining detail.</div>`
         : '';
 
+    // Cap the running-balance line at a sane number of points so a large ledger
+    // doesn't render thousands of x-labels — sample evenly across the range.
+    let plotPoints = balanceSeries;
+    if (balanceSeries.length > 60) {
+        const step = Math.ceil(balanceSeries.length / 60);
+        plotPoints = balanceSeries.filter((_, i) => i % step === 0 || i === balanceSeries.length - 1);
+    }
+
     container.innerHTML = `
         ${truncatedBanner}
         ${data?.opening_balance != null ? `<div class="report-note">Opening Balance: <strong>${fmt(data.opening_balance)}</strong></div>` : ''}
+        ${plotPoints.length > 1 ? `
+        <div class="acc-charts" style="grid-template-columns: 1fr;">
+            <div class="acc-chart-card">
+                <h4>Running balance</h4>
+                <div class="acc-chart-sub">Account balance movement across the period</div>
+                <div id="ledgerBalanceChart" class="acc-chart"></div>
+            </div>
+        </div>` : ''}
         <div class="data-table-container">
             <table class="data-table report-table">
                 <thead>
@@ -850,6 +956,12 @@ function renderLedgerReport(data) {
                 </tfoot>
             </table>
         </div>`;
+
+    if (plotPoints.length > 1 && typeof acArea === 'function') {
+        const draw = () => acArea('ledgerBalanceChart', plotPoints.map(p => p.date), plotPoints.map(p => p.balance), 'Balance');
+        draw();
+        _acActiveRender = draw;
+    }
 }
 
 // ---- Day Book ----
@@ -879,6 +991,13 @@ function renderDayBookReport(data) {
     }).join('');
 
     container.innerHTML = `
+        <div class="acc-charts" style="grid-template-columns: 1fr;">
+            <div class="acc-chart-card">
+                <h4>Debit vs credit posted</h4>
+                <div class="acc-chart-sub">Total value moved through the day book (${items.length.toLocaleString('en-IN')} vouchers)</div>
+                <div id="dbTotalsChart" class="acc-chart"></div>
+            </div>
+        </div>
         <div class="data-table-container">
             <table class="data-table report-table">
                 <thead>
@@ -894,6 +1013,13 @@ function renderDayBookReport(data) {
                 </tfoot>
             </table>
         </div>`;
+
+    if (typeof acBarV === 'function') {
+        const draw = () => acBarV('dbTotalsChart', ['Debit', 'Credit'],
+            [Math.round(totalDebit * 100) / 100, Math.round(totalCredit * 100) / 100], ['#3b82f6', '#8b5cf6']);
+        draw();
+        _acActiveRender = draw;
+    }
 }
 
 // ---- Cash Book ----
@@ -935,9 +1061,24 @@ function renderCashBookReport(data) {
         ? `<div class="report-note" style="color:var(--color-warning);">Showing the first ${items.length.toLocaleString('en-IN')} of ${(data.entry_count ?? 0).toLocaleString('en-IN')} entries — totals and net movement cover the full range. Narrow the date range to see the remaining detail.</div>`
         : '';
 
+    const totalDeposits = Math.round(parseFloat(data?.total_deposits ?? 0) * 100) / 100;
+    const totalWithdrawals = Math.round(parseFloat(data?.total_withdrawals ?? 0) * 100) / 100;
+
     container.innerHTML = `
         ${truncatedBanner}
         <div class="report-note">Movement for the selected period — the balance column starts at 0 (no opening balance).</div>
+        <div class="acc-charts">
+            <div class="acc-chart-card">
+                <h4>Receipts vs payments</h4>
+                <div class="acc-chart-sub">Total cash in and out for the period</div>
+                <div id="cbFlowChart" class="acc-chart"></div>
+            </div>
+            <div class="acc-chart-card">
+                <h4>Cash mix</h4>
+                <div class="acc-chart-sub">Share of receipts and payments</div>
+                <div id="cbMixChart" class="acc-chart"></div>
+            </div>
+        </div>
         <div class="data-table-container">
             <table class="data-table report-table">
                 <thead>
@@ -947,13 +1088,24 @@ function renderCashBookReport(data) {
                 <tfoot>
                     <tr class="total-row">
                         <td colspan="2"><strong>Net Movement (Period)</strong></td>
-                        <td class="amount"><strong>${fmt(data?.total_deposits ?? 0)}</strong></td>
-                        <td class="amount"><strong>${fmt(data?.total_withdrawals ?? 0)}</strong></td>
+                        <td class="amount"><strong>${fmt(totalDeposits)}</strong></td>
+                        <td class="amount"><strong>${fmt(totalWithdrawals)}</strong></td>
                         <td class="amount"><strong>${fmt(netMovement)}</strong></td>
                     </tr>
                 </tfoot>
             </table>
         </div>`;
+
+    const draw = () => {
+        if (typeof acBarV === 'function') {
+            acBarV('cbFlowChart', ['Receipts', 'Payments'], [totalDeposits, totalWithdrawals], ['#10b981', '#ef4444']);
+        }
+        if (typeof acDonut === 'function') {
+            acDonut('cbMixChart', ['Receipts', 'Payments'], [totalDeposits, totalWithdrawals], ['#10b981', '#ef4444']);
+        }
+    };
+    draw();
+    _acActiveRender = draw;
 }
 
 // ---- Aging Reports (AR / AP) ----
@@ -994,6 +1146,13 @@ function renderAgingReport(data, type) {
     const totalCells = buckets.map(b => `<td class="amount"><strong>${fmt(totals[b])}</strong></td>`).join('');
 
     container.innerHTML = `
+        <div class="acc-charts" style="grid-template-columns: 1fr;">
+            <div class="acc-chart-card">
+                <h4>Outstanding by age</h4>
+                <div class="acc-chart-sub">The further right, the higher the ${type === 'ar' ? 'collection' : 'overdue'} risk</div>
+                <div id="${type}AgingBucketChart" class="acc-chart"></div>
+            </div>
+        </div>
         <div class="data-table-container">
             <table class="data-table report-table">
                 <thead>
@@ -1013,4 +1172,12 @@ function renderAgingReport(data, type) {
                 </tfoot>
             </table>
         </div>`;
+
+    if (typeof acBarV === 'function') {
+        const draw = () => acBarV(`${type}AgingBucketChart`, bucketLabels,
+            buckets.map(b => Math.round(totals[b] * 100) / 100),
+            ['#10b981', '#3b82f6', '#f59e0b', '#f97316', '#ef4444']);
+        draw();
+        _acActiveRender = draw;
+    }
 }

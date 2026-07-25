@@ -327,15 +327,9 @@
                 <!-- Tab 4: GSTR-1 -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="gstr-1">
-                    <div class="filters-bar">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="gstr1From" style="font-size:0.8rem;margin-bottom:2px;">From</label>
-                            <input type="date" id="gstr1From" class="form-control">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="gstr1To" style="font-size:0.8rem;margin-bottom:2px;">To</label>
-                            <input type="date" id="gstr1To" class="form-control">
-                        </div>
+                    <div class="filters-bar" style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                        <input type="text" id="gstr1From" class="form-control" placeholder="From date" style="max-width:180px;">
+                        <input type="text" id="gstr1To" class="form-control" placeholder="To date" style="max-width:180px;">
                         <button class="btn btn-primary" onclick="generateGSTR1()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -361,15 +355,9 @@
                 <!-- Tab 5: GSTR-3B -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="gstr-3b">
-                    <div class="filters-bar">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="gstr3bFrom" style="font-size:0.8rem;margin-bottom:2px;">From</label>
-                            <input type="date" id="gstr3bFrom" class="form-control">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="gstr3bTo" style="font-size:0.8rem;margin-bottom:2px;">To</label>
-                            <input type="date" id="gstr3bTo" class="form-control">
-                        </div>
+                    <div class="filters-bar" style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                        <input type="text" id="gstr3bFrom" class="form-control" placeholder="From date" style="max-width:180px;">
+                        <input type="text" id="gstr3bTo" class="form-control" placeholder="To date" style="max-width:180px;">
                         <button class="btn btn-primary" onclick="generateGSTR3B()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -395,15 +383,9 @@
                 <!-- Tab 6: TDS Return -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="tds-return">
-                    <div class="filters-bar">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="tdsFrom" style="font-size:0.8rem;margin-bottom:2px;">From</label>
-                            <input type="date" id="tdsFrom" class="form-control">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="tdsTo" style="font-size:0.8rem;margin-bottom:2px;">To</label>
-                            <input type="date" id="tdsTo" class="form-control">
-                        </div>
+                    <div class="filters-bar" style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                        <input type="text" id="tdsFrom" class="form-control" placeholder="From date" style="max-width:180px;">
+                        <input type="text" id="tdsTo" class="form-control" placeholder="To date" style="max-width:180px;">
                         <button class="btn btn-primary" onclick="generateTDSReturn()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -482,7 +464,7 @@
                 <!-- Tab 8: Tax Ledger -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="tax-ledger">
-                    <div class="filters-bar">
+                    <div class="filters-bar" style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
                         <select id="ledgerTxnTypeFilter" class="form-control" style="max-width: 180px;" onchange="taxLedgerPage = 1; loadTaxLedger()">
                             <option value="">All Transactions</option>
                             <option value="sales">Sales</option>
@@ -491,12 +473,8 @@
                             <option value="tds_collected">TDS Collected</option>
                             <option value="tcs_collected">TCS Collected</option>
                         </select>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <input type="date" id="ledgerFrom" class="form-control" onchange="taxLedgerPage = 1; loadTaxLedger()">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <input type="date" id="ledgerTo" class="form-control" onchange="taxLedgerPage = 1; loadTaxLedger()">
-                        </div>
+                        <input type="text" id="ledgerFrom" class="form-control" placeholder="From date" style="max-width:180px;">
+                        <input type="text" id="ledgerTo" class="form-control" placeholder="To date" style="max-width:180px;">
                     </div>
 
                     <div class="data-table-container">
@@ -740,6 +718,8 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/taxation.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 

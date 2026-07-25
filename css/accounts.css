@@ -1503,6 +1503,111 @@ textarea.form-control {
 }
 
 /* =============================================================
+   FINANCIAL-STATEMENT TABLES — TB / P&L / Balance Sheet / Cash Flow
+   Shared row semantics for the statement-style report tables so
+   section headings, subtotals and grand totals read as an
+   accountant expects (indent, rules, weight).
+   ============================================================= */
+.report-table .section-header td {
+    background: var(--bg-tertiary, rgba(255, 255, 255, 0.03));
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding-top: 14px;
+    padding-bottom: 8px;
+    border-top: 1px solid var(--border-color);
+}
+
+.report-table .subtotal-row td {
+    font-weight: 600;
+    color: var(--text-primary);
+    border-top: 1px solid var(--border-color);
+    background: var(--hover-overlay-subtle, rgba(255, 255, 255, 0.02));
+}
+
+.report-table .total-row td,
+.report-table tfoot .total-row td {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    border-top: 2px solid var(--border-strong, var(--text-secondary));
+    border-bottom: 3px double var(--border-strong, var(--text-secondary));
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+/* Net Profit / Net Loss tint on the P&L grand-total row */
+.report-table .total-row.profit td {
+    color: var(--color-success);
+    border-top-color: var(--color-success);
+    border-bottom-color: var(--color-success);
+}
+
+.report-table .total-row.loss td {
+    color: var(--color-error);
+    border-top-color: var(--color-error);
+    border-bottom-color: var(--color-error);
+}
+
+/* Informational note strips above a report (opening balance, truncation, etc.) */
+.report-note {
+    display: block;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    background: var(--hover-overlay-subtle, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--brand-primary);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.report-note strong {
+    color: var(--text-primary);
+}
+
+/* Balance-check banner at the foot of Trial Balance / Balance Sheet */
+.report-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: 1px solid transparent;
+}
+
+.report-footer::before {
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+.report-footer.balanced {
+    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
+    border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
+}
+
+.report-footer.balanced::before {
+    content: "\2713"; /* check mark */
+}
+
+.report-footer.unbalanced {
+    color: var(--color-error);
+    background: color-mix(in srgb, var(--color-error) 12%, transparent);
+    border-color: color-mix(in srgb, var(--color-error) 35%, transparent);
+}
+
+.report-footer.unbalanced::before {
+    content: "\26A0"; /* warning sign */
+}
+
+/* =============================================================
    AGING TABLE — AR/AP Aging reports
    ============================================================= */
 .aging-current {

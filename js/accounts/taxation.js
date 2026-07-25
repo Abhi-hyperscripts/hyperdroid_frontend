@@ -49,13 +49,35 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadInitialData();
     AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
     setupSearchListeners();
+    initDatePickers();
 });
+
+// Shared theme-aware chart re-render hook (set by whichever report is on screen;
+// a MutationObserver in accounts-charts.js calls it on light/dark toggle).
+// Reset on every tab switch so a stale renderer doesn't fire for the wrong tab.
+
+function initDatePickers() {
+    const fpConfig = { dateFormat: 'Y-m-d', allowInput: true };
+    const initWhenReady = () => {
+        if (typeof flatpickr !== 'function') { setTimeout(initWhenReady, 200); return; }
+        ['gstr1From', 'gstr1To', 'gstr3bFrom', 'gstr3bTo', 'tdsFrom', 'tdsTo'].forEach(id => {
+            if (document.getElementById(id)) flatpickr('#' + id, fpConfig);
+        });
+        // Tax Ledger date pickers re-query on change (native onchange was dropped in the flatpickr swap)
+        const ledgerOnChange = () => { taxLedgerPage = 1; loadTaxLedger(); };
+        if (document.getElementById('ledgerFrom')) flatpickr('#ledgerFrom', { ...fpConfig, onChange: ledgerOnChange });
+        if (document.getElementById('ledgerTo')) flatpickr('#ledgerTo', { ...fpConfig, onChange: ledgerOnChange });
+    };
+    initWhenReady();
+}
 
 // ============================================================================
 // TAB SWITCH HANDLER
 // ============================================================================
 
 function onTabSwitch(tabId) {
+    // Drop any prior tab's chart re-render hook before the new tab renders its own.
+    if (typeof _acActiveRender !== 'undefined') _acActiveRender = null;
     switch (tabId) {
         case 'tax-config':      loadTaxConfigs(); break;
         case 'tax-rates':       loadTaxRates(); break;
@@ -613,8 +635,12 @@ function setDefaultDatesAndGenerate(fromId, toId, generateFn) {
             ? new Date(now.getFullYear(), 3, 1)   // Apr 1 of current year
             : new Date(now.getFullYear() - 1, 3, 1); // Apr 1 of previous year
         const pad = (n) => String(n).padStart(2, '0');
-        fromEl.value = `${fyStart.getFullYear()}-${pad(fyStart.getMonth() + 1)}-${pad(fyStart.getDate())}`;
-        toEl.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+        const fromVal = `${fyStart.getFullYear()}-${pad(fyStart.getMonth() + 1)}-${pad(fyStart.getDate())}`;
+        const toVal = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+        // Prefer flatpickr's API so the visible input + internal state stay in sync;
+        // fall back to raw .value for any input that isn't flatpickr-backed.
+        if (fromEl._flatpickr) fromEl._flatpickr.setDate(fromVal, false); else fromEl.value = fromVal;
+        if (toEl._flatpickr) toEl._flatpickr.setDate(toVal, false); else toEl.value = toVal;
     }
 
     generateFn();
@@ -651,6 +677,18 @@ async function generateGSTR1() {
                 <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.total_taxable ?? 0)}</div><div class="stat-label">Total Taxable</div></div>
                 <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.total_tax ?? 0)}</div><div class="stat-label">Total Tax</div></div>
             </div>
+            <div class="acc-charts">
+                <div class="acc-chart-card">
+                    <h4>Outward supplies by party</h4>
+                    <div class="acc-chart-sub">Net taxable value per customer (negatives = credit notes)</div>
+                    <div id="gstr1PartyChart" class="acc-chart"></div>
+                </div>
+                <div class="acc-chart-card">
+                    <h4>Taxable vs tax</h4>
+                    <div class="acc-chart-sub">Total taxable value against GST collected</div>
+                    <div id="gstr1TaxSplitChart" class="acc-chart"></div>
+                </div>
+            </div>
             <div class="data-table-container"><table class="data-table">
                 <thead><tr><th>Party</th><th>Date</th><th>Party Tax ID</th><th>Taxable Amount</th><th>Tax Amount</th><th>Total</th></tr></thead>
                 <tbody>${rows.map(r => `<tr>
@@ -662,6 +700,27 @@ async function generateGSTR1() {
                     <td class="text-right">${AccountsCommon.formatCurrency((r.taxable_amount || 0) + (r.tax_amount || 0))}</td>
                 </tr>`).join('')}</tbody>
             </table></div></div>`;
+
+        // Aggregate net taxable value per party for the breakdown bar.
+        const byParty = {};
+        rows.forEach(r => {
+            const name = r.party_name || 'Unknown';
+            byParty[name] = (byParty[name] || 0) + (parseFloat(r.taxable_amount) || 0);
+        });
+        const partyRanked = Object.entries(byParty)
+            .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 8);
+        const draw = () => {
+            if (typeof acBarH === 'function' && partyRanked.length) {
+                acBarH('gstr1PartyChart', partyRanked.map(p => p[0]), partyRanked.map(p => Math.round(p[1] * 100) / 100));
+            }
+            if (typeof acBarV === 'function') {
+                acBarV('gstr1TaxSplitChart', ['Taxable', 'Tax'],
+                    [Math.round((res.total_taxable || 0) * 100) / 100, Math.round((res.total_tax || 0) * 100) / 100],
+                    ['#3b82f6', '#10b981']);
+            }
+        };
+        draw();
+        if (typeof _acActiveRender !== 'undefined') _acActiveRender = draw;
     } catch (err) {
         console.error('[Taxation] generateGSTR1 error:', err);
         Toast.error(err.message || 'Failed to generate GSTR-1 report');
@@ -691,13 +750,34 @@ async function generateGSTR3B() {
             return;
         }
 
+        const outputTax = parseFloat(res.outward_supplies?.tax || 0);
+        const inputCredit = parseFloat(res.inward_supplies?.tax || 0);
+        const netPayable = parseFloat(res.net_tax_payable || 0);
+
         area.innerHTML = `<div class="glass-card-body">
             <h4 style="margin-bottom:1rem;">GSTR-3B Summary (${AccountsCommon.formatDate(from)} - ${AccountsCommon.formatDate(to)})</h4>
-            <div class="stats-row">
-                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.outward_supplies?.tax || 0)}</div><div class="stat-label">Output Tax (${res.outward_supplies?.count ?? 0} txns)</div></div>
-                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.inward_supplies?.tax || 0)}</div><div class="stat-label">Input Tax Credit (${res.inward_supplies?.count ?? 0} txns)</div></div>
-                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.net_tax_payable || 0)}</div><div class="stat-label">Net Tax Payable</div></div>
+            <div class="stats-row" style="margin-bottom:1rem;">
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(outputTax)}</div><div class="stat-label">Output Tax (${res.outward_supplies?.count ?? 0} txns)</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(inputCredit)}</div><div class="stat-label">Input Tax Credit (${res.inward_supplies?.count ?? 0} txns)</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(netPayable)}</div><div class="stat-label">Net Tax Payable</div></div>
+            </div>
+            <div class="acc-charts" style="grid-template-columns: 1fr;">
+                <div class="acc-chart-card">
+                    <h4>Output tax vs input credit</h4>
+                    <div class="acc-chart-sub">Net GST payable = output tax collected − input tax credit claimed</div>
+                    <div id="gstr3bChart" class="acc-chart"></div>
+                </div>
             </div></div>`;
+
+        const draw = () => {
+            if (typeof acBarV === 'function') {
+                acBarV('gstr3bChart', ['Output tax', 'Input credit', 'Net payable'],
+                    [Math.round(outputTax * 100) / 100, Math.round(inputCredit * 100) / 100, Math.round(netPayable * 100) / 100],
+                    ['#ef4444', '#10b981', '#3b82f6']);
+            }
+        };
+        draw();
+        if (typeof _acActiveRender !== 'undefined') _acActiveRender = draw;
     } catch (err) {
         console.error('[Taxation] generateGSTR3B error:', err);
         Toast.error(err.message || 'Failed to generate GSTR-3B report');
@@ -735,6 +815,13 @@ async function generateTDSReturn() {
                 <div class="stat-card"><div class="stat-value">${res.deductee_count ?? rows.length}</div><div class="stat-label">Deductees</div></div>
                 <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.total_tds ?? 0)}</div><div class="stat-label">Total TDS</div></div>
             </div>
+            <div class="acc-charts" style="grid-template-columns: 1fr;">
+                <div class="acc-chart-card">
+                    <h4>TDS deducted by deductee</h4>
+                    <div class="acc-chart-sub">Tax withheld per party for the period</div>
+                    <div id="tdsDeducteeChart" class="acc-chart"></div>
+                </div>
+            </div>
             <div class="data-table-container"><table class="data-table">
                 <thead><tr><th>Deductee</th><th>PAN / Tax ID</th><th>Amount Paid</th><th>TDS Deducted</th><th>Date</th></tr></thead>
                 <tbody>${rows.map(r => `<tr>
@@ -745,6 +832,24 @@ async function generateTDSReturn() {
                     <td>${AccountsCommon.formatDate(r.transaction_date)}</td>
                 </tr>`).join('')}</tbody>
             </table></div></div>`;
+
+        // Aggregate TDS deducted per deductee for the breakdown bar.
+        const byDeductee = {};
+        rows.forEach(r => {
+            const name = r.party_name || 'Unknown';
+            byDeductee[name] = (byDeductee[name] || 0) + (parseFloat(r.tax_amount) || 0);
+        });
+        const deducteeRanked = Object.entries(byDeductee)
+            .filter(d => d[1] !== 0).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 8);
+        const draw = () => {
+            if (typeof acBarH === 'function' && deducteeRanked.length) {
+                acBarH('tdsDeducteeChart', deducteeRanked.map(d => d[0]), deducteeRanked.map(d => Math.round(d[1] * 100) / 100));
+            } else if (typeof _acEmpty === 'function') {
+                _acEmpty('tdsDeducteeChart', 'No TDS deducted in this period');
+            }
+        };
+        draw();
+        if (typeof _acActiveRender !== 'undefined') _acActiveRender = draw;
     } catch (err) {
         console.error('[Taxation] generateTDSReturn error:', err);
         Toast.error(err.message || 'Failed to generate TDS return');
