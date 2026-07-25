@@ -171,6 +171,21 @@ function initDropdowns() {
 // PURCHASE ORDERS — LIST
 // ============================================================================
 
+// Purchase-commitment charts — PO value by status + top vendors by PO value. Shared helpers; full set.
+const _PO_STATUS_COLOR = { draft: '#64748b', approved: '#3b82f6', sent: '#06b6d4', received: '#8b5cf6', billed: '#10b981', cancelled: '#ef4444' };
+async function renderPOCharts(baseParams) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('purchase-orders', { ...baseParams, limit: 1000, offset: 0 }), { _skipSpinner: true });
+        const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const byStatus = {};
+        all.forEach(po => { const amt = parseFloat(po.total_amount || 0); if (amt > 0 && (po.status || 'draft') !== 'cancelled') { const s = po.status || 'draft'; byStatus[s] = (byStatus[s] || 0) + amt; } });
+        const st = Object.keys(byStatus);
+        acDonut('poStatusChart', st.map(s => s.replace(/_/g, ' ')), st.map(s => Math.round(byStatus[s] * 100) / 100), st.map(s => _PO_STATUS_COLOR[s] || '#64748b'));
+        const rank = _acRank(all.filter(po => (po.status || 'draft') !== 'cancelled').map(po => ({ name: po.vendor_name || '—', amt: parseFloat(po.total_amount || 0) })), 'name', 'amt', 6);
+        acBarH('poVendorChart', rank.labels, rank.data);
+    } catch (e) { _acEmpty('poStatusChart'); _acEmpty('poVendorChart'); }
+}
+
 async function loadPurchaseOrders() {
     const params = { limit: PAGE_SIZE, offset: (poPage - 1) * PAGE_SIZE };
     const vendorId = poVendorFilterDD?.getValue?.();
@@ -189,6 +204,11 @@ async function loadPurchaseOrders() {
         const res = await api.request(AccountsCommon.buildUrl('purchase-orders', params));
         const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
         purchaseOrders = items;  // cache for row action handlers
+
+        // Charts read the full matching set (vendor + date; ignore status so the pipeline split shows).
+        const _poChartParams = { ...(vendorId ? { vendorId } : {}), ...(dateFrom ? { fromDate: dateFrom } : {}), ...(dateTo ? { toDate: dateTo } : {}) };
+        renderPOCharts(_poChartParams);
+        _acActiveRender = () => renderPOCharts(_poChartParams);
         // Backend total is the FILTERED count — ?? (not ||) so a legitimate 0 sticks
         const total = res?.total ?? items.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;

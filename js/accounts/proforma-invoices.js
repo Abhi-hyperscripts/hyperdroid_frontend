@@ -143,6 +143,22 @@ function initDropdowns() {
 // PROFORMA INVOICES — LIST
 // ============================================================================
 
+// Pipeline charts — proforma value by status + top customers by quoted value. Uses the shared
+// accounts-charts.js helpers; pulls the full matching set so it isn't limited to one page.
+const _PF_STATUS_COLOR = { draft: '#64748b', sent: '#3b82f6', accepted: '#10b981', rejected: '#ef4444', invoiced: '#06b6d4', expired: '#f59e0b' };
+async function renderProformaCharts(baseParams) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('proforma-invoices', { ...baseParams, limit: 1000, offset: 0 }), { _skipSpinner: true });
+        const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const byStatus = {};
+        all.forEach(pi => { const amt = parseFloat(pi.total_amount || 0); if (amt > 0) { const s = pi.status || 'draft'; byStatus[s] = (byStatus[s] || 0) + amt; } });
+        const st = Object.keys(byStatus);
+        acDonut('pfStatusChart', st.map(s => s.replace(/_/g, ' ')), st.map(s => Math.round(byStatus[s] * 100) / 100), st.map(s => _PF_STATUS_COLOR[s] || '#64748b'));
+        const rank = _acRank(all.map(pi => ({ name: pi.customer_name || '—', amt: parseFloat(pi.total_amount || 0) })), 'name', 'amt', 6);
+        acBarH('pfCustomerChart', rank.labels, rank.data);
+    } catch (e) { _acEmpty('pfStatusChart'); _acEmpty('pfCustomerChart'); }
+}
+
 async function loadProformaInvoices() {
     const customerId = proformaCustomerFilterDD?.getValue?.();
     const status = document.getElementById('proformaStatusFilter')?.value;
@@ -166,6 +182,11 @@ async function loadProformaInvoices() {
         const res = await api.request(AccountsCommon.buildUrl('proforma-invoices', params));
         let items = Array.isArray(res) ? res : (res?.data || res?.items || []);
         proformaInvoices = items;  // cache for row action handlers
+
+        // Charts read the full matching set (customer + date; ignore status so the pipeline split shows).
+        const _pfChartParams = { ...(customerId ? { customerId } : {}), ...(dateFrom ? { fromDate: dateFrom } : {}), ...(dateTo ? { toDate: dateTo } : {}) };
+        renderProformaCharts(_pfChartParams);
+        _acActiveRender = () => renderProformaCharts(_pfChartParams);
 
         let total, totalPages;
         if (searching) {

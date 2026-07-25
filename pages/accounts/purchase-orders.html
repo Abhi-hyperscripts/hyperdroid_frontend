@@ -140,6 +140,19 @@
                         </div>
                     </div>
 
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>PO value by status</h4>
+                            <div class="acc-chart-sub">Committed purchase value in each stage</div>
+                            <div id="poStatusChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Top vendors by PO value</h4>
+                            <div class="acc-chart-sub">Where purchase commitments concentrate</div>
+                            <div id="poVendorChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="poVendorFilterContainer"></div>
                         <select id="poStatusFilter" class="form-control" style="max-width: 160px;">
@@ -340,6 +353,8 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/purchase-orders.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 
