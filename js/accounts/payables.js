@@ -281,7 +281,9 @@ function setBillModalMode(mode, bill) {
         if (!banner) {
             banner = document.createElement('div');
             banner.className = 'bill-readonly-banner';
-            const body = modal.querySelector('.modal-body');
+            // Rebuilt as a full-page .acc-form-page: content is in <form class="acc-form">, not .modal-body.
+            // (The optional-chaining guard meant no crash, but the banner silently never appeared.)
+            const body = modal.querySelector('.acc-form') || modal.querySelector('.modal-body') || modal.querySelector('.acc-form-page__inner');
             body?.insertBefore(banner, body.firstChild);
         }
         if (isPostedToGl) {

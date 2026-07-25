@@ -550,8 +550,9 @@ function _setInvoiceModalReadOnly(readOnly) {
         if (readOnly) el.setAttribute('disabled', 'disabled');
         else el.removeAttribute('disabled');
     });
-    // Also hide Save Draft + Save & Approve in read-only mode
-    modal.querySelectorAll('.modal-footer button').forEach(b => {
+    // Also hide Save Draft + Save & Approve in read-only mode. The form was rebuilt as a full-page
+    // .acc-form-page whose action bar is .acc-form-page__actions (legacy .modal-footer kept as a fallback).
+    modal.querySelectorAll('.acc-form-page__actions button, .modal-footer button').forEach(b => {
         const t = b.innerText.trim();
         if (t === 'Save Draft' || t === 'Save & Approve') {
             b.style.display = readOnly ? 'none' : '';
@@ -568,8 +569,11 @@ function _setInvoiceModalReadOnly(readOnly) {
             Once a tax invoice is approved, GST regulations require it to remain immutable for GSTR-1 filing.
             To make corrections, <em>cancel this invoice</em> or issue a <em>credit note</em>, then create a fresh invoice.
         `;
-        const body = modal.querySelector('.modal-body');
-        body.insertBefore(banner, body.firstChild);
+        // The invoice modal was rebuilt as a full-page .acc-form-page: its content lives in the
+        // <form class="acc-form">, not a .modal-body (which no longer exists → this used to throw
+        // "Cannot read properties of null (reading 'insertBefore')" on viewing any issued invoice).
+        const body = modal.querySelector('.acc-form') || modal.querySelector('.modal-body') || modal.querySelector('.acc-form-page__inner');
+        if (body) body.insertBefore(banner, body.firstChild);
     } else if (!readOnly && banner) {
         banner.remove();
     }
