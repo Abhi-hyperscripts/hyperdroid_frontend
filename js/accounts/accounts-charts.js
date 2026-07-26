@@ -156,6 +156,30 @@ function acArea(id, categories, data, name) {
 }
 // Multi-series line chart (e.g. monthly Revenue vs Expenses vs Net across a fiscal year).
 // series = [{ name, data:[…] }, …]; categories = month labels. Handles negatives (loss months).
+// Multi-series smooth gradient AREA lines — the full-width "hero" trend chart.
+// series = [{ name, data: [...] }, ...]. Taller than the card charts by default.
+function acAreas(id, categories, series, colors, height = 320) {
+    if (!series || !series.length || series.every(s => (s.data || []).every(v => !v))) return _acEmpty(id);
+    const t = _acTheme();
+    _acMount(id, {
+        chart: { type: 'area', height, background: 'transparent', toolbar: { show: false },
+                 fontFamily: 'inherit', zoom: { enabled: false } },
+        theme: { mode: t.isDark ? 'dark' : 'light' },
+        colors: colors || _acPalette,
+        series,
+        stroke: { curve: 'smooth', width: 2.5 },
+        fill: { type: 'gradient', gradient: { shadeIntensity: 0.9, opacityFrom: 0.28, opacityTo: 0.02, stops: [0, 95] } },
+        dataLabels: { enabled: false },
+        markers: { size: 0, hover: { size: 5 } },
+        xaxis: { categories, labels: { style: { colors: t.text, fontSize: '11px' } },
+                 axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { formatter: _inrCompact, style: { colors: t.text, fontSize: '11px' } } },
+        legend: { position: 'top', horizontalAlign: 'right', labels: { colors: t.text }, fontSize: '12px',
+                  markers: { width: 9, height: 9 }, itemMargin: { horizontal: 10 } },
+        grid: { borderColor: t.grid, strokeDashArray: 4, padding: { left: 8, right: 8 } },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', shared: true, y: { formatter: _inr } }
+    });
+}
 function acLines(id, categories, series, colors) {
     if (!series || !series.length || series.every(s => (s.data || []).every(v => !v))) return _acEmpty(id);
     const t = _acTheme();
