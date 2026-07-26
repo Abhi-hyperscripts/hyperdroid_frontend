@@ -25,7 +25,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const tabNames = { 'pr-list': 'Projects', 'pr-stmt': 'Project Statement' };
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
-    AccountsCommon.setupTabs(tabNames);
+    AccountsCommon.setupTabs(tabNames, (tabId) => {
+        _acActiveRender = null;  // re-armed by each tab's renderer
+        if (tabId === 'pr-list') renderProjectCharts();
+    });
 
     accountsRoles.applyRBAC();
     AccountsCommon.initDatePickers(['prStartDate']);
@@ -68,6 +71,8 @@ async function loadProjects(page = projectsPage) {
         projectsList = env.data || [];
         projectsTotal = env.total ?? projectsList.length;
         renderProjects();
+        renderProjectCharts();
+        _acActiveRender = renderProjectCharts;
     } catch (err) {
         console.error('[Projects] loadProjects error:', err);
         const tb = document.getElementById('projectsTable');
@@ -203,6 +208,8 @@ async function loadStatement() {
         const rows = data.projects || [];
         if (!rows.length) {
             tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary);">No billing for this customer yet.</td></tr>';
+            const host = document.getElementById('stmtCharts');
+            if (host) host.style.display = 'none';
             return;
         }
         // Each project row is clickable → reveals a nested detail row of its individual invoice lines
@@ -233,10 +240,41 @@ async function loadStatement() {
             tb._stmtDelegated = true;
             tb.addEventListener('click', onStmtRowClick);
         }
+
+        renderStatementChart(rows);
+        _acActiveRender = () => renderStatementChart(rows);
     } catch (err) {
         console.error('[Projects] loadStatement error:', err);
         tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-error);">Failed to load statement.</td></tr>';
     }
+}
+
+// Project charts
+function renderProjectCharts() {
+    if (typeof acBarH !== 'function') return;
+    if (!projectsList.length) { _acEmpty('prBudgetChart'); _acEmpty('prStatusChart'); return; }
+    const short = (s) => (s || '—').length > 16 ? s.slice(0, 15) + '…' : (s || '—');
+    const rank = _acRank(projectsList.map(p => ({ name: short(p.name), amt: parseFloat(p.budget || 0) })), 'name', 'amt', 6);
+    rank.labels.length ? acBarH('prBudgetChart', rank.labels, rank.data) : _acEmpty('prBudgetChart', 'No budgets set');
+    const statusColor = { active: '#3b82f6', completed: '#10b981', on_hold: '#f59e0b', cancelled: '#ef4444' };
+    const byStatus = {};
+    projectsList.forEach(p => { const s = p.status || 'active'; byStatus[s] = (byStatus[s] || 0) + 1; });
+    const sts = Object.keys(byStatus).sort();
+    acDonut('prStatusChart', sts.map(s => s.replace(/_/g, ' ')), sts.map(s => byStatus[s]),
+            sts.map((s, i) => statusColor[s] || _acPalette[i % _acPalette.length]));
+}
+
+function renderStatementChart(rows) {
+    if (typeof acColumns !== 'function') return;
+    const host = document.getElementById('stmtCharts');
+    if (host) host.style.display = '';
+    const short = (s) => (s || 'Unassigned').length > 14 ? s.slice(0, 13) + '…' : (s || 'Unassigned');
+    const top = [...rows].sort((a, b) => parseFloat(b.billed || 0) - parseFloat(a.billed || 0)).slice(0, 8);
+    acColumns('stmtProjectChart', top.map(r => short(r.project_name)), [
+        { name: 'Billed', data: top.map(r => Math.round(parseFloat(r.billed || 0) * 100) / 100) },
+        { name: 'Collected', data: top.map(r => Math.round(parseFloat(r.collected || 0) * 100) / 100) },
+        { name: 'Due', data: top.map(r => Math.round(parseFloat(r.due || 0) * 100) / 100) }
+    ], ['#3b82f6', '#10b981', '#f59e0b']);
 }
 
 async function onStmtRowClick(e) {

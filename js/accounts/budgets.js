@@ -23,7 +23,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const tabNames = { 'budget-list': 'Budget List', 'budget-analysis': 'Budget vs Actual' };
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
-    AccountsCommon.setupTabs(tabNames, (tabId) => { if (tabId === 'budget-analysis') loadAnalysis(); });
+    AccountsCommon.setupTabs(tabNames, (tabId) => {
+        _acActiveRender = null;  // re-armed by each tab's renderer for theme-toggle redraws
+        if (tabId === 'budget-analysis') loadAnalysis();
+        else if (tabId === 'budget-list') renderBudgetListCharts();
+    });
 
     await loadInitialData();
     initDropdowns();
@@ -128,6 +132,7 @@ function renderBudgets() {
     if (!budgetsList.length) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary);">No budgets for this fiscal year. Click "Add Budget" to create one.</td></tr>';
         AccountsCommon.renderPagination('budgetsPagination', 1, 1, () => {});
+        renderBudgetListCharts();   // shows the empty-state boxes instead of blank cards
         return;
     }
 
@@ -151,6 +156,23 @@ function renderBudgets() {
     }).join('');
 
     AccountsCommon.renderPagination('budgetsPagination', budgetPage, totalPages, p => { budgetPage = p; renderBudgets(); });
+    renderBudgetListCharts();
+    _acActiveRender = renderBudgetListCharts;
+}
+
+// Budget-list charts — largest lines + income/expense mix, from the FULL list (not the page slice).
+function renderBudgetListCharts() {
+    if (typeof acBarH !== 'function') return;
+    if (!budgetsList.length) { _acEmpty('budgetLinesChart'); _acEmpty('budgetMixChart'); return; }
+    const rank = _acRank(budgetsList.map(b => ({ name: b.account_name || b.account_code || '—', amt: parseFloat(b.annual_amount || 0) })), 'name', 'amt', 6);
+    rank.labels.length ? acBarH('budgetLinesChart', rank.labels, rank.data) : _acEmpty('budgetLinesChart');
+    const byType = {};
+    budgetsList.forEach(b => { const k = b.account_type_name || 'Other'; byType[k] = (byType[k] || 0) + parseFloat(b.annual_amount || 0); });
+    const types = Object.keys(byType).filter(k => byType[k] > 0).sort();
+    types.length
+        ? acDonut('budgetMixChart', types, types.map(k => Math.round(byType[k] * 100) / 100),
+                  types.map((k, i) => _acPalette[i % _acPalette.length]))
+        : _acEmpty('budgetMixChart');
 }
 
 function openAddModal() {
@@ -307,6 +329,18 @@ function renderAnalysis(report) {
             <div class="stat-value" style="color:${report.total_variance >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${fmt(report.total_variance)}</div>
             <div class="stat-label">Variance</div>
         </div>
+    </div>
+    <div class="acc-charts" style="margin-bottom:1.5rem;">
+        <div class="acc-chart-card">
+            <h4>Budget vs actual</h4>
+            <div class="acc-chart-sub">Largest budget lines against what was actually posted</div>
+            <div id="budgetVsActualChart" class="acc-chart"></div>
+        </div>
+        <div class="acc-chart-card">
+            <h4>Variance by account</h4>
+            <div class="acc-chart-sub">Green = favorable, red = unfavorable (direction depends on income vs expense)</div>
+            <div id="budgetVarianceChart" class="acc-chart"></div>
+        </div>
     </div>`;
 
     for (const section of report.sections) {
@@ -365,4 +399,30 @@ function renderAnalysis(report) {
     }
 
     container.innerHTML = html;
+    renderAnalysisCharts(report);
+    _acActiveRender = () => renderAnalysisCharts(report);
+}
+
+// Budget-vs-actual charts. Variance bar colour encodes FAVORABILITY, not sign:
+// expense under budget (variance ≥ 0) and income over budget (variance ≤ 0) are green.
+function renderAnalysisCharts(report) {
+    if (typeof acColumns !== 'function') return;
+    const rows = [];
+    for (const section of report.sections) {
+        const isIncome = (section.account_type || '').toLowerCase().includes('income')
+            || (section.account_type || '').toLowerCase().includes('revenue');
+        (section.accounts || []).forEach(a => rows.push({ ...a, _isIncome: isIncome }));
+    }
+    const top = rows.sort((a, b) => (b.budget_amount || 0) - (a.budget_amount || 0)).slice(0, 8);
+    if (!top.length) { _acEmpty('budgetVsActualChart'); _acEmpty('budgetVarianceChart'); return; }
+    const short = (s) => (s || '').length > 16 ? s.slice(0, 15) + '…' : (s || '—');
+    const cats = top.map(a => short(a.account_name));
+    acColumns('budgetVsActualChart', cats, [
+        { name: 'Budget', data: top.map(a => Math.round((a.budget_amount || 0) * 100) / 100) },
+        { name: 'Actual', data: top.map(a => Math.round((a.actual_amount || 0) * 100) / 100) }
+    ], ['#3b82f6', '#10b981']);
+    const favorable = (a) => a._isIncome ? (a.variance || 0) <= 0 : (a.variance || 0) >= 0;
+    acBarV('budgetVarianceChart', cats,
+        top.map(a => Math.round(Math.abs(a.variance || 0) * 100) / 100),
+        top.map(a => favorable(a) ? '#10b981' : '#ef4444'));
 }

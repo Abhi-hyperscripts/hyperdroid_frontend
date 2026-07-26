@@ -768,9 +768,45 @@ async function loadJournalEntries() {
         if (journalPage > totalPages) { journalPage = totalPages; return loadJournalEntries(); }
         renderJournalEntriesTable(entries);
         AccountsCommon.renderPagination('journalEntriesPagination', journalPage, totalPages, p => { journalPage = p; loadJournalEntries(); });
+
+        // Charts read the full matching set (dates respected; journal filter ignored so the mix shows)
+        const chartParams = {};
+        if (fromDate) chartParams.fromDate = fromDate;
+        if (toDate) chartParams.toDate = toDate;
+        renderJournalCharts(chartParams);
+        _acActiveRender = () => renderJournalCharts(chartParams);
     } catch (err) {
         console.error('[Ledger] loadJournalEntries error:', err);
         Toast.error('Failed to load journal entries');
+    }
+}
+
+// Journal charts — one trend line per journal type + entry counts. Posted only.
+async function renderJournalCharts(baseParams) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('journals/entries', { ...baseParams, status: 'posted', limit: 1000, offset: 0 }), { _skipSpinner: true });
+        const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        if (!all.length) { _acEmpty('journalTrendChart'); _acEmpty('journalCountChart'); return; }
+        const journalMap = {};
+        journalTypes.forEach(j => { journalMap[j.id] = j.name || j.journal_type_name || j.type; });
+        const jName = (e) => journalMap[e.journal_type_id] || e.journal_type_name || 'General';
+
+        const groups = {};
+        all.forEach(e => { (groups[jName(e)] = groups[jName(e)] || []).push(e); });
+        // Alphabetical + capped at the palette size so colours stay stable per journal
+        const names = Object.keys(groups).sort().slice(0, 7);
+        let cats = null;
+        const series = names.map(n => {
+            const m = _acMonthly(groups[n], 'entry_date', 'total_debit', 6);
+            cats = m.categories;
+            return { name: n, data: m.data };
+        });
+        acLines('journalTrendChart', cats, series, names.map((n, i) => _acPalette[i % _acPalette.length]));
+        acBarV('journalCountChart', names.map(n => n.replace(/ Journal$/, '')), names.map(n => groups[n].length),
+               names.map((n, i) => _acPalette[i % _acPalette.length]), (v) => `${Math.round(v)} entries`);
+    } catch (err) {
+        console.error('[Ledger] renderJournalCharts error:', err);
+        _acEmpty('journalTrendChart'); _acEmpty('journalCountChart');
     }
 }
 

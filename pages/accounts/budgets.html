@@ -162,6 +162,18 @@
                             <div class="stat-label">Total Annual Budget</div>
                         </div>
                     </div>
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Budget by account</h4>
+                            <div class="acc-chart-sub">Largest annual budget lines</div>
+                            <div id="budgetLinesChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Budget mix</h4>
+                            <div class="acc-chart-sub">Annual budget split by account type</div>
+                            <div id="budgetMixChart" class="acc-chart"></div>
+                        </div>
+                    </div>
                     <div class="data-table-container">
                         <table class="data-table">
                             <thead>
@@ -264,6 +276,8 @@
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/budgets.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="accounts" data-title="Accounts Assistant"><\/script>');</script>

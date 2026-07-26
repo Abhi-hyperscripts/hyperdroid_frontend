@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 // ============================================================================
 
 function onTabSwitch(tabId) {
+    _acActiveRender = null;  // re-armed by loadAssets on the register tab
     switch (tabId) {
         case 'asset-categories':  loadCategories(); break;
         case 'asset-register':    loadAssets(); break;
@@ -287,10 +288,39 @@ async function loadAssets() {
             assetPage = page;
             loadAssets();
         });
+
+        // Charts read the full filtered list (not the page slice)
+        renderAssetCharts(list);
+        _acActiveRender = () => renderAssetCharts(list);
     } catch (err) {
         console.error('[Assets] loadAssets error:', err);
         Toast.error('Failed to load assets');
     }
+}
+
+// Register charts — book value by category + cost-vs-book-value (gap = depreciation consumed)
+function renderAssetCharts(list) {
+    if (typeof acDonut !== 'function') return;
+    const live = list.filter(a => a.status !== 'disposed');
+    if (!live.length) { _acEmpty('assetCategoryChart'); _acEmpty('assetCostChart'); return; }
+    const catMap = {};
+    assetCategories.forEach(c => { catMap[c.id] = c.name; });
+    const byCat = {};
+    live.forEach(a => {
+        const k = catMap[a.asset_category_id] || catMap[a.category_id] || a.category_name || 'Uncategorized';
+        const b = byCat[k] || (byCat[k] = { book: 0, cost: 0 });
+        b.book += parseFloat(a.book_value || 0);
+        b.cost += parseFloat(a.purchase_cost || a.cost || 0);
+    });
+    const cats = Object.keys(byCat).sort();
+    cats.some(k => byCat[k].book > 0)
+        ? acDonut('assetCategoryChart', cats, cats.map(k => Math.round(byCat[k].book * 100) / 100),
+                  cats.map((k, i) => _acPalette[i % _acPalette.length]))
+        : _acEmpty('assetCategoryChart');
+    acColumns('assetCostChart', cats.map(k => k.length > 14 ? k.slice(0, 13) + '…' : k), [
+        { name: 'Purchase cost', data: cats.map(k => Math.round(byCat[k].cost * 100) / 100) },
+        { name: 'Book value', data: cats.map(k => Math.round(byCat[k].book * 100) / 100) }
+    ], ['#3b82f6', '#10b981']);
 }
 
 function renderAssets() {

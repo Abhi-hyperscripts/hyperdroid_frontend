@@ -103,20 +103,21 @@ function acBarH(id, labels, data) {
         tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }
     });
 }
-function acBarV(id, categories, data, colors) {
+function acBarV(id, categories, data, colors, fmt) {
     if (!data.length || data.every(v => !v)) return _acEmpty(id);
     const t = _acTheme();
+    const f = fmt || _inr;  // pass a formatter for non-currency data (e.g. counts)
     _acMount(id, {
         chart: { type: 'bar', height: 250, background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
         theme: { mode: t.isDark ? 'dark' : 'light' },
         plotOptions: { bar: { horizontal: false, borderRadius: 5, columnWidth: '52%', distributed: !!colors } },
         colors: colors || [t.brand], legend: { show: false },
-        series: [{ name: 'Amount', data }],
+        series: [{ name: fmt ? 'Count' : 'Amount', data }],
         dataLabels: { enabled: false },
         xaxis: { categories, labels: { style: { colors: t.text, fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { labels: { formatter: _inr, style: { colors: t.text, fontSize: '11px' } } },
+        yaxis: { labels: { formatter: f, style: { colors: t.text, fontSize: '11px' } } },
         grid: { borderColor: t.grid, strokeDashArray: 4 },
-        tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }
+        tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: f } }
     });
 }
 // Multi-series grouped columns (e.g. Revenue vs Expenses). series = [{ name, data:[…] }, …].

@@ -196,6 +196,19 @@
                         </div>
                     </div>
 
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Book value by category</h4>
+                            <div class="acc-chart-sub">Where the asset base sits today</div>
+                            <div id="assetCategoryChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Cost vs book value</h4>
+                            <div class="acc-chart-sub">Purchase cost against remaining value — the gap is depreciation consumed</div>
+                            <div id="assetCostChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+
                     <div class="filters-bar">
                         <select id="assetStatusFilter" class="form-control" style="max-width: 160px;" onchange="assetPage = 1; loadAssets()">
                             <option value="">All Statuses</option>
@@ -548,6 +561,8 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/assets.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 

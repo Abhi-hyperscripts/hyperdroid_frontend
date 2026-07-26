@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 // ============================================================================
 
 function onTabSwitch(tabId) {
+    _acActiveRender = null;  // re-armed by loadSubscriptions on the subscriptions tab
     switch (tabId) {
         case 'billing-plans':   loadPlans(); break;
         case 'subscriptions':   loadSubscriptions(); break;
@@ -361,10 +362,37 @@ async function loadSubscriptions() {
             subscriptionPage = page;
             loadSubscriptions();
         });
+        renderSubscriptionCharts();
+        _acActiveRender = renderSubscriptionCharts;
     } catch (err) {
         console.error('[Billing] loadSubscriptions error:', err);
         Toast.error('Failed to load subscriptions');
     }
+}
+
+// Subscription charts — recurring value by plan (at plan price) + status mix
+function renderSubscriptionCharts() {
+    if (typeof acDonut !== 'function') return;
+    if (!allSubscriptions.length) { _acEmpty('subPlanChart'); _acEmpty('subStatusChart'); return; }
+    const planById = {};
+    billingPlans.forEach(p => { planById[p.id] = p; });
+    const byPlan = {};
+    allSubscriptions.filter(s => ['active', 'paused'].includes(s.status || 'active')).forEach(s => {
+        const p = planById[s.billing_plan_id];
+        const name = p?.name || s.plan_name || 'Unknown plan';
+        byPlan[name] = (byPlan[name] || 0) + parseFloat(s.amount ?? p?.amount ?? 0);
+    });
+    const plans = Object.keys(byPlan).filter(k => byPlan[k] > 0).sort();
+    plans.length
+        ? acDonut('subPlanChart', plans, plans.map(k => Math.round(byPlan[k] * 100) / 100),
+                  plans.map((k, i) => _acPalette[i % _acPalette.length]))
+        : _acEmpty('subPlanChart', 'No priced subscriptions');
+    const statusColor = { active: '#10b981', paused: '#f59e0b', cancelled: '#ef4444', expired: '#64748b' };
+    const byStatus = {};
+    allSubscriptions.forEach(s => { const k = s.status || 'active'; byStatus[k] = (byStatus[k] || 0) + 1; });
+    const sts = Object.keys(byStatus).sort();
+    acBarV('subStatusChart', sts, sts.map(k => byStatus[k]),
+           sts.map((k, i) => statusColor[k] || _acPalette[i % _acPalette.length]), (v) => `${Math.round(v)} subs`);
 }
 
 function renderSubscriptions() {

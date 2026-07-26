@@ -954,9 +954,44 @@ async function loadTaxLedger() {
             taxLedgerPage = page;
             loadTaxLedger();
         });
+
+        // Charts read the full matching set (dates respected; type filter ignored so the mix shows)
+        const chartParams = {};
+        if (from) chartParams.fromDate = from;
+        if (to) chartParams.toDate = to;
+        renderTaxLedgerCharts(chartParams);
+        _acActiveRender = () => renderTaxLedgerCharts(chartParams);
     } catch (err) {
         console.error('[Taxation] loadTaxLedger error:', err);
         Toast.error('Failed to load tax ledger');
+    }
+}
+
+// Tax-ledger charts — monthly output (sales) vs input (purchase) tax + mix by transaction type
+async function renderTaxLedgerCharts(baseParams) {
+    if (typeof acColumns !== 'function') return;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('tax/ledger', { ...baseParams, limit: 1000, offset: 0 }), { _skipSpinner: true });
+        const all = res?.data ?? (Array.isArray(res) ? res : []);
+        if (!all.length) { _acEmpty('taxFlowChart'); _acEmpty('taxTypeChart'); return; }
+        const dateKey = all[0].transaction_date != null ? 'transaction_date' : 'date';
+        const outM = _acMonthly(all.filter(e => e.transaction_type === 'sales'), dateKey, 'tax_amount', 6);
+        const inM = _acMonthly(all.filter(e => e.transaction_type === 'purchase'), dateKey, 'tax_amount', 6);
+        acColumns('taxFlowChart', outM.categories, [
+            { name: 'Output tax', data: outM.data },
+            { name: 'Input credit', data: inM.data }
+        ], ['#ef4444', '#10b981']);
+        const label = (t) => ({ sales: 'Sales (output)', purchase: 'Purchase (input)', tds_deducted: 'TDS deducted', tds_collected: 'TDS collected', tcs_collected: 'TCS collected' })[t] || (t || 'Other');
+        const byType = {};
+        all.forEach(e => { const k = label(e.transaction_type); byType[k] = (byType[k] || 0) + parseFloat(e.tax_amount || 0); });
+        const types = Object.keys(byType).filter(k => byType[k] > 0).sort();
+        types.length
+            ? acDonut('taxTypeChart', types, types.map(k => Math.round(byType[k] * 100) / 100),
+                      types.map((k, i) => _acPalette[i % _acPalette.length]))
+            : _acEmpty('taxTypeChart');
+    } catch (err) {
+        console.error('[Taxation] renderTaxLedgerCharts error:', err);
+        _acEmpty('taxFlowChart'); _acEmpty('taxTypeChart');
     }
 }
 

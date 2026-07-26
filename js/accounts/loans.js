@@ -78,11 +78,28 @@ async function loadLoans(page = loansPage) {
         loansTotal = env.total ?? loansList.length;
         updateStats(env.stats);
         renderLoans();
+        renderLoanCharts();
+        _acActiveRender = renderLoanCharts;
     } catch (err) {
         console.error('[Loans] loadLoans error:', err);
         const tb = document.getElementById('loansTable');
         if (tb) tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--color-error);">Failed to load loans</td></tr>';
     }
+}
+
+// Loan charts — remaining principal per loan + repaid-vs-outstanding progress
+function renderLoanCharts() {
+    if (typeof acBarH !== 'function') return;
+    const active = loansList.filter(l => (l.status || 'active') !== 'closed' || parseFloat(l.outstanding_principal || 0) > 0);
+    if (!loansList.length) { _acEmpty('loanOutstandingChart'); _acEmpty('loanProgressChart'); return; }
+    const short = (s) => (s || '—').length > 16 ? s.slice(0, 15) + '…' : (s || '—');
+    const rank = _acRank(active.map(l => ({ name: short(l.name || l.loan_name || l.lender), amt: parseFloat(l.outstanding_principal || 0) })), 'name', 'amt', 6);
+    rank.labels.length ? acBarH('loanOutstandingChart', rank.labels, rank.data) : _acEmpty('loanOutstandingChart', 'Nothing outstanding');
+    const top = [...loansList].sort((a, b) => parseFloat(b.principal_amount || 0) - parseFloat(a.principal_amount || 0)).slice(0, 6);
+    acColumns('loanProgressChart', top.map(l => short(l.name || l.loan_name || l.lender)), [
+        { name: 'Repaid', data: top.map(l => Math.max(0, Math.round((parseFloat(l.principal_amount || 0) - parseFloat(l.outstanding_principal || 0)) * 100) / 100)) },
+        { name: 'Outstanding', data: top.map(l => Math.round(parseFloat(l.outstanding_principal || 0) * 100) / 100) }
+    ], ['#10b981', '#f59e0b']);
 }
 
 function updateStats(stats) {

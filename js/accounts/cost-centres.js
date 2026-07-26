@@ -146,8 +146,13 @@ async function loadSpend() {
         const rows = data.cost_centres || [];
         if (!rows.length) {
             tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-secondary);">No spend in this period.</td></tr>';
+            const ch = document.getElementById('spendCharts');
+            if (ch) ch.style.display = 'none';
+            _acActiveRender = null;
             return;
         }
+        renderSpendCharts(rows);
+        _acActiveRender = () => renderSpendCharts(rows);
         tb.innerHTML = rows.map(r => `<tr>
             <td>${AccountsCommon.escapeHtml(r.cost_centre_name || 'Unassigned')}${r.cost_centre_code ? ' <span style="color:var(--text-secondary);font-size:0.8rem;">(' + AccountsCommon.escapeHtml(r.cost_centre_code) + ')</span>' : ''}</td>
             <td style="text-align:right;">${AccountsCommon.formatCurrency(r.spend_ex_tax)}</td>
@@ -163,4 +168,17 @@ async function loadSpend() {
         console.error('[CostCentres] loadSpend error:', err);
         tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-error);">Failed to load spend.</td></tr>';
     }
+}
+
+// Spend charts — hidden until the first Generate so the tab doesn't open on two empty boxes
+function renderSpendCharts(rows) {
+    if (typeof acBarH !== 'function') return;
+    const host = document.getElementById('spendCharts');
+    if (host) host.style.display = '';
+    const short = (s) => (s || 'Unassigned').length > 16 ? s.slice(0, 15) + '…' : (s || 'Unassigned');
+    const rank = _acRank(rows.map(r => ({ name: short(r.cost_centre_name), amt: parseFloat(r.spend || 0) })), 'name', 'amt', 8);
+    rank.labels.length ? acBarH('ccSpendChart', rank.labels, rank.data) : _acEmpty('ccSpendChart');
+    const names = rows.map(r => short(r.cost_centre_name));
+    acDonut('ccShareChart', names, rows.map(r => Math.round(parseFloat(r.spend || 0) * 100) / 100),
+            names.map((n, i) => _acPalette[i % _acPalette.length]));
 }

@@ -184,6 +184,18 @@
                 <!-- Tab 2: Subscriptions -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="subscriptions">
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Recurring value by plan</h4>
+                            <div class="acc-chart-sub">Active + paused subscriptions at plan price</div>
+                            <div id="subPlanChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Subscriptions by status</h4>
+                            <div class="acc-chart-sub">Health of the subscription base</div>
+                            <div id="subStatusChart" class="acc-chart"></div>
+                        </div>
+                    </div>
                     <div class="filters-bar">
                         <div class="search-box-modern">
                             <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -578,6 +590,8 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/billing.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 

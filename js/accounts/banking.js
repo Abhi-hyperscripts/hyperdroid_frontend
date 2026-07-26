@@ -394,6 +394,8 @@ async function loadBankTransactions() {
         if (!bankId) {
             const tbody = document.getElementById('bankTransactionsTable');
             if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:1rem; color:var(--text-secondary);">Select a bank account to view transactions</td></tr>';
+            _acEmpty('txnFlowChart', 'Select a bank account');
+            _acEmpty('txnTypeChart', 'Select a bank account');
             return;
         }
 
@@ -422,9 +424,48 @@ async function loadBankTransactions() {
             currentTxnPage = page;
             loadBankTransactions();
         });
+
+        // Charts read the full matching set for this account (dates respected, search ignored)
+        const chartParams = {};
+        if (fromDate) chartParams.fromDate = fromDate;
+        if (toDate) chartParams.toDate = toDate;
+        renderBankTxnCharts(bankId, chartParams);
+        _acActiveRender = () => renderBankTxnCharts(bankId, chartParams);
     } catch (err) {
         console.error('[Banking] loadBankTransactions error:', err);
         Toast.error('Failed to load transactions');
+    }
+}
+
+// Transaction charts — monthly in-vs-out + volume by type. Inflow set matches the
+// table's Dr/Cr logic (deposit / transfer_in / interest increase the bank asset).
+async function renderBankTxnCharts(bankId, baseParams) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`bank/accounts/${bankId}/transactions`, { ...baseParams, limit: 1000, offset: 0 }), { _skipSpinner: true });
+        const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        if (!all.length) { _acEmpty('txnFlowChart'); _acEmpty('txnTypeChart'); return; }
+        const inflowTypes = ['deposit', 'transfer_in', 'interest'];
+        const isIn = (t) => inflowTypes.includes(t.transaction_type || t.type);
+        const dateKey = all[0].transaction_date != null ? 'transaction_date' : 'date';
+        const inM = _acMonthly(all.filter(isIn), dateKey, 'amount', 6);
+        const outM = _acMonthly(all.filter(t => !isIn(t)), dateKey, 'amount', 6);
+        acColumns('txnFlowChart', inM.categories, [
+            { name: 'In', data: inM.data },
+            { name: 'Out', data: outM.data }
+        ], ['#10b981', '#ef4444']);
+        const byType = {};
+        all.forEach(t => {
+            const k = (t.transaction_type || t.type || 'other').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            byType[k] = (byType[k] || 0) + parseFloat(t.amount || 0);
+        });
+        const types = Object.keys(byType).filter(k => byType[k] > 0).sort();
+        types.length
+            ? acDonut('txnTypeChart', types, types.map(k => Math.round(byType[k] * 100) / 100),
+                      types.map((k, i) => _acPalette[i % _acPalette.length]))
+            : _acEmpty('txnTypeChart');
+    } catch (err) {
+        console.error('[Banking] renderBankTxnCharts error:', err);
+        _acEmpty('txnFlowChart'); _acEmpty('txnTypeChart');
     }
 }
 
@@ -643,8 +684,33 @@ async function loadRecentTransfers() {
         const res = await api.request(AccountsCommon.buildUrl('bank/transfer', { limit: 20 }), { _skipSpinner: true });
         recentTransfers = Array.isArray(res) ? res : (res?.data || res?.items || []);
         renderRecentTransfersTable();
+        renderTransferCharts();
+        _acActiveRender = renderTransferCharts;
     } catch (err) {
         console.error('[Banking] loadRecentTransfers error:', err);
+    }
+}
+
+// Transfer charts — monthly volume + busiest from→to routes (full set, not the recent-20 slice)
+async function renderTransferCharts() {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('bank/transfer', { limit: 500 }), { _skipSpinner: true });
+        const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        if (!all.length) { _acEmpty('transferVolumeChart'); _acEmpty('transferRoutesChart'); return; }
+        const acctMap = {};
+        bankAccountsList.forEach(a => { acctMap[a.id] = a.account_name || a.name; });
+        const dateKey = all[0].transfer_date != null ? 'transfer_date' : 'date';
+        const m = _acMonthly(all, dateKey, 'amount', 6);
+        acArea('transferVolumeChart', m.categories, m.data, 'Transferred');
+        const short = (s) => (s || '?').length > 12 ? s.slice(0, 11) + '…' : (s || '?');
+        const rank = _acRank(all.map(t => ({
+            route: `${short(acctMap[t.from_account_id] || t.from_account_name)} → ${short(acctMap[t.to_account_id] || t.to_account_name)}`,
+            amt: parseFloat(t.amount || 0)
+        })), 'route', 'amt', 6);
+        rank.labels.length ? acBarH('transferRoutesChart', rank.labels, rank.data) : _acEmpty('transferRoutesChart');
+    } catch (err) {
+        console.error('[Banking] renderTransferCharts error:', err);
+        _acEmpty('transferVolumeChart'); _acEmpty('transferRoutesChart');
     }
 }
 

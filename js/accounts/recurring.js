@@ -137,10 +137,45 @@ async function loadRecurring(page = recurringPage) {
         recurringTotal = env.total ?? recurringList.length;
         updateStats(env.stats);
         renderTable();
+        renderRecurringCharts();
+        _acActiveRender = renderRecurringCharts;
     } catch (err) {
         console.error('[Recurring] load error:', err);
         Toast.error('Failed to load recurring transactions');
     }
+}
+
+// Recurring charts — committed value by type + top rules, normalized to a
+// monthly-equivalent so a yearly ₹1.2L and a monthly ₹10k rank the same.
+const _FREQ_MONTHLY_FACTOR = { daily: 30.44, weekly: 4.33, fortnightly: 2.17, monthly: 1, quarterly: 1 / 3, half_yearly: 1 / 6, yearly: 1 / 12, annually: 1 / 12 };
+function renderRecurringCharts() {
+    if (typeof acDonut !== 'function') return;
+    const active = recurringList.filter(r => r.status === 'active');
+    if (!active.length) { _acEmpty('recurringTypeChart', 'No active rules'); _acEmpty('recurringTopChart', 'No active rules'); return; }
+    // The rule row carries no amount column — the value lives in template_data JSON:
+    // invoice/bill lines are {quantity, unit_price}; journal lines are {debit_amount, credit_amount}.
+    const ruleAmount = (r) => {
+        try {
+            const td = typeof r.template_data === 'string' ? JSON.parse(r.template_data) : (r.template_data || {});
+            return (td.lines || []).reduce((s, l) =>
+                s + (l.unit_price != null
+                    ? (parseFloat(l.quantity ?? 1) || 1) * (parseFloat(l.unit_price) || 0)
+                    : (parseFloat(l.debit_amount) || 0)), 0);
+        } catch { return 0; }
+    };
+    const monthlyEq = (r) => ruleAmount(r) * (_FREQ_MONTHLY_FACTOR[r.frequency] ?? 1);
+    const typeLabel = (t) => ({ invoice: 'Invoices', bill: 'Bills', journal: 'Journals' })[t] || (t || 'Other');
+    const typeColor = { Invoices: '#10b981', Bills: '#ef4444', Journals: '#3b82f6' };
+    const byType = {};
+    active.forEach(r => { const k = typeLabel(r.transaction_type); byType[k] = (byType[k] || 0) + monthlyEq(r); });
+    const types = Object.keys(byType).filter(k => byType[k] > 0).sort();
+    types.length
+        ? acDonut('recurringTypeChart', types, types.map(k => Math.round(byType[k] * 100) / 100),
+                  types.map((k, i) => typeColor[k] || _acPalette[i % _acPalette.length]))
+        : _acEmpty('recurringTypeChart');
+    const short = (s) => (s || '—').length > 18 ? s.slice(0, 17) + '…' : (s || '—');
+    const rank = _acRank(active.map(r => ({ name: short(r.name), amt: monthlyEq(r) })), 'name', 'amt', 6);
+    rank.labels.length ? acBarH('recurringTopChart', rank.labels, rank.data) : _acEmpty('recurringTopChart');
 }
 
 async function loadLookups() {

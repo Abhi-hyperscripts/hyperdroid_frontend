@@ -109,6 +109,18 @@
                             <input type="checkbox" id="prShowArchived" onchange="loadProjects(1)"> Show cancelled/completed
                         </label>
                     </div>
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Budget by project</h4>
+                            <div class="acc-chart-sub">Largest engagements by allocated budget</div>
+                            <div id="prBudgetChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Projects by status</h4>
+                            <div class="acc-chart-sub">Where the portfolio stands</div>
+                            <div id="prStatusChart" class="acc-chart"></div>
+                        </div>
+                    </div>
                     <div class="data-table-container">
                         <table class="data-table">
                             <thead><tr><th>Code</th><th>Name</th><th>Customer</th><th style="text-align:right;">Budget</th><th>Status</th><th>Actions</th></tr></thead>
@@ -126,6 +138,13 @@
                             <div class="searchable-dropdown-container" id="stmtCustomerContainer"></div>
                         </div>
                         <button class="btn btn-primary" onclick="loadStatement()">Generate</button>
+                    </div>
+                    <div class="acc-charts" id="stmtCharts" style="display:none;">
+                        <div class="acc-chart-card">
+                            <h4>Billed vs collected vs due</h4>
+                            <div class="acc-chart-sub">Per project, for the selected customer</div>
+                            <div id="stmtProjectChart" class="acc-chart"></div>
+                        </div>
                     </div>
                     <div class="data-table-container">
                         <table class="data-table">
@@ -198,6 +217,8 @@
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/projects.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

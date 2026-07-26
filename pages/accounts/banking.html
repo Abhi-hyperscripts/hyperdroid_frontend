@@ -250,6 +250,18 @@
                 <!-- Tab 2: Bank Transactions -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="bank-transactions">
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Cash in vs out</h4>
+                            <div class="acc-chart-sub">Monthly inflow and outflow for the selected account</div>
+                            <div id="txnFlowChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Volume by type</h4>
+                            <div class="acc-chart-sub">Where the account's movement comes from</div>
+                            <div id="txnTypeChart" class="acc-chart"></div>
+                        </div>
+                    </div>
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="txnBankFilterContainer"></div>
                         <input type="text" id="txnFromDate" class="form-control" style="width:auto;" placeholder="From date">
@@ -349,6 +361,19 @@
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Transfer volume</h4>
+                            <div class="acc-chart-sub">Value moved between accounts — last 6 months</div>
+                            <div id="transferVolumeChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Busiest routes</h4>
+                            <div class="acc-chart-sub">Top from → to account pairs by value</div>
+                            <div id="transferRoutesChart" class="acc-chart"></div>
                         </div>
                     </div>
 

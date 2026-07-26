@@ -131,6 +131,18 @@
                         </div>
                         <button class="btn btn-primary" onclick="loadSpend()">Generate</button>
                     </div>
+                    <div class="acc-charts" id="spendCharts" style="display:none;">
+                        <div class="acc-chart-card">
+                            <h4>Spend by cost centre</h4>
+                            <div class="acc-chart-sub">Total spend (incl. tax) in the period</div>
+                            <div id="ccSpendChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Share of spend</h4>
+                            <div class="acc-chart-sub">Each centre's slice of the total</div>
+                            <div id="ccShareChart" class="acc-chart"></div>
+                        </div>
+                    </div>
                     <div class="data-table-container">
                         <table class="data-table">
                             <thead><tr><th>Cost Centre</th><th style="text-align:right;">Spend (ex-GST)</th><th style="text-align:right;">Input GST</th><th style="text-align:right;">Total Spend</th></tr></thead>
@@ -183,6 +195,8 @@
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/cost-centres.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

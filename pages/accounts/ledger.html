@@ -303,6 +303,18 @@
                 <!-- Tab 3: Journal Entries -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="journal-entries">
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Journal activity trend</h4>
+                            <div class="acc-chart-sub">Posted value per journal — last 6 months</div>
+                            <div id="journalTrendChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Entries by journal</h4>
+                            <div class="acc-chart-sub">How many entries each journal carries</div>
+                            <div id="journalCountChart" class="acc-chart"></div>
+                        </div>
+                    </div>
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="journalTypeFilterContainer"></div>
                         <input type="text" id="journalFromDate" class="form-control" style="width:auto;" placeholder="From date">

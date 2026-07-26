@@ -115,6 +115,19 @@
                     </div>
                 </div>
 
+                <div class="acc-charts">
+                    <div class="acc-chart-card">
+                        <h4>Outstanding by loan</h4>
+                        <div class="acc-chart-sub">Remaining principal on each loan</div>
+                        <div id="loanOutstandingChart" class="acc-chart"></div>
+                    </div>
+                    <div class="acc-chart-card">
+                        <h4>Repayment progress</h4>
+                        <div class="acc-chart-sub">Principal repaid vs still outstanding, per loan</div>
+                        <div id="loanProgressChart" class="acc-chart"></div>
+                    </div>
+                </div>
+
                 <!-- Toolbar -->
                 <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;">
                     <button class="btn btn-primary" data-admin-only onclick="openCreateLoan()">
@@ -282,6 +295,8 @@
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/loans.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
