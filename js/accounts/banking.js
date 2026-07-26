@@ -68,6 +68,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     refreshBankDropdowns();
     refreshImportCounterDropdown();
     setupSearchListeners();
+    AccountsCommon.initDatePickers([
+        { id: 'txnFromDate', onChange: () => { currentTxnPage = 1; loadBankTransactions(); } },
+        { id: 'txnToDate', onChange: () => { currentTxnPage = 1; loadBankTransactions(); } },
+        'txnDate', 'transferDate', 'reconStatementDate'
+    ]);
 });
 
 // ============================================================================
@@ -472,7 +477,7 @@ function renderBankTransactionsTable() {
 
 function showRecordTransactionModal() {
     document.getElementById('bankTransactionForm').reset();
-    document.getElementById('txnDate').value = AccountsCommon.todayLocal();
+    AccountsCommon.setDateField('txnDate', AccountsCommon.todayLocal());
 
     const bankId = txnBankFilterDropdown?.getValue?.() || '';
     document.getElementById('txnBankAccountId').value = bankId;
@@ -619,7 +624,7 @@ async function executeTransfer() {
         await api.request(AccountsCommon.buildUrl('bank/transfer'), { method: 'POST', body: JSON.stringify(payload) });
         Toast.success('Transfer executed successfully');
         document.getElementById('transferForm').reset();
-        document.getElementById('transferDate').value = AccountsCommon.todayLocal();
+        AccountsCommon.setDateField('transferDate', AccountsCommon.todayLocal());
         transferFromDropdown?.setValue?.('');
         transferToDropdown?.setValue?.('');
         await loadRecentTransfers();
@@ -934,7 +939,7 @@ function initDropdowns() {
 
     // Set default date for transfer
     const transferDate = document.getElementById('transferDate');
-    if (transferDate && !transferDate.value) transferDate.value = AccountsCommon.todayLocal();
+    if (transferDate && !transferDate.value) AccountsCommon.setDateField(transferDate, AccountsCommon.todayLocal());
 }
 
 function refreshBankDropdowns() {

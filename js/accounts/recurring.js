@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Set default start date to today
     document.getElementById('rStartDate').value = AccountsCommon.todayLocal();
 
+    AccountsCommon.initDatePickers(['rStartDate', 'rEndDate']);
     await Promise.all([loadRecurring(), loadLookups()]);
     initDropdowns();
 });
@@ -234,8 +235,8 @@ function openCreateModal() {
     document.getElementById('rName').value = '';
     document.getElementById('rDescription').value = '';
     document.getElementById('rAmount').value = '';
-    document.getElementById('rEndDate').value = '';
-    document.getElementById('rStartDate').value = AccountsCommon.todayLocal();
+    AccountsCommon.setDateField('rEndDate', '');
+    AccountsCommon.setDateField('rStartDate', AccountsCommon.todayLocal());
     typeDropdown?.setValue('invoice');
     frequencyDropdown?.setValue('monthly');
     customerDropdown?.setValue('');

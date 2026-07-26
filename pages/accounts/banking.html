@@ -252,8 +252,8 @@
                 <div class="tab-content" id="bank-transactions">
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="txnBankFilterContainer"></div>
-                        <input type="date" id="txnFromDate" class="form-control" style="width:auto;" onchange="currentTxnPage=1; loadBankTransactions()" placeholder="From Date">
-                        <input type="date" id="txnToDate" class="form-control" style="width:auto;" onchange="currentTxnPage=1; loadBankTransactions()" placeholder="To Date">
+                        <input type="text" id="txnFromDate" class="form-control" style="width:auto;" placeholder="From date">
+                        <input type="text" id="txnToDate" class="form-control" style="width:auto;" placeholder="To date">
                         <div class="search-box-modern">
                             <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"/>
@@ -328,7 +328,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label for="transferDate">Date *</label>
-                                        <input type="date" id="transferDate" class="form-control" required>
+                                        <input type="text" id="transferDate" class="form-control" placeholder="Select date" required>
                                     </div>
                                 </div>
                                 <div class="form-row">
@@ -497,7 +497,7 @@
                             <div class="form-row two-col" style="align-items:flex-end;">
                                 <div class="form-group">
                                     <label for="reconStatementDate">Statement Date *</label>
-                                    <input type="date" id="reconStatementDate" class="form-control">
+                                    <input type="text" id="reconStatementDate" class="form-control" placeholder="Select date">
                                 </div>
                                 <div class="form-group" style="display:flex; align-items:flex-end;">
                                     <button type="button" class="btn btn-primary" onclick="startReconciliation()">
@@ -672,7 +672,7 @@
                         <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="txnDate">Transaction Date *</label>
-                                <input type="date" id="txnDate" class="form-control" required>
+                                <input type="text" id="txnDate" class="form-control" placeholder="Select date" required>
                             </div>
                             <div class="form-group">
                                 <label for="txnType">Transaction Type *</label>

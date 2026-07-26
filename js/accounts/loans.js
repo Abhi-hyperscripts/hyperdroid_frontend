@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('loanStartDate').value = AccountsCommon.todayLocal();
 
+    AccountsCommon.initDatePickers(['loanStartDate']);
     await Promise.all([loadLoans(), loadLookups()]);
     AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
 });
@@ -128,7 +129,7 @@ function renderLoans() {
 function openCreateLoan() {
     if (!accountsRoles.isAdmin()) { Toast.error('Only an admin can create loans'); return; }
     ['loanName', 'loanLender', 'loanPrincipal', 'loanRate', 'loanTenure', 'loanEmi'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
-    document.getElementById('loanStartDate').value = AccountsCommon.todayLocal();
+    AccountsCommon.setDateField('loanStartDate', AccountsCommon.todayLocal());
     loanAccountDropdown?.setValue?.('');
     interestAccountDropdown?.setValue?.('');
     bankAccountDropdown?.setValue?.('');

@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Wire up search inputs with debounce
     setupSearchListeners();
+    AccountsCommon.initDatePickers(['fiscalYearStart', 'fiscalYearEnd']);
 });
 
 // ============================================================================
@@ -1219,12 +1220,12 @@ function editFiscalYear(id) {
     document.getElementById('fiscalYearModalTitle').textContent = 'Edit Fiscal Year';
     document.getElementById('fiscalYearId').value = fy.id;
     document.getElementById('fiscalYearName').value = fy.name;
-    document.getElementById('fiscalYearStart').value = fy.start_date?.split('T')[0] || '';
-    const endEl = document.getElementById('fiscalYearEnd');
-    if (endEl) endEl.value = fy.end_date?.split('T')[0] || '';
+    AccountsCommon.setDateField('fiscalYearStart', fy.start_date?.split('T')[0] || '');
+    AccountsCommon.setDateField('fiscalYearEnd', fy.end_date?.split('T')[0] || '');
     // Backend UpdateFiscalYearRequest only supports `name` — dates are immutable
     // after creation, so disable them instead of implying they can change.
     document.getElementById('fiscalYearStart').disabled = true;
+    const endEl = document.getElementById('fiscalYearEnd');
     if (endEl) endEl.disabled = true;
     AccountsCommon.openModal('fiscalYearModal');
 }
@@ -1233,6 +1234,9 @@ function showCreateFiscalYearModal() {
     document.getElementById('fiscalYearModalTitle').textContent = 'Create Fiscal Year';
     document.getElementById('fiscalYearForm').reset();
     document.getElementById('fiscalYearId').value = '';
+    // form.reset() bypasses flatpickr — clear its internal state so the calendar doesn't reopen on a stale date
+    AccountsCommon.setDateField('fiscalYearStart', '');
+    AccountsCommon.setDateField('fiscalYearEnd', '');
     // Re-enable date fields that editFiscalYear disables
     document.getElementById('fiscalYearStart').disabled = false;
     const endEl = document.getElementById('fiscalYearEnd');

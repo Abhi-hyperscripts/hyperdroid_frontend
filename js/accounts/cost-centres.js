@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     AccountsCommon.setupTabs(tabNames);
 
     accountsRoles.applyRBAC();
+    AccountsCommon.initDatePickers(['spendFrom', 'spendTo']);
     await loadCentres();
 });
 

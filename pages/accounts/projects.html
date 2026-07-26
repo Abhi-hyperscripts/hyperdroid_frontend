@@ -19,6 +19,8 @@
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -168,7 +170,7 @@
                         </div>
                         <div class="form-group">
                             <label for="prStartDate">Start Date</label>
-                            <input type="date" id="prStartDate" class="form-control">
+                            <input type="text" id="prStartDate" class="form-control" placeholder="Select date">
                         </div>
                     </div>
                     <div class="form-group" id="prStatusGroup" style="display:none;">
@@ -198,6 +200,7 @@
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/projects.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="accounts" data-title="Accounts Assistant"><\/script>');</script>
 </body>
 </html>

@@ -765,6 +765,38 @@ const AccountsCommon = {
         });
     },
 
+    /** Attach flatpickr to date text inputs. The flatpickr CDN script loads AFTER the
+     *  page script on every accounts page, so this retries until the library exists.
+     *  specs: array of 'inputId' or { id, onChange } for filter inputs that reload a list. */
+    initDatePickers(specs) {
+        const attach = () => {
+            if (typeof flatpickr !== 'function') { setTimeout(attach, 300); return; }
+            specs.forEach(spec => {
+                const s = typeof spec === 'string' ? { id: spec } : spec;
+                const el = document.getElementById(s.id);
+                if (!el || el._flatpickr) return;
+                const opts = { dateFormat: 'Y-m-d', allowInput: true };
+                if (s.onChange) opts.onChange = s.onChange;
+                flatpickr(el, opts);
+            });
+        };
+        attach();
+    },
+
+    /** Set (or clear) a date input's value through its flatpickr instance so the
+     *  calendar's selected date stays in sync with the visible value. Falls back to
+     *  raw .value if flatpickr hasn't attached yet. */
+    setDateField(id, val) {
+        const el = typeof id === 'string' ? document.getElementById(id) : id;
+        if (!el) return;
+        if (el._flatpickr) {
+            if (val) el._flatpickr.setDate(val, false);
+            else el._flatpickr.clear();
+        } else {
+            el.value = val || '';
+        }
+    },
+
     // ------------------------------------------------------------------
     // UI Helpers
     // ------------------------------------------------------------------

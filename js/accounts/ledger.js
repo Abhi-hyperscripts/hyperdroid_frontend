@@ -48,6 +48,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadInitialData();
     AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
     setupSearchListeners();
+    AccountsCommon.initDatePickers([
+        { id: 'glFromDate', onChange: () => { currentGlPage = 1; loadGlEntries(); } },
+        { id: 'glToDate', onChange: () => { currentGlPage = 1; loadGlEntries(); } },
+        { id: 'journalFromDate', onChange: () => { journalPage = 1; loadJournalEntries(); } },
+        { id: 'journalToDate', onChange: () => { journalPage = 1; loadJournalEntries(); } },
+        'glEntryDate', 'reversalDate'
+    ]);
 });
 
 // ============================================================================
@@ -332,7 +339,7 @@ async function postGlEntry(id) {
 
 function reverseGlEntry(id) {
     document.getElementById('reverseGlId').value = id;
-    document.getElementById('reversalDate').value = AccountsCommon.todayLocal();
+    AccountsCommon.setDateField('reversalDate', AccountsCommon.todayLocal());
     document.getElementById('reversalReason').value = '';
     AccountsCommon.openModal('reverseGlModal');
 }
@@ -479,7 +486,7 @@ function resetGlForm() {
     editingGlId = null;
     const form = document.getElementById('glForm');
     if (form) form.reset();
-    document.getElementById('glEntryDate').value = AccountsCommon.todayLocal();
+    AccountsCommon.setDateField('glEntryDate', AccountsCommon.todayLocal());
     populateJournalTypeSelect();
     clearGlLines();
     addGlLine();

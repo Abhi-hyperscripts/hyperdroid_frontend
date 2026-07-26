@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     await loadInitialData();
     setupSearchListeners();
+    AccountsCommon.initDatePickers(['subStartDate', 'usageDate']);
 });
 
 // ============================================================================
@@ -478,7 +479,7 @@ function showCreateSubscriptionModal() {
     document.getElementById('subscriptionModalTitle').textContent = 'Create Subscription';
     document.getElementById('subscriptionForm').reset();
     document.getElementById('subscriptionId').value = '';
-    document.getElementById('subStartDate').value = AccountsCommon.todayLocal();
+    AccountsCommon.setDateField('subStartDate', AccountsCommon.todayLocal());
     initSubscriptionCustomerDropdown();
     populateSubPlanSelect();
     AccountsCommon.openModal('subscriptionModal');

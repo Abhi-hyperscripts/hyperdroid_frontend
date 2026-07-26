@@ -73,6 +73,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadInitialData();
     AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
     setupSearchListeners();
+    AccountsCommon.initDatePickers([
+        { id: 'auditFrom', onChange: () => { auditLogPage = 1; loadAuditLogs(); } },
+        { id: 'auditTo', onChange: () => { auditLogPage = 1; loadAuditLogs(); } }
+    ]);
 });
 
 // ────────────────────────────────────────────────────────────────────────

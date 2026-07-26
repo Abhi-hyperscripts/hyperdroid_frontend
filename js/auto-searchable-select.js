@@ -99,9 +99,13 @@
         // keep it for form submission + native value reads.
         const container = document.createElement('div');
         container.className = 'searchable-dropdown-container sd-auto-container';
-        // Inherit width from the select so layouts don't shift.
+        // Inherit width from the select so layouts don't shift. Inside a table
+        // cell the computed px width is a trap: column widths keep settling as
+        // rows are added, so rows converted at different moments freeze at
+        // different widths and misalign — stay fluid at 100% there instead.
         const cs = window.getComputedStyle(select);
-        if (cs.width) container.style.width = cs.width;
+        if (select.closest('td')) container.style.width = '100%';
+        else if (cs.width) container.style.width = cs.width;
         select.parentNode.insertBefore(container, select);
 
         select.style.display = 'none';

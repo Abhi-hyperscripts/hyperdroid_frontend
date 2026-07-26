@@ -134,8 +134,8 @@
                 <!-- ============================================================ -->
                 <div class="tab-content active" id="gl-entries">
                     <div class="filters-bar">
-                        <input type="date" id="glFromDate" class="form-control" style="width:auto;" onchange="currentGlPage=1; loadGlEntries()" placeholder="From Date">
-                        <input type="date" id="glToDate" class="form-control" style="width:auto;" onchange="currentGlPage=1; loadGlEntries()" placeholder="To Date">
+                        <input type="text" id="glFromDate" class="form-control" style="width:auto;" placeholder="From date">
+                        <input type="text" id="glToDate" class="form-control" style="width:auto;" placeholder="To date">
                         <div class="searchable-dropdown-container" id="glAccountFilterContainer"></div>
                         <div class="searchable-dropdown-container" id="glJournalFilterContainer"></div>
                         <select id="glStatusFilter" class="form-control" style="width:auto; min-width:140px;" onchange="currentGlPage=1; loadGlEntries()">
@@ -228,7 +228,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="glEntryDate">Entry Date *</label>
-                                    <input type="date" id="glEntryDate" class="form-control" required>
+                                    <input type="text" id="glEntryDate" class="form-control" placeholder="Select date" required>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -288,8 +288,8 @@
                 <div class="tab-content" id="journal-entries">
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="journalTypeFilterContainer"></div>
-                        <input type="date" id="journalFromDate" class="form-control" style="width:auto;" onchange="journalPage=1; loadJournalEntries()" placeholder="From Date">
-                        <input type="date" id="journalToDate" class="form-control" style="width:auto;" onchange="journalPage=1; loadJournalEntries()" placeholder="To Date">
+                        <input type="text" id="journalFromDate" class="form-control" style="width:auto;" placeholder="From date">
+                        <input type="text" id="journalToDate" class="form-control" style="width:auto;" placeholder="To date">
                         <input type="text" id="journalSearch" class="form-control" style="width:auto; min-width:180px;" placeholder="Search entries...">
                     </div>
 
@@ -362,7 +362,7 @@
                         <input type="hidden" id="reverseGlId">
                         <div class="form-group">
                             <label for="reversalDate">Reversal Date *</label>
-                            <input type="date" id="reversalDate" class="form-control" required>
+                            <input type="text" id="reversalDate" class="form-control" placeholder="Select date" required>
                         </div>
                         <div class="form-group" style="margin-top:1rem;">
                             <label for="reversalReason">Reason *</label>

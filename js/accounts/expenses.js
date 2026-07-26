@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     await loadInitialData();
     setupSearchListeners();
+    AccountsCommon.initDatePickers(['claimDate']);
 });
 
 // ============================================================================
@@ -569,7 +570,7 @@ function renderClaimsTable() {
 
 function showSubmitClaimModal() {
     document.getElementById('claimForm').reset();
-    document.getElementById('claimDate').value = AccountsCommon.todayLocal();
+    AccountsCommon.setDateField('claimDate', AccountsCommon.todayLocal());
     document.getElementById('claimItemsBody').innerHTML = '';
     document.getElementById('claimTotal').textContent = '0.00';
     addClaimItem();
@@ -596,9 +597,13 @@ function addClaimItem() {
         </select></td>
         <td><input type="text" class="form-control claim-item-desc" data-idx="${idx}" placeholder="Description"></td>
         <td><input type="number" class="form-control claim-item-amount" data-idx="${idx}" min="0" step="0.01" placeholder="0.00" onchange="calculateClaimTotal()" oninput="calculateClaimTotal()"></td>
-        <td><input type="date" class="form-control claim-item-date" data-idx="${idx}" value="${AccountsCommon.todayLocal()}"></td>
+        <td><input type="text" class="form-control claim-item-date" data-idx="${idx}" value="${AccountsCommon.todayLocal()}" placeholder="Select date"></td>
         <td><button type="button" class="btn-icon" onclick="removeClaimItem(${idx})" data-tooltip="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
+    // Dynamic row — attach flatpickr directly (the shared init only handles static ids)
+    if (typeof flatpickr === 'function') {
+        flatpickr(row.querySelector('.claim-item-date'), { dateFormat: 'Y-m-d', allowInput: true });
+    }
 }
 
 function removeClaimItem(idx) {

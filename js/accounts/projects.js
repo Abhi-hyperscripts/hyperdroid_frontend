@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     AccountsCommon.setupTabs(tabNames);
 
     accountsRoles.applyRBAC();
+    AccountsCommon.initDatePickers(['prStartDate']);
     await Promise.all([loadProjects(), loadCustomers()]);
     AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
 });
@@ -106,7 +107,8 @@ function openCreate() {
     if (!accountsRoles.isAdmin()) { Toast.error('Only an admin can manage projects'); return; }
     document.getElementById('prModalTitle').textContent = 'New Project';
     document.getElementById('prId').value = '';
-    ['prName', 'prCode', 'prBudget', 'prStartDate', 'prDescription'].forEach(id => { document.getElementById(id).value = ''; });
+    ['prName', 'prCode', 'prBudget', 'prDescription'].forEach(id => { document.getElementById(id).value = ''; });
+    AccountsCommon.setDateField('prStartDate', '');
     prCustomerDropdown?.setValue?.('');
     prCustomerDropdown?.enable?.();
     document.getElementById('prCustomerLockHint').style.display = 'none';
@@ -122,7 +124,7 @@ function editProject(id) {
     document.getElementById('prName').value = p.name || '';
     document.getElementById('prCode').value = p.code || '';
     document.getElementById('prBudget').value = p.budget != null ? p.budget : '';
-    document.getElementById('prStartDate').value = p.start_date ? String(p.start_date).slice(0, 10) : '';
+    AccountsCommon.setDateField('prStartDate', p.start_date ? String(p.start_date).slice(0, 10) : '');
     document.getElementById('prDescription').value = p.description || '';
     prCustomerDropdown?.setValue?.(p.customer_id || '');
     // customer_id is immutable on update (backend UpdateProjectRequest has no customer_id)

@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     await loadInitialData();
     setupSearchListeners();
+    AccountsCommon.initDatePickers(['assetPurchaseDate', 'disposeDate', 'depreciationDate']);
 });
 
 // ============================================================================
@@ -365,7 +366,7 @@ function editAsset(id) {
     document.getElementById('assetId').value = asset.id;
     document.getElementById('assetCode').value = asset.asset_code || asset.code || '';
     document.getElementById('assetName').value = asset.name || '';
-    document.getElementById('assetPurchaseDate').value = asset.purchase_date ? asset.purchase_date.split('T')[0] : '';
+    AccountsCommon.setDateField('assetPurchaseDate', asset.purchase_date ? asset.purchase_date.split('T')[0] : '');
     document.getElementById('assetCost').value = asset.purchase_cost ?? asset.cost ?? '';
     document.getElementById('assetResidualValue').value = asset.salvage_value ?? asset.residual_value ?? '';
     document.getElementById('assetLocation').value = asset.location || '';
