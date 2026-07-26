@@ -2615,7 +2615,6 @@ textarea.form-control {
     font-size: 0.85rem;
     line-height: 1.6;
     color: var(--text-secondary);
-    max-width: 920px;
 }
 .acc-help-body p { margin: 0 0 8px; }
 .acc-help-body p:last-child { margin-bottom: 0; }
