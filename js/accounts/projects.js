@@ -261,7 +261,8 @@ function renderProjectCharts() {
     projectsList.forEach(p => { const s = p.status || 'active'; byStatus[s] = (byStatus[s] || 0) + 1; });
     const sts = Object.keys(byStatus).sort();
     acDonut('prStatusChart', sts.map(s => s.replace(/_/g, ' ')), sts.map(s => byStatus[s]),
-            sts.map((s, i) => statusColor[s] || _acPalette[i % _acPalette.length]));
+            sts.map((s, i) => statusColor[s] || _acPalette[i % _acPalette.length]),
+            (v) => `${Math.round(v)} project${Math.round(v) === 1 ? '' : 's'}`);
 }
 
 function renderStatementChart(rows) {

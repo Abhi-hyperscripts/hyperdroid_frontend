@@ -70,9 +70,10 @@ function _acRank(items, labelKey, amtKey, topN = 6) {
     const rows = Object.entries(m).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, topN);
     return { labels: rows.map(r => r[0]), data: rows.map(r => Math.round(r[1] * 100) / 100) };
 }
-function acDonut(id, labels, series, colors) {
+function acDonut(id, labels, series, colors, fmt) {
     if (!series.length || series.every(v => !v)) return _acEmpty(id);
     const t = _acTheme();
+    const f = fmt || _inr;  // pass a formatter for non-currency data (e.g. counts)
     _acMount(id, {
         chart: { type: 'donut', height: 250, background: 'transparent', fontFamily: 'inherit' },
         theme: { mode: t.isDark ? 'dark' : 'light' },
@@ -81,9 +82,9 @@ function acDonut(id, labels, series, colors) {
         legend: { position: 'bottom', labels: { colors: t.text }, fontSize: '12px', markers: { width: 9, height: 9 }, itemMargin: { horizontal: 8, vertical: 3 } },
         plotOptions: { pie: { donut: { size: '70%', labels: { show: true,
             name: { color: t.text, fontSize: '12px' },
-            value: { color: t.isDark ? '#f1f5f9' : '#0f172a', fontSize: '18px', fontWeight: 700, formatter: _inr },
-            total: { show: true, label: 'Total', fontSize: '12px', color: t.text, formatter: () => _inr(series.reduce((a, b) => a + b, 0)) } } } } },
-        tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }
+            value: { color: t.isDark ? '#f1f5f9' : '#0f172a', fontSize: '18px', fontWeight: 700, formatter: f },
+            total: { show: true, label: 'Total', fontSize: '12px', color: t.text, formatter: () => f(series.reduce((a, b) => a + b, 0)) } } } } },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: f } }
     });
 }
 function acBarH(id, labels, data) {

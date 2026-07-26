@@ -374,6 +374,9 @@ async function loadSubscriptions() {
 function renderSubscriptionCharts() {
     if (typeof acDonut !== 'function') return;
     if (!allSubscriptions.length) { _acEmpty('subPlanChart'); _acEmpty('subStatusChart'); return; }
+    // Value lives on the PLAN — on a direct #subscriptions load this can run before
+    // loadInitialData has filled billingPlans; retry instead of drawing an empty donut.
+    if (!billingPlans.length) { setTimeout(renderSubscriptionCharts, 500); return; }
     const planById = {};
     billingPlans.forEach(p => { planById[p.id] = p; });
     const byPlan = {};
