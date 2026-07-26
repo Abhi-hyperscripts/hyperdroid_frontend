@@ -273,11 +273,14 @@
                             </svg>
                             <input type="text" id="txnSearch" placeholder="Search transactions...">
                         </div>
-                        <button class="btn btn-primary" onclick="showRecordTransactionModal()" data-admin-only>
+                        <button class="btn btn-primary" onclick="showQuickSpendModal()" data-admin-only>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
+                            Record Spend
+                        </button>
+                        <button class="btn btn-outline" onclick="showRecordTransactionModal()" data-admin-only data-tooltip="Advanced: deposits, interest, charges, any counter account">
                             Record Transaction
                         </button>
                     </div>
@@ -714,16 +717,6 @@
 
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="txnCategory">Spend Category (optional)</label>
-                            <select id="txnCategory" class="form-control">
-                                <option value="">— Pick a category to auto-fill the account —</option>
-                            </select>
-                            <small style="display:block;margin-top:4px;color:var(--text-secondary);font-size:0.75rem;">
-                                Everyday spends (groceries, milk, stationery…) — picking one fills the counter account and description for you.
-                                Manage the list in Expenses &rarr; Categories.
-                            </small>
-                        </div>
                         <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="txnAmount">Amount *</label>
@@ -751,6 +744,58 @@
                 <div class="modal-footer">
                     <button class="btn btn-outline" onclick="AccountsCommon.closeModal('bankTransactionModal')">Cancel</button>
                     <button id="saveBankTransactionBtn" class="btn btn-primary" onclick="saveBankTransaction()">Save Transaction</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Spend — everyday petty-cash expenses by category, no accounting jargon -->
+    <div id="quickSpendModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Spend</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('quickSpendModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="quickSpendForm">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="qsCategory">What was it for? *</label>
+                                <select id="qsCategory" class="form-control" required>
+                                    <option value="">Select category...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="qsAmount">Amount *</label>
+                                <input type="number" id="qsAmount" class="form-control" required step="0.01" min="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="qsPaidFrom">Paid from *</label>
+                                <select id="qsPaidFrom" class="form-control" required>
+                                    <option value="">Select account...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="qsDate">Date *</label>
+                                <input type="text" id="qsDate" class="form-control" placeholder="Select date" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="qsDescription">Note (optional)</label>
+                            <input type="text" id="qsDescription" class="form-control" placeholder="e.g. 2 milk crates + water cans">
+                        </div>
+                        <small style="display:block;color:var(--text-secondary);font-size:0.75rem;">
+                            Money-out only — the accounting (counter account) comes from the category.
+                            Add your own categories in Expenses &rarr; Categories.
+                        </small>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('quickSpendModal')">Cancel</button>
+                    <button id="saveQuickSpendBtn" class="btn btn-primary" onclick="saveQuickSpend()">Save Spend</button>
                 </div>
             </div>
         </div>

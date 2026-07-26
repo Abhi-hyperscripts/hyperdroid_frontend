@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     AccountsCommon.initDatePickers([
         { id: 'txnFromDate', onChange: () => { currentTxnPage = 1; loadBankTransactions(); } },
         { id: 'txnToDate', onChange: () => { currentTxnPage = 1; loadBankTransactions(); } },
-        'txnDate', 'transferDate', 'reconStatementDate'
+        'txnDate', 'transferDate', 'reconStatementDate', 'qsDate'
     ]);
 });
 
@@ -527,34 +527,82 @@ function showRecordTransactionModal() {
     document.getElementById('txnBankAccountId').value = bankId;
 
     populateCounterAccountSelect();
-    populateTxnCategorySelect();
     AccountsCommon.openModal('bankTransactionModal');
 }
 
-// Spend-category shortcut — picking "Groceries" / "Stationery" etc. fills the
-// counter account (from the category's default GL account) and the description,
-// so everyday petty-cash spends don't require knowing any account codes.
-function populateTxnCategorySelect() {
-    const sel = document.getElementById('txnCategory');
-    if (!sel) return;
+// ============================================================================
+// QUICK SPEND — everyday petty-cash expenses by category. The user picks WHAT
+// it was for (Groceries / Milk / Stationery…) and the accounting (withdrawal +
+// counter account from the category's default GL) happens behind the scenes.
+// ============================================================================
+
+function showQuickSpendModal() {
+    document.getElementById('quickSpendForm').reset();
+    AccountsCommon.setDateField('qsDate', AccountsCommon.todayLocal());
+
     const esc = AccountsCommon.escapeHtml;
-    sel.innerHTML = '<option value="">— Pick a category to auto-fill the account —</option>' +
+    const catSel = document.getElementById('qsCategory');
+    catSel.innerHTML = '<option value="">Select category...</option>' +
         expenseCategoriesList
             .filter(c => c.is_active !== false && c.default_account_id)
             .map(c => `<option value="${c.id}">${esc(c.name)}</option>`)
             .join('');
-    if (!sel._categoryWired) {
-        sel._categoryWired = true;
-        sel.addEventListener('change', () => {
-            const cat = expenseCategoriesList.find(c => c.id === sel.value);
-            if (!cat) return;
-            document.getElementById('txnCounterAccount').value = cat.default_account_id;
-            const desc = document.getElementById('txnDescription');
-            if (desc && !desc.value.trim()) desc.value = cat.name;
-            // Everyday category spends are money OUT — default the type if not chosen yet
-            const type = document.getElementById('txnType');
-            if (type && !type.value) type.value = 'withdrawal';
+
+    const fromSel = document.getElementById('qsPaidFrom');
+    fromSel.innerHTML = '<option value="">Select account...</option>' +
+        bankAccountsList
+            .filter(b => b.is_active !== false)
+            .map(b => `<option value="${b.id}">${esc(b.account_name || b.name)}</option>`)
+            .join('');
+    // Default to the account being viewed, else the petty-cash box — that's the everyday case
+    const current = txnBankFilterDropdown?.getValue?.();
+    const petty = bankAccountsList.find(b => (b.account_type || '') === 'petty_cash');
+    fromSel.value = current || petty?.id || '';
+
+    AccountsCommon.openModal('quickSpendModal');
+}
+
+let quickSpendInFlight = false;
+async function saveQuickSpend() {
+    const cat = expenseCategoriesList.find(c => c.id === document.getElementById('qsCategory').value);
+    const bankId = document.getElementById('qsPaidFrom').value;
+    const amount = parseFloat(document.getElementById('qsAmount').value) || 0;
+    const date = document.getElementById('qsDate').value;
+    const note = document.getElementById('qsDescription').value.trim();
+
+    if (!cat || !bankId || amount <= 0 || !date) {
+        Toast.error('Category, amount, paid-from account and date are required');
+        return;
+    }
+
+    if (quickSpendInFlight) return;
+    quickSpendInFlight = true;
+    const btn = document.getElementById('saveQuickSpendBtn');
+    if (btn) btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl(`bank/accounts/${bankId}/transactions`), {
+            method: 'POST',
+            body: JSON.stringify({
+                bank_account_id: bankId,
+                transaction_date: date,
+                transaction_type: 'withdrawal',
+                amount,
+                description: note ? `${cat.name} — ${note}` : cat.name,
+                reference_number: null,
+                counter_account_id: cat.default_account_id
+            })
         });
+        Toast.success(`Spend recorded: ${cat.name} ₹${amount.toLocaleString('en-IN')}`);
+        AccountsCommon.closeModal('quickSpendModal');
+        // Refresh the register + balances if the spend hit the account being viewed
+        if (txnBankFilterDropdown?.getValue?.() === bankId) await loadBankTransactions();
+        await loadBankAccounts();
+    } catch (err) {
+        console.error('[Banking] saveQuickSpend error:', err);
+        Toast.error(err.message || 'Failed to record spend');
+    } finally {
+        quickSpendInFlight = false;
+        if (btn) btn.disabled = false;
     }
 }
 
