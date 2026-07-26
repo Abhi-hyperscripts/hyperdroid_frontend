@@ -237,12 +237,16 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
     padding: 16px;
 }
 
-.filters-bar .searchable-dropdown,
+/* Fixed width, NOT content-based: `width:auto` made the control resize when a
+   long option was selected, shifting the whole filter row. The trigger text
+   ellipsizes instead. A page can still widen one picker via inline style. */
+.filters-bar .searchable-dropdown-container,
 .filters-bar .searchable-dropdown-wrapper {
-    width: auto !important;
-    min-width: 180px;
-    max-width: 280px;
-    flex-shrink: 0;
+    width: 220px;
+    flex: 0 0 auto;
+}
+.filters-bar .searchable-dropdown {
+    width: 100% !important;
 }
 
 .search-box-modern {
