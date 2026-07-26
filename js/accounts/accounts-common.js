@@ -160,6 +160,9 @@ const AccountsCommon = {
         // Auto-convert all native <select> filters (outside modals) to searchable dropdowns
         this._convertFilterSelects();
 
+        // "What is this?" education panels — collapsed accounting primers per subsection
+        this._injectHelpPanels(pageId);
+
         return true;
     },
 
@@ -763,6 +766,41 @@ const AccountsCommon = {
             day: '2-digit', month: 'short', year: 'numeric',
             hour: '2-digit', minute: '2-digit'
         });
+    },
+
+    /** Inject collapsed "What is this?" education panels (content map lives in
+     *  accounts-help.js, lazy-loaded so pages don't need an extra script tag).
+     *  One panel per .tab-content whose `${pageId}:${id}` has an entry; pages
+     *  without tabs use the `${pageId}:_page` key, placed after the <h1>. */
+    _injectHelpPanels(pageId) {
+        const inject = () => {
+            const HELP = window.ACCOUNTS_HELP || {};
+            const mk = (html) => {
+                const d = document.createElement('details');
+                d.className = 'acc-help';
+                d.innerHTML = `<summary>What is this?</summary><div class="acc-help-body">${html}</div>`;
+                return d;
+            };
+            document.querySelectorAll('.tab-content').forEach(tc => {
+                const html = HELP[`${pageId}:${tc.id}`];
+                if (html && !tc.querySelector(':scope > details.acc-help')) tc.prepend(mk(html));
+            });
+            const pageHtml = HELP[`${pageId}:_page`];
+            if (pageHtml && !document.querySelector('details.acc-help[data-page-help]')) {
+                const h1 = document.querySelector('h1');
+                if (h1) {
+                    const p = mk(pageHtml);
+                    p.dataset.pageHelp = '1';
+                    (h1.closest('.page-header') || h1.parentElement).insertAdjacentElement('afterend', p);
+                }
+            }
+        };
+        if (window.ACCOUNTS_HELP) { inject(); return; }
+        const s = document.createElement('script');
+        const v = typeof CACHE_VERSION !== 'undefined' ? CACHE_VERSION : Date.now();
+        s.src = `../../js/accounts/accounts-help.js?v=${v}`;
+        s.onload = inject;
+        document.head.appendChild(s);
     },
 
     /** Attach flatpickr to date text inputs. The flatpickr CDN script loads AFTER the

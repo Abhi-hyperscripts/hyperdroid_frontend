@@ -2580,3 +2580,43 @@ textarea.form-control {
     background: linear-gradient(90deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 62%, #7db3ff));
     transition: width .55s cubic-bezier(.22, 1, .36, 1);
 }
+
+/* ── "What is this?" education panels ─────────────────────────────────────
+   Collapsed accounting primers injected per subsection (accounts-help.js via
+   AccountsCommon._injectHelpPanels). Native <details> — no JS to toggle. */
+.acc-help {
+    margin: 0 0 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-tertiary);
+}
+.acc-help > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    user-select: none;
+}
+.acc-help > summary::-webkit-details-marker { display: none; }
+.acc-help > summary::before {
+    content: '▸';
+    color: var(--brand-primary);
+    transition: transform 0.15s ease;
+}
+.acc-help[open] > summary::before { transform: rotate(90deg); }
+.acc-help > summary:hover { color: var(--text-primary); }
+.acc-help-body {
+    padding: 0 14px 12px 30px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    max-width: 920px;
+}
+.acc-help-body p { margin: 0 0 8px; }
+.acc-help-body p:last-child { margin-bottom: 0; }
+.acc-help-body strong { color: var(--text-primary); }
