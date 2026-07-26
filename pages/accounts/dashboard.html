@@ -77,462 +77,169 @@
             </div>
         </div>
 
-        <!-- KPI Overview — live data from /accounts/dashboard/kpis -->
-        <div class="stats-grid" id="statsGrid">
-            <!-- Cash Position -->
-            <div class="stat-card">
-                <div class="stat-card-header">
-                    <div class="stat-icon acct-assets">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="3" y1="22" x2="21" y2="22"/>
-                            <line x1="6" y1="18" x2="6" y2="11"/>
-                            <line x1="10" y1="18" x2="10" y2="11"/>
-                            <line x1="14" y1="18" x2="14" y2="11"/>
-                            <line x1="18" y1="18" x2="18" y2="11"/>
-                            <polygon points="12 2 2 8 22 8"/>
-                        </svg>
-                    </div>
+        <!-- ══ Financial Pulse — money coming in → cash today → money going out ══ -->
+        <div class="pulse-strip glass-card">
+            <div class="pulse-flow">
+                <a class="pulse-node" href="receivables.html">
+                    <span class="pulse-node-label">Coming in · Receivables</span>
+                    <span class="pulse-node-value pulse-in" id="pulseAr">—</span>
+                    <span class="pulse-node-sub" id="pulseArSub"></span>
+                </a>
+                <svg class="pulse-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+                <div class="pulse-core">
+                    <span class="pulse-node-label">Cash today</span>
+                    <span class="pulse-core-value" id="pulseCash">—</span>
+                    <span class="pulse-verdict" id="pulseVerdict">Checking the books…</span>
                 </div>
-                <div class="stat-value" id="kpiCashPosition">-</div>
-                <div class="stat-label">Cash Position</div>
-                <div class="stat-sublabel" id="kpiCashSplit">Bank + Cash</div>
+                <svg class="pulse-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+                <a class="pulse-node" href="payables.html">
+                    <span class="pulse-node-label">Going out · Payables</span>
+                    <span class="pulse-node-value pulse-out" id="pulseAp">—</span>
+                    <span class="pulse-node-sub" id="pulseApSub"></span>
+                </a>
             </div>
+            <div class="pulse-chips" id="pulseChips"></div>
+        </div>
 
-            <!-- MTD Revenue with trend arrow -->
-            <div class="stat-card">
-                <div class="stat-card-header">
-                    <div class="stat-icon acct-revenue">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                            <polyline points="17 6 23 6 23 12"/>
-                        </svg>
-                    </div>
-                    <span id="kpiRevenueMtdTrend" class="kpi-trend"></span>
-                </div>
-                <div class="stat-value" id="kpiRevenueMtd">-</div>
-                <div class="stat-label">Revenue (MTD)</div>
+        <!-- ══ KPI grid — uniform 4-across ══ -->
+        <div class="dash-kpis" id="dashKpis">
+            <div class="dash-kpi">
+                <span class="dash-kpi-label">Cash position</span>
+                <span class="dash-kpi-value" id="kpiCashPosition">—</span>
+                <span class="dash-kpi-sub" id="kpiCashSplit"></span>
             </div>
-
-            <!-- YTD Revenue -->
-            <div class="stat-card">
-                <div class="stat-card-header">
-                    <div class="stat-icon acct-revenue">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="stat-value" id="kpiRevenueYtd">-</div>
-                <div class="stat-label">Revenue (YTD)</div>
-                <div class="stat-sublabel" id="kpiFyLabel"></div>
+            <div class="dash-kpi">
+                <span class="dash-kpi-label">Revenue · this month <span id="kpiRevenueMtdTrend" class="kpi-trend"></span></span>
+                <span class="dash-kpi-value" id="kpiRevenueMtd">—</span>
+                <span class="dash-kpi-sub">vs last month</span>
             </div>
-
-            <!-- Net Profit YTD -->
-            <div class="stat-card">
-                <div class="stat-card-header">
-                    <div class="stat-icon acct-net-income">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
-                            <path d="M22 12A10 10 0 0 0 12 2v10z"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="stat-value" id="kpiNetProfitYtd">-</div>
-                <div class="stat-label">Net Profit (YTD)</div>
-                <div class="stat-sublabel" id="kpiExpensesYtd"></div>
+            <div class="dash-kpi">
+                <span class="dash-kpi-label">Revenue · year to date</span>
+                <span class="dash-kpi-value" id="kpiRevenueYtd">—</span>
+                <span class="dash-kpi-sub" id="kpiFyLabel"></span>
             </div>
-
-            <!-- AR Outstanding with overdue badge -->
-            <div class="stat-card">
-                <div class="stat-card-header">
-                    <div class="stat-icon acct-accounts">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                            <line x1="1" y1="10" x2="23" y2="10"/>
-                        </svg>
-                    </div>
-                    <span id="kpiArOverdueBadge" class="kpi-badge kpi-badge-danger" style="display:none;"></span>
-                </div>
-                <div class="stat-value" id="kpiArOutstanding">-</div>
-                <div class="stat-label">AR Outstanding</div>
-                <div class="stat-sublabel" id="kpiArCount"></div>
+            <div class="dash-kpi">
+                <span class="dash-kpi-label">Expenses · year to date</span>
+                <span class="dash-kpi-value" id="kpiExpensesYtdValue">—</span>
+                <span class="dash-kpi-sub">All expense accounts</span>
             </div>
-
-            <!-- AP Outstanding with overdue badge -->
-            <div class="stat-card">
-                <div class="stat-card-header">
-                    <div class="stat-icon acct-liabilities">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                        </svg>
-                    </div>
-                    <span id="kpiApOverdueBadge" class="kpi-badge kpi-badge-danger" style="display:none;"></span>
-                </div>
-                <div class="stat-value" id="kpiApOutstanding">-</div>
-                <div class="stat-label">AP Outstanding</div>
-                <div class="stat-sublabel" id="kpiApCount"></div>
+            <div class="dash-kpi">
+                <span class="dash-kpi-label">Net profit · year to date</span>
+                <span class="dash-kpi-value" id="kpiNetProfitYtd">—</span>
+                <span class="dash-kpi-sub">Revenue − expenses</span>
             </div>
-
-            <!-- Projected Balance 30 days -->
-            <div class="stat-card">
-                <div class="stat-card-header">
-                    <div class="stat-icon acct-expenses">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 4 23 10 17 10"/>
-                            <polyline points="1 20 1 14 7 14"/>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="stat-value" id="kpiProjected30d">-</div>
-                <div class="stat-label">Projected Balance (30d)</div>
-                <div class="stat-sublabel" id="kpiFlow30d"></div>
+            <div class="dash-kpi">
+                <span class="dash-kpi-label">Receivables outstanding</span>
+                <span class="dash-kpi-value" id="kpiArOutstanding">—</span>
+                <span class="dash-kpi-sub" id="kpiArCount"></span>
+            </div>
+            <div class="dash-kpi">
+                <span class="dash-kpi-label">Payables outstanding</span>
+                <span class="dash-kpi-value" id="kpiApOutstanding">—</span>
+                <span class="dash-kpi-sub" id="kpiApCount"></span>
+            </div>
+            <div class="dash-kpi">
+                <span class="dash-kpi-label">Projected balance · 30 days</span>
+                <span class="dash-kpi-value" id="kpiProjected30d">—</span>
+                <span class="dash-kpi-sub" id="kpiFlow30d"></span>
             </div>
         </div>
 
-        <!-- Revenue Trend -->
-        <div class="acct-gl-section glass-card" id="revenueTrendSection" style="margin-bottom:1.5rem;">
-            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
-                <h3 class="section-title">Revenue Trend</h3>
-                <span style="font-size:0.8rem;color:var(--text-secondary);">Last 12 months</span>
+        <!-- ══ Health charts ══ -->
+        <div class="acc-charts dash-charts">
+            <div class="acc-chart-card">
+                <h4>Revenue vs expenses</h4>
+                <div class="acc-chart-sub">Posted, month by month — last 12 months</div>
+                <div id="revenueTrendChart" class="acc-chart"></div>
             </div>
-            <div id="revenueTrendChart" style="padding:0.5rem 0;">
-                <div class="empty-state"><p>Loading…</p></div>
+            <div class="acc-chart-card">
+                <h4>Monthly net result</h4>
+                <div class="acc-chart-sub">Green months made money, red months lost it</div>
+                <div id="netTrendChart" class="acc-chart"></div>
             </div>
-        </div>
-
-        <!-- Bank Accounts Section -->
-        <div class="section-header">
-            <h3 class="section-title">Bank Accounts</h3>
-        </div>
-        <div class="bank-accounts-grid" id="bankAccountsGrid">
-            <div class="empty-state"><p>Loading bank accounts...</p></div>
-        </div>
-
-        <!-- Recent GL Entries -->
-        <div class="acct-gl-section glass-card">
-            <div class="acct-gl-header">
-                <h3 class="section-title">Recent GL Entries</h3>
-                <a href="ledger.html" class="view-all-link">View All</a>
+            <div class="acc-chart-card">
+                <h4>Who owes you, by age</h4>
+                <div class="acc-chart-sub">Receivables aging — the red end needs calls today</div>
+                <div id="arAgingChart" class="acc-chart"></div>
             </div>
-            <div class="recent-entries-table-wrap" id="recentEntriesWrap">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th class="text-right">Debit</th>
-                            <th class="text-right">Credit</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recentEntriesBody">
-                        <tr><td colspan="4" class="text-center">Loading...</td></tr>
-                    </tbody>
-                </table>
+            <div class="acc-chart-card">
+                <h4>What you owe, by age</h4>
+                <div class="acc-chart-sub">Payables aging — pay the oldest first</div>
+                <div id="apAgingChart" class="acc-chart"></div>
             </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="section-header">
-            <h3 class="section-title">Quick Actions</h3>
-        </div>
-        <div class="quick-actions" id="quickActionsGrid">
-            <!-- 1. Accounts Setup -->
-            <div class="action-card" id="cardSetup" onclick="location.href='setup.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09"/>
-                    </svg>
+        <!-- ══ Accounts detail + quick links rail ══ -->
+        <div class="dash-split">
+            <div class="dash-main">
+                <div class="glass-card dash-panel">
+                    <div class="dash-panel-head">
+                        <h3 class="section-title">Bank &amp; cash</h3>
+                        <a href="banking.html" class="view-all-link">Banking</a>
+                    </div>
+                    <div class="bank-rows" id="bankAccountsGrid">
+                        <div class="empty-state"><p>Loading accounts…</p></div>
+                    </div>
                 </div>
-                <div class="action-content">
-                    <h4>Accounts Setup</h4>
-                    <p>Chart of accounts, fiscal years & journals</p>
+                <div class="glass-card dash-panel">
+                    <div class="dash-panel-head">
+                        <h3 class="section-title">Latest activity</h3>
+                        <a href="ledger.html" class="view-all-link">Open ledger</a>
+                    </div>
+                    <div class="recent-entries-table-wrap" id="recentEntriesWrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th class="text-right">Debit</th>
+                                    <th class="text-right">Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentEntriesBody">
+                                <tr><td colspan="4" class="text-center">Loading…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-
-            <!-- 2. Taxation — set up BEFORE invoices so GST appears on first invoice -->
-            <div class="action-card" id="cardTaxation" onclick="location.href='taxation.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <polyline points="9 12 11 14 15 10"/>
-                    </svg>
+            <aside class="dash-rail">
+                <div class="glass-card dash-panel">
+                    <div class="dash-panel-head"><h3 class="section-title">Do something</h3></div>
+                    <nav class="quick-rail">
+                        <a href="receivables.html"><span class="qr-ic qr-in">↧</span>New invoice</a>
+                        <a href="payables.html"><span class="qr-ic qr-out">↥</span>Record a bill</a>
+                        <a href="banking.html#bank-transactions"><span class="qr-ic qr-spend">₹</span>Record a spend</a>
+                        <a href="proforma-invoices.html"><span class="qr-ic qr-quote">≈</span>Quote a prospect</a>
+                        <a href="purchase-orders.html"><span class="qr-ic qr-po">☰</span>Raise a purchase order</a>
+                        <a href="expenses.html#expense-claims"><span class="qr-ic qr-claim">⇄</span>Expense claim</a>
+                    </nav>
                 </div>
-                <div class="action-content">
-                    <h4>Taxation</h4>
-                    <p>GST rates, HSN/SAC, tax configs &mdash; configure before invoicing</p>
+                <div class="glass-card dash-panel">
+                    <div class="dash-panel-head"><h3 class="section-title">Review</h3></div>
+                    <nav class="quick-rail">
+                        <a href="reports.html">Reports — P&amp;L, balance sheet, cash flow</a>
+                        <a href="taxation.html">Taxation — GSTR-1, 3B, TDS</a>
+                        <a href="budgets.html">Budgets vs actual</a>
+                        <a href="cost-centres.html#cc-spend">Spend by department</a>
+                        <a href="projects.html#pr-stmt">Project billing</a>
+                        <a href="assets.html">Fixed assets</a>
+                        <a href="loans.html">Loans &amp; EMIs</a>
+                    </nav>
                 </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 3. Vendors & Customers -->
-            <div class="action-card" id="cardParties" onclick="location.href='parties.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
+                <div class="glass-card dash-panel">
+                    <div class="dash-panel-head"><h3 class="section-title">Settings</h3></div>
+                    <nav class="quick-rail">
+                        <a href="setup.html">Chart of accounts &amp; fiscal years</a>
+                        <a href="parties.html">Customers &amp; vendors</a>
+                        <a href="recurring.html">Recurring rules</a>
+                        <a href="billing.html">Subscription billing</a>
+                        <a href="admin.html">Administration
+                            <span id="pendingApprovalsBadge" class="count-badge-pill" style="display:none;">0</span>
+                        </a>
+                    </nav>
                 </div>
-                <div class="action-content">
-                    <h4>Vendors & Customers</h4>
-                    <p>Manage vendors, customers & contacts</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 3. Vendor Bills -->
-            <div class="action-card" id="cardBills" onclick="location.href='payables.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Vendor Bills</h4>
-                    <p>Manage payables, bills & payments</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 3. Customer Invoices -->
-            <div class="action-card" id="cardInvoices" onclick="location.href='receivables.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                        <line x1="1" y1="10" x2="23" y2="10"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Customer Invoices</h4>
-                    <p>Create invoices, record payments & aging</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 3b. Proforma Invoices -->
-            <div class="action-card" id="cardProforma" onclick="location.href='proforma-invoices.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Proforma Invoices</h4>
-                    <p>Quotes & estimates before final invoicing</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 3c. Purchase Orders -->
-            <div class="action-card" id="cardPurchaseOrders" onclick="location.href='purchase-orders.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                        <line x1="3" y1="6" x2="21" y2="6"/>
-                        <path d="M16 10a4 4 0 0 1-8 0"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Purchase Orders</h4>
-                    <p>PO lifecycle, approvals & convert to bills</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 4. General Ledger -->
-            <div class="action-card" id="cardLedger" onclick="location.href='ledger.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>General Ledger</h4>
-                    <p>GL entries, journal entries & postings</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 5. Banking -->
-            <div class="action-card" id="cardBanking" onclick="location.href='banking.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="3" y1="22" x2="21" y2="22"/>
-                        <line x1="6" y1="18" x2="6" y2="11"/>
-                        <line x1="10" y1="18" x2="10" y2="11"/>
-                        <line x1="14" y1="18" x2="14" y2="11"/>
-                        <line x1="18" y1="18" x2="18" y2="11"/>
-                        <polygon points="12 2 2 8 22 8"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Banking</h4>
-                    <p>Bank accounts, transfers & reconciliation</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 6. Reports -->
-            <div class="action-card" id="cardReports" onclick="location.href='reports.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
-                        <path d="M22 12A10 10 0 0 0 12 2v10z"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Financial Reports</h4>
-                    <p>Trial balance, P&L, balance sheet & more</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 7. Expenses -->
-            <div class="action-card" id="cardExpenses" onclick="location.href='expenses.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="1" x2="12" y2="23"/>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Expense Management</h4>
-                    <p>Categories, policies & claim approvals</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 8. Fixed Assets -->
-            <div class="action-card" id="cardAssets" onclick="location.href='assets.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Fixed Assets</h4>
-                    <p>Asset register & depreciation schedules</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 9. Loans -->
-            <div class="action-card" id="cardLoans" onclick="location.href='loans.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="1" x2="12" y2="23"/>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Loans</h4>
-                    <p>Term loans, EMI schedules & repayments</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 10. Cost Centres -->
-            <div class="action-card" id="cardCostCentres" onclick="location.href='cost-centres.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Cost Centres</h4>
-                    <p>Departmental spend tags & spend report</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 10b. Projects -->
-            <div class="action-card" id="cardProjects" onclick="location.href='projects.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Projects</h4>
-                    <p>Per-customer project billing & statements</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 11. Billing -->
-            <div class="action-card" id="cardBilling" onclick="location.href='billing.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="5" width="20" height="14" rx="2"/>
-                        <line x1="2" y1="10" x2="22" y2="10"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Billing</h4>
-                    <p>Plans, subscriptions & usage meters</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 12. Budgets -->
-            <div class="action-card" id="cardBudgets" onclick="location.href='budgets.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Budgets</h4>
-                    <p>Annual budgets & variance analysis</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 13. Recurring Transactions -->
-            <div class="action-card" id="cardRecurring" onclick="location.href='recurring.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="23 4 23 10 17 10"/>
-                        <polyline points="1 20 1 14 7 14"/>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Recurring Transactions</h4>
-                    <p>Auto-generate invoices, bills & journals on schedule</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
-            <!-- 13. Admin -->
-            <div class="action-card" id="cardAdmin" onclick="location.href='admin.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.18V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1.08H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 8.82a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1.08-1.51V3a2 2 0 0 1 4 0v.09"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Administration <span id="pendingApprovalsBadge" class="count-badge-pill" style="display:none;">0</span></h4>
-                    <p id="pendingApprovalsDesc">Audit logs, approvals & year-end closing</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
+            </aside>
         </div>
     </div>
 

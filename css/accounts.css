@@ -2619,3 +2619,87 @@ textarea.form-control {
 .acc-help-body p { margin: 0 0 8px; }
 .acc-help-body p:last-child { margin-bottom: 0; }
 .acc-help-body strong { color: var(--text-primary); }
+
+/* ── Accounts dashboard redesign ──────────────────────────────────────────
+   Pulse strip (in → cash → out with a solvency verdict), uniform KPI grid,
+   2×2 health charts, bottom split with a quick-links rail. Theme vars only. */
+
+.pulse-strip { padding: 20px 24px; margin-bottom: 16px; }
+.pulse-flow { display: flex; align-items: center; gap: 18px; }
+.pulse-node, .pulse-core { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pulse-node { flex: 1; text-decoration: none; border-radius: 10px; padding: 6px 10px; margin: -6px -10px; }
+.pulse-node:hover { background: var(--bg-tertiary); }
+.pulse-core { flex: 1.4; text-align: center; align-items: center; }
+.pulse-node:last-of-type { text-align: right; align-items: flex-end; }
+.pulse-node-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); }
+.pulse-node-value { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); }
+.pulse-node-value.pulse-in { color: var(--color-success); }
+.pulse-node-value.pulse-out { color: var(--color-warning); }
+.pulse-core-value { font-size: 2rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+.pulse-verdict { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); max-width: 420px; }
+.pulse-verdict.ok { color: var(--color-success); }
+.pulse-verdict.warn { color: var(--color-warning); }
+.pulse-verdict.danger { color: var(--color-error); }
+.pulse-node-sub { font-size: 0.75rem; color: var(--text-secondary); }
+.pulse-arrow { width: 26px; height: 26px; flex-shrink: 0; color: var(--text-secondary); opacity: 0.55; }
+.pulse-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; justify-content: center; }
+.pulse-chips:empty { display: none; }
+.pulse-chip { font-size: 0.78rem; font-weight: 600; padding: 4px 12px; border-radius: 999px;
+    border: 1px solid var(--border-color); color: var(--text-secondary); text-decoration: none; }
+.pulse-chip:hover { color: var(--text-primary); }
+.pulse-chip.danger { color: var(--color-error); border-color: color-mix(in srgb, var(--color-error) 45%, transparent);
+    background: color-mix(in srgb, var(--color-error) 10%, transparent); }
+.pulse-chip.warn { color: var(--color-warning); border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
+    background: color-mix(in srgb, var(--color-warning) 10%, transparent); }
+
+.dash-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.dash-kpi { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px;
+    background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; min-width: 0; }
+.dash-kpi-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+.dash-kpi-value { font-size: 1.3rem; font-weight: 700; color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-kpi-value.negative { color: var(--color-error); }
+.dash-kpi-sub { font-size: 0.74rem; color: var(--text-secondary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.dash-charts { margin-bottom: 16px; }
+
+.dash-split { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 16px; align-items: start; }
+.dash-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.dash-rail { display: flex; flex-direction: column; gap: 16px; }
+.dash-panel { padding: 18px 20px; }
+.dash-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.dash-panel-head .section-title { margin: 0; }
+
+.bank-rows { display: flex; flex-direction: column; }
+.bank-row { display: flex; align-items: center; gap: 12px; padding: 10px 4px;
+    border-bottom: 1px solid var(--border-color); text-decoration: none; }
+.bank-row:last-child { border-bottom: none; }
+.bank-row-name { font-weight: 600; color: var(--text-primary); font-size: 0.9rem; }
+.bank-row-bank { font-size: 0.75rem; color: var(--text-secondary); }
+.bank-row-balance { margin-left: auto; font-weight: 700; color: var(--text-primary); font-size: 0.95rem; }
+.bank-row-balance.negative { color: var(--color-error); }
+
+.quick-rail { display: flex; flex-direction: column; }
+.quick-rail a { display: flex; align-items: center; gap: 10px; padding: 9px 8px; margin: 0 -8px;
+    border-radius: 8px; font-size: 0.87rem; color: var(--text-primary); text-decoration: none; }
+.quick-rail a:hover { background: var(--bg-tertiary); }
+.qr-ic { width: 26px; height: 26px; border-radius: 7px; display: inline-flex; align-items: center;
+    justify-content: center; font-size: 0.9rem; font-weight: 700; flex-shrink: 0;
+    background: var(--bg-tertiary); color: var(--brand-primary); }
+.qr-ic.qr-in { color: var(--color-success); }
+.qr-ic.qr-out { color: var(--color-warning); }
+.qr-ic.qr-spend { color: var(--color-error); }
+.quick-rail .count-badge-pill { margin-left: auto; }
+
+@media (max-width: 1100px) {
+    .dash-kpis { grid-template-columns: repeat(2, 1fr); }
+    .dash-split { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+    .pulse-flow { flex-direction: column; align-items: stretch; gap: 10px; }
+    .pulse-arrow { transform: rotate(90deg); align-self: center; }
+    .pulse-node, .pulse-node:last-of-type, .pulse-core { text-align: left; align-items: flex-start; }
+    .dash-kpis { grid-template-columns: 1fr; }
+}

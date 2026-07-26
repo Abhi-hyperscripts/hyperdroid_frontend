@@ -20,6 +20,7 @@ async function loadDashboard() {
             loadSetupStatus(),
             loadKpis(),
             loadRevenueTrend(),
+            loadAgingCharts(),
             loadBankingSummary(),
             loadRecentEntries(),
             loadPendingApprovals()
@@ -42,50 +43,82 @@ function refreshDashboard() {
 // ============================================================================
 
 async function loadKpis() {
-    const ids = ['kpiCashPosition', 'kpiRevenueMtd', 'kpiRevenueYtd', 'kpiNetProfitYtd',
-        'kpiArOutstanding', 'kpiApOutstanding', 'kpiProjected30d'];
+    const ids = ['kpiCashPosition', 'kpiRevenueMtd', 'kpiRevenueYtd', 'kpiExpensesYtdValue', 'kpiNetProfitYtd',
+        'kpiArOutstanding', 'kpiApOutstanding', 'kpiProjected30d', 'pulseAr', 'pulseCash', 'pulseAp'];
     try {
         const url = AccountsCommon.buildUrl('dashboard/kpis');
         const k = await api.request(url, { _skipSpinner: true });
+        const fmt = AccountsCommon.formatCurrency;
 
-        // Cash
+        // ── Pulse strip: in → cash → out, plus the solvency verdict ──
+        setCurrency('pulseAr', k.ar_outstanding);
+        setText('pulseArSub', `${k.ar_open_invoices_count || 0} open invoice${(k.ar_open_invoices_count || 0) === 1 ? '' : 's'}`);
+        setCurrency('pulseCash', k.total_liquid);
+        setCurrency('pulseAp', k.ap_outstanding);
+        setText('pulseApSub', `${k.ap_open_bills_count || 0} open bill${(k.ap_open_bills_count || 0) === 1 ? '' : 's'}`);
+        renderPulseVerdict(k);
+        renderPulseChips(k);
+
+        // ── KPI grid ──
         setCurrency('kpiCashPosition', k.total_liquid);
-        setText('kpiCashSplit',
-            `Bank ${AccountsCommon.formatCurrency(k.total_bank_balance || 0)} · Cash ${AccountsCommon.formatCurrency(k.total_cash_balance || 0)}`);
-
-        // Revenue MTD + trend vs prev month
+        setText('kpiCashSplit', `Bank ${fmt(k.total_bank_balance || 0)} · Cash ${fmt(k.total_cash_balance || 0)}`);
         setCurrency('kpiRevenueMtd', k.revenue_mtd);
         renderTrend('kpiRevenueMtdTrend', k.revenue_mtd, k.revenue_prev_month);
-
-        // Revenue YTD
         setCurrency('kpiRevenueYtd', k.revenue_ytd);
         setText('kpiFyLabel', k.fiscal_year_name || '');
-
-        // Net profit YTD
+        setCurrency('kpiExpensesYtdValue', k.expenses_ytd);
         setCurrency('kpiNetProfitYtd', k.net_profit_ytd);
-        setText('kpiExpensesYtd',
-            `Expenses ${AccountsCommon.formatCurrency(k.expenses_ytd || 0)}`);
-
-        // AR
         setCurrency('kpiArOutstanding', k.ar_outstanding);
-        setText('kpiArCount',
-            `${k.ar_open_invoices_count || 0} open invoice${(k.ar_open_invoices_count || 0) === 1 ? '' : 's'}`);
-        renderOverdueBadge('kpiArOverdueBadge', k.ar_overdue_count, k.ar_overdue);
-
-        // AP
+        setText('kpiArCount', `${k.ar_open_invoices_count || 0} open invoice${(k.ar_open_invoices_count || 0) === 1 ? '' : 's'}`);
         setCurrency('kpiApOutstanding', k.ap_outstanding);
-        setText('kpiApCount',
-            `${k.ap_open_bills_count || 0} open bill${(k.ap_open_bills_count || 0) === 1 ? '' : 's'}`);
-        renderOverdueBadge('kpiApOverdueBadge', k.ap_overdue_count, k.ap_overdue);
-
-        // Projected 30d balance
+        setText('kpiApCount', `${k.ap_open_bills_count || 0} open bill${(k.ap_open_bills_count || 0) === 1 ? '' : 's'}`);
         setCurrency('kpiProjected30d', k.projected_balance_30d);
-        setText('kpiFlow30d',
-            `In ${AccountsCommon.formatCurrency(k.expected_inflow_30d || 0)} · Out ${AccountsCommon.formatCurrency(k.expected_outflow_30d || 0)}`);
+        setText('kpiFlow30d', `In ${fmt(k.expected_inflow_30d || 0)} · Out ${fmt(k.expected_outflow_30d || 0)}`);
     } catch (err) {
         console.error('[Accounts:Dashboard] loadKpis error:', err);
         ids.forEach(id => setText(id, '-'));
     }
+}
+
+// The one-sentence answer to "are we okay?" — computed from cash vs open bills.
+function renderPulseVerdict(k) {
+    const el = document.getElementById('pulseVerdict');
+    if (!el) return;
+    const cash = parseFloat(k.total_liquid) || 0;
+    const ap = parseFloat(k.ap_outstanding) || 0;
+    const ar = parseFloat(k.ar_outstanding) || 0;
+    let cls = 'ok', text;
+    if (ap <= 0) {
+        text = cash > 0 ? 'No open bills — everything in the bank is yours.' : 'No open bills, but no cash either — time to invoice.';
+        if (cash <= 0) cls = 'warn';
+    } else if (cash >= ap) {
+        const x = cash / ap;
+        text = `Cash covers every open bill ${x >= 10 ? Math.round(x) : x.toFixed(1)}× over.`;
+    } else if (cash + ar >= ap) {
+        cls = 'warn';
+        text = `Bills exceed cash by ${AccountsCommon.formatCurrency(ap - cash)} — collecting receivables closes the gap.`;
+    } else {
+        cls = 'danger';
+        text = `Bills exceed cash + receivables by ${AccountsCommon.formatCurrency(ap - cash - ar)}.`;
+    }
+    el.textContent = text;
+    el.className = 'pulse-verdict ' + cls;
+}
+
+// Attention chips under the pulse: overdue AR / overdue AP / 30-day projection.
+function renderPulseChips(k) {
+    const host = document.getElementById('pulseChips');
+    if (!host) return;
+    const fmt = AccountsCommon.formatCurrency;
+    const chips = [];
+    if ((k.ar_overdue_count || 0) > 0)
+        chips.push(`<a class="pulse-chip danger" href="receivables.html#ar-aging">${k.ar_overdue_count} overdue invoice${k.ar_overdue_count === 1 ? '' : 's'} · ${fmt(k.ar_overdue || 0)}</a>`);
+    if ((k.ap_overdue_count || 0) > 0)
+        chips.push(`<a class="pulse-chip warn" href="payables.html#ap-aging">${k.ap_overdue_count} overdue bill${k.ap_overdue_count === 1 ? '' : 's'} · ${fmt(k.ap_overdue || 0)}</a>`);
+    const proj = parseFloat(k.projected_balance_30d);
+    if (!isNaN(proj))
+        chips.push(`<span class="pulse-chip${proj < 0 ? ' danger' : ''}">30-day projection · ${fmt(proj)}</span>`);
+    host.innerHTML = chips.join('');
 }
 
 async function loadRevenueTrend() {
@@ -101,26 +134,69 @@ async function loadRevenueTrend() {
     }
 }
 
-// Monthly Revenue vs Expenses (last 12 months) — ApexCharts grouped columns, theme-aware and
-// consistent with the AR/AP charts. Redraws on theme toggle via _acActiveRender.
+// The dashboard has several charts — register each draw fn so a theme toggle
+// redraws them all (each page normally has one _acActiveRender slot).
+const _dashDraws = {};
+function _registerDashDraw(key, draw) {
+    _dashDraws[key] = draw;
+    _acActiveRender = () => Object.values(_dashDraws).forEach(f => { try { f(); } catch (e) { /* chart host gone */ } });
+}
+
+// Monthly Revenue vs Expenses (last 12 months) + the monthly net result derived
+// from the same data (green = profitable month, red = loss month).
 function renderRevenueTrendChart(trend) {
     const host = document.getElementById('revenueTrendChart');
     if (!host) return;
     const data = (trend || []).slice(-12);
     if (!data.length || data.every(d => !d.revenue && !d.expenses)) {
-        if (typeof _acEmpty === 'function') _acEmpty('revenueTrendChart', 'No revenue or expenses in the last 12 months yet.');
-        else host.innerHTML = '<div class="empty-state"><p>No revenue or expenses in the last 12 months yet.</p></div>';
+        if (typeof _acEmpty === 'function') {
+            _acEmpty('revenueTrendChart', 'No revenue or expenses in the last 12 months yet.');
+            _acEmpty('netTrendChart', 'Nothing posted yet.');
+        }
         return;
     }
     const categories = data.map(d => (d.label || '').replace(/ \d{2}(\d{2})$/, " '$1"));
     const revenue = data.map(d => Math.round((Number(d.revenue) || 0) * 100) / 100);
     const expenses = data.map(d => Math.round((Number(d.expenses) || 0) * 100) / 100);
-    const draw = () => acColumns('revenueTrendChart', categories, [
+    const net = revenue.map((r, i) => Math.round((r - expenses[i]) * 100) / 100);
+    _registerDashDraw('revExp', () => acColumns('revenueTrendChart', categories, [
         { name: 'Revenue', data: revenue },
         { name: 'Expenses', data: expenses }
-    ], ['#10b981', '#ef4444']);
-    draw();
-    _acActiveRender = draw;
+    ], ['#10b981', '#ef4444']));
+    _registerDashDraw('net', () => acBarV('netTrendChart', categories, net,
+        net.map(v => v >= 0 ? '#10b981' : '#ef4444')));
+    _dashDraws.revExp(); _dashDraws.net();
+}
+
+// AR / AP aging buckets — same risk gradient as the Receivables/Payables pages.
+const _AGING_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#f97316', '#ef4444'];
+const _AGING_LABELS = ['Current', '1–30d', '31–60d', '61–90d', '90d+'];
+async function loadAgingCharts() {
+    const bucketize = (rows, nameKey) => {
+        const sum = (f1, f2, f3) => rows.reduce((s, r) => s + (parseFloat(r[f1] ?? r[f2] ?? r[f3] ?? 0) || 0), 0);
+        return [
+            rows.reduce((s, r) => s + (parseFloat(r.current_amount ?? r.current ?? 0) || 0), 0),
+            sum('days_30', '1_30', 'days_1_30'),
+            sum('days_60', '31_60', 'days_31_60'),
+            sum('days_90', '61_90', 'days_61_90'),
+            sum('days_120_plus', '90_plus', 'days_90_plus')
+        ].map(v => Math.round(v * 100) / 100);
+    };
+    const draw = (chartId, buckets, emptyMsg) => {
+        if (buckets.every(v => !v)) { if (typeof _acEmpty === 'function') _acEmpty(chartId, emptyMsg); return; }
+        _registerDashDraw(chartId, () => acBarV(chartId, _AGING_LABELS, buckets, _AGING_COLORS));
+        _dashDraws[chartId]();
+    };
+    try {
+        const ar = await api.request(AccountsCommon.buildUrl('invoices/aging'), { _skipSpinner: true });
+        const arRows = Array.isArray(ar) ? ar : (ar?.data || ar?.buckets || ar?.customers || []);
+        draw('arAgingChart', bucketize(arRows), 'Nothing outstanding — all invoices collected.');
+    } catch (e) { if (typeof _acEmpty === 'function') _acEmpty('arAgingChart', 'Could not load receivables aging.'); }
+    try {
+        const ap = await api.request(AccountsCommon.buildUrl('vendor-bills/aging'), { _skipSpinner: true });
+        const apRows = Array.isArray(ap) ? ap : (ap?.data || ap?.buckets || ap?.vendors || []);
+        draw('apAgingChart', bucketize(apRows), 'Nothing owed — all bills settled.');
+    } catch (e) { if (typeof _acEmpty === 'function') _acEmpty('apAgingChart', 'Could not load payables aging.'); }
 }
 
 function renderTrend(elId, current, previous) {
@@ -133,15 +209,6 @@ function renderTrend(elId, current, previous) {
     const up = deltaPct >= 0;
     el.textContent = `${up ? '▲' : '▼'} ${Math.abs(deltaPct).toFixed(1)}%`;
     el.className = 'kpi-trend ' + (up ? 'kpi-trend-up' : 'kpi-trend-down');
-}
-
-function renderOverdueBadge(elId, count, amount) {
-    const el = document.getElementById(elId);
-    if (!el) return;
-    const c = parseInt(count, 10) || 0;
-    if (c <= 0) { el.style.display = 'none'; return; }
-    el.style.display = 'inline-block';
-    el.textContent = `${c} overdue · ${AccountsCommon.formatCurrency(amount || 0)}`;
 }
 
 // ============================================================================
@@ -165,24 +232,15 @@ async function loadBankingSummary() {
         grid.innerHTML = accounts.map(acc => {
             const name = AccountsCommon.escapeHtml(acc.account_name || acc.accountName || 'Unnamed');
             const bank = AccountsCommon.escapeHtml(acc.bank_name || acc.bankName || '');
-            const balance = AccountsCommon.formatCurrency(acc.balance ?? acc.current_balance ?? 0);
-            const isNeg = (acc.balance ?? acc.current_balance ?? 0) < 0;
+            const bal = acc.balance ?? acc.current_balance ?? 0;
             return `
-                <div class="bank-account-card glass-card">
-                    <div class="bank-card-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                            <line x1="3" y1="22" x2="21" y2="22"/>
-                            <line x1="6" y1="18" x2="6" y2="11"/>
-                            <line x1="10" y1="18" x2="10" y2="11"/>
-                            <line x1="14" y1="18" x2="14" y2="11"/>
-                            <line x1="18" y1="18" x2="18" y2="11"/>
-                            <polygon points="12 2 2 8 22 8"/>
-                        </svg>
-                        <span class="bank-card-name">${name}</span>
+                <a class="bank-row" href="banking.html#bank-transactions">
+                    <div>
+                        <div class="bank-row-name">${name}</div>
+                        ${bank ? `<div class="bank-row-bank">${bank}</div>` : ''}
                     </div>
-                    ${bank ? `<div class="bank-card-bank">${bank}</div>` : ''}
-                    <div class="bank-card-balance ${isNeg ? 'negative' : ''}">${balance}</div>
-                </div>`;
+                    <span class="bank-row-balance ${bal < 0 ? 'negative' : ''}">${AccountsCommon.formatCurrency(bal)}</span>
+                </a>`;
         }).join('');
     } catch (err) {
         console.error('[Accounts:Dashboard] loadBankingSummary error:', err);
