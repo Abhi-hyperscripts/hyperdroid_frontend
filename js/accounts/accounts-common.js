@@ -791,7 +791,10 @@ const AccountsCommon = {
                 if (h1) {
                     const p = mk(pageHtml);
                     p.dataset.pageHelp = '1';
-                    (h1.closest('.page-header') || h1.parentElement).insertAdjacentElement('afterend', p);
+                    // Insert BELOW the whole header row — inserting next to the h1 inside a
+                    // flex header squeezed the panel in beside the title and broke the row.
+                    const headerRow = h1.closest('.acct-dash-header, .page-header, .hrms-header') || h1.parentElement;
+                    headerRow.insertAdjacentElement('afterend', p);
                 }
             }
         };

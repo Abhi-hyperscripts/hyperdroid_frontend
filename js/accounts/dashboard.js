@@ -43,46 +43,39 @@ function refreshDashboard() {
 // ============================================================================
 
 async function loadKpis() {
-    const ids = ['kpiCashPosition', 'kpiRevenueMtd', 'kpiRevenueYtd', 'kpiExpensesYtdValue', 'kpiNetProfitYtd',
-        'kpiArOutstanding', 'kpiApOutstanding', 'kpiProjected30d', 'pulseAr', 'pulseCash', 'pulseAp'];
+    const ids = ['tCash', 'tAr', 'tAp', 'tRevM', 'tNet', 'tCashProj'];
     try {
         const url = AccountsCommon.buildUrl('dashboard/kpis');
         const k = await api.request(url, { _skipSpinner: true });
         const fmt = AccountsCommon.formatCurrency;
 
-        // ── Pulse strip: in → cash → out, plus the solvency verdict ──
-        setCurrency('pulseAr', k.ar_outstanding);
-        setText('pulseArSub', `${k.ar_open_invoices_count || 0} open invoice${(k.ar_open_invoices_count || 0) === 1 ? '' : 's'}`);
-        setCurrency('pulseCash', k.total_liquid);
-        setCurrency('pulseAp', k.ap_outstanding);
-        setText('pulseApSub', `${k.ap_open_bills_count || 0} open bill${(k.ap_open_bills_count || 0) === 1 ? '' : 's'}`);
-        renderPulseVerdict(k);
-        renderPulseChips(k);
+        renderVerdict(k);
 
-        // ── KPI grid ──
-        setCurrency('kpiCashPosition', k.total_liquid);
-        setText('kpiCashSplit', `Bank ${fmt(k.total_bank_balance || 0)} · Cash ${fmt(k.total_cash_balance || 0)}`);
-        setCurrency('kpiRevenueMtd', k.revenue_mtd);
-        renderTrend('kpiRevenueMtdTrend', k.revenue_mtd, k.revenue_prev_month);
-        setCurrency('kpiRevenueYtd', k.revenue_ytd);
-        setText('kpiFyLabel', k.fiscal_year_name || '');
-        setCurrency('kpiExpensesYtdValue', k.expenses_ytd);
-        setCurrency('kpiNetProfitYtd', k.net_profit_ytd);
-        setCurrency('kpiArOutstanding', k.ar_outstanding);
-        setText('kpiArCount', `${k.ar_open_invoices_count || 0} open invoice${(k.ar_open_invoices_count || 0) === 1 ? '' : 's'}`);
-        setCurrency('kpiApOutstanding', k.ap_outstanding);
-        setText('kpiApCount', `${k.ap_open_bills_count || 0} open bill${(k.ap_open_bills_count || 0) === 1 ? '' : 's'}`);
-        setCurrency('kpiProjected30d', k.projected_balance_30d);
-        setText('kpiFlow30d', `In ${fmt(k.expected_inflow_30d || 0)} · Out ${fmt(k.expected_outflow_30d || 0)}`);
+        // Hero — the cash numeral counts up on load
+        countUpCurrency('tCash', k.total_liquid);
+        setText('tCashSplit', `Bank ${fmt(k.total_bank_balance || 0)} · Cash ${fmt(k.total_cash_balance || 0)}`);
+        setCurrency('tCashProj', k.projected_balance_30d);
+        setCurrency('tAr', k.ar_outstanding);
+        setText('tArSub', `${k.ar_open_invoices_count || 0} open invoice${(k.ar_open_invoices_count || 0) === 1 ? '' : 's'}`);
+        setCurrency('tAp', k.ap_outstanding);
+        setText('tApSub', `${k.ap_open_bills_count || 0} open bill${(k.ap_open_bills_count || 0) === 1 ? '' : 's'}`);
+
+        // Stat band
+        setCurrency('tRevM', k.revenue_mtd);
+        renderTrend('tRevMTrend', k.revenue_mtd, k.revenue_prev_month);
+        setCurrency('tNet', k.net_profit_ytd);
+        setText('tNetSub', `Revenue ${fmt(k.revenue_ytd || 0)} − expenses ${fmt(k.expenses_ytd || 0)}`);
+        renderOverdueTile('tArOverVal', 'tArOverSub', k.ar_overdue_count, k.ar_overdue, 'invoice');
+        renderOverdueTile('tApOverVal', 'tApOverSub', k.ap_overdue_count, k.ap_overdue, 'bill');
     } catch (err) {
         console.error('[Accounts:Dashboard] loadKpis error:', err);
         ids.forEach(id => setText(id, '-'));
     }
 }
 
-// The one-sentence answer to "are we okay?" — computed from cash vs open bills.
-function renderPulseVerdict(k) {
-    const el = document.getElementById('pulseVerdict');
+// The headline: a one-sentence verdict on financial health, plus the FY context line.
+function renderVerdict(k) {
+    const el = document.getElementById('dvVerdict');
     if (!el) return;
     const cash = parseFloat(k.total_liquid) || 0;
     const ap = parseFloat(k.ap_outstanding) || 0;
@@ -99,26 +92,45 @@ function renderPulseVerdict(k) {
         text = `Bills exceed cash by ${AccountsCommon.formatCurrency(ap - cash)} — collecting receivables closes the gap.`;
     } else {
         cls = 'danger';
-        text = `Bills exceed cash + receivables by ${AccountsCommon.formatCurrency(ap - cash - ar)}.`;
+        text = `Bills exceed cash and receivables combined by ${AccountsCommon.formatCurrency(ap - cash - ar)}.`;
     }
     el.textContent = text;
-    el.className = 'pulse-verdict ' + cls;
+    el.className = 'hero-verdict ' + cls;
+    setText('dvContext', `${k.fiscal_year_name || 'This fiscal year'} so far · revenue ${AccountsCommon.formatCurrency(k.revenue_ytd || 0)} · expenses ${AccountsCommon.formatCurrency(k.expenses_ytd || 0)}`);
 }
 
-// Attention chips under the pulse: overdue AR / overdue AP / 30-day projection.
-function renderPulseChips(k) {
-    const host = document.getElementById('pulseChips');
-    if (!host) return;
-    const fmt = AccountsCommon.formatCurrency;
-    const chips = [];
-    if ((k.ar_overdue_count || 0) > 0)
-        chips.push(`<a class="pulse-chip danger" href="receivables.html#ar-aging">${k.ar_overdue_count} overdue invoice${k.ar_overdue_count === 1 ? '' : 's'} · ${fmt(k.ar_overdue || 0)}</a>`);
-    if ((k.ap_overdue_count || 0) > 0)
-        chips.push(`<a class="pulse-chip warn" href="payables.html#ap-aging">${k.ap_overdue_count} overdue bill${k.ap_overdue_count === 1 ? '' : 's'} · ${fmt(k.ap_overdue || 0)}</a>`);
-    const proj = parseFloat(k.projected_balance_30d);
-    if (!isNaN(proj))
-        chips.push(`<span class="pulse-chip${proj < 0 ? ' danger' : ''}">30-day projection · ${fmt(proj)}</span>`);
-    host.innerHTML = chips.join('');
+// Overdue tiles always show a state — a green "all current" is as informative as a red total.
+function renderOverdueTile(valId, subId, count, amount, noun) {
+    const val = document.getElementById(valId);
+    if (!val) return;
+    const c = parseInt(count, 10) || 0;
+    if (c <= 0) {
+        val.textContent = '✓ All current';
+        val.classList.remove('dv-danger', 'dv-warn');
+        val.classList.add('dv-ok');
+        setText(subId, `No overdue ${noun}s`);
+    } else {
+        val.textContent = AccountsCommon.formatCurrency(amount || 0);
+        setText(subId, `${c} ${noun}${c === 1 ? '' : 's'} past due — tap to see aging`);
+    }
+}
+
+// rAF count-up for the hero numeral (skipped under prefers-reduced-motion).
+function countUpCurrency(id, target) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const end = parseFloat(target) || 0;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || end === 0) {
+        el.textContent = AccountsCommon.formatCurrency(end); return;
+    }
+    const dur = 900, t0 = performance.now();
+    const ease = (t) => 1 - Math.pow(1 - t, 3);
+    const tick = (now) => {
+        const p = Math.min(1, (now - t0) / dur);
+        el.textContent = AccountsCommon.formatCurrency(end * ease(p));
+        if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
 }
 
 async function loadRevenueTrend() {
@@ -159,13 +171,36 @@ function renderRevenueTrendChart(trend) {
     const revenue = data.map(d => Math.round((Number(d.revenue) || 0) * 100) / 100);
     const expenses = data.map(d => Math.round((Number(d.expenses) || 0) * 100) / 100);
     const net = revenue.map((r, i) => Math.round((r - expenses[i]) * 100) / 100);
-    _registerDashDraw('revExp', () => acColumns('revenueTrendChart', categories, [
-        { name: 'Revenue', data: revenue },
-        { name: 'Expenses', data: expenses }
-    ], ['#10b981', '#ef4444']));
+    _registerDashDraw('revExp', () => drawHeroChart(categories, revenue, expenses));
     _registerDashDraw('net', () => acBarV('netTrendChart', categories, net,
         net.map(v => v >= 0 ? '#10b981' : '#ef4444')));
     _dashDraws.revExp(); _dashDraws.net();
+}
+
+// The hero chart is deliberately quieter than the card charts: full-bleed,
+// no axes/grid noise — the shape of the money story, not a reading instrument.
+// Hovering still gives exact figures via the shared tooltip.
+function drawHeroChart(categories, revenue, expenses) {
+    const el = document.getElementById('revenueTrendChart');
+    if (!el || typeof ApexCharts === 'undefined') return;
+    if (_acCharts['revenueTrendChart']) { _acCharts['revenueTrendChart'].destroy(); delete _acCharts['revenueTrendChart']; }
+    el.innerHTML = '';
+    const t = _acTheme();
+    _acCharts['revenueTrendChart'] = new ApexCharts(el, {
+        chart: { type: 'area', height: 210, background: 'transparent', fontFamily: 'inherit',
+                 sparkline: { enabled: true }, animations: { speed: 900, easing: 'easeout' } },
+        theme: { mode: t.isDark ? 'dark' : 'light' },
+        colors: ['#10b981', '#ef4444'],
+        series: [{ name: 'Revenue', data: revenue }, { name: 'Expenses', data: expenses }],
+        stroke: { curve: 'smooth', width: 2.5 },
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.32, opacityTo: 0, stops: [0, 92] } },
+        markers: { size: 0, hover: { size: 5 } },
+        xaxis: { categories },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', shared: true,
+                   x: { formatter: (i) => categories[i - 1] ?? '' },
+                   y: { formatter: (v) => AccountsCommon.formatCurrency(v) } }
+    });
+    _acCharts['revenueTrendChart'].render();
 }
 
 // AR / AP aging buckets — same risk gradient as the Receivables/Payables pages.
@@ -229,12 +264,18 @@ async function loadBankingSummary() {
             return;
         }
 
-        grid.innerHTML = accounts.map(acc => {
-            const name = AccountsCommon.escapeHtml(acc.account_name || acc.accountName || 'Unnamed');
+        // Deterministic avatar hue per account so colors are stable across loads
+        const AV_HUES = [212, 158, 262, 20, 330, 190];
+        grid.innerHTML = accounts.map((acc, i) => {
+            const rawName = acc.account_name || acc.accountName || 'Unnamed';
+            const name = AccountsCommon.escapeHtml(rawName);
             const bank = AccountsCommon.escapeHtml(acc.bank_name || acc.bankName || '');
             const bal = acc.balance ?? acc.current_balance ?? 0;
+            const initials = rawName.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            const hue = AV_HUES[i % AV_HUES.length];
             return `
                 <a class="bank-row" href="banking.html#bank-transactions">
+                    <span class="bank-avatar" style="background:linear-gradient(135deg, hsl(${hue} 70% 52%), hsl(${hue + 24} 70% 42%));">${AccountsCommon.escapeHtml(initials)}</span>
                     <div>
                         <div class="bank-row-name">${name}</div>
                         ${bank ? `<div class="bank-row-bank">${bank}</div>` : ''}
@@ -262,25 +303,23 @@ async function loadRecentEntries() {
         const entries = Array.isArray(res) ? res : (res?.data || res?.items || []);
 
         if (!entries.length) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center">No entries yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center">No entries yet</td></tr>';
             return;
         }
 
         tbody.innerHTML = entries.map(e => {
             const date = AccountsCommon.formatDate(e.entry_date || e.entryDate || e.date);
             const desc = AccountsCommon.escapeHtml(e.description || e.memo || '-');
-            const debit = e.total_debit ?? e.debit_amount ?? e.debitAmount ?? 0;
-            const credit = e.total_credit ?? e.credit_amount ?? e.creditAmount ?? 0;
+            const amount = e.total_debit ?? e.debit_amount ?? e.total_credit ?? 0;
             return `<tr>
                 <td>${date}</td>
                 <td class="desc-cell">${desc}</td>
-                <td class="text-right">${debit ? AccountsCommon.formatCurrency(debit) : '-'}</td>
-                <td class="text-right">${credit ? AccountsCommon.formatCurrency(credit) : '-'}</td>
+                <td class="text-right">${AccountsCommon.formatCurrency(amount)}</td>
             </tr>`;
         }).join('');
     } catch (err) {
         console.error('[Accounts:Dashboard] loadRecentEntries error:', err);
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Failed to load entries</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Failed to load entries</td></tr>';
     }
 }
 
