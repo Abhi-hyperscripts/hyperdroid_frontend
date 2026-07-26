@@ -12,6 +12,7 @@
 
 let bankAccountsList = [];
 let coaAccounts = [];
+let expenseCategoriesList = [];   // spend-category shortcuts in the Record Transaction modal
 let bankTransactions = [];
 let recentTransfers = [];
 let currentTxnPage = 1;
@@ -96,13 +97,15 @@ function onTabSwitch(tabId) {
 
 async function loadInitialData() {
     try {
-        const [bankRes, coaRes] = await Promise.all([
+        const [bankRes, coaRes, catRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => [])
+            api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => []),
+            api.request(AccountsCommon.buildUrl('expenses/categories'), { _skipSpinner: true }).catch(() => [])
         ]);
 
         bankAccountsList = Array.isArray(bankRes) ? bankRes : (bankRes?.data || bankRes?.items || []);
         coaAccounts = Array.isArray(coaRes) ? coaRes : (coaRes?.data || coaRes?.items || []);
+        expenseCategoriesList = Array.isArray(catRes) ? catRes : (catRes?.data || catRes?.items || []);
 
         updateBankAccountStats();
         renderBankAccountsTable();
@@ -524,7 +527,35 @@ function showRecordTransactionModal() {
     document.getElementById('txnBankAccountId').value = bankId;
 
     populateCounterAccountSelect();
+    populateTxnCategorySelect();
     AccountsCommon.openModal('bankTransactionModal');
+}
+
+// Spend-category shortcut — picking "Groceries" / "Stationery" etc. fills the
+// counter account (from the category's default GL account) and the description,
+// so everyday petty-cash spends don't require knowing any account codes.
+function populateTxnCategorySelect() {
+    const sel = document.getElementById('txnCategory');
+    if (!sel) return;
+    const esc = AccountsCommon.escapeHtml;
+    sel.innerHTML = '<option value="">— Pick a category to auto-fill the account —</option>' +
+        expenseCategoriesList
+            .filter(c => c.is_active !== false && c.default_account_id)
+            .map(c => `<option value="${c.id}">${esc(c.name)}</option>`)
+            .join('');
+    if (!sel._categoryWired) {
+        sel._categoryWired = true;
+        sel.addEventListener('change', () => {
+            const cat = expenseCategoriesList.find(c => c.id === sel.value);
+            if (!cat) return;
+            document.getElementById('txnCounterAccount').value = cat.default_account_id;
+            const desc = document.getElementById('txnDescription');
+            if (desc && !desc.value.trim()) desc.value = cat.name;
+            // Everyday category spends are money OUT — default the type if not chosen yet
+            const type = document.getElementById('txnType');
+            if (type && !type.value) type.value = 'withdrawal';
+        });
+    }
 }
 
 function populateCounterAccountSelect(selectedId) {
