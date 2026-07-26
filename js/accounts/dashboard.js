@@ -187,7 +187,7 @@ function drawHeroChart(categories, revenue, expenses) {
     el.innerHTML = '';
     const t = _acTheme();
     _acCharts['revenueTrendChart'] = new ApexCharts(el, {
-        chart: { type: 'area', height: 210, background: 'transparent', fontFamily: 'inherit',
+        chart: { type: 'area', height: 150, background: 'transparent', fontFamily: 'inherit',
                  sparkline: { enabled: true }, animations: { speed: 900, easing: 'easeout' } },
         theme: { mode: t.isDark ? 'dark' : 'light' },
         colors: ['#10b981', '#ef4444'],

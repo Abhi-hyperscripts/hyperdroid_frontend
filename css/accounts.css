@@ -2628,16 +2628,16 @@ textarea.form-control {
 .acct-dash-container { --dash-ease: cubic-bezier(0.22, 1, 0.36, 1); }
 
 /* HERO */
-.hero { position: relative; border-radius: 22px; overflow: hidden; margin-bottom: 16px;
+.dvhero { position: relative; border-radius: 22px; overflow: hidden; margin-bottom: 16px;
     border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
     background: var(--bg-card);
     box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 7%, transparent),
                 0 30px 60px -30px rgba(0, 0, 0, 0.6);
     animation: dashRise 0.6s var(--dash-ease) both; }
-.hero::before, .hero::after { content: ''; position: absolute; pointer-events: none; filter: blur(10px); }
-.hero::before { width: 55%; height: 130%; left: -12%; top: -55%;
+.dvhero::before, .dvhero::after { content: ''; position: absolute; pointer-events: none; filter: blur(10px); }
+.dvhero::before { width: 55%; height: 130%; left: -12%; top: -55%;
     background: radial-gradient(closest-side, color-mix(in srgb, var(--brand-primary) 22%, transparent), transparent 72%); }
-.hero::after { width: 45%; height: 120%; right: -10%; top: -45%;
+.dvhero::after { width: 45%; height: 120%; right: -10%; top: -45%;
     background: radial-gradient(closest-side, rgba(139, 92, 246, 0.16), transparent 72%); }
 .hero-top { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 28px;
     padding: 28px 32px 6px; flex-wrap: wrap; }
@@ -2694,7 +2694,7 @@ a.dv-tile:hover { transform: translateY(-2px);
 .dv-actions { animation-delay: 0.08s; } .dv-band4 { animation-delay: 0.14s; }
 .dv-band3 { animation-delay: 0.2s; } .dv-bottom { animation-delay: 0.26s; }
 @media (prefers-reduced-motion: reduce) {
-    .hero, .dv-actions, .dv-band4, .dv-band3, .dv-bottom { animation: none; }
+    .dvhero, .dv-actions, .dv-band4, .dv-band3, .dv-bottom { animation: none; }
     a.dv-tile:hover, a.hero-stat:hover { transform: none; }
 }
 
@@ -2772,7 +2772,7 @@ a.dv-tile:hover { transform: translateY(-2px);
         radial-gradient(900px 420px at 15% -5%, rgba(59, 130, 246, 0.07), transparent 65%),
         radial-gradient(800px 380px at 90% 0%, rgba(139, 92, 246, 0.06), transparent 65%);
 }
-:root[data-theme="light"] .hero,
+:root[data-theme="light"] .dvhero,
 :root[data-theme="light"] .dv-tile {
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -2862,3 +2862,27 @@ a.dv-tile:hover { transform: translateY(-2px);
 .explore-grid-wide { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 @media (max-width: 1100px) { .dv-band2 { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .dv-band2, .dv-explore { animation: none; } }
+
+/* ── Hero compression + light-mode primary chip fix ──
+   styles.css has a global `.header p { margin-bottom: 40px }`-class rule that
+   inflated the hero paragraphs; pin their margins explicitly. */
+.hero-top { padding: 20px 26px 0; }
+.hero-main { gap: 4px; }
+.dvhero .hero-verdict { margin: 2px 0 0 !important; font-size: 0.95rem; }
+.dvhero .dv-context { margin: 2px 0 0 !important; font-size: 0.8rem; }
+.hero-cash { font-size: clamp(2.2rem, 3.6vw, 3rem); }
+.hero-side { gap: 8px; min-width: 230px; }
+.hero-stat { padding: 7px 12px; border-radius: 11px; }
+.hero-stat b { font-size: 1rem; }
+.hero-chart { margin-top: -18px; }
+/* Light mode: the primary action chip must stay brand-filled — the generic
+   light .dv-chip white background was winning by specificity, leaving
+   white-on-white (invisible "New invoice"). */
+:root[data-theme="light"] .dv-chip-primary {
+    background: var(--brand-primary);
+    border-color: transparent;
+    color: #fff;
+}
+
+/* Legend at the chart's bottom-right — top-right collided with the side stats after compression */
+.hero-chart-legend { top: auto; bottom: 10px; }
