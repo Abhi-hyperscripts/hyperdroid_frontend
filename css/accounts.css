@@ -2895,3 +2895,17 @@ a.dv-tile:hover { transform: translateY(-2px);
 
 /* Breathing room between the side stats and the chart legend */
 .hero-chart-legend { margin-top: 14px; padding-bottom: 6px; }
+
+/* ── COA template picker cards ── */
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 13px; }
+.tpl-card { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--text-primary) 3%, transparent), transparent 45%), var(--bg-card);
+    transition: border-color 0.15s; }
+.tpl-card:hover { border-color: color-mix(in srgb, var(--brand-primary) 40%, var(--border-color)); }
+.tpl-card h5 { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+.tpl-card p { margin: 0; font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); flex: 1; }
+.tpl-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.tpl-count { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-secondary); }
+:root[data-theme="light"] .tpl-card { background: #fff; border-color: #e2e8f0; }

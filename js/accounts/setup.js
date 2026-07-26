@@ -86,7 +86,7 @@ function onTabSwitch(tabId) {
         case 'fiscal-years':    loadFiscalYears(); break;
         case 'fiscal-periods':  loadFiscalPeriods(); break;
         case 'journal-types':   loadJournalTypes(); break;
-        case 'templates':       break; // static content
+        case 'templates':       loadCoaTemplates(); break;
     }
 }
 
@@ -1553,27 +1553,54 @@ async function viewJournalTypeDetail(id) {
 // 9. COA TEMPLATES
 // ============================================================================
 
-async function initializeTemplate(country) {
-    const label = country === 'india' ? 'India' : 'Default';
-    const ok = await Confirm.show({ title: 'Initialize Template', message: `Initialize the ${label} Chart of Accounts template? This will create account types, groups, and accounts.`, confirmText: 'Continue', type: 'warning' });
+let _coaTemplates = [];
+async function loadCoaTemplates() {
+    const grid = document.getElementById('coaTemplateGrid');
+    if (!grid) return;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('coa/templates'), { _skipSpinner: true });
+        _coaTemplates = res?.data || [];
+        if (!_coaTemplates.length) { grid.innerHTML = '<div class="empty-state"><p>No templates available.</p></div>'; return; }
+        const esc = AccountsCommon.escapeHtml;
+        grid.innerHTML = _coaTemplates.map(t => `
+            <div class="tpl-card">
+                <h5>${esc(t.name)}</h5>
+                <p>${esc(t.description)}</p>
+                <div class="tpl-card-foot">
+                    <span class="tpl-count">${t.account_count} accounts</span>
+                    <button class="btn btn-sm btn-primary" onclick="initializeTemplate('${esc(t.code)}')" data-admin-only>Apply</button>
+                </div>
+            </div>`).join('');
+        accountsRoles.applyRBAC();
+    } catch (err) {
+        console.error('[Setup] loadCoaTemplates error:', err);
+        grid.innerHTML = '<div class="empty-state"><p>Could not load templates.</p></div>';
+    }
+}
+
+async function initializeTemplate(templateCode) {
+    // Back-compat with the old country-name argument
+    const code = templateCode === 'india' ? 'IN' : templateCode;
+    const tpl = _coaTemplates.find(t => t.code === code);
+    const label = tpl ? tpl.name : code;
+    const ok = await Confirm.show({
+        title: 'Apply Template',
+        message: `Apply "${label}"? This creates its account types, groups and accounts. Safe to run on an existing chart — accounts you already have are kept, only missing ones are added.`,
+        confirmText: 'Apply Template', type: 'warning'
+    });
     if (!ok) return;
 
     try {
-        await api.request(AccountsCommon.buildUrl('coa/setup-template'), {
+        const res = await api.request(AccountsCommon.buildUrl('coa/setup-template'), {
             method: 'POST',
-            body: JSON.stringify({ country_code: country === 'india' ? 'IN' : country?.toUpperCase() || 'IN' })
+            body: JSON.stringify({ country_code: code })
         });
-        Toast.success(`${label} template initialized successfully`);
-
-        // Reload all data
-        await Promise.all([
-            loadAccountTypes(),
-            loadAccountGroups()
-        ]);
+        Toast.success(`${label} applied — ${res?.accounts ?? '?'} accounts in your chart`);
+        await Promise.all([loadAccountTypes(), loadAccountGroups()]);
         await loadAccounts();
     } catch (err) {
         console.error('[Setup] initializeTemplate error:', err);
-        Toast.error(err.message || 'Failed to initialize template');
+        Toast.error(err.message || 'Failed to apply template');
     }
 }
 

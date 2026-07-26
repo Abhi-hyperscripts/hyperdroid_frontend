@@ -596,19 +596,12 @@
                         </div>
                     </div>
 
-                    <div class="filters-bar" style="gap: 1rem; flex-wrap: wrap;">
-                        <button class="btn btn-primary" id="initTemplateBtn" onclick="initializeTemplate('india')" data-admin-only>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                            </svg>
-                            Initialize India Template
-                        </button>
-                        <button class="btn btn-outline" onclick="initializeTemplate('default')" data-admin-only>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                            </svg>
-                            Initialize Default Template
-                        </button>
+                    <!-- Business-type template cards (from GET coa/templates) -->
+                    <div class="tpl-grid" id="coaTemplateGrid">
+                        <div class="empty-state"><p>Loading templates…</p></div>
+                    </div>
+
+                    <div class="filters-bar" style="gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
                         <button class="btn btn-secondary" onclick="openCustomTemplateModal()" data-admin-only>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
