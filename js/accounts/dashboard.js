@@ -303,23 +303,48 @@ async function loadRecentEntries() {
         const entries = Array.isArray(res) ? res : (res?.data || res?.items || []);
 
         if (!entries.length) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center">No entries yet</td></tr>';
+            tbody.innerHTML = '<div class="empty-state"><p>No entries yet — approve your first invoice or bill.</p></div>';
             return;
         }
 
-        tbody.innerHTML = entries.map(e => {
+        // Feed rows: classify each entry from its description so it gets a typed
+        // icon, a clean title (system prefixes stripped) and a signed amount colour.
+        const FEED_TYPES = [
+            { re: /^withdrawal:\s*/i, kind: 'out',  label: 'Money out' },
+            { re: /^deposit:\s*/i,    kind: 'in',   label: 'Money in' },
+            { re: /^transfer:\s*/i,   kind: 'move', label: 'Transfer' },
+            { re: /^invoice:\s*/i,    kind: 'doc',  label: 'Invoice' },
+            { re: /^payment/i,        kind: 'in',   label: 'Payment' },
+            { re: /^emi\b/i,          kind: 'out',  label: 'Loan EMI' },
+            { re: /accrual/i,         kind: 'doc',  label: 'Journal' },
+        ];
+        const ICONS = {
+            in:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></svg>',
+            out:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>',
+            move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+            doc:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+        };
+        tbody.innerHTML = entries.slice(0, 9).map(e => {
+            const rawDesc = e.description || e.memo || '—';
+            let kind = 'doc', typeLabel = 'Entry', title = rawDesc;
+            for (const t of FEED_TYPES) {
+                if (t.re.test(rawDesc)) { kind = t.kind; typeLabel = t.label; title = rawDesc.replace(t.re, ''); break; }
+            }
             const date = AccountsCommon.formatDate(e.entry_date || e.entryDate || e.date);
-            const desc = AccountsCommon.escapeHtml(e.description || e.memo || '-');
             const amount = e.total_debit ?? e.debit_amount ?? e.total_credit ?? 0;
-            return `<tr>
-                <td>${date}</td>
-                <td class="desc-cell">${desc}</td>
-                <td class="text-right">${AccountsCommon.formatCurrency(amount)}</td>
-            </tr>`;
+            const sign = kind === 'out' ? '−' : kind === 'in' ? '+' : '';
+            return `<div class="feed-row">
+                <span class="feed-ic feed-${kind}">${ICONS[kind]}</span>
+                <div class="feed-body">
+                    <span class="feed-title">${AccountsCommon.escapeHtml(title)}</span>
+                    <span class="feed-sub">${date} · ${typeLabel}</span>
+                </div>
+                <span class="feed-amount feed-${kind}-amt">${sign}${AccountsCommon.formatCurrency(amount)}</span>
+            </div>`;
         }).join('');
     } catch (err) {
         console.error('[Accounts:Dashboard] loadRecentEntries error:', err);
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Failed to load entries</td></tr>';
+        tbody.innerHTML = '<div class="empty-state"><p>Could not load activity.</p></div>';
     }
 }
 
