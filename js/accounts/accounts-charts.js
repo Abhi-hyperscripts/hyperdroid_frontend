@@ -28,6 +28,15 @@ if (!window._acThemeWatched) {
     } catch (e) { /* no-op */ }
 }
 const _inr = (v) => AccountsCommon.formatCurrency(v);
+// Compact Indian units for axis/bar labels where the full string collides
+// (₹2.41Cr / ₹6.68L / ₹30K). Tooltips keep the exact figure via _inr.
+const _inrCompact = (v) => {
+    const n = Math.abs(parseFloat(v) || 0), sign = v < 0 ? '-' : '';
+    if (n >= 1e7) return `${sign}₹${(n / 1e7).toFixed(n >= 1e8 ? 0 : 2)}Cr`;
+    if (n >= 1e5) return `${sign}₹${(n / 1e5).toFixed(n >= 1e6 ? 0 : 2)}L`;
+    if (n >= 1e3) return `${sign}₹${Math.round(n / 1e3)}K`;
+    return `${sign}₹${Math.round(n)}`;
+};
 function _acMount(id, options) {
     const el = document.getElementById(id);
     if (!el || typeof ApexCharts === 'undefined') return;
@@ -80,13 +89,15 @@ function acDonut(id, labels, series, colors) {
 function acBarH(id, labels, data) {
     if (!data.length) return _acEmpty(id);
     const t = _acTheme();
+    const maxV = Math.max(...data);
     _acMount(id, {
         chart: { type: 'bar', height: Math.max(data.length * 44, 170), background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
         theme: { mode: t.isDark ? 'dark' : 'light' },
         plotOptions: { bar: { horizontal: true, borderRadius: 5, barHeight: '56%' } }, colors: [t.brand],
         series: [{ name: 'Amount', data }],
-        dataLabels: { enabled: true, formatter: _inr, style: { fontSize: '11px', fontWeight: 600, colors: ['#fff'] } },
-        xaxis: { categories: labels, labels: { formatter: _inr, style: { colors: t.text, fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        // Label only bars wide enough to hold the text — short bars clip it; the tooltip has the exact figure
+        dataLabels: { enabled: true, formatter: (v) => v >= maxV * 0.18 ? _inrCompact(v) : '', style: { fontSize: '11px', fontWeight: 600, colors: ['#fff'] } },
+        xaxis: { categories: labels, tickAmount: 4, labels: { formatter: _inrCompact, style: { colors: t.text, fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
         yaxis: { labels: { style: { colors: t.text, fontSize: '12px' }, maxWidth: 170 } },
         grid: { borderColor: t.grid, strokeDashArray: 4, yaxis: { lines: { show: false } } },
         tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: _inr } }

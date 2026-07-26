@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 // ============================================================================
 
 function onTabSwitch(tabId) {
+    _acActiveRender = null;  // re-armed by loadGlEntries for theme-toggle redraws
     switch (tabId) {
         case 'gl-entries':       loadGlEntries(); break;
         case 'create-gl':       initCreateGlTab(); break;
@@ -185,9 +186,61 @@ async function loadGlEntries() {
             currentGlPage = page;
             loadGlEntries();
         });
+
+        // Charts read the full matching set (account + journal + dates; status/source
+        // ignored so the mix splits always show the whole posted picture).
+        const chartParams = {};
+        if (accountId) chartParams.accountId = accountId;
+        if (journalType) chartParams.journalTypeId = journalType;
+        if (fromDate) chartParams.fromDate = fromDate;
+        if (toDate) chartParams.toDate = toDate;
+        renderGlCharts(chartParams);
+        _acActiveRender = () => renderGlCharts(chartParams);
     } catch (err) {
         console.error('[Ledger] loadGlEntries error:', err);
         Toast.error('Failed to load GL entries');
+    }
+}
+
+// GL register charts — posting activity + journal/source mix. Posted entries only,
+// so the totals tie to what the reports show. Every entry balances (debit == credit),
+// so a debit-vs-credit split would always be 50/50 — total_debit IS the entry value.
+async function renderGlCharts(baseParams) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('gl', { ...baseParams, status: 'posted', limit: 1000, offset: 0 }), { _skipSpinner: true });
+        const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        if (!all.length) { _acEmpty('glActivityChart'); _acEmpty('glJournalChart'); _acEmpty('glSourceChart'); return; }
+        const journalMap = {};
+        journalTypes.forEach(j => { journalMap[j.id] = j.name || j.journal_type_name || j.type; });
+
+        const m = _acMonthly(all, 'entry_date', 'total_debit', 6);
+        acArea('glActivityChart', m.categories, m.data, 'Posted value');
+
+        const byJournal = {};
+        all.forEach(e => {
+            const k = journalMap[e.journal_type_id] || e.journal_type_name || 'General';
+            byJournal[k] = (byJournal[k] || 0) + parseFloat(e.total_debit || 0);
+        });
+        let names = Object.keys(byJournal).filter(k => byJournal[k] > 0);
+        if (names.length > 7) {  // fold the tail into "Other" — the palette has 7 stable hues
+            names.sort((a, b) => byJournal[b] - byJournal[a]);
+            byJournal['Other'] = names.slice(6).reduce((s, k) => s + byJournal[k], 0);
+            names = names.slice(0, 6).concat('Other');
+        }
+        // Alphabetical so a journal keeps its colour across filters (colour follows the entity, not its rank)
+        names.sort((a, b) => a === 'Other' ? 1 : b === 'Other' ? -1 : a.localeCompare(b));
+        names.length
+            ? acDonut('glJournalChart', names, names.map(k => Math.round(byJournal[k] * 100) / 100),
+                      names.map((k, i) => k === 'Other' ? '#64748b' : _acPalette[i % _acPalette.length]))
+            : _acEmpty('glJournalChart');
+
+        const srcLabel = (t) => !t || t === 'manual' ? 'Manual'
+            : String(t).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const rank = _acRank(all.map(e => ({ src: srcLabel(e.reference_type), amt: parseFloat(e.total_debit || 0) })), 'src', 'amt', 6);
+        rank.labels.length ? acBarH('glSourceChart', rank.labels, rank.data) : _acEmpty('glSourceChart');
+    } catch (err) {
+        console.error('[Ledger] renderGlCharts error:', err);
+        _acEmpty('glActivityChart'); _acEmpty('glJournalChart'); _acEmpty('glSourceChart');
     }
 }
 

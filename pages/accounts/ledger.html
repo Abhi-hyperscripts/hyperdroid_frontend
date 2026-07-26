@@ -133,6 +133,23 @@
                 <!-- Tab 1: GL Entries -->
                 <!-- ============================================================ -->
                 <div class="tab-content active" id="gl-entries">
+                    <div class="acc-charts">
+                        <div class="acc-chart-card">
+                            <h4>Posting activity</h4>
+                            <div class="acc-chart-sub">Posted value through the ledger — last 6 months</div>
+                            <div id="glActivityChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Posted value by journal</h4>
+                            <div class="acc-chart-sub">Which journals the value is booked through</div>
+                            <div id="glJournalChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Posted value by source</h4>
+                            <div class="acc-chart-sub">Documents feeding the ledger</div>
+                            <div id="glSourceChart" class="acc-chart"></div>
+                        </div>
+                    </div>
                     <div class="filters-bar">
                         <input type="text" id="glFromDate" class="form-control" style="width:auto;" placeholder="From date">
                         <input type="text" id="glToDate" class="form-control" style="width:auto;" placeholder="To date">
@@ -391,6 +408,8 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/ledger.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 
