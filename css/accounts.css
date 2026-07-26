@@ -2886,3 +2886,9 @@ a.dv-tile:hover { transform: translateY(-2px);
 
 /* Legend at the chart's bottom-right — top-right collided with the side stats after compression */
 .hero-chart-legend { top: auto; bottom: 10px; }
+
+/* Chart in its own clear zone: no negative tuck under the side stats (they were
+   covering the newest data points), legend in normal flow above the plot. */
+.hero-chart { margin-top: 4px; display: flex; flex-direction: column; }
+.hero-chart-legend { position: static; order: -1; justify-content: flex-end;
+    padding: 0 24px 2px; }
