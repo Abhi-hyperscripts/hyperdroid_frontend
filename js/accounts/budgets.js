@@ -382,10 +382,10 @@ function renderAnalysis(report) {
                                     <td style="text-align:right;">${fmt(a.actual_amount)}</td>
                                     <td style="text-align:right;color:${varColor};">${fmt(a.variance)}</td>
                                     <td style="text-align:right;color:${varColor};">${(a.variance_percentage || 0).toFixed(1)}%</td>
-                                    <td><div style="height:8px;background:var(--bg-secondary);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${pctColor};transition:width 0.3s;"></div></div></td>
+                                    <td><div style="height:8px;background:var(--bg-tertiary);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${pctColor};transition:width 0.3s;"></div></div></td>
                                 </tr>`;
                             }).join('')}
-                            <tr style="font-weight:600;background:var(--bg-secondary);">
+                            <tr style="font-weight:600;background:var(--bg-tertiary);">
                                 <td colspan="2">Total ${AccountsCommon.escapeHtml(section.account_type)}</td>
                                 <td style="text-align:right;">${fmt(section.section_budget)}</td>
                                 <td style="text-align:right;">${fmt(section.section_actual)}</td>

@@ -1044,7 +1044,7 @@ function initImportTab() {
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.style.borderColor = 'var(--brand-primary)';
-            dropZone.style.background = 'var(--bg-secondary)';
+            dropZone.style.background = 'var(--bg-tertiary)';
         });
         dropZone.addEventListener('dragleave', () => {
             dropZone.style.borderColor = 'var(--border-primary)';

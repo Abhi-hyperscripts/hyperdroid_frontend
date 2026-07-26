@@ -224,7 +224,7 @@ async function loadStatement() {
             <td style="text-align:right;font-weight:600;">${AccountsCommon.formatCurrency(r.due)}</td>
         </tr>
         <tr class="stmt-detail-row" data-detail="${AccountsCommon.escapeHtml(String(pid))}" style="display:none;">
-            <td colspan="4" style="padding:0;background:var(--bg-secondary,#f8fafc);">
+            <td colspan="4" style="padding:0;background:var(--bg-tertiary);">
                 <div class="stmt-detail-body" style="padding:0.75rem 1.25rem;">Loading…</div>
             </td>
         </tr>`;
