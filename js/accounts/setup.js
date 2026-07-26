@@ -1568,13 +1568,48 @@ async function loadCoaTemplates() {
                 <p>${esc(t.description)}</p>
                 <div class="tpl-card-foot">
                     <span class="tpl-count">${t.account_count} accounts</span>
-                    <button class="btn btn-sm btn-primary" onclick="initializeTemplate('${esc(t.code)}')" data-admin-only>Apply</button>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn btn-sm btn-outline" onclick="viewCoaTemplate('${esc(t.code)}')">View</button>
+                        <button class="btn btn-sm btn-primary" onclick="initializeTemplate('${esc(t.code)}')" data-admin-only>Apply</button>
+                    </div>
                 </div>
             </div>`).join('');
         accountsRoles.applyRBAC();
     } catch (err) {
         console.error('[Setup] loadCoaTemplates error:', err);
         grid.innerHTML = '<div class="empty-state"><p>Could not load templates.</p></div>';
+    }
+}
+
+// Preview a template's accounts — grouped by type, headers dimmed, in a modal.
+async function viewCoaTemplate(code) {
+    const tpl = _coaTemplates.find(t => t.code === code);
+    const esc = AccountsCommon.escapeHtml;
+    document.getElementById('tplPreviewTitle').textContent = tpl ? tpl.name : code;
+    const body = document.getElementById('tplPreviewBody');
+    body.innerHTML = '<div class="empty-state"><p>Loading…</p></div>';
+    AccountsCommon.openModal('tplPreviewModal');
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`coa/templates/${encodeURIComponent(code)}/accounts`), { _skipSpinner: true });
+        const accounts = res?.data || [];
+        const typeOrder = ['Assets', 'Liabilities', 'Equity', 'Income', 'Expenses'];
+        body.innerHTML = typeOrder.map(type => {
+            const rows = accounts.filter(a => a.type === type);
+            if (!rows.length) return '';
+            return `<div class="tpl-prev-section">
+                <div class="tpl-prev-type">${type} <span>${rows.filter(r => r.postable).length} postable</span></div>
+                ${rows.map(a => `
+                    <div class="tpl-prev-row ${a.postable ? '' : 'is-header'}">
+                        <code>${esc(a.code)}</code>
+                        <span class="tpl-prev-name">${esc(a.name)}</span>
+                        <span class="tpl-prev-group">${esc(a.group || '')}</span>
+                        ${a.postable ? '' : '<span class="tpl-prev-tag">header</span>'}
+                    </div>`).join('')}
+            </div>`;
+        }).join('');
+    } catch (err) {
+        console.error('[Setup] viewCoaTemplate error:', err);
+        body.innerHTML = '<div class="empty-state"><p>Could not load the template preview.</p></div>';
     }
 }
 
