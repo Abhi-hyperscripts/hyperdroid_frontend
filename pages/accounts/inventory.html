@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Inventory - Accounts | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Inventory</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Inventory</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Items</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="organization-layout">
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header"><h3>Inventory</h3></div>
+                <nav class="sidebar-nav">
+                    <div class="nav-group" data-group="inventory">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Inventory</span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="inv-items"><span class="nav-number">1</span><span class="nav-label">Items</span></button>
+                            <button class="sidebar-btn" data-tab="inv-stock"><span class="nav-number">2</span><span class="nav-label">Stock on Hand</span></button>
+                            <button class="sidebar-btn" data-tab="inv-movements"><span class="nav-number">3</span><span class="nav-label">Movements</span></button>
+                            <button class="sidebar-btn" data-tab="inv-serials"><span class="nav-number">4</span><span class="nav-label">Serials &amp; Warranty</span></button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="organization-content">
+                <!-- 1. ITEMS -->
+                <div class="tab-content active" id="inv-items">
+                    <div class="filters-bar" style="align-items:flex-end;gap:12px;">
+                        <div class="form-group" style="margin:0;max-width:300px;"><input type="text" id="itemSearch" class="form-control" placeholder="Search SKU / name…"></div>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-secondary);"><input type="checkbox" id="itemShowInactive"> Show inactive</label>
+                        <span style="flex:1"></span>
+                        <button class="btn btn-outline" onclick="showCategoryModal()" data-admin-only>+ Category</button>
+                        <button class="btn btn-primary" onclick="showItemModal()" data-admin-only>+ New Item</button>
+                    </div>
+                    <div class="data-table-container" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead><tr><th>SKU</th><th>Name</th><th>Category</th><th>Type</th><th>Sale Price</th><th>On Hand</th><th>Avg Cost</th><th>Warranty</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="itemsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. STOCK -->
+                <div class="tab-content" id="inv-stock">
+                    <div class="stats-row" style="margin-bottom:1rem;">
+                        <div class="stat-card"><div class="stat-value" id="stockValueStat">₹0</div><div class="stat-label">Stock Valuation</div></div>
+                        <div class="stat-card"><div class="stat-value" id="stockGlStat">₹0</div><div class="stat-label">Inventory GL (1135)</div></div>
+                        <div class="stat-card"><div class="stat-value" id="stockSyncStat">—</div><div class="stat-label">Books in Sync</div></div>
+                        <div class="stat-card"><div class="stat-value" id="lowStockStat">0</div><div class="stat-label">Below Reorder</div></div>
+                    </div>
+                    <div class="filters-bar" style="justify-content:flex-end;">
+                        <button class="btn btn-primary" onclick="showAdjustModal()" data-admin-only>Adjust Stock / Opening</button>
+                    </div>
+                    <div class="data-table-container" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead><tr><th>SKU</th><th>Name</th><th>Category</th><th>On Hand</th><th>Avg Cost</th><th>Stock Value</th><th>Reorder At</th><th></th></tr></thead>
+                            <tbody id="stockTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. MOVEMENTS -->
+                <div class="tab-content" id="inv-movements">
+                    <div class="filters-bar"><div class="searchable-dropdown-container" id="moveItemFilter" style="min-width:260px;"></div></div>
+                    <div class="data-table-container" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Qty</th><th>Unit Cost</th><th>Total</th><th>Reference</th><th>Notes</th></tr></thead>
+                            <tbody id="movementsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 4. SERIALS -->
+                <div class="tab-content" id="inv-serials">
+                    <div class="filters-bar" style="align-items:flex-end;gap:12px;">
+                        <div class="form-group" style="margin:0;max-width:320px;">
+                            <label>Warranty lookup</label>
+                            <input type="text" id="serialLookup" class="form-control" placeholder="Scan / type serial number, press Enter">
+                        </div>
+                        <span style="flex:1"></span>
+                        <button class="btn btn-primary" onclick="showReceiveSerialsModal()" data-admin-only>+ Receive Serials</button>
+                    </div>
+                    <div id="serialLookupResult" style="display:none;margin-top:12px;" class="form-card"></div>
+                    <div class="data-table-container" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead><tr><th>Serial</th><th>Item</th><th>Status</th><th>Sold To</th><th>Invoice</th><th>Sold On</th><th>Warranty Until</th><th>Actions</th></tr></thead>
+                            <tbody id="serialsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Item modal -->
+    <div class="modal" id="itemModal">
+        <div class="modal-content" style="max-width:720px;">
+            <div class="modal-header"><h3 id="itemModalTitle">New Item</h3><button class="close-btn" onclick="AccountsCommon.closeModal('itemModal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="itemId">
+                <div class="form-row two-col">
+                    <div class="form-group"><label>SKU / Code *</label><input type="text" id="itSku" class="form-control" placeholder="e.g. LAP-DELL-5520"></div>
+                    <div class="form-group"><label>Name *</label><input type="text" id="itName" class="form-control" placeholder="Item name shown on invoices"></div>
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Category</label><div class="searchable-dropdown-container" id="itCategory"></div></div>
+                    <div class="form-group"><label>Type</label><div class="searchable-dropdown-container" id="itType"></div></div>
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Sale Price</label><input type="number" id="itSalePrice" class="form-control" step="0.01" min="0"></div>
+                    <div class="form-group"><label>Purchase Price <span class="opt">(cost hint)</span></label><input type="number" id="itPurchasePrice" class="form-control" step="0.01" min="0"></div>
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>HSN / SAC</label><input type="text" id="itHsn" class="form-control" maxlength="20"></div>
+                    <div class="form-group"><label>Unit</label><input type="text" id="itUnit" class="form-control" value="pcs"></div>
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Warranty (months)</label><input type="number" id="itWarranty" class="form-control" min="0" max="240" value="0"></div>
+                    <div class="form-group"><label>Reorder Level</label><input type="number" id="itReorder" class="form-control" min="0" value="0"></div>
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="itTrack" checked> Track stock</label></div>
+                    <div class="form-group"><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="itSerial"> Serial-tracked (warranty per unit)</label></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('itemModal')">Cancel</button>
+                <button class="btn btn-primary" id="saveItemBtn" onclick="saveItem()">Save Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category modal -->
+    <div class="modal" id="categoryModal">
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-header"><h3>New Category</h3><button class="close-btn" onclick="AccountsCommon.closeModal('categoryModal')">&times;</button></div>
+            <div class="modal-body"><div class="form-group"><label>Name *</label><input type="text" id="catName" class="form-control"></div></div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('categoryModal')">Cancel</button><button class="btn btn-primary" onclick="saveCategory()">Save</button></div>
+        </div>
+    </div>
+
+    <!-- Adjust modal -->
+    <div class="modal" id="adjustModal">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header"><h3>Adjust Stock / Opening</h3><button class="close-btn" onclick="AccountsCommon.closeModal('adjustModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Item *</label><div class="searchable-dropdown-container" id="adjItem"></div></div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Date *</label><input type="text" id="adjDate" class="form-control" placeholder="Select date"></div>
+                    <div class="form-group"><label>Quantity (+ add / − remove) *</label><input type="number" id="adjQty" class="form-control" step="any" placeholder="e.g. 10 or -2"></div>
+                </div>
+                <div class="form-group" id="adjCostGroup"><label>Unit Cost (for added stock)</label><input type="number" id="adjCost" class="form-control" step="0.01" min="0"></div>
+                <div class="form-group"><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="adjOpening"> This is opening stock</label></div>
+                <div class="form-group"><label>Notes</label><input type="text" id="adjNotes" class="form-control" placeholder="stock-take / damage / opening"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('adjustModal')">Cancel</button><button class="btn btn-primary" id="saveAdjBtn" onclick="saveAdjustment()">Record</button></div>
+        </div>
+    </div>
+
+    <!-- Receive serials modal -->
+    <div class="modal" id="serialsModal">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header"><h3>Receive Serial Numbers</h3><button class="close-btn" onclick="AccountsCommon.closeModal('serialsModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Item * <span class="opt">(serial-tracked)</span></label><div class="searchable-dropdown-container" id="snItem"></div></div>
+                <div class="form-group"><label>Serial numbers * <span class="opt">(one per line — scan into this box)</span></label><textarea id="snList" class="form-control" rows="6" placeholder="SN-0001&#10;SN-0002"></textarea></div>
+                <div class="form-group"><label>Unit Cost</label><input type="number" id="snCost" class="form-control" step="0.01" min="0"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('serialsModal')">Cancel</button><button class="btn btn-primary" onclick="saveSerials()">Receive</button></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/inventory.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="accounts" data-title="Accounts Assistant"><\/script>');</script>
+</body>
+</html>

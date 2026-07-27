@@ -535,6 +535,41 @@ async function submitBulkInvoices() {
 // INVOICE MODAL & CRUD
 // ============================================================================
 
+// ── Inventory item picker: adds a pre-filled line from the catalog ──────────
+let inventoryItems = [];
+let invoiceItemPickerDD = null;
+
+async function initInvoiceItemPicker() {
+    const container = document.getElementById('invoiceItemPicker');
+    if (!container || typeof SearchableDropdown !== 'function') return;
+    if (!inventoryItems.length) {
+        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }); } catch { inventoryItems = []; }
+    }
+    const opts = [{ value: '', label: '+ Add from item catalog…' },
+        ...inventoryItems.filter(i => i.is_active).map(i => ({ value: i.id, label: `${i.sku} — ${i.name} (${AccountsCommon.formatCurrency(i.sale_price)})` }))];
+    container.innerHTML = '';
+    invoiceItemPickerDD = new SearchableDropdown(container, {
+        id: 'invoiceItemPickerDD', options: opts, value: '', placeholder: '+ Add from item catalog…',
+        searchPlaceholder: 'Search SKU / name…', compact: true,
+        onChange: (v) => {
+            if (!v) return;
+            const it = inventoryItems.find(x => x.id === v);
+            if (it) {
+                // Default the revenue account: item's own, else first income option already in the line dropdown.
+                addInvoiceLine({
+                    item_id: it.id, description: it.name, hsn_sac: it.hsn_sac || '',
+                    quantity: 1, unit_price: it.sale_price,
+                    account_id: it.income_account_id || AccountsCommon.postableAccounts(accounts, 'income')[0]?.id || undefined,
+                    ...(it.tax_config_id ? { tax_config_id: it.tax_config_id } : {})
+                });
+                if (it.track_inventory && it.qty_on_hand <= 0)
+                    Toast.info(`Heads up: '${it.sku}' has ${it.qty_on_hand} in stock — selling will take it negative.`);
+            }
+            invoiceItemPickerDD.setValue?.('');
+        }
+    });
+}
+
 // Invoice-level Project dropdown (one project per invoice; applied to every line on save)
 let invoiceProjectDropdown = null;
 
@@ -661,6 +696,7 @@ function showCreateInvoiceModal() {
     if (printBtn) printBtn.style.display = 'none';
     initInvoiceProjectDropdown('');
     initInvoiceCurrencyDropdown(BASE_CURRENCY);
+    initInvoiceItemPicker();
     addInvoiceLine();
     calculateInvoiceTotals();
     renderInvoiceCustomFields(null);
@@ -696,6 +732,7 @@ async function editInvoice(id) {
         // at the captured rate so the user edits what the client sees.
         const fxRate = inv.exchange_rate ? parseFloat(inv.exchange_rate) : 0;
         await initInvoiceCurrencyDropdown(inv.currency || BASE_CURRENCY);
+        initInvoiceItemPicker();
         if (fxRate > 0) {
             document.getElementById('invoiceExchangeRate').value = fxRate;
             const rh = document.getElementById('invoiceRateHint');
@@ -804,6 +841,7 @@ function addInvoiceLine(data = {}) {
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeInvoiceLine(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
+    row._itemId = data.item_id || null;
     tbody.appendChild(row);
 
     // Hide the native select + wire SearchableDropdown with quick-add
@@ -1070,6 +1108,7 @@ async function saveInvoice(approve) {
             unit_price: rate,
             tax_config_id: taxConfigId,
             tax_rate: taxRate || 0,
+            item_id: row._itemId || null,
             project_id: invoiceProjectDropdown?.getValue?.() || null
         });
     });

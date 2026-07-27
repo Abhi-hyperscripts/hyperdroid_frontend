@@ -289,6 +289,36 @@ function renderBillsTable() {
 // BILL MODAL — CREATE / EDIT
 // ============================================================================
 
+// ── Inventory item picker (bills): pre-filled purchase lines from the catalog ──
+let inventoryItems = [];
+let billItemPickerDD = null;
+
+async function initBillItemPicker() {
+    const container = document.getElementById('billItemPicker');
+    if (!container || typeof SearchableDropdown !== 'function') return;
+    if (!inventoryItems.length) {
+        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }); } catch { inventoryItems = []; }
+    }
+    const opts = [{ value: '', label: '+ Add from item catalog…' },
+        ...inventoryItems.filter(i => i.is_active).map(i => ({ value: i.id, label: `${i.sku} — ${i.name}` }))];
+    container.innerHTML = '';
+    billItemPickerDD = new SearchableDropdown(container, {
+        id: 'billItemPickerDD', options: opts, value: '', placeholder: '+ Add from item catalog…',
+        searchPlaceholder: 'Search SKU / name…', compact: true,
+        onChange: (v) => {
+            if (!v) return;
+            const it = inventoryItems.find(x => x.id === v);
+            if (it) addBillLine({
+                item_id: it.id, description: it.name, quantity: 1,
+                unit_price: it.purchase_price ?? it.sale_price,
+                account_id: AccountsCommon.postableAccounts(accounts, 'expense')[0]?.id || '',
+                ...(it.tax_config_id ? { tax_config_id: it.tax_config_id } : {})
+            });
+            billItemPickerDD.setValue?.('');
+        }
+    });
+}
+
 // Document-currency picker (display-layer FX) — shared controller from AccountsCommon.
 const billFx = AccountsCommon.createFxPicker({
     containerId: 'billCurrencyContainer', rateGroupId: 'billRateGroup',
@@ -302,6 +332,7 @@ function showCreateBillModal() {
     document.getElementById('billId').value = '';
     document.getElementById('billDate').value = AccountsCommon.todayLocal();
     billFx.init(AccountsCommon.FX_BASE);
+    initBillItemPicker();
     populateBillVendorSelect();
     clearBillLines();
     addBillLine();
@@ -420,6 +451,7 @@ async function loadBillIntoModal(id, mode) {
         // at the captured rate so the user edits what the vendor's bill actually says.
         const billFxRate = bill.exchange_rate ? parseFloat(bill.exchange_rate) : 0;
         await billFx.init(bill.currency || AccountsCommon.FX_BASE, billFxRate);
+        initBillItemPicker();
         if (billFxRate > 0) {
             lines.forEach(l => {
                 const inr = parseFloat(l.unit_price ?? l.rate ?? 0);
@@ -512,6 +544,7 @@ function addBillLine(data) {
 
     const row = document.createElement('tr');
     row.dataset.lineIdx = idx;
+    if (data && data.item_id) row.dataset.itemId = data.item_id;
 
     const d = billLines[idx];
     const accountOpts = '<option value="">Select...</option>' +
@@ -821,6 +854,7 @@ async function saveBill(approve = false) {
             return;
         }
         lines.push({
+            item_id: row.dataset.itemId || null,
             description,
             account_id,
             quantity,
