@@ -124,33 +124,39 @@ async function startCamera() {
     // and Android in-app browsers that lack BarcodeDetector.
     if (typeof Html5Qrcode !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
         document.getElementById('h5qrView').style.display = '';
-        const h5 = new Html5Qrcode('h5qrView', {
-            formatsToSupport: [
-                Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.QR_CODE
-            ]
-        });
-        const startH5 = camConfig => h5.start(
-            camConfig,
-            { fps: 15, qrbox: { width: 300, height: 180 },
-              experimentalFeatures: { useBarCodeDetectorIfSupported: true } },
-            decoded => sendScan((decoded || '').trim()),
-            () => { /* per-frame misses are normal */ });
-        // Tiered start: high resolution makes 1D barcodes decodable (default 640×480 blurs the
-        // bars), but some browsers reject the richer constraints — so any failure retries with
-        // the bare config that works everywhere. Never declare the camera dead on the first no.
+        // Tiered start. Two hard-won rules encoded here:
+        //  1. start()'s FIRST argument accepts ONLY {facingMode}/{deviceId} — resolution goes in
+        //     the options object as videoConstraints (higher res is what makes 1D bars decodable).
+        //  2. A failed instance is stuck 'under transition' and can never be restarted — every
+        //     attempt needs a FRESH Html5Qrcode instance, or the retry dies with
+        //     'Cannot transition to a new state'.
+        const attempts = [
+            { videoConstraints: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } },
+            {},  // library defaults — the config that has always worked
+        ];
         let lastErr = null;
-        for (const camConfig of [
-            { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-            { facingMode: 'environment' },
-        ]) {
+        for (const extra of attempts) {
+            const h5 = new Html5Qrcode('h5qrView', {
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ]
+            });
             try {
-                await startH5(camConfig);
+                await h5.start(
+                    { facingMode: 'environment' },
+                    { fps: 15, qrbox: { width: 300, height: 180 },
+                      experimentalFeatures: { useBarCodeDetectorIfSupported: true }, ...extra },
+                    decoded => sendScan((decoded || '').trim()),
+                    () => { /* per-frame misses are normal */ });
                 document.getElementById('scanStatus').textContent = 'Hold 15–20 cm away, steady, bars filling the box';
                 return;
-            } catch (err) { lastErr = err; console.warn('[Scanner] camera start failed for', camConfig, err); }
+            } catch (err) {
+                lastErr = err; console.warn('[Scanner] camera start failed', extra, err);
+                try { h5.clear(); } catch { /* leave the container usable for the next attempt */ }
+            }
         }
         document.getElementById('h5qrView').style.display = 'none';
         const reason = lastErr && /denied|NotAllowed/i.test(String(lastErr.name || lastErr))
