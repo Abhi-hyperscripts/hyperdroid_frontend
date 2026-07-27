@@ -417,157 +417,127 @@ async function loadSetupStatus() {
     if (!panel || !grid) return;
     panel.hidden = false;
 
-    // Fire all 6 reads in parallel; never throw — each check has its own
-    // catch so one broken endpoint can't break the whole readiness panel.
-    const safeGet = async (path) => {
-        try { return await api.request(AccountsCommon.buildUrl(path), { _skipSpinner: true }); }
+    // Every check has its own catch — one broken endpoint can't break the guide.
+    const safeGet = async (path, params) => {
+        try { return await api.request(AccountsCommon.buildUrl(path, params), { _skipSpinner: true }); }
         catch (e) { return { _err: e?.message || 'failed' }; }
     };
+    const listOf = (res, ...keys) => {
+        if (Array.isArray(res)) return res;
+        for (const k of ['data', 'items', ...keys]) if (Array.isArray(res?.[k])) return res[k];
+        return [];
+    };
+    const countOf = (res, ...keys) => res?.total ?? res?.totalCount ?? listOf(res, ...keys).length;
 
-    const [coa, fy, taxConfigs, customers, vendors, banks] = await Promise.all([
-        safeGet('coa'),
-        safeGet('fiscal/years/active'),
-        safeGet('tax/configurations'),
-        safeGet('customers'),
-        safeGet('vendors'),
-        safeGet('bank/accounts')
+    const [coa, fy, settings, taxConfigs, banks, customers, vendors, expCats,
+           ccs, projects, recurring, invoices, bills, payments] = await Promise.all([
+        safeGet('coa', { limit: 1 }), safeGet('fiscal/years/active'), safeGet('settings'),
+        safeGet('tax/configurations'), safeGet('bank/accounts'),
+        safeGet('customers', { limit: 1 }), safeGet('vendors', { limit: 1 }), safeGet('expenses/categories'),
+        safeGet('cost-centres', { limit: 1 }), safeGet('projects', { limit: 1 }), safeGet('recurring', { limit: 1 }),
+        safeGet('invoices', { limit: 1 }), safeGet('vendor-bills', { limit: 1 }),
+        safeGet('invoices/payments', { limit: 1 })
     ]);
 
-    const checks = [];
+    const hasFy = !!(fy && !fy._err && (fy.id || fy.fiscal_year_id || fy.name));
+    // Budgets are per fiscal year — only checkable once a year exists
+    const budgets = hasFy ? await safeGet('budgets', { fiscalYearId: fy.id || fy.fiscal_year_id, limit: 1 }) : null;
+    const hasState = !!(settings && !settings._err && settings.state_code);
 
-    // 1. Chart of Accounts
-    {
-        const list = Array.isArray(coa) ? coa : (coa?.accounts || []);
-        const ok = list.length > 0;
-        checks.push(_setupCheck({
-            label: 'Chart of Accounts',
-            ok,
-            detail: ok ? `${list.length} account${list.length === 1 ? '' : 's'} configured` : 'No accounts yet — invoices and journal entries can\'t post',
-            actionLabel: ok ? 'Manage' : 'Set up now',
-            href: 'setup.html#accounts'
-        }));
-    }
+    // The in-product version of the onboarding walkthrough: four phases, each
+    // step = live status + why it matters + a link to the exact screen.
+    const phases = [
+        { title: 'Phase 1 — Foundation (one-time)', steps: [
+            { label: 'Chart of accounts', ok: countOf(coa, 'accounts') > 0, required: true,
+              detail: 'Your filing system for money — apply a business-type template, customize later',
+              action: 'Pick a template', href: 'setup.html#templates' },
+            { label: 'Fiscal year', ok: hasFy, required: true,
+              detail: hasFy ? `${fy.name || 'Active year'} is active` : 'The 12-month cycle reports are measured in (India: April–March)',
+              action: hasFy ? 'View' : 'Create', href: 'setup.html#fiscal-years' },
+            { label: 'GST home state', ok: hasState, required: true,
+              detail: hasState ? 'Home state set — CGST/SGST vs IGST resolves automatically'
+                               : 'Decides CGST+SGST vs IGST on every document — set before approving anything',
+              action: hasState ? 'View' : 'Set now', href: 'admin.html#tenant-settings' },
+            { label: 'Taxes (GST/TDS)', ok: countOf(taxConfigs, 'configurations') > 0, required: true,
+              detail: 'Seed the India defaults, then add the HSN/SAC codes you bill under',
+              action: 'Set up taxes', href: 'taxation.html' },
+            { label: 'Bank account', ok: countOf(banks, 'bank_accounts') > 0, required: true,
+              detail: 'Where payments land — add each real account (+ a petty-cash box if you spend cash)',
+              action: 'Add bank', href: 'banking.html' },
+            { label: 'Opening balances', ok: null, required: false,
+              detail: 'Only if the business existed before this system — enter balances as of day one',
+              action: 'Enter', href: 'setup.html#opening-balances' },
+        ]},
+        { title: 'Phase 2 — People & vocabulary', steps: [
+            { label: 'Customers', ok: countOf(customers, 'customers') > 0, required: true,
+              detail: 'State + GST treatment per customer makes invoice tax automatic',
+              action: 'Add first', href: 'parties.html#customer-list' },
+            { label: 'Vendors', ok: countOf(vendors, 'vendors') > 0, required: true,
+              detail: 'Needed to record bills — registered vendors give you GST input credit',
+              action: 'Add first', href: 'parties.html#vendor-list' },
+            { label: 'Expense categories', ok: listOf(expCats).length > 0, required: true,
+              detail: 'Friendly names (Groceries, Stationery…) that power Record Spend and claims',
+              action: 'Define', href: 'expenses.html#expense-categories' },
+        ]},
+        { title: 'Phase 3 — Optional structure (add when needed)', steps: [
+            { label: 'Cost centres', ok: countOf(ccs) > 0, required: false,
+              detail: 'Tag spending by department to answer "who spent this?"', action: 'Create', href: 'cost-centres.html' },
+            { label: 'Projects', ok: countOf(projects) > 0, required: false,
+              detail: 'Track billed / collected / due per client engagement', action: 'Create', href: 'projects.html' },
+            { label: 'Recurring rules', ok: countOf(recurring) > 0, required: false,
+              detail: 'Rent, salaries, SaaS invoices — generated on schedule so nobody has to remember',
+              action: 'Automate', href: 'recurring.html' },
+            { label: 'Budgets', ok: countOf(budgets) > 0, required: false,
+              detail: 'Plan per account for the year; Budget-vs-Actual does the judging', action: 'Plan', href: 'budgets.html' },
+        ]},
+        { title: 'Phase 4 — Go live', steps: [
+            { label: 'First invoice approved', ok: countOf(invoices) > 0, required: true,
+              detail: 'Draft posts nothing — approval is the accounting moment', action: 'New invoice', href: 'receivables.html' },
+            { label: 'First bill recorded', ok: countOf(bills) > 0, required: true,
+              detail: 'Captures the expense AND your GST input credit', action: 'Record bill', href: 'payables.html' },
+            { label: 'First payment', ok: countOf(payments) > 0, required: true,
+              detail: 'Money in against an invoice — bank up, receivable cleared', action: 'Record', href: 'receivables.html#customer-payments' },
+            { label: 'Monthly habit: reconcile the bank', ok: null, required: false,
+              detail: 'Prove books = bank statement every month, then lock the period. The one habit that keeps everything trustworthy.',
+              action: 'Reconcile', href: 'banking.html#reconciliation' },
+        ]},
+    ];
 
-    // 2. Fiscal Year
-    {
-        const active = fy && !fy._err && (fy.id || fy.fiscal_year_id || fy.name);
-        const ok = !!active;
-        const detail = ok
-            ? `${fy.name || 'Active fiscal year'} (${(fy.start_date||'').slice(0,10)} → ${(fy.end_date||'').slice(0,10)})`
-            : 'No active fiscal year — opening balances + period reports can\'t resolve';
-        checks.push(_setupCheck({
-            label: 'Fiscal Year',
-            ok,
-            detail,
-            actionLabel: ok ? 'View' : 'Create now',
-            href: 'setup.html#fiscal-years'
-        }));
-    }
+    const esc = AccountsCommon.escapeHtml;
+    const icon = (ok) => ok === true
+        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+        : ok === false
+        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg>'
+        : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>';
 
-    // 3. Taxation — if there's at least one configuration AND it has at least one rate.
-    //    Cheaper proxy: just count configurations. If a config exists, the CA can drill in.
-    {
-        const list = Array.isArray(taxConfigs) ? taxConfigs : (taxConfigs?.configurations || []);
-        const ok = list.length > 0;
-        checks.push(_setupCheck({
-            label: 'Taxation (GST/VAT)',
-            ok,
-            detail: ok
-                ? `${list.length} tax configuration${list.length === 1 ? '' : 's'} ready — invoices will pick up the right slabs`
-                : 'Not configured — GST won\'t appear on invoices until you set this up',
-            actionLabel: ok ? 'Manage' : 'Set up now',
-            href: 'taxation.html',
-            severity: ok ? 'ok' : 'error'   // taxation missing is a hard error, not just a warning
-        }));
-    }
+    grid.innerHTML = phases.map(p => `
+        <div class="setup-phase-title">${esc(p.title)}</div>
+        ${p.steps.map(st => {
+            const state = st.ok === true ? 'ok' : (st.required ? 'warn' : 'opt');
+            return `<div class="setup-status-row ${state}">
+                <span class="setup-status-icon">${icon(st.ok)}</span>
+                <div class="setup-status-text">
+                    <span class="setup-status-label">${esc(st.label)}${st.required ? '' : ' <em class="setup-opt-tag">optional</em>'}</span>
+                    <span class="setup-status-detail">${esc(st.detail)}</span>
+                </div>
+                <a class="setup-status-action" href="${esc(st.href)}">${esc(st.ok === true ? 'View' : st.action)}</a>
+            </div>`;
+        }).join('')}`).join('');
 
-    // 4. Customers
-    {
-        // The list endpoints return { data, total, stats } — parse data/items too, not just a bare array
-        // or a (non-existent) .customers key, else this wrongly reads 0 and shows "No customers yet".
-        const list = Array.isArray(customers) ? customers : (customers?.data || customers?.items || customers?.customers || []);
-        const ok = list.length > 0;
-        checks.push(_setupCheck({
-            label: 'Customers',
-            ok,
-            detail: ok ? `${list.length} customer${list.length === 1 ? '' : 's'} on file` : 'No customers yet — needed to issue invoices',
-            actionLabel: ok ? 'View' : 'Add first',
-            href: 'parties.html#customers'
-        }));
-    }
-
-    // 5. Vendors
-    {
-        const list = Array.isArray(vendors) ? vendors : (vendors?.data || vendors?.items || vendors?.vendors || []);
-        const ok = list.length > 0;
-        checks.push(_setupCheck({
-            label: 'Vendors',
-            ok,
-            detail: ok ? `${list.length} vendor${list.length === 1 ? '' : 's'} on file` : 'No vendors yet — needed to record bills',
-            actionLabel: ok ? 'View' : 'Add first',
-            href: 'parties.html#vendors'
-        }));
-    }
-
-    // 6. Bank Account
-    {
-        const list = Array.isArray(banks) ? banks : (banks?.bank_accounts || []);
-        const ok = list.length > 0;
-        checks.push(_setupCheck({
-            label: 'Bank Account',
-            ok,
-            detail: ok ? `${list.length} account${list.length === 1 ? '' : 's'} linked` : 'No bank account linked — payments can\'t be reconciled',
-            actionLabel: ok ? 'Manage' : 'Link now',
-            href: 'banking.html'
-        }));
-    }
-
-    grid.innerHTML = checks.map(_renderSetupRow).join('');
-
-    // Header summary + collapse behavior
-    const passed = checks.filter(c => c.ok).length;
-    const total  = checks.length;
-    const allGreen = passed === total;
-    document.getElementById('setupStatusProgress').textContent = `${passed} of ${total}`;
+    const required = phases.flatMap(p => p.steps).filter(st => st.required);
+    const passed = required.filter(st => st.ok === true).length;
+    const allGreen = passed === required.length;
+    document.getElementById('setupStatusProgress').textContent = `${passed} of ${required.length}`;
     document.getElementById('setupStatusSub').textContent = allGreen
-        ? 'All systems ready — start invoicing and recording transactions.'
-        : `${total - passed} step${total - passed === 1 ? '' : 's'} remaining before you can transact cleanly.`;
+        ? 'All set — the books are live. Expand any time to revisit the guide.'
+        : `Your step-by-step setup guide — ${required.length - passed} step${required.length - passed === 1 ? '' : 's'} to go.`;
 
     panel.classList.toggle('is-all-green', allGreen);
-
-    // Default expanded if anything is missing; collapsed when all-green.
-    // Respect the user's manual collapse choice across reloads.
     const userPref = localStorage.getItem(SETUP_STATUS_COLLAPSED_KEY);
     let collapsed;
-    if (userPref === 'true' || userPref === 'false') {
-        collapsed = userPref === 'true';
-    } else {
-        collapsed = allGreen;
-    }
+    if (userPref === 'true' || userPref === 'false') collapsed = userPref === 'true';
+    else collapsed = allGreen;
     panel.classList.toggle('is-collapsed', collapsed);
-}
-
-function _setupCheck({ label, ok, detail, actionLabel, href, severity }) {
-    return { label, ok, detail, actionLabel, href, severity: severity || (ok ? 'ok' : 'warn') };
-}
-
-function _renderSetupRow(c) {
-    const icon = c.ok
-        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
-        : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="10"/></svg>';
-    const safeLabel  = AccountsCommon.escapeHtml(c.label);
-    const safeDetail = AccountsCommon.escapeHtml(c.detail || '');
-    const safeAction = AccountsCommon.escapeHtml(c.actionLabel || (c.ok ? 'View' : 'Fix'));
-    const safeHref   = AccountsCommon.escapeHtml(c.href || '#');
-    return `
-        <div class="setup-status-row ${c.severity}">
-            <span class="setup-status-icon">${icon}</span>
-            <div class="setup-status-text">
-                <span class="setup-status-label">${safeLabel}</span>
-                <span class="setup-status-detail">${safeDetail}</span>
-            </div>
-            <a class="setup-status-action" href="${safeHref}">${safeAction}</a>
-        </div>`;
 }
 
 function toggleSetupStatusCollapsed() {

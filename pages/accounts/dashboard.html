@@ -62,7 +62,7 @@
         <div class="setup-status-panel" id="setupStatusPanel" hidden>
             <div class="setup-status-header">
                 <div>
-                    <h3 class="setup-status-title">Setup status</h3>
+                    <h3 class="setup-status-title">Getting started</h3>
                     <p class="setup-status-sub" id="setupStatusSub">Checking your tenant…</p>
                 </div>
                 <div class="setup-status-actions">
@@ -317,7 +317,7 @@
         }
         .setup-status-detail {
             display: block; font-size: 0.76rem; color: var(--text-secondary);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            line-height: 1.45;
         }
         .setup-status-action {
             font-size: 0.78rem; color: var(--brand-primary);
@@ -326,6 +326,20 @@
             white-space: nowrap; flex-shrink: 0;
             text-decoration: none;
         }
+        .setup-phase-title {
+            grid-column: 1 / -1;
+            font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
+            color: var(--text-secondary); padding: 12px 4px 4px;
+            border-bottom: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
+            margin-bottom: 4px;
+        }
+        .setup-phase-title:first-child { padding-top: 0; }
+        .setup-opt-tag {
+            font-style: normal; font-size: 0.64rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.05em; color: var(--text-secondary);
+            border: 1px solid var(--border-color); border-radius: 5px; padding: 0 5px; margin-left: 6px;
+        }
+        .setup-status-row.opt .setup-status-icon { color: var(--text-secondary); opacity: 0.7; }
         .setup-status-action:hover {
             background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
         }
