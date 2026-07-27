@@ -35,15 +35,15 @@
     <img class="logo" src="/assets/brand_logo.png" alt="Ragenaizer">
 
     <div class="card" id="pairCard">
-        <h1>Pair with a till</h1>
-        <p class="sub">Scan the QR on the till's screen — or type the code it shows and connect (staff login required for codes).</p>
+        <h1>Pair with a billing counter</h1>
+        <p class="sub">Scan the QR shown on the billing counter's screen — or type the code it shows and connect (staff login required for codes).</p>
         <input type="text" id="pairInput" maxlength="8" placeholder="CODE" autocomplete="off">
         <button class="primary" onclick="joinSession()">Connect</button>
         <p id="pairMsg"></p>
     </div>
 
     <div class="card" id="scanCard" style="display:none;">
-        <p class="paired">✓ Paired to till <span id="pairedCode"></span></p>
+        <p class="paired">✓ Paired to counter <span id="pairedCode"></span></p>
         <video id="scanVideo" autoplay playsinline muted style="display:none;"></video>
         <div id="h5qrView" style="display:none;"></div>
         <p id="scanStatus">Point at a barcode…</p>
@@ -51,7 +51,7 @@
         <button class="ghost" onclick="location.reload()">Unpair</button>
     </div>
 
-    <p class="hint">Every scan lands instantly in the till's cart.<br>Keep this page open while scanning.</p>
+    <p class="hint">Every scan lands instantly in the counter's bill.<br>Keep this page open while scanning.</p>
 
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="/js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>

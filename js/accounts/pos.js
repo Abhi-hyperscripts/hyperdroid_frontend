@@ -234,7 +234,7 @@ async function pairPhoneScanner() {
     overlay.innerHTML = `<div class="modal-content" style="max-width:420px;text-align:center;">
         <div class="modal-header"><h3>Pair phone scanner</h3><button class="close-btn" onclick="document.getElementById('pairModal').remove()">&times;</button></div>
         <div class="modal-body">
-            <p style="font-size:0.88rem;color:var(--text-secondary);">Scan this with the phone's camera — it opens the scanner already paired:</p>
+            <p style="font-size:0.88rem;color:var(--text-secondary);">Scan this with the phone's camera — it opens the scanner already paired to this counter:</p>
             <div id="pairQr" style="display:inline-block;background:#fff;padding:12px;border-radius:12px;margin:12px 0;"></div>
             <p style="font-size:0.8rem;color:var(--text-secondary);">or open <a href="${scanUrl}" target="_blank" style="word-break:break-all;">${scanUrl.replace(location.origin, 'ragenaizer.com')}</a><br>and enter the code:</p>
             <div style="font-size:2rem;font-weight:800;letter-spacing:0.3em;margin:8px 0;">${pairCode}</div>

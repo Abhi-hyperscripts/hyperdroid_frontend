@@ -56,7 +56,7 @@ async function joinByToken(token) {
         wireAcks();
         await hub.start();
         const ok = await hub.invoke('JoinPosSessionByToken', token);
-        if (!ok) { msg.textContent = 'This pairing QR has expired — generate a new one on the till.'; return; }
+        if (!ok) { msg.textContent = 'This pairing QR has expired — generate a new one on the billing counter.'; return; }
         sessionToken = token;
         showScanUi('(QR pairing)');
     } catch (err) {
@@ -68,7 +68,7 @@ async function joinByToken(token) {
 async function joinSession() {
     const code = document.getElementById('pairInput').value.trim().toUpperCase();
     const msg = document.getElementById('pairMsg');
-    if (code.length < 4) { msg.textContent = 'Enter the code shown on the till.'; return; }
+    if (code.length < 4) { msg.textContent = 'Enter the code shown on the billing counter.'; return; }
     msg.textContent = 'Connecting…';
     try {
         hub = buildHub(true);
@@ -76,8 +76,8 @@ async function joinSession() {
         await hub.start();
         let token = null;
         try { token = await hub.invoke('JoinPosSession', code); }
-        catch { msg.textContent = 'Codes need a staff login on this phone — scan the QR on the till instead (no login needed).'; return; }
-        if (!token) { msg.textContent = 'No till is waiting on that code — check it and try again.'; return; }
+        catch { msg.textContent = 'Codes need a staff login on this phone — scan the QR on the counter screen instead (no login needed).'; return; }
+        if (!token) { msg.textContent = 'No counter is waiting on that code — check it and try again.'; return; }
         sessionToken = token;
         showScanUi(code);
     } catch (err) {
