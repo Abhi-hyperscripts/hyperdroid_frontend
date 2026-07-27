@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         ],
         value: 'cash', compact: true
     });
+    connectStockHub();
     const search = document.getElementById('posSearch');
     search.addEventListener('input', renderGrid);
     search.addEventListener('keydown', e => {
@@ -84,6 +85,43 @@ async function refreshPosItems(silent = true) {
 
 setInterval(() => { if (!document.hidden) refreshPosItems(); }, 15000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshPosItems(); });
+
+/**
+ * Live multi-counter channel: the backend pushes fresh item snapshots the instant any
+ * counter's sale (or bill/adjustment/build/cancel) commits. Polling stays as fallback;
+ * correctness is guaranteed by the server-side enforceStock lock either way.
+ */
+function applyStockPush(updates) {
+    let capped = false;
+    (updates || []).forEach(u => {
+        const it = posItems.find(i => i.id === u.id);
+        if (!it) return;
+        it.qty_on_hand = u.qty_on_hand;
+        it.avg_cost = u.avg_cost;
+        const line = cart.find(c => c.item.id === u.id);
+        if (line && line.item.track_inventory && line.qty > u.qty_on_hand) {
+            line.qty = Math.max(0, u.qty_on_hand);
+            capped = true;
+        }
+    });
+    cart = cart.filter(c => c.qty > 0);
+    renderGrid(true);
+    renderCart();
+    if (capped) Toast.error('Stock changed at another counter — cart quantities adjusted.');
+}
+
+function connectStockHub() {
+    if (typeof signalR === 'undefined' || typeof getAuthToken !== 'function') return;
+    try {
+        const conn = new signalR.HubConnectionBuilder()
+            .withUrl(`${CONFIG.endpoints.accounts}/hubs/stock`, { accessTokenFactory: () => getAuthToken() })
+            .withAutomaticReconnect([0, 2000, 10000, 30000])
+            .build();
+        conn.on('StockChanged', applyStockPush);
+        conn.start().then(() => console.log('[POS] stock hub connected'))
+            .catch(err => console.warn('[POS] stock hub unavailable, polling only:', err?.message));
+    } catch (e) { console.warn('[POS] stock hub init failed', e); }
+}
 
 function taxRateFor(configId) {
     const cfg = taxConfigs.find(t => t.id === configId);
