@@ -55,6 +55,36 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 });
 
+/**
+ * Multi-counter freshness: refetch the catalog (stock counts included), re-render,
+ * and cap any cart line that another counter's sale has made unsellable.
+ * Runs every 15s while the tab is visible, on tab focus, and after stock conflicts.
+ */
+async function refreshPosItems(silent = true) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true });
+        posItems = (Array.isArray(res) ? res : []).filter(i => i.is_active);
+        let capped = false;
+        cart.forEach(line => {
+            const fresh = posItems.find(i => i.id === line.item.id);
+            if (!fresh) return;
+            line.item = fresh;
+            if (fresh.track_inventory && line.qty > fresh.qty_on_hand) {
+                line.qty = Math.max(0, fresh.qty_on_hand);
+                capped = true;
+            }
+        });
+        cart = cart.filter(c => c.qty > 0);
+        renderCategoryChips();
+        renderGrid(true);
+        renderCart();
+        if (capped) Toast.error('Stock changed at another counter — cart quantities adjusted.');
+    } catch { /* offline blip — next tick retries */ }
+}
+
+setInterval(() => { if (!document.hidden) refreshPosItems(); }, 15000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshPosItems(); });
+
 function taxRateFor(configId) {
     const cfg = taxConfigs.find(t => t.id === configId);
     if (!cfg) return 0;
@@ -240,7 +270,18 @@ async function completeSale() {
                 body: JSON.stringify({ customer_id: customerId, invoice_date: today, due_date: today, notes: 'Cash sale (POS)', lines })
             });
             const invId = inv.id || inv?.data?.id;
-            const approved = await api.request(AccountsCommon.buildUrl(`invoices/${invId}/approve`), { method: 'POST' });
+            let approved;
+            try {
+                approved = await api.request(AccountsCommon.buildUrl(`invoices/${invId}/approve`, { enforceStock: true }), { method: 'POST' });
+            } catch (err) {
+                // Lost the race to another counter: remove the stray draft, resync, tell the teller.
+                if ((err.message || '').includes('INSUFFICIENT_STOCK')) {
+                    await api.request(AccountsCommon.buildUrl(`invoices/${invId}`), { method: 'DELETE', _skipSpinner: true }).catch(() => {});
+                    await refreshPosItems();
+                    throw new Error('Just sold out at another counter — stock refreshed, please re-check the cart.');
+                }
+                throw err;
+            }
             invoices.push({
                 invId,
                 number: approved.invoice_number || approved?.data?.invoice_number,
