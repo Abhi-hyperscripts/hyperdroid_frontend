@@ -707,6 +707,27 @@ const AccountsCommon = {
      * backend rejects with "does not allow direct posting"), active only, and — when `typeContains` is
      * given — restricted to an account-type class (case-insensitive substring, e.g. 'expense', 'income').
      */
+    /**
+     * Gate for the "+ Add Line" buttons on document forms (invoice / proforma / PO / bill):
+     * the previous row must have a GL account selected before a new row may be added.
+     * Highlights the offending account cell (cleared on selection or after 4s) and
+     * returns false to block the add. An empty table (first line) always passes.
+     */
+    requirePrevLineAccount(tbody) {
+        const lastRow = tbody?.querySelector('tr:last-child');
+        if (!lastRow) return true;
+        const sel = lastRow.querySelector('.line-account');
+        if (!sel || sel.value) return true;
+        const target = lastRow.querySelector('.line-account-sd') || sel;
+        target.classList.add('line-account-error');
+        target.scrollIntoView({ block: 'nearest' });
+        if (typeof Toast !== 'undefined') Toast.error('Select a GL account on the previous line before adding a new one');
+        const clear = () => target.classList.remove('line-account-error');
+        sel.addEventListener('change', clear, { once: true });
+        setTimeout(clear, 4000);
+        return false;
+    },
+
     postableAccounts(accounts, typeContains) {
         return (accounts || []).filter(a => {
             if (a.allow_direct_posting === false) return false;

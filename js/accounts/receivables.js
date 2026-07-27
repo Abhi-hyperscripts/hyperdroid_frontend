@@ -671,6 +671,7 @@ function addInvoiceLine(data = {}) {
     // A fresh line (Add Line click) inherits the previous row's GL account — on a 10-line
     // invoice the account rarely changes row to row, so default to it (still editable).
     if (data.account_id === undefined) {
+        if (!AccountsCommon.requirePrevLineAccount(tbody)) return;
         const prevAcct = tbody.querySelector('tr:last-child .line-account')?.value;
         if (prevAcct) data.account_id = prevAcct;
     }

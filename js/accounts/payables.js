@@ -480,7 +480,13 @@ function addBillLine(data) {
     if (data && data.unit_price !== undefined && data.rate === undefined) {
         data.rate = data.unit_price;
     }
-    billLines.push(data || { description: '', account_id: '', quantity: 1, rate: 0 });
+    // A fresh line (Add Line click, no data) inherits the previous row's GL account —
+    // same convenience as invoices; still editable per line. Read the DOM select, not
+    // billLines[]: the dropdown's onChange only syncs the hidden select, so the array
+    // holds the value from load time, not the user's current pick.
+    if (!data && !AccountsCommon.requirePrevLineAccount(document.getElementById('billLinesBody'))) return;
+    const inheritedAcct = !data ? (document.querySelector('#billLinesBody tr:last-child .line-account')?.value || '') : '';
+    billLines.push(data || { description: '', account_id: inheritedAcct, quantity: 1, rate: 0 });
 
     const tbody = document.getElementById('billLinesBody');
     if (!tbody) return;

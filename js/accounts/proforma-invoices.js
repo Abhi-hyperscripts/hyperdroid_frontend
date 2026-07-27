@@ -481,6 +481,13 @@ async function editProforma(id) {
 
 function addProformaLine(data = {}) {
     const tbody = document.getElementById('proformaLines');
+    // A fresh line inherits the previous row's GL account (same convenience as invoices) —
+    // still editable per line; loaded lines keep their own saved account.
+    if (data.account_id === undefined) {
+        if (!AccountsCommon.requirePrevLineAccount(tbody)) return;
+        const prevAcct = tbody.querySelector('tr:last-child .line-account')?.value;
+        if (prevAcct) data.account_id = prevAcct;
+    }
     const row = document.createElement('tr');
     const acctOptions = AccountsCommon.postableAccounts(accounts, 'income').map(a => {
         const code = a.account_code || a.code || '';

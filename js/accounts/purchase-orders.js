@@ -438,6 +438,12 @@ async function editPO(id) {
 
 function addPOLine(data = {}) {
     const tbody = document.getElementById('poLines');
+    // A fresh line inherits the previous row's GL account (same convenience as invoices).
+    if (data.account_id === undefined) {
+        if (!AccountsCommon.requirePrevLineAccount(tbody)) return;
+        const prevAcct = tbody.querySelector('tr:last-child .line-account')?.value;
+        if (prevAcct) data.account_id = prevAcct;
+    }
     const row = document.createElement('tr');
     // PO lines must post to a postable Expense account (backend enforces the class).
     const acctOptions = AccountsCommon.postableAccounts(accounts, 'expense').map(a => {
