@@ -329,8 +329,19 @@ function populateGLAccountSelect(selectedId) {
     const sel = document.getElementById('glAccountId');
     if (!sel) return;
     const esc = AccountsCommon.escapeHtml;
+    // Only VALID bank ledgers are offered: postable (headers like "1120 Bank
+    // Accounts" are structure rows — linking one bricks every payment posting),
+    // Asset-type, debit-normal, and not already claimed by another bank account.
+    const takenGls = new Set(bankAccountsList.filter(b => b.id !== document.getElementById('bankAccountId')?.value)
+        .map(b => b.gl_account_id));
     sel.innerHTML = '<option value="">Select GL Account...</option>' +
-        coaAccounts.map(a => {
+        coaAccounts.filter(a =>
+            a.id === selectedId || (
+                a.allow_direct_posting !== false &&
+                (a.account_type_name || '') === 'Assets' &&
+                (a.normal_balance || 'debit') === 'debit' &&
+                !takenGls.has(a.id)))
+        .map(a => {
             const code = a.account_code || a.code || '';
             const name = a.account_name || a.name || '';
             const label = code ? code + ' - ' + name : name;
@@ -378,6 +389,7 @@ async function saveBankAccount() {
         }
         AccountsCommon.closeModal('bankAccountModal');
         await loadBankAccounts();
+        loadBankDashboard();   // the balance-by-account chart must reflect the new/edited account
         refreshBankDropdowns();
     } catch (err) {
         console.error('[Banking] saveBankAccount error:', err);
