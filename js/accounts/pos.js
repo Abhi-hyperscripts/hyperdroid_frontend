@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     taxConfigs = Array.isArray(taxRes) ? taxRes : (taxRes?.data || []);
     bankAccounts = (Array.isArray(bankRes) ? bankRes : []).filter(b => b.is_active !== false);
     incomeAccounts = AccountsCommon.postableAccounts(Array.isArray(coaRes) ? coaRes : (coaRes?.data || []), 'income');
+    renderCategoryChips();
     renderGrid();
     renderCart();
     posBankDD = new SearchableDropdown(document.getElementById('posBank'), {
@@ -70,22 +71,46 @@ function basePrice(i) {
         : i.sale_price;
 }
 
+let posCategory = '';   // active category chip ('' = all)
+const POS_GRID_CAP = 60; // never render more cards than a cashier can scan visually
+
 function filteredItems() {
     const q = (document.getElementById('posSearch')?.value || '').toLowerCase();
-    return posItems.filter(i => !q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q));
+    return posItems.filter(i =>
+        (!posCategory || i.category_name === posCategory) &&
+        (!q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)));
 }
+
+function renderCategoryChips() {
+    const host = document.getElementById('posCats');
+    if (!host) return;
+    const cats = [...new Set(posItems.map(i => i.category_name).filter(Boolean))].sort();
+    if (!cats.length) { host.style.display = 'none'; return; }
+    host.style.display = '';
+    host.innerHTML = [`<button class="pos-chip ${!posCategory ? 'on' : ''}" onclick="setPosCategory('')">All</button>`]
+        .concat(cats.map(c => `<button class="pos-chip ${posCategory === c ? 'on' : ''}" onclick="setPosCategory('${esc(c).replace(/'/g, '')}')">${esc(c)}</button>`))
+        .join('');
+}
+
+function setPosCategory(c) { posCategory = c; renderCategoryChips(); renderGrid(); }
 
 function renderGrid() {
     const grid = document.getElementById('posGrid');
-    const rows = filteredItems();
+    const all = filteredItems();
+    // Cap the grid: with 1,000s of SKUs the grid is a browse aid, not the index —
+    // scanning/search is the fast path. Overflow shows a keep-typing hint.
+    const rows = all.slice(0, POS_GRID_CAP);
+    const overflowNote = all.length > POS_GRID_CAP
+        ? `<div class="pos-empty" style="padding:1rem;">Showing ${POS_GRID_CAP} of ${all.length} items — keep typing to narrow, or scan the barcode.</div>`
+        : '';
     grid.innerHTML = rows.length ? rows.map(i => `
-        <button type="button" class="form-card" style="text-align:left;cursor:pointer;padding:12px;" onclick="addToCart('${i.id}')">
-            <div style="font-weight:600;">${esc(i.name)}</div>
-            <div style="font-size:0.75rem;color:var(--text-secondary);"><code>${esc(i.sku)}</code></div>
-            <div style="margin-top:6px;font-weight:700;">${money(i.sale_price)}</div>
-            ${i.track_inventory ? `<div style="font-size:0.72rem;color:${i.qty_on_hand > 0 ? 'var(--text-secondary)' : 'var(--color-error)'};">${i.qty_on_hand} in stock</div>` : ''}
-        </button>`).join('')
-        : '<p style="color:var(--text-secondary);">No items — create your catalog in Inventory → Items first.</p>';
+        <button type="button" class="pos-item" onclick="addToCart('${i.id}')">
+            <div class="nm">${esc(i.name)}</div>
+            <div class="sku">${esc(i.sku)}</div>
+            <div class="pr">${money(i.sale_price)}</div>
+            ${i.track_inventory ? `<div class="stk ${i.qty_on_hand > 0 ? '' : 'out'}">${i.qty_on_hand > 0 ? i.qty_on_hand + ' in stock' : 'out of stock'}</div>` : '<div class="stk">service</div>'}
+        </button>`).join('') + overflowNote
+        : `<div class="pos-empty"><p style="font-size:2rem;margin-bottom:8px;">🛒</p><p><strong>${posItems.length ? 'No matches.' : 'No items yet.'}</strong></p><p>${posItems.length ? 'Try a different search or category.' : 'Build your catalog in <a href="inventory.html">Inventory → Items</a> — or import it from CSV in one paste.'}</p></div>`;
 }
 
 function addToCart(itemId) {
@@ -107,19 +132,27 @@ function setQty(itemId, qty) {
 function renderCart() {
     const tb = document.getElementById('posCart');
     tb.innerHTML = cart.length ? cart.map(c => `<tr>
-        <td style="max-width:150px;">${esc(c.item.name)}<div style="font-size:0.72rem;color:var(--text-secondary);">${money(basePrice(c.item))} ex-GST</div></td>
-        <td style="width:90px;"><input type="number" class="form-control" style="width:70px;" min="0" value="${c.qty}" onchange="setQty('${c.item.id}', parseFloat(this.value)||0)"></td>
-        <td style="text-align:right;">${money(basePrice(c.item) * c.qty)}</td>
-    </tr>`).join('') : '<tr><td style="color:var(--text-secondary);padding:1rem;">Cart is empty — tap items to add.</td></tr>';
-    let sub = 0, tax = 0;
+        <td class="pos-line-name">${esc(c.item.name)}<div class="sub">${money(basePrice(c.item))} ex-GST</div></td>
+        <td><span class="pos-qty">
+            <button type="button" onclick="setQty('${c.item.id}', ${c.qty - 1})">−</button>
+            <span>${c.qty}</span>
+            <button type="button" onclick="setQty('${c.item.id}', ${c.qty + 1})">+</button>
+        </span></td>
+        <td style="text-align:right;font-weight:600;">${money(basePrice(c.item) * c.qty)}</td>
+    </tr>`).join('') : '<tr><td class="pos-cart-empty">Cart is empty — tap items or scan a barcode.</td></tr>';
+    let sub = 0, tax = 0, count = 0;
     cart.forEach(c => {
         const base = basePrice(c.item) * c.qty;
-        sub += base;
+        sub += base; count += c.qty;
         tax += base * (c.item.tax_config_id ? taxRateFor(c.item.tax_config_id) : 0) / 100;
     });
     document.getElementById('posSub').textContent = money(sub);
     document.getElementById('posTax').textContent = money(tax);
     document.getElementById('posTotal').textContent = money(sub + tax);
+    const countEl = document.getElementById('posCartCount');
+    if (countEl) countEl.textContent = `${count} item${count === 1 ? '' : 's'}`;
+    const btn = document.getElementById('posPayBtn');
+    if (btn && !btn.disabled) btn.textContent = cart.length ? `Charge ${money(sub + tax)}` : 'Charge ₹0.00';
 }
 
 async function ensureWalkInCustomer() {
@@ -194,12 +227,13 @@ async function completeSale() {
         renderCart();
         // refresh stock counts on the grid
         posItems = (await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true })).filter(i => i.is_active);
+        renderCategoryChips();
         renderGrid();
     } catch (err) {
         console.error('[POS] completeSale', err);
         Toast.error(err.message || 'Sale failed — check Receivables for a stranded draft/approved invoice.');
     } finally {
-        btn.disabled = false; btn.textContent = 'Complete Sale';
+        btn.disabled = false; renderCart();
     }
 }
 

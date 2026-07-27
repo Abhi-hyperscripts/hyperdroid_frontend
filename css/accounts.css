@@ -3002,3 +3002,63 @@ a.dv-tile:hover { transform: translateY(-2px);
     transition: color 0.15s, border-color 0.15s;
 }
 .fx-info-btn:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+/* ── Cash Sale (POS) — counter ergonomics: big targets, giant total ── */
+.pos-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+.pos-left { min-width: 0; }
+.pos-search-wrap { position: relative; margin-bottom: 14px; }
+.pos-search-wrap svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);
+    width: 18px !important; height: 18px !important; pointer-events: none; }
+.pos-search-wrap input { width: 100%; height: 52px; padding: 0 16px 0 48px !important; box-sizing: border-box; font-size: 1.05rem;
+    border: 2px solid var(--border-color); border-radius: 12px; background: var(--bg-card); color: var(--text-primary); }
+.pos-search-wrap input:focus { outline: none; border-color: var(--brand-primary); }
+.pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.pos-item { text-align: left; padding: 14px; border: 1px solid var(--border-color); border-radius: 14px;
+    background: var(--bg-card); cursor: pointer; transition: transform .12s, box-shadow .12s, border-color .12s; }
+.pos-item:hover { transform: translateY(-2px); border-color: var(--brand-primary); box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+.pos-item:active { transform: scale(0.97); }
+.pos-item .nm { font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em; }
+.pos-item .sku { font-size: 0.7rem; color: var(--text-secondary); font-family: monospace; margin-top: 2px; }
+.pos-item .pr { font-weight: 800; font-size: 1.05rem; margin-top: 8px; }
+.pos-item .stk { font-size: 0.7rem; margin-top: 2px; color: var(--text-secondary); }
+.pos-item .stk.out { color: var(--color-error); font-weight: 600; }
+.pos-empty { grid-column: 1 / -1; text-align: center; padding: 3rem 1rem; color: var(--text-secondary);
+    border: 1px dashed var(--border-color); border-radius: 14px; }
+.pos-cart { position: sticky; top: 80px; background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; max-height: calc(100vh - 100px); }
+.pos-cart-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px;
+    font-weight: 700; border-bottom: 1px solid var(--border-color); }
+.pos-cart-count { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
+    background: var(--bg-tertiary); padding: 3px 10px; border-radius: 999px; }
+.pos-cart-lines { flex: 1; overflow-y: auto; min-height: 90px; max-height: 320px; }
+.pos-cart-lines table { width: 100%; border-collapse: collapse; }
+.pos-cart-lines td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); vertical-align: middle; font-size: 0.88rem; }
+.pos-line-name { max-width: 140px; }
+.pos-line-name .sub { font-size: 0.72rem; color: var(--text-secondary); }
+.pos-qty { display: inline-flex; align-items: center; gap: 2px; }
+.pos-qty button { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--border-color);
+    background: var(--bg-tertiary); color: var(--text-primary); font-weight: 700; cursor: pointer; line-height: 1; }
+.pos-qty button:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+.pos-qty span { min-width: 26px; text-align: center; font-weight: 700; }
+.pos-cart-empty { padding: 2rem 1rem; text-align: center; color: var(--text-secondary); font-size: 0.88rem; }
+.pos-totals { padding: 12px 16px; border-top: 1px solid var(--border-color); }
+.pos-trow { display: flex; justify-content: space-between; padding: 3px 0; color: var(--text-secondary); font-size: 0.88rem; }
+.pos-trow.pos-grand { color: var(--text-primary); font-weight: 800; font-size: 1.6rem; padding-top: 8px; }
+.pos-pay { padding: 12px 16px 16px; border-top: 1px solid var(--border-color); }
+.pos-pay-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.pos-pay-row > div { min-width: 0; }
+.pos-pay-row .searchable-dropdown-container { min-width: 0 !important; width: 100%; }
+.pos-pay-row label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-secondary); display: block; margin-bottom: 4px; }
+.pos-charge { width: 100%; height: 54px; border: none; border-radius: 12px; background: var(--brand-primary);
+    color: var(--text-inverse, #fff); font-size: 1.15rem; font-weight: 800; cursor: pointer; transition: filter .12s; }
+.pos-charge:hover { filter: brightness(1.08); }
+.pos-charge:disabled { opacity: 0.6; cursor: default; }
+.pos-pay small { display: block; margin-top: 10px; font-size: 0.72rem; line-height: 1.45; color: var(--text-secondary); }
+@media (max-width: 1000px) { .pos-layout { grid-template-columns: 1fr; } .pos-cart { position: static; max-height: none; } }
+
+.pos-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.pos-chip { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border-color);
+    background: var(--bg-card); color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+.pos-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+.pos-chip.on { background: var(--brand-primary); border-color: var(--brand-primary); color: var(--text-inverse, #fff); }

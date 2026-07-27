@@ -76,24 +76,35 @@
             </aside>
             <main class="organization-content">
                 <div class="tab-content active" id="pos-counter">
-                    <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start;">
-                        <div>
-                            <input type="text" id="posSearch" class="form-control" placeholder="Scan SKU / search items… (Enter adds first match)" style="margin-bottom:10px;">
-                            <div id="posGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;"></div>
-                        </div>
-                        <div class="form-card" style="position:sticky;top:80px;">
-                            <h4 style="margin-bottom:10px;">Cart</h4>
-                            <div class="data-table-container"><table class="data-table"><tbody id="posCart"></tbody></table></div>
-                            <div style="margin-top:10px;font-size:0.95rem;">
-                                <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><span id="posSub">₹0.00</span></div>
-                                <div style="display:flex;justify-content:space-between;"><span>GST</span><span id="posTax">₹0.00</span></div>
-                                <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.2rem;margin-top:6px;"><span>Total</span><span id="posTotal">₹0.00</span></div>
+                    <div class="pos-layout">
+                        <div class="pos-left">
+                            <div class="pos-search-wrap">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="posSearch" placeholder="Scan barcode or search items… Enter adds first match">
                             </div>
-                            <div class="form-group" style="margin-top:12px;"><label>Received into</label><div class="searchable-dropdown-container" id="posBank"></div></div>
-                            <div class="form-group"><label>Payment method</label><div class="searchable-dropdown-container" id="posMethod"></div></div>
-                            <button class="btn btn-primary" id="posPayBtn" style="width:100%;margin-top:8px;" onclick="completeSale()">Complete Sale</button>
-                            <small class="form-hint" id="posHint" style="display:block;margin-top:8px;">Creates + approves the invoice and records the payment in one go, against the Walk-in Customer. Mixed GST slabs split automatically into one invoice per slab, settled by a single payment.</small>
+                            <div id="posCats" class="pos-chips"></div>
+                            <div id="posGrid" class="pos-grid"></div>
                         </div>
+                        <aside class="pos-cart">
+                            <div class="pos-cart-head">
+                                <span>Current Sale</span>
+                                <span class="pos-cart-count" id="posCartCount">0 items</span>
+                            </div>
+                            <div class="pos-cart-lines"><table><tbody id="posCart"></tbody></table></div>
+                            <div class="pos-totals">
+                                <div class="pos-trow"><span>Subtotal</span><span id="posSub">₹0.00</span></div>
+                                <div class="pos-trow"><span>GST</span><span id="posTax">₹0.00</span></div>
+                                <div class="pos-trow pos-grand"><span>Total</span><span id="posTotal">₹0.00</span></div>
+                            </div>
+                            <div class="pos-pay">
+                                <div class="pos-pay-row">
+                                    <div><label>Received into</label><div class="searchable-dropdown-container" id="posBank"></div></div>
+                                    <div><label>Method</label><div class="searchable-dropdown-container" id="posMethod"></div></div>
+                                </div>
+                                <button class="pos-charge" id="posPayBtn" onclick="completeSale()">Charge ₹0.00</button>
+                                <small id="posHint">One tap = invoice + GST + stock + payment + receipt, against the Walk-in Customer. Mixed GST slabs split automatically.</small>
+                            </div>
+                        </aside>
                     </div>
                 </div>
             </main>
