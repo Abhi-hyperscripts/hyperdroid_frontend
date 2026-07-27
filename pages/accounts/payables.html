@@ -517,6 +517,16 @@
                             <input type="text" id="billPoReference" class="form-control" placeholder="PO-2026-001">
                         </div>
                         <div class="form-group">
+                            <label for="billCurrencyContainer">Currency</label>
+                            <div class="searchable-dropdown-container" id="billCurrencyContainer"></div>
+                            <small class="field-hint">Books are kept in INR. A foreign-currency bill is converted at the rate below. Import-of-services GST (reverse charge) is not automated — check with your CA.</small>
+                        </div>
+                        <div class="form-group" id="billRateGroup" style="display:none;">
+                            <label for="billExchangeRate">Exchange Rate <span class="req">*</span></label>
+                            <input type="number" id="billExchangeRate" class="form-control" step="0.0001" min="0" placeholder="0.0000" oninput="calculateBillTotals()">
+                            <small class="field-hint" id="billRateHint">How many ₹ one unit of the bill currency is worth.</small>
+                        </div>
+                        <div class="form-group">
                             <label for="billDate">Bill Date <span class="req">*</span></label>
                             <input type="text" id="billDate" class="form-control" required placeholder="Select date">
                         </div>
@@ -564,6 +574,7 @@
                             <div class="po-totals-row"><span>Subtotal:</span><span id="billSubtotal">0.00</span></div>
                             <div class="po-totals-row"><span>Tax (Input GST):</span><span id="billTax">0.00</span></div>
                             <div class="po-totals-row po-totals-grand"><span>Total:</span><span id="billTotal">0.00</span></div>
+                            <div class="po-totals-row" id="billFxEquiv" style="display:none;color:var(--text-secondary);font-size:0.82rem;"></div>
                         </div>
                     </div>
                 </div>
@@ -640,8 +651,9 @@
                         </div>
                         <div class="form-row two-col">
                             <div class="form-group">
-                                <label for="paymentAmount">Amount *</label>
-                                <input type="number" id="paymentAmount" class="form-control" required step="0.01" min="0" placeholder="0.00">
+                                <label for="paymentAmount">Amount Paid (Bank) *</label>
+                                <input type="number" id="paymentAmount" class="form-control" required step="0.01" min="0" placeholder="0.00" oninput="updateVendorPaymentForex()">
+                                <small class="form-hint" id="vendorPaymentForexHint" style="display:none;font-weight:600;"></small>
                             </div>
                             <div class="form-group">
                                 <label for="paymentBankAccount">Bank Account *</label>

@@ -647,6 +647,8 @@ function showCreateInvoiceModal() {
     document.getElementById('invoiceForm').reset();
     document.getElementById('invoiceId').value = '';
     document.getElementById('invoiceLines').innerHTML = '';
+    const printBtn = document.getElementById('invoicePrintBtn');
+    if (printBtn) printBtn.style.display = 'none';
     initInvoiceProjectDropdown('');
     initInvoiceCurrencyDropdown(BASE_CURRENCY);
     addInvoiceLine();
@@ -672,6 +674,8 @@ async function editInvoice(id) {
             : `View Invoice ${inv.invoice_number || ''}  (${(inv.status || '').toUpperCase()} — read-only)`;
 
         document.getElementById('invoiceId').value = inv.id;
+        const invPrintBtn = document.getElementById('invoicePrintBtn');
+        if (invPrintBtn) invPrintBtn.style.display = '';
         document.getElementById('invoiceCustomerId').value = inv.customer_id || '';
         document.getElementById('invoiceDate').value = inv.invoice_date?.split('T')[0] || '';
         document.getElementById('invoiceDueDate').value = inv.due_date?.split('T')[0] || '';
@@ -1303,6 +1307,27 @@ function updatePaymentGross() {
     const tds = parseFloat(document.getElementById('paymentTds')?.value) || 0;
     const disp = document.getElementById('paymentGrossDisplay');
     if (disp) disp.value = AccountsCommon.formatCurrency(amount + tds);
+    // Live forex preview: (net cash + TDS) vs booked allocations. Only a real forex candidate
+    // when at least one allocated invoice is foreign-currency.
+    const hint = document.getElementById('paymentForexHint');
+    if (!hint) return;
+    let alloc = 0, fxAlloc = false;
+    document.querySelectorAll('#paymentAllocations tr:not(.empty-state)').forEach(row => {
+        const amt = parseFloat(row.querySelector('.alloc-amount')?.value) || 0;
+        if (amt > 0) { alloc += amt; if (row.dataset.fx) fxAlloc = true; }
+    });
+    const diff = Math.round(((amount + tds) - alloc) * 100) / 100;
+    if (!alloc || diff === 0) { hint.style.display = 'none'; return; }
+    hint.style.display = '';
+    if (fxAlloc) {
+        hint.style.color = diff > 0 ? 'var(--color-success)' : 'var(--color-error)';
+        hint.textContent = diff > 0
+            ? `Forex gain ${AccountsCommon.formatCurrency(diff)} will post to 4290 Foreign Exchange Gain/Loss`
+            : `Forex loss ${AccountsCommon.formatCurrency(-diff)} will post to 4290 Foreign Exchange Gain/Loss`;
+    } else {
+        hint.style.color = 'var(--color-warning)';
+        hint.textContent = `Allocations are ${AccountsCommon.formatCurrency(Math.abs(diff))} ${diff > 0 ? 'short of' : 'over'} Amount + TDS`;
+    }
 }
 
 // Open the Record Payment modal pre-filled with the invoice's customer.
@@ -1342,10 +1367,12 @@ async function loadCustomerInvoicesForPayment() {
         }
         tbody.innerHTML = items.map(inv => {
             const bal = parseFloat(inv.balance_due) || 0;
-            return `<tr>
-                <td>${AccountsCommon.escapeHtml(inv.invoice_number || '-')}<input type="hidden" class="alloc-invoice-id" value="${inv.id}"></td>
+            const isFx = !!inv.exchange_rate;
+            const fxBadge = isFx ? ` <span style="font-size:0.72rem;color:var(--text-secondary);">(${AccountsCommon.escapeHtml(inv.currency)} @ ${inv.exchange_rate})</span>` : '';
+            return `<tr data-fx="${isFx ? '1' : ''}">
+                <td>${AccountsCommon.escapeHtml(inv.invoice_number || '-')}${fxBadge}<input type="hidden" class="alloc-invoice-id" value="${inv.id}"></td>
                 <td>${AccountsCommon.formatCurrency(bal)}</td>
-                <td><input type="number" class="form-control alloc-amount" step="0.01" min="0" max="${bal}" placeholder="0.00"></td>
+                <td><input type="number" class="form-control alloc-amount" step="0.01" min="0" max="${bal}" placeholder="0.00" oninput="updatePaymentGross()"></td>
             </tr>`;
         }).join('');
     } catch (err) {
@@ -1383,11 +1410,18 @@ async function saveCustomerPayment() {
         if (invoiceId && allocAmt > 0) allocations.push({ customer_invoice_id: invoiceId, allocated_amount: allocAmt });
     });
 
-    // Over-allocation guard: the sum of invoice allocations cannot exceed the GROSS settled amount
-    // (net cash + TDS), since the invoice clears at the gross (small epsilon for 2-dp float noise).
-    const allocatedTotal = allocations.reduce((s, a) => s + a.allocated_amount, 0);
-    if (allocatedTotal - gross > 0.005) {
-        Toast.error(`Allocated total (${AccountsCommon.formatCurrency(allocatedTotal)}) exceeds the amount applied to invoices (${AccountsCommon.formatCurrency(gross)})`);
+    const allocatedTotal = Math.round(allocations.reduce((s, a) => s + a.allocated_amount, 0) * 100) / 100;
+    // Difference between what reached the bank (+TDS) and the booked amounts being settled.
+    // Against a foreign-currency invoice that difference IS the realized forex gain/loss;
+    // otherwise it's a mistake (short/over allocation) and blocks the save.
+    let anyFxAllocated = false;
+    document.querySelectorAll('#paymentAllocations tr:not(.empty-state)').forEach(row => {
+        const amt = parseFloat(row.querySelector('.alloc-amount')?.value) || 0;
+        if (amt > 0 && row.dataset.fx) anyFxAllocated = true;
+    });
+    const forex = Math.round((gross - allocatedTotal) * 100) / 100;
+    if (forex !== 0 && !anyFxAllocated) {
+        Toast.error(`Allocations (${AccountsCommon.formatCurrency(allocatedTotal)}) must equal Amount Received + TDS (${AccountsCommon.formatCurrency(gross)})`);
         return;
     }
 
@@ -1395,10 +1429,13 @@ async function saveCustomerPayment() {
     // Fixed in Phase 4 Tier 1 — was being silently dropped before.
     // `amount` = GROSS (what clears the invoices = allocations sum); `tds_amount` = TDS withheld. The
     // bank receives amount - tds_amount. With tds 0, gross == net cash → identical to the legacy payload.
+    // `amount` = booked gross being settled (Σ allocations); the bank actually received
+    // amount - tds + forex. With no FX difference this equals the legacy gross payload.
     const payload = {
         customer_id: document.getElementById('paymentCustomerId').value,
         payment_date: document.getElementById('paymentDate').value,
-        amount: gross,
+        amount: allocatedTotal,
+        forex_gain_loss: anyFxAllocated ? forex : 0,
         tds_amount: tds,
         bank_account_id: document.getElementById('paymentBankAccountId').value,
         reference_number: document.getElementById('paymentReference').value,
@@ -1873,5 +1910,127 @@ async function downloadInvoicePdf(id, invoiceNumber) {
     } catch (err) {
         console.error('[Receivables] PDF download error:', err);
         Toast.error('Failed to download PDF');
+    }
+}
+
+
+// ============================================================================
+// INVOICE PRINT / PDF — client-facing document. For a foreign-currency invoice
+// every money figure is shown in the DOCUMENT currency with the INR value and
+// captured rate alongside (GSTR-1 wants INR; the client wants their currency).
+// Seller block comes from Admin → Tenant Settings → organization profile.
+// ============================================================================
+async function printInvoice() {
+    const id = document.getElementById('invoiceId')?.value;
+    if (!id) { Toast.error('Save the invoice first'); return; }
+    try {
+        const [inv, settingsRes] = await Promise.all([
+            api.request(AccountsCommon.buildUrl(`invoices/${id}`)),
+            api.request(AccountsCommon.buildUrl('settings'), { _skipSpinner: true }).catch(() => ({}))
+        ]);
+        const settings = settingsRes?.data || settingsRes || {};
+        const cust = customers.find(c => c.id === inv.customer_id) || {};
+        const esc = AccountsCommon.escapeHtml;
+        const fx = inv.exchange_rate ? parseFloat(inv.exchange_rate) : 0;
+        const sym = fx ? currencySymbol(inv.currency) : '₹';
+        const docAmt = (inr) => fx ? (parseFloat(inr) / fx) : parseFloat(inr);
+        const money = (v) => sym + (Number(v) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const inr = (v) => '₹' + (Number(v) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const isExport = (cust.gst_treatment === 'overseas');
+        const lines = inv.lines || [];
+
+        const custAddr = [cust.billing_address_line1, cust.billing_address_line2, cust.city, cust.state, cust.country, cust.postal_code]
+            .filter(Boolean).join(', ');
+
+        const rows = lines.map((l, i) => `
+            <tr>
+                <td class="c">${i + 1}</td>
+                <td>${esc(l.description || l.account_name || '')}</td>
+                <td class="c">${esc(l.hsn_sac || '')}</td>
+                <td class="r">${Number(l.quantity) || 0}</td>
+                <td class="r">${money(docAmt(l.unit_price))}</td>
+                <td class="r">${money(docAmt(l.amount ?? (l.quantity * l.unit_price)))}</td>
+            </tr>`).join('');
+
+        const fxSummary = fx ? `
+            <tr><td colspan="2" class="fxnote">Exchange rate: 1 ${esc(inv.currency)} = ₹${fx} · INR value ${inr(inv.total_amount)}</td></tr>` : '';
+        const exportNote = isExport
+            ? '<p class="note">SUPPLY MEANT FOR EXPORT UNDER LUT WITHOUT PAYMENT OF INTEGRATED TAX (IGST) — zero-rated export of services.</p>'
+            : '';
+
+        const w = window.open('', '_blank');
+        if (!w) { Toast.error('Allow pop-ups to print the invoice'); return; }
+        w.document.write(`<!DOCTYPE html><html><head><title>${esc(inv.invoice_number || 'Invoice')}</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; padding: 32px; font-size: 13px; }
+    .head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1a1a1a; padding-bottom: 16px; }
+    .head h1 { font-size: 22px; letter-spacing: 0.5px; }
+    .head .doc { text-align: right; }
+    .head .doc .t { font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+    .meta { display: flex; justify-content: space-between; margin: 18px 0; gap: 24px; }
+    .meta .block { flex: 1; }
+    .meta h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 6px; }
+    .meta p { line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th { background: #f0f0f0; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    th, td { border: 1px solid #ccc; padding: 7px 10px; }
+    td.r, th.r { text-align: right; } td.c, th.c { text-align: center; }
+    .totals { margin-top: 12px; margin-left: auto; width: 320px; }
+    .totals td { border: none; padding: 4px 10px; }
+    .totals .grand td { border-top: 2px solid #1a1a1a; font-weight: 700; font-size: 15px; padding-top: 8px; }
+    .fxnote td { color: #555; font-size: 12px; font-style: italic; }
+    .note { margin-top: 18px; font-size: 11.5px; color: #444; border: 1px solid #ddd; padding: 8px 12px; }
+    .foot { margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px; color: #666; }
+    @media print { body { padding: 12px; } }
+</style></head><body>
+    <div class="head">
+        <div>
+            <h1>${esc(settings.org_legal_name || 'Your Business Name')}</h1>
+            <p>${esc(settings.org_address || '')}</p>
+            ${settings.org_gstin ? `<p>GSTIN: ${esc(settings.org_gstin)}</p>` : ''}
+        </div>
+        <div class="doc">
+            <div class="t">${isExport ? 'Export Invoice' : 'Tax Invoice'}</div>
+            <p><strong>${esc(inv.invoice_number || '')}</strong></p>
+            <p>Date: ${(inv.invoice_date || '').split('T')[0]}</p>
+            <p>Due: ${(inv.due_date || '').split('T')[0]}</p>
+        </div>
+    </div>
+    <div class="meta">
+        <div class="block">
+            <h3>Bill To</h3>
+            <p><strong>${esc(cust.name || inv.customer_name || '')}</strong></p>
+            ${custAddr ? `<p>${esc(custAddr)}</p>` : ''}
+            ${cust.gst_number ? `<p>GSTIN: ${esc(cust.gst_number)}</p>` : ''}
+        </div>
+        <div class="block">
+            <h3>Details</h3>
+            <p>Currency: ${esc(inv.currency || 'INR')}${fx ? ` (1 ${esc(inv.currency)} = ₹${fx})` : ''}</p>
+            <p>Status: ${esc((inv.status || '').replace('_', ' '))}</p>
+        </div>
+    </div>
+    <table>
+        <thead><tr><th class="c" style="width:36px;">#</th><th>Description</th><th class="c" style="width:90px;">HSN/SAC</th><th class="r" style="width:60px;">Qty</th><th class="r" style="width:110px;">Unit Price</th><th class="r" style="width:120px;">Amount</th></tr></thead>
+        <tbody>${rows}</tbody>
+    </table>
+    <table class="totals">
+        <tr><td>Subtotal</td><td class="r">${money(docAmt(inv.subtotal))}</td></tr>
+        ${Number(inv.tax_amount) ? `<tr><td>Tax (GST)</td><td class="r">${money(docAmt(inv.tax_amount))}</td></tr>` : ''}
+        <tr class="grand"><td>Total</td><td class="r">${money(docAmt(inv.total_amount))}</td></tr>
+        ${fxSummary}
+    </table>
+    ${exportNote}
+    ${inv.notes ? `<p class="note">${esc(inv.notes)}</p>` : ''}
+    <div class="foot">
+        <span>Generated by Ragenaizer Accounts</span>
+        <span>Authorised Signatory</span>
+    </div>
+    <script>window.onload = () => window.print();<\/script>
+</body></html>`);
+        w.document.close();
+    } catch (err) {
+        console.error('[AR] printInvoice error:', err);
+        Toast.error('Failed to build the print view');
     }
 }

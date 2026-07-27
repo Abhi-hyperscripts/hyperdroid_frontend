@@ -670,6 +670,7 @@
             <div class="acc-form-page__actions">
                 <div class="acc-form-page__actions-inner">
                     <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('customerInvoiceModal')">Cancel</button>
+                    <button type="button" class="btn btn-outline" id="invoicePrintBtn" style="display:none;" onclick="printInvoice()">Print / PDF</button>
                     <button class="btn btn-outline" id="invoiceSaveDraftBtn" onclick="saveInvoice(false)">Save Draft</button>
                     <button class="btn btn-primary" id="invoiceSaveApproveBtn" onclick="saveInvoice(true)">Save &amp; Approve</button>
                 </div>
@@ -716,7 +717,8 @@
                             <div class="form-group">
                                 <label for="paymentGrossDisplay">Applied to Invoices (Gross)</label>
                                 <input type="text" id="paymentGrossDisplay" class="form-control" readonly value="0.00" tabindex="-1">
-                                <small class="form-hint">Amount Received + TDS. Your allocations below must sum to this.</small>
+                                <small class="form-hint">Amount Received + TDS. For foreign-currency invoices, any difference vs the allocations posts as forex gain/loss.</small>
+                                <small class="form-hint" id="paymentForexHint" style="display:none;font-weight:600;"></small>
                             </div>
                             <div class="form-group">
                                 <label for="paymentBankAccountId">Bank Account *</label>

@@ -289,10 +289,19 @@ function renderBillsTable() {
 // BILL MODAL — CREATE / EDIT
 // ============================================================================
 
+// Document-currency picker (display-layer FX) — shared controller from AccountsCommon.
+const billFx = AccountsCommon.createFxPicker({
+    containerId: 'billCurrencyContainer', rateGroupId: 'billRateGroup',
+    rateInputId: 'billExchangeRate', rateHintId: 'billRateHint',
+    dateFieldId: 'billDate', ddId: 'billCurrencyDD',
+    onUpdate: () => calculateBillTotals()
+});
+
 function showCreateBillModal() {
     document.getElementById('billForm').reset();
     document.getElementById('billId').value = '';
     document.getElementById('billDate').value = AccountsCommon.todayLocal();
+    billFx.init(AccountsCommon.FX_BASE);
     populateBillVendorSelect();
     clearBillLines();
     addBillLine();
@@ -407,6 +416,16 @@ async function loadBillIntoModal(id, mode) {
 
         clearBillLines();
         const lines = bill.lines || bill.line_items || [];
+        // FX bills store line amounts in INR; display them back in the document currency
+        // at the captured rate so the user edits what the vendor's bill actually says.
+        const billFxRate = bill.exchange_rate ? parseFloat(bill.exchange_rate) : 0;
+        await billFx.init(bill.currency || AccountsCommon.FX_BASE, billFxRate);
+        if (billFxRate > 0) {
+            lines.forEach(l => {
+                const inr = parseFloat(l.unit_price ?? l.rate ?? 0);
+                l.unit_price = Math.round((inr / billFxRate) * 100) / 100;
+            });
+        }
         if (lines.length) {
             lines.forEach(l => addBillLine(l));
         } else {
@@ -738,9 +757,21 @@ function calculateBillTotals() {
     const sub = document.getElementById('billSubtotal');
     const tax = document.getElementById('billTax');
     const tot = document.getElementById('billTotal');
-    if (sub) sub.textContent = subtotal.toFixed(2);
-    if (tax) tax.textContent = totalTax.toFixed(2);
-    if (tot) tot.textContent = (subtotal + totalTax).toFixed(2);
+    const cur = billFx.currency();
+    const sym = cur === AccountsCommon.FX_BASE ? '' : AccountsCommon.fxSymbol(cur);
+    if (sub) sub.textContent = sym + subtotal.toFixed(2);
+    if (tax) tax.textContent = sym + totalTax.toFixed(2);
+    if (tot) tot.textContent = sym + (subtotal + totalTax).toFixed(2);
+    const fxRow = document.getElementById('billFxEquiv');
+    if (fxRow) {
+        const rate = billFx.rate();
+        if (cur !== AccountsCommon.FX_BASE && rate > 0) {
+            fxRow.style.display = '';
+            fxRow.innerHTML = `<span>Posted to books as</span><span>≈ ₹${((subtotal + totalTax) * rate).toLocaleString('en-IN', { maximumFractionDigits: 2 })} @ ${rate}</span>`;
+        } else {
+            fxRow.style.display = 'none';
+        }
+    }
 }
 
 // ============================================================================
@@ -826,8 +857,21 @@ async function saveBill(approve = false) {
     // Note: TDS fields removed from this modal (they belonged in a separate
     // TDS workflow). If the backend still requires them, send 0/null defaults
     // so existing endpoints don't break.
+    const billCurrency = billFx.currency();
+    const billRate = billFx.rate();
+    if (billCurrency !== AccountsCommon.FX_BASE) {
+        if (!(billRate > 0)) {
+            Toast.error(`Enter the exchange rate: how many ₹ one ${billCurrency} is worth`);
+            return;
+        }
+        // Convert entered document-currency prices to INR — books run entirely in INR.
+        lines.forEach(l => { l.unit_price = Math.round(l.unit_price * billRate * 100) / 100; });
+    }
+
     const payload = {
         vendor_id: vendorId, bill_date: billDate, due_date: dueDate,
+        currency: billCurrency,
+        exchange_rate: billCurrency !== AccountsCommon.FX_BASE ? billRate : null,
         po_reference: poReference, notes, lines,
         tds_amount: 0, tds_section: null
     };
@@ -1162,16 +1206,44 @@ async function loadVendorOpenBills(preSelectBillId) {
         allocBody.innerHTML = openBills.map(b => {
             const balance = parseFloat(b.balance_due) || 0;
             const preAlloc = (preSelectBillId === b.id) ? balance.toFixed(2) : '';
+            const isFx = !!b.exchange_rate;
+            const fxBadge = isFx ? ` <span style="font-size:0.72rem;color:var(--text-secondary);">(${AccountsCommon.escapeHtml(b.currency)} @ ${b.exchange_rate})</span>` : '';
             return `<tr>
-                <td><code>${AccountsCommon.escapeHtml(b.bill_number || '-')}</code></td>
+                <td><code>${AccountsCommon.escapeHtml(b.bill_number || '-')}</code>${fxBadge}</td>
                 <td>${AccountsCommon.formatDate(b.due_date)}</td>
                 <td class="text-right">${AccountsCommon.formatCurrency(balance)}</td>
-                <td><input type="number" class="form-control form-control-sm alloc-amount" data-bill-id="${b.id}" data-balance="${balance}" value="${preAlloc}" min="0" max="${balance}" step="0.01" placeholder="0.00"></td>
+                <td><input type="number" class="form-control form-control-sm alloc-amount" data-bill-id="${b.id}" data-balance="${balance}" data-fx="${isFx ? '1' : ''}" value="${preAlloc}" min="0" max="${balance}" step="0.01" placeholder="0.00" oninput="updateVendorPaymentForex()"></td>
             </tr>`;
         }).join('');
+        updateVendorPaymentForex();
     } catch (err) {
         console.error('[Payables] loadVendorOpenBills error:', err);
         allocBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:var(--text-secondary);">Failed to load bills</td></tr>';
+    }
+}
+
+// Live forex preview for vendor payments: booked allocations vs what actually leaves the bank.
+// Paying LESS than booked on a foreign-currency bill = forex gain; more = loss.
+function updateVendorPaymentForex() {
+    const hint = document.getElementById('vendorPaymentForexHint');
+    if (!hint) return;
+    const bankPaid = parseFloat(document.getElementById('paymentAmount')?.value) || 0;
+    let alloc = 0, fxAlloc = false;
+    document.querySelectorAll('#paymentAllocBody .alloc-amount').forEach(input => {
+        const amt = parseFloat(input.value) || 0;
+        if (amt > 0) { alloc += amt; if (input.dataset.fx) fxAlloc = true; }
+    });
+    const diff = Math.round((alloc - bankPaid) * 100) / 100;   // positive = gain (paid less than booked)
+    if (!alloc || !bankPaid || diff === 0) { hint.style.display = 'none'; return; }
+    hint.style.display = '';
+    if (fxAlloc) {
+        hint.style.color = diff > 0 ? 'var(--color-success)' : 'var(--color-error)';
+        hint.textContent = diff > 0
+            ? `Forex gain ${AccountsCommon.formatCurrency(diff)} will post to 4290 Foreign Exchange Gain/Loss`
+            : `Forex loss ${AccountsCommon.formatCurrency(-diff)} will post to 4290 Foreign Exchange Gain/Loss`;
+    } else {
+        hint.style.color = 'var(--color-warning)';
+        hint.textContent = `Allocations differ from the amount paid by ${AccountsCommon.formatCurrency(Math.abs(diff))}`;
     }
 }
 
@@ -1209,16 +1281,25 @@ async function saveVendorPayment() {
         }
     });
 
-    // Over-allocation guard: the sum of bill allocations cannot exceed the
-    // payment amount (small epsilon for float noise on 2-dp currency).
-    const allocatedTotal = allocations.reduce((s, a) => s + a.allocated_amount, 0);
-    if (allocatedTotal - amount > 0.005) {
-        Toast.error(`Allocated total (${AccountsCommon.formatCurrency(allocatedTotal)}) exceeds the payment amount (${AccountsCommon.formatCurrency(amount)})`);
+    const allocatedTotal = Math.round(allocations.reduce((s, a) => s + a.allocated_amount, 0) * 100) / 100;
+    // Booked-vs-bank difference: against a foreign-currency bill it IS the realized forex
+    // gain/loss (positive = gain, we paid fewer rupees); otherwise it's a mistake and blocks.
+    let anyFxAllocated = false;
+    document.querySelectorAll('#paymentAllocBody .alloc-amount').forEach(input => {
+        const amt = parseFloat(input.value) || 0;
+        if (amt > 0 && input.dataset.fx) anyFxAllocated = true;
+    });
+    const forex = Math.round((allocatedTotal - amount) * 100) / 100;
+    if (forex !== 0 && !anyFxAllocated) {
+        Toast.error(`Allocated total (${AccountsCommon.formatCurrency(allocatedTotal)}) must equal the amount paid (${AccountsCommon.formatCurrency(amount)})`);
         return;
     }
 
+    // `amount` = booked AP being settled (Σ allocations); the bank actually pays
+    // amount - forex. With no FX difference this equals the legacy payload.
     const payload = {
-        vendor_id: vendorId, payment_date: paymentDate, amount,
+        vendor_id: vendorId, payment_date: paymentDate, amount: allocatedTotal,
+        forex_gain_loss: anyFxAllocated ? forex : 0,
         bank_account_id: bankAccountId, reference_number: referenceNumber,
         payment_method: document.getElementById('paymentMethod')?.value || 'bank_transfer',
         allocations

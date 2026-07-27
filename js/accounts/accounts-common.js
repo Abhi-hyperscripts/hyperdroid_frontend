@@ -728,6 +728,102 @@ const AccountsCommon = {
         return false;
     },
 
+    // ── Multi-currency (display-layer FX) shared helpers ─────────────────────
+    // Line prices are entered in the document currency and converted to the base
+    // currency at save; currency + captured rate ride along on the document.
+    FX_BASE: 'INR',
+    _currencyList: null,
+
+    async getCurrencyList() {
+        if (this._currencyList?.length) return this._currencyList;
+        try {
+            const res = await api.request(this.buildUrl('currency/list'), { _skipSpinner: true });
+            this._currencyList = Array.isArray(res) ? res : [];
+        } catch { /* offline fallback below */ }
+        if (!this._currencyList?.length) this._currencyList = [
+            { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
+            { code: 'USD', name: 'US Dollar', symbol: '$' },
+            { code: 'EUR', name: 'Euro', symbol: '€' },
+            { code: 'GBP', name: 'British Pound', symbol: '£' }
+        ];
+        return this._currencyList;
+    },
+
+    fxSymbol(code) {
+        return (this._currencyList || []).find(c => c.code === code)?.symbol || code + ' ';
+    },
+
+    /**
+     * Wire a document form's currency dropdown + exchange-rate field.
+     * cfg: { containerId, rateGroupId, rateInputId, rateHintId, dateFieldId, ddId, onUpdate }
+     * Returns a controller: { init(currency, rate), currency(), rate() }.
+     * The rate auto-fetches (ECB via backend, cached) on currency change and stays editable.
+     */
+    createFxPicker(cfg) {
+        const self = this;
+        let dd = null;
+        const rateEl = () => document.getElementById(cfg.rateInputId);
+        const hintEl = () => document.getElementById(cfg.rateHintId);
+        const groupEl = () => document.getElementById(cfg.rateGroupId);
+
+        async function onChanged(autoFetch) {
+            const cur = ctrl.currency();
+            const group = groupEl();
+            if (!group) return;
+            if (cur === self.FX_BASE) {
+                group.style.display = 'none';
+                if (rateEl()) rateEl().value = '';
+                cfg.onUpdate?.();
+                return;
+            }
+            group.style.display = '';
+            if (autoFetch) {
+                if (hintEl()) hintEl().textContent = 'Fetching rate…';
+                try {
+                    const date = document.getElementById(cfg.dateFieldId)?.value || '';
+                    const res = await api.request(self.buildUrl('currency/rate', { from: cur, to: self.FX_BASE, ...(date ? { date } : {}) }), { _skipSpinner: true });
+                    if (rateEl()) rateEl().value = res.rate;
+                    if (hintEl()) hintEl().textContent = `1 ${cur} = ₹${res.rate} · ECB reference (${res.effective_date?.split('T')[0] || 'latest'}) — editable`;
+                } catch {
+                    if (hintEl()) hintEl().textContent = `Couldn't fetch the ${cur} rate — enter it manually (how many ₹ one ${cur} is worth).`;
+                }
+            }
+            cfg.onUpdate?.();
+        }
+
+        const ctrl = {
+            currency() { return dd?.getValue?.() || self.FX_BASE; },
+            rate() { return parseFloat(rateEl()?.value) || 0; },
+            async init(currency, rate) {
+                const container = document.getElementById(cfg.containerId);
+                if (!container || typeof SearchableDropdown !== 'function') return;
+                const list = await self.getCurrencyList();
+                const opts = list.map(c => ({ value: c.code, label: `${c.code} — ${c.name}` }));
+                if (dd?.setOptions) {
+                    dd.setOptions(opts, false);
+                    dd.setValue?.(currency || self.FX_BASE);
+                } else {
+                    container.innerHTML = '';
+                    dd = new SearchableDropdown(container, {
+                        id: cfg.ddId || cfg.containerId + 'DD',
+                        options: opts,
+                        value: currency || self.FX_BASE,
+                        placeholder: self.FX_BASE,
+                        searchPlaceholder: 'Search currency…',
+                        compact: true,
+                        onChange: () => onChanged(true)
+                    });
+                }
+                if (rate > 0 && rateEl()) {
+                    rateEl().value = rate;
+                    if (hintEl()) hintEl().textContent = `1 ${currency} = ₹${rate} · rate captured on this document — editable`;
+                }
+                await onChanged(false);
+            }
+        };
+        return ctrl;
+    },
+
     postableAccounts(accounts, typeContains) {
         return (accounts || []).filter(a => {
             if (a.allow_direct_posting === false) return false;

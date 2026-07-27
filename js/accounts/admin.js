@@ -481,12 +481,18 @@ async function loadTenantSettings() {
         const cc = document.getElementById('settingsCountryCode');
         if (cur) cur.value = s.base_currency || 'INR';
         if (cc) cc.value = s.country_code || 'IN';
+        const oln = document.getElementById('settingsOrgLegalName');
+        const ogs = document.getElementById('settingsOrgGstin');
+        const oad = document.getElementById('settingsOrgAddress');
+        if (oln) oln.value = s.org_legal_name || '';
+        if (ogs) ogs.value = s.org_gstin || '';
+        if (oad) oad.value = s.org_address || '';
 
         // RBAC: only admins may edit. Non-admins see the values read-only.
         const canEdit = accountsRoles.isAdmin();
         const saveBtn = document.getElementById('saveTenantSettingsBtn');
         if (saveBtn) saveBtn.style.display = canEdit ? '' : 'none';
-        [cur, cc].forEach(el => { if (el) el.disabled = !canEdit; });
+        [cur, cc, oln, ogs, oad].forEach(el => { if (el) el.disabled = !canEdit; });
         if (!canEdit) {
             homeStateDropdown?.disable?.();
             fyStartDropdown?.disable?.();
@@ -506,7 +512,11 @@ async function saveTenantSettings() {
         state_code: stateCode,
         base_currency: (document.getElementById('settingsBaseCurrency').value || 'INR').trim().toUpperCase(),
         country_code: (document.getElementById('settingsCountryCode').value || 'IN').trim().toUpperCase(),
-        financial_year_start_month: parseInt(fyStartDropdown?.getValue?.()) || 4
+        financial_year_start_month: parseInt(fyStartDropdown?.getValue?.()) || 4,
+        // Org profile — printed as the seller block on the invoice/proforma print view.
+        org_legal_name: document.getElementById('settingsOrgLegalName')?.value.trim() || null,
+        org_gstin: (document.getElementById('settingsOrgGstin')?.value || '').trim().toUpperCase() || null,
+        org_address: document.getElementById('settingsOrgAddress')?.value.trim() || null
     };
 
     if (!AccountsCommon.beginSubmit('saveTenantSettings')) return;

@@ -355,7 +355,7 @@ async function viewPO(id) {
                     ${field('Status', AccountsCommon.statusBadge(po.status))}
                     ${field('PO Date', fmtD(po.po_date))}
                     ${field('Expected Date', fmtD(po.expected_date))}
-                    ${field('Currency', esc(po.currency || 'INR'))}
+                    ${field('Currency', esc(po.currency || 'INR') + (po.exchange_rate ? ` @ ${po.exchange_rate}` : ''))}
                     ${approvedField}
                     ${po.notes ? field('Notes', esc(po.notes), true) : ''}
                 </div>
@@ -385,6 +385,14 @@ async function viewPO(id) {
 // PO MODAL — CREATE / EDIT
 // ============================================================================
 
+// Document-currency picker (display-layer FX) — shared controller from AccountsCommon.
+const poFx = AccountsCommon.createFxPicker({
+    containerId: 'poCurrencyContainer', rateGroupId: 'poRateGroup',
+    rateInputId: 'poExchangeRate', rateHintId: 'poRateHint',
+    dateFieldId: 'poDate', ddId: 'poCurrencyDD',
+    onUpdate: () => calculatePOTotals()
+});
+
 function showCreatePOModal() {
     document.getElementById('poModalTitle').textContent = 'Create Purchase Order';
     document.getElementById('poForm').reset();
@@ -395,7 +403,7 @@ function showCreatePOModal() {
     const poVendorSel = document.getElementById('poVendorId');
     poVendorSel.value = '';
     poVendorSel.dispatchEvent(new Event('change'));
-    document.getElementById('poCurrency').value = 'INR';
+    poFx.init(AccountsCommon.FX_BASE);
     document.getElementById('poLines').innerHTML = '';
     addPOLine();
     calculatePOTotals();
@@ -413,10 +421,18 @@ async function editPO(id) {
         poVendorSel.dispatchEvent(new Event('change')); // re-sync the SearchableDropdown label on repeat edits
         document.getElementById('poDate').value = po.po_date?.split('T')[0] || '';
         document.getElementById('poExpectedDate').value = po.expected_date?.split('T')[0] || '';
-        document.getElementById('poCurrency').value = po.currency || 'INR';
         document.getElementById('poNotes').value = po.notes || '';
 
         const lines = po.lines || [];
+        // FX POs store line amounts in INR; display them back in the document currency.
+        const poFxRate = po.exchange_rate ? parseFloat(po.exchange_rate) : 0;
+        await poFx.init(po.currency || AccountsCommon.FX_BASE, poFxRate);
+        if (poFxRate > 0) {
+            lines.forEach(l => {
+                const inr = parseFloat(l.unit_price ?? 0);
+                l.unit_price = Math.round((inr / poFxRate) * 100) / 100;
+            });
+        }
         const tbody = document.getElementById('poLines');
         tbody.innerHTML = '';
         if (lines.length) {
@@ -711,11 +727,23 @@ function calculatePOTotals() {
         }
     });
 
-    setText('poSubtotal', subtotal.toFixed(2));
-    setText('poTax', totalTax.toFixed(2));
+    const cur = poFx.currency();
+    const sym = cur === AccountsCommon.FX_BASE ? '' : AccountsCommon.fxSymbol(cur);
+    setText('poSubtotal', sym + subtotal.toFixed(2));
+    setText('poTax', sym + totalTax.toFixed(2));
     // The PO stores/prints the pre-tax subtotal (GST is authoritatively added when it converts to a
     // bill), so the PO Total must equal the subtotal — matching the saved + detail-view figures.
-    setText('poTotal', subtotal.toFixed(2));
+    setText('poTotal', sym + subtotal.toFixed(2));
+    const fxRow = document.getElementById('poFxEquiv');
+    if (fxRow) {
+        const rate = poFx.rate();
+        if (cur !== AccountsCommon.FX_BASE && rate > 0) {
+            fxRow.style.display = '';
+            fxRow.innerHTML = `<span>Posted to books as</span><span>≈ ₹${(subtotal * rate).toLocaleString('en-IN', { maximumFractionDigits: 2 })} @ ${rate}</span>`;
+        } else {
+            fxRow.style.display = 'none';
+        }
+    }
 }
 
 // ============================================================================
@@ -760,11 +788,22 @@ async function savePO() {
     if (lineError) { Toast.error(lineError); return; }
     if (!lines.length) { Toast.error('Add at least one line item with an account'); return; }
 
+    const poCurrency = poFx.currency();
+    const poRate = poFx.rate();
+    if (poCurrency !== AccountsCommon.FX_BASE) {
+        if (!(poRate > 0)) {
+            Toast.error(`Enter the exchange rate: how many ₹ one ${poCurrency} is worth`);
+            return;
+        }
+        lines.forEach(l => { l.unit_price = Math.round(l.unit_price * poRate * 100) / 100; });
+    }
+
     const payload = {
         vendor_id: document.getElementById('poVendorId').value,
         po_date: document.getElementById('poDate').value,
         expected_date: document.getElementById('poExpectedDate').value || null, // blank "" can't bind to backend DateTime? (JsonException -> 400); send null
-        currency: document.getElementById('poCurrency').value || 'INR',
+        currency: poCurrency,
+        exchange_rate: poCurrency !== AccountsCommon.FX_BASE ? poRate : null,
         notes: document.getElementById('poNotes').value,
         lines
     };
