@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         value: 'cash', compact: true
     });
     connectStockHub();
+    // Camera-scan button only where the native detector + a camera exist (Chrome/Android).
+    if ('BarcodeDetector' in window && navigator.mediaDevices?.getUserMedia)
+        document.getElementById('posCamBtn').style.display = '';
     const search = document.getElementById('posSearch');
     search.addEventListener('input', renderGrid);
     search.addEventListener('keydown', e => {
@@ -139,6 +142,47 @@ document.addEventListener('keydown', (e) => {
     }
     if (e.key.length === 1) _wedgeBuf += e.key;
 });
+
+/**
+ * Phone-camera scanning via the native BarcodeDetector (Chrome/Android — the dominant
+ * store hardware in India). The button only appears where the API + camera exist;
+ * elsewhere the wedge/search paths carry the load. On detect: same add path as a
+ * hardware scanner, plus a vibration tick as the 'beep'.
+ */
+let _camStream = null, _camTimer = null, _camDetector = null;
+
+async function startCameraScan() {
+    try {
+        _camDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'] });
+        _camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const video = document.getElementById('posCamVideo');
+        video.srcObject = _camStream;
+        document.getElementById('posCamOverlay').style.display = '';
+        _camTimer = setInterval(async () => {
+            try {
+                const codes = await _camDetector.detect(video);
+                if (!codes.length) return;
+                const raw = (codes[0].rawValue || '').trim().toLowerCase();
+                if (!raw) return;
+                const hit = posItems.find(i => (i.barcode || '').toLowerCase() === raw)
+                    || posItems.find(i => i.sku.toLowerCase() === raw);
+                stopCameraScan();
+                if (hit) { addToCart(hit.id); navigator.vibrate?.(60); }
+                else Toast.error(`No item with barcode '${raw}'`);
+            } catch { /* per-frame detect errors are harmless */ }
+        }, 250);
+    } catch (err) {
+        stopCameraScan();
+        Toast.error(err?.name === 'NotAllowedError' ? 'Camera permission denied' : 'Camera scanning unavailable on this device');
+    }
+}
+
+function stopCameraScan() {
+    clearInterval(_camTimer); _camTimer = null;
+    _camStream?.getTracks().forEach(t => t.stop());
+    _camStream = null;
+    document.getElementById('posCamOverlay').style.display = 'none';
+}
 
 function connectStockHub() {
     if (typeof signalR === 'undefined' || typeof getAuthToken !== 'function') return;
