@@ -73,7 +73,9 @@ function basePrice(i) {
 }
 
 let posCategory = '';   // active category chip ('' = all)
-const POS_GRID_CAP = 60; // never render more cards than a cashier can scan visually
+const POS_PAGE = 60;     // rows appended per scroll batch (infinite scroll)
+let posVisible = POS_PAGE;
+let posScrollObserver = null;
 
 function filteredItems() {
     const q = (document.getElementById('posSearch')?.value || '').toLowerCase();
@@ -95,12 +97,27 @@ function renderCategoryChips() {
 
 function setPosCategory(c) { posCategory = c; renderCategoryChips(); renderGrid(); }
 
-function renderGrid() {
+/** Watch the sentinel under the table; append the next batch when it scrolls into view. */
+function armPosScroll() {
+    const sentinel = document.getElementById('posMoreSentinel');
+    if (!sentinel) return;
+    posScrollObserver?.disconnect();
+    posScrollObserver = new IntersectionObserver(entries => {
+        if (entries.some(e => e.isIntersecting)) {
+            posVisible += POS_PAGE;
+            renderGrid(true);
+        }
+    }, { rootMargin: '200px' });
+    posScrollObserver.observe(sentinel);
+}
+
+function renderGrid(keepCount) {
+    if (!keepCount) posVisible = POS_PAGE;   // search/category change restarts the window
     const grid = document.getElementById('posGrid');
     const all = filteredItems();
-    // Dense table: with 1,000s of SKUs a vertical list scans far faster than cards.
-    // Cap the rows — scanning/search is the fast path, the list is the browse aid.
-    const rows = all.slice(0, POS_GRID_CAP);
+    // Dense table + infinite scroll: render in POS_PAGE batches, appending as the
+    // sentinel under the table enters the viewport. Scanning/search stays the fast path.
+    const rows = all.slice(0, posVisible);
     if (!rows.length) {
         grid.innerHTML = `<div class="pos-empty"><p style="font-size:2rem;margin-bottom:8px;">🛒</p><p><strong>${posItems.length ? 'No matches.' : 'No items yet.'}</strong></p><p>${posItems.length ? 'Try a different search or category.' : 'Build your catalog in <a href="inventory.html">Inventory → Items</a> — or import it from CSV in one paste.'}</p></div>`;
         return;
@@ -117,7 +134,10 @@ function renderGrid() {
                 <td class="r">${i.track_inventory && i.qty_on_hand <= 0 ? '<span class="pos-add off">✕</span>' : '<span class="pos-add">+</span>'}</td>
             </tr>`).join('')}
         </tbody></table></div>
-        ${all.length > POS_GRID_CAP ? `<div class="pos-more">Showing ${POS_GRID_CAP} of ${all.length} — keep typing to narrow, or scan the barcode. Enter adds the highlighted row.</div>` : ''}`;
+        ${all.length > rows.length
+            ? `<div class="pos-more" id="posMoreSentinel">Showing ${rows.length} of ${all.length} — scroll for more, type to narrow, or scan.</div>`
+            : `<div class="pos-more">${all.length} item${all.length === 1 ? '' : 's'}</div>`}`;
+    if (all.length > rows.length) armPosScroll();
 }
 
 function addToCart(itemId) {
