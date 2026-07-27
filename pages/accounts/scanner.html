@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <title>Cash Sale (POS) - Accounts | Ragenaizer</title>
+    <title>Phone Scanner - Accounts | Ragenaizer</title>
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -41,7 +41,7 @@
                 <nav class="breadcrumb-nav">
                     <a href="dashboard.html">Accounts</a>
                     <span class="separator">/</span>
-                    <span class="current">Cash Sale</span>
+                    <span class="current">Phone Scanner</span>
                 </nav>
                 <div class="hrms-header-row">
                     <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
@@ -55,11 +55,11 @@
                             <path d="M12 19l-7-7 7-7"></path>
                         </svg>
                     </button>
-                    <h1>Cash Sale (POS)</h1>
+                    <h1>Phone Scanner</h1>
                 </div>
                 <div class="active-tab-title" id="activeTabTitle">
                     <span class="tab-indicator"></span>
-                    <span id="activeTabName">Counter</span>
+                    <span id="activeTabName">Scanner</span>
                 </div>
             </div>
         </div>
@@ -67,52 +67,23 @@
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <div class="organization-layout">
-            <aside class="sidebar-nav-panel" id="accountsSidebar">
-                <div class="sidebar-header"><h3>Cash Sale</h3></div>
-                <nav class="sidebar-nav"><div class="nav-group" data-group="pos">
-                    <div class="nav-group-header"><span class="nav-group-title">POS</span><span class="chevron">&#9660;</span></div>
-                    <div class="nav-group-items"><button class="sidebar-btn active" data-tab="pos-counter"><span class="nav-number">1</span><span class="nav-label">Counter</span></button></div>
-                </div></nav>
-            </aside>
-            <main class="organization-content">
-                <div class="tab-content active" id="pos-counter">
-                    <div class="pos-layout">
-                        <div class="pos-left">
-                            <div class="pos-search-wrap">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                <input type="text" id="posSearch" placeholder="Scan barcode or search items… Enter adds first match">
-                                <button type="button" id="posCamBtn" class="pos-cam-btn" style="display:none;" onclick="startCameraScan()" aria-label="Scan with camera">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                                </button>
-                            </div>
-                            <div id="posCamOverlay" class="pos-cam-overlay" style="display:none;" onclick="stopCameraScan()">
-                                <video id="posCamVideo" autoplay playsinline muted></video>
-                                <div class="pos-cam-hint">Point at the barcode — tap anywhere to cancel</div>
-                            </div>
-                            <div id="posCats" class="pos-chips"></div>
-                            <div id="posGrid" class="pos-results"></div>
+            <main class="organization-content" style="max-width:560px;margin:0 auto;">
+                <div class="tab-content active" id="scanner-main">
+                    <div class="form-card" id="pairCard">
+                        <h3 style="margin-bottom:8px;">Pair with a till</h3>
+                        <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;">On the desktop POS, tap <strong>📱 Pair phone scanner</strong> and enter the code it shows:</p>
+                        <input type="text" id="pairInput" class="form-control" maxlength="8" placeholder="e.g. K7M2XQ" style="text-transform:uppercase;font-size:1.4rem;letter-spacing:0.3em;text-align:center;">
+                        <button class="btn btn-primary" style="width:100%;margin-top:12px;height:48px;" onclick="joinSession()">Connect</button>
+                        <p id="pairMsg" style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary);"></p>
+                    </div>
+                    <div id="scanCard" style="display:none;">
+                        <div class="form-card" style="text-align:center;">
+                            <p style="font-size:0.85rem;color:var(--color-success);font-weight:600;">✓ Paired to till <span id="pairedCode"></span></p>
+                            <video id="scanVideo" autoplay playsinline muted style="width:100%;border-radius:14px;margin:10px 0;"></video>
+                            <p id="scanStatus" style="font-size:1rem;font-weight:600;min-height:1.5em;">Point at a barcode…</p>
+                            <input type="text" id="manualCode" class="form-control" placeholder="…or type a barcode and press Enter" style="margin-top:8px;">
+                            <button class="btn btn-outline" style="width:100%;margin-top:12px;" onclick="location.reload()">Unpair</button>
                         </div>
-                        <aside class="pos-cart">
-                            <div class="pos-cart-head">
-                                <span>Current Sale</span>
-                                <span class="pos-cart-count" id="posCartCount">0 items</span>
-                            </div>
-                            <div class="pos-cart-lines"><table><tbody id="posCart"></tbody></table></div>
-                            <div class="pos-totals">
-                                <div class="pos-trow"><span>Subtotal</span><span id="posSub">₹0.00</span></div>
-                                <div class="pos-trow"><span>GST</span><span id="posTax">₹0.00</span></div>
-                                <div class="pos-trow pos-grand"><span>Total</span><span id="posTotal">₹0.00</span></div>
-                            </div>
-                            <div class="pos-pay">
-                                <div class="pos-pay-row">
-                                    <div><label>Received into</label><div class="searchable-dropdown-container" id="posBank"></div></div>
-                                    <div><label>Method</label><div class="searchable-dropdown-container" id="posMethod"></div></div>
-                                </div>
-                                <button class="pos-charge" id="posPayBtn" onclick="completeSale()">Charge ₹0.00</button>
-                                <button type="button" class="btn btn-outline" style="width:100%;margin-top:8px;" onclick="pairPhoneScanner()">📱 Pair phone scanner</button>
-                                <small id="posHint">One tap = invoice + GST + stock + payment + receipt, against the Walk-in Customer. Mixed GST slabs split automatically.</small>
-                            </div>
-                        </aside>
                     </div>
                 </div>
             </main>
@@ -131,7 +102,7 @@
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
         document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/accounts/pos.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/scanner.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>

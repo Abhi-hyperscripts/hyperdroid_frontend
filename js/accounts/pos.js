@@ -184,17 +184,57 @@ function stopCameraScan() {
     document.getElementById('posCamOverlay').style.display = 'none';
 }
 
+let posHub = null;
+let pairCode = null;
+
 function connectStockHub() {
     if (typeof signalR === 'undefined' || typeof getAuthToken !== 'function') return;
     try {
-        const conn = new signalR.HubConnectionBuilder()
+        posHub = new signalR.HubConnectionBuilder()
             .withUrl(`${CONFIG.endpoints.accounts}/hubs/stock`, { accessTokenFactory: () => getAuthToken() })
             .withAutomaticReconnect([0, 2000, 10000, 30000])
             .build();
-        conn.on('StockChanged', applyStockPush);
-        conn.start().then(() => console.log('[POS] stock hub connected'))
+        posHub.on('StockChanged', applyStockPush);
+        posHub.on('ScannerPaired', () => {
+            const st = document.getElementById('pairStatus');
+            if (st) { st.textContent = '✓ Phone paired — scans land in this cart'; st.style.color = 'var(--color-success)'; }
+            Toast.success('Phone scanner paired');
+        });
+        posHub.on('RemoteScan', (raw) => {
+            const code = (raw || '').toLowerCase();
+            const hit = posItems.find(i => (i.barcode || '').toLowerCase() === code)
+                || posItems.find(i => i.sku.toLowerCase() === code);
+            let ok = false, label = `No item with barcode '${raw}'`;
+            if (hit) {
+                const before = cart.reduce((s, c) => s + c.qty, 0);
+                addToCart(hit.id);   // stock guards apply exactly as at the till
+                ok = cart.reduce((s, c) => s + c.qty, 0) > before;
+                label = ok ? hit.name : `'${hit.name}' out of stock`;
+                if (!ok) label = `'${hit.name}' — out of stock`;
+            } else Toast.error(label);
+            if (pairCode) posHub.invoke('AckScan', pairCode, ok, label).catch(() => {});
+        });
+        posHub.start().then(() => console.log('[POS] stock hub connected'))
             .catch(err => console.warn('[POS] stock hub unavailable, polling only:', err?.message));
     } catch (e) { console.warn('[POS] stock hub init failed', e); }
+}
+
+/** Pair a phone as a handheld scanner: register a short code on the hub, show it big. */
+async function pairPhoneScanner() {
+    if (!posHub || posHub.state !== 'Connected') { Toast.error('Live channel not connected yet — try again in a moment'); return; }
+    pairCode = Array.from({ length: 6 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
+    const ok = await posHub.invoke('RegisterPosSession', pairCode).catch(() => false);
+    if (!ok) { Toast.error('Could not open a pairing session'); return; }
+    const overlay = document.createElement('div');
+    overlay.className = 'modal'; overlay.style.display = 'flex'; overlay.id = 'pairModal';
+    overlay.innerHTML = `<div class="modal-content" style="max-width:420px;text-align:center;">
+        <div class="modal-header"><h3>Pair phone scanner</h3><button class="close-btn" onclick="document.getElementById('pairModal').remove()">&times;</button></div>
+        <div class="modal-body">
+            <p style="font-size:0.88rem;color:var(--text-secondary);">On the phone, open<br><strong>ragenaizer.com/pages/accounts/scanner.html</strong><br>log in, and enter this code:</p>
+            <div style="font-size:2.6rem;font-weight:800;letter-spacing:0.35em;margin:14px 0;">${pairCode}</div>
+            <p id="pairStatus" style="font-size:0.85rem;color:var(--text-secondary);">Waiting for the phone…</p>
+        </div></div>`;
+    document.body.appendChild(overlay);
 }
 
 function taxRateFor(configId) {
