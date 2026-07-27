@@ -157,7 +157,7 @@ async function startCamera() {
             document.getElementById('scanVideo').style.display = 'none';
         }
     } else {
-        diag('no detector engine');
+        diag('no detector engine' + (window.__scanLibErr ? ' [' + window.__scanLibErr + ']' : ''));
     }
     // Path 2: html5-qrcode (ZXing in JS) — works wherever getUserMedia does, incl. iOS Safari
     // and Android in-app browsers that lack BarcodeDetector.

@@ -60,9 +60,20 @@
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <!-- zbar-wasm + polyfill: gives every browser (iOS Safari, Samsung Internet…) a native-style
          BarcodeDetector backed by the zbar engine — far stronger at 1D retail barcodes (EAN/UPC)
-         than the JS decoder inside html5-qrcode, which stays only as the last-resort fallback. -->
-    <script src="https://cdn.jsdelivr.net/npm/@undecaf/zbar-wasm@0.10.1/dist/index.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@undecaf/barcode-detector-polyfill@0.9.21/dist/index.js"></script>
+         than the JS decoder inside html5-qrcode, which stays only as the last-resort fallback.
+         SELF-HOSTED (js/vendor/, zbar.wasm alongside — the engine resolves it relative to its
+         script URL): iOS Private-mode Safari silently dropped these exact files from the CDN,
+         leaving phones with no decode engine. Any load/parse failure lands in __scanLibErr,
+         which the on-page diagnostic line surfaces. -->
+    <script>
+        window.__scanLibErr = '';
+        window.addEventListener('error', function (e) {
+            if (e && e.filename && /zbar-wasm|barcode-detector-polyfill/.test(e.filename))
+                window.__scanLibErr += (e.message || 'script error') + '; ';
+        }, true);
+    </script>
+    <script src="/js/vendor/zbar-wasm.js" onerror="window.__scanLibErr+='zbar-wasm load failed; '"></script>
+    <script src="/js/vendor/barcode-detector-polyfill.js" onerror="window.__scanLibErr+='polyfill load failed; '"></script>
     <script>
         try { window.BarcodeDetector.getSupportedFormats(); }
         catch (_) { if (window.barcodeDetectorPolyfill) window.BarcodeDetector = barcodeDetectorPolyfill.BarcodeDetectorPolyfill; }
