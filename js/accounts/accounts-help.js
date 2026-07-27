@@ -240,7 +240,7 @@ window.ACCOUNTS_HELP = {
          <p><strong>Example:</strong> two ad agencies quote ₹50,000. The GST-registered one effectively costs ₹50,000 (you reclaim the ₹9,000 GST as input credit); the unregistered one's ₹50,000 is final. Registration status literally changes the price.</p>`,
     'parties:customer-list':
         `<p><strong>Your customer master.</strong> State + GST registration drive invoice tax (intra vs inter-state, or zero-rated for overseas). A customer's full money story lives in Receivables; this is just who they are.</p>
-         <p><strong>Example:</strong> add "Palm Cove Resorts (Maldives)" with treatment <em>Overseas</em> → every invoice to them is automatically zero-rated export, no GST. Add a Bengaluru client → IGST. Set it right once, never think about it again.</p>`,
+         <p><strong>Example:</strong> add "Northwind Software (USA)" with treatment <em>Overseas</em> → every invoice to them is automatically zero-rated export, no GST. Add a Bengaluru client → IGST. Set it right once, never think about it again.</p>`,
     'parties:pending-vendors':
         `<p><strong>Vendor records requested by other modules</strong> (e.g. Procurement) wait here for an accounts admin to approve before joining the master — keeping one clean, deduplicated list.</p>
          <p><strong>Example:</strong> Procurement raises "ABC Traders" for a new PO. You spot it's the same as existing "A.B.C. Traders" and reject the duplicate — one vendor, one payment history, no split records.</p>`,
