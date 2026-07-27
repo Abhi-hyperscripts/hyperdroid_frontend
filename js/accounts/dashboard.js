@@ -19,6 +19,7 @@ async function loadDashboard() {
         await Promise.all([
             loadSetupStatus(),
             loadKpis(),
+            loadStockTile(),
             loadRevenueTrend(),
             loadAgingCharts(),
             loadBankingSummary(),
@@ -41,6 +42,26 @@ function refreshDashboard() {
 // ============================================================================
 // KPIs — single roll-up call for all dashboard tiles
 // ============================================================================
+
+// Stock tile — appears only when the tenant tracks inventory (service firms never see it).
+async function loadStockTile() {
+    try {
+        const [val, stock] = await Promise.all([
+            api.request(AccountsCommon.buildUrl('inventory/valuation'), { _skipSpinner: true }),
+            api.request(AccountsCommon.buildUrl('inventory/stock'), { _skipSpinner: true })
+        ]);
+        const rows = Array.isArray(stock) ? stock : [];
+        if (!rows.length) return;   // no tracked goods → keep the tile hidden
+        const tile = document.getElementById('tStockTile');
+        if (!tile) return;
+        tile.style.display = '';
+        document.getElementById('tStockVal').textContent = AccountsCommon.formatCurrency(val.stock_value);
+        const low = rows.filter(r => r.below_reorder).length;
+        const sub = document.getElementById('tStockSub');
+        if (low > 0) { sub.textContent = `${low} item${low > 1 ? 's' : ''} below reorder`; sub.style.color = 'var(--color-warning)'; }
+        else sub.textContent = `${rows.length} tracked item${rows.length > 1 ? 's' : ''}${val.in_sync ? ' · books in sync' : ''}`;
+    } catch { /* inventory not in use — tile stays hidden */ }
+}
 
 async function loadKpis() {
     const ids = ['tCash', 'tAr', 'tAp', 'tRevM', 'tNet', 'tCashProj'];
