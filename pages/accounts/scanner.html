@@ -79,7 +79,8 @@
                     <div id="scanCard" style="display:none;">
                         <div class="form-card" style="text-align:center;">
                             <p style="font-size:0.85rem;color:var(--color-success);font-weight:600;">✓ Paired to till <span id="pairedCode"></span></p>
-                            <video id="scanVideo" autoplay playsinline muted style="width:100%;border-radius:14px;margin:10px 0;"></video>
+                            <video id="scanVideo" autoplay playsinline muted style="width:100%;border-radius:14px;margin:10px 0;display:none;"></video>
+                            <div id="h5qrView" style="width:100%;border-radius:14px;overflow:hidden;margin:10px 0;display:none;"></div>
                             <p id="scanStatus" style="font-size:1rem;font-weight:600;min-height:1.5em;">Point at a barcode…</p>
                             <input type="text" id="manualCode" class="form-control" placeholder="…or type a barcode and press Enter" style="margin-top:8px;">
                             <button class="btn btn-outline" style="width:100%;margin-top:12px;" onclick="location.reload()">Unpair</button>
@@ -106,6 +107,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="accounts" data-title="Accounts Assistant"><\/script>');</script>
 </body>
 </html>

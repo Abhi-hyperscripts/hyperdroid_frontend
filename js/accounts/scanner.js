@@ -97,22 +97,43 @@ function sendScan(code) {
 }
 
 async function startCamera() {
-    if (!('BarcodeDetector' in window) || !navigator.mediaDevices?.getUserMedia) {
-        document.getElementById('scanStatus').textContent = 'Camera decoding not supported here — type barcodes below.';
-        return;
+    // Path 1: native BarcodeDetector (Chrome/Android) — fastest, zero extra decode cost.
+    if ('BarcodeDetector' in window && navigator.mediaDevices?.getUserMedia) {
+        try {
+            const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'] });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            const video = document.getElementById('scanVideo');
+            video.style.display = '';
+            video.srcObject = stream;
+            setInterval(async () => {
+                try {
+                    const codes = await detector.detect(video);
+                    if (codes.length) sendScan((codes[0].rawValue || '').trim());
+                } catch { /* per-frame errors are harmless */ }
+            }, 250);
+            return;
+        } catch { /* fall through to the JS decoder (e.g. permission granted but detector flaky) */ }
     }
-    try {
-        const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'] });
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        const video = document.getElementById('scanVideo');
-        video.srcObject = stream;
-        setInterval(async () => {
-            try {
-                const codes = await detector.detect(video);
-                if (codes.length) sendScan((codes[0].rawValue || '').trim());
-            } catch { /* per-frame errors are harmless */ }
-        }, 250);
-    } catch {
-        document.getElementById('scanStatus').textContent = 'Camera unavailable — type barcodes below.';
+    // Path 2: html5-qrcode (ZXing in JS) — works wherever getUserMedia does, incl. iOS Safari
+    // and Android in-app browsers that lack BarcodeDetector.
+    if (typeof Html5Qrcode !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+        try {
+            document.getElementById('h5qrView').style.display = '';
+            const h5 = new Html5Qrcode('h5qrView', {
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ]
+            });
+            await h5.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 260, height: 160 } },
+                decoded => sendScan((decoded || '').trim()),
+                () => { /* per-frame misses are normal */ });
+            return;
+        } catch (err) {
+            console.warn('[Scanner] html5-qrcode failed', err);
+        }
     }
+    document.getElementById('scanStatus').textContent = 'Camera unavailable — type barcodes below.';
 }
