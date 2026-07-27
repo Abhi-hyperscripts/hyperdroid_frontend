@@ -84,7 +84,7 @@ function initItemModalDropdowns(selectedCat, selectedType) {
 
 function showItemModal() {
     document.getElementById('itemModalTitle').textContent = 'New Item';
-    ['itemId', 'itSku', 'itName', 'itSalePrice', 'itPurchasePrice', 'itHsn'].forEach(id => document.getElementById(id).value = '');
+    ['itemId', 'itSku', 'itName', 'itSalePrice', 'itPurchasePrice', 'itHsn', 'itBarcode'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('itUnit').value = 'pcs';
     document.getElementById('itWarranty').value = '0';
     document.getElementById('itReorder').value = '0';
@@ -106,6 +106,7 @@ function editItem(id) {
     document.getElementById('itSalePrice').value = i.sale_price;
     document.getElementById('itPurchasePrice').value = i.purchase_price ?? '';
     document.getElementById('itHsn').value = i.hsn_sac || '';
+    document.getElementById('itBarcode').value = i.barcode || '';
     document.getElementById('itUnit').value = i.unit;
     document.getElementById('itWarranty').value = i.warranty_months;
     document.getElementById('itReorder').value = i.reorder_level;
@@ -127,6 +128,7 @@ async function saveItem() {
         sale_price: parseFloat(document.getElementById('itSalePrice').value) || 0,
         purchase_price: parseFloat(document.getElementById('itPurchasePrice').value) || null,
         hsn_sac: document.getElementById('itHsn').value.trim() || null,
+        barcode: document.getElementById('itBarcode').value.trim() || null,
         unit: document.getElementById('itUnit').value.trim() || 'pcs',
         warranty_months: parseInt(document.getElementById('itWarranty').value) || 0,
         reorder_level: parseFloat(document.getElementById('itReorder').value) || 0,
@@ -342,6 +344,7 @@ function parseCsvRows() {
                 reorder_level: parseFloat(c[7]) || 0,
                 track_inventory: c[8] !== undefined ? yes(c[8]) : true,
                 tracking_mode: yes(c[9]) ? 'serial' : 'none',
+                barcode: c[10] || null,
                 item_type: 'goods'
             };
         }).filter(r => r.sku && r.name);

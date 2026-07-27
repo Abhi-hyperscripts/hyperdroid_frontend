@@ -50,7 +50,9 @@ document.addEventListener('DOMContentLoaded', async function () {
             e.preventDefault();
             const q = search.value.trim().toLowerCase();
             const sellable = i => !i.track_inventory || i.qty_on_hand > 0;
-            const hit = posItems.find(i => i.sku.toLowerCase() === q) || filteredItems().find(sellable);
+            const hit = posItems.find(i => (i.barcode || '').toLowerCase() === q)
+                || posItems.find(i => i.sku.toLowerCase() === q)
+                || filteredItems().find(sellable);
             if (hit) { addToCart(hit.id); search.value = ''; renderGrid(); }
         }
     });
@@ -110,6 +112,34 @@ function applyStockPush(updates) {
     if (capped) Toast.error('Stock changed at another counter — cart quantities adjusted.');
 }
 
+/**
+ * Global keyboard wedge: USB/Bluetooth barcode scanners are HID keyboards that "type"
+ * the code in <50ms bursts ending with Enter. A burst of ≥6 chars with <45ms gaps is
+ * unambiguously a scan (humans type ~150ms/char), so scans are captured ANYWHERE on
+ * the page — the teller can never miss a beep because focus was on a chip or stepper.
+ * The search box keeps its own Enter handler; the wedge skips it to avoid double-adds.
+ */
+let _wedgeBuf = '';
+let _wedgeLast = 0;
+document.addEventListener('keydown', (e) => {
+    const inSearch = e.target === document.getElementById('posSearch');
+    const now = performance.now();
+    if (now - _wedgeLast > 45) _wedgeBuf = '';
+    _wedgeLast = now;
+    if (e.key === 'Enter') {
+        if (!inSearch && _wedgeBuf.length >= 6) {
+            const code = _wedgeBuf.toLowerCase();
+            _wedgeBuf = '';
+            const hit = posItems.find(i => (i.barcode || '').toLowerCase() === code)
+                || posItems.find(i => i.sku.toLowerCase() === code);
+            if (hit) { e.preventDefault(); addToCart(hit.id); }
+            else Toast.error(`No item with barcode '${code}'`);
+        }
+        return;
+    }
+    if (e.key.length === 1) _wedgeBuf += e.key;
+});
+
 function connectStockHub() {
     if (typeof signalR === 'undefined' || typeof getAuthToken !== 'function') return;
     try {
@@ -149,7 +179,7 @@ function filteredItems() {
     const q = (document.getElementById('posSearch')?.value || '').toLowerCase();
     return posItems.filter(i =>
         (!posCategory || i.category_name === posCategory) &&
-        (!q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)));
+        (!q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q) || (i.barcode || '').toLowerCase().includes(q)));
 }
 
 function renderCategoryChips() {
