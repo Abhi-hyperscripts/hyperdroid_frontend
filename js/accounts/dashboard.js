@@ -456,7 +456,7 @@ const GUIDE_HELP = {
         what: `Who you sell to. Each customer record carries the two facts that drive tax: their state and their GST registration status.`,
         why: `Set once, correct forever: registered Delhi client → IGST automatically; overseas client → zero-rated export automatically. Every invoice, statement and reminder hangs off this record.`,
         how: [`Open Parties → Customers → Add`, `Name, state, GST treatment (registered / unregistered / overseas), GSTIN if they have one`, `Add just your real customers — more get added as they come`],
-        example: `Add "Opro Maldives" as Overseas once — every invoice to them is automatically a zero-GST export. No per-invoice thinking.`
+        example: `Add "Palm Cove Resorts (Maldives)" as Overseas once — every invoice to them is automatically a zero-GST export. No per-invoice thinking.`
     },
     'Vendors': {
         what: `Who you buy from — landlord, internet provider, the AC repair shop, your CA.`,
