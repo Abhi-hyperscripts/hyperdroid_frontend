@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         await joinByToken(qrToken);
         return;
     }
-    // Manual-code path: short codes are guessable, so this path requires a tenant login.
-    if (!await AccountsCommon.initPage('scanner', '../')) return;
+    // Manual-code path: works only for logged-in staff (the hub enforces it);
+    // an anonymous phone that tries a code gets a clear pointer to the QR.
     wireInputs();
 });
 
@@ -74,7 +74,9 @@ async function joinSession() {
         hub = buildHub(true);
         wireAcks();
         await hub.start();
-        const token = await hub.invoke('JoinPosSession', code);
+        let token = null;
+        try { token = await hub.invoke('JoinPosSession', code); }
+        catch { msg.textContent = 'Codes need a staff login on this phone — scan the QR on the till instead (no login needed).'; return; }
         if (!token) { msg.textContent = 'No till is waiting on that code — check it and try again.'; return; }
         sessionToken = token;
         showScanUi(code);
