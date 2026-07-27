@@ -7,8 +7,17 @@
 let hub = null, sessionCode = null, lastSent = '', lastSentAt = 0;
 
 document.addEventListener('DOMContentLoaded', async function () {
+    // Stash the QR's ?code= BEFORE the auth gate — a login redirect drops the query string.
+    const qrCode = new URLSearchParams(location.search).get('code');
+    if (qrCode) localStorage.setItem('pendingPairCode', qrCode.toUpperCase());
     if (!await AccountsCommon.initPage('scanner', '../')) return;
     document.getElementById('pairInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinSession(); });
+    const pending = localStorage.getItem('pendingPairCode');
+    if (pending) {
+        localStorage.removeItem('pendingPairCode');
+        document.getElementById('pairInput').value = pending;
+        joinSession();   // auto-pair straight from the QR
+    }
     document.getElementById('manualCode').addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); sendScan(e.target.value.trim()); e.target.value = ''; }
     });

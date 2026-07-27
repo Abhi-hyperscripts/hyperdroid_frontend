@@ -227,14 +227,19 @@ async function pairPhoneScanner() {
     if (!ok) { Toast.error('Could not open a pairing session'); return; }
     const overlay = document.createElement('div');
     overlay.className = 'modal'; overlay.style.display = 'flex'; overlay.id = 'pairModal';
+    const scanUrl = `${location.origin}/pages/accounts/scanner.html?code=${pairCode}`;
     overlay.innerHTML = `<div class="modal-content" style="max-width:420px;text-align:center;">
         <div class="modal-header"><h3>Pair phone scanner</h3><button class="close-btn" onclick="document.getElementById('pairModal').remove()">&times;</button></div>
         <div class="modal-body">
-            <p style="font-size:0.88rem;color:var(--text-secondary);">On the phone, open<br><strong>ragenaizer.com/pages/accounts/scanner.html</strong><br>log in, and enter this code:</p>
-            <div style="font-size:2.6rem;font-weight:800;letter-spacing:0.35em;margin:14px 0;">${pairCode}</div>
+            <p style="font-size:0.88rem;color:var(--text-secondary);">Scan this with the phone's camera — it opens the scanner already paired:</p>
+            <div id="pairQr" style="display:inline-block;background:#fff;padding:12px;border-radius:12px;margin:12px 0;"></div>
+            <p style="font-size:0.8rem;color:var(--text-secondary);">or open <a href="${scanUrl}" target="_blank" style="word-break:break-all;">${scanUrl.replace(location.origin, 'ragenaizer.com')}</a><br>and enter the code:</p>
+            <div style="font-size:2rem;font-weight:800;letter-spacing:0.3em;margin:8px 0;">${pairCode}</div>
             <p id="pairStatus" style="font-size:0.85rem;color:var(--text-secondary);">Waiting for the phone…</p>
         </div></div>`;
     document.body.appendChild(overlay);
+    if (typeof QRCode !== 'undefined')
+        new QRCode(document.getElementById('pairQr'), { text: scanUrl, width: 170, height: 170, correctLevel: QRCode.CorrectLevel.M });
 }
 
 function taxRateFor(configId) {
