@@ -416,6 +416,83 @@ function setProformaBillTo(mode) {
     document.querySelectorAll('.proforma-recipient-field').forEach(el => el.style.display = isRecipient ? '' : 'none');
 }
 
+// ── Multi-currency (display-layer FX) — mirror of the invoice form ────────────
+const BASE_CURRENCY = 'INR';
+let currencyList = [];
+let proformaCurrencyDropdown = null;
+
+async function loadCurrencyList() {
+    if (currencyList.length) return currencyList;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('currency/list'), { _skipSpinner: true });
+        currencyList = Array.isArray(res) ? res : [];
+    } catch { /* offline fallback below */ }
+    if (!currencyList.length) currencyList = [
+        { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
+        { code: 'USD', name: 'US Dollar', symbol: '$' },
+        { code: 'EUR', name: 'Euro', symbol: '€' },
+        { code: 'GBP', name: 'British Pound', symbol: '£' }
+    ];
+    return currencyList;
+}
+
+function currencySymbol(code) {
+    return currencyList.find(c => c.code === code)?.symbol || code + ' ';
+}
+
+function proformaCurrency() { return proformaCurrencyDropdown?.getValue?.() || BASE_CURRENCY; }
+function proformaRate() { return parseFloat(document.getElementById('proformaExchangeRate')?.value) || 0; }
+
+async function initProformaCurrencyDropdown(value) {
+    const container = document.getElementById('proformaCurrencyContainer');
+    if (!container || typeof SearchableDropdown !== 'function') return;
+    await loadCurrencyList();
+    const opts = currencyList.map(c => ({ value: c.code, label: `${c.code} — ${c.name}` }));
+    if (proformaCurrencyDropdown?.setOptions) {
+        proformaCurrencyDropdown.setOptions(opts, false);
+        proformaCurrencyDropdown.setValue?.(value || BASE_CURRENCY);
+    } else {
+        container.innerHTML = '';
+        proformaCurrencyDropdown = new SearchableDropdown(container, {
+            id: 'proformaCurrencyDD',
+            options: opts,
+            value: value || BASE_CURRENCY,
+            placeholder: BASE_CURRENCY,
+            searchPlaceholder: 'Search currency…',
+            compact: true,
+            onChange: () => onProformaCurrencyChanged(true)
+        });
+    }
+    onProformaCurrencyChanged(false);
+}
+
+async function onProformaCurrencyChanged(autoFetch) {
+    const cur = proformaCurrency();
+    const group = document.getElementById('proformaRateGroup');
+    const hint = document.getElementById('proformaRateHint');
+    const rateEl = document.getElementById('proformaExchangeRate');
+    if (!group) return;
+    if (cur === BASE_CURRENCY) {
+        group.style.display = 'none';
+        if (rateEl) rateEl.value = '';
+        calculateProformaTotals();
+        return;
+    }
+    group.style.display = '';
+    if (autoFetch) {
+        if (hint) hint.textContent = 'Fetching rate…';
+        try {
+            const date = document.getElementById('proformaDate')?.value || '';
+            const res = await api.request(AccountsCommon.buildUrl('currency/rate', { from: cur, to: BASE_CURRENCY, ...(date ? { date } : {}) }), { _skipSpinner: true });
+            if (rateEl) rateEl.value = res.rate;
+            if (hint) hint.textContent = `1 ${cur} = ₹${res.rate} · ECB reference (${res.effective_date?.split('T')[0] || 'latest'}) — editable`;
+        } catch {
+            if (hint) hint.textContent = `Couldn't fetch the ${cur} rate — enter it manually (how many ₹ one ${cur} is worth).`;
+        }
+    }
+    calculateProformaTotals();
+}
+
 function showCreateProformaModal() {
     document.getElementById('proformaModalTitle').textContent = 'Create Proforma Invoice';
     document.getElementById('proformaForm').reset();
@@ -428,6 +505,7 @@ function showCreateProformaModal() {
     proformaCustSel.value = '';
     proformaCustSel.dispatchEvent(new Event('change'));
     document.getElementById('proformaLines').innerHTML = '';
+    initProformaCurrencyDropdown(BASE_CURRENCY);
     addProformaLine();
     calculateProformaTotals();
     renderProformaCustomFields(null);
@@ -460,6 +538,17 @@ async function editProforma(id) {
         document.getElementById('proformaNotes').value = pi.notes || '';
 
         const lines = pi.lines || [];
+        const fxRate = pi.exchange_rate ? parseFloat(pi.exchange_rate) : 0;
+        await initProformaCurrencyDropdown(pi.currency || BASE_CURRENCY);
+        if (fxRate > 0) {
+            document.getElementById('proformaExchangeRate').value = fxRate;
+            const rh = document.getElementById('proformaRateHint');
+            if (rh) rh.textContent = `1 ${pi.currency} = ₹${fxRate} · rate captured on this quote — editable`;
+            lines.forEach(l => {
+                const inr = parseFloat(l.unit_price ?? 0);
+                l.unit_price = Math.round((inr / fxRate) * 100) / 100;
+            });
+        }
         const tbody = document.getElementById('proformaLines');
         tbody.innerHTML = '';
         if (lines.length) {
@@ -675,11 +764,23 @@ function calculateProformaTotals() {
             }
         }
     });
-    setText('proformaSubtotal', subtotal.toFixed(2));
-    setText('proformaTax', totalTax.toFixed(2));
+    const cur = proformaCurrency();
+    const sym = cur === BASE_CURRENCY ? '' : currencySymbol(cur);
+    setText('proformaSubtotal', sym + subtotal.toFixed(2));
+    setText('proformaTax', sym + totalTax.toFixed(2));
     // The proforma stores/prints the pre-tax subtotal (GST is authoritatively added when it converts to
     // an invoice), so the Proforma Total must equal the subtotal — matching the saved + detail-view figures.
-    setText('proformaTotal', subtotal.toFixed(2));
+    setText('proformaTotal', sym + subtotal.toFixed(2));
+    const fxRow = document.getElementById('proformaFxEquiv');
+    if (fxRow) {
+        const rate = proformaRate();
+        if (cur !== BASE_CURRENCY && rate > 0) {
+            fxRow.style.display = '';
+            fxRow.innerHTML = `<span>Posted to books as</span><span>≈ ₹${(subtotal * rate).toLocaleString('en-IN', { maximumFractionDigits: 2 })} @ ${rate}</span>`;
+        } else {
+            fxRow.style.display = 'none';
+        }
+    }
 }
 
 // ============================================================================
@@ -729,7 +830,19 @@ async function saveProforma() {
     // tax_configuration_id was previously a single header-level field —
     // keeping a no-op default so the existing backend still parses, but tax
     // is now per-line via the lines[*].tax_config_id field above.
+    const docCurrency = proformaCurrency();
+    const docRate = proformaRate();
+    if (docCurrency !== BASE_CURRENCY) {
+        if (!(docRate > 0)) {
+            Toast.error(`Enter the exchange rate: how many ₹ one ${docCurrency} is worth`);
+            return;
+        }
+        lines.forEach(l => { l.unit_price = Math.round(l.unit_price * docRate * 100) / 100; });
+    }
+
     const payload = {
+        currency: docCurrency,
+        exchange_rate: docCurrency !== BASE_CURRENCY ? docRate : null,
         // Existing-customer mode sends customer_id; recipient mode sends the recipient_* fields (customer_id null).
         customer_id: isRecipient ? null : (document.getElementById('proformaCustomerId').value || null),
         recipient_name: isRecipient ? (document.getElementById('proformaRecipientName').value.trim() || null) : null,

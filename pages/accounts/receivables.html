@@ -605,9 +605,14 @@
                             <small class="field-hint">Applies to every line item on this invoice.</small>
                         </div>
                         <div class="form-group">
-                            <label for="invoiceCurrency">Currency</label>
-                            <input type="text" id="invoiceCurrency" class="form-control" value="INR" readonly title="Invoices use the account's base currency">
-                            <small class="field-hint">Base currency (per-document currency not supported).</small>
+                            <label for="invoiceCurrencyContainer">Currency</label>
+                            <div class="searchable-dropdown-container" id="invoiceCurrencyContainer"></div>
+                            <small class="field-hint">Books are kept in INR. A foreign-currency invoice is converted at the rate below.</small>
+                        </div>
+                        <div class="form-group" id="invoiceRateGroup" style="display:none;">
+                            <label for="invoiceExchangeRate">Exchange Rate <span class="req">*</span></label>
+                            <input type="number" id="invoiceExchangeRate" class="form-control" step="0.0001" min="0" placeholder="0.0000" oninput="calculateInvoiceTotals()">
+                            <small class="field-hint" id="invoiceRateHint">How many ₹ one unit of the invoice currency is worth.</small>
                         </div>
                         <div class="form-group">
                             <label for="invoiceDate">Invoice Date <span class="req">*</span></label>
@@ -657,6 +662,7 @@
                             <div class="po-totals-row"><span>Subtotal:</span><span id="invoiceSubtotal">0.00</span></div>
                             <div class="po-totals-row"><span>Tax (Output GST):</span><span id="invoiceTax">0.00</span></div>
                             <div class="po-totals-row po-totals-grand"><span>Total:</span><span id="invoiceTotal">0.00</span></div>
+                            <div class="po-totals-row" id="invoiceFxEquiv" style="display:none;color:var(--text-secondary);font-size:0.82rem;"></div>
                         </div>
                     </div>
                 </div>

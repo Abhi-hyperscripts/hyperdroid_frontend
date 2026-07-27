@@ -538,6 +538,87 @@ async function submitBulkInvoices() {
 // Invoice-level Project dropdown (one project per invoice; applied to every line on save)
 let invoiceProjectDropdown = null;
 
+// ── Multi-currency (display-layer FX) ─────────────────────────────────────────
+// Line prices are ENTERED in the invoice currency; on save they are converted to
+// INR at the captured rate (books stay in INR), and currency+rate ride along for
+// the client-facing document. Base-currency invoices skip all of this.
+const BASE_CURRENCY = 'INR';
+let currencyList = [];          // [{code,name,symbol}] from /currency/list
+let invoiceCurrencyDropdown = null;
+
+async function loadCurrencyList() {
+    if (currencyList.length) return currencyList;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('currency/list'), { _skipSpinner: true });
+        currencyList = Array.isArray(res) ? res : [];
+    } catch { /* offline fallback below */ }
+    if (!currencyList.length) currencyList = [
+        { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
+        { code: 'USD', name: 'US Dollar', symbol: '$' },
+        { code: 'EUR', name: 'Euro', symbol: '€' },
+        { code: 'GBP', name: 'British Pound', symbol: '£' }
+    ];
+    return currencyList;
+}
+
+function currencySymbol(code) {
+    return currencyList.find(c => c.code === code)?.symbol || code + ' ';
+}
+
+function invoiceCurrency() { return invoiceCurrencyDropdown?.getValue?.() || BASE_CURRENCY; }
+function invoiceRate() { return parseFloat(document.getElementById('invoiceExchangeRate')?.value) || 0; }
+
+async function initInvoiceCurrencyDropdown(value) {
+    const container = document.getElementById('invoiceCurrencyContainer');
+    if (!container || typeof SearchableDropdown !== 'function') return;
+    await loadCurrencyList();
+    const opts = currencyList.map(c => ({ value: c.code, label: `${c.code} — ${c.name}` }));
+    if (invoiceCurrencyDropdown?.setOptions) {
+        invoiceCurrencyDropdown.setOptions(opts, false);
+        invoiceCurrencyDropdown.setValue?.(value || BASE_CURRENCY);
+    } else {
+        container.innerHTML = '';
+        invoiceCurrencyDropdown = new SearchableDropdown(container, {
+            id: 'invoiceCurrencyDD',
+            options: opts,
+            value: value || BASE_CURRENCY,
+            placeholder: BASE_CURRENCY,
+            searchPlaceholder: 'Search currency…',
+            compact: true,
+            onChange: () => onInvoiceCurrencyChanged(true)
+        });
+    }
+    onInvoiceCurrencyChanged(false);
+}
+
+/** Show/hide the rate field; auto-fetch the ECB rate when switching to a foreign currency. */
+async function onInvoiceCurrencyChanged(autoFetch) {
+    const cur = invoiceCurrency();
+    const group = document.getElementById('invoiceRateGroup');
+    const hint = document.getElementById('invoiceRateHint');
+    const rateEl = document.getElementById('invoiceExchangeRate');
+    if (!group) return;
+    if (cur === BASE_CURRENCY) {
+        group.style.display = 'none';
+        if (rateEl) rateEl.value = '';
+        calculateInvoiceTotals();
+        return;
+    }
+    group.style.display = '';
+    if (autoFetch) {
+        if (hint) hint.textContent = 'Fetching rate…';
+        try {
+            const date = document.getElementById('invoiceDate')?.value || '';
+            const res = await api.request(AccountsCommon.buildUrl('currency/rate', { from: cur, to: BASE_CURRENCY, ...(date ? { date } : {}) }), { _skipSpinner: true });
+            if (rateEl) rateEl.value = res.rate;
+            if (hint) hint.textContent = `1 ${cur} = ₹${res.rate} · ECB reference (${res.effective_date?.split('T')[0] || 'latest'}) — editable`;
+        } catch {
+            if (hint) hint.textContent = `Couldn't fetch the ${cur} rate — enter it manually (how many ₹ one ${cur} is worth).`;
+        }
+    }
+    calculateInvoiceTotals();
+}
+
 function initInvoiceProjectDropdown(value) {
     const container = document.getElementById('invoiceProjectContainer');
     if (!container || typeof SearchableDropdown !== 'function') return;
@@ -567,6 +648,7 @@ function showCreateInvoiceModal() {
     document.getElementById('invoiceId').value = '';
     document.getElementById('invoiceLines').innerHTML = '';
     initInvoiceProjectDropdown('');
+    initInvoiceCurrencyDropdown(BASE_CURRENCY);
     addInvoiceLine();
     calculateInvoiceTotals();
     renderInvoiceCustomFields(null);
@@ -596,6 +678,19 @@ async function editInvoice(id) {
         document.getElementById('invoiceNotes').value = inv.notes || '';
 
         const lines = inv.lines || inv.line_items || [];
+        // FX invoices store line amounts in INR; display them back in the document currency
+        // at the captured rate so the user edits what the client sees.
+        const fxRate = inv.exchange_rate ? parseFloat(inv.exchange_rate) : 0;
+        await initInvoiceCurrencyDropdown(inv.currency || BASE_CURRENCY);
+        if (fxRate > 0) {
+            document.getElementById('invoiceExchangeRate').value = fxRate;
+            const rh = document.getElementById('invoiceRateHint');
+            if (rh) rh.textContent = `1 ${inv.currency} = ₹${fxRate} · rate captured on this invoice — editable`;
+            lines.forEach(l => {
+                const inr = parseFloat(l.unit_price ?? l.rate ?? 0);
+                l.unit_price = Math.round((inr / fxRate) * 100) / 100;
+            });
+        }
         // One project per invoice: seed the header dropdown from the lines. Legacy invoices could
         // tag lines with different projects — surface that instead of silently rewriting on save.
         const lineProjects = [...new Set(lines.map(l => l.project_id || ''))];
@@ -909,9 +1004,21 @@ function calculateInvoiceTotals() {
         }
     });
 
-    setText('invoiceSubtotal', subtotal.toFixed(2));
-    setText('invoiceTax', totalTax.toFixed(2));
-    setText('invoiceTotal', (subtotal + totalTax).toFixed(2));
+    const cur = invoiceCurrency();
+    const sym = cur === BASE_CURRENCY ? '' : currencySymbol(cur);
+    setText('invoiceSubtotal', sym + subtotal.toFixed(2));
+    setText('invoiceTax', sym + totalTax.toFixed(2));
+    setText('invoiceTotal', sym + (subtotal + totalTax).toFixed(2));
+    const fxRow = document.getElementById('invoiceFxEquiv');
+    if (fxRow) {
+        const rate = invoiceRate();
+        if (cur !== BASE_CURRENCY && rate > 0) {
+            fxRow.style.display = '';
+            fxRow.innerHTML = `<span>Posted to books as</span><span>≈ ₹${((subtotal + totalTax) * rate).toLocaleString('en-IN', { maximumFractionDigits: 2 })} @ ${rate}</span>`;
+        } else {
+            fxRow.style.display = 'none';
+        }
+    }
 }
 
 async function saveInvoice(approve) {
@@ -979,11 +1086,25 @@ async function saveInvoice(approve) {
     // status:'approved' here was silently dropped, so "Save & Approve" only ever
     // saved a draft. Fixed in Phase 4 Tier 1: send a clean payload without `status`,
     // then chain a POST /approve when approve===true.
+    const docCurrency = invoiceCurrency();
+    const docRate = invoiceRate();
+    if (docCurrency !== BASE_CURRENCY) {
+        if (!(docRate > 0)) {
+            Toast.error(`Enter the exchange rate: how many ₹ one ${docCurrency} is worth`);
+            return;
+        }
+        // Convert entered document-currency prices to INR — the books (GL, AR, taxes,
+        // payments) run entirely in INR; currency+rate ride along for the client document.
+        lines.forEach(l => { l.unit_price = Math.round(l.unit_price * docRate * 100) / 100; });
+    }
+
     const payload = {
         customer_id: document.getElementById('invoiceCustomerId').value,
         invoice_date: document.getElementById('invoiceDate').value,
         due_date: document.getElementById('invoiceDueDate').value,
         notes: document.getElementById('invoiceNotes').value,
+        currency: docCurrency,
+        exchange_rate: docCurrency !== BASE_CURRENCY ? docRate : null,
         lines
     };
 
