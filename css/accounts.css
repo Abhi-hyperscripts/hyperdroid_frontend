@@ -3083,3 +3083,6 @@ a.dv-tile:hover { transform: translateY(-2px);
 .pos-more { text-align: center; padding: 10px; font-size: 0.8rem; color: var(--text-secondary); }
 
 .pos-results { min-width: 0; }
+
+.pos-table tbody tr.pos-oos { opacity: 0.55; }
+.pos-add.off { background: var(--bg-tertiary); color: var(--text-secondary); }

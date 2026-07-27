@@ -48,7 +48,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (e.key === 'Enter') {
             e.preventDefault();
             const q = search.value.trim().toLowerCase();
-            const hit = posItems.find(i => i.sku.toLowerCase() === q) || filteredItems()[0];
+            const sellable = i => !i.track_inventory || i.qty_on_hand > 0;
+            const hit = posItems.find(i => i.sku.toLowerCase() === q) || filteredItems().find(sellable);
             if (hit) { addToCart(hit.id); search.value = ''; renderGrid(); }
         }
     });
@@ -107,12 +108,12 @@ function renderGrid() {
     grid.innerHTML = `<div class="pos-table-wrap"><table class="pos-table">
         <thead><tr><th>Item</th><th>Category</th><th class="r">Price</th><th class="r">Stock</th><th></th></tr></thead>
         <tbody>${rows.map((i, idx) => `
-            <tr class="${idx === 0 ? 'first' : ''}" onclick="addToCart('${i.id}')">
+            <tr class="${idx === 0 ? 'first' : ''}${i.track_inventory && i.qty_on_hand <= 0 ? ' pos-oos' : ''}" onclick="addToCart('${i.id}')">
                 <td><div class="nm">${esc(i.name)}</div><div class="sku">${esc(i.sku)}</div></td>
                 <td class="cat">${esc(i.category_name || '—')}</td>
                 <td class="r pr">${money(i.sale_price)}</td>
                 <td class="r ${i.track_inventory && i.qty_on_hand <= 0 ? 'out' : ''}">${i.track_inventory ? i.qty_on_hand : '—'}</td>
-                <td class="r"><span class="pos-add">+</span></td>
+                <td class="r">${i.track_inventory && i.qty_on_hand <= 0 ? '<span class="pos-add off">✕</span>' : '<span class="pos-add">+</span>'}</td>
             </tr>`).join('')}
         </tbody></table></div>
         ${all.length > POS_GRID_CAP ? `<div class="pos-more">Showing ${POS_GRID_CAP} of ${all.length} — keep typing to narrow, or scan the barcode. Enter adds the highlighted row.</div>` : ''}`;
@@ -122,6 +123,13 @@ function addToCart(itemId) {
     const it = posItems.find(x => x.id === itemId);
     if (!it) return;
     const line = cart.find(c => c.item.id === itemId);
+    // Counter sales are physical goods in hand: never ring more than the shelf holds.
+    // (The B2B invoice flow still allows advance-order oversell — that's deliberate.)
+    if (it.track_inventory) {
+        const inCart = line?.qty || 0;
+        if (it.qty_on_hand <= 0) { Toast.error(`'${it.name}' is out of stock — receive or adjust stock first.`); return; }
+        if (inCart + 1 > it.qty_on_hand) { Toast.error(`Only ${it.qty_on_hand} of '${it.name}' in stock.`); return; }
+    }
     if (line) line.qty += 1; else cart.push({ item: it, qty: 1 });
     renderCart();
 }
@@ -129,7 +137,12 @@ function addToCart(itemId) {
 function setQty(itemId, qty) {
     const line = cart.find(c => c.item.id === itemId);
     if (!line) return;
-    line.qty = Math.max(0, qty);
+    let capped = Math.max(0, qty);
+    if (line.item.track_inventory && capped > line.item.qty_on_hand) {
+        capped = line.item.qty_on_hand;
+        Toast.error(`Only ${line.item.qty_on_hand} of '${line.item.name}' in stock.`);
+    }
+    line.qty = capped;
     if (!line.qty) cart = cart.filter(c => c !== line);
     renderCart();
 }
