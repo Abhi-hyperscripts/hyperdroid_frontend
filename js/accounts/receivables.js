@@ -535,6 +535,29 @@ async function submitBulkInvoices() {
 // INVOICE MODAL & CRUD
 // ============================================================================
 
+// Invoice-level Project dropdown (one project per invoice; applied to every line on save)
+let invoiceProjectDropdown = null;
+
+function initInvoiceProjectDropdown(value) {
+    const container = document.getElementById('invoiceProjectContainer');
+    if (!container || typeof SearchableDropdown !== 'function') return;
+    const opts = invoiceProjectOptions();
+    if (invoiceProjectDropdown?.setOptions) {
+        invoiceProjectDropdown.setOptions(opts, false);
+        invoiceProjectDropdown.setValue?.(value || '');
+    } else {
+        container.innerHTML = '';
+        invoiceProjectDropdown = new SearchableDropdown(container, {
+            id: 'invoiceProjectDD',
+            options: opts,
+            value: value || '',
+            placeholder: 'No project',
+            searchPlaceholder: 'Search projects…',
+            compact: true
+        });
+    }
+}
+
 function showCreateInvoiceModal() {
     document.getElementById('invoiceModalTitle').textContent = 'Create Invoice';
     // The modal is shared with the read-only "view issued invoice" path; clear that state first,
@@ -543,6 +566,7 @@ function showCreateInvoiceModal() {
     document.getElementById('invoiceForm').reset();
     document.getElementById('invoiceId').value = '';
     document.getElementById('invoiceLines').innerHTML = '';
+    initInvoiceProjectDropdown('');
     addInvoiceLine();
     calculateInvoiceTotals();
     renderInvoiceCustomFields(null);
@@ -572,6 +596,12 @@ async function editInvoice(id) {
         document.getElementById('invoiceNotes').value = inv.notes || '';
 
         const lines = inv.lines || inv.line_items || [];
+        // One project per invoice: seed the header dropdown from the lines. Legacy invoices could
+        // tag lines with different projects — surface that instead of silently rewriting on save.
+        const lineProjects = [...new Set(lines.map(l => l.project_id || ''))];
+        initInvoiceProjectDropdown(lineProjects.length === 1 ? lineProjects[0] : '');
+        if (isDraft && lineProjects.filter(p => p).length > 1)
+            Toast.info('This draft has lines tagged to different projects. Saving will apply the single project selected above to all lines.');
         const tbody = document.getElementById('invoiceLines');
         tbody.innerHTML = '';
         if (lines.length) {
@@ -638,6 +668,12 @@ function addInvoiceLine(data = {}) {
     // Normalize: backend uses unit_price, frontend uses rate
     if (data.unit_price !== undefined && data.rate === undefined) data.rate = data.unit_price;
     const tbody = document.getElementById('invoiceLines');
+    // A fresh line (Add Line click) inherits the previous row's GL account — on a 10-line
+    // invoice the account rarely changes row to row, so default to it (still editable).
+    if (data.account_id === undefined) {
+        const prevAcct = tbody.querySelector('tr:last-child .line-account')?.value;
+        if (prevAcct) data.account_id = prevAcct;
+    }
     const row = document.createElement('tr');
     const acctOptions = AccountsCommon.postableAccounts(accounts, 'income').map(a => {
         const code = a.account_code || a.code || '';
@@ -656,7 +692,6 @@ function addInvoiceLine(data = {}) {
         <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculateInvoiceTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${data.rate || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateInvoiceTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
-        <td><div class="searchable-dropdown-container line-project-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeInvoiceLine(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
@@ -705,17 +740,6 @@ function addInvoiceLine(data = {}) {
     });
     row._lineTaxDropdown = taxDd;
 
-    // Project — optional analytical tag per line, scoped to the invoice's customer (no GL impact).
-    const projDd = new SearchableDropdown(row.querySelector('.line-project-sd'), {
-        id: `inv-line-project-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        options: invoiceProjectOptions(),
-        value: data.project_id || '',
-        placeholder: 'None',
-        searchPlaceholder: 'Search projects…',
-        compact: true
-    });
-    row._lineProjectDropdown = projDd;
-
     calculateInvoiceTotals();
 }
 
@@ -754,13 +778,9 @@ function onInvoiceCustomerChange() {
     }
 }
 
-/** Re-scope every line's Project dropdown when the invoice customer changes. */
+/** Re-scope the invoice's Project dropdown when the customer changes (projects are per-customer). */
 function refreshLineProjectDropdowns() {
-    const opts = invoiceProjectOptions();
-    document.querySelectorAll('#invoiceLines tr').forEach(row => {
-        const dd = row._lineProjectDropdown;
-        if (dd?.setOptions) { dd.setOptions(opts, false); dd.setValue?.(''); }
-    });
+    initInvoiceProjectDropdown('');
 }
 
 function _invoiceTaxRateFor(configId) {
@@ -928,7 +948,7 @@ async function saveInvoice(approve) {
             unit_price: rate,
             tax_config_id: taxConfigId,
             tax_rate: taxRate || 0,
-            project_id: row._lineProjectDropdown?.selectedValue || null
+            project_id: invoiceProjectDropdown?.getValue?.() || null
         });
     });
 

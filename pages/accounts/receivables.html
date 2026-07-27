@@ -600,6 +600,11 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label for="invoiceProjectContainer">Project <span class="opt">(optional)</span></label>
+                            <div class="searchable-dropdown-container" id="invoiceProjectContainer"></div>
+                            <small class="field-hint">Applies to every line item on this invoice.</small>
+                        </div>
+                        <div class="form-group">
                             <label for="invoiceCurrency">Currency</label>
                             <input type="text" id="invoiceCurrency" class="form-control" value="INR" readonly title="Invoices use the account's base currency">
                             <small class="field-hint">Base currency (per-document currency not supported).</small>
@@ -635,7 +640,6 @@
                                         <th style="width:110px;">Qty</th>
                                         <th style="width:140px;">Unit Price</th>
                                         <th style="width:160px;">Tax (Output GST)</th>
-                                        <th style="width:140px;">Project</th>
                                         <th style="width:140px; text-align:right;">Amount</th>
                                         <th style="width:40px;"></th>
                                     </tr>
