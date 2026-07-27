@@ -220,6 +220,31 @@
         </div>
     </div>
 
+    <!-- BOM modal -->
+    <div class="modal" id="bomModal">
+        <div class="modal-content" style="max-width:640px;">
+            <div class="modal-header"><h3 id="bomModalTitle">Bill of Materials</h3><button class="close-btn" onclick="AccountsCommon.closeModal('bomModal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="bomItemId">
+                <div class="data-table-container"><table class="data-table">
+                    <thead><tr><th>Component</th><th style="width:110px;">Qty / unit</th><th style="width:110px;">On hand</th><th style="width:40px;"></th></tr></thead>
+                    <tbody id="bomLines"></tbody>
+                </table></div>
+                <button type="button" class="btn btn-outline" style="margin-top:8px;" onclick="addBomLine()">+ Component</button>
+                <hr style="margin:14px 0;border-color:var(--border-color);">
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Build quantity</label><input type="number" id="buildQty" class="form-control" min="0" step="any" value="1"></div>
+                    <div class="form-group"><label>Build date</label><input type="text" id="buildDate" class="form-control" placeholder="Select date"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('bomModal')">Close</button>
+                <button class="btn btn-outline" id="saveBomBtn" onclick="saveBom()">Save BOM</button>
+                <button class="btn btn-primary" id="buildBtn" onclick="buildAssembly()">Build</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Receive serials modal -->
     <div class="modal" id="serialsModal">
         <div class="modal-content" style="max-width:520px;">

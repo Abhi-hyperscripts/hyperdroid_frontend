@@ -8,6 +8,25 @@
  */
 window.ACCOUNTS_HELP = {
 
+    // ── Inventory ─────────────────────────────────────────────────────────
+    'inventory:inv-items':
+        `<p><strong>Your product catalog.</strong> An <strong>item</strong> is anything you sell or buy repeatedly — a product (goods) or a service. Give it a SKU (your short code), price, GST slab and HSN code once, and billing becomes "pick item, quantity 2" instead of retyping everything. Tick <strong>Track stock</strong> for physical goods so the system counts what's on the shelf; tick <strong>Serial-tracked</strong> for things with warranties (phones, laptops) so each unit is tracked individually. The ⚙ button opens the <strong>Bill of Materials</strong> — a recipe for items you assemble from components.</p>
+         <p><strong>Example:</strong> "LAP-DELL-5520 — Dell Latitude, ₹62,000, GST 18%, warranty 12 months, serial-tracked, reorder at 3". Now every sale deducts stock, computes profit, and starts a 12-month warranty clock per serial number.</p>`,
+    'inventory:inv-stock':
+        `<p><strong>What's on the shelf, and what it's worth.</strong> Stock is valued at <strong>weighted-average cost</strong>: buy 10 @ ₹800 then 5 @ ₹900 and each unit is worth ₹833.33 in your books. The two big numbers at the top must always match — <strong>Stock Valuation</strong> (counted from items) and the <strong>Inventory GL balance</strong> (from the accounting ledger). "Books in Sync ✓" is your audit-grade guarantee. Use <strong>Adjust Stock</strong> for stock-takes (differences post to Cost of Goods Sold) and for <strong>opening stock</strong> when you first join (posts against opening balance equity, not your profit).</p>
+         <p><strong>Example:</strong> your stock-take finds 2 damaged keyboards. Adjust −2: stock drops, and ₹1,000 posts to COGS automatically — your profit honestly reflects the loss, no journal entry needed.</p>`,
+    'inventory:inv-movements':
+        `<p><strong>Every stock in and out, forever.</strong> This is the stock ledger — the inventory equivalent of your bank statement. Approving a purchase bill writes a <em>Purchase in</em>; approving an invoice writes a <em>Sale out</em> at average cost; adjustments, opening stock and assembly builds all leave rows here. Nothing edits stock silently.</p>
+         <p><strong>Example:</strong> "Where did my 4 missing power banks go?" Filter the item: 20 in on BILL-2026-014, 14 sold across 6 invoices, 2 written off in the March stock-take — leaving 4 on the shelf. Every row links to its document.</p>`,
+    'inventory:inv-serials':
+        `<p><strong>Warranty desk.</strong> For serial-tracked items, every unit has its own record: which bill it arrived on, which invoice sold it, to whom, and <strong>when its warranty ends</strong> (sale date + the item's warranty months). A customer walks in with a device — scan or type the serial, press Enter, and you instantly see IN WARRANTY or OUT OF WARRANTY with the full purchase story. Mark units <em>returned</em> or <em>claimed</em> to keep the service trail.</p>
+         <p><strong>Example:</strong> serial PH-88231 → "Sold to Meera Traders on INV-2026-0042, 2026-03-11 — IN WARRANTY until 2027-03-11." No register, no arguing over receipts.</p>`,
+
+    // ── Cash Sale (POS) ───────────────────────────────────────────────────
+    'pos:pos-counter':
+        `<p><strong>The 30-second counter sale.</strong> Tap items (or scan a SKU into the search box and press Enter), take the money, done. Behind the scenes this does full accounting in one motion: creates a tax invoice for the <strong>Walk-in Customer</strong>, approves it (revenue + GST + stock out + cost of goods sold all post), records the payment into the account you picked, and prints an 80mm receipt. Items priced "GST-inclusive" are split correctly — a ₹499 MRP at 18% books ₹422.88 revenue + ₹76.12 GST.</p>
+         <p><strong>Example:</strong> 2 × Mouse ₹500 + 1 × Keyboard ₹1,500 by UPI → total ₹2,950 with GST, stock down 3 units, profit margin recorded, receipt printed. One tap. Note: one GST slab per sale — mixed slabs ring as separate sales.</p>`,
+
     // ── Dashboard ─────────────────────────────────────────────────────────
     'accounts:_page':
         `<p><strong>Your money at a glance.</strong> Everything in Accounts follows one simple idea called <strong>double-entry</strong>: every transaction touches two places — money comes <em>from</em> somewhere and goes <em>to</em> somewhere. This dashboard summarises the result: revenue vs expenses, what customers owe you (<strong>receivables</strong>), and what you owe vendors (<strong>payables</strong>).</p>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Cash Sale (POS) - Accounts | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Cash Sale</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Cash Sale (POS)</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Counter</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="organization-layout">
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header"><h3>Cash Sale</h3></div>
+                <nav class="sidebar-nav"><div class="nav-group" data-group="pos">
+                    <div class="nav-group-header"><span class="nav-group-title">POS</span><span class="chevron">&#9660;</span></div>
+                    <div class="nav-group-items"><button class="sidebar-btn active" data-tab="pos-counter"><span class="nav-number">1</span><span class="nav-label">Counter</span></button></div>
+                </div></nav>
+            </aside>
+            <main class="organization-content">
+                <div class="tab-content active" id="pos-counter">
+                    <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start;">
+                        <div>
+                            <input type="text" id="posSearch" class="form-control" placeholder="Scan SKU / search items… (Enter adds first match)" style="margin-bottom:10px;">
+                            <div id="posGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;"></div>
+                        </div>
+                        <div class="form-card" style="position:sticky;top:80px;">
+                            <h4 style="margin-bottom:10px;">Cart</h4>
+                            <div class="data-table-container"><table class="data-table"><tbody id="posCart"></tbody></table></div>
+                            <div style="margin-top:10px;font-size:0.95rem;">
+                                <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><span id="posSub">₹0.00</span></div>
+                                <div style="display:flex;justify-content:space-between;"><span>GST</span><span id="posTax">₹0.00</span></div>
+                                <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.2rem;margin-top:6px;"><span>Total</span><span id="posTotal">₹0.00</span></div>
+                            </div>
+                            <div class="form-group" style="margin-top:12px;"><label>Received into</label><div class="searchable-dropdown-container" id="posBank"></div></div>
+                            <div class="form-group"><label>Payment method</label><div class="searchable-dropdown-container" id="posMethod"></div></div>
+                            <button class="btn btn-primary" id="posPayBtn" style="width:100%;margin-top:8px;" onclick="completeSale()">Complete Sale</button>
+                            <small class="form-hint" id="posHint" style="display:block;margin-top:8px;">Creates + approves the invoice and records the payment in one go, against the Walk-in Customer. Mixed GST slabs in one cart are not supported — ring them as separate sales.</small>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/pos.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="accounts" data-title="Accounts Assistant"><\/script>');</script>
+</body>
+</html>

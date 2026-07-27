@@ -66,7 +66,7 @@ function renderItems() {
         <td>${i.track_inventory ? fmtMoney(i.avg_cost) : '—'}</td>
         <td>${i.warranty_months ? i.warranty_months + ' mo' : '-'}</td>
         <td><span class="status-badge ${i.is_active ? 'status-active' : 'status-rejected'}">${i.is_active ? 'Active' : 'Inactive'}</span></td>
-        <td class="actions-cell">${isAdmin ? `<button class="btn-icon" onclick="editItem('${i.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <td class="actions-cell">${isAdmin ? `${i.item_type === 'goods' && i.track_inventory ? `<button class="btn-icon" onclick="openBom('${i.id}')" data-tooltip="BOM / Build">⚙</button>` : ''}<button class="btn-icon" onclick="editItem('${i.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
             <button class="btn-icon ${i.is_active ? 'danger' : ''}" onclick="toggleItem('${i.id}', ${!i.is_active})" data-tooltip="${i.is_active ? 'Deactivate' : 'Reactivate'}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></button>` : '-'}</td>
     </tr>`).join('');
 }
@@ -320,6 +320,80 @@ async function saveSerials() {
         AccountsCommon.closeModal('serialsModal');
         await loadSerials();
     } catch (err) { Toast.error(err.message || 'Failed'); }
+}
+
+// ── BOM / assembly ─────────────────────────────────────────────────────────
+let bomDDs = [];
+
+function bomComponentOptions() {
+    const finishedId = document.getElementById('bomItemId').value;
+    return items.filter(i => i.item_type === 'goods' && i.track_inventory && i.is_active && i.id !== finishedId)
+        .map(i => ({ value: i.id, label: `${i.sku} — ${i.name}` }));
+}
+
+function addBomLine(line) {
+    const tb = document.getElementById('bomLines');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><div class="searchable-dropdown-container bom-comp"></div></td>
+        <td><input type="number" class="form-control bom-qty" min="0" step="any" value="${line?.quantity ?? 1}"></td>
+        <td class="bom-onhand">${line ? line.qty_on_hand : '-'}</td>
+        <td><button type="button" class="btn-icon danger" onclick="this.closest('tr').remove()">×</button></td>`;
+    tb.appendChild(tr);
+    const dd = new SearchableDropdown(tr.querySelector('.bom-comp'), {
+        id: 'bomComp' + Math.random().toString(36).slice(2, 7),
+        options: bomComponentOptions(), value: line?.component_item_id || '', placeholder: 'Component…', compact: true,
+        onChange: v => { const it = items.find(x => x.id === v); tr.querySelector('.bom-onhand').textContent = it ? it.qty_on_hand : '-'; }
+    });
+    tr._dd = dd;
+}
+
+async function openBom(itemId) {
+    const it = items.find(x => x.id === itemId);
+    document.getElementById('bomModalTitle').textContent = `BOM — ${it.sku} ${it.name}`;
+    document.getElementById('bomItemId').value = itemId;
+    document.getElementById('bomLines').innerHTML = '';
+    document.getElementById('buildQty').value = '1';
+    AccountsCommon.setDateField('buildDate', AccountsCommon.todayLocal());
+    AccountsCommon.initDatePickers(['buildDate']);
+    try {
+        const bom = await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/bom`), { _skipSpinner: true });
+        (bom.lines || []).forEach(l => addBomLine(l));
+    } catch { /* no bom yet */ }
+    if (!document.querySelectorAll('#bomLines tr').length) addBomLine();
+    AccountsCommon.openModal('bomModal');
+}
+
+function collectBomLines() {
+    return Array.from(document.querySelectorAll('#bomLines tr')).map(tr => ({
+        component_item_id: tr._dd?.getValue?.() || '',
+        quantity: parseFloat(tr.querySelector('.bom-qty').value) || 0
+    })).filter(l => l.component_item_id && l.quantity > 0);
+}
+
+async function saveBom() {
+    const itemId = document.getElementById('bomItemId').value;
+    try {
+        await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/bom`), { method: 'PUT', body: JSON.stringify({ lines: collectBomLines() }) });
+        Toast.success('BOM saved');
+    } catch (err) { Toast.error(err.message || 'Failed to save BOM'); }
+}
+
+async function buildAssembly() {
+    const itemId = document.getElementById('bomItemId').value;
+    const qty = parseFloat(document.getElementById('buildQty').value);
+    if (!qty || qty <= 0) { Toast.error('Enter a build quantity'); return; }
+    const btn = document.getElementById('buildBtn'); btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/bom`), { method: 'PUT', body: JSON.stringify({ lines: collectBomLines() }) });
+        const res = await api.request(AccountsCommon.buildUrl('inventory/builds'), {
+            method: 'POST',
+            body: JSON.stringify({ finished_item_id: itemId, quantity: qty, build_date: document.getElementById('buildDate').value })
+        });
+        Toast.success(`Built ${qty} @ ${AccountsCommon.formatCurrency(res.unit_cost)} each`);
+        AccountsCommon.closeModal('bomModal');
+        await loadItems();
+    } catch (err) { Toast.error(err.message || 'Build failed'); }
+    finally { btn.disabled = false; }
 }
 
 async function setSerialStatus(sn, status) {
