@@ -130,10 +130,12 @@ async function startCamera() {
                 ]
             });
             await h5.start(
-                // High resolution + continuous focus are what make 1D barcodes decodable —
-                // default 640×480 frames blur the bars into mush, especially on iPhone.
-                { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 },
-                  focusMode: 'continuous', advanced: [{ focusMode: 'continuous' }] },
+                // High resolution is what makes 1D barcodes decodable — default 640×480 frames
+                // blur the bars into mush. NOTE: only STANDARD MediaTrack constraint keys here;
+                // html5-qrcode validates them and a non-standard key (e.g. focusMode) makes the
+                // whole start() throw → false 'camera unavailable'. iPhones autofocus continuously
+                // by default, so nothing is lost by omitting it.
+                { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
                 { fps: 15, qrbox: { width: 300, height: 180 },
                   experimentalFeatures: { useBarCodeDetectorIfSupported: true } },
                 decoded => sendScan((decoded || '').trim()),
