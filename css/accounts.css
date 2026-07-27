@@ -3062,3 +3062,24 @@ a.dv-tile:hover { transform: translateY(-2px);
     background: var(--bg-card); color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; cursor: pointer; }
 .pos-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
 .pos-chip.on { background: var(--brand-primary); border-color: var(--brand-primary); color: var(--text-inverse, #fff); }
+
+/* POS results — dense, keyboard-first table (replaces the card grid) */
+.pos-table-wrap { border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; background: var(--bg-card); }
+.pos-table { width: 100%; border-collapse: collapse; }
+.pos-table th { position: sticky; top: 0; background: var(--bg-tertiary); text-align: left; font-size: 0.7rem;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); padding: 9px 14px; }
+.pos-table td { padding: 8px 14px; border-top: 1px solid var(--border-color); vertical-align: middle; }
+.pos-table th.r, .pos-table td.r { text-align: right; }
+.pos-table tbody tr { cursor: pointer; }
+.pos-table tbody tr:hover { background: color-mix(in srgb, var(--brand-primary) 7%, transparent); }
+.pos-table tbody tr.first { box-shadow: inset 3px 0 0 var(--brand-primary); }
+.pos-table .nm { font-weight: 600; font-size: 0.9rem; }
+.pos-table .sku { font-size: 0.7rem; color: var(--text-secondary); font-family: monospace; }
+.pos-table .cat { font-size: 0.8rem; color: var(--text-secondary); }
+.pos-table .pr { font-weight: 700; }
+.pos-table .out { color: var(--color-error); font-weight: 700; }
+.pos-add { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center;
+    border-radius: 8px; background: var(--brand-primary); color: var(--text-inverse, #fff); font-weight: 800; }
+.pos-more { text-align: center; padding: 10px; font-size: 0.8rem; color: var(--text-secondary); }
+
+.pos-results { min-width: 0; }

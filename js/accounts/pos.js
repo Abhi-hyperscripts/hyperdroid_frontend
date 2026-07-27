@@ -97,20 +97,25 @@ function setPosCategory(c) { posCategory = c; renderCategoryChips(); renderGrid(
 function renderGrid() {
     const grid = document.getElementById('posGrid');
     const all = filteredItems();
-    // Cap the grid: with 1,000s of SKUs the grid is a browse aid, not the index —
-    // scanning/search is the fast path. Overflow shows a keep-typing hint.
+    // Dense table: with 1,000s of SKUs a vertical list scans far faster than cards.
+    // Cap the rows — scanning/search is the fast path, the list is the browse aid.
     const rows = all.slice(0, POS_GRID_CAP);
-    const overflowNote = all.length > POS_GRID_CAP
-        ? `<div class="pos-empty" style="padding:1rem;">Showing ${POS_GRID_CAP} of ${all.length} items — keep typing to narrow, or scan the barcode.</div>`
-        : '';
-    grid.innerHTML = rows.length ? rows.map(i => `
-        <button type="button" class="pos-item" onclick="addToCart('${i.id}')">
-            <div class="nm">${esc(i.name)}</div>
-            <div class="sku">${esc(i.sku)}</div>
-            <div class="pr">${money(i.sale_price)}</div>
-            ${i.track_inventory ? `<div class="stk ${i.qty_on_hand > 0 ? '' : 'out'}">${i.qty_on_hand > 0 ? i.qty_on_hand + ' in stock' : 'out of stock'}</div>` : '<div class="stk">service</div>'}
-        </button>`).join('') + overflowNote
-        : `<div class="pos-empty"><p style="font-size:2rem;margin-bottom:8px;">🛒</p><p><strong>${posItems.length ? 'No matches.' : 'No items yet.'}</strong></p><p>${posItems.length ? 'Try a different search or category.' : 'Build your catalog in <a href="inventory.html">Inventory → Items</a> — or import it from CSV in one paste.'}</p></div>`;
+    if (!rows.length) {
+        grid.innerHTML = `<div class="pos-empty"><p style="font-size:2rem;margin-bottom:8px;">🛒</p><p><strong>${posItems.length ? 'No matches.' : 'No items yet.'}</strong></p><p>${posItems.length ? 'Try a different search or category.' : 'Build your catalog in <a href="inventory.html">Inventory → Items</a> — or import it from CSV in one paste.'}</p></div>`;
+        return;
+    }
+    grid.innerHTML = `<div class="pos-table-wrap"><table class="pos-table">
+        <thead><tr><th>Item</th><th>Category</th><th class="r">Price</th><th class="r">Stock</th><th></th></tr></thead>
+        <tbody>${rows.map((i, idx) => `
+            <tr class="${idx === 0 ? 'first' : ''}" onclick="addToCart('${i.id}')">
+                <td><div class="nm">${esc(i.name)}</div><div class="sku">${esc(i.sku)}</div></td>
+                <td class="cat">${esc(i.category_name || '—')}</td>
+                <td class="r pr">${money(i.sale_price)}</td>
+                <td class="r ${i.track_inventory && i.qty_on_hand <= 0 ? 'out' : ''}">${i.track_inventory ? i.qty_on_hand : '—'}</td>
+                <td class="r"><span class="pos-add">+</span></td>
+            </tr>`).join('')}
+        </tbody></table></div>
+        ${all.length > POS_GRID_CAP ? `<div class="pos-more">Showing ${POS_GRID_CAP} of ${all.length} — keep typing to narrow, or scan the barcode. Enter adds the highlighted row.</div>` : ''}`;
 }
 
 function addToCart(itemId) {
