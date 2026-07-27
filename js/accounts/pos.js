@@ -186,6 +186,7 @@ function stopCameraScan() {
 
 let posHub = null;
 let pairCode = null;
+let pairToken = null;
 
 function connectStockHub() {
     if (typeof signalR === 'undefined' || typeof getAuthToken !== 'function') return;
@@ -212,7 +213,7 @@ function connectStockHub() {
                 label = ok ? hit.name : `'${hit.name}' out of stock`;
                 if (!ok) label = `'${hit.name}' — out of stock`;
             } else Toast.error(label);
-            if (pairCode) posHub.invoke('AckScan', pairCode, ok, label).catch(() => {});
+            if (pairToken) posHub.invoke('AckScan', pairToken, ok, label).catch(() => {});
         });
         posHub.start().then(() => console.log('[POS] stock hub connected'))
             .catch(err => console.warn('[POS] stock hub unavailable, polling only:', err?.message));
@@ -224,11 +225,12 @@ async function pairPhoneScanner() {
     document.getElementById('pairModal')?.remove();   // repeat clicks replace, never stack
     if (!posHub || posHub.state !== 'Connected') { Toast.error('Live channel not connected yet — try again in a moment'); return; }
     pairCode = Array.from({ length: 6 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
-    const ok = await posHub.invoke('RegisterPosSession', pairCode).catch(() => false);
-    if (!ok) { Toast.error('Could not open a pairing session'); return; }
+    const reg = await posHub.invoke('RegisterPosSession', pairCode).catch(() => null);
+    if (!reg?.token) { Toast.error('Could not open a pairing session'); return; }
+    pairToken = reg.token;
     const overlay = document.createElement('div');
     overlay.className = 'modal active'; overlay.id = 'pairModal';
-    const scanUrl = `${location.origin}/pages/accounts/scanner.html?code=${pairCode}`;
+    const scanUrl = `${location.origin}/pages/accounts/scanner.html?token=${pairToken}`;
     overlay.innerHTML = `<div class="modal-content" style="max-width:420px;text-align:center;">
         <div class="modal-header"><h3>Pair phone scanner</h3><button class="close-btn" onclick="document.getElementById('pairModal').remove()">&times;</button></div>
         <div class="modal-body">

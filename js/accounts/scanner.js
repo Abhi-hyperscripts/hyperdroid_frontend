@@ -4,24 +4,66 @@
  * camera decoding uses the native BarcodeDetector where available (Chrome/Android),
  * with the manual-entry box as the universal fallback (incl. iPhone Safari).
  */
-let hub = null, sessionCode = null, lastSent = '', lastSentAt = 0;
+let hub = null, sessionToken = null, lastSent = '', lastSentAt = 0;
 
 document.addEventListener('DOMContentLoaded', async function () {
-    // Stash the QR's ?code= BEFORE the auth gate — a login redirect drops the query string.
-    const qrCode = new URLSearchParams(location.search).get('code');
-    if (qrCode) localStorage.setItem('pendingPairCode', qrCode.toUpperCase());
-    if (!await AccountsCommon.initPage('scanner', '../')) return;
-    document.getElementById('pairInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinSession(); });
-    const pending = localStorage.getItem('pendingPairCode');
-    if (pending) {
-        localStorage.removeItem('pendingPairCode');
-        document.getElementById('pairInput').value = pending;
-        joinSession();   // auto-pair straight from the QR
+    const qrToken = new URLSearchParams(location.search).get('token');
+    if (qrToken) {
+        // QR path: the token IS the credential — no login, any phone. The hub scopes this
+        // connection to exactly one till's cart; no tenant data flows to the phone.
+        wireInputs();
+        await joinByToken(qrToken);
+        return;
     }
+    // Manual-code path: short codes are guessable, so this path requires a tenant login.
+    if (!await AccountsCommon.initPage('scanner', '../')) return;
+    wireInputs();
+});
+
+function wireInputs() {
+    document.getElementById('pairInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinSession(); });
     document.getElementById('manualCode').addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); sendScan(e.target.value.trim()); e.target.value = ''; }
     });
-});
+}
+
+function buildHub(withAuth) {
+    const b = new signalR.HubConnectionBuilder();
+    const opts = withAuth && typeof getAuthToken === 'function' ? { accessTokenFactory: () => getAuthToken() } : {};
+    return b.withUrl(`${CONFIG.endpoints.accounts}/hubs/stock`, opts).withAutomaticReconnect().build();
+}
+
+function wireAcks() {
+    hub.on('ScanAck', (ok, label) => {
+        const st = document.getElementById('scanStatus');
+        st.textContent = ok ? `✓ ${label}` : `✕ ${label}`;
+        st.style.color = ok ? 'var(--color-success)' : 'var(--color-error)';
+        navigator.vibrate?.(ok ? 60 : [60, 60, 60]);
+    });
+}
+
+function showScanUi(label) {
+    document.getElementById('pairCard').style.display = 'none';
+    document.getElementById('scanCard').style.display = '';
+    document.getElementById('pairedCode').textContent = label;
+    startCamera();
+}
+
+async function joinByToken(token) {
+    const msg = document.getElementById('pairMsg');
+    try {
+        hub = buildHub(false);            // anonymous — the token is the credential
+        wireAcks();
+        await hub.start();
+        const ok = await hub.invoke('JoinPosSessionByToken', token);
+        if (!ok) { msg.textContent = 'This pairing QR has expired — generate a new one on the till.'; return; }
+        sessionToken = token;
+        showScanUi('(QR pairing)');
+    } catch (err) {
+        msg.textContent = 'Could not connect — check the internet connection.';
+        console.error('[Scanner] token join failed', err);
+    }
+}
 
 async function joinSession() {
     const code = document.getElementById('pairInput').value.trim().toUpperCase();
@@ -29,24 +71,13 @@ async function joinSession() {
     if (code.length < 4) { msg.textContent = 'Enter the code shown on the till.'; return; }
     msg.textContent = 'Connecting…';
     try {
-        hub = new signalR.HubConnectionBuilder()
-            .withUrl(`${CONFIG.endpoints.accounts}/hubs/stock`, { accessTokenFactory: () => getAuthToken() })
-            .withAutomaticReconnect()
-            .build();
-        hub.on('ScanAck', (ok, label) => {
-            const st = document.getElementById('scanStatus');
-            st.textContent = ok ? `✓ ${label}` : `✕ ${label}`;
-            st.style.color = ok ? 'var(--color-success)' : 'var(--color-error)';
-            navigator.vibrate?.(ok ? 60 : [60, 60, 60]);
-        });
+        hub = buildHub(true);
+        wireAcks();
         await hub.start();
-        const ok = await hub.invoke('JoinPosSession', code);
-        if (!ok) { msg.textContent = 'No till is waiting on that code — check it and try again.'; return; }
-        sessionCode = code;
-        document.getElementById('pairCard').style.display = 'none';
-        document.getElementById('scanCard').style.display = '';
-        document.getElementById('pairedCode').textContent = code;
-        startCamera();
+        const token = await hub.invoke('JoinPosSession', code);
+        if (!token) { msg.textContent = 'No till is waiting on that code — check it and try again.'; return; }
+        sessionToken = token;
+        showScanUi(code);
     } catch (err) {
         msg.textContent = 'Could not connect — check your internet and login.';
         console.error('[Scanner] join failed', err);
@@ -54,13 +85,13 @@ async function joinSession() {
 }
 
 function sendScan(code) {
-    if (!code || !hub || !sessionCode) return;
+    if (!code || !hub || !sessionToken) return;
     // Debounce: the camera sees the same barcode on many consecutive frames.
     const now = Date.now();
     if (code === lastSent && now - lastSentAt < 1500) return;
     lastSent = code; lastSentAt = now;
     document.getElementById('scanStatus').textContent = '…';
-    hub.invoke('SendScan', sessionCode, code).catch(() => {
+    hub.invoke('SendScan', sessionToken, code).catch(() => {
         document.getElementById('scanStatus').textContent = 'Send failed — reconnecting…';
     });
 }
