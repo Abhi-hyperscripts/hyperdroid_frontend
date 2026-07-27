@@ -54,6 +54,7 @@ const NEVER_CACHE_PATTERNS = [
     /\/hubs\//i,
     /\.html(?:\?|$)/i,
     /\/sw-version\.js/i,   // version probe — must always be fresh
+    /\/js\/accounts\/scanner\.js/i,   // phone-scanner logic — tiny file, phones must never run a stale copy
 ];
 
 // Strip cache-buster query so SW_VERSION is the only invalidation knob.

@@ -52,13 +52,16 @@
         <button class="ghost" onclick="location.reload()">Unpair</button>
     </div>
 
-    <p class="hint">Every scan lands instantly in the counter's bill.<br>Keep this page open while scanning.</p>
+    <p class="hint">Every scan lands instantly in the counter's bill.<br>Keep this page open while scanning.<br><span id="buildNo" style="opacity:0.6;"></span></p>
 
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="/js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="/js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script>document.write('<script src="/js/accounts/scanner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <!-- ?fresh= (not ?v=) on purpose: the service worker strips ?v= from its cache key and
+         serves the STALE cached copy, so phones kept running old scanner code. An unstripped
+         param makes every load a cache miss → always fetched from the network. -->
+    <script>document.write('<script src="/js/accounts/scanner.js?fresh=' + CACHE_VERSION + '"><\/script>');</script>
 </body>
 </html>

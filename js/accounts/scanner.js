@@ -7,6 +7,10 @@
 let hub = null, sessionToken = null, lastSent = '', lastSentAt = 0;
 
 document.addEventListener('DOMContentLoaded', async function () {
+    // Visible build stamp — lets anyone confirm at a glance which version this phone runs
+    // (the SW cache once served phones a stale scanner.js; this makes that failure visible).
+    const buildEl = document.getElementById('buildNo');
+    if (buildEl && typeof SW_VERSION !== 'undefined') buildEl.textContent = 'Build ' + SW_VERSION;
     const qrToken = new URLSearchParams(location.search).get('token');
     if (qrToken) {
         // QR path: the token IS the credential — no login, any phone. The hub scopes this
@@ -119,32 +123,41 @@ async function startCamera() {
     // Path 2: html5-qrcode (ZXing in JS) — works wherever getUserMedia does, incl. iOS Safari
     // and Android in-app browsers that lack BarcodeDetector.
     if (typeof Html5Qrcode !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
-        try {
-            document.getElementById('h5qrView').style.display = '';
-            const h5 = new Html5Qrcode('h5qrView', {
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
-                    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.QR_CODE
-                ]
-            });
-            await h5.start(
-                // High resolution is what makes 1D barcodes decodable — default 640×480 frames
-                // blur the bars into mush. NOTE: only STANDARD MediaTrack constraint keys here;
-                // html5-qrcode validates them and a non-standard key (e.g. focusMode) makes the
-                // whole start() throw → false 'camera unavailable'. iPhones autofocus continuously
-                // by default, so nothing is lost by omitting it.
-                { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-                { fps: 15, qrbox: { width: 300, height: 180 },
-                  experimentalFeatures: { useBarCodeDetectorIfSupported: true } },
-                decoded => sendScan((decoded || '').trim()),
-                () => { /* per-frame misses are normal */ });
-            document.getElementById('scanStatus').textContent = 'Hold 15–20 cm away, steady, bars filling the box';
-            return;
-        } catch (err) {
-            console.warn('[Scanner] html5-qrcode failed', err);
+        document.getElementById('h5qrView').style.display = '';
+        const h5 = new Html5Qrcode('h5qrView', {
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.QR_CODE
+            ]
+        });
+        const startH5 = camConfig => h5.start(
+            camConfig,
+            { fps: 15, qrbox: { width: 300, height: 180 },
+              experimentalFeatures: { useBarCodeDetectorIfSupported: true } },
+            decoded => sendScan((decoded || '').trim()),
+            () => { /* per-frame misses are normal */ });
+        // Tiered start: high resolution makes 1D barcodes decodable (default 640×480 blurs the
+        // bars), but some browsers reject the richer constraints — so any failure retries with
+        // the bare config that works everywhere. Never declare the camera dead on the first no.
+        let lastErr = null;
+        for (const camConfig of [
+            { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+            { facingMode: 'environment' },
+        ]) {
+            try {
+                await startH5(camConfig);
+                document.getElementById('scanStatus').textContent = 'Hold 15–20 cm away, steady, bars filling the box';
+                return;
+            } catch (err) { lastErr = err; console.warn('[Scanner] camera start failed for', camConfig, err); }
         }
+        document.getElementById('h5qrView').style.display = 'none';
+        const reason = lastErr && /denied|NotAllowed/i.test(String(lastErr.name || lastErr))
+            ? 'camera permission denied — allow camera for this site' : (lastErr?.name || lastErr || '');
+        document.getElementById('scanStatus').textContent =
+            'Camera unavailable' + (reason ? ` (${reason})` : '') + ' — type barcodes below.';
+        return;
     }
     document.getElementById('scanStatus').textContent = 'Camera unavailable — type barcodes below.';
 }
