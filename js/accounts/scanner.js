@@ -103,22 +103,38 @@ function sendScan(code) {
 }
 
 async function startCamera() {
-    // Path 1: native BarcodeDetector (Chrome/Android) — fastest, zero extra decode cost.
+    // Path 1: BarcodeDetector — native on Chrome/Android, zbar-wasm polyfill everywhere else
+    // (wired up in scanner.html). zbar is the industry-standard 1D engine: it reads EAN/UPC
+    // frames the JS fallback decoder gives up on, which is why this path is preferred.
     if ('BarcodeDetector' in window && navigator.mediaDevices?.getUserMedia) {
+        let stream = null;
         try {
             const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'] });
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            // High resolution is what makes the thin bars of a 1D code resolvable.
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+            });
+            // Best-effort focus hint — applied at track level where browsers safely ignore
+            // unsupported keys (unlike html5-qrcode's strict constraint validation).
+            try { await stream.getVideoTracks()[0].applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch { }
             const video = document.getElementById('scanVideo');
             video.style.display = '';
             video.srcObject = stream;
+            video.addEventListener('loadedmetadata',
+                () => console.log('[Scanner] decode feed', video.videoWidth + 'x' + video.videoHeight), { once: true });
             setInterval(async () => {
                 try {
                     const codes = await detector.detect(video);
                     if (codes.length) sendScan((codes[0].rawValue || '').trim());
                 } catch { /* per-frame errors are harmless */ }
             }, 250);
+            document.getElementById('scanStatus').textContent = 'Point at a barcode — 15–20 cm, steady';
             return;
-        } catch { /* fall through to the JS decoder (e.g. permission granted but detector flaky) */ }
+        } catch (err) {
+            console.warn('[Scanner] BarcodeDetector path failed', err);
+            try { stream?.getTracks().forEach(t => t.stop()); } catch { }
+            document.getElementById('scanVideo').style.display = 'none';
+        }
     }
     // Path 2: html5-qrcode (ZXing in JS) — works wherever getUserMedia does, incl. iOS Safari
     // and Android in-app browsers that lack BarcodeDetector.
@@ -147,7 +163,10 @@ async function startCamera() {
             try {
                 await h5.start(
                     { facingMode: 'environment' },
-                    { fps: 15, qrbox: { width: 300, height: 180 },
+                    { fps: 15,
+                      // Wide, letterbox-shaped scan window — EAN bars need width, and a box cut
+                      // relative to the viewfinder survives every phone screen size.
+                      qrbox: (w, h) => ({ width: Math.floor(w * 0.9), height: Math.floor(Math.min(h * 0.35, 220)) }),
                       experimentalFeatures: { useBarCodeDetectorIfSupported: true }, ...extra },
                     decoded => sendScan((decoded || '').trim()),
                     () => { /* per-frame misses are normal */ });

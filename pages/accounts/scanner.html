@@ -58,6 +58,15 @@
     <script>document.write('<script src="/js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="/js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <!-- zbar-wasm + polyfill: gives every browser (iOS Safari, Samsung Internet…) a native-style
+         BarcodeDetector backed by the zbar engine — far stronger at 1D retail barcodes (EAN/UPC)
+         than the JS decoder inside html5-qrcode, which stays only as the last-resort fallback. -->
+    <script src="https://cdn.jsdelivr.net/npm/@undecaf/zbar-wasm@0.10.1/dist/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@undecaf/barcode-detector-polyfill@0.9.21/dist/index.js"></script>
+    <script>
+        try { window.BarcodeDetector.getSupportedFormats(); }
+        catch (_) { if (window.barcodeDetectorPolyfill) window.BarcodeDetector = barcodeDetectorPolyfill.BarcodeDetectorPolyfill; }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <!-- ?fresh= (not ?v=) on purpose: the service worker strips ?v= from its cache key and
          serves the STALE cached copy, so phones kept running old scanner code. An unstripped
