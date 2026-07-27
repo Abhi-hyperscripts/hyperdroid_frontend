@@ -106,10 +106,11 @@ function renderGrid() {
         return;
     }
     grid.innerHTML = `<div class="pos-table-wrap"><table class="pos-table">
-        <thead><tr><th>Item</th><th>Category</th><th class="r">Price</th><th class="r">Stock</th><th></th></tr></thead>
+        <thead><tr><th>Item</th><th>SKU</th><th>Category</th><th class="r">Price</th><th class="r">Stock</th><th></th></tr></thead>
         <tbody>${rows.map((i, idx) => `
             <tr class="${idx === 0 ? 'first' : ''}${i.track_inventory && i.qty_on_hand <= 0 ? ' pos-oos' : ''}" onclick="addToCart('${i.id}')">
-                <td><div class="nm">${esc(i.name)}</div><div class="sku">${esc(i.sku)}</div></td>
+                <td class="nm">${esc(i.name)}</td>
+                <td class="sku">${esc(i.sku)}</td>
                 <td class="cat">${esc(i.category_name || '—')}</td>
                 <td class="r pr">${money(i.sale_price)}</td>
                 <td class="r ${i.track_inventory && i.qty_on_hand <= 0 ? 'out' : ''}">${i.track_inventory ? i.qty_on_hand : '—'}</td>
