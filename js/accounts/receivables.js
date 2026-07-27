@@ -1447,7 +1447,7 @@ async function openApplyAdvance(invoiceId, customerId, balanceDue, invoiceNumber
     if (pool <= 0) { Toast.info('This customer has no advance on account.'); return; }
     const maxApply = Math.min(pool, balanceDue);
     const overlay = document.createElement('div');
-    overlay.className = 'modal'; overlay.style.display = 'flex';
+    overlay.className = 'modal active';
     overlay.innerHTML = `<div class="modal-content" style="max-width:420px;">
         <div class="modal-header"><h3>Apply Advance — ${AccountsCommon.escapeHtml(invoiceNumber)}</h3></div>
         <div class="modal-body">

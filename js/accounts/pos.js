@@ -221,12 +221,13 @@ function connectStockHub() {
 
 /** Pair a phone as a handheld scanner: register a short code on the hub, show it big. */
 async function pairPhoneScanner() {
+    document.getElementById('pairModal')?.remove();   // repeat clicks replace, never stack
     if (!posHub || posHub.state !== 'Connected') { Toast.error('Live channel not connected yet — try again in a moment'); return; }
     pairCode = Array.from({ length: 6 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
     const ok = await posHub.invoke('RegisterPosSession', pairCode).catch(() => false);
     if (!ok) { Toast.error('Could not open a pairing session'); return; }
     const overlay = document.createElement('div');
-    overlay.className = 'modal'; overlay.style.display = 'flex'; overlay.id = 'pairModal';
+    overlay.className = 'modal active'; overlay.id = 'pairModal';
     const scanUrl = `${location.origin}/pages/accounts/scanner.html?code=${pairCode}`;
     overlay.innerHTML = `<div class="modal-content" style="max-width:420px;text-align:center;">
         <div class="modal-header"><h3>Pair phone scanner</h3><button class="close-btn" onclick="document.getElementById('pairModal').remove()">&times;</button></div>
@@ -486,8 +487,7 @@ async function promptSerials(invoices, soldDate) {
     if (!serialLines.length) return;
 
     const overlay = document.createElement('div');
-    overlay.className = 'modal';
-    overlay.style.display = 'flex';
+    overlay.className = 'modal active';
     let inner = '';
     for (let li = 0; li < serialLines.length; li++) {
         const { c } = serialLines[li];
