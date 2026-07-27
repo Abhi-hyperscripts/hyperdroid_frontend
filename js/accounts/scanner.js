@@ -129,9 +129,16 @@ async function startCamera() {
                     Html5QrcodeSupportedFormats.QR_CODE
                 ]
             });
-            await h5.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 260, height: 160 } },
+            await h5.start(
+                // High resolution + continuous focus are what make 1D barcodes decodable —
+                // default 640×480 frames blur the bars into mush, especially on iPhone.
+                { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 },
+                  focusMode: 'continuous', advanced: [{ focusMode: 'continuous' }] },
+                { fps: 15, qrbox: { width: 300, height: 180 },
+                  experimentalFeatures: { useBarCodeDetectorIfSupported: true } },
                 decoded => sendScan((decoded || '').trim()),
                 () => { /* per-frame misses are normal */ });
+            document.getElementById('scanStatus').textContent = 'Hold 15–20 cm away, steady, bars filling the box';
             return;
         } catch (err) {
             console.warn('[Scanner] html5-qrcode failed', err);
