@@ -482,7 +482,7 @@ async function editProforma(id) {
 function addProformaLine(data = {}) {
     const tbody = document.getElementById('proformaLines');
     const row = document.createElement('tr');
-    const acctOptions = accounts.map(a => {
+    const acctOptions = AccountsCommon.postableAccounts(accounts, 'income').map(a => {
         const code = a.account_code || a.code || '';
         const name = a.account_name || a.name || '';
         const label = code && name ? `${code} — ${name}` : (name || code);

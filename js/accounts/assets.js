@@ -228,20 +228,25 @@ async function populateCategoryAccountSelects(glAccountId, depAccountId, accumDe
         const depSel = document.getElementById('categoryDepAccount');
         const accumSel = document.getElementById('categoryAccumDep');
 
-        const sdOptions = [{ value: '', label: 'Select account...' }].concat(accounts.map(a => ({
+        // Typed pickers: asset + accumulated-dep = postable Asset accounts, depreciation
+        // charge = postable Expense accounts (headers/wrong types 409 at posting time).
+        const toOpts = (list) => [{ value: '', label: 'Select account...' }].concat(list.map(a => ({
             value: a.id,
             label: a.account_code ? a.account_code + ' - ' + (a.account_name || a.name) : (a.account_name || a.name)
         })));
+        const assetOpts = toOpts(AccountsCommon.postableAccounts(accounts, 'asset'));
+        const expenseOpts = toOpts(AccountsCommon.postableAccounts(accounts, 'expense'));
+        const optionsBySelect = [assetOpts, expenseOpts, assetOpts];
 
         const selectedById = [glAccountId, depAccountId, accumDepAccountId];
         [glSel, depSel, accumSel].forEach((sel, i) => {
             if (!sel) return;
             const selectedId = selectedById[i];
             if (sel._searchableDropdown) {
-                sel._searchableDropdown.setOptions(sdOptions, false);
+                sel._searchableDropdown.setOptions(optionsBySelect[i], false);
                 if (selectedId) sel._searchableDropdown.setValue(selectedId);
             } else {
-                sel.innerHTML = sdOptions.map(o => `<option value="${o.value}">${AccountsCommon.escapeHtml(o.label)}</option>`).join('');
+                sel.innerHTML = optionsBySelect[i].map(o => `<option value="${o.value}">${AccountsCommon.escapeHtml(o.label)}</option>`).join('');
                 if (selectedId) sel.value = selectedId;
             }
         });

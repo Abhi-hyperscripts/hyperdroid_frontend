@@ -35,15 +35,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initDropdowns() {
     if (typeof SearchableDropdown === 'undefined') { setTimeout(initDropdowns, 100); return; }
 
-    const acctOptions = accountsList.map(a => ({ value: a.id, label: `${a.account_code} — ${a.account_name}` }));
+    // Typed pickers: each role only offers accounts that can actually serve it —
+    // loan account = postable Liability, interest = postable Expense, disbursement =
+    // any postable account (headers would 409 at GL-post time). Same bug class as
+    // the bank-GL-header link.
+    const optOf = (list) => list.map(a => ({ value: a.id, label: `${a.account_code} — ${a.account_name}` }));
+    const liabilityOptions = optOf(AccountsCommon.postableAccounts(accountsList, 'liabilit'));
+    const expenseOptions = optOf(AccountsCommon.postableAccounts(accountsList, 'expense'));
+    const acctOptions = optOf(AccountsCommon.postableAccounts(accountsList));
     // SearchableDropdown escapes option labels itself — pass raw text (no pre-escaping, else double-escaped).
     const bankOptions = bankAccountsList.map(b => ({ value: b.id, label: `${b.account_name}${b.bank_name ? ' (' + b.bank_name + ')' : ''}` }));
 
     loanAccountDropdown = new SearchableDropdown(document.getElementById('loanAccountContainer'), {
-        options: acctOptions, placeholder: 'Select liability account...'
+        options: liabilityOptions, placeholder: 'Select liability account...'
     });
     interestAccountDropdown = new SearchableDropdown(document.getElementById('interestAccountContainer'), {
-        options: acctOptions, placeholder: 'Select interest expense account...'
+        options: expenseOptions, placeholder: 'Select interest expense account...'
     });
     disbursementAccountDropdown = new SearchableDropdown(document.getElementById('disbursementAccountContainer'), {
         options: acctOptions, placeholder: 'Select where the money landed...'

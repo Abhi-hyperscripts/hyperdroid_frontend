@@ -228,7 +228,8 @@ function initCategoryDropdowns(accountValue) {
     // Backend ships `account_code`/`account_name` — falling back to `code`/`name`
     // (which don't exist on the payload) produced "undefined" labels in the
     // dropdown. Same field-name-mismatch class as bug #30 in receivables/payables.
-    const options = coaAccounts.map(a => {
+    // Backend rejects non-Expense default accounts — only offer postable Expense leaves
+    const options = AccountsCommon.postableAccounts(coaAccounts, 'expense').map(a => {
         const code = a.account_code || a.code || '';
         const name = a.account_name || a.name || '';
         return { value: a.id, label: code ? `${code} - ${name}` : name };

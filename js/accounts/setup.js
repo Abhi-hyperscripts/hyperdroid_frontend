@@ -939,7 +939,9 @@ async function loadOpeningBalances() {
         // because saves post one account per request, leave the books half-written.
         const plTypes = ['Income', 'Revenue', 'Expense', 'Expenses'];
         openingBalances = allAccounts
-            .filter(a => a.is_active !== false && !plTypes.includes(a.account_type_name))
+            // Headers (allow_direct_posting=false) 409 on save just like P&L accounts —
+            // listing them guarantees a half-written save (same class as the P&L guard above).
+            .filter(a => a.is_active !== false && a.allow_direct_posting !== false && !plTypes.includes(a.account_type_name))
             .map(a => ({
                 account_id: a.id,
                 account_code: a.account_code || a.code,

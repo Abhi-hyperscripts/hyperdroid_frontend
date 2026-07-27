@@ -98,7 +98,7 @@ function initDropdowns() {
         label: fy.name || `${fy.start_date} - ${fy.end_date}`
     }));
 
-    const accountOptions = coaAccounts.map(a => ({
+    const accountOptions = AccountsCommon.postableAccounts(coaAccounts).map(a => ({
         value: a.id,
         label: `${a.account_code ? a.account_code + ' - ' : ''}${a.account_name || a.name || ''}`
     }));

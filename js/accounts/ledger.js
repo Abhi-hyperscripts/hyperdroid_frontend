@@ -577,7 +577,7 @@ function addGlLine(data) {
 
     // Initialize SearchableDropdown for account selection
     const acctOpts = [{ value: '', label: 'Select Account...' }].concat(
-        coaAccounts.map(a => {
+        AccountsCommon.postableAccounts(coaAccounts).map(a => {
             const c = a.account_code || a.code || '';
             const n = a.account_name || a.name || '';
             return { value: a.id, label: c ? c + ' - ' + n : n };
@@ -864,7 +864,8 @@ function renderJournalEntriesTable(entries) {
 function initDropdowns() {
     const accountOpts = [
         { value: '', label: 'All Accounts' },
-        ...coaAccounts.map(a => { const c = a.account_code || a.code || ''; const n = a.account_name || a.name || ''; return { value: a.id, label: c ? c + ' - ' + n : n }; })
+        // Headers can never carry postings — offering them just filters to an empty list
+        ...AccountsCommon.postableAccounts(coaAccounts).map(a => { const c = a.account_code || a.code || ''; const n = a.account_name || a.name || ''; return { value: a.id, label: c ? c + ' - ' + n : n }; })
     ];
     const journalOpts = [
         { value: '', label: 'All Journal Types' },
