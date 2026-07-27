@@ -380,6 +380,11 @@ function invoiceActions(inv) {
     if (!accountsRoles.isAdmin()) {
         return html;
     }
+    // Open invoices: settle from the customer's advance pool (booking deposits).
+    if (['approved', 'sent', 'partially_paid', 'overdue'].includes(inv.status)) {
+        const bal = parseFloat(inv.balance_due) || 0;
+        html += ` <button class="btn-icon" data-tooltip="Apply advance" onclick="openApplyAdvance('${inv.id}', '${inv.customer_id}', ${bal}, '${(inv.invoice_number || '').replace(/'/g, '')}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></button>`;
+    }
     if (inv.status === 'draft') {
         html += ` <button class="btn-icon" data-tooltip="Edit" onclick="editInvoice('${inv.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
         html += ` <button class="btn-icon" data-tooltip="Approve" onclick="approveInvoice('${inv.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>`;
@@ -1373,6 +1378,9 @@ function updatePaymentGross() {
         hint.textContent = diff > 0
             ? `Forex gain ${AccountsCommon.formatCurrency(diff)} will post to 4290 Foreign Exchange Gain/Loss`
             : `Forex loss ${AccountsCommon.formatCurrency(-diff)} will post to 4290 Foreign Exchange Gain/Loss`;
+    } else if (diff > 0 && tds === 0) {
+        hint.style.color = 'var(--color-success)';
+        hint.textContent = `${AccountsCommon.formatCurrency(diff)} will be held as a customer advance (apply it to a future invoice from the invoice's ⧉ action)`;
     } else {
         hint.style.color = 'var(--color-warning)';
         hint.textContent = `Allocations are ${AccountsCommon.formatCurrency(Math.abs(diff))} ${diff > 0 ? 'short of' : 'over'} Amount + TDS`;
@@ -1429,6 +1437,43 @@ async function loadCustomerInvoicesForPayment() {
     }
 }
 
+// ── Customer advances: apply the pool against an open invoice ────────────────
+async function openApplyAdvance(invoiceId, customerId, balanceDue, invoiceNumber) {
+    let pool = 0;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`invoices/advances/${customerId}`), { _skipSpinner: true });
+        pool = parseFloat(res.balance) || 0;
+    } catch { }
+    if (pool <= 0) { Toast.info('This customer has no advance on account.'); return; }
+    const maxApply = Math.min(pool, balanceDue);
+    const overlay = document.createElement('div');
+    overlay.className = 'modal'; overlay.style.display = 'flex';
+    overlay.innerHTML = `<div class="modal-content" style="max-width:420px;">
+        <div class="modal-header"><h3>Apply Advance — ${AccountsCommon.escapeHtml(invoiceNumber)}</h3></div>
+        <div class="modal-body">
+            <p style="font-size:0.85rem;color:var(--text-secondary);">Advance available: <strong>${AccountsCommon.formatCurrency(pool)}</strong> · Invoice balance: <strong>${AccountsCommon.formatCurrency(balanceDue)}</strong></p>
+            <div class="form-group"><label>Amount to apply</label><input type="number" id="advApplyAmt" class="form-control" step="0.01" min="0" max="${maxApply}" value="${maxApply}"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" id="advCancel">Cancel</button>
+            <button class="btn btn-primary" id="advGo">Apply</button>
+        </div></div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#advCancel').onclick = () => overlay.remove();
+    overlay.querySelector('#advGo').onclick = async () => {
+        const amt = parseFloat(overlay.querySelector('#advApplyAmt').value);
+        if (!amt || amt <= 0) { Toast.error('Enter an amount'); return; }
+        try {
+            await api.request(AccountsCommon.buildUrl('invoices/advances/apply'), {
+                method: 'POST', body: JSON.stringify({ invoice_id: invoiceId, amount: amt })
+            });
+            Toast.success(`Advance ${AccountsCommon.formatCurrency(amt)} applied`);
+            overlay.remove();
+            loadCustomerInvoices();
+        } catch (err) { Toast.error(err.message || 'Failed to apply advance'); }
+    };
+}
+
 async function saveCustomerPayment() {
     const form = document.getElementById('paymentForm');
     if (!form.reportValidity()) return;
@@ -1469,9 +1514,14 @@ async function saveCustomerPayment() {
         if (amt > 0 && row.dataset.fx) anyFxAllocated = true;
     });
     const forex = Math.round((gross - allocatedTotal) * 100) / 100;
+    let advanceMode = false;
     if (forex !== 0 && !anyFxAllocated) {
-        Toast.error(`Allocations (${AccountsCommon.formatCurrency(allocatedTotal)}) must equal Amount Received + TDS (${AccountsCommon.formatCurrency(gross)})`);
-        return;
+        // Excess cash on a non-FX receipt = customer advance (booking deposit); shortfall is still an error.
+        if (forex > 0 && tds === 0) advanceMode = true;
+        else {
+            Toast.error(`Allocations (${AccountsCommon.formatCurrency(allocatedTotal)}) must equal Amount Received + TDS (${AccountsCommon.formatCurrency(gross)})`);
+            return;
+        }
     }
 
     // Backend RecordCustomerPaymentRequest expects `reference_number`, not `reference`.
@@ -1483,7 +1533,8 @@ async function saveCustomerPayment() {
     const payload = {
         customer_id: document.getElementById('paymentCustomerId').value,
         payment_date: document.getElementById('paymentDate').value,
-        amount: allocatedTotal,
+        amount: advanceMode ? gross : allocatedTotal,
+        allow_advance: advanceMode,
         forex_gain_loss: anyFxAllocated ? forex : 0,
         tds_amount: tds,
         bank_account_id: document.getElementById('paymentBankAccountId').value,
