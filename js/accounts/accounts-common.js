@@ -753,6 +753,41 @@ const AccountsCommon = {
         return (this._currencyList || []).find(c => c.code === code)?.symbol || code + ' ';
     },
 
+    _fxHelpPanel: null,
+
+    /** Right slide-over explaining the exchange-rate field, in founder language. */
+    showFxRateHelp(currency, rate) {
+        if (typeof SlidePanel !== 'function') return;
+        if (!this._fxHelpPanel) this._fxHelpPanel = new SlidePanel({ id: 'fxRateHelpPanel', title: 'Exchange rate — what is this?' });
+        const cur = currency && currency !== this.FX_BASE ? currency : 'USD';
+        const rateStr = rate > 0 ? rate : '96.50';
+        this._fxHelpPanel.open({
+            body: `
+            <div class="guide-help-body">
+                <h4>What the number means</h4>
+                <p><strong>1 ${cur} = ₹${rateStr}</strong> is the conversion this document will use: every 1 ${cur} you bill
+                is worth ₹${rateStr} in your books. Your ledger, GST reports and receivables always stay in rupees —
+                the client-facing document shows their currency.</p>
+
+                <h4>Where the auto-filled rate comes from</h4>
+                <p>The <strong>European Central Bank's daily reference rate</strong> — a free, official mid-market rate
+                published every banking day, fetched automatically for your document date (weekends and holidays roll
+                back to the last banking day). It is the same class of rate you would see on Google or XE, and it is a
+                defensible, auditable source if your CA ever asks <em>"what rate did you use?"</em></p>
+
+                <h4>Why it's editable</h4>
+                <p>The reference rate is a mid-market rate — nobody actually settles at exactly that. Your bank will
+                apply its own rate (usually slightly worse), or your contract may fix a rate with the client. If so,
+                just type over the suggestion — whatever is in the box when you save becomes the booked rate.</p>
+
+                <h4>What happens when the money arrives</h4>
+                <p>Don't overthink the rate at invoice time. The receivable is booked at this rate, and when the payment
+                actually lands at the real rate weeks later, the difference posts automatically as a
+                <strong>forex gain or loss</strong> (account 4290) when you record the payment. Nothing to reconcile by hand.</p>
+            </div>`
+        });
+    },
+
     /**
      * Wire a document form's currency dropdown + exchange-rate field.
      * cfg: { containerId, rateGroupId, rateInputId, rateHintId, dateFieldId, ddId, onUpdate }
@@ -797,6 +832,17 @@ const AccountsCommon = {
             async init(currency, rate) {
                 const container = document.getElementById(cfg.containerId);
                 if (!container || typeof SearchableDropdown !== 'function') return;
+                // (i) beside the Exchange Rate label → slide-over explainer (injected once).
+                const rateLabel = groupEl()?.querySelector('label');
+                if (rateLabel && !rateLabel.querySelector('.fx-info-btn')) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'fx-info-btn';
+                    btn.setAttribute('aria-label', 'What is the exchange rate?');
+                    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+                    btn.onclick = () => self.showFxRateHelp(ctrl.currency(), ctrl.rate());
+                    rateLabel.appendChild(btn);
+                }
                 const list = await self.getCurrencyList();
                 const opts = list.map(c => ({ value: c.code, label: `${c.code} — ${c.name}` }));
                 if (dd?.setOptions) {

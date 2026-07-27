@@ -479,6 +479,16 @@ async function onProformaCurrencyChanged(autoFetch) {
         return;
     }
     group.style.display = '';
+    const rateLabel = group.querySelector('label');
+    if (rateLabel && !rateLabel.querySelector('.fx-info-btn')) {
+        const infoBtn = document.createElement('button');
+        infoBtn.type = 'button';
+        infoBtn.className = 'fx-info-btn';
+        infoBtn.setAttribute('aria-label', 'What is the exchange rate?');
+        infoBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+        infoBtn.onclick = () => AccountsCommon.showFxRateHelp(proformaCurrency(), proformaRate());
+        rateLabel.appendChild(infoBtn);
+    }
     if (autoFetch) {
         if (hint) hint.textContent = 'Fetching rate…';
         try {

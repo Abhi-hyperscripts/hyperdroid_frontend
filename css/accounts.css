@@ -2991,3 +2991,14 @@ a.dv-tile:hover { transform: translateY(-2px);
     .ts-grid { grid-template-columns: 1fr; }
     .ts-span2, .ts-span4 { grid-column: 1 / -1; }
 }
+
+/* (i) beside the Exchange Rate label — opens the FX explainer slide-over */
+.fx-info-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; margin-left: 6px; padding: 0;
+    border: 1px solid var(--border-color); border-radius: 50%;
+    background: transparent; color: var(--text-secondary);
+    cursor: pointer; vertical-align: middle;
+    transition: color 0.15s, border-color 0.15s;
+}
+.fx-info-btn:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
