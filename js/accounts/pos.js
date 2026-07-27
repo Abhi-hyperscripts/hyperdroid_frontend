@@ -91,11 +91,6 @@ function renderGrid() {
 function addToCart(itemId) {
     const it = posItems.find(x => x.id === itemId);
     if (!it) return;
-    const slabs = new Set(cart.map(c => c.item.tax_config_id || ''));
-    if (cart.length && !slabs.has(it.tax_config_id || '')) {
-        Toast.error('Different GST slab — ring this item as a separate sale.');
-        return;
-    }
     const line = cart.find(c => c.item.id === itemId);
     if (line) line.qty += 1; else cart.push({ item: it, qty: 1 });
     renderCart();
@@ -149,34 +144,52 @@ async function completeSale() {
     try {
         const customerId = await ensureWalkInCustomer();
         const today = AccountsCommon.todayLocal();
-        const lines = cart.map(c => ({
-            item_id: c.item.id,
-            description: c.item.name,
-            hsn_sac: c.item.hsn_sac || '',
-            quantity: c.qty,
-            unit_price: basePrice(c.item),
-            account_id: c.item.income_account_id || incomeAccounts[0].id,
-            ...(c.item.tax_config_id ? { tax_config_id: c.item.tax_config_id } : {})
-        }));
-        const inv = await api.request(AccountsCommon.buildUrl('invoices'), {
-            method: 'POST',
-            body: JSON.stringify({ customer_id: customerId, invoice_date: today, due_date: today, notes: 'Cash sale (POS)', lines })
+        // One tax config per invoice (backend rule) — a mixed-slab cart auto-splits into one
+        // invoice per slab, settled together by a single payment with multiple allocations.
+        const groups = new Map();
+        cart.forEach(c => {
+            const key = c.item.tax_config_id || '';
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(c);
         });
-        const invId = inv.id || inv?.data?.id;
-        const approved = await api.request(AccountsCommon.buildUrl(`invoices/${invId}/approve`), { method: 'POST' });
-        const total = parseFloat(approved.total_amount ?? approved?.data?.total_amount);
+        const invoices = [];   // {invId, number, total, items:[cartLines]}
+        for (const [, groupCart] of groups) {
+            const lines = groupCart.map(c => ({
+                item_id: c.item.id,
+                description: c.item.name,
+                hsn_sac: c.item.hsn_sac || '',
+                quantity: c.qty,
+                unit_price: basePrice(c.item),
+                account_id: c.item.income_account_id || incomeAccounts[0].id,
+                ...(c.item.tax_config_id ? { tax_config_id: c.item.tax_config_id } : {})
+            }));
+            const inv = await api.request(AccountsCommon.buildUrl('invoices'), {
+                method: 'POST',
+                body: JSON.stringify({ customer_id: customerId, invoice_date: today, due_date: today, notes: 'Cash sale (POS)', lines })
+            });
+            const invId = inv.id || inv?.data?.id;
+            const approved = await api.request(AccountsCommon.buildUrl(`invoices/${invId}/approve`), { method: 'POST' });
+            invoices.push({
+                invId,
+                number: approved.invoice_number || approved?.data?.invoice_number,
+                total: parseFloat(approved.total_amount ?? approved?.data?.total_amount),
+                items: groupCart
+            });
+        }
+        const total = Math.round(invoices.reduce((s, i) => s + i.total, 0) * 100) / 100;
         await api.request(AccountsCommon.buildUrl('invoices/payments'), {
             method: 'POST',
             body: JSON.stringify({
                 customer_id: customerId, payment_date: today, amount: total, tds_amount: 0,
                 bank_account_id: bankId, payment_method: posMethodDD?.getValue?.() || 'cash',
                 reference_number: 'POS',
-                allocations: [{ customer_invoice_id: invId, allocated_amount: total }]
+                allocations: invoices.map(i => ({ customer_invoice_id: i.invId, allocated_amount: i.total }))
             }),
-            headers: { 'Idempotency-Key': 'pos-' + invId }
+            headers: { 'Idempotency-Key': 'pos-' + invoices[0].invId }
         });
         Toast.success(`Sale complete — ${money(total)}`);
-        await printReceipt(approved.invoice_number || approved?.data?.invoice_number, total);
+        await printReceipt(invoices.map(i => i.number).join(' · '), total);
+        await promptSerials(invoices, today);
         cart = [];
         renderCart();
         // refresh stock counts on the grid
@@ -188,6 +201,64 @@ async function completeSale() {
     } finally {
         btn.disabled = false; btn.textContent = 'Complete Sale';
     }
+}
+
+/**
+ * After a sale containing serial-tracked items: pick WHICH units went out, so the
+ * warranty registry stays exact. Skippable (serials can be marked later in Inventory).
+ */
+async function promptSerials(invoices, soldDate) {
+    const serialLines = [];
+    for (const inv of invoices)
+        for (const c of inv.items)
+            if (c.item.tracking_mode === 'serial') serialLines.push({ inv, c });
+    if (!serialLines.length) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal';
+    overlay.style.display = 'flex';
+    let inner = '';
+    for (let li = 0; li < serialLines.length; li++) {
+        const { c } = serialLines[li];
+        let opts = [];
+        try {
+            const free = await api.request(AccountsCommon.buildUrl('inventory/serials', { itemId: c.item.id, status: 'in_stock', limit: 200 }), { _skipSpinner: true });
+            opts = free.map(s => s.serial_no);
+        } catch { }
+        for (let u = 0; u < c.qty; u++) {
+            inner += `<div class="form-group"><label>${esc(c.item.name)} — unit ${u + 1}</label>
+                <select class="form-control pos-serial" data-inv="${serialLines[li].inv.invId}">
+                    <option value="">(skip — assign later)</option>
+                    ${opts.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}
+                </select></div>`;
+        }
+    }
+    overlay.innerHTML = `<div class="modal-content" style="max-width:460px;">
+        <div class="modal-header"><h3>Which serial numbers were sold?</h3></div>
+        <div class="modal-body">${inner}</div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" id="posSerialSkip">Skip</button>
+            <button class="btn btn-primary" id="posSerialSave">Save</button>
+        </div></div>`;
+    document.body.appendChild(overlay);
+    await new Promise(resolve => {
+        overlay.querySelector('#posSerialSkip').onclick = () => { overlay.remove(); resolve(); };
+        overlay.querySelector('#posSerialSave').onclick = async () => {
+            const sels = overlay.querySelectorAll('.pos-serial');
+            for (const sel of sels) {
+                if (!sel.value) continue;
+                try {
+                    await api.request(AccountsCommon.buildUrl(`inventory/serials/${encodeURIComponent(sel.value)}/sell`), {
+                        method: 'POST',
+                        body: JSON.stringify({ invoice_id: sel.dataset.inv, sold_date: soldDate }),
+                        _skipSpinner: true
+                    });
+                } catch (err) { Toast.error(`${sel.value}: ${err.message}`); }
+            }
+            Toast.success('Serials recorded — warranties started');
+            overlay.remove(); resolve();
+        };
+    });
 }
 
 /** 80mm thermal receipt via the browser's print dialog. */

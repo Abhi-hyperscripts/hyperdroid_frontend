@@ -25,7 +25,7 @@ window.ACCOUNTS_HELP = {
     // ── Cash Sale (POS) ───────────────────────────────────────────────────
     'pos:pos-counter':
         `<p><strong>The 30-second counter sale.</strong> Tap items (or scan a SKU into the search box and press Enter), take the money, done. Behind the scenes this does full accounting in one motion: creates a tax invoice for the <strong>Walk-in Customer</strong>, approves it (revenue + GST + stock out + cost of goods sold all post), records the payment into the account you picked, and prints an 80mm receipt. Items priced "GST-inclusive" are split correctly — a ₹499 MRP at 18% books ₹422.88 revenue + ₹76.12 GST.</p>
-         <p><strong>Example:</strong> 2 × Mouse ₹500 + 1 × Keyboard ₹1,500 by UPI → total ₹2,950 with GST, stock down 3 units, profit margin recorded, receipt printed. One tap. Note: one GST slab per sale — mixed slabs ring as separate sales.</p>`,
+         <p><strong>Example:</strong> 2 × Mouse ₹500 + 1 × Keyboard ₹1,500 by UPI → total ₹2,950 with GST, stock down 3 units, profit margin recorded, receipt printed. One tap. Mixed GST slabs are handled automatically — the sale splits into one invoice per slab behind the scenes, settled by a single payment. Serial-tracked items prompt you for which units were sold, starting their warranties.</p>`,
 
     // ── Dashboard ─────────────────────────────────────────────────────────
     'accounts:_page':

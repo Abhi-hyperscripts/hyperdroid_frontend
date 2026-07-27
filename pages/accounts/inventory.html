@@ -92,6 +92,7 @@
                         <div class="form-group" style="margin:0;max-width:300px;"><input type="text" id="itemSearch" class="form-control" placeholder="Search SKU / name…"></div>
                         <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-secondary);"><input type="checkbox" id="itemShowInactive"> Show inactive</label>
                         <span style="flex:1"></span>
+                        <button class="btn btn-outline" onclick="showImportModal()" data-admin-only>Import CSV</button>
                         <button class="btn btn-outline" onclick="showCategoryModal()" data-admin-only>+ Category</button>
                         <button class="btn btn-primary" onclick="showItemModal()" data-admin-only>+ New Item</button>
                     </div>
@@ -112,6 +113,8 @@
                         <div class="stat-card"><div class="stat-value" id="lowStockStat">0</div><div class="stat-label">Below Reorder</div></div>
                     </div>
                     <div class="filters-bar" style="justify-content:flex-end;">
+                        <input type="text" id="registerAsOf" class="form-control" style="max-width:170px;" placeholder="As-of date">
+                        <button class="btn btn-outline" onclick="printStockRegister()">Stock Register</button>
                         <button class="btn btn-primary" onclick="showAdjustModal()" data-admin-only>Adjust Stock / Opening</button>
                     </div>
                     <div class="data-table-container" style="margin-top:12px;">
@@ -189,6 +192,24 @@
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="AccountsCommon.closeModal('itemModal')">Cancel</button>
                 <button class="btn btn-primary" id="saveItemBtn" onclick="saveItem()">Save Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV import modal -->
+    <div class="modal" id="importModal">
+        <div class="modal-content" style="max-width:680px;">
+            <div class="modal-header"><h3>Import Items from CSV</h3><button class="close-btn" onclick="AccountsCommon.closeModal('importModal')">&times;</button></div>
+            <div class="modal-body">
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;">Paste CSV rows (with or without a header). Columns, in order:<br>
+                <code>sku, name, sale_price, purchase_price, hsn, unit, warranty_months, reorder_level, track(y/n), serial(y/n)</code><br>
+                Only <strong>sku</strong> and <strong>name</strong> are required — missing columns use sensible defaults.</p>
+                <textarea id="csvBox" class="form-control" rows="10" placeholder="LAP-D5520, Dell Latitude 5520, 62000, 54000, 8471, pcs, 12, 3, y, y&#10;MSE-L100, Logitech Mouse, 500, 380, 8471, pcs, 0, 10, y, n"></textarea>
+                <div id="csvPreview" style="margin-top:8px;font-size:0.85rem;color:var(--text-secondary);"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('importModal')">Cancel</button>
+                <button class="btn btn-primary" id="csvImportBtn" onclick="runCsvImport()">Import</button>
             </div>
         </div>
     </div>

@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
     AccountsCommon.setupTabs(tabNames, onTabSwitch);
     accountsRoles.applyRBAC();
-    AccountsCommon.initDatePickers(['adjDate']);
+    AccountsCommon.initDatePickers(['adjDate', 'registerAsOf']);
+    AccountsCommon.setDateField('registerAsOf', AccountsCommon.todayLocal());
     document.getElementById('itemSearch')?.addEventListener('input', () => renderItems());
     document.getElementById('itemShowInactive')?.addEventListener('change', () => loadItems());
     document.getElementById('serialLookup')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); lookupSerial(); } });
@@ -320,6 +321,88 @@ async function saveSerials() {
         AccountsCommon.closeModal('serialsModal');
         await loadSerials();
     } catch (err) { Toast.error(err.message || 'Failed'); }
+}
+
+// ── CSV import ─────────────────────────────────────────────────────────────
+function parseCsvRows() {
+    const txt = document.getElementById('csvBox').value.trim();
+    if (!txt) return [];
+    const yes = v => ['y', 'yes', 'true', '1'].includes((v || '').trim().toLowerCase());
+    return txt.split('\n').map(l => l.trim()).filter(Boolean)
+        .filter(l => !/^sku\s*,/i.test(l))   // skip a header row
+        .map(l => {
+            const c = l.split(',').map(x => x.trim());
+            return {
+                sku: c[0], name: c[1],
+                sale_price: parseFloat(c[2]) || 0,
+                purchase_price: parseFloat(c[3]) || null,
+                hsn_sac: c[4] || null,
+                unit: c[5] || 'pcs',
+                warranty_months: parseInt(c[6]) || 0,
+                reorder_level: parseFloat(c[7]) || 0,
+                track_inventory: c[8] !== undefined ? yes(c[8]) : true,
+                tracking_mode: yes(c[9]) ? 'serial' : 'none',
+                item_type: 'goods'
+            };
+        }).filter(r => r.sku && r.name);
+}
+
+function showImportModal() {
+    document.getElementById('csvBox').value = '';
+    document.getElementById('csvPreview').textContent = '';
+    document.getElementById('csvBox').oninput = () => {
+        const rows = parseCsvRows();
+        document.getElementById('csvPreview').textContent = rows.length ? `${rows.length} item(s) ready to import — first: ${rows[0].sku} "${rows[0].name}" @ ${rows[0].sale_price}` : '';
+    };
+    AccountsCommon.openModal('importModal');
+}
+
+async function runCsvImport() {
+    const rows = parseCsvRows();
+    if (!rows.length) { Toast.error('Nothing to import — paste CSV rows first'); return; }
+    const btn = document.getElementById('csvImportBtn'); btn.disabled = true;
+    let ok = 0; const fails = [];
+    for (const r of rows) {
+        btn.textContent = `Importing ${ok + fails.length + 1}/${rows.length}…`;
+        try { await api.request(AccountsCommon.buildUrl('inventory/items'), { method: 'POST', body: JSON.stringify(r), _skipSpinner: true }); ok++; }
+        catch (err) { fails.push(`${r.sku}: ${err.message}`); }
+    }
+    btn.disabled = false; btn.textContent = 'Import';
+    if (fails.length) Toast.error(`${ok} imported, ${fails.length} failed — ${fails[0]}${fails.length > 1 ? ` (+${fails.length - 1} more)` : ''}`);
+    else { Toast.success(`${ok} item(s) imported`); AccountsCommon.closeModal('importModal'); }
+    await loadItems();
+}
+
+// ── Stock register (as-of print view) ──────────────────────────────────────
+async function printStockRegister() {
+    const asOf = document.getElementById('registerAsOf').value || AccountsCommon.todayLocal();
+    try {
+        const [rows, settingsRes] = await Promise.all([
+            api.request(AccountsCommon.buildUrl('inventory/stock-register', { asOf }), { _skipSpinner: true }),
+            api.request(AccountsCommon.buildUrl('settings'), { _skipSpinner: true }).catch(() => ({}))
+        ]);
+        const org = settingsRes?.data || settingsRes || {};
+        const total = rows.reduce((s, r) => s + r.stock_value, 0);
+        const w = window.open('', '_blank');
+        if (!w) { Toast.error('Allow pop-ups to print'); return; }
+        w.document.write(`<!DOCTYPE html><html><head><title>Stock Register ${asOf}</title><style>
+            body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:28px;}
+            h1{font-size:18px;} h2{font-size:14px;color:#555;font-weight:500;margin:4px 0 16px;}
+            table{width:100%;border-collapse:collapse;margin-top:10px;}
+            th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;}
+            th{background:#f0f0f0;font-size:11px;text-transform:uppercase;}
+            td.r,th.r{text-align:right;} tfoot td{font-weight:700;border-top:2px solid #1a1a1a;}
+        </style></head><body>
+            <h1>${esc(org.org_legal_name || 'Stock Register')}</h1>
+            <h2>Closing stock as of ${asOf}${org.org_gstin ? ' · GSTIN ' + esc(org.org_gstin) : ''}</h2>
+            <table><thead><tr><th>SKU</th><th>Item</th><th>Category</th><th class="r">Qty</th><th class="r">Avg Cost</th><th class="r">Value</th></tr></thead>
+            <tbody>${rows.map(r => `<tr><td>${esc(r.sku)}</td><td>${esc(r.name)}</td><td>${esc(r.category_name || '-')}</td><td class="r">${r.qty_on_hand} ${esc(r.unit)}</td><td class="r">${(+r.avg_cost).toFixed(2)}</td><td class="r">${(+r.stock_value).toFixed(2)}</td></tr>`).join('') || '<tr><td colspan="6">No stock as of this date.</td></tr>'}</tbody>
+            <tfoot><tr><td colspan="5">Total closing stock value</td><td class="r">₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr></tfoot>
+            </table>
+            <script>window.onload = () => window.print();<\/script>
+        </body></html>`);
+        w.document.close();
+    } catch (err) { Toast.error(err.message || 'Failed to build the register'); }
 }
 
 // ── BOM / assembly ─────────────────────────────────────────────────────────
