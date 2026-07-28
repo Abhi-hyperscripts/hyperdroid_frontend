@@ -82,7 +82,11 @@ function onTabSwitch(tabId) {
         case 'tax-config':      loadTaxConfigs(); break;
         case 'tax-rates':       loadTaxRates(); break;
         case 'hsn-sac':         loadHsnSacCodes(); break;
-        case 'gstr-1':          setDefaultDatesAndGenerate('gstr1From', 'gstr1To', generateGSTR1); break;
+        case 'gstr-1':
+            setDefaultDatesAndGenerate('gstr1From', 'gstr1To', generateGSTR1);
+            // Default the portal-JSON month to the last completed month (what's due for filing).
+            { const m = document.getElementById('gstr1Month'); if (m && !m.value) { const d = new Date(); d.setMonth(d.getMonth() - 1); m.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; } }
+            break;
         case 'gstr-3b':         setDefaultDatesAndGenerate('gstr3bFrom', 'gstr3bTo', generateGSTR3B); break;
         case 'tds-return':      setDefaultDatesAndGenerate('tdsFrom', 'tdsTo', generateTDSReturn); break;
         case 'tax-calculator':  populateCalcConfigSelect(); break;
@@ -649,6 +653,61 @@ function setDefaultDatesAndGenerate(fromId, toId, generateFn) {
 // ============================================================================
 // 4. GSTR-1
 // ============================================================================
+
+/**
+ * Build + download the GSTN-portal-uploadable GSTR-1 JSON for the selected return month.
+ * The backend assembles the b2b/b2cl/b2cs/exp/cdnr/hsn/doc_issue sections from approved
+ * invoices and credit notes; the downloaded file imports straight into the GST portal /
+ * offline tool. A summary of what went into the file is shown for review before filing.
+ */
+async function downloadGstr1Json() {
+    const monthInput = document.getElementById('gstr1Month')?.value; // YYYY-MM
+    if (!monthInput) { Toast.error('Pick the return month first'); return; }
+    const [year, month] = monthInput.split('-').map(Number);
+    try {
+        const url = AccountsCommon.buildUrl('tax/reports/gstr1-json', { year, month });
+        const res = await api.request(url);
+        // Download the portal payload as a .json file.
+        const blob = new Blob([JSON.stringify(res.payload, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = res.file_name;
+        a.click();
+        URL.revokeObjectURL(a.href);
+
+        // Render the review summary so what's inside the file is visible before upload.
+        const s = res.summary || {};
+        const area = document.getElementById('gstr1ReportArea');
+        const warn = s.lines_missing_hsn > 0
+            ? `<p style="color:var(--color-warning);margin-top:0.5rem;">⚠ ${s.lines_missing_hsn} HSN row(s) have no HSN/SAC code — the portal may reject Table 12. Set HSN codes on the items/lines and re-export.</p>` : '';
+        const tile = (label, value) => `
+            <div style="background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.85rem;">
+                <div style="font-size:0.72rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;">${label}</div>
+                <div style="font-size:1.15rem;font-weight:700;color:var(--text-primary);margin-top:2px;">${value}</div>
+            </div>`;
+        area.innerHTML = `
+            <div class="glass-card-header"><h3>Portal JSON built — ${AccountsCommon.escapeHtml(res.file_name)}</h3></div>
+            <div class="glass-card-body">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.75rem;">
+                    ${tile('B2B invoices', `${s.b2b_invoices ?? 0} <small>(${s.b2b_parties ?? 0} parties)</small>`)}
+                    ${tile('B2C large', s.b2cl_invoices ?? 0)}
+                    ${tile('B2C small rows', s.b2cs_rows ?? 0)}
+                    ${tile('Exports', s.export_invoices ?? 0)}
+                    ${tile('Credit notes', s.cdnr_notes ?? 0)}
+                    ${tile('Taxable value', '₹' + Number(s.total_taxable || 0).toLocaleString('en-IN'))}
+                    ${tile('Total tax', '₹' + Number(s.total_tax || 0).toLocaleString('en-IN'))}
+                    ${tile('Cancelled docs', s.cancelled_count ?? 0)}
+                </div>
+                ${warn}
+                <p style="color:var(--text-secondary);margin-top:0.75rem;font-size:0.85rem;">
+                    Upload at gst.gov.in → Returns → GSTR-1 → Prepare Offline → Upload JSON, review, then file with EVC/DSC.
+                </p>
+            </div>`;
+        Toast.success('GSTR-1 portal JSON downloaded');
+    } catch (err) {
+        Toast.error(err?.message || 'GSTR-1 JSON export failed');
+    }
+}
 
 async function generateGSTR1() {
     const from = document.getElementById('gstr1From')?.value;
