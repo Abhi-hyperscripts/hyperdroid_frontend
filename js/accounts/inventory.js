@@ -171,10 +171,12 @@ async function saveCategory() {
 // ── Stock ──────────────────────────────────────────────────────────────────
 async function loadStock() {
     try {
-        const [rows, val] = await Promise.all([
+        const [rows, val, mismatches] = await Promise.all([
             api.request(AccountsCommon.buildUrl('inventory/stock'), { _skipSpinner: true }),
-            api.request(AccountsCommon.buildUrl('inventory/valuation'), { _skipSpinner: true })
+            api.request(AccountsCommon.buildUrl('inventory/valuation'), { _skipSpinner: true }),
+            api.request(AccountsCommon.buildUrl('inventory/serial-mismatches'), { _skipSpinner: true }).catch(() => [])
         ]);
+        renderSerialReconBanner(mismatches);
         document.getElementById('stockValueStat').textContent = fmtMoney(val.stock_value);
         document.getElementById('stockGlStat').textContent = fmtMoney(val.inventory_gl_balance);
         const sync = document.getElementById('stockSyncStat');
@@ -190,6 +192,17 @@ async function loadStock() {
             <td>${r.below_reorder ? '<span class="status-badge status-pending">Low stock</span>' : ''}</td>
         </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary);">No stocked items yet.</td></tr>';
     } catch (err) { console.error('[Inventory] loadStock', err); Toast.error('Failed to load stock'); }
+}
+
+function renderSerialReconBanner(mismatches) {
+    const el = document.getElementById('serialReconBanner');
+    if (!el) return;
+    if (!Array.isArray(mismatches) || !mismatches.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    const lines = mismatches.slice(0, 6).map(m =>
+        `<code>${esc(m.sku)}</code> — ${m.qty_on_hand} on hand vs ${m.in_stock_serials} serial(s) registered <strong>(${m.delta > 0 ? '+' : ''}${m.delta})</strong>`).join('<br>');
+    const more = mismatches.length > 6 ? `<br>…and ${mismatches.length - 6} more.` : '';
+    el.innerHTML = `⚠️ <strong>${mismatches.length} serial-tracked item(s) need serial numbers registered.</strong> Units are in stock but their serials aren't recorded — scan them in via the Serials tab so warranty lookups stay accurate.<br><br>${lines}${more}`;
+    el.style.display = 'block';
 }
 
 function showAdjustModal() {
