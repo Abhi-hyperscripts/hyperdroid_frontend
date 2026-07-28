@@ -1181,8 +1181,10 @@ function handleStatementFileSelect(event) {
 }
 
 async function processStatementFile(file) {
-    if (!file.name.endsWith('.xlsx')) {
-        Toast.error('Please upload an .xlsx file');
+    const isXlsx = file.name.toLowerCase().endsWith('.xlsx');
+    const isCsv = file.name.toLowerCase().endsWith('.csv');
+    if (!isXlsx && !isCsv) {
+        Toast.error('Upload an .xlsx or .csv file');
         return;
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -1195,12 +1197,43 @@ async function processStatementFile(file) {
     document.getElementById('statementFileName').textContent = file.name;
 
     try {
-        const data = await file.arrayBuffer();
-        parseExcelAndPreview(data);
+        if (isCsv) {
+            parseRowsAndPreview(parseCsvStatement(await file.text()));
+        } else {
+            const data = await file.arrayBuffer();
+            parseExcelAndPreview(data);
+        }
     } catch (err) {
         console.error('[Import] File read error:', err);
         Toast.error('Failed to read file');
     }
+}
+
+/**
+ * CSV → row-of-cells matrix, quote-aware (handles "quoted, commas" and "" escapes).
+ * Banks export CSV far more often than xlsx, so this accepts the same Date/Description/
+ * Debit/Credit/Balance/Reference header layout as the Excel template.
+ */
+function parseCsvStatement(text) {
+    const rows = [];
+    let row = [], cell = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (inQuotes) {
+            if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else inQuotes = false; }
+            else cell += ch;
+        } else if (ch === '"') inQuotes = true;
+        else if (ch === ',') { row.push(cell); cell = ''; }
+        else if (ch === '\n' || ch === '\r') {
+            if (ch === '\r' && text[i + 1] === '\n') i++;
+            row.push(cell); cell = '';
+            if (row.some(c => c.trim() !== '')) rows.push(row);
+            row = [];
+        } else cell += ch;
+    }
+    row.push(cell);
+    if (row.some(c => c.trim() !== '')) rows.push(row);
+    return rows;
 }
 
 function parseExcelAndPreview(arrayBuffer) {
@@ -1216,7 +1249,17 @@ function parseExcelAndPreview(arrayBuffer) {
         const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+        parseRowsAndPreview(rows);
+    } catch (err) {
+        console.error('[Import] Parse error:', err);
+        Toast.error('Failed to parse Excel file: ' + err.message);
+    }
+}
 
+/** Shared for xlsx + csv: cell matrix → validated parsedStatementRows → preview. */
+function parseRowsAndPreview(rows) {
+    showMatchCol = false;   // fresh file → matches from a previous file no longer apply
+    try {
         if (rows.length < 2) {
             Toast.error('File has no data rows (only header found)');
             return;
@@ -1303,7 +1346,7 @@ function parseExcelAndPreview(arrayBuffer) {
         renderImportPreview();
     } catch (err) {
         console.error('[Import] Parse error:', err);
-        Toast.error('Failed to parse Excel file: ' + err.message);
+        Toast.error('Failed to parse the statement: ' + err.message);
     }
 }
 
@@ -1354,6 +1397,91 @@ function parseAmount(str) {
     return parenNegative ? -Math.abs(num) : num;
 }
 
+// ── Statement auto-match: suggest which open invoice/bill each row settles ──
+let showMatchCol = false;
+
+function matchCellHtml(r, i) {
+    if (r.recorded) return `<span style="color:var(--color-success);font-weight:600;">✓ ${AccountsCommon.escapeHtml(r.recorded)}</span>`;
+    const c = r.match;
+    if (c === undefined) return '<span style="color:var(--text-secondary);font-size:0.8rem;">—</span>';
+    if (!c) return '<span style="color:var(--text-secondary);font-size:0.8rem;">No match found</span>';
+    const kindLabel = c.kind === 'customer_invoice' ? 'Receipt for' : 'Payment for';
+    return `<div style="font-size:0.8rem;line-height:1.35;">
+        <div><strong>${AccountsCommon.escapeHtml(c.doc_number)}</strong> · ${AccountsCommon.escapeHtml(c.party_name)}</div>
+        <div style="color:var(--text-secondary);">${AccountsCommon.escapeHtml(c.reasons)}</div>
+        <button class="btn btn-outline" style="height:26px;padding:0 10px;font-size:0.75rem;margin-top:3px;"
+            onclick="recordMatchedRow(${i})">${kindLabel} ${AccountsCommon.formatCurrency(r.credit ?? r.debit ?? 0)}</button>
+    </div>`;
+}
+
+async function suggestStatementMatches() {
+    const valid = parsedStatementRows.filter(r => r.status === 'valid');
+    if (!valid.length) { Toast.error('No valid rows to match'); return; }
+    try {
+        const payload = valid.map(r => ({
+            transaction_date: AccountsCommon.toDateInput(r.date),
+            description: r.description,
+            debit: r.debit ?? null, credit: r.credit ?? null,
+            reference_number: r.reference || null
+        }));
+        const res = await api.request(AccountsCommon.buildUrl('bank/match-suggestions'), {
+            method: 'POST', body: JSON.stringify({ transactions: payload })
+        });
+        // res[i] pairs with valid[i]; store the TOP candidate on the row.
+        let matched = 0;
+        valid.forEach((r, vi) => {
+            const s = (res || []).find(x => x.row_index === vi);
+            r.match = s?.candidates?.length ? s.candidates[0] : null;
+            if (r.match) matched++;
+        });
+        showMatchCol = true;
+        renderImportPreview();
+        Toast.success(matched ? `${matched} of ${valid.length} rows matched to open invoices/bills` : 'No confident matches found');
+    } catch (err) { Toast.error(err.message || 'Match suggestion failed'); }
+}
+
+/**
+ * One-click record of a matched row: credit → customer receipt against the invoice,
+ * debit → vendor payment against the bill, into the bank account selected for this
+ * import. The row is then EXCLUDED from Confirm Import — the receipt/payment already
+ * moved the bank GL, importing it again would double-book the money.
+ */
+async function recordMatchedRow(i) {
+    const r = parsedStatementRows[i];
+    const c = r?.match;
+    if (!r || !c || r.recorded) return;
+    const bankId = importBankDropdown?.getValue?.();
+    if (!bankId) { Toast.error('Pick the bank account (step 1) first — the receipt/payment posts into it'); return; }
+    const amount = Math.min(r.credit ?? r.debit ?? 0, c.balance_due);
+    const dateStr = AccountsCommon.toDateInput(r.date);
+    try {
+        if (c.kind === 'customer_invoice') {
+            await api.request(AccountsCommon.buildUrl('invoices/payments'), {
+                method: 'POST',
+                body: JSON.stringify({
+                    customer_id: c.party_id, payment_date: dateStr, amount, tds_amount: 0,
+                    bank_account_id: bankId, payment_method: 'bank_transfer',
+                    reference_number: r.reference || 'Statement import',
+                    allocations: [{ customer_invoice_id: c.doc_id, allocated_amount: amount }]
+                })
+            });
+        } else {
+            await api.request(AccountsCommon.buildUrl('vendor-bills/payments'), {
+                method: 'POST',
+                body: JSON.stringify({
+                    vendor_id: c.party_id, payment_date: dateStr, amount,
+                    bank_account_id: bankId, payment_method: 'bank_transfer',
+                    reference_number: r.reference || 'Statement import',
+                    allocations: [{ vendor_bill_id: c.doc_id, allocated_amount: amount }]
+                })
+            });
+        }
+        r.recorded = `${c.kind === 'customer_invoice' ? 'Receipt' : 'Payment'} · ${c.doc_number}`;
+        renderImportPreview();
+        Toast.success(`${r.recorded} recorded — row excluded from the raw import`);
+    } catch (err) { Toast.error(err.message || 'Recording failed'); }
+}
+
 function renderImportPreview() {
     document.getElementById('importStep1').style.display = 'none';
     document.getElementById('importStep2').style.display = '';
@@ -1393,8 +1521,10 @@ function renderImportPreview() {
             <td style="text-align:right;">${r.credit != null ? fmt(r.credit) : ''}</td>
             <td style="text-align:right;">${r.balance != null ? fmt(r.balance) : ''}</td>
             <td>${AccountsCommon.escapeHtml(r.reference || '')}</td>
+            <td class="import-match-cell" data-row="${i}" style="display:${showMatchCol ? '' : 'none'};">${matchCellHtml(r, i)}</td>
         </tr>`;
     }).join('');
+    document.getElementById('importMatchTh').style.display = showMatchCol ? '' : 'none';
 
     // Disable confirm if no valid rows
     document.getElementById('confirmImportBtn').disabled = valid.length === 0;
@@ -1407,8 +1537,10 @@ async function confirmStatementImport() {
     if (!bankId) { Toast.error('Please select a bank account'); return; }
     if (!counterId) { Toast.error('Please select a counter account'); return; }
 
-    const validRows = parsedStatementRows.filter(r => r.status === 'valid');
-    if (validRows.length === 0) { Toast.error('No valid rows to import'); return; }
+    // Rows already recorded as receipts/payments are EXCLUDED: those postings moved the
+    // bank GL through the payment flows — importing them again would double-book the money.
+    const validRows = parsedStatementRows.filter(r => r.status === 'valid' && !r.recorded);
+    if (validRows.length === 0) { Toast.error(parsedStatementRows.some(r => r.recorded) ? 'All rows were recorded as receipts/payments — nothing left to import as raw transactions' : 'No valid rows to import'); return; }
 
     const payload = {
         counter_account_id: counterId,

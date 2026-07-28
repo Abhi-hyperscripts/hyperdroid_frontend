@@ -452,8 +452,8 @@
                                         <polyline points="9 15 12 12 15 15"/>
                                     </svg>
                                     <p style="color:var(--text-secondary);margin:0;">Drag &amp; drop your filled template here, or click to browse</p>
-                                    <p style="color:var(--text-secondary);font-size:0.8rem;margin:0.25rem 0 0;">Accepts .xlsx files</p>
-                                    <input type="file" id="statementFileInput" accept=".xlsx" onchange="handleStatementFileSelect(event)" style="display:none;">
+                                    <p style="color:var(--text-secondary);font-size:0.8rem;margin:0.25rem 0 0;">Accepts .xlsx and .csv files (Date, Description, Debit, Credit columns)</p>
+                                    <input type="file" id="statementFileInput" accept=".xlsx,.csv" onchange="handleStatementFileSelect(event)" style="display:none;">
                                 </div>
 
                                 <div id="statementSelectedFile" style="display:none;margin-top:1rem;padding:0.75rem 1rem;background:var(--bg-tertiary);border-radius:8px;display:none;align-items:center;justify-content:space-between;">
@@ -471,6 +471,7 @@
                                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
                                     <h4>Preview Import (<span id="importRowCount">0</span> transactions)</h4>
                                     <div style="display:flex;gap:0.5rem;">
+                                        <button class="btn btn-outline" onclick="suggestStatementMatches()" title="Match rows against open invoices (money in) and bills (money out) so receipts/payments can be recorded in one click">Suggest matches</button>
                                         <button class="btn btn-outline" onclick="cancelStatementImport()">Cancel</button>
                                         <button class="btn btn-primary" id="confirmImportBtn" onclick="confirmStatementImport()">Confirm Import</button>
                                     </div>
@@ -488,6 +489,7 @@
                                                 <th style="text-align:right;">Credit</th>
                                                 <th style="text-align:right;">Balance</th>
                                                 <th>Reference</th>
+                                                <th id="importMatchTh" style="display:none;min-width:230px;">Suggested match</th>
                                             </tr>
                                         </thead>
                                         <tbody id="importPreviewTable"></tbody>
