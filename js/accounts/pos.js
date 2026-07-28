@@ -43,6 +43,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         value: 'cash', compact: true
     });
     connectStockHub();
+    updateNetBadge();
+    syncOfflineSales();   // drain anything queued from a previous offline session
     // Camera-scan button only where the native detector + a camera exist (Chrome/Android).
     if ('BarcodeDetector' in window && navigator.mediaDevices?.getUserMedia)
         document.getElementById('posCamBtn').style.display = '';
@@ -85,11 +87,257 @@ async function refreshPosItems(silent = true) {
         renderGrid(true);
         renderCart();
         if (capped) Toast.error('Stock changed at another counter — cart quantities adjusted.');
-    } catch { /* offline blip — next tick retries */ }
+        // A successful fetch proves we're back online — drain any offline queue.
+        if (netOffline) { netOffline = false; updateNetBadge(); }
+        syncOfflineSales();
+    } catch (err) { if (isNetworkError(err)) markOffline(); /* next tick retries */ }
 }
 
 setInterval(() => { if (!document.hidden) refreshPosItems(); }, 15000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshPosItems(); });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OFFLINE MODE — the counter must keep billing when the internet dies.
+// Sales completed offline are queued in IndexedDB (survives reload/power-cut),
+// print a provisional receipt, and sync in order the moment the connection is
+// back. Real invoice numbers are assigned at sync; replayed sales post WITHOUT
+// stock enforcement (the goods already left the store — negative stock is the
+// honest record of that, not a reason to lose the sale).
+// ═══════════════════════════════════════════════════════════════════════════
+
+let netOffline = !navigator.onLine;
+let posSyncing = false;
+
+function isNetworkError(err) {
+    return !navigator.onLine || /failed to fetch|load failed|network\s?error|connection refused|err_(network|internet|connection)/i.test(err?.message || '');
+}
+
+function posDb() {
+    return new Promise((resolve, reject) => {
+        const r = indexedDB.open('ragenaizer-pos', 1);
+        r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('offline_sales')) r.result.createObjectStore('offline_sales', { keyPath: 'id' }); };
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+    });
+}
+async function posQueuePut(entry) {
+    const db = await posDb();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('offline_sales', 'readwrite');
+        tx.objectStore('offline_sales').put(entry);
+        tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+    });
+}
+async function posQueueDelete(id) {
+    const db = await posDb();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('offline_sales', 'readwrite');
+        tx.objectStore('offline_sales').delete(id);
+        tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+    });
+}
+async function posQueueAll() {
+    const db = await posDb();
+    return new Promise((resolve, reject) => {
+        const req = db.transaction('offline_sales', 'readonly').objectStore('offline_sales').getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+function markOffline() {
+    if (!netOffline) { netOffline = true; updateNetBadge(); }
+}
+window.addEventListener('offline', markOffline);
+window.addEventListener('online', () => { netOffline = false; updateNetBadge(); syncOfflineSales(); });
+
+async function updateNetBadge() {
+    const el = document.getElementById('posNetBadge');
+    if (!el) return;
+    const entries = await posQueueAll().catch(() => []);
+    const queued = entries.filter(e => e.status !== 'error').length;
+    const errored = entries.filter(e => e.status === 'error').length;
+    const show = (text, colorVar, clickable) => {
+        el.style.display = '';
+        el.textContent = text;
+        el.style.color = `var(${colorVar})`;
+        el.style.background = `color-mix(in srgb, var(${colorVar}) 15%, transparent)`;
+        el.style.border = `1px solid color-mix(in srgb, var(${colorVar}) 40%, transparent)`;
+        el.style.cursor = clickable ? 'pointer' : 'default';
+        el.onclick = clickable ? showQueueIssues : null;
+    };
+    if (posSyncing) show(`Syncing ${queued} offline sale${queued === 1 ? '' : 's'}…`, '--brand-primary', false);
+    else if (netOffline) show(`Offline — billing keeps working${queued ? ` · ${queued} queued` : ''}`, '--color-warning', false);
+    else if (errored) show(`${errored} offline sale${errored === 1 ? '' : 's'} need attention`, '--color-error', true);
+    else if (queued) show(`${queued} sale${queued === 1 ? '' : 's'} waiting to sync`, '--color-warning', false);
+    else { el.style.display = 'none'; el.onclick = null; }
+}
+
+/** Queue a sale that couldn't reach the server; prints a provisional receipt. */
+async function queueOfflineSale(sale) {
+    sale.offlineRef = 'OFF-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
+    sale.id = sale.offlineRef;
+    sale.at = new Date().toISOString();
+    sale.status = 'queued';
+    let sub = 0, tax = 0;
+    sale.cart.forEach(c => { const b = basePrice(c.item) * c.qty; sub += b; tax += b * (c.item.tax_config_id ? taxRateFor(c.item.tax_config_id) : 0) / 100; });
+    sale.total = Math.round((sub + tax) * 100) / 100;
+    await posQueuePut(sale);
+    // Optimistically decrement the local stock view so the next offline sale
+    // at THIS counter sees honest numbers (server truth returns on sync).
+    sale.cart.forEach(c => { const it = posItems.find(i => i.id === c.item.id); if (it && it.track_inventory) it.qty_on_hand -= c.qty; });
+    await printReceipt(sale.offlineRef, sale.total, true);
+    Toast.success(`Sale saved offline (${sale.offlineRef}) — will sync when back online`);
+    cart = [];
+    renderCart(); renderGrid(true);
+    updateNetBadge();
+}
+
+/**
+ * Shared server flow for a sale: split by slab → create+approve invoices → one payment.
+ * Resumable: progress (created invoices) is tracked on the sale object — and persisted
+ * for queued sales — so a retry never double-creates invoices; the payment is
+ * idempotent via a stable key.
+ */
+async function submitSaleToServer(sale, { enforceStock }) {
+    const customerId = await ensureWalkInCustomer();
+    const date = sale.date;
+    const groups = [];
+    {
+        const map = new Map();
+        sale.cart.forEach(c => {
+            const key = c.item.tax_config_id || '';
+            if (!map.has(key)) { map.set(key, []); groups.push(map.get(key)); }
+            map.get(key).push(c);
+        });
+    }
+    const invoices = (sale.progress?.invoices || []).map(p => ({ ...p, items: [] }));
+    for (let gi = invoices.length; gi < groups.length; gi++) {
+        const groupCart = groups[gi];
+        const lines = groupCart.map(c => ({
+            item_id: c.item.id,
+            description: c.item.name,
+            hsn_sac: c.item.hsn_sac || '',
+            quantity: c.qty,
+            unit_price: basePrice(c.item),
+            account_id: c.item.income_account_id || incomeAccounts[0].id,
+            ...(c.item.tax_config_id ? { tax_config_id: c.item.tax_config_id } : {})
+        }));
+        const inv = await api.request(AccountsCommon.buildUrl('invoices'), {
+            method: 'POST',
+            body: JSON.stringify({
+                customer_id: customerId, invoice_date: date, due_date: date,
+                notes: sale.offlineRef ? `Cash sale (POS · offline ${sale.offlineRef})` : 'Cash sale (POS)', lines
+            })
+        });
+        const invId = inv.id || inv?.data?.id;
+        let approved;
+        try {
+            approved = await api.request(AccountsCommon.buildUrl(`invoices/${invId}/approve`, enforceStock ? { enforceStock: true } : {}), { method: 'POST' });
+        } catch (err) {
+            if (enforceStock && (err.message || '').includes('INSUFFICIENT_STOCK')) {
+                await api.request(AccountsCommon.buildUrl(`invoices/${invId}`), { method: 'DELETE', _skipSpinner: true }).catch(() => {});
+                await refreshPosItems();
+                throw new Error('Just sold out at another counter — stock refreshed, please re-check the cart.');
+            }
+            throw err;
+        }
+        invoices.push({
+            invId,
+            number: approved.invoice_number || approved?.data?.invoice_number,
+            total: parseFloat(approved.total_amount ?? approved?.data?.total_amount),
+            items: groupCart
+        });
+        sale.progress = { invoices: invoices.map(i => ({ invId: i.invId, number: i.number, total: i.total })) };
+        if (sale.id) await posQueuePut(sale).catch(() => {});
+    }
+    const total = Math.round(invoices.reduce((s, i) => s + i.total, 0) * 100) / 100;
+    await api.request(AccountsCommon.buildUrl('invoices/payments'), {
+        method: 'POST',
+        body: JSON.stringify({
+            customer_id: customerId, payment_date: date, amount: total, tds_amount: 0,
+            bank_account_id: sale.bankId, payment_method: sale.method,
+            reference_number: sale.offlineRef ? `POS ${sale.offlineRef}` : 'POS',
+            allocations: invoices.map(i => ({ customer_invoice_id: i.invId, allocated_amount: i.total }))
+        }),
+        headers: { 'Idempotency-Key': 'pos-' + (sale.offlineRef || invoices[0].invId) }
+    });
+    return { invoices, total };
+}
+
+/** Replay queued offline sales, oldest first. Stops on network loss; business
+ * rejections are flagged for attention instead of blocking the rest. */
+async function syncOfflineSales() {
+    if (posSyncing) return;
+    const entries = (await posQueueAll().catch(() => [])).filter(e => e.status !== 'error')
+        .sort((a, b) => (a.at || '').localeCompare(b.at || ''));
+    if (!entries.length) { updateNetBadge(); return; }
+    posSyncing = true; updateNetBadge();
+    try {
+        for (const entry of entries) {
+            try {
+                const { invoices } = await submitSaleToServer(entry, { enforceStock: false });
+                await posQueueDelete(entry.id);
+                Toast.success(`${entry.offlineRef} synced — ${invoices.map(i => i.number).join(' · ')}`);
+                if (entry.cart.some(c => c.item.tracking_mode === 'serial'))
+                    Toast.error(`${entry.offlineRef} had serial-tracked items — assign serials in Inventory → Serials`);
+            } catch (err) {
+                if (isNetworkError(err)) { markOffline(); return; }
+                entry.status = 'error'; entry.error = err.message || 'Posting failed';
+                await posQueuePut(entry).catch(() => {});
+                Toast.error(`${entry.offlineRef} could not post: ${entry.error}`);
+            }
+        }
+    } finally {
+        posSyncing = false;
+        updateNetBadge();
+        refreshPosItems();
+    }
+}
+
+/** Modal for offline sales the server rejected: retry after fixing, or discard. */
+async function showQueueIssues() {
+    const errored = (await posQueueAll().catch(() => [])).filter(e => e.status === 'error');
+    if (!errored.length) { updateNetBadge(); return; }
+    document.getElementById('posQueueModal')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal active';
+    overlay.id = 'posQueueModal';
+    overlay.innerHTML = `<div class="modal-content" style="max-width:520px;">
+        <div class="modal-header"><h3>Offline sales needing attention</h3><button class="close-btn" onclick="this.closest('.modal').remove()">&times;</button></div>
+        <div class="modal-body">
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:10px;">These sales were billed offline but the server rejected them when syncing. Fix the cause (e.g. missing account setup), then retry — or discard if the sale was rung up by mistake.</p>
+            ${errored.map(e => `<div style="border:1px solid var(--border-color);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;gap:8px;">
+                    <strong>${esc(e.offlineRef)}</strong><span>${money(e.total || 0)}</span>
+                </div>
+                <div style="font-size:0.8rem;color:var(--text-secondary);">${esc(new Date(e.at).toLocaleString('en-IN'))} · ${e.cart.length} line${e.cart.length === 1 ? '' : 's'}</div>
+                <div style="font-size:0.8rem;color:var(--color-error);margin-top:4px;">${esc(e.error || '')}</div>
+                <button class="btn btn-outline" style="margin-top:8px;height:30px;padding:0 12px;font-size:0.8rem;" onclick="discardOfflineSale('${esc(e.id)}')">Discard</button>
+            </div>`).join('')}
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="this.closest('.modal').remove()">Close</button>
+            <button class="btn btn-primary" onclick="retryErroredSales()">Retry all</button>
+        </div></div>`;
+    document.body.appendChild(overlay);
+}
+
+async function retryErroredSales() {
+    const entries = (await posQueueAll().catch(() => [])).filter(e => e.status === 'error');
+    for (const e of entries) { e.status = 'queued'; delete e.error; await posQueuePut(e).catch(() => {}); }
+    document.getElementById('posQueueModal')?.remove();
+    syncOfflineSales();
+}
+
+async function discardOfflineSale(id) {
+    Confirm.show('Discard this offline sale?', 'The queued sale will be deleted and never posted to the books. Only do this if it was rung up by mistake.', async () => {
+        await posQueueDelete(id).catch(() => {});
+        document.getElementById('posQueueModal')?.remove();
+        updateNetBadge();
+        Toast.success('Offline sale discarded');
+    });
+}
 
 /**
  * Live multi-counter channel: the backend pushes fresh item snapshots the instant any
@@ -389,9 +637,21 @@ async function ensureWalkInCustomer() {
     const list = Array.isArray(res) ? res : (res?.data || res?.items || []);
     const found = list.find(c => c.name === 'Walk-in Customer');
     if (found) return found.id;
+    // Backend requires a phone and, for a domestic (unregistered) party, a state code
+    // (place of supply). A counter sale is by definition in the shop, so the business's
+    // own home state from Settings IS the place of supply; the phone is a placeholder.
+    let stateCode = '';
+    try { const s = await api.request(AccountsCommon.buildUrl('settings'), { _skipSpinner: true }); stateCode = (s?.data || s || {}).state_code || ''; } catch { }
+    if (!stateCode) throw new Error('Set your business state in Settings first — POS needs it to classify GST on counter sales.');
     const created = await api.request(AccountsCommon.buildUrl('customers'), {
         method: 'POST',
-        body: JSON.stringify({ name: 'Walk-in Customer', payment_terms_days: 0, gst_treatment: 'unregistered' })
+        // Placeholder contact fields: the backend requires the full party profile, but a
+        // walk-in counter buyer has none — the store's own location stands in.
+        body: JSON.stringify({
+            name: 'Walk-in Customer', phone: '0000000000', email: 'walkin@pos.local',
+            billing_address_line1: 'Counter sale', city: 'Counter sale', state: 'As per store', country: 'India',
+            payment_terms_days: 0, gst_treatment: 'unregistered', state_code: stateCode
+        })
     });
     return created.id || created?.data?.id;
 }
@@ -403,66 +663,21 @@ async function completeSale() {
     if (!incomeAccounts.length) { Toast.error('No postable Income account found — set up your chart of accounts first.'); return; }
     const btn = document.getElementById('posPayBtn');
     btn.disabled = true; btn.textContent = 'Processing…';
+    // Snapshot the sale up front: the same object either posts live or gets queued,
+    // and any invoices already created before a mid-sale network drop ride along in
+    // sale.progress so the replay never double-creates them.
+    const sale = {
+        cart: cart.map(c => ({ item: { ...c.item }, qty: c.qty })),
+        date: AccountsCommon.todayLocal(),
+        bankId,
+        method: posMethodDD?.getValue?.() || 'cash'
+    };
     try {
-        const customerId = await ensureWalkInCustomer();
-        const today = AccountsCommon.todayLocal();
-        // One tax config per invoice (backend rule) — a mixed-slab cart auto-splits into one
-        // invoice per slab, settled together by a single payment with multiple allocations.
-        const groups = new Map();
-        cart.forEach(c => {
-            const key = c.item.tax_config_id || '';
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key).push(c);
-        });
-        const invoices = [];   // {invId, number, total, items:[cartLines]}
-        for (const [, groupCart] of groups) {
-            const lines = groupCart.map(c => ({
-                item_id: c.item.id,
-                description: c.item.name,
-                hsn_sac: c.item.hsn_sac || '',
-                quantity: c.qty,
-                unit_price: basePrice(c.item),
-                account_id: c.item.income_account_id || incomeAccounts[0].id,
-                ...(c.item.tax_config_id ? { tax_config_id: c.item.tax_config_id } : {})
-            }));
-            const inv = await api.request(AccountsCommon.buildUrl('invoices'), {
-                method: 'POST',
-                body: JSON.stringify({ customer_id: customerId, invoice_date: today, due_date: today, notes: 'Cash sale (POS)', lines })
-            });
-            const invId = inv.id || inv?.data?.id;
-            let approved;
-            try {
-                approved = await api.request(AccountsCommon.buildUrl(`invoices/${invId}/approve`, { enforceStock: true }), { method: 'POST' });
-            } catch (err) {
-                // Lost the race to another counter: remove the stray draft, resync, tell the teller.
-                if ((err.message || '').includes('INSUFFICIENT_STOCK')) {
-                    await api.request(AccountsCommon.buildUrl(`invoices/${invId}`), { method: 'DELETE', _skipSpinner: true }).catch(() => {});
-                    await refreshPosItems();
-                    throw new Error('Just sold out at another counter — stock refreshed, please re-check the cart.');
-                }
-                throw err;
-            }
-            invoices.push({
-                invId,
-                number: approved.invoice_number || approved?.data?.invoice_number,
-                total: parseFloat(approved.total_amount ?? approved?.data?.total_amount),
-                items: groupCart
-            });
-        }
-        const total = Math.round(invoices.reduce((s, i) => s + i.total, 0) * 100) / 100;
-        await api.request(AccountsCommon.buildUrl('invoices/payments'), {
-            method: 'POST',
-            body: JSON.stringify({
-                customer_id: customerId, payment_date: today, amount: total, tds_amount: 0,
-                bank_account_id: bankId, payment_method: posMethodDD?.getValue?.() || 'cash',
-                reference_number: 'POS',
-                allocations: invoices.map(i => ({ customer_invoice_id: i.invId, allocated_amount: i.total }))
-            }),
-            headers: { 'Idempotency-Key': 'pos-' + invoices[0].invId }
-        });
+        if (netOffline) { await queueOfflineSale(sale); return; }
+        const { invoices, total } = await submitSaleToServer(sale, { enforceStock: true });
         Toast.success(`Sale complete — ${money(total)}`);
         await printReceipt(invoices.map(i => i.number).join(' · '), total);
-        await promptSerials(invoices, today);
+        await promptSerials(invoices, sale.date);
         cart = [];
         renderCart();
         // refresh stock counts on the grid
@@ -471,7 +686,12 @@ async function completeSale() {
         renderGrid();
     } catch (err) {
         console.error('[POS] completeSale', err);
-        Toast.error(err.message || 'Sale failed — check Receivables for a stranded draft/approved invoice.');
+        if (isNetworkError(err)) {
+            markOffline();
+            await queueOfflineSale(sale);
+        } else {
+            Toast.error(err.message || 'Sale failed — check Receivables for a stranded draft/approved invoice.');
+        }
     } finally {
         btn.disabled = false; renderCart();
     }
@@ -534,10 +754,20 @@ async function promptSerials(invoices, soldDate) {
     });
 }
 
-/** 80mm thermal receipt via the browser's print dialog. */
-async function printReceipt(invoiceNumber, total) {
+/** 80mm thermal receipt via the browser's print dialog. offline=true prints a
+ *  provisional receipt (queued sale — real invoice number arrives at sync). */
+async function printReceipt(invoiceNumber, total, offline = false) {
     let org = {};
-    try { const s = await api.request(AccountsCommon.buildUrl('settings'), { _skipSpinner: true }); org = s?.data || s || {}; } catch { }
+    if (!offline) {
+        try {
+            const s = await api.request(AccountsCommon.buildUrl('settings'), { _skipSpinner: true });
+            org = s?.data || s || {};
+            try { localStorage.setItem('acct_org_profile', JSON.stringify({ org_legal_name: org.org_legal_name, org_address: org.org_address, org_gstin: org.org_gstin })); } catch { }
+        } catch { }
+    } else {
+        // Offline: use the org profile cached from the last successful load, if any.
+        try { org = JSON.parse(localStorage.getItem('acct_org_profile') || '{}'); } catch { }
+    }
     const w = window.open('', '_blank', 'width=380,height=600');
     if (!w) return;
     const rows = cart.map(c => {
@@ -560,6 +790,7 @@ async function printReceipt(invoiceNumber, total) {
         ${org.org_gstin ? `<p class="c"><small>GSTIN: ${esc(org.org_gstin)}</small></p>` : ''}
         <hr>
         <p><small>${esc(invoiceNumber || '')} · ${new Date().toLocaleString('en-IN')}</small></p>
+        ${offline ? '<p><small>Offline sale — tax invoice number will be assigned when the counter reconnects.</small></p>' : ''}
         <hr>
         <table>${rows}</table>
         <hr>
