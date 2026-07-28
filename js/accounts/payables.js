@@ -319,6 +319,160 @@ async function initBillItemPicker() {
     });
 }
 
+// ── Scan-to-receive: barcode/SKU field on the bill form ─────────────────────
+// A truckload of dealer stock is received by scanning: USB scanners type the
+// code + Enter into #billScanInput; each scan adds the item as a line at its
+// purchase price, and a REPEAT scan bumps that line's quantity instead of
+// duplicating it. Items are matched by barcode first, then SKU.
+
+function findItemByCode(code) {
+    const q = (code || '').trim().toLowerCase();
+    if (!q) return null;
+    return inventoryItems.find(i => i.is_active && (i.barcode || '').toLowerCase() === q)
+        || inventoryItems.find(i => i.is_active && i.sku.toLowerCase() === q);
+}
+
+function billReceiveItem(item, qty = 1, unitCost = null, description = null) {
+    // The pristine starter line (no item, no description, zero rate) just gets in the
+    // way once real receiving starts — drop it before adding the first scanned line.
+    const rows = document.querySelectorAll('#billLinesBody tr');
+    if (rows.length === 1 && !rows[0].dataset.itemId
+        && !(rows[0].querySelector('.line-desc')?.value || '').trim()
+        && !parseFloat(rows[0].querySelector('.line-rate')?.value || '0')) {
+        rows[0].remove();
+    }
+    // Repeat scan → bump the existing line for this item.
+    const existing = document.querySelector(`#billLinesBody tr[data-item-id="${item.id}"]`);
+    if (existing) {
+        const qtyInput = existing.querySelector('.line-qty');
+        qtyInput.value = (parseFloat(qtyInput.value) || 0) + qty;
+        calculateBillTotals();
+        return existing;
+    }
+    addBillLine({
+        item_id: item.id, description: description || item.name, quantity: qty,
+        unit_price: unitCost ?? (item.purchase_price ?? item.sale_price),
+        account_id: AccountsCommon.postableAccounts(accounts, 'expense')[0]?.id || '',
+        ...(item.tax_config_id ? { tax_config_id: item.tax_config_id } : {})
+    });
+    return document.querySelector('#billLinesBody tr:last-child');
+}
+
+function wireBillScanInput() {
+    const input = document.getElementById('billScanInput');
+    if (!input || input._wired) return;
+    input._wired = true;
+    input.addEventListener('keydown', async e => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const code = input.value.trim();
+        input.value = '';
+        if (!code) return;
+        if (!inventoryItems.length) await initBillItemPicker();
+        const item = findItemByCode(code);
+        if (!item) { Toast.error(`No item with barcode/SKU '${code}' — add it in Inventory (or use CSV import with auto-create).`); return; }
+        const row = billReceiveItem(item);
+        row?.scrollIntoView({ block: 'nearest' });
+        Toast.success(`${item.name} — qty ${row?.querySelector('.line-qty')?.value || 1}`);
+    });
+}
+
+// ── Dealer-invoice CSV → bill lines ─────────────────────────────────────────
+
+function showBillCsvModal() {
+    document.getElementById('billCsvBox').value = '';
+    document.getElementById('billCsvPreview').textContent = '';
+    document.getElementById('billCsvFile').value = '';
+    AccountsCommon.openModal('billCsvModal');
+}
+
+async function billCsvFilePicked(e) {
+    const f = e.target.files?.[0];
+    if (f) document.getElementById('billCsvBox').value = await f.text();
+}
+
+/** Quote-aware CSV rows (handles "quoted, commas" and "" escapes). */
+function parseBillCsv(text) {
+    const rows = [];
+    let row = [], cell = '', inQ = false;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (inQ) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else inQ = false; } else cell += ch; }
+        else if (ch === '"') inQ = true;
+        else if (ch === ',') { row.push(cell); cell = ''; }
+        else if (ch === '\n' || ch === '\r') {
+            if (ch === '\r' && text[i + 1] === '\n') i++;
+            row.push(cell); cell = '';
+            if (row.some(c => c.trim() !== '')) rows.push(row);
+            row = [];
+        } else cell += ch;
+    }
+    row.push(cell);
+    if (row.some(c => c.trim() !== '')) rows.push(row);
+    return rows;
+}
+
+async function runBillCsvImport() {
+    const text = document.getElementById('billCsvBox').value.trim();
+    if (!text) { Toast.error('Paste or upload the CSV first'); return; }
+    const autoCreate = document.getElementById('billCsvAutoCreate').checked;
+    if (!inventoryItems.length) await initBillItemPicker();
+
+    const rows = parseBillCsv(text);
+    let added = 0, bumped = 0, created = 0;
+    const failed = [];
+    const btn = document.getElementById('billCsvImportBtn');
+    btn.disabled = true;
+    try {
+        for (const cells of rows) {
+            const code = (cells[0] || '').trim();
+            if (!code || /^(barcode|sku|barcode_or_sku|code)$/i.test(code)) continue;   // header row
+            const qty = parseFloat(cells[1]);
+            const cost = cells[2] !== undefined && String(cells[2]).trim() !== '' ? parseFloat(cells[2]) : null;
+            const desc = (cells[3] || '').trim() || null;
+            if (!(qty > 0)) { failed.push(`${code} (bad qty)`); continue; }
+            if (cost !== null && !(cost >= 0)) { failed.push(`${code} (bad cost)`); continue; }
+            let item = findItemByCode(code);
+            if (!item && autoCreate) {
+                try {
+                    // New product from the dealer: numeric codes are barcodes, others become the SKU.
+                    const isBarcode = /^\d{8,14}$/.test(code);
+                    item = await api.request(AccountsCommon.buildUrl('inventory/items'), {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            sku: isBarcode ? 'ITM-' + code.slice(-6) : code,
+                            name: desc || code,
+                            item_type: 'goods', track_inventory: true, unit: 'pcs',
+                            purchase_price: cost ?? 0, sale_price: cost ?? 0,
+                            ...(isBarcode ? { barcode: code } : {})
+                        }),
+                        _skipSpinner: true
+                    });
+                    inventoryItems.push(item);
+                    created++;
+                } catch (err) { failed.push(`${code} (create: ${err.message})`); continue; }
+            }
+            if (!item) { failed.push(code); continue; }
+            const before = document.querySelector(`#billLinesBody tr[data-item-id="${item.id}"]`);
+            billReceiveItem(item, qty, cost, desc);
+            before ? bumped++ : added++;
+        }
+    } finally { btn.disabled = false; }
+
+    const bits = [`${added} line${added === 1 ? '' : 's'} added`];
+    if (bumped) bits.push(`${bumped} merged into existing lines`);
+    if (created) bits.push(`${created} item${created === 1 ? '' : 's'} auto-created`);
+    document.getElementById('billCsvPreview').innerHTML = failed.length
+        ? `<span style="color:var(--color-error);">Unmatched (${failed.length}): ${AccountsCommon.escapeHtml(failed.join(', '))}${autoCreate ? '' : ' — tick auto-create or add them in Inventory first'}</span>`
+        : '';
+    if (added || bumped) {
+        Toast.success(bits.join(' · '));
+        if (!failed.length) AccountsCommon.closeModal('billCsvModal');
+    } else if (failed.length) {
+        Toast.error('No rows matched your item catalog');
+    }
+}
+
 // Document-currency picker (display-layer FX) — shared controller from AccountsCommon.
 const billFx = AccountsCommon.createFxPicker({
     containerId: 'billCurrencyContainer', rateGroupId: 'billRateGroup',
@@ -333,6 +487,7 @@ function showCreateBillModal() {
     document.getElementById('billDate').value = AccountsCommon.todayLocal();
     billFx.init(AccountsCommon.FX_BASE);
     initBillItemPicker();
+    wireBillScanInput();
     populateBillVendorSelect();
     clearBillLines();
     addBillLine();

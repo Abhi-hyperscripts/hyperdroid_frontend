@@ -551,6 +551,9 @@
                     <div class="po-lines-wrap">
                         <div class="filters-bar" style="margin-bottom:8px;align-items:center;gap:10px;">
                             <div class="searchable-dropdown-container" id="billItemPicker" style="min-width:300px;"></div>
+                            <input type="text" id="billScanInput" class="form-control" placeholder="⌁ Scan barcode / type SKU + Enter" style="max-width:240px;" autocomplete="off"
+                                title="Click here, then scan with a USB barcode scanner — each scan adds the item (repeat scans bump the quantity)">
+                            <button type="button" class="btn btn-outline" onclick="showBillCsvModal()" title="Upload the dealer's invoice as CSV — rows match to items by barcode or SKU">Import lines (CSV)</button>
                             <small class="field-hint" style="margin:0;">Pick a catalog item — stocked goods capitalize into Inventory on approval.</small>
                         </div>
                         <div class="data-table-container po-lines-container">
@@ -596,6 +599,32 @@
     </div>
 
     <!-- Bulk Bill Import Modal -->
+    <!-- Dealer-invoice CSV → bill lines -->
+    <div id="billCsvModal" class="modal">
+        <div class="modal-content" style="max-width:640px;">
+            <div class="modal-header"><h3>Import bill lines from CSV</h3><button class="close-btn" onclick="AccountsCommon.closeModal('billCsvModal')">&times;</button></div>
+            <div class="modal-body">
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;">
+                    Paste (or upload) the dealer invoice as CSV — one row per product. Columns, in order:<br>
+                    <code>barcode_or_sku, qty, unit_cost, description</code><br>
+                    Only the first two are required — cost falls back to the item's purchase price. Rows match your
+                    catalog by <strong>barcode</strong> first, then <strong>SKU</strong>.
+                </p>
+                <input type="file" id="billCsvFile" accept=".csv" class="form-control" style="margin-bottom:8px;" onchange="billCsvFilePicked(event)">
+                <textarea id="billCsvBox" class="form-control" rows="8" placeholder="8901725014612, 24, 118.50&#10;LAP-D5520, 2, 54000, Dell Latitude 5520"></textarea>
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;margin-top:10px;">
+                    <input type="checkbox" id="billCsvAutoCreate">
+                    Auto-create unknown items (SKU = the code, tracked goods at the given cost)
+                </label>
+                <div id="billCsvPreview" style="margin-top:8px;font-size:0.85rem;color:var(--text-secondary);"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('billCsvModal')">Cancel</button>
+                <button class="btn btn-primary" id="billCsvImportBtn" onclick="runBillCsvImport()">Add lines</button>
+            </div>
+        </div>
+    </div>
+
     <div id="bulkBillModal" class="modal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
