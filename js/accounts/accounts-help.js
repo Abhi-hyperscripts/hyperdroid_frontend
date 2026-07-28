@@ -133,7 +133,7 @@ window.ACCOUNTS_HELP = {
         `<p><strong>The tax regimes your business operates under</strong> (e.g. GST for India). A configuration defines the tax type and its rules; rates hang off it. Seed India defaults once and rarely touch this again.</p>
          <p><strong>Example:</strong> the India seed creates GST (with CGST/SGST/IGST splitting), TDS and TCS configurations in one click — the plumbing every invoice and bill then uses automatically.</p>`,
     'taxation:tax-rates':
-        `<p><strong>The actual percentages</strong> — GST 5/12/18/28%, TDS sections like 194C/194J. When you pick "GST 18%" on an invoice line, this is where that rate lives. Intra-state splits into CGST+SGST; inter-state becomes IGST — decided by your state vs the customer's.</p>
+        `<p><strong>The actual percentages</strong> — GST slabs 5/18/40% (GST 2.0; the old 12% and 28% slabs ended 22 Sep 2025 but stay available for backdated documents), TDS sections like 194C/194J. When you pick "GST 18%" on an invoice line, this is where that rate lives. Intra-state splits into CGST+SGST; inter-state becomes IGST — decided by your state vs the customer's.</p>
          <p><strong>Example:</strong> same ₹1,00,000 service at 18%: customer in your state → ₹9,000 CGST + ₹9,000 SGST; customer in Karnataka → ₹18,000 IGST; customer in Dubai → zero-rated export, ₹0. One rate, three outcomes, all automatic.</p>`,
     'taxation:hsn-sac':
         `<p><strong>HSN (goods) and SAC (services) are government classification codes</strong> that must appear on GST invoices. Store the ones you use with default rates so invoice lines auto-fill.</p>

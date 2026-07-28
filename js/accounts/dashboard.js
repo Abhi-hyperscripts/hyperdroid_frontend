@@ -456,7 +456,7 @@ const GUIDE_HELP = {
         example: `Your office is in Noida (UP). A ₹1,00,000 invoice to a Delhi client shows ₹18,000 IGST; the same invoice to a Noida client shows ₹9,000 CGST + ₹9,000 SGST. You never think about it — the system reads this setting.`
     },
     'Taxes (GST/TDS)': {
-        what: `The tax rates the system applies for you: GST slabs (5/12/18/28%) and TDS sections. "Seed India defaults" creates all of them in one click.`,
+        what: `The tax rates the system applies for you: GST 2.0 slabs (5/18/40%, plus the pre-Sep-2025 12/28% for backdated documents) and TDS sections. "Seed India defaults" creates all of them in one click.`,
         why: `Once seeded, you pick "GST 18%" from a dropdown on an invoice line and everything else — the split, the ledger entries, the GSTR-1/3B returns — assembles itself. No spreadsheets at filing time.`,
         how: [`Open Taxation → Tax Configuration`, `Press Seed India defaults`, `Then add the 2-3 HSN/SAC codes you bill under (software services = SAC 998314) so invoice lines auto-fill`],
         example: `In July you charged ₹72,000 GST on sales and paid ₹23,000 GST on purchases. GSTR-3B says: pay ₹49,000, not ₹72,000 — the ₹23,000 credit is money this setup saves you from overpaying.`
