@@ -67,8 +67,8 @@ function renderItems() {
         <td>${i.track_inventory ? fmtMoney(i.avg_cost) : '—'}</td>
         <td>${i.warranty_months ? i.warranty_months + ' mo' : '-'}</td>
         <td><span class="status-badge ${i.is_active ? 'status-active' : 'status-rejected'}">${i.is_active ? 'Active' : 'Inactive'}</span></td>
-        <td class="actions-cell">${isAdmin ? `${i.item_type === 'goods' && i.track_inventory ? `<button class="btn-icon" onclick="openBom('${i.id}')" data-tooltip="BOM / Build">⚙</button>` : ''}<button class="btn-icon" onclick="editItem('${i.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-            <button class="btn-icon ${i.is_active ? 'danger' : ''}" onclick="toggleItem('${i.id}', ${!i.is_active})" data-tooltip="${i.is_active ? 'Deactivate' : 'Reactivate'}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></button>` : '-'}</td>
+        <td class="actions-cell"><button class="btn-icon" onclick="showLabelModal('${i.id}')" data-tooltip="Print barcode labels"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v14"/><path d="M7 5v14"/><path d="M11 5v14"/><path d="M15 5v14"/><path d="M19 5v14"/><path d="M21 5v14" stroke-width="1"/></svg></button>${isAdmin ? `${i.item_type === 'goods' && i.track_inventory ? `<button class="btn-icon" onclick="openBom('${i.id}')" data-tooltip="BOM / Build">⚙</button>` : ''}<button class="btn-icon" onclick="editItem('${i.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+            <button class="btn-icon ${i.is_active ? 'danger' : ''}" onclick="toggleItem('${i.id}', ${!i.is_active})" data-tooltip="${i.is_active ? 'Deactivate' : 'Reactivate'}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></button>` : ''}</td>
     </tr>`).join('');
 }
 
@@ -406,6 +406,89 @@ async function printStockRegister() {
         </body></html>`);
         w.document.close();
     } catch (err) { Toast.error(err.message || 'Failed to build the register'); }
+}
+
+// ── Barcode label printing ─────────────────────────────────────────────────
+// Label stock formats: thermal roll printers print one label per page; A4 sheets
+// use the two most common Indian label-sheet layouts (65-up and 24-up).
+const LABEL_FORMATS = {
+    t50x25: { label: 'Thermal roll · 50×25 mm', page: '@page{size:50mm 25mm;margin:0}', cell: 'width:50mm;height:25mm;page-break-after:always;', barcodeH: 34 },
+    t40x25: { label: 'Thermal roll · 40×25 mm', page: '@page{size:40mm 25mm;margin:0}', cell: 'width:40mm;height:25mm;page-break-after:always;', barcodeH: 32 },
+    a4x65: { label: 'A4 sheet · 65 labels (38.1×21.2 mm)', page: '@page{size:A4;margin:10.7mm 4.65mm}', grid: 'display:grid;grid-template-columns:repeat(5,38.1mm);grid-auto-rows:21.2mm;column-gap:2.5mm;', cell: 'width:38.1mm;height:21.2mm;overflow:hidden;', barcodeH: 26 },
+    a4x24: { label: 'A4 sheet · 24 labels (64×34 mm)', page: '@page{size:A4;margin:12.7mm 7mm}', grid: 'display:grid;grid-template-columns:repeat(3,64mm);grid-auto-rows:34mm;column-gap:2.5mm;', cell: 'width:64mm;height:34mm;overflow:hidden;', barcodeH: 44 },
+};
+let labelSizeDD = null;
+
+function labelCode(i) { return (i.barcode || i.sku || '').trim(); }
+
+function showLabelModal(preselectId) {
+    if (!labelSizeDD && typeof SearchableDropdown !== 'undefined') {
+        labelSizeDD = new SearchableDropdown(document.getElementById('labelSizeContainer'), {
+            options: Object.entries(LABEL_FORMATS).map(([value, f]) => ({ value, label: f.label })),
+            placeholder: 'Label format…'
+        });
+        labelSizeDD.setValue?.('t50x25');
+        document.getElementById('labelSearch').addEventListener('input', () => renderLabelRows());
+    }
+    renderLabelRows(preselectId);
+    AccountsCommon.openModal('labelModal');
+}
+
+function renderLabelRows(preselectId) {
+    const tb = document.getElementById('labelItemsTable');
+    const q = (document.getElementById('labelSearch').value || '').toLowerCase();
+    // Preserve any quantities already typed before re-rendering the filtered list.
+    const kept = {};
+    tb.querySelectorAll('input[data-item]').forEach(inp => { if (+inp.value > 0) kept[inp.dataset.item] = +inp.value; });
+    if (preselectId) kept[preselectId] = kept[preselectId] || 1;
+    const rows = items.filter(i => i.is_active && labelCode(i) &&
+        (!q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)));
+    tb.innerHTML = rows.map(i => `<tr>
+        <td><code>${esc(i.sku)}</code></td>
+        <td>${esc(i.name)}</td>
+        <td style="font-size:0.8rem;color:var(--text-secondary);">${esc(labelCode(i))}${BarcodeRender.normalizeEan(labelCode(i)) ? ' · EAN-13' : ' · Code 128'}</td>
+        <td><input type="number" min="0" max="500" data-item="${i.id}" class="form-control" style="height:32px;padding:0 8px;" value="${kept[i.id] || 0}"></td>
+    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-secondary);">No matching items (items need a barcode or SKU).</td></tr>';
+}
+
+function printLabels() {
+    const fmt = LABEL_FORMATS[labelSizeDD?.getValue?.() || 't50x25'] || LABEL_FORMATS.t50x25;
+    const showName = document.getElementById('labelShowName').checked;
+    const showPrice = document.getElementById('labelShowPrice').checked;
+    const wanted = [];
+    document.querySelectorAll('#labelItemsTable input[data-item]').forEach(inp => {
+        const qty = Math.min(500, +inp.value || 0);
+        if (qty > 0) { const item = items.find(x => x.id === inp.dataset.item); if (item) wanted.push({ item, qty }); }
+    });
+    if (!wanted.length) { Toast.error('Set a label count on at least one item'); return; }
+
+    const failed = [];
+    const cells = [];
+    for (const { item, qty } of wanted) {
+        const svg = BarcodeRender.svg(labelCode(item), { height: fmt.barcodeH, moduleWidth: 2 });
+        if (!svg) { failed.push(item.sku); continue; }
+        const inner = `
+            ${showName ? `<div style="font-size:7pt;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(item.name)}</div>` : ''}
+            <div style="line-height:0;">${svg}</div>
+            ${showPrice ? `<div style="font-size:8pt;font-weight:700;">₹${(+item.sale_price || 0).toLocaleString('en-IN')}</div>` : ''}`;
+        for (let k = 0; k < qty; k++)
+            cells.push(`<div style="${fmt.cell}box-sizing:border-box;padding:1mm 1.5mm;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">${inner}</div>`);
+    }
+    if (!cells.length) { Toast.error('None of the selected codes could be rendered'); return; }
+    if (failed.length) Toast.error(`Skipped (unencodable code): ${failed.join(', ')}`);
+
+    const w = window.open('', '_blank');
+    if (!w) { Toast.error('Allow pop-ups to print'); return; }
+    w.document.write(`<!DOCTYPE html><html><head><title>Barcode labels</title><style>
+        ${fmt.page}
+        body{margin:0;font-family:'Segoe UI',Arial,sans-serif;color:#000;}
+        svg{max-width:100%;height:auto;}
+    </style></head><body>
+        ${fmt.grid ? `<div style="${fmt.grid}">${cells.join('')}</div>` : cells.join('')}
+        <script>window.onload = () => window.print();<\/script>
+    </body></html>`);
+    w.document.close();
+    AccountsCommon.closeModal('labelModal');
 }
 
 // ── BOM / assembly ─────────────────────────────────────────────────────────
