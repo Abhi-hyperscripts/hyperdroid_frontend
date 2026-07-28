@@ -393,6 +393,7 @@ async function billCsvFilePicked(e) {
 
 /** Quote-aware CSV rows (handles "quoted, commas" and "" escapes). */
 function parseBillCsv(text) {
+    if (text && text.charCodeAt(0) === 0xFEFF) text = text.slice(1);   // strip UTF-8 BOM (Excel exports)
     const rows = [];
     let row = [], cell = '', inQ = false;
     for (let i = 0; i < text.length; i++) {

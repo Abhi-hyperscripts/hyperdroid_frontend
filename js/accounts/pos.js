@@ -114,7 +114,13 @@ function isNetworkError(err) {
 
 function posDb() {
     return new Promise((resolve, reject) => {
-        const r = indexedDB.open('ragenaizer-pos', 1);
+        // TENANT-SCOPED database name: the offline queue for Company A lives in a DIFFERENT
+        // IndexedDB than Company B's, so a sale queued under one company can NEVER sync into
+        // another's books on a shared browser. The name derives from the current JWT, so sync
+        // (which always opens the CURRENT tenant's DB) only ever drains this tenant's queue.
+        const tenantId = AccountsCommon.getTenantId?.();
+        if (!tenantId) { reject(new Error('no tenant')); return; }   // not logged in → nothing to sync
+        const r = indexedDB.open('ragenaizer-pos-' + tenantId, 1);
         r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('offline_sales')) r.result.createObjectStore('offline_sales', { keyPath: 'id' }); };
         r.onsuccess = () => resolve(r.result);
         r.onerror = () => reject(r.error);
@@ -175,7 +181,8 @@ async function updateNetBadge() {
 
 /** Queue a sale that couldn't reach the server; prints a provisional receipt. */
 async function queueOfflineSale(sale) {
-    sale.offlineRef = 'OFF-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
+    // offlineRef is assigned once at sale creation (completeSale), so the idempotency keys for the
+    // invoice create + payment are IDENTICAL whether the sale posts live or via replay.
     sale.id = sale.offlineRef;
     sale.at = new Date().toISOString();
     sale.status = 'queued';
@@ -200,6 +207,7 @@ async function queueOfflineSale(sale) {
  * idempotent via a stable key.
  */
 async function submitSaleToServer(sale, { enforceStock }) {
+    if (!incomeAccounts.length) throw new Error('No postable Income account — set up your chart of accounts before syncing offline sales.');
     const customerId = await ensureWalkInCustomer();
     const date = sale.date;
     const groups = [];
@@ -223,24 +231,34 @@ async function submitSaleToServer(sale, { enforceStock }) {
             account_id: c.item.income_account_id || incomeAccounts[0].id,
             ...(c.item.tax_config_id ? { tax_config_id: c.item.tax_config_id } : {})
         }));
+        // client_ref makes the create IDEMPOTENT: if the server committed this invoice but the
+        // response was lost, the replayed create returns the SAME invoice instead of a duplicate.
+        // Stable per (sale, slab group). sale.offlineRef is assigned at sale creation (see completeSale).
         const inv = await api.request(AccountsCommon.buildUrl('invoices'), {
             method: 'POST',
             body: JSON.stringify({
                 customer_id: customerId, invoice_date: date, due_date: date,
-                notes: sale.offlineRef ? `Cash sale (POS · offline ${sale.offlineRef})` : 'Cash sale (POS)', lines
+                notes: `Cash sale (POS · ${sale.offlineRef})`, client_ref: `${sale.offlineRef}:${gi}`, lines
             })
         });
         const invId = inv.id || inv?.data?.id;
+        const alreadyApproved = (inv.status || inv?.data?.status) && (inv.status || inv?.data?.status) !== 'draft';
         let approved;
-        try {
-            approved = await api.request(AccountsCommon.buildUrl(`invoices/${invId}/approve`, enforceStock ? { enforceStock: true } : {}), { method: 'POST' });
-        } catch (err) {
-            if (enforceStock && (err.message || '').includes('INSUFFICIENT_STOCK')) {
-                await api.request(AccountsCommon.buildUrl(`invoices/${invId}`), { method: 'DELETE', _skipSpinner: true }).catch(() => {});
-                await refreshPosItems();
-                throw new Error('Just sold out at another counter — stock refreshed, please re-check the cart.');
+        if (alreadyApproved) {
+            // The idempotent create returned an invoice already approved on a prior (lost-response)
+            // attempt — don't re-approve (would double stock-out); reuse it as-is.
+            approved = inv.data || inv;
+        } else {
+            try {
+                approved = await api.request(AccountsCommon.buildUrl(`invoices/${invId}/approve`, enforceStock ? { enforceStock: true } : {}), { method: 'POST' });
+            } catch (err) {
+                if (enforceStock && (err.message || '').includes('INSUFFICIENT_STOCK')) {
+                    await api.request(AccountsCommon.buildUrl(`invoices/${invId}`), { method: 'DELETE', _skipSpinner: true }).catch(() => {});
+                    await refreshPosItems();
+                    throw new Error('Just sold out at another counter — stock refreshed, please re-check the cart.');
+                }
+                throw err;
             }
-            throw err;
         }
         invoices.push({
             invId,
@@ -313,7 +331,7 @@ async function showQueueIssues() {
                 </div>
                 <div style="font-size:0.8rem;color:var(--text-secondary);">${esc(new Date(e.at).toLocaleString('en-IN'))} · ${e.cart.length} line${e.cart.length === 1 ? '' : 's'}</div>
                 <div style="font-size:0.8rem;color:var(--color-error);margin-top:4px;">${esc(e.error || '')}</div>
-                <button class="btn btn-outline" style="margin-top:8px;height:30px;padding:0 12px;font-size:0.8rem;" onclick="discardOfflineSale('${esc(e.id)}')">Discard</button>
+                <button class="btn btn-outline" style="margin-top:8px;height:30px;padding:0 12px;font-size:0.8rem;" onclick="discardOfflineSale('${esc(AccountsCommon.escJs(e.id))}')">Discard</button>
             </div>`).join('')}
         </div>
         <div class="modal-footer">
@@ -529,7 +547,7 @@ function renderCategoryChips() {
     if (!cats.length) { host.style.display = 'none'; return; }
     host.style.display = '';
     host.innerHTML = [`<button class="pos-chip ${!posCategory ? 'on' : ''}" onclick="setPosCategory('')">All</button>`]
-        .concat(cats.map(c => `<button class="pos-chip ${posCategory === c ? 'on' : ''}" onclick="setPosCategory('${esc(c).replace(/'/g, '')}')">${esc(c)}</button>`))
+        .concat(cats.map(c => `<button class="pos-chip ${posCategory === c ? 'on' : ''}" onclick="setPosCategory('${esc(AccountsCommon.escJs(c))}')">${esc(c)}</button>`))
         .join('');
 }
 
@@ -670,7 +688,10 @@ async function completeSale() {
         cart: cart.map(c => ({ item: { ...c.item }, qty: c.qty })),
         date: AccountsCommon.todayLocal(),
         bankId,
-        method: posMethodDD?.getValue?.() || 'cash'
+        method: posMethodDD?.getValue?.() || 'cash',
+        // Stable ref for this sale, assigned up front so the invoice-create client_ref and the
+        // payment Idempotency-Key are the SAME whether the sale posts live or via offline replay.
+        offlineRef: 'OFF-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase()
     };
     try {
         if (netOffline) { await queueOfflineSale(sale); return; }

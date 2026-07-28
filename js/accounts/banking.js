@@ -1215,6 +1215,7 @@ async function processStatementFile(file) {
  * Debit/Credit/Balance/Reference header layout as the Excel template.
  */
 function parseCsvStatement(text) {
+    if (text && text.charCodeAt(0) === 0xFEFF) text = text.slice(1);   // strip UTF-8 BOM (Excel/bank exports)
     const rows = [];
     let row = [], cell = '', inQuotes = false;
     for (let i = 0; i < text.length; i++) {
@@ -1454,10 +1455,15 @@ async function recordMatchedRow(i) {
     if (!bankId) { Toast.error('Pick the bank account (step 1) first — the receipt/payment posts into it'); return; }
     const amount = Math.min(r.credit ?? r.debit ?? 0, c.balance_due);
     const dateStr = AccountsCommon.toDateInput(r.date);
+    // Idempotency key: stable across RETRIES of THIS row, but UNIQUE per statement row — include the
+    // row index + date so two equal-amount lines to the same invoice (e.g. equal instalments) don't
+    // collide and silently drop the second payment.
+    const idemKey = `stmt-${c.kind}-${c.doc_id}-${i}-${AccountsCommon.toDateInput(r.date)}-${amount}`;
     try {
         if (c.kind === 'customer_invoice') {
             await api.request(AccountsCommon.buildUrl('invoices/payments'), {
                 method: 'POST',
+                headers: { 'Idempotency-Key': idemKey },
                 body: JSON.stringify({
                     customer_id: c.party_id, payment_date: dateStr, amount, tds_amount: 0,
                     bank_account_id: bankId, payment_method: 'bank_transfer',
@@ -1468,6 +1474,7 @@ async function recordMatchedRow(i) {
         } else {
             await api.request(AccountsCommon.buildUrl('vendor-bills/payments'), {
                 method: 'POST',
+                headers: { 'Idempotency-Key': idemKey },
                 body: JSON.stringify({
                     vendor_id: c.party_id, payment_date: dateStr, amount,
                     bank_account_id: bankId, payment_method: 'bank_transfer',

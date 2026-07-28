@@ -274,7 +274,7 @@ async function loadSerials() {
             <td>${esc(s.sold_invoice_number || '-')}</td>
             <td>${s.sold_date ? s.sold_date.split('T')[0] : '-'}</td>
             <td>${s.warranty_expiry ? `${s.warranty_expiry.split('T')[0]} ${s.in_warranty ? '<span style="color:var(--color-success);">✓</span>' : '<span style="color:var(--color-error);">expired</span>'}` : '-'}</td>
-            <td class="actions-cell">${s.status === 'sold' ? `<button class="btn-icon" onclick="setSerialStatus('${esc(s.serial_no)}','returned')" data-tooltip="Mark returned">↩</button><button class="btn-icon" onclick="setSerialStatus('${esc(s.serial_no)}','claimed')" data-tooltip="Warranty claim">🛠</button>` : ''}</td>
+            <td class="actions-cell">${s.status === 'sold' ? `<button class="btn-icon" onclick="setSerialStatus('${esc(AccountsCommon.escJs(s.serial_no))}','returned')" data-tooltip="Mark returned">↩</button><button class="btn-icon" onclick="setSerialStatus('${esc(AccountsCommon.escJs(s.serial_no))}','claimed')" data-tooltip="Warranty claim">🛠</button>` : ''}</td>
         </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary);">No serials yet. Receive serials against a serial-tracked item.</td></tr>';
     } catch (err) { console.error('[Inventory] loadSerials', err); }
 }
