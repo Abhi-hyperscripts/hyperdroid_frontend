@@ -208,6 +208,7 @@ function initDatePickers() {
     flatpickr('#paymentDateTo', { ...opts, onChange: () => { paymentPage = 1; loadCustomerPayments(); } });
     flatpickr('#cnDateFrom', { ...opts, onChange: () => { cnPage = 1; loadCreditNotes(); } });
     flatpickr('#cnDateTo', { ...opts, onChange: () => { cnPage = 1; loadCreditNotes(); } });
+    flatpickr('#refundAdvDate', opts);
     flatpickr('#statementDateFrom', opts);
     flatpickr('#statementDateTo', opts);
     flatpickr('#tdsFromDate', opts);
@@ -383,7 +384,13 @@ function invoiceActions(inv) {
     // Open invoices: settle from the customer's advance pool (booking deposits).
     if (['approved', 'sent', 'partially_paid', 'overdue'].includes(inv.status)) {
         const bal = parseFloat(inv.balance_due) || 0;
-        html += ` <button class="btn-icon" data-tooltip="Apply advance" onclick="openApplyAdvance('${inv.id}', '${inv.customer_id}', ${bal}, '${(inv.invoice_number || '').replace(/'/g, '')}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></button>`;
+        const num = (inv.invoice_number || '').replace(/'/g, '');
+        html += ` <button class="btn-icon" data-tooltip="Apply advance" onclick="openApplyAdvance('${inv.id}', '${inv.customer_id}', ${bal}, '${num}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></button>`;
+        // Write off the balance as bad debt (Dr Bad Debt / Cr AR).
+        html += ` <button class="btn-icon" data-tooltip="Write off" onclick="writeOffInvoice('${inv.id}','${num}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 8l-6 6-3-3-4 4"/></svg></button>`;
+        // Cancel (reverse) an approved invoice that hasn't been paid against.
+        if ((parseFloat(inv.paid_amount) || 0) === 0)
+            html += ` <button class="btn-icon btn-icon-danger" data-tooltip="Cancel invoice" onclick="cancelInvoiceDoc('${inv.id}','${num}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>`;
     }
     if (inv.status === 'draft') {
         html += ` <button class="btn-icon" data-tooltip="Edit" onclick="editInvoice('${inv.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
@@ -398,6 +405,223 @@ function invoiceActions(inv) {
         html += ` <button class="btn btn-outline" style="padding:0.2rem 0.6rem;font-size:0.75rem;" onclick="payInvoice('${inv.customer_id}')">Pay</button>`;
     }
     return html;
+}
+
+// Write off an invoice's outstanding balance as bad debt (Dr Bad Debt / Cr AR). Reason is audit-recorded.
+async function writeOffInvoice(id, number) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Write off ${number}?`,
+        message: 'Posts the outstanding balance to Bad Debt. Use this only when the amount is genuinely uncollectible.',
+        confirmText: 'Write off'
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`invoices/${id}/write-off`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('Invoice written off');
+        await loadCustomerInvoices();
+    } catch (e) { Toast.error(e.message || 'Write-off failed'); }
+}
+
+// Cancel (reverse) an approved invoice that has no payments against it.
+async function cancelInvoiceDoc(id, number) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Cancel invoice ${number}?`,
+        message: 'Reverses the GL entry and any stock issued. Only possible while no payment has been recorded.',
+        confirmText: 'Cancel invoice'
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`invoices/${id}/cancel`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('Invoice cancelled');
+        await loadCustomerInvoices();
+    } catch (e) { Toast.error(e.message || 'Cancel failed'); }
+}
+
+// ── GST E-Invoicing (IRP / IRN) ─────────────────────────────────────────────
+// Injects an "E-Invoice" panel into the read-only invoice view. The Generate action
+// is gated behind CONFIG.eInvoiceEnabled — a GST Suvidha Provider must be configured
+// + validated server-side before it will complete, so we hide it until then rather
+// than ship a button that errors. Preview builds the INV-01 payload locally (no GSP call).
+async function renderEInvoicePanel(inv) {
+    const modal = document.getElementById('customerInvoiceModal');
+    if (!modal) return;
+    const body = modal.querySelector('.acc-form') || modal.querySelector('.acc-form-page__inner') || modal.querySelector('.modal-body');
+    if (!body) return;
+    modal.querySelector('.einvoice-panel')?.remove();
+
+    const st = (inv.status || '').toLowerCase();
+    if (st === 'draft' || st === 'cancelled') return; // only issued, live invoices
+
+    const panel = document.createElement('div');
+    panel.className = 'einvoice-panel';
+    panel.style.cssText = 'background:var(--bg-card-hover);border:1px solid var(--border-color);border-radius:8px;padding:14px 16px;margin-bottom:14px;';
+    panel.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <strong style="font-size:0.9rem;color:var(--text-primary);">GST E-Invoice (IRP)</strong>
+        <span class="einvoice-status" style="font-size:0.75rem;color:var(--text-secondary);">Checking…</span>
+      </div>
+      <div class="einvoice-detail" style="margin-top:10px;font-size:0.82rem;color:var(--text-secondary);"></div>`;
+    const banner = modal.querySelector('.invoice-readonly-banner');
+    if (banner && banner.parentElement === body) banner.insertAdjacentElement('afterend', panel);
+    else body.insertBefore(panel, body.firstChild);
+
+    const statusEl = panel.querySelector('.einvoice-status');
+    const detailEl = panel.querySelector('.einvoice-detail');
+    const isAdmin = accountsRoles.isAdmin();
+    const isManager = accountsRoles.isManager();
+
+    let rec = null;
+    try { rec = await api.request(AccountsCommon.buildUrl(`einvoice/${inv.id}`), { _skipSpinner: true }); }
+    catch (e) { rec = null; } // 404 = not registered yet
+
+    if (rec && rec.irn) {
+        const cancelled = (rec.status || '').toLowerCase() === 'cancelled';
+        statusEl.innerHTML = cancelled
+            ? `<span style="color:var(--color-error);">● Cancelled</span>`
+            : `<span style="color:var(--color-success);">● Registered</span>`;
+        detailEl.innerHTML = `
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start;">
+              <span>IRN</span><code style="word-break:break-all;color:var(--text-primary);">${AccountsCommon.escapeHtml(rec.irn)}</code>
+              ${rec.ack_no ? `<span>Ack No</span><span style="color:var(--text-primary);">${AccountsCommon.escapeHtml(String(rec.ack_no))}</span>` : ''}
+              ${rec.ack_date ? `<span>Ack Date</span><span style="color:var(--text-primary);">${AccountsCommon.formatDate(rec.ack_date)}</span>` : ''}
+            </div>
+            ${rec.signed_qr_code ? `<details style="margin-top:8px;"><summary style="cursor:pointer;">Signed QR (print on the invoice)</summary><textarea readonly style="width:100%;height:80px;margin-top:6px;font-family:monospace;font-size:0.7rem;">${AccountsCommon.escapeHtml(rec.signed_qr_code)}</textarea></details>` : ''}
+            ${cancelled && rec.cancel_reason ? `<div style="margin-top:8px;color:var(--color-error);">Cancelled: ${AccountsCommon.escapeHtml(rec.cancel_reason)}</div>` : ''}`;
+        if (!cancelled && isAdmin) {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-outline';
+            btn.style.cssText = 'margin-top:10px;padding:0.3rem 0.8rem;font-size:0.78rem;';
+            btn.textContent = 'Cancel IRN';
+            btn.onclick = () => cancelEInvoice(inv.id, inv.invoice_number || '');
+            detailEl.appendChild(btn);
+        }
+    } else {
+        statusEl.innerHTML = `<span>● Not registered</span>`;
+        detailEl.innerHTML = `Register this B2B invoice on the government IRP to obtain an IRN + signed QR. The customer must have a GSTIN.`;
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center;';
+        if (isManager) {
+            const prev = document.createElement('button');
+            prev.className = 'btn btn-outline';
+            prev.style.cssText = 'padding:0.3rem 0.8rem;font-size:0.78rem;';
+            prev.textContent = 'Preview payload';
+            prev.onclick = () => previewEInvoice(inv.id);
+            actions.appendChild(prev);
+        }
+        if (CONFIG.eInvoiceEnabled && isAdmin) {
+            const gen = document.createElement('button');
+            gen.className = 'btn btn-primary';
+            gen.style.cssText = 'padding:0.3rem 0.8rem;font-size:0.78rem;';
+            gen.textContent = 'Generate IRN';
+            gen.onclick = () => generateEInvoice(inv.id, inv.invoice_number || '');
+            actions.appendChild(gen);
+        } else if (isAdmin) {
+            const note = document.createElement('span');
+            note.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);';
+            note.textContent = 'E-invoicing not enabled yet (GSP setup pending).';
+            actions.appendChild(note);
+        }
+        detailEl.appendChild(actions);
+    }
+}
+
+// Dry-run: fetch and display the INV-01 payload that WOULD be registered. No GSP call.
+async function previewEInvoice(id) {
+    try {
+        const payload = await api.request(AccountsCommon.buildUrl(`einvoice/${id}/preview`), { _skipSpinner: true });
+        let modal = document.getElementById('einvoicePreviewModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'einvoicePreviewModal';
+            modal.className = 'modal';
+            modal.innerHTML = `<div class="modal-content" style="max-width:720px;">
+                <div class="modal-header"><h3>E-Invoice payload (INV-01)</h3>
+                  <button class="close-btn" onclick="AccountsCommon.closeModal('einvoicePreviewModal')">&times;</button></div>
+                <div class="modal-body">
+                  <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:8px;">Exactly what would be registered on the government IRP. Nothing has been submitted.</p>
+                  <pre class="einvoice-preview-json" style="max-height:60vh;overflow:auto;background:var(--bg-body);padding:12px;border-radius:6px;font-size:0.72rem;white-space:pre;"></pre>
+                </div>
+                <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('einvoicePreviewModal')">Close</button></div>
+              </div>`;
+            document.body.appendChild(modal);
+        }
+        modal.querySelector('.einvoice-preview-json').textContent = JSON.stringify(payload, null, 2);
+        AccountsCommon.openModal('einvoicePreviewModal');
+    } catch (e) {
+        Toast.error(e.message || 'Could not build the e-invoice payload');
+    }
+}
+
+// Register the invoice on the IRP (admin only; gated by CONFIG.eInvoiceEnabled in the UI).
+async function generateEInvoice(id, number) {
+    const ok = await Confirm.show({
+        title: `Generate IRN for ${number}?`,
+        message: 'Registers this invoice on the government IRP and returns an IRN + signed QR. This is a live, irreversible action (cancellation is allowed within 24h).',
+        confirmText: 'Generate IRN',
+        type: 'warning'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`einvoice/${id}/generate`), { method: 'POST' });
+        Toast.success('IRN generated');
+        await editInvoice(id); // reopen refreshes the panel with the new IRN/QR
+    } catch (e) { Toast.error(e.message || 'IRN generation failed'); }
+}
+
+// Cancel a registered IRN (admin only; reason required by the IRP within 24h).
+async function cancelEInvoice(id, number) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Cancel IRN for ${number}?`,
+        message: 'Cancels the registered IRN on the IRP (allowed within 24h of generation). A reason is required and recorded.',
+        confirmText: 'Cancel IRN'
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`einvoice/${id}/cancel`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('IRN cancelled');
+        await editInvoice(id);
+    } catch (e) { Toast.error(e.message || 'IRN cancel failed'); }
+}
+
+// Void (reverse) a recorded customer receipt: reverses its GL + allocations and restores the bank balance.
+async function voidCustomerPayment(id, number) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Void receipt ${number}?`,
+        message: 'Reverses the receipt, un-allocates it from any invoices, and restores the bank balance.',
+        confirmText: 'Void receipt'
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`invoices/payments/${id}/void`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('Receipt voided');
+        await loadCustomerPayments();
+    } catch (e) { Toast.error(e.message || 'Void failed'); }
+}
+
+// Refund an unapplied customer advance (booking deposit) back to a bank account.
+function openRefundAdvance(paymentId, number, maxAmount, bankId) {
+    document.getElementById('refundAdvId').value = paymentId;
+    document.getElementById('refundAdvMax').textContent = AccountsCommon.formatCurrency(maxAmount);
+    document.getElementById('refundAdvAmount').value = maxAmount.toFixed(2);
+    document.getElementById('refundAdvAmount').max = maxAmount;
+    AccountsCommon.setDateField('refundAdvDate', AccountsCommon.todayLocal());
+    const opts = bankAccounts.map(b => ({ value: b.id, label: b.account_name || b.name }));
+    document.getElementById('refundAdvBank').innerHTML = '';
+    window._refundAdvBankDD = new SearchableDropdown(document.getElementById('refundAdvBank'), { id: 'refundAdvBankDD', options: opts, value: bankId || (opts[0]?.value || ''), placeholder: 'Bank account…', compact: true });
+    document.getElementById('refundAdvTitle').textContent = `Refund advance · ${number}`;
+    AccountsCommon.openModal('refundAdvanceModal');
+}
+async function saveRefundAdvance() {
+    const id = document.getElementById('refundAdvId').value;
+    const amount = parseFloat(document.getElementById('refundAdvAmount').value);
+    const bank_account_id = window._refundAdvBankDD?.getValue?.();
+    if (!amount || amount <= 0) { Toast.error('Enter a refund amount'); return; }
+    if (!bank_account_id) { Toast.error('Pick a bank account'); return; }
+    try {
+        await api.request(AccountsCommon.buildUrl(`invoices/payments/${id}/refund-advance`), { method: 'POST', body: JSON.stringify({ amount, bank_account_id, refund_date: document.getElementById('refundAdvDate').value }) });
+        Toast.success('Advance refunded');
+        AccountsCommon.closeModal('refundAdvanceModal');
+        await loadCustomerPayments();
+    } catch (e) { Toast.error(e.message || 'Refund failed'); }
 }
 
 /**
@@ -769,6 +993,11 @@ async function editInvoice(id) {
         // Save buttons. CAs needing changes must issue a Credit Note +
         // a fresh invoice.
         _setInvoiceModalReadOnly(!isDraft);
+
+        // E-invoice panel only makes sense for issued (non-draft) invoices. Runs AFTER
+        // _setInvoiceModalReadOnly so its buttons aren't caught by the disable-all sweep.
+        if (!isDraft) renderEInvoicePanel(inv);
+        else { const p = document.getElementById('customerInvoiceModal')?.querySelector('.einvoice-panel'); if (p) p.remove(); }
 
         AccountsCommon.showFormPage('customerInvoiceModal');
     } catch (err) {
@@ -1318,16 +1547,22 @@ async function loadCustomerPayments() {
             tbody.innerHTML = pageItems.map(p => {
                 const custName = p.customer_name || customers.find(c => c.id === p.customer_id)?.name || '-';
                 const bankName = p.bank_account_name || p.bank_name || window._bankAccountMap?.[p.bank_account_id] || bankAccounts.find(b => b.id === p.bank_account_id)?.account_name || (p.bank_account_id ? p.bank_account_id.substring(0, 8) + '...' : '-');
-                // No row action: CustomerPayment has no invoice_id and there is no
-                // payment-detail endpoint — the old "View" button 404'd via editInvoice(payment id).
+                const pnum = (p.payment_number || '').replace(/'/g, '');
+                const advanceLeft = (parseFloat(p.advance_amount) || 0) - (parseFloat(p.advance_applied) || 0);
+                let acts = '';
+                if (accountsRoles.isAdmin() && p.status !== 'voided') {
+                    if (advanceLeft > 0.005)
+                        acts += `<button class="btn-icon" data-tooltip="Refund advance" onclick="openRefundAdvance('${p.id}','${pnum}',${advanceLeft},'${p.bank_account_id || ''}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></button> `;
+                    acts += `<button class="btn-icon btn-icon-danger" data-tooltip="Void receipt" onclick="voidCustomerPayment('${p.id}','${pnum}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg></button>`;
+                }
                 return `<tr>
-                    <td>${AccountsCommon.escapeHtml(p.payment_number || '-')}</td>
+                    <td>${AccountsCommon.escapeHtml(p.payment_number || '-')}${p.status === 'voided' ? ' <span class="status-badge">voided</span>' : ''}</td>
                     <td>${AccountsCommon.escapeHtml(custName)}</td>
                     <td>${AccountsCommon.formatDate(p.payment_date)}</td>
                     <td>${AccountsCommon.formatCurrency(p.amount)}</td>
                     <td>${AccountsCommon.escapeHtml(bankName)}</td>
                     <td>${AccountsCommon.escapeHtml(p.reference_number || p.reference || '-')}</td>
-                    <td><span class="text-secondary">-</span></td>
+                    <td class="actions-cell">${acts || '<span class="text-secondary">-</span>'}</td>
                 </tr>`;
             }).join('');
         }

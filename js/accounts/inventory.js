@@ -6,17 +6,26 @@
 let items = [];
 let categories = [];
 let itemDD = null, typeDD = null, catDD = null, adjItemDD = null, snItemDD = null, moveFilterDD = null;
+// New-feature state
+let locations = [];
+let trackDD = null, valDD = null, schedDD = null;           // item modal enums
+let locTypeDD = null, xfItemDD = null, xfFromDD = null, xfToDD = null, locBalDD = null;
+let woItemDD = null, woLocDD = null, scLocDD = null, spItemDD = null;
+let priceLists = [], selectedPriceListId = null;
+const TRACK_OPTS = [{ value: 'none', label: 'None' }, { value: 'batch', label: 'Batch / lot (expiry, FEFO)' }, { value: 'serial', label: 'Serial (per-unit warranty)' }];
+const VAL_OPTS = [{ value: 'weighted_avg', label: 'Weighted average' }, { value: 'fifo', label: 'FIFO' }];
+const SCHED_OPTS = [{ value: 'none', label: 'None' }, { value: 'H', label: 'Schedule H' }, { value: 'H1', label: 'Schedule H1' }, { value: 'X', label: 'Schedule X' }];
 
 const fmtMoney = v => AccountsCommon.formatCurrency(v);
 const esc = s => AccountsCommon.escapeHtml(s ?? '');
 
 document.addEventListener('DOMContentLoaded', async function () {
     if (!await AccountsCommon.initPage('inventory', '../')) return;
-    const tabNames = { 'inv-items': 'Items', 'inv-stock': 'Stock on Hand', 'inv-movements': 'Movements', 'inv-serials': 'Serials & Warranty' };
+    const tabNames = { 'inv-items': 'Items', 'inv-stock': 'Stock on Hand', 'inv-locations': 'Locations', 'inv-batches': 'Batches & Expiry', 'inv-workorders': 'Work Orders', 'inv-count': 'Stock Count', 'inv-pricelists': 'Price Lists', 'inv-reorder': 'Reorder Report', 'inv-movements': 'Movements', 'inv-serials': 'Serials & Warranty' };
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
     AccountsCommon.setupTabs(tabNames, onTabSwitch);
     accountsRoles.applyRBAC();
-    AccountsCommon.initDatePickers(['adjDate', 'registerAsOf']);
+    AccountsCommon.initDatePickers(['adjDate', 'registerAsOf', 'xfDate', 'woDate', 'woExpiry', 'scDate']);
     AccountsCommon.setDateField('registerAsOf', AccountsCommon.todayLocal());
     document.getElementById('itemSearch')?.addEventListener('input', () => renderItems());
     document.getElementById('itemShowInactive')?.addEventListener('change', () => loadItems());
@@ -29,6 +38,12 @@ function onTabSwitch(tabId) {
     switch (tabId) {
         case 'inv-items': loadItems(); break;
         case 'inv-stock': loadStock(); break;
+        case 'inv-locations': loadLocationsTab(); break;
+        case 'inv-batches': loadBatchesTab(); break;
+        case 'inv-workorders': loadWorkOrders(); break;
+        case 'inv-count': loadStockCounts(); break;
+        case 'inv-pricelists': loadPriceLists(); break;
+        case 'inv-reorder': loadReorder(); break;
         case 'inv-movements': loadMovements(); break;
         case 'inv-serials': loadSerials(); break;
     }
@@ -80,6 +95,9 @@ function initItemModalDropdowns(selectedCat, selectedType) {
         options: [{ value: 'goods', label: 'Goods (stockable)' }, { value: 'service', label: 'Service' }],
         value: selectedType || 'goods', compact: true
     });
+    trackDD = new SearchableDropdown(document.getElementById('itTracking'), { id: 'itTrackingDD', options: TRACK_OPTS, value: arguments[2] || 'none', compact: true });
+    valDD = new SearchableDropdown(document.getElementById('itValuation'), { id: 'itValuationDD', options: VAL_OPTS, value: arguments[3] || 'weighted_avg', compact: true });
+    schedDD = new SearchableDropdown(document.getElementById('itSchedule'), { id: 'itScheduleDD', options: SCHED_OPTS, value: arguments[4] || 'none', compact: true });
 }
 
 function showItemModal() {
@@ -88,11 +106,10 @@ function showItemModal() {
     document.getElementById('itUnit').value = 'pcs';
     document.getElementById('itWarranty').value = '0';
     document.getElementById('itReorder').value = '0';
+    document.getElementById('itReorderQty').value = '0';
     document.getElementById('itTrack').checked = true;
-    document.getElementById('itSerial').checked = false;
-    document.getElementById('itCategory').innerHTML = '';
-    document.getElementById('itType').innerHTML = '';
-    initItemModalDropdowns();
+    ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule'].forEach(id => document.getElementById(id).innerHTML = '');
+    initItemModalDropdowns(null, 'goods', 'none', 'weighted_avg', 'none');
     AccountsCommon.openModal('itemModal');
 }
 
@@ -110,11 +127,10 @@ function editItem(id) {
     document.getElementById('itUnit').value = i.unit;
     document.getElementById('itWarranty').value = i.warranty_months;
     document.getElementById('itReorder').value = i.reorder_level;
+    document.getElementById('itReorderQty').value = i.reorder_quantity ?? 0;
     document.getElementById('itTrack').checked = i.track_inventory;
-    document.getElementById('itSerial').checked = i.tracking_mode === 'serial';
-    document.getElementById('itCategory').innerHTML = '';
-    document.getElementById('itType').innerHTML = '';
-    initItemModalDropdowns(i.category_id, i.item_type);
+    ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule'].forEach(id => document.getElementById(id).innerHTML = '');
+    initItemModalDropdowns(i.category_id, i.item_type, i.tracking_mode || 'none', i.valuation_method || 'weighted_avg', i.drug_schedule || 'none');
     AccountsCommon.openModal('itemModal');
 }
 
@@ -132,8 +148,11 @@ async function saveItem() {
         unit: document.getElementById('itUnit').value.trim() || 'pcs',
         warranty_months: parseInt(document.getElementById('itWarranty').value) || 0,
         reorder_level: parseFloat(document.getElementById('itReorder').value) || 0,
+        reorder_quantity: parseFloat(document.getElementById('itReorderQty').value) || 0,
         track_inventory: document.getElementById('itTrack').checked,
-        tracking_mode: document.getElementById('itSerial').checked ? 'serial' : 'none'
+        tracking_mode: trackDD?.getValue?.() || 'none',
+        valuation_method: valDD?.getValue?.() || 'weighted_avg',
+        drug_schedule: schedDD?.getValue?.() || 'none'
     };
     if (!payload.sku || !payload.name) { Toast.error('SKU and name are required'); return; }
     const btn = document.getElementById('saveItemBtn'); btn.disabled = true;
@@ -270,7 +289,37 @@ async function loadMovements() {
                 <td>${esc(m.notes || '')}</td>
             </tr>`;
         }).join('') : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary);">No movements yet — approve a purchase bill or record an adjustment.</td></tr>';
+        renderMovementCharts(rows);
     } catch (err) { console.error('[Inventory] loadMovements', err); }
+}
+
+// Charts for the stock ledger: monthly in-vs-out value flow + a by-type breakdown.
+function renderMovementCharts(rows) {
+    const isInMove = m => (m.movement_type || '').includes('in') || m.movement_type === 'opening';
+    // Last 6 months of in/out value (at cost). Value (₹) is the common denominator across items.
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: d.toLocaleString('en-IN', { month: 'short' }) });
+    }
+    const idx = Object.fromEntries(months.map((m, i) => [m.key, i]));
+    const inData = months.map(() => 0), outData = months.map(() => 0);
+    rows.forEach(m => {
+        const k = (m.movement_date || '').slice(0, 7);
+        if (!(k in idx)) return;
+        const v = Math.abs(parseFloat(m.total_cost) || 0);
+        if (isInMove(m)) inData[idx[k]] += v; else outData[idx[k]] += v;
+    });
+    const r2 = v => Math.round(v * 100) / 100;
+    _chart('acColumns', 'moveFlowChart', months.map(m => m.label),
+        [{ name: 'Stock in', data: inData.map(r2) }, { name: 'Stock out', data: outData.map(r2) }],
+        ['#10b981', '#ef4444']);
+    // Movement composition by type (count).
+    const byType = {};
+    rows.forEach(m => { const t = MOVE_LABELS[m.movement_type] || m.movement_type || 'other'; byType[t] = (byType[t] || 0) + 1; });
+    const tk = Object.keys(byType);
+    _chart('acDonut', 'moveTypeChart', tk, tk.map(t => byType[t]), null, cnt);
 }
 
 // ── Serials & warranty ─────────────────────────────────────────────────────
@@ -542,7 +591,8 @@ async function openBom(itemId) {
         (bom.lines || []).forEach(l => addBomLine(l));
     } catch { /* no bom yet */ }
     if (!document.querySelectorAll('#bomLines tr').length) addBomLine();
-    AccountsCommon.openModal('bomModal');
+    document.getElementById('bomExplosionView').style.display = 'none';
+    AccountsCommon.showFormPage('bomPage');
 }
 
 function collectBomLines() {
@@ -572,7 +622,7 @@ async function buildAssembly() {
             body: JSON.stringify({ finished_item_id: itemId, quantity: qty, build_date: document.getElementById('buildDate').value })
         });
         Toast.success(`Built ${qty} @ ${AccountsCommon.formatCurrency(res.unit_cost)} each`);
-        AccountsCommon.closeModal('bomModal');
+        AccountsCommon.hideFormPage('bomPage');
         await loadItems();
     } catch (err) { Toast.error(err.message || 'Build failed'); }
     finally { btn.disabled = false; }
@@ -584,4 +634,455 @@ async function setSerialStatus(sn, status) {
         Toast.success(`Marked ${status.replace('_', ' ')}`);
         await loadSerials();
     } catch (err) { Toast.error(err.message || 'Failed'); }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  NEW FEATURE TABS — Locations · Batches/Expiry · Work Orders · Stock Count ·
+//  Price Lists · Reorder.  Backend: /api/accounts/{inventory,work-orders,
+//  stock-counts,price-lists}/*
+// ════════════════════════════════════════════════════════════════════════════
+const unwrap = r => Array.isArray(r) ? r : (r?.data || r?.balances || r?.items || r?.entries || r?.rows || []);
+const num = v => Number(v ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 4 });
+// Count formatter for non-currency charts (donut totals, quantity bars).
+const cnt = v => Math.round(Number(v ?? 0)).toLocaleString('en-IN');
+// Status colours shared by the sub-tab charts (consistent with the status badges).
+const _WO_COLORS = { planned: '#64748b', in_progress: '#f59e0b', completed: '#10b981', cancelled: '#ef4444' };
+const _SC_COLORS = { draft: '#64748b', counting: '#f59e0b', open: '#f59e0b', finalized: '#10b981', cancelled: '#ef4444' };
+// Guard: charts are no-ops if the chart lib failed to load — keeps tabs working regardless.
+const _chart = (fn, ...args) => { try { if (typeof window[fn] === 'function') window[fn](...args); } catch (e) { /* chart is decorative */ } };
+
+// ── Locations ───────────────────────────────────────────────────────────────
+async function loadLocations() {
+    try { locations = unwrap(await api.request(AccountsCommon.buildUrl('inventory/locations'), { _skipSpinner: true })); }
+    catch { locations = []; }
+}
+async function loadLocationsTab() {
+    await loadLocations();
+    const tb = document.getElementById('locationsTable');
+    tb.innerHTML = locations.length ? locations.map(l => `
+        <tr><td>${esc(l.name)}</td><td style="text-transform:capitalize;">${esc(l.location_type || '')}</td><td>${esc(l.gstin || '—')}</td>
+        <td>${esc(l.address || '—')}</td><td style="text-align:center;">${l.is_default ? '✓' : ''}</td>
+        <td><span class="status-badge ${l.is_active ? 'status-active' : ''}">${l.is_active ? 'Active' : 'Inactive'}</span></td></tr>`).join('')
+        : `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No locations yet — a default location is used until you add one.</td></tr>`;
+    const opts = [{ value: '', label: 'All locations' }, ...locations.map(l => ({ value: l.id, label: l.name }))];
+    document.getElementById('locBalFilter').innerHTML = '';
+    locBalDD = new SearchableDropdown(document.getElementById('locBalFilter'), { id: 'locBalDD', options: opts, value: '', compact: true, onChange: loadLocBalances });
+    await loadLocBalances();
+    // Overview chart: total stock value per location (unfiltered, top 8).
+    try {
+        const all = unwrap(await api.request(AccountsCommon.buildUrl('inventory/stock-balances'), { _skipSpinner: true }));
+        const byLoc = {};
+        all.forEach(b => { const k = b.location_name || '—'; byLoc[k] = (byLoc[k] || 0) + (parseFloat(b.value) || 0); });
+        const rows = Object.entries(byLoc).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 8);
+        _chart('acBarH', 'locValueChart', rows.map(r => r[0]), rows.map(r => Math.round(r[1] * 100) / 100));
+    } catch { _chart('acBarH', 'locValueChart', [], []); }
+}
+async function loadLocBalances() {
+    const loc = locBalDD?.getValue?.() || '';
+    const tb = document.getElementById('locBalancesTable');
+    try {
+        const list = unwrap(await api.request(AccountsCommon.buildUrl('inventory/stock-balances', loc ? { locationId: loc } : {}), { _skipSpinner: true }));
+        tb.innerHTML = list.length ? list.map(b => `
+            <tr><td>${esc(b.location_name || '—')}</td><td>${esc(b.sku || '')}</td><td>${esc(b.item_name || b.name || '')}</td>
+            <td>${num(b.quantity)}</td><td>${fmtMoney(b.value)}</td></tr>`).join('')
+            : `<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No stock at this location.</td></tr>`;
+    } catch { tb.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Could not load balances.</td></tr>`; }
+}
+function showLocationModal() {
+    ['locName', 'locGstin', 'locAddress'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('locType').innerHTML = '';
+    locTypeDD = new SearchableDropdown(document.getElementById('locType'), { id: 'locTypeDD', options: [{ value: 'warehouse', label: 'Warehouse' }, { value: 'store', label: 'Store' }, { value: 'branch', label: 'Branch' }], value: 'warehouse', compact: true });
+    AccountsCommon.openModal('locationModal');
+}
+async function saveLocation() {
+    const name = document.getElementById('locName').value.trim();
+    if (!name) { Toast.error('Name is required'); return; }
+    const btn = document.getElementById('saveLocBtn'); btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl('inventory/locations'), { method: 'POST', body: JSON.stringify({
+            name, location_type: locTypeDD?.getValue?.() || 'warehouse',
+            gstin: document.getElementById('locGstin').value.trim() || null,
+            address: document.getElementById('locAddress').value.trim() || null }) });
+        Toast.success('Location created'); AccountsCommon.closeModal('locationModal'); await loadLocationsTab();
+    } catch (e) { Toast.error(e.message || 'Failed to create location'); } finally { btn.disabled = false; }
+}
+async function showTransferModal() {
+    if (!locations.length) await loadLocations();
+    document.getElementById('xfQty').value = '';
+    AccountsCommon.setDateField('xfDate', AccountsCommon.todayLocal());
+    const itemOpts = items.filter(i => i.track_inventory && i.item_type === 'goods' && i.is_active).map(i => ({ value: i.id, label: `${i.sku} — ${i.name}` }));
+    const locOpts = locations.map(l => ({ value: l.id, label: l.name }));
+    ['xfItem', 'xfFrom', 'xfTo'].forEach(id => document.getElementById(id).innerHTML = '');
+    xfItemDD = new SearchableDropdown(document.getElementById('xfItem'), { id: 'xfItemDD', options: itemOpts, placeholder: 'Select item…', compact: true });
+    xfFromDD = new SearchableDropdown(document.getElementById('xfFrom'), { id: 'xfFromDD', options: locOpts, placeholder: 'From…', compact: true });
+    xfToDD = new SearchableDropdown(document.getElementById('xfTo'), { id: 'xfToDD', options: locOpts, placeholder: 'To…', compact: true });
+    AccountsCommon.openModal('transferModal');
+}
+async function saveTransfer() {
+    const item_id = xfItemDD?.getValue?.(), from = xfFromDD?.getValue?.(), to = xfToDD?.getValue?.();
+    const qty = parseFloat(document.getElementById('xfQty').value);
+    if (!item_id || !from || !to || !qty) { Toast.error('Item, both locations and a quantity are required'); return; }
+    if (from === to) { Toast.error('Source and destination must differ'); return; }
+    const btn = document.getElementById('saveXfBtn'); btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl('inventory/transfer'), { method: 'POST', body: JSON.stringify({
+            item_id, from_location_id: from, to_location_id: to, quantity: qty, transfer_date: document.getElementById('xfDate').value }) });
+        Toast.success('Stock transferred'); AccountsCommon.closeModal('transferModal'); await loadLocBalances();
+    } catch (e) { Toast.error(e.message || 'Transfer failed'); } finally { btn.disabled = false; }
+}
+
+// ── Batches & Expiry ─────────────────────────────────────────────────────────
+function switchBatchView(view) {
+    document.querySelectorAll('.acc-seg-btn').forEach(b => b.classList.toggle('active', b.dataset.batchview === view));
+    document.querySelectorAll('.batch-view').forEach(v => v.style.display = 'none');
+    document.getElementById('batchView-' + view).style.display = '';
+    if (view === 'balances') loadBatchBalances();
+    else if (view === 'expiry') loadExpiryReport();
+    else loadScheduleH();
+}
+function loadBatchesTab() { switchBatchView('balances'); }
+function expiryCell(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr), today = new Date(); today.setHours(0, 0, 0, 0);
+    const days = Math.round((d - today) / 86400000);
+    const color = days < 0 ? 'var(--color-error)' : days <= 30 ? 'var(--color-warning)' : 'var(--text-primary)';
+    return `<span style="color:${color};font-weight:${days <= 30 ? 600 : 400};">${AccountsCommon.formatDate(dateStr)}</span>`;
+}
+async function loadBatchBalances() {
+    const tb = document.getElementById('batchBalancesTable');
+    try {
+        const list = unwrap(await api.request(AccountsCommon.buildUrl('inventory/batch-balances'), { _skipSpinner: true }));
+        tb.innerHTML = list.length ? list.map(b => `
+            <tr><td>${esc(b.sku || '')}</td><td>${esc(b.item_name || b.name || '')}</td><td>${esc(b.batch_number || '—')}</td>
+            <td>${esc(b.location_name || '—')}</td><td>${expiryCell(b.expiry_date)}</td><td>${num(b.quantity)}</td><td>${fmtMoney(b.value)}</td></tr>`).join('')
+            : `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No batch/lot stock yet. Receive a batch-tracked item with a lot number.</td></tr>`;
+        // Top items by lot value on hand.
+        const byItem = {};
+        list.forEach(b => { const k = b.item_name || b.name || b.sku || '—'; byItem[k] = (byItem[k] || 0) + (parseFloat(b.value) || 0); });
+        const rows = Object.entries(byItem).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 8);
+        _chart('acBarH', 'batchValueChart', rows.map(r => r[0]), rows.map(r => Math.round(r[1] * 100) / 100));
+    } catch { tb.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Could not load lot balances.</td></tr>`; }
+}
+async function loadExpiryReport() {
+    const days = parseInt(document.getElementById('expiryDays').value) || 90;
+    const tb = document.getElementById('expiryTable');
+    try {
+        const list = unwrap(await api.request(AccountsCommon.buildUrl('inventory/expiry-report', { withinDays: days }), { _skipSpinner: true }));
+        tb.innerHTML = list.length ? list.map(b => {
+            const d = b.expiry_date ? Math.round((new Date(b.expiry_date) - new Date().setHours(0, 0, 0, 0)) / 86400000) : null;
+            return `<tr><td>${esc(b.sku || '')}</td><td>${esc(b.item_name || b.name || '')}</td><td>${esc(b.batch_number || '—')}</td>
+            <td>${esc(b.location_name || '—')}</td><td>${expiryCell(b.expiry_date)}</td><td>${d === null ? '—' : d}</td><td>${num(b.quantity)}</td><td>${fmtMoney(b.value)}</td></tr>`;
+        }).join('')
+            : `<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Nothing expiring in the next ${days} days.</td></tr>`;
+        // Value at risk grouped by urgency of expiry.
+        const buckets = [
+            { label: 'Expired', color: '#ef4444', test: d => d < 0 },
+            { label: '≤30d', color: '#f59e0b', test: d => d >= 0 && d <= 30 },
+            { label: '31–60d', color: '#eab308', test: d => d >= 31 && d <= 60 },
+            { label: '61–90d', color: '#84cc16', test: d => d >= 61 && d <= 90 },
+            { label: '90d+', color: '#10b981', test: d => d > 90 }
+        ];
+        const totals = buckets.map(() => 0);
+        list.forEach(b => {
+            const d = b.expiry_date ? Math.round((new Date(b.expiry_date) - new Date().setHours(0, 0, 0, 0)) / 86400000) : null;
+            if (d === null) return;
+            const i = buckets.findIndex(bk => bk.test(d));
+            if (i >= 0) totals[i] += (parseFloat(b.value) || 0);
+        });
+        // Keep only buckets that carry value so an empty tail (e.g. beyond the window) isn't a dead bar.
+        const keep = buckets.map((bk, i) => ({ bk, v: Math.round(totals[i] * 100) / 100 })).filter(x => x.v > 0);
+        _chart('acBarV', 'expiryRiskChart', keep.map(x => x.bk.label), keep.map(x => x.v), keep.map(x => x.bk.color));
+    } catch { tb.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Could not load expiry report.</td></tr>`; }
+}
+async function loadScheduleH() {
+    const tb = document.getElementById('scheduleHTable');
+    try {
+        const list = unwrap(await api.request(AccountsCommon.buildUrl('inventory/schedule-h-register'), { _skipSpinner: true }));
+        tb.innerHTML = list.length ? list.map(r => `
+            <tr><td>${AccountsCommon.formatDate(r.movement_date)}</td><td>${esc(r.sku || '')}</td><td>${esc(r.name || '')}</td>
+            <td><span class="status-badge">${esc(r.drug_schedule || '')}</span></td><td>${esc(r.batch_number || '—')}</td>
+            <td>${r.expiry_date ? AccountsCommon.formatDate(r.expiry_date) : '—'}</td><td>${num(r.quantity)}</td>
+            <td>${esc(r.customer_name || '—')}</td><td>${esc(r.invoice_number || '—')}</td></tr>`).join('')
+            : `<tr><td colspan="9" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No controlled-drug dispensing recorded in the last 90 days.</td></tr>`;
+    } catch { tb.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Could not load register.</td></tr>`; }
+}
+
+// ── Work Orders ──────────────────────────────────────────────────────────────
+async function loadWorkOrders() {
+    const tb = document.getElementById('workOrdersTable');
+    try {
+        const list = unwrap(await api.request(AccountsCommon.buildUrl('work-orders'), { _skipSpinner: true }));
+        tb.innerHTML = list.length ? list.map(w => {
+            const st = (w.status || '').toLowerCase();
+            let actions = '';
+            if (st === 'planned') actions = `<button class="btn btn-sm btn-outline" onclick="issueWorkOrder('${w.id}')" data-admin-only>Issue</button> <button class="btn btn-sm btn-outline" onclick="cancelWorkOrder('${w.id}')" data-admin-only>Cancel</button>`;
+            else if (st === 'in_progress') actions = `<button class="btn btn-sm btn-primary" onclick="showCompleteWorkOrder('${w.id}')" data-admin-only>Complete</button> <button class="btn btn-sm btn-outline" onclick="cancelWorkOrder('${w.id}')" data-admin-only>Cancel</button>`;
+            return `<tr><td>${esc(w.wo_number || w.id.slice(0, 8))}</td><td>${esc(w.finished_item_name || w.finished_sku || '')}</td>
+            <td>${num(w.quantity)}</td><td>${w.build_date ? AccountsCommon.formatDate(w.build_date) : '—'}</td>
+            <td><span class="status-badge ${st === 'completed' ? 'status-active' : st === 'cancelled' ? '' : 'status-pending'}">${esc(w.status || '')}</span></td>
+            <td>${fmtMoney(w.issued_cost)}</td><td class="actions-cell">${actions}</td></tr>`;
+        }).join('')
+            : `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No work orders yet. Create one for any item that has a BOM.</td></tr>`;
+        accountsRoles.applyRBAC();
+        // Status breakdown (donut) + component cost currently in WIP (in-progress orders).
+        const byStatus = {};
+        list.forEach(w => { const s = (w.status || 'unknown').toLowerCase(); byStatus[s] = (byStatus[s] || 0) + 1; });
+        const sk = Object.keys(byStatus);
+        _chart('acDonut', 'woStatusChart', sk.map(s => s.replace(/_/g, ' ')), sk.map(s => byStatus[s]), sk.map(s => _WO_COLORS[s] || '#64748b'), cnt);
+        const wip = list.filter(w => (w.status || '').toLowerCase() === 'in_progress');
+        _chart('acBarH', 'woWipChart', wip.map(w => w.wo_number || (w.id || '').slice(0, 8)), wip.map(w => Math.round((parseFloat(w.issued_cost) || 0) * 100) / 100));
+    } catch { tb.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Could not load work orders.</td></tr>`; }
+}
+async function showWorkOrderModal() {
+    if (!locations.length) await loadLocations();
+    document.getElementById('woQty').value = '1'; document.getElementById('woNotes').value = '';
+    AccountsCommon.setDateField('woDate', AccountsCommon.todayLocal());
+    const itemOpts = items.filter(i => i.item_type === 'goods' && i.is_active).map(i => ({ value: i.id, label: `${i.sku} — ${i.name}` }));
+    const locOpts = [{ value: '', label: 'Default location' }, ...locations.map(l => ({ value: l.id, label: l.name }))];
+    ['woItem', 'woLocation'].forEach(id => document.getElementById(id).innerHTML = '');
+    woItemDD = new SearchableDropdown(document.getElementById('woItem'), { id: 'woItemDD', options: itemOpts, placeholder: 'Finished item…', compact: true });
+    woLocDD = new SearchableDropdown(document.getElementById('woLocation'), { id: 'woLocDD', options: locOpts, value: '', compact: true });
+    AccountsCommon.openModal('workOrderModal');
+}
+async function saveWorkOrder() {
+    const finished_item_id = woItemDD?.getValue?.();
+    const quantity = parseFloat(document.getElementById('woQty').value);
+    if (!finished_item_id || !quantity) { Toast.error('Finished item and quantity are required'); return; }
+    const btn = document.getElementById('saveWoBtn'); btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl('work-orders'), { method: 'POST', body: JSON.stringify({
+            finished_item_id, quantity, build_date: document.getElementById('woDate').value,
+            location_id: woLocDD?.getValue?.() || null, notes: document.getElementById('woNotes').value.trim() || null }) });
+        Toast.success('Work order created'); AccountsCommon.closeModal('workOrderModal'); await loadWorkOrders();
+    } catch (e) { Toast.error(e.message || 'Failed to create work order'); } finally { btn.disabled = false; }
+}
+async function issueWorkOrder(id) {
+    try { await api.request(AccountsCommon.buildUrl(`work-orders/${id}/issue`), { method: 'POST' }); Toast.success('Materials issued to WIP'); await loadWorkOrders(); }
+    catch (e) { Toast.error(e.message || 'Issue failed'); }
+}
+function showCompleteWorkOrder(id) {
+    document.getElementById('woCompleteId').value = id;
+    document.getElementById('woBatch').value = ''; document.getElementById('woMrp').value = '';
+    AccountsCommon.setDateField('woExpiry', '');
+    AccountsCommon.openModal('woCompleteModal');
+}
+async function completeWorkOrder() {
+    const id = document.getElementById('woCompleteId').value;
+    const body = {
+        batch_number: document.getElementById('woBatch').value.trim() || null,
+        expiry_date: document.getElementById('woExpiry').value || null,
+        mrp: parseFloat(document.getElementById('woMrp').value) || null };
+    try { await api.request(AccountsCommon.buildUrl(`work-orders/${id}/complete`), { method: 'POST', body: JSON.stringify(body) }); Toast.success('Work order completed'); AccountsCommon.closeModal('woCompleteModal'); await loadWorkOrders(); }
+    catch (e) { Toast.error(e.message || 'Complete failed'); }
+}
+async function cancelWorkOrder(id) {
+    if (!await Confirm.show({ title: 'Cancel work order?', message: 'Any issued materials are returned from WIP to inventory.' })) return;
+    try { await api.request(AccountsCommon.buildUrl(`work-orders/${id}/cancel`), { method: 'POST' }); Toast.success('Work order cancelled'); await loadWorkOrders(); }
+    catch (e) { Toast.error(e.message || 'Cancel failed'); }
+}
+
+// ── Stock Count ──────────────────────────────────────────────────────────────
+async function loadStockCounts() {
+    const tb = document.getElementById('stockCountsTable');
+    try {
+        const list = unwrap(await api.request(AccountsCommon.buildUrl('stock-counts'), { _skipSpinner: true }));
+        tb.innerHTML = list.length ? list.map(c => {
+            const st = (c.status || '').toLowerCase();
+            const open = st === 'draft' || st === 'counting' || st === 'open';
+            let actions = open
+                ? `<button class="btn btn-sm btn-primary" onclick="openCountDetail('${c.id}')" data-admin-only>Enter Counts</button>`
+                : `<button class="btn btn-sm btn-outline" onclick="openCountDetail('${c.id}')">View</button>`;
+            if (open) actions += ` <button class="btn-icon btn-icon-danger" onclick="cancelStockCount('${c.id}','${esc(AccountsCommon.escJs(c.count_number || ''))}')" data-admin-only data-tooltip="Cancel count"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>`;
+            return `<tr><td>${esc(c.count_number || c.id.slice(0, 8))}</td><td>${c.count_date ? AccountsCommon.formatDate(c.count_date) : '—'}</td>
+            <td>${esc(c.location_name || 'All')}</td><td>${c.line_count ?? '—'}</td>
+            <td><span class="status-badge ${st === 'finalized' ? 'status-active' : st === 'cancelled' ? '' : 'status-pending'}">${esc(c.status || '')}</span></td>
+            <td class="actions-cell">${actions}</td></tr>`;
+        }).join('')
+            : `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No stock counts yet.</td></tr>`;
+        accountsRoles.applyRBAC();
+        const byStatus = {};
+        list.forEach(c => { const s = (c.status || 'unknown').toLowerCase(); byStatus[s] = (byStatus[s] || 0) + 1; });
+        const sk = Object.keys(byStatus);
+        _chart('acDonut', 'scStatusChart', sk.map(s => s.replace(/_/g, ' ')), sk.map(s => byStatus[s]), sk.map(s => _SC_COLORS[s] || '#64748b'), cnt);
+    } catch { tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Could not load counts.</td></tr>`; }
+}
+async function showStockCountModal() {
+    if (!locations.length) await loadLocations();
+    AccountsCommon.setDateField('scDate', AccountsCommon.todayLocal());
+    const locOpts = [{ value: '', label: 'All locations' }, ...locations.map(l => ({ value: l.id, label: l.name }))];
+    document.getElementById('scLocation').innerHTML = '';
+    scLocDD = new SearchableDropdown(document.getElementById('scLocation'), { id: 'scLocDD', options: locOpts, value: '', compact: true });
+    AccountsCommon.openModal('stockCountModal');
+}
+async function saveStockCount() {
+    const btn = document.getElementById('saveScBtn'); btn.disabled = true;
+    try {
+        const c = await api.request(AccountsCommon.buildUrl('stock-counts'), { method: 'POST', body: JSON.stringify({
+            count_date: document.getElementById('scDate').value, location_id: scLocDD?.getValue?.() || null }) });
+        Toast.success('Stock count created'); AccountsCommon.closeModal('stockCountModal'); await loadStockCounts();
+        if (c?.id) openCountDetail(c.id);
+    } catch (e) { Toast.error(e.message || 'Failed to create count'); } finally { btn.disabled = false; }
+}
+async function openCountDetail(id) {
+    try {
+        const c = await api.request(AccountsCommon.buildUrl(`stock-counts/${id}`), { _skipSpinner: true });
+        document.getElementById('countDetailId').value = id;
+        document.getElementById('countDetailTitle').textContent = `Stock Count ${c.count_number || ''}`;
+        const finalized = (c.status || '').toLowerCase() === 'finalized' || (c.status || '').toLowerCase() === 'cancelled';
+        document.getElementById('finalizeCountBtn').style.display = finalized ? 'none' : '';
+        const lines = c.lines || [];
+        document.getElementById('countLinesTable').innerHTML = lines.length ? lines.map(l => `
+            <tr><td>${esc(l.sku || '')}</td><td>${esc(l.name || '')}</td><td>${num(l.system_qty)}</td>
+            <td>${finalized ? num(l.counted_qty) : `<input type="number" step="any" class="form-control" style="padding:.3rem .5rem;" data-item="${l.item_id}" value="${l.counted_qty ?? ''}">`}</td>
+            <td>${l.counted_qty != null ? num((l.counted_qty - l.system_qty)) : '—'}</td></tr>`).join('')
+            : `<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:1rem;">No lines.</td></tr>`;
+        AccountsCommon.openModal('countDetailModal');
+    } catch (e) { Toast.error(e.message || 'Could not open count'); }
+}
+async function finalizeStockCount() {
+    const id = document.getElementById('countDetailId').value;
+    const inputs = [...document.querySelectorAll('#countLinesTable input[data-item]')];
+    try {
+        for (const inp of inputs) {
+            if (inp.value === '') continue;
+            await api.request(AccountsCommon.buildUrl(`stock-counts/${id}/lines`), { method: 'POST', body: JSON.stringify({ item_id: inp.dataset.item, counted_qty: parseFloat(inp.value) }) });
+        }
+        if (!await Confirm.show({ title: 'Finalize count?', message: 'Counted-vs-system variances post as GL-tied stock adjustments. This cannot be undone.' })) return;
+        await api.request(AccountsCommon.buildUrl(`stock-counts/${id}/finalize`), { method: 'POST' });
+        Toast.success('Count finalized — variance posted'); AccountsCommon.closeModal('countDetailModal'); await loadStockCounts();
+    } catch (e) { Toast.error(e.message || 'Finalize failed'); }
+}
+// Full multi-level BOM explosion for the item open in the BOM modal, at the entered build qty:
+// shows the flattened raw-material requirements (with shortfalls) and the rolled-up cost.
+async function explodeBom() {
+    const itemId = document.getElementById('bomItemId').value;
+    const qty = parseFloat(document.getElementById('buildQty').value) || 1;
+    const view = document.getElementById('bomExplosionView');
+    if (!itemId) { Toast.error('Save the BOM first'); return; }
+    view.style.display = ''; view.innerHTML = '<p style="color:var(--text-secondary);font-size:.85rem;">Exploding…</p>';
+    try {
+        const d = await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/bom-explosion`, { quantity: qty }), { _skipSpinner: true });
+        const raws = d.raw_materials || [];
+        if (!raws.length) { view.innerHTML = '<p style="color:var(--text-secondary);font-size:.85rem;">No components — this item has no bill of materials.</p>'; return; }
+        const rows = raws.map(r => {
+            const short = Number(r.shortfall) > 0;
+            return `<tr>
+                <td>${esc(r.sku || '')}</td><td>${esc(r.name || '')}</td>
+                <td style="text-align:right;">${num(r.required_qty)}</td>
+                <td style="text-align:right;">${num(r.qty_on_hand)}</td>
+                <td style="text-align:right;${short ? 'color:var(--color-error);font-weight:600;' : ''}">${short ? num(r.shortfall) : '—'}</td>
+                <td style="text-align:right;">${fmtMoney(Number(r.required_qty) * Number(r.unit_cost))}</td>
+            </tr>`;
+        }).join('');
+        view.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <strong style="font-size:.9rem;">Raw materials to build ${num(qty)} · ${d.max_depth}-level BOM</strong>
+                <span style="font-size:.9rem;">Rolled-up cost: <strong>${fmtMoney(d.total_cost)}</strong></span>
+            </div>
+            <div class="data-table-container"><table class="data-table">
+                <thead><tr><th>SKU</th><th>Component</th><th style="text-align:right;">Required</th><th style="text-align:right;">On hand</th><th style="text-align:right;">Shortfall</th><th style="text-align:right;">Cost</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table></div>`;
+    } catch (e) { view.innerHTML = `<p style="color:var(--color-error);font-size:.85rem;">${esc(e.message || 'Explosion failed')}</p>`; }
+}
+
+async function cancelStockCount(id, number) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Cancel stock count ${number}?`,
+        message: 'Discards the count without posting any adjustment. System quantities are unchanged.',
+        confirmText: 'Cancel count'
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`stock-counts/${id}/cancel`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('Stock count cancelled'); await loadStockCounts();
+    } catch (e) { Toast.error(e.message || 'Cancel failed'); }
+}
+
+// ── Price Lists ──────────────────────────────────────────────────────────────
+async function loadPriceLists() {
+    try { priceLists = unwrap(await api.request(AccountsCommon.buildUrl('price-lists'), { _skipSpinner: true })); }
+    catch { priceLists = []; }
+    const tb = document.getElementById('priceListsTable');
+    tb.innerHTML = priceLists.length ? priceLists.map(p => `
+        <tr class="${p.id === selectedPriceListId ? 'row-selected' : ''}" style="cursor:pointer;" onclick="selectPriceList('${p.id}','${esc(AccountsCommon.escJs(p.name))}')">
+        <td>${esc(p.name)}</td><td style="text-align:center;">${p.is_active ? '✓' : '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();activatePriceList(\'' + p.id + '\')" data-admin-only>Activate</button>'}</td></tr>`).join('')
+        : `<tr><td colspan="2" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No price lists yet.</td></tr>`;
+    accountsRoles.applyRBAC();
+    if (selectedPriceListId) await loadPriceListItems();
+}
+async function selectPriceList(id, name) {
+    selectedPriceListId = id;
+    document.getElementById('plSelectedName').textContent = name;
+    document.getElementById('plAddPriceBtn').style.display = '';
+    document.querySelectorAll('#priceListsTable tr').forEach(r => r.classList.remove('row-selected'));
+    accountsRoles.applyRBAC();
+    await loadPriceListItems();
+}
+async function loadPriceListItems() {
+    const tb = document.getElementById('priceListItemsTable');
+    const chartWrap = document.getElementById('plChartWrap');
+    if (!selectedPriceListId) { tb.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Select a price list.</td></tr>`; if (chartWrap) chartWrap.style.display = 'none'; return; }
+    try {
+        const list = unwrap(await api.request(AccountsCommon.buildUrl(`price-lists/${selectedPriceListId}/prices`), { _skipSpinner: true }));
+        tb.innerHTML = list.length ? list.map(p => `
+            <tr><td>${esc(p.sku || '')}</td><td>${esc(p.name || p.item_name || '')}</td><td>${fmtMoney(p.price)}</td>
+            <td class="actions-cell"><button class="btn-icon" onclick="removeItemPrice('${p.item_id}')" data-admin-only data-tooltip="Remove">🗑</button></td></tr>`).join('')
+            : `<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No item prices set. Use “Set Item Price”.</td></tr>`;
+        accountsRoles.applyRBAC();
+        // Price-per-item bar for the selected list (top 10 by price).
+        if (list.length) {
+            if (chartWrap) chartWrap.style.display = '';
+            const top = [...list].sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0)).slice(0, 10);
+            _chart('acBarH', 'plPriceChart', top.map(p => p.name || p.item_name || p.sku || ''), top.map(p => Math.round((parseFloat(p.price) || 0) * 100) / 100));
+        } else if (chartWrap) { chartWrap.style.display = 'none'; }
+    } catch { tb.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Could not load prices.</td></tr>`; }
+}
+function showPriceListModal() { document.getElementById('plName').value = ''; AccountsCommon.openModal('priceListModal'); }
+async function savePriceList() {
+    const name = document.getElementById('plName').value.trim();
+    if (!name) { Toast.error('Name is required'); return; }
+    try { await api.request(AccountsCommon.buildUrl('price-lists'), { method: 'POST', body: JSON.stringify({ name }) }); Toast.success('Price list created'); AccountsCommon.closeModal('priceListModal'); await loadPriceLists(); }
+    catch (e) { Toast.error(e.message || 'Failed'); }
+}
+async function activatePriceList(id) {
+    try { await api.request(AccountsCommon.buildUrl(`price-lists/${id}/activate`), { method: 'POST' }); Toast.success('Activated'); await loadPriceLists(); }
+    catch (e) { Toast.error(e.message || 'Failed'); }
+}
+function showSetPriceModal() {
+    if (!selectedPriceListId) { Toast.error('Select a price list first'); return; }
+    document.getElementById('spPrice').value = '';
+    document.getElementById('spItem').innerHTML = '';
+    const opts = items.filter(i => i.is_active).map(i => ({ value: i.id, label: `${i.sku} — ${i.name}` }));
+    spItemDD = new SearchableDropdown(document.getElementById('spItem'), { id: 'spItemDD', options: opts, placeholder: 'Select item…', compact: true });
+    AccountsCommon.openModal('setPriceModal');
+}
+async function saveItemPrice() {
+    const item_id = spItemDD?.getValue?.(); const price = parseFloat(document.getElementById('spPrice').value);
+    if (!item_id || isNaN(price)) { Toast.error('Item and price are required'); return; }
+    try { await api.request(AccountsCommon.buildUrl(`price-lists/${selectedPriceListId}/prices`), { method: 'POST', body: JSON.stringify({ item_id, price }) }); Toast.success('Price set'); AccountsCommon.closeModal('setPriceModal'); await loadPriceListItems(); }
+    catch (e) { Toast.error(e.message || 'Failed'); }
+}
+async function removeItemPrice(itemId) {
+    if (!await Confirm.show({ title: 'Remove price?', message: 'This item will fall back to its default sale price.' })) return;
+    try { await api.request(AccountsCommon.buildUrl(`price-lists/${selectedPriceListId}/prices/${itemId}`), { method: 'DELETE' }); Toast.success('Removed'); await loadPriceListItems(); }
+    catch (e) { Toast.error(e.message || 'Failed'); }
+}
+
+// ── Reorder Report ────────────────────────────────────────────────────────────
+async function loadReorder() {
+    const tb = document.getElementById('reorderTable');
+    try {
+        const list = unwrap(await api.request(AccountsCommon.buildUrl('inventory/reorder-report'), { _skipSpinner: true }));
+        tb.innerHTML = list.length ? list.map(r => `
+            <tr><td>${esc(r.sku || '')}</td><td>${esc(r.name || r.item_name || '')}</td><td>${num(r.qty_on_hand)}</td>
+            <td>${num(r.reorder_level)}</td><td><strong>${num(r.suggested_order_qty ?? r.reorder_quantity)}</strong></td>
+            <td>${esc(r.preferred_vendor_name || r.vendor_name || '—')}</td></tr>`).join('')
+            : `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Nothing below its reorder level. 🎉</td></tr>`;
+        // Suggested order quantity by item (most urgent first, top 8) — count-scaled, not currency.
+        const top = [...list]
+            .map(r => ({ label: r.sku || r.name || r.item_name || '', qty: Number(r.suggested_order_qty ?? r.reorder_quantity ?? 0) }))
+            .filter(x => x.qty > 0).sort((a, b) => b.qty - a.qty).slice(0, 8);
+        _chart('acBarV', 'reorderChart', top.map(x => x.label), top.map(x => x.qty), null, cnt);
+    } catch { tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Could not load reorder report.</td></tr>`; }
 }

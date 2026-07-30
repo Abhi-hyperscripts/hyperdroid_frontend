@@ -833,6 +833,26 @@
         </div>
     </div>
 
+    <!-- Refund advance modal -->
+    <div id="refundAdvanceModal" class="modal">
+        <div class="modal-content" style="max-width:440px;">
+            <div class="modal-header"><h3 id="refundAdvTitle">Refund advance</h3><button class="close-btn" onclick="AccountsCommon.closeModal('refundAdvanceModal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="refundAdvId">
+                <p style="font-size:.85rem;color:var(--text-secondary);margin:0 0 10px;">Unapplied advance available: <strong id="refundAdvMax">—</strong></p>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Refund amount *</label><input type="number" id="refundAdvAmount" class="form-control" step="0.01" min="0"></div>
+                    <div class="form-group"><label>Date *</label><input type="text" id="refundAdvDate" class="form-control" placeholder="Select date"></div>
+                </div>
+                <div class="form-group"><label>Refund to bank *</label><div class="searchable-dropdown-container" id="refundAdvBank"></div></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('refundAdvanceModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveRefundAdvance()">Refund</button>
+            </div>
+        </div>
+    </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>

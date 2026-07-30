@@ -58,8 +58,24 @@ async function loadStockTile() {
         document.getElementById('tStockVal').textContent = AccountsCommon.formatCurrency(val.stock_value);
         const low = rows.filter(r => r.below_reorder).length;
         const sub = document.getElementById('tStockSub');
-        if (low > 0) { sub.textContent = `${low} item${low > 1 ? 's' : ''} below reorder`; sub.style.color = 'var(--color-warning)'; }
-        else sub.textContent = `${rows.length} tracked item${rows.length > 1 ? 's' : ''}${val.in_sync ? ' · books in sync' : ''}`;
+        if (low > 0) {
+            sub.textContent = `${low} item${low > 1 ? 's' : ''} below reorder`; sub.style.color = 'var(--color-warning)';
+            tile.setAttribute('href', 'inventory.html#inv-reorder');   // send them straight to the reorder list
+        } else {
+            sub.textContent = `${rows.length} tracked item${rows.length > 1 ? 's' : ''}${val.in_sync ? ' · books in sync' : ''}`;
+        }
+        // Expiring-soon alert (batch/lot items): only shown when something is actually at risk.
+        try {
+            const exp = await api.request(AccountsCommon.buildUrl('inventory/expiry-report', { withinDays: 90 }), { _skipSpinner: true });
+            const lots = Array.isArray(exp) ? exp : (exp?.data || exp?.rows || []);
+            if (lots.length) {
+                const atRisk = lots.reduce((s, l) => s + (Number(l.value) || 0), 0);
+                const et = document.getElementById('tExpiryTile');
+                et.style.display = '';
+                document.getElementById('tExpiryVal').textContent = AccountsCommon.formatCurrency(atRisk);
+                document.getElementById('tExpirySub').textContent = `${lots.length} lot${lots.length > 1 ? 's' : ''} within 90 days`;
+            }
+        } catch { /* no batch tracking / endpoint absent — expiry tile stays hidden */ }
     } catch { /* inventory not in use — tile stays hidden */ }
 }
 

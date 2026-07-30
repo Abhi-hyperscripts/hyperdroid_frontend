@@ -175,6 +175,45 @@ function renderBudgetListCharts() {
         : _acEmpty('budgetMixChart');
 }
 
+// Bulk entry: set the annual budget for every income/expense account in one screen.
+function openBulkModal() {
+    if (!selectedFyId) { Toast.error('Please select a fiscal year first'); return; }
+    const budgetable = accountsList.filter(a => (a.account_type_name === 'Income' || a.account_type_name === 'Expenses') && a.allow_direct_posting);
+    const existing = {}; budgetsList.forEach(b => existing[b.account_id] = b.annual_amount);
+    const esc = AccountsCommon.escapeHtml;
+    document.getElementById('bulkBudgetRows').innerHTML = budgetable.length
+        ? budgetable.map(a => `<tr data-acct="${a.id}" data-label="${esc((a.account_code + ' ' + a.account_name).toLowerCase())}">
+            <td>${esc(a.account_code)} — ${esc(a.account_name)}</td>
+            <td>${esc(a.account_type_name)}</td>
+            <td style="text-align:right;"><input type="number" class="form-control bulk-amt" step="0.01" min="0" value="${existing[a.id] != null ? existing[a.id] : ''}" style="text-align:right;padding:.3rem .5rem;"></td>
+        </tr>`).join('')
+        : '<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);padding:1rem;">No income/expense accounts — set up your chart of accounts first.</td></tr>';
+    const s = document.getElementById('bulkBudgetSearch'); if (s) s.value = '';
+    AccountsCommon.openModal('bulkBudgetModal');
+}
+function filterBulkRows() {
+    const q = (document.getElementById('bulkBudgetSearch').value || '').toLowerCase();
+    document.querySelectorAll('#bulkBudgetRows tr[data-acct]').forEach(tr => {
+        tr.style.display = !q || (tr.dataset.label || '').includes(q) ? '' : 'none';
+    });
+}
+async function saveBulkBudgets() {
+    const items = [];
+    document.querySelectorAll('#bulkBudgetRows tr[data-acct]').forEach(tr => {
+        const v = tr.querySelector('.bulk-amt').value;
+        if (v !== '' && !isNaN(parseFloat(v))) items.push({ account_id: tr.dataset.acct, annual_amount: parseFloat(v) });
+    });
+    if (!items.length) { Toast.error('Enter at least one amount'); return; }
+    const btn = document.getElementById('bulkBudgetSaveBtn'); btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl('budgets/bulk'), { method: 'POST', body: JSON.stringify({ fiscal_year_id: selectedFyId, items }) });
+        Toast.success(`Saved ${items.length} budget${items.length > 1 ? 's' : ''}`);
+        AccountsCommon.closeModal('bulkBudgetModal');
+        await loadBudgets();
+    } catch (e) { Toast.error(e.message || 'Bulk save failed'); }
+    finally { btn.disabled = false; }
+}
+
 function openAddModal() {
     if (!selectedFyId) { Toast.error('Please select a fiscal year first'); return; }
     editingBudget = null;
@@ -406,18 +445,20 @@ function renderAnalysis(report) {
 // Budget-vs-actual charts. Variance bar colour encodes FAVORABILITY, not sign:
 // expense under budget (variance ≥ 0) and income over budget (variance ≤ 0) are green.
 function renderAnalysisCharts(report) {
-    if (typeof acColumns !== 'function') return;
+    if (typeof acRadar !== 'function') return;
     const rows = [];
     for (const section of report.sections) {
         const isIncome = (section.account_type || '').toLowerCase().includes('income')
             || (section.account_type || '').toLowerCase().includes('revenue');
         (section.accounts || []).forEach(a => rows.push({ ...a, _isIncome: isIncome }));
     }
-    const top = rows.sort((a, b) => (b.budget_amount || 0) - (a.budget_amount || 0)).slice(0, 8);
+    // Radar reads best with a handful of axes; take the 6 largest budget lines.
+    const top = rows.sort((a, b) => (b.budget_amount || 0) - (a.budget_amount || 0)).slice(0, 6);
     if (!top.length) { _acEmpty('budgetVsActualChart'); _acEmpty('budgetVarianceChart'); return; }
     const short = (s) => (s || '').length > 16 ? s.slice(0, 15) + '…' : (s || '—');
     const cats = top.map(a => short(a.account_name));
-    acColumns('budgetVsActualChart', cats, [
+    // Spider chart: the Budget polygon vs the Actual polygon across accounts — over/under-spend shows as shape.
+    acRadar('budgetVsActualChart', cats, [
         { name: 'Budget', data: top.map(a => Math.round((a.budget_amount || 0) * 100) / 100) },
         { name: 'Actual', data: top.map(a => Math.round((a.actual_amount || 0) * 100) / 100) }
     ], ['#3b82f6', '#10b981']);

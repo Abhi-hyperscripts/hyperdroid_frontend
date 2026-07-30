@@ -71,6 +71,14 @@ const CONFIG = {
     // Cached ICE servers from backend
     _cachedIceServers: null,
 
+    // Feature flag — GST e-invoicing (IRP/IRN). Keep FALSE until a GST Suvidha Provider
+    // (GSP) is configured server-side (AccountsService `EInvoice:Enabled` + Provider/BaseUrl/ApiKey)
+    // AND validated with a sandbox round-trip. While false, the invoice view hides the
+    // "Generate IRN" action so nothing half-working reaches end users; "Preview payload"
+    // stays available (it builds the INV-01 JSON locally, no GSP call). Flip to true at
+    // deploy time in lockstep with the server config.
+    eInvoiceEnabled: false,
+
     // Derived URLs (computed from base endpoints)
     get authApiBaseUrl() {
         return `${this.endpoints.auth}/api`;

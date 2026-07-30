@@ -861,6 +861,56 @@ async function exportAuditLogs() {
 // 2. PENDING APPROVALS
 // ============================================================================
 
+// SLA compliance strip for client/vendor master-data requests. Requests left un-reviewed
+// past the SLA window (48h) are auto-approved and flagged breached; this surfaces the
+// breach rate, average review time and the specific requests that breached, so finance
+// can see whether the approval queue is being worked in time. Returns '' when unavailable.
+function renderCvrSlaStrip(sla) {
+    if (!sla || typeof sla.total_requests !== 'number' || sla.total_requests === 0) return '';
+    const esc = AccountsCommon.escapeHtml;
+    const breach = Number(sla.sla_breach_rate_percent ?? 0);
+    const breachColor = breach === 0 ? 'var(--color-success)' : (breach < 10 ? 'var(--color-warning, #f59e0b)' : 'var(--color-error)');
+    const tile = (label, value, color) => `
+        <div style="flex:1; min-width:120px; background:var(--bg-card-hover); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px;">
+            <div style="font-size:0.72rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.03em;">${esc(label)}</div>
+            <div style="font-size:1.15rem; font-weight:700; color:${color || 'var(--text-primary)'}; margin-top:2px;">${value}</div>
+        </div>`;
+    const breached = Array.isArray(sla.breached_requests) ? sla.breached_requests : [];
+    const breachedList = breached.length ? `
+        <details style="margin:10px 0 4px;">
+          <summary style="cursor:pointer; font-size:0.82rem; color:var(--text-secondary);">${breached.length} breached request${breached.length === 1 ? '' : 's'} (auto-approved past SLA)</summary>
+          <div style="margin-top:8px; overflow-x:auto;">
+            <table class="data-table" style="width:100%; font-size:0.8rem;">
+              <thead><tr><th>Name</th><th>Type</th><th>From</th><th>Requested by</th><th class="text-right">Waited</th></tr></thead>
+              <tbody>${breached.map(b => `<tr>
+                <td>${esc(b.name || '-')}</td>
+                <td>${esc(b.type || '-')}</td>
+                <td>${esc(b.service || '-')}</td>
+                <td>${esc(b.requested_by_name || '-')}</td>
+                <td class="text-right">${Number(b.waited_hours ?? 0).toFixed(1)} h</td>
+              </tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </details>` : '';
+    return `
+        <div class="glass-card" style="margin-bottom:1.25rem;">
+          <div class="glass-card-body">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
+              <h4 style="margin:0;">Request SLA compliance</h4>
+              <span style="font-size:0.75rem; color:var(--text-secondary);">Target: review within ${esc(String(sla.sla_hours ?? 48))} h</span>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              ${tile('Breach rate', breach.toFixed(1) + '%', breachColor)}
+              ${tile('Avg review time', Number(sla.avg_review_time_hours ?? 0).toFixed(1) + ' h')}
+              ${tile('Within SLA', String(sla.approved_within_sla ?? 0))}
+              ${tile('Pending', String(sla.pending ?? 0))}
+              ${tile('Total', String(sla.total_requests ?? 0))}
+            </div>
+            ${breachedList}
+          </div>
+        </div>`;
+}
+
 async function loadPendingApprovals() {
     const container = document.getElementById('pendingApprovalsContainer');
     if (!container) return;
@@ -873,13 +923,16 @@ async function loadPendingApprovals() {
         //      Customers/Vendors in Accounts. We pull ALL statuses here
         //      (pending + approved + rejected) so the page also serves as
         //      an audit trail for cross-service master-data requests.
-        const [expRes, cvrRes] = await Promise.all([
+        const [expRes, cvrRes, slaRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('audit/approvals/pending'), { _skipSpinner: true }).catch(() => null),
-            api.request(AccountsCommon.buildUrl('requests', { limit: 200 }), { _skipSpinner: true }).catch(() => null)
+            api.request(AccountsCommon.buildUrl('requests', { limit: 200 }), { _skipSpinner: true }).catch(() => null),
+            // SLA compliance for client/vendor master-data requests (manager+/admin only endpoint).
+            (accountsRoles.isManager() ? api.request(AccountsCommon.buildUrl('requests/sla-report'), { _skipSpinner: true }).catch(() => null) : Promise.resolve(null))
         ]);
 
         const expenseClaims = Array.isArray(expRes?.expense_claims) ? expRes.expense_claims : [];
         const cvrItems      = Array.isArray(cvrRes?.items) ? cvrRes.items : [];
+        const slaHtml       = renderCvrSlaStrip(slaRes);
 
         pendingApprovals = [
             ...expenseClaims.map(c => ({
@@ -917,7 +970,7 @@ async function loadPendingApprovals() {
         ];
 
         if (!pendingApprovals.length) {
-            container.innerHTML = `<div class="empty-message">
+            container.innerHTML = slaHtml + `<div class="empty-message">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -935,7 +988,7 @@ async function loadPendingApprovals() {
             return `<span style="display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; background:${m.bg}; color:${m.fg};">${m.label}</span>`;
         };
 
-        container.innerHTML = pendingApprovals.map(a => {
+        container.innerHTML = slaHtml + pendingApprovals.map(a => {
             const isCVR     = a.entity_type === 'client_request' || a.entity_type === 'vendor_request';
             // CVR review endpoint (POST requests/{id}/review) requires
             // ACCOUNTS_ADMIN/SUPERADMIN — managers get a 403. Expense-claim

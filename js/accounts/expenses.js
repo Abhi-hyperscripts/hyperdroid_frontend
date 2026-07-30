@@ -451,9 +451,28 @@ async function renderClaimCharts() {
         all.forEach(c => { const amt = parseFloat(c.total_amount || 0); if (amt > 0 && (c.status || 'draft') !== 'cancelled') { const s = c.status || 'draft'; byStatus[s] = (byStatus[s] || 0) + amt; } });
         const st = Object.keys(byStatus);
         acDonut('claimStatusChart', st.map(s => s.replace(/_/g, ' ')), st.map(s => Math.round(byStatus[s] * 100) / 100), st.map(s => _CLAIM_STATUS_COLOR[s] || '#64748b'));
-        const rank = _acRank(all.filter(c => (c.status || 'draft') !== 'cancelled').map(c => ({ name: c.employee_name || '—', amt: parseFloat(c.total_amount || 0) })), 'name', 'amt', 6);
+        const active = all.filter(c => (c.status || 'draft') !== 'cancelled');
+        const rank = _acRank(active.map(c => ({ name: c.employee_name || '—', amt: parseFloat(c.total_amount || 0) })), 'name', 'amt', 6);
         acBarH('claimEmployeeChart', rank.labels, rank.data);
-    } catch (e) { _acEmpty('claimStatusChart'); _acEmpty('claimEmployeeChart'); }
+        // Spend by category (polar). Categories live on claim ITEMS, so fetch the (capped) claim
+        // details and aggregate their line amounts. Capped so a big backlog can't fan out to
+        // hundreds of requests on one chart render.
+        if (typeof acPolar === 'function') {
+            const CAP = 60;
+            const toFetch = active.slice(0, CAP);
+            const details = await Promise.all(toFetch.map(c =>
+                api.request(AccountsCommon.buildUrl(`expenses/claims/${c.id}`), { _skipSpinner: true }).catch(() => null)));
+            const byCat = {};
+            details.filter(Boolean).forEach(d => (d.items || d.lines || []).forEach(it => {
+                const cat = it.category_name || 'Uncategorised';
+                byCat[cat] = (byCat[cat] || 0) + parseFloat(it.amount ?? it.total_amount ?? it.total ?? 0);
+            }));
+            const cats = Object.keys(byCat).filter(k => byCat[k] > 0).sort((a, b) => byCat[b] - byCat[a]).slice(0, 8);
+            cats.length
+                ? acPolar('claimCategoryChart', cats, cats.map(k => Math.round(byCat[k] * 100) / 100), cats.map((k, i) => _acPalette[i % _acPalette.length]))
+                : _acEmpty('claimCategoryChart');
+        }
+    } catch (e) { _acEmpty('claimStatusChart'); _acEmpty('claimEmployeeChart'); _acEmpty('claimCategoryChart'); }
 }
 
 async function loadExpenseClaims() {
@@ -552,6 +571,10 @@ function renderClaimsTable() {
         }
         if (isAdmin && c.status === 'approved') {
             actions += ` <button class="btn-icon" onclick="showReimburseClaimModal('${c.id}')" data-tooltip="Reimburse" data-admin-only><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></button>`;
+            actions += ` <button class="btn-icon" onclick="unapproveClaim('${c.id}','${AccountsCommon.escJs(c.claim_number || '')}')" data-tooltip="Unapprove" data-admin-only><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>`;
+        }
+        if (isAdmin && c.status === 'reimbursed') {
+            actions += ` <button class="btn-icon btn-icon-danger" onclick="voidReimbursement('${c.id}','${AccountsCommon.escJs(c.claim_number || '')}')" data-tooltip="Void reimbursement" data-admin-only><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg></button>`;
         }
         return `<tr>
             <td>${AccountsCommon.escapeHtml(c.claim_number || '-')}</td>
@@ -563,6 +586,36 @@ function renderClaimsTable() {
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
+}
+
+// Unapprove an approved (not-yet-reimbursed) claim back to submitted, e.g. to correct it.
+async function unapproveClaim(id, number) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Unapprove ${number}?`,
+        message: 'Sends the claim back to Submitted so it can be corrected or re-reviewed.',
+        confirmText: 'Unapprove', danger: false
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`expenses/claims/${id}/unapprove`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('Claim unapproved');
+        await loadExpenseClaims();
+    } catch (e) { Toast.error(e.message || 'Unapprove failed'); }
+}
+
+// Void a reimbursement payout — reverses the reimbursement GL entry and restores the bank balance.
+async function voidReimbursement(id, number) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Void reimbursement for ${number}?`,
+        message: 'Reverses the reimbursement payout and restores the bank balance. The claim returns to Approved.',
+        confirmText: 'Void reimbursement'
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`expenses/claims/${id}/void-reimbursement`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('Reimbursement voided');
+        await loadExpenseClaims();
+    } catch (e) { Toast.error(e.message || 'Void failed'); }
 }
 
 // ============================================================================

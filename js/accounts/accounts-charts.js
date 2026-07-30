@@ -197,3 +197,43 @@ function acLines(id, categories, series, colors) {
         tooltip: { theme: t.isDark ? 'dark' : 'light', shared: true, intersect: false, y: { formatter: _inr } }
     });
 }
+// Radar (spider) — overlay 2+ series across the SAME axes. Best when each item is profiled
+// on several shared dimensions (e.g. Budget vs Actual across accounts). series = [{name,data:[…]}].
+function acRadar(id, categories, series, colors, fmt) {
+    if (!series || !series.length || series.every(s => (s.data || []).every(v => !v))) return _acEmpty(id);
+    const t = _acTheme();
+    const f = fmt || _inr;
+    _acMount(id, {
+        chart: { type: 'radar', height: 320, background: 'transparent', toolbar: { show: false }, fontFamily: 'inherit' },
+        theme: { mode: t.isDark ? 'dark' : 'light' },
+        colors: colors || _acPalette,
+        series,
+        stroke: { width: 2 },
+        fill: { opacity: 0.18 },
+        markers: { size: 3, hover: { size: 5 } },
+        dataLabels: { enabled: false },
+        legend: { position: 'top', horizontalAlign: 'left', labels: { colors: t.text }, fontSize: '12px', markers: { width: 10, height: 10 } },
+        xaxis: { categories, labels: { style: { colors: categories.map(() => t.text), fontSize: '11px' } } },
+        yaxis: { labels: { formatter: f, style: { colors: t.text, fontSize: '10px' } } },
+        plotOptions: { radar: { polygons: { strokeColors: t.grid, connectorColors: t.grid } } },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: f } }
+    });
+}
+// Polar area — a donut whose slices also vary by RADIUS, so magnitude reads two ways. Use for
+// share-of-total where the size differences matter (e.g. spend by cost centre). pass fmt for counts.
+function acPolar(id, labels, series, colors, fmt) {
+    if (!series.length || series.every(v => !v)) return _acEmpty(id);
+    const t = _acTheme();
+    const f = fmt || _inr;
+    _acMount(id, {
+        chart: { type: 'polarArea', height: 300, background: 'transparent', fontFamily: 'inherit' },
+        theme: { mode: t.isDark ? 'dark' : 'light' },
+        labels, series, colors: colors || _acPalette.slice(0, series.length),
+        stroke: { colors: [t.isDark ? '#0f172a' : '#ffffff'], width: 1 },
+        fill: { opacity: 0.82 },
+        legend: { position: 'bottom', labels: { colors: t.text }, fontSize: '12px', markers: { width: 9, height: 9 }, itemMargin: { horizontal: 8, vertical: 3 } },
+        yaxis: { show: false, labels: { formatter: f } },
+        plotOptions: { polarArea: { rings: { strokeColor: t.grid }, spokes: { connectorColors: t.grid } } },
+        tooltip: { theme: t.isDark ? 'dark' : 'light', y: { formatter: f } }
+    });
+}

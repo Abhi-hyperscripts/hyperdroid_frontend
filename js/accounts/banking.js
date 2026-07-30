@@ -1014,6 +1014,35 @@ async function completeReconciliation() {
     }
 }
 
+// Abandon an in-progress reconciliation without finalising it. Without this, a
+// started session could only be Completed — leaving no way to back out of a
+// mistaken start (wrong bank/date) short of finalising a wrong reconciliation.
+// Nothing is posted to the GL; matched rows are simply released.
+async function abandonReconciliation() {
+    if (!currentReconId) { Toast.error('No active reconciliation'); return; }
+    const ok = await Confirm.show({
+        title: 'Abandon Reconciliation',
+        message: 'Discard this in-progress reconciliation? Any transactions you matched in this session are released back to unreconciled, and nothing is posted. This does not affect completed reconciliations.',
+        confirmText: 'Abandon',
+        type: 'warning'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`bank/reconciliations/${currentReconId}/abandon`), { method: 'POST' });
+        Toast.success('Reconciliation abandoned');
+        currentReconId = null;
+        reconTransactions = [];
+        reconMatchedCount = 0;
+        reconMatchedAmount = 0;
+        reconBookBalance = null;
+        document.getElementById('reconWorkspace').style.display = 'none';
+        await loadBankAccounts();
+    } catch (err) {
+        console.error('[Banking] abandonReconciliation error:', err);
+        Toast.error(err.message || 'Failed to abandon reconciliation');
+    }
+}
+
 // ============================================================================
 // SEARCHABLE DROPDOWNS INIT
 // ============================================================================

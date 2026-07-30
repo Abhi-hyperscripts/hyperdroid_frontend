@@ -78,8 +78,14 @@
                         <div class="nav-group-items">
                             <button class="sidebar-btn active" data-tab="inv-items"><span class="nav-number">1</span><span class="nav-label">Items</span></button>
                             <button class="sidebar-btn" data-tab="inv-stock"><span class="nav-number">2</span><span class="nav-label">Stock on Hand</span></button>
-                            <button class="sidebar-btn" data-tab="inv-movements"><span class="nav-number">3</span><span class="nav-label">Movements</span></button>
-                            <button class="sidebar-btn" data-tab="inv-serials"><span class="nav-number">4</span><span class="nav-label">Serials &amp; Warranty</span></button>
+                            <button class="sidebar-btn" data-tab="inv-locations"><span class="nav-number">3</span><span class="nav-label">Locations</span></button>
+                            <button class="sidebar-btn" data-tab="inv-batches"><span class="nav-number">4</span><span class="nav-label">Batches &amp; Expiry</span></button>
+                            <button class="sidebar-btn" data-tab="inv-workorders"><span class="nav-number">5</span><span class="nav-label">Work Orders</span></button>
+                            <button class="sidebar-btn" data-tab="inv-count"><span class="nav-number">6</span><span class="nav-label">Stock Count</span></button>
+                            <button class="sidebar-btn" data-tab="inv-pricelists"><span class="nav-number">7</span><span class="nav-label">Price Lists</span></button>
+                            <button class="sidebar-btn" data-tab="inv-reorder"><span class="nav-number">8</span><span class="nav-label">Reorder Report</span></button>
+                            <button class="sidebar-btn" data-tab="inv-movements"><span class="nav-number">9</span><span class="nav-label">Movements</span></button>
+                            <button class="sidebar-btn" data-tab="inv-serials"><span class="nav-number">10</span><span class="nav-label">Serials &amp; Warranty</span></button>
                         </div>
                     </div>
                 </nav>
@@ -130,6 +136,18 @@
                 <!-- 3. MOVEMENTS -->
                 <div class="tab-content" id="inv-movements">
                     <div class="filters-bar"><div class="searchable-dropdown-container" id="moveItemFilter" style="min-width:260px;"></div></div>
+                    <div class="acc-charts" style="margin-top:12px;">
+                        <div class="acc-chart-card">
+                            <h4>Stock in vs out by month</h4>
+                            <div class="acc-chart-sub">Value received (purchases, opening) against value issued (sales, write-offs)</div>
+                            <div id="moveFlowChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Movements by type</h4>
+                            <div class="acc-chart-sub">What's driving stock changes in this view</div>
+                            <div id="moveTypeChart" class="acc-chart"></div>
+                        </div>
+                    </div>
                     <div class="data-table-container" style="margin-top:12px;">
                         <table class="data-table">
                             <thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Qty</th><th>Unit Cost</th><th>Total</th><th>Reference</th><th>Notes</th></tr></thead>
@@ -153,6 +171,190 @@
                         <table class="data-table">
                             <thead><tr><th>Serial</th><th>Item</th><th>Status</th><th>Sold To</th><th>Invoice</th><th>Sold On</th><th>Warranty Until</th><th>Actions</th></tr></thead>
                             <tbody id="serialsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- LOCATIONS -->
+                <div class="tab-content" id="inv-locations">
+                    <div class="filters-bar" style="align-items:flex-end;gap:12px;">
+                        <p style="margin:0;font-size:.85rem;color:var(--text-secondary);flex:1;">Warehouses, stores &amp; branches. Stock is tracked per location; move lots between them with Transfer.</p>
+                        <button class="btn btn-outline" onclick="showTransferModal()" data-admin-only>Transfer Stock</button>
+                        <button class="btn btn-primary" onclick="showLocationModal()" data-admin-only>+ New Location</button>
+                    </div>
+                    <div class="data-table-container" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead><tr><th>Name</th><th>Type</th><th>GSTIN</th><th>Address</th><th>Default</th><th>Status</th></tr></thead>
+                            <tbody id="locationsTable"></tbody>
+                        </table>
+                    </div>
+                    <h3 style="margin:1.25rem 0 .5rem;font-size:1rem;">Stock by location</h3>
+                    <div class="acc-charts" style="margin-bottom:12px;">
+                        <div class="acc-chart-card">
+                            <h4>Stock value by location</h4>
+                            <div class="acc-chart-sub">Where your inventory value physically sits</div>
+                            <div id="locValueChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+                    <div class="filters-bar"><div class="searchable-dropdown-container" id="locBalFilter" style="min-width:240px;"></div></div>
+                    <div class="data-table-container" style="margin-top:8px;">
+                        <table class="data-table">
+                            <thead><tr><th>Location</th><th>SKU</th><th>Item</th><th>Qty</th><th>Value</th></tr></thead>
+                            <tbody id="locBalancesTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- BATCHES & EXPIRY -->
+                <div class="tab-content" id="inv-batches">
+                    <div class="acc-segmented" style="margin-bottom:4px;">
+                        <button class="acc-seg-btn active" data-batchview="balances" onclick="switchBatchView('balances')">Lot Balances</button>
+                        <button class="acc-seg-btn" data-batchview="expiry" onclick="switchBatchView('expiry')">Expiry Report</button>
+                        <button class="acc-seg-btn" data-batchview="scheduleh" onclick="switchBatchView('scheduleh')">Schedule-H Register</button>
+                    </div>
+                    <div id="batchView-balances" class="batch-view">
+                        <div class="acc-charts" style="margin-top:12px;">
+                            <div class="acc-chart-card">
+                                <h4>Lot value on hand by item</h4>
+                                <div class="acc-chart-sub">Top batch-tracked items by value in stock</div>
+                                <div id="batchValueChart" class="acc-chart"></div>
+                            </div>
+                        </div>
+                        <div class="data-table-container" style="margin-top:12px;">
+                            <table class="data-table">
+                                <thead><tr><th>SKU</th><th>Item</th><th>Batch / Lot</th><th>Location</th><th>Expiry</th><th>Qty</th><th>Value</th></tr></thead>
+                                <tbody id="batchBalancesTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="batchView-expiry" class="batch-view" style="display:none;">
+                        <div class="filters-bar" style="justify-content:flex-end;gap:10px;align-items:center;">
+                            <label style="font-size:.85rem;color:var(--text-secondary);">Window (days)</label>
+                            <input type="number" id="expiryDays" class="form-control" style="max-width:110px;" value="90" min="1" onchange="loadExpiryReport()">
+                        </div>
+                        <div class="acc-charts" style="margin-top:8px;">
+                            <div class="acc-chart-card">
+                                <h4>Value at risk by expiry window</h4>
+                                <div class="acc-chart-sub">Stock value grouped by how soon it expires — clear the red first</div>
+                                <div id="expiryRiskChart" class="acc-chart"></div>
+                            </div>
+                        </div>
+                        <div class="data-table-container" style="margin-top:8px;">
+                            <table class="data-table">
+                                <thead><tr><th>SKU</th><th>Item</th><th>Batch / Lot</th><th>Location</th><th>Expiry</th><th>Days Left</th><th>Qty</th><th>Value at Risk</th></tr></thead>
+                                <tbody id="expiryTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="batchView-scheduleh" class="batch-view" style="display:none;">
+                        <p style="margin:12px 0 0;font-size:.85rem;color:var(--text-secondary);">Statutory dispensing register for Schedule H / H1 / X controlled drugs (last 90 days).</p>
+                        <div class="data-table-container" style="margin-top:8px;">
+                            <table class="data-table">
+                                <thead><tr><th>Date</th><th>SKU</th><th>Drug</th><th>Schedule</th><th>Batch</th><th>Expiry</th><th>Qty</th><th>Dispensed To</th><th>Invoice</th></tr></thead>
+                                <tbody id="scheduleHTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WORK ORDERS -->
+                <div class="tab-content" id="inv-workorders">
+                    <div class="filters-bar" style="align-items:flex-end;">
+                        <p style="margin:0;font-size:.85rem;color:var(--text-secondary);flex:1;">Manufacturing orders: issue components to WIP (Dr WIP / Cr Inventory), then complete to receive the finished good.</p>
+                        <button class="btn btn-primary" onclick="showWorkOrderModal()" data-admin-only>+ New Work Order</button>
+                    </div>
+                    <div class="acc-charts" style="margin-top:12px;">
+                        <div class="acc-chart-card">
+                            <h4>Work orders by status</h4>
+                            <div class="acc-chart-sub">Where your production pipeline stands</div>
+                            <div id="woStatusChart" class="acc-chart"></div>
+                        </div>
+                        <div class="acc-chart-card">
+                            <h4>Issued cost in progress</h4>
+                            <div class="acc-chart-sub">Component value currently sitting in WIP, by order</div>
+                            <div id="woWipChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+                    <div class="data-table-container" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead><tr><th>WO #</th><th>Finished Item</th><th>Qty</th><th>Build Date</th><th>Status</th><th>Issued Cost</th><th>Actions</th></tr></thead>
+                            <tbody id="workOrdersTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- STOCK COUNT -->
+                <div class="tab-content" id="inv-count">
+                    <div class="filters-bar" style="align-items:flex-end;">
+                        <p style="margin:0;font-size:.85rem;color:var(--text-secondary);flex:1;">Physical counts. Finalizing posts the counted-vs-system variance as a GL-tied adjustment (surplus = recovery, shortfall = shrinkage).</p>
+                        <button class="btn btn-primary" onclick="showStockCountModal()" data-admin-only>+ New Count</button>
+                    </div>
+                    <div class="acc-charts" style="margin-top:12px;">
+                        <div class="acc-chart-card">
+                            <h4>Counts by status</h4>
+                            <div class="acc-chart-sub">Draft &amp; in-progress counts still need finalising</div>
+                            <div id="scStatusChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+                    <div class="data-table-container" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead><tr><th>Count #</th><th>Date</th><th>Location</th><th>Lines</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="stockCountsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PRICE LISTS -->
+                <div class="tab-content" id="inv-pricelists">
+                    <div class="filters-bar" style="align-items:flex-end;">
+                        <p style="margin:0;font-size:.85rem;color:var(--text-secondary);flex:1;">Named price lists (wholesale, retail MRP, etc.) with per-item prices.</p>
+                        <button class="btn btn-primary" onclick="showPriceListModal()" data-admin-only>+ New Price List</button>
+                    </div>
+                    <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;">
+                        <div style="min-width:240px;flex:0 0 260px;">
+                            <div class="data-table-container">
+                                <table class="data-table">
+                                    <thead><tr><th>Price List</th><th>Active</th></tr></thead>
+                                    <tbody id="priceListsTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div style="flex:1;min-width:320px;">
+                            <div class="filters-bar" style="justify-content:space-between;align-items:center;">
+                                <strong id="plSelectedName" style="font-size:.95rem;">Select a price list</strong>
+                                <button class="btn btn-outline btn-sm" id="plAddPriceBtn" style="display:none;" onclick="showSetPriceModal()" data-admin-only>+ Set Item Price</button>
+                            </div>
+                            <div class="acc-charts" id="plChartWrap" style="margin-top:8px;display:none;">
+                                <div class="acc-chart-card">
+                                    <h4>Item prices in this list</h4>
+                                    <div class="acc-chart-sub">Per-item price on the selected list</div>
+                                    <div id="plPriceChart" class="acc-chart"></div>
+                                </div>
+                            </div>
+                            <div class="data-table-container" style="margin-top:8px;">
+                                <table class="data-table">
+                                    <thead><tr><th>SKU</th><th>Item</th><th>Price</th><th></th></tr></thead>
+                                    <tbody id="priceListItemsTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REORDER REPORT -->
+                <div class="tab-content" id="inv-reorder">
+                    <p style="margin:0 0 12px;font-size:.85rem;color:var(--text-secondary);">Items at or below their reorder level, with the suggested order quantity.</p>
+                    <div class="acc-charts" style="margin-bottom:12px;">
+                        <div class="acc-chart-card">
+                            <h4>Suggested order quantity by item</h4>
+                            <div class="acc-chart-sub">What to buy, most urgent first</div>
+                            <div id="reorderChart" class="acc-chart"></div>
+                        </div>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead><tr><th>SKU</th><th>Item</th><th>On Hand</th><th>Reorder Level</th><th>Suggested Order Qty</th><th>Preferred Vendor</th></tr></thead>
+                            <tbody id="reorderTable"></tbody>
                         </table>
                     </div>
                 </div>
@@ -184,13 +386,18 @@
                 </div>
                 <div class="form-group"><label>Barcode <span class="opt">(EAN-13 — scan into this box; leave blank if the SKU is the barcode)</span></label><input type="text" id="itBarcode" class="form-control" maxlength="60" placeholder="e.g. 8901430123457"></div>
                 <div class="form-row two-col">
-                    <div class="form-group"><label>Warranty (months)</label><input type="number" id="itWarranty" class="form-control" min="0" max="240" value="0"></div>
                     <div class="form-group"><label>Reorder Level</label><input type="number" id="itReorder" class="form-control" min="0" value="0"></div>
+                    <div class="form-group"><label>Reorder Qty <span class="opt">(suggested order size)</span></label><input type="number" id="itReorderQty" class="form-control" min="0" value="0"></div>
                 </div>
                 <div class="form-row two-col">
-                    <div class="form-group"><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="itTrack" checked> Track stock</label></div>
-                    <div class="form-group"><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="itSerial"> Serial-tracked (warranty per unit)</label></div>
+                    <div class="form-group"><label>Tracking mode</label><div class="searchable-dropdown-container" id="itTracking"></div></div>
+                    <div class="form-group"><label>Cost method</label><div class="searchable-dropdown-container" id="itValuation"></div></div>
                 </div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Drug schedule <span class="opt">(pharmacy — H/H1/X are prescription-controlled)</span></label><div class="searchable-dropdown-container" id="itSchedule"></div></div>
+                    <div class="form-group"><label>Warranty (months) <span class="opt">(serial items)</span></label><input type="number" id="itWarranty" class="form-control" min="0" max="240" value="0"></div>
+                </div>
+                <div class="form-group"><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="itTrack" checked> Track stock (uncheck for a pure service)</label></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="AccountsCommon.closeModal('itemModal')">Cancel</button>
@@ -273,27 +480,43 @@
         </div>
     </div>
 
-    <!-- BOM modal -->
-    <div class="modal" id="bomModal">
-        <div class="modal-content" style="max-width:640px;">
-            <div class="modal-header"><h3 id="bomModalTitle">Bill of Materials</h3><button class="close-btn" onclick="AccountsCommon.closeModal('bomModal')">&times;</button></div>
-            <div class="modal-body">
+    <!-- BOM / Build — full page (roomy for many components + the explosion tree) -->
+    <div id="bomPage" class="acc-form-page acc-form-page--wide" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('bomPage'); return false;">Inventory</a>
+                </nav>
+                <h1 class="acc-form-page__title" id="bomModalTitle">Bill of Materials</h1>
+            </div>
+            <div class="acc-form">
                 <input type="hidden" id="bomItemId">
-                <div class="data-table-container"><table class="data-table">
-                    <thead><tr><th>Component</th><th style="width:110px;">Qty / unit</th><th style="width:110px;">On hand</th><th style="width:40px;"></th></tr></thead>
-                    <tbody id="bomLines"></tbody>
-                </table></div>
-                <button type="button" class="btn btn-outline" style="margin-top:8px;" onclick="addBomLine()">+ Component</button>
-                <hr style="margin:14px 0;border-color:var(--border-color);">
-                <div class="form-row two-col">
-                    <div class="form-group"><label>Build quantity</label><input type="number" id="buildQty" class="form-control" min="0" step="any" value="1"></div>
-                    <div class="form-group"><label>Build date</label><input type="text" id="buildDate" class="form-control" placeholder="Select date"></div>
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Components</div>
+                    <div class="data-table-container"><table class="data-table">
+                        <thead><tr><th>Component</th><th style="width:140px;">Qty / unit</th><th style="width:140px;">On hand</th><th style="width:48px;"></th></tr></thead>
+                        <tbody id="bomLines"></tbody>
+                    </table></div>
+                    <button type="button" class="btn btn-outline" style="margin-top:10px;" onclick="addBomLine()">+ Component</button>
+                </div>
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg> Build a batch</div>
+                    <div class="pgrid">
+                        <div class="form-group"><label>Build quantity</label><input type="number" id="buildQty" class="form-control" min="0" step="any" value="1"></div>
+                        <div class="form-group"><label>Build date</label><input type="text" id="buildDate" class="form-control" placeholder="Select date"></div>
+                    </div>
+                    <div id="bomExplosionView" style="display:none;margin-top:14px;"></div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('bomModal')">Close</button>
-                <button class="btn btn-outline" id="saveBomBtn" onclick="saveBom()">Save BOM</button>
-                <button class="btn btn-primary" id="buildBtn" onclick="buildAssembly()">Build</button>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('bomPage')">Close</button>
+                    <button class="btn btn-outline" onclick="explodeBom()">Explode (full tree)</button>
+                    <button class="btn btn-outline" id="saveBomBtn" onclick="saveBom()">Save BOM</button>
+                    <button class="btn btn-primary" id="buildBtn" onclick="buildAssembly()">Build</button>
+                </div>
             </div>
         </div>
     </div>
@@ -308,6 +531,132 @@
                 <div class="form-group"><label>Unit Cost</label><input type="number" id="snCost" class="form-control" step="0.01" min="0"></div>
             </div>
             <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('serialsModal')">Cancel</button><button class="btn btn-primary" onclick="saveSerials()">Receive</button></div>
+        </div>
+    </div>
+
+    <!-- Location modal -->
+    <div class="modal" id="locationModal">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header"><h3>New Location</h3><button class="close-btn" onclick="AccountsCommon.closeModal('locationModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Name *</label><input type="text" id="locName" class="form-control" placeholder="Main Warehouse"></div>
+                    <div class="form-group"><label>Type</label><div class="searchable-dropdown-container" id="locType"></div></div>
+                </div>
+                <div class="form-group"><label>GSTIN <span class="opt">(if this location bills separately)</span></label><input type="text" id="locGstin" class="form-control" maxlength="15"></div>
+                <div class="form-group"><label>Address</label><input type="text" id="locAddress" class="form-control"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('locationModal')">Cancel</button><button class="btn btn-primary" id="saveLocBtn" onclick="saveLocation()">Save</button></div>
+        </div>
+    </div>
+
+    <!-- Transfer stock modal -->
+    <div class="modal" id="transferModal">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header"><h3>Transfer Stock</h3><button class="close-btn" onclick="AccountsCommon.closeModal('transferModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Item *</label><div class="searchable-dropdown-container" id="xfItem"></div></div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>From *</label><div class="searchable-dropdown-container" id="xfFrom"></div></div>
+                    <div class="form-group"><label>To *</label><div class="searchable-dropdown-container" id="xfTo"></div></div>
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Quantity *</label><input type="number" id="xfQty" class="form-control" step="any" min="0"></div>
+                    <div class="form-group"><label>Date *</label><input type="text" id="xfDate" class="form-control" placeholder="Select date"></div>
+                </div>
+                <p style="font-size:.8rem;color:var(--text-secondary);margin:0;">Batch/lot items move earliest-expiry-first, carrying their lot &amp; expiry to the destination.</p>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('transferModal')">Cancel</button><button class="btn btn-primary" id="saveXfBtn" onclick="saveTransfer()">Transfer</button></div>
+        </div>
+    </div>
+
+    <!-- Work order modal -->
+    <div class="modal" id="workOrderModal">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header"><h3>New Work Order</h3><button class="close-btn" onclick="AccountsCommon.closeModal('workOrderModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Finished item * <span class="opt">(must have a BOM)</span></label><div class="searchable-dropdown-container" id="woItem"></div></div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Quantity to build *</label><input type="number" id="woQty" class="form-control" step="any" min="0" value="1"></div>
+                    <div class="form-group"><label>Build date *</label><input type="text" id="woDate" class="form-control" placeholder="Select date"></div>
+                </div>
+                <div class="form-group"><label>Location <span class="opt">(optional)</span></label><div class="searchable-dropdown-container" id="woLocation"></div></div>
+                <div class="form-group"><label>Notes</label><input type="text" id="woNotes" class="form-control"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('workOrderModal')">Cancel</button><button class="btn btn-primary" id="saveWoBtn" onclick="saveWorkOrder()">Create</button></div>
+        </div>
+    </div>
+
+    <!-- Complete work order (batch capture) modal -->
+    <div class="modal" id="woCompleteModal">
+        <div class="modal-content" style="max-width:480px;">
+            <div class="modal-header"><h3>Complete Work Order</h3><button class="close-btn" onclick="AccountsCommon.closeModal('woCompleteModal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="woCompleteId">
+                <p style="font-size:.85rem;color:var(--text-secondary);">For a batch-tracked finished good, capture the produced lot. Leave blank for non-batch items.</p>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Batch / Lot #</label><input type="text" id="woBatch" class="form-control"></div>
+                    <div class="form-group"><label>Expiry</label><input type="text" id="woExpiry" class="form-control" placeholder="Select date"></div>
+                </div>
+                <div class="form-group"><label>MRP <span class="opt">(optional)</span></label><input type="number" id="woMrp" class="form-control" step="0.01" min="0"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('woCompleteModal')">Cancel</button><button class="btn btn-primary" onclick="completeWorkOrder()">Complete</button></div>
+        </div>
+    </div>
+
+    <!-- Stock count modal -->
+    <div class="modal" id="stockCountModal">
+        <div class="modal-content" style="max-width:480px;">
+            <div class="modal-header"><h3>New Stock Count</h3><button class="close-btn" onclick="AccountsCommon.closeModal('stockCountModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Count date *</label><input type="text" id="scDate" class="form-control" placeholder="Select date"></div>
+                    <div class="form-group"><label>Location</label><div class="searchable-dropdown-container" id="scLocation"></div></div>
+                </div>
+                <p style="font-size:.8rem;color:var(--text-secondary);margin:0;">All stocked items are added to the count; enter counted quantities on the next screen.</p>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('stockCountModal')">Cancel</button><button class="btn btn-primary" id="saveScBtn" onclick="saveStockCount()">Create</button></div>
+        </div>
+    </div>
+
+    <!-- Stock count detail modal -->
+    <div class="modal" id="countDetailModal">
+        <div class="modal-content" style="max-width:720px;">
+            <div class="modal-header"><h3 id="countDetailTitle">Stock Count</h3><button class="close-btn" onclick="AccountsCommon.closeModal('countDetailModal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="countDetailId">
+                <div class="data-table-container" style="max-height:360px;overflow-y:auto;">
+                    <table class="data-table">
+                        <thead><tr><th>SKU</th><th>Item</th><th>System Qty</th><th style="width:130px;">Counted</th><th>Variance</th></tr></thead>
+                        <tbody id="countLinesTable"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('countDetailModal')">Close</button>
+                <button class="btn btn-primary" id="finalizeCountBtn" onclick="finalizeStockCount()" data-admin-only>Finalize &amp; Post Variance</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Price list modal -->
+    <div class="modal" id="priceListModal">
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-header"><h3>New Price List</h3><button class="close-btn" onclick="AccountsCommon.closeModal('priceListModal')">&times;</button></div>
+            <div class="modal-body"><div class="form-group"><label>Name *</label><input type="text" id="plName" class="form-control" placeholder="Wholesale"></div></div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('priceListModal')">Cancel</button><button class="btn btn-primary" onclick="savePriceList()">Save</button></div>
+        </div>
+    </div>
+
+    <!-- Set item price modal -->
+    <div class="modal" id="setPriceModal">
+        <div class="modal-content" style="max-width:460px;">
+            <div class="modal-header"><h3>Set Item Price</h3><button class="close-btn" onclick="AccountsCommon.closeModal('setPriceModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Item *</label><div class="searchable-dropdown-container" id="spItem"></div></div>
+                <div class="form-group"><label>Price *</label><input type="number" id="spPrice" class="form-control" step="0.01" min="0"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('setPriceModal')">Cancel</button><button class="btn btn-primary" onclick="saveItemPrice()">Save</button></div>
         </div>
     </div>
 

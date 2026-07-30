@@ -1040,14 +1040,34 @@ async function renderTaxLedgerCharts(baseParams) {
             { name: 'Output tax', data: outM.data },
             { name: 'Input credit', data: inM.data }
         ], ['#ef4444', '#10b981']);
-        const label = (t) => ({ sales: 'Sales (output)', purchase: 'Purchase (input)', tds_deducted: 'TDS deducted', tds_collected: 'TDS collected', tcs_collected: 'TCS collected' })[t] || (t || 'Other');
-        const byType = {};
-        all.forEach(e => { const k = label(e.transaction_type); byType[k] = (byType[k] || 0) + parseFloat(e.tax_amount || 0); });
-        const types = Object.keys(byType).filter(k => byType[k] > 0).sort();
-        types.length
-            ? acDonut('taxTypeChart', types, types.map(k => Math.round(byType[k] * 100) / 100),
-                      types.map((k, i) => _acPalette[i % _acPalette.length]))
-            : _acEmpty('taxTypeChart');
+        // Output tax vs input credit across each tax type (radar). Two polygons — where output
+        // stretches past input you're a net payer on that slab, and vice-versa. Falls back to the
+        // transaction-type donut when there aren't ≥3 tax types to draw a readable polygon.
+        const byCfg = {};
+        all.forEach(e => {
+            const name = e.tax_config_name || taxConfigs.find(c => c.id === e.tax_configuration_id)?.name || 'Other';
+            const amt = parseFloat(e.tax_amount || 0);
+            byCfg[name] = byCfg[name] || { out: 0, inp: 0 };
+            if (e.transaction_type === 'sales') byCfg[name].out += amt;
+            else if (e.transaction_type === 'purchase') byCfg[name].inp += amt;
+        });
+        const cfgNames = Object.keys(byCfg).filter(n => byCfg[n].out > 0 || byCfg[n].inp > 0)
+            .sort((a, b) => (byCfg[b].out + byCfg[b].inp) - (byCfg[a].out + byCfg[a].inp)).slice(0, 8);
+        if (cfgNames.length >= 3 && typeof acRadar === 'function') {
+            acRadar('taxTypeChart', cfgNames, [
+                { name: 'Output tax', data: cfgNames.map(n => Math.round(byCfg[n].out * 100) / 100) },
+                { name: 'Input credit', data: cfgNames.map(n => Math.round(byCfg[n].inp * 100) / 100) }
+            ], ['#ef4444', '#10b981']);
+        } else {
+            const label = (t) => ({ sales: 'Sales (output)', purchase: 'Purchase (input)', tds_deducted: 'TDS deducted', tds_collected: 'TDS collected', tcs_collected: 'TCS collected' })[t] || (t || 'Other');
+            const byType = {};
+            all.forEach(e => { const k = label(e.transaction_type); byType[k] = (byType[k] || 0) + parseFloat(e.tax_amount || 0); });
+            const types = Object.keys(byType).filter(k => byType[k] > 0).sort();
+            types.length
+                ? acDonut('taxTypeChart', types, types.map(k => Math.round(byType[k] * 100) / 100),
+                          types.map((k, i) => _acPalette[i % _acPalette.length]))
+                : _acEmpty('taxTypeChart');
+        }
     } catch (err) {
         console.error('[Taxation] renderTaxLedgerCharts error:', err);
         _acEmpty('taxFlowChart'); _acEmpty('taxTypeChart');

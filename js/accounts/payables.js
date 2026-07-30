@@ -73,7 +73,7 @@ function initDatePickers() {
     flatpickr('#billFromDate', { ...opts, onChange: () => { currentBillPage = 1; loadVendorBills(); } });
     flatpickr('#billToDate', { ...opts, onChange: () => { currentBillPage = 1; loadVendorBills(); } });
     // Statement + modal dates: plain pickers (statement uses its Generate button).
-    ['#stmtFromDate', '#stmtToDate', '#dnDate', '#billDate', '#billDueDate', '#paymentDate'].forEach(sel => flatpickr(sel, opts));
+    ['#stmtFromDate', '#stmtToDate', '#dnDate', '#billDate', '#billDueDate', '#paymentDate', '#billLotMfg', '#billLotExpiry'].forEach(sel => flatpickr(sel, opts));
 }
 
 // ============================================================================
@@ -622,11 +622,76 @@ async function loadBillIntoModal(id, mode) {
         calculateBillTotals();
         await renderBillCustomFields(bill.id);
         setBillModalMode(effectiveMode, bill);
+        renderBillBatchCapture(bill);
         AccountsCommon.showFormPage('vendorBillModal');
     } catch (err) {
         console.error('[Payables] loadBillIntoModal error:', err);
         Toast.error('Failed to load bill details');
     }
+}
+
+// After an approved bill's stock is received, record WHICH lot arrived for each batch-tracked item line
+// (links the batch/expiry to the bill line for traceability). Only shown on approved bills with batch items.
+function renderBillBatchCapture(bill) {
+    document.getElementById('billBatchSection')?.remove();
+    if ((bill.status || 'draft') === 'draft') return;
+    const lines = bill.lines || bill.line_items || [];
+    const batchLines = lines.filter(l => {
+        const it = inventoryItems.find(i => i.id === l.item_id);
+        return it && it.tracking_mode === 'batch' && l.id;
+    });
+    if (!batchLines.length) return;
+    const esc = AccountsCommon.escapeHtml;
+    const rows = batchLines.map(l => {
+        const it = inventoryItems.find(i => i.id === l.item_id);
+        const hasLot = l.batch_number;
+        return `<tr>
+            <td>${esc(it.sku)}</td><td>${esc(it.name)}</td><td style="text-align:right;">${l.quantity ?? l.qty ?? ''}</td>
+            <td>${hasLot ? `<span class="status-badge status-active">${esc(l.batch_number)}${l.expiry_date ? ' · exp ' + AccountsCommon.formatDate(l.expiry_date) : ''}</span>` : '<span style="color:var(--color-warning);">Lot not recorded</span>'}</td>
+            <td class="actions-cell"><button class="btn btn-sm btn-outline" onclick="openBillLotModal('${bill.id}','${l.id}','${esc((it.sku + ' — ' + it.name).replace(/'/g, ''))}')">${hasLot ? 'Update lot' : 'Set lot'}</button></td>
+        </tr>`;
+    }).join('');
+    const section = document.createElement('div');
+    section.id = 'billBatchSection';
+    section.style.cssText = 'margin-top:16px;';
+    section.innerHTML = `
+        <h4 style="font-size:.95rem;margin:0 0 6px;">Received lots (batch-tracked items)</h4>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 8px;">Record the lot/expiry that physically arrived against each batch item on this bill.</p>
+        <div class="data-table-container"><table class="data-table">
+            <thead><tr><th>SKU</th><th>Item</th><th style="text-align:right;">Qty</th><th>Lot</th><th></th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table></div>`;
+    const anchor = document.getElementById('billLinesBody')?.closest('.data-table-container') || document.getElementById('billLinesBody')?.closest('table');
+    (anchor?.parentElement || document.querySelector('#vendorBillModal .modal-body') || document.body).insertBefore(section, anchor ? anchor.nextSibling : null);
+}
+
+let _billLotDD = null;
+function openBillLotModal(billId, lineId, itemLabel) {
+    document.getElementById('billLotBillId').value = billId;
+    document.getElementById('billLotLineId').value = lineId;
+    document.getElementById('billLotItem').textContent = itemLabel;
+    ['billLotNumber', 'billLotMrp'].forEach(id => document.getElementById(id).value = '');
+    AccountsCommon.setDateField('billLotMfg', '');
+    AccountsCommon.setDateField('billLotExpiry', '');
+    AccountsCommon.openModal('billLotModal');
+}
+async function saveBillLineBatch() {
+    const billId = document.getElementById('billLotBillId').value;
+    const lineId = document.getElementById('billLotLineId').value;
+    const batch_number = document.getElementById('billLotNumber').value.trim();
+    if (!batch_number) { Toast.error('Batch / lot number is required'); return; }
+    const body = {
+        batch_number,
+        mfg_date: document.getElementById('billLotMfg').value || null,
+        expiry_date: document.getElementById('billLotExpiry').value || null,
+        mrp: parseFloat(document.getElementById('billLotMrp').value) || null
+    };
+    try {
+        await api.request(AccountsCommon.buildUrl(`vendor-bills/${billId}/lines/${lineId}/batch`), { method: 'POST', body: JSON.stringify(body) });
+        Toast.success('Lot recorded');
+        AccountsCommon.closeModal('billLotModal');
+        await loadBillIntoModal(billId, 'view');   // refresh the batch section
+    } catch (e) { Toast.error(e.message || 'Failed to record lot'); }
 }
 
 async function editBill(id) { return loadBillIntoModal(id, 'edit'); }
@@ -701,6 +766,7 @@ function addBillLine(data) {
     const row = document.createElement('tr');
     row.dataset.lineIdx = idx;
     if (data && data.item_id) row.dataset.itemId = data.item_id;
+    if (data && data.id) row.dataset.lineId = data.id;   // persisted line id — used for lot capture on approved bills
 
     const d = billLines[idx];
     const accountOpts = '<option value="">Select...</option>' +

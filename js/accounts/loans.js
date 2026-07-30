@@ -145,9 +145,57 @@ function renderLoans() {
             <td><span class="badge ${statusClass}">${AccountsCommon.escapeHtml((l.status || '').replace(/\b\w/g, c => c.toUpperCase()))}</span></td>
             <td class="actions-cell">
                 <button class="btn btn-sm btn-outline" onclick="viewLoan('${AccountsCommon.escJs(l.id)}')">View / Pay EMI</button>
+                ${accountsRoles.isAdmin() && (l.status || 'active') === 'active' ? `
+                <button class="btn-icon" onclick="forecloseLoan('${AccountsCommon.escJs(l.id)}','${AccountsCommon.escJs(l.loan_number || l.reference || '')}')" data-tooltip="Foreclose (settle early)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
+                <button class="btn-icon btn-icon-danger" onclick="cancelLoan('${AccountsCommon.escJs(l.id)}','${AccountsCommon.escJs(l.loan_number || l.reference || '')}')" data-tooltip="Cancel loan"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>` : ''}
             </td>
         </tr>`;
     }).join('');
+}
+
+// Foreclose a loan — settle the full outstanding principal now and close the schedule.
+async function forecloseLoan(id, number) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Foreclose loan ${number}?`,
+        message: 'Settles the entire outstanding principal today and closes all remaining installments.',
+        confirmText: 'Foreclose', danger: false
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`loans/${id}/foreclose`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('Loan foreclosed');
+        await loadLoans();
+    } catch (e) { Toast.error(e.message || 'Foreclose failed'); }
+}
+
+// Cancel a loan booked in error (reverses the disbursement GL, only while no EMI is paid).
+async function cancelLoan(id, number) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Cancel loan ${number}?`,
+        message: 'Reverses the disbursement entry. Only possible while no installment has been paid.',
+        confirmText: 'Cancel loan'
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`loans/${id}/cancel`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('Loan cancelled');
+        await loadLoans();
+    } catch (e) { Toast.error(e.message || 'Cancel failed'); }
+}
+
+// Void a paid EMI (e.g. wrong receipt): reverses that installment's GL entry and re-opens it as pending.
+async function voidInstallment(loanId, installmentId, number) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Void EMI #${number}?`,
+        message: 'Reverses this installment payment and re-opens it as pending.',
+        confirmText: 'Void EMI'
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`loans/${loanId}/installments/${installmentId}/void`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('EMI voided');
+        await viewLoan(loanId);
+    } catch (e) { Toast.error(e.message || 'Void failed'); }
 }
 
 function openCreateLoan() {
@@ -245,7 +293,9 @@ function renderLoanView(loan) {
         const isNext = !paid && s.installment_number === firstPendingNo;
         const action = (isAdmin && isNext)
             ? `<button class="btn btn-sm btn-primary" onclick="payInstallment('${AccountsCommon.escJs(loan.id)}','${AccountsCommon.escJs(s.id)}')">Pay EMI</button>`
-            : (paid ? '<span style="color:var(--color-success);font-size:0.8rem;">Paid</span>' : '<span style="color:var(--text-secondary);font-size:0.8rem;">—</span>');
+            : (paid
+                ? `<span style="color:var(--color-success);font-size:0.8rem;">Paid</span>${isAdmin ? ` <button class="btn-icon btn-icon-danger" onclick="voidInstallment('${AccountsCommon.escJs(loan.id)}','${AccountsCommon.escJs(s.id)}',${s.installment_number})" data-tooltip="Void this EMI payment"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg></button>` : ''}`
+                : '<span style="color:var(--text-secondary);font-size:0.8rem;">—</span>');
         return `<tr>
             <td>${s.installment_number}</td>
             <td>${AccountsCommon.escapeHtml(AccountsCommon.formatDate ? AccountsCommon.formatDate(s.due_date) : (s.due_date || '').slice(0, 10))}</td>

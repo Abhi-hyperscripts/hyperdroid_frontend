@@ -178,7 +178,8 @@ function renderSpendCharts(rows) {
     const short = (s) => (s || 'Unassigned').length > 16 ? s.slice(0, 15) + '…' : (s || 'Unassigned');
     const rank = _acRank(rows.map(r => ({ name: short(r.cost_centre_name), amt: parseFloat(r.spend || 0) })), 'name', 'amt', 8);
     rank.labels.length ? acBarH('ccSpendChart', rank.labels, rank.data) : _acEmpty('ccSpendChart');
+    // Polar area: each centre's share of spend, with the radius reinforcing magnitude.
     const names = rows.map(r => short(r.cost_centre_name));
-    acDonut('ccShareChart', names, rows.map(r => Math.round(parseFloat(r.spend || 0) * 100) / 100),
+    (typeof acPolar === 'function' ? acPolar : acDonut)('ccShareChart', names, rows.map(r => Math.round(parseFloat(r.spend || 0) * 100) / 100),
             names.map((n, i) => _acPalette[i % _acPalette.length]));
 }

@@ -103,10 +103,38 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             Add Budget
                         </button>
+                        <button class="btn btn-outline" onclick="openBulkModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                            Bulk Entry
+                        </button>
                         <button class="btn btn-outline" onclick="openCopyModal()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                             Copy from Prior Year
                         </button>
+                    </div>
+                </div>
+
+                <!-- Bulk budget entry modal -->
+                <div id="bulkBudgetModal" class="modal">
+                    <div class="modal-content" style="max-width:640px;">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Bulk Budget Entry</h5>
+                            <button class="close-btn" onclick="AccountsCommon.closeModal('bulkBudgetModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="font-size:.85rem;color:var(--text-secondary);margin:0 0 10px;">Set the annual budget for every income &amp; expense account at once. Existing amounts are pre-filled; blank rows are skipped. The annual figure is spread evenly across 12 months.</p>
+                            <input type="text" id="bulkBudgetSearch" class="form-control" placeholder="Filter accounts…" style="margin-bottom:8px;" oninput="filterBulkRows()">
+                            <div class="data-table-container" style="max-height:400px;overflow-y:auto;">
+                                <table class="data-table">
+                                    <thead><tr><th>Account</th><th>Type</th><th style="width:160px;text-align:right;">Annual amount</th></tr></thead>
+                                    <tbody id="bulkBudgetRows"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-outline" onclick="AccountsCommon.closeModal('bulkBudgetModal')">Cancel</button>
+                            <button class="btn btn-primary" id="bulkBudgetSaveBtn" onclick="saveBulkBudgets()">Save All</button>
+                        </div>
                     </div>
                 </div>
 

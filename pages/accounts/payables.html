@@ -663,6 +663,29 @@
     </div>
 
     <!-- Vendor Payment Modal -->
+    <!-- Vendor-bill line lot capture -->
+    <div id="billLotModal" class="modal">
+        <div class="modal-content" style="max-width:480px;">
+            <div class="modal-header"><h3>Record received lot</h3><button class="close-btn" onclick="AccountsCommon.closeModal('billLotModal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="billLotBillId"><input type="hidden" id="billLotLineId">
+                <p style="font-size:.85rem;color:var(--text-secondary);margin:0 0 10px;"><strong id="billLotItem"></strong></p>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Batch / Lot # *</label><input type="text" id="billLotNumber" class="form-control"></div>
+                    <div class="form-group"><label>MRP</label><input type="number" id="billLotMrp" class="form-control" step="0.01" min="0"></div>
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Mfg date</label><input type="text" id="billLotMfg" class="form-control" placeholder="Select date"></div>
+                    <div class="form-group"><label>Expiry date</label><input type="text" id="billLotExpiry" class="form-control" placeholder="Select date"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('billLotModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveBillLineBatch()">Record lot</button>
+            </div>
+        </div>
+    </div>
+
     <div id="vendorPaymentModal" class="modal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">

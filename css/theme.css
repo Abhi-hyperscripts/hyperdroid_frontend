@@ -117,6 +117,9 @@
      BACKGROUND COLORS
      ═══════════════════════════════════════════════════════════════════════════ */
   --bg-body: #f5f7fa;
+  /* Generic app surfaces (see dark-mode note). Light values: base + a subtle grey step. */
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #eef2f7;
   --bg-card: #ffffff;
   --bg-card-rgb: 255, 255, 255;        /* RGB values for rgba() glass usage */
   --bg-card-hover: #f9fafb;
@@ -543,6 +546,11 @@
 [data-theme="dark"] {
   /* Background colors */
   --bg-body: #0f172a;
+  /* Generic app surfaces referenced across the app (previously UNDEFINED → callers fell back to LIGHT
+     hardcodes like #f4f6f9, causing white surfaces in dark mode). Defined here so every consumer gets a
+     dark surface. --bg-primary = app base; --bg-secondary = a subtle step above it. */
+  --bg-primary: #0f172a;
+  --bg-secondary: #172234;
   --bg-card: #1e293b;
   --bg-card-rgb: 30, 41, 59;           /* RGB values for rgba() glass usage */
   --bg-card-hover: #334155;

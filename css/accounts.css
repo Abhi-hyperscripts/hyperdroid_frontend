@@ -143,7 +143,7 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--bg-primary, rgba(0,0,0,0.5));
+    background: var(--bg-modal-overlay, rgba(0,0,0,0.5));   /* dim backdrop — stay semi-transparent now that --bg-primary is a solid surface */
     z-index: 9998;
     align-items: center;
     justify-content: center;
@@ -2199,7 +2199,7 @@ textarea.form-control {
     height: 36px;
     border: 1px solid var(--border-primary);
     border-radius: 6px;
-    background: var(--bg-secondary);
+    background: var(--bg-input);   /* was undefined --bg-secondary (transparent); use the themed input surface */
     padding: 0 12px;
     flex: 1;
     min-width: 180px;
@@ -2316,7 +2316,10 @@ textarea.form-control {
 .acc-form-page {
     padding: 76px 16px 104px;      /* top clears the fixed 76px navbar; bottom clears the fixed footer */
     min-height: 100vh;
-    background: var(--bg-secondary, #f4f6f9);
+    /* --bg-secondary is not defined by the theme, so the old `var(--bg-secondary,#f4f6f9)` fell back to a
+       LIGHT surface even in dark mode (white page + dark cards). --bg-body is the real theme-aware app
+       background (dark #0f172a / light #f5f7fa), so the form page now matches the rest of the app. */
+    background: var(--bg-body);
 }
 .acc-form-page__inner { max-width: 1080px; margin: 0 auto; }
 .acc-form-page__head { padding: 1.4rem 0 1.2rem; }

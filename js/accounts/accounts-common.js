@@ -1215,6 +1215,54 @@ const AccountsCommon = {
     },
 
     /**
+     * Reason-capturing confirmation used by lifecycle actions that post an audit reason
+     * (write-off, void, cancel, foreclose, reverse, unapprove …). Resolves to the entered
+     * reason string on confirm, or null if cancelled. `required` blocks confirm until text is entered.
+     */
+    reasonPrompt({ title = 'Confirm', message = '', confirmText = 'Confirm', placeholder = 'Reason (recorded on the audit trail)…', required = true, danger = true } = {}) {
+        return new Promise((resolve) => {
+            document.querySelector('.acct-reason-overlay')?.remove();
+            const esc = (s) => this.escapeHtml(s);
+            // Reuse the app's own .modal / .modal-content chrome so it matches every other dialog
+            // (glassmorphic surface, centered, themed) instead of a bespoke overlay.
+            const overlay = document.createElement('div');
+            overlay.className = 'modal active acct-reason-overlay';
+            overlay.innerHTML = `
+                <div class="modal-content" style="max-width:460px;">
+                    <div class="modal-header">
+                        <h3>${esc(title)}</h3>
+                        <button class="close-btn acct-reason-cancel" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        ${message ? `<p style="margin:0 0 .75rem;color:var(--text-secondary);font-size:.9rem;line-height:1.5;">${esc(message)}</p>` : ''}
+                        <div class="form-group" style="margin:0;">
+                            <textarea class="form-control acct-reason-input" rows="3" placeholder="${esc(placeholder)}"></textarea>
+                            <div class="acct-reason-err" style="color:var(--color-error);font-size:.8rem;margin-top:6px;display:none;">Please enter a reason.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline acct-reason-cancel">Cancel</button>
+                        <button class="btn ${danger ? 'btn-danger' : 'btn-primary'} acct-reason-ok">${esc(confirmText)}</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+            document.body.classList.add('modal-open');
+            const ta = overlay.querySelector('.acct-reason-input');
+            const err = overlay.querySelector('.acct-reason-err');
+            setTimeout(() => ta.focus(), 50);
+            const close = (val) => { overlay.remove(); if (!document.querySelector('.modal.active')) document.body.classList.remove('modal-open'); resolve(val); };
+            overlay.querySelectorAll('.acct-reason-cancel').forEach(b => b.onclick = () => close(null));
+            overlay.querySelector('.acct-reason-ok').onclick = () => {
+                const v = ta.value.trim();
+                if (required && !v) { err.style.display = ''; ta.focus(); return; }
+                close(v || '');
+            };
+            ta.addEventListener('input', () => { if (ta.value.trim()) err.style.display = 'none'; });
+            overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) close(null); });
+        });
+    },
+
+    /**
      * Convert all native <select> inside a modal to SearchableDropdown.
      * Skips selects that are already converted (have data-searchable attribute).
      */

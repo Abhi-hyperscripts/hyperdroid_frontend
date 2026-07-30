@@ -358,6 +358,9 @@ function renderAssets() {
             if (status === 'active') {
                 actions += `<button class="btn-icon danger" onclick="showDisposeModal('${a.id}')" data-tooltip="Dispose"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`;
             }
+            if (status === 'disposed') {
+                actions += `<button class="btn-icon" onclick="reverseDisposal('${a.id}','${AccountsCommon.escJs(a.asset_code || a.code || '')}')" data-tooltip="Reverse disposal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>`;
+            }
         }
 
         return `<tr>
@@ -371,6 +374,21 @@ function renderAssets() {
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
+}
+
+// Reverse a fixed-asset disposal — restores the asset to active and reverses the disposal GL entry.
+async function reverseDisposal(id, code) {
+    const reason = await AccountsCommon.reasonPrompt({
+        title: `Reverse disposal of ${code}?`,
+        message: 'Restores the asset to Active and reverses the disposal GL entry (gain/loss and accumulated-depreciation write-back).',
+        confirmText: 'Reverse disposal', danger: false
+    });
+    if (reason == null) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`assets/${id}/reverse-disposal`), { method: 'POST', body: JSON.stringify({ reason }) });
+        Toast.success('Disposal reversed — asset is active again');
+        if (typeof loadAssets === 'function') await loadAssets(); else location.reload();
+    } catch (e) { Toast.error(e.message || 'Reverse failed'); }
 }
 
 // Backend UpdateAssetBody only accepts { name, description, location, department } —
