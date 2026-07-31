@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         'customer-payments': 'Payments',
         'credit-notes': 'Credit Notes',
         'delivery-challans': 'Delivery Challans',
+        'sales-orders': 'Sales Orders',
         'ar-aging': 'AR Aging',
         'overdue-interest': 'Overdue Interest',
         'customer-statements': 'Customer Statements'
@@ -83,6 +84,7 @@ function onTabSwitch(tabId) {
         case 'customer-payments':   loadCustomerPayments(); break;
         case 'credit-notes':        loadCreditNotes(); break;
         case 'delivery-challans':   loadChallans(); break;
+        case 'sales-orders':        loadSalesOrders(); break;
         case 'ar-aging':            loadARAging(); break;
         case 'overdue-interest':    loadInterestReport(); break;
         case 'customer-statements': break; // user-triggered
@@ -3050,4 +3052,307 @@ async function raiseInterestInvoice(customerId, customerName) {
     } catch (err) {
         Toast.error(err?.message || 'Failed to raise interest invoice');
     }
+}
+
+// ============================================================================
+// SALES ORDERS (order booking) — the delivery-challan pattern: pure document,
+// stock/GL move only when the converted invoice is approved.
+// ============================================================================
+
+let salesOrdersCache = [];
+let soCustomerDD = null;
+
+async function loadSalesOrders() {
+    try {
+        const status = document.getElementById('soStatusFilter')?.value || '';
+        const params = { limit: 500 };
+        if (status) params.status = status;
+        const res = await api.request(AccountsCommon.buildUrl('sales-orders', params), { _skipSpinner: true });
+        salesOrdersCache = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        let all = salesOrdersCache;
+        if (status) {
+            try {
+                const allRes = await api.request(AccountsCommon.buildUrl('sales-orders', { limit: 500 }), { _skipSpinner: true });
+                all = Array.isArray(allRes) ? allRes : (allRes?.data || allRes?.items || []);
+            } catch { /* keep filtered set */ }
+        }
+        document.getElementById('soTotal').textContent = all.length;
+        document.getElementById('soDraft').textContent = all.filter(o => o.status === 'draft').length;
+        document.getElementById('soConfirmed').textContent = all.filter(o => o.status === 'confirmed').length;
+        document.getElementById('soInvoiced').textContent = all.filter(o => o.status === 'invoiced').length;
+        renderSalesOrdersTable();
+    } catch (err) {
+        console.error('[SO] load error:', err);
+        Toast.error('Failed to load sales orders');
+    }
+}
+
+function renderSalesOrdersTable() {
+    const tbody = document.getElementById('salesOrdersTable');
+    if (!tbody) return;
+    const esc = AccountsCommon.escapeHtml;
+    const q = (document.getElementById('soSearch')?.value || '').trim().toLowerCase();
+    const rows = salesOrdersCache.filter(o => !q ||
+        (o.order_number || '').toLowerCase().includes(q) ||
+        (o.customer_name || '').toLowerCase().includes(q) ||
+        (o.booked_by || '').toLowerCase().includes(q));
+    if (!rows.length) {
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <p>${q ? 'No orders match your search' : 'No sales orders — book field/phone orders here, bill them when fulfilling'}</p></div></td></tr>`;
+        return;
+    }
+    const icon = {
+        view: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+        confirm: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+        convert: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>',
+        cancel: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+        del: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+    };
+    tbody.innerHTML = rows.map(o => {
+        const acts = [`<button class="btn-icon" onclick="viewSalesOrder('${o.id}')" data-tooltip="View">${icon.view}</button>`];
+        if (o.status === 'draft') {
+            acts.push(`<button class="btn-icon" onclick="confirmSalesOrder('${o.id}')" data-tooltip="Confirm (assign number)" data-admin-only>${icon.confirm}</button>`);
+            acts.push(`<button class="btn-icon btn-icon-danger" onclick="deleteSalesOrder('${o.id}')" data-tooltip="Delete draft" data-admin-only>${icon.del}</button>`);
+        } else if (o.status === 'confirmed') {
+            acts.push(`<button class="btn-icon" onclick="convertSalesOrder('${o.id}')" data-tooltip="Convert to invoice" data-admin-only>${icon.convert}</button>`);
+            acts.push(`<button class="btn-icon btn-icon-danger" onclick="cancelSalesOrder('${o.id}')" data-tooltip="Cancel order" data-admin-only>${icon.cancel}</button>`);
+        }
+        return `<tr>
+            <td><strong>${esc(o.order_number)}</strong></td>
+            <td>${esc(o.customer_name || '')}</td>
+            <td>${AccountsCommon.formatDate(o.order_date)}</td>
+            <td>${o.expected_date ? AccountsCommon.formatDate(o.expected_date) : '—'}</td>
+            <td>${esc(o.booked_by || '—')}</td>
+            <td>${AccountsCommon.statusBadge(o.status)}</td>
+            <td class="table-actions">${acts.join('')}</td>
+        </tr>`;
+    }).join('');
+    accountsRoles.applyRBAC();
+}
+
+// ── Full-page form (create + read-only view) ───────────────────────────────
+
+async function showSalesOrderForm() {
+    if (!inventoryItems.length) {
+        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }); } catch { inventoryItems = []; }
+    }
+    document.getElementById('soFormTitle').textContent = 'New Sales Order';
+    document.getElementById('soId').value = '';
+    document.getElementById('soBookedBy').value = '';
+    document.getElementById('soNotes').value = '';
+    document.getElementById('soLines').innerHTML = '';
+    document.getElementById('soStatusBanner').style.display = 'none';
+    _setSoReadOnly(false);
+    if (typeof flatpickr === 'function') {
+        flatpickr('#soDate', { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+        flatpickr('#soExpected', { dateFormat: 'Y-m-d', allowInput: true });
+    }
+    soCustomerDD = new SearchableDropdown(document.getElementById('soCustomerDD'), {
+        id: 'soCustomerSD',
+        options: [{ value: '', label: 'Select customer...' },
+            ...customers.filter(c => c.is_active !== false).map(c => ({ value: c.id, label: c.name }))],
+        value: '', placeholder: 'Select customer...', searchPlaceholder: 'Search customers…'
+    });
+    addSoLine();
+    AccountsCommon.showFormPage('salesOrderModal');
+}
+
+function addSoLine(data = {}) {
+    const tbody = document.getElementById('soLines');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><div class="searchable-dropdown-container so-item-sd"></div></td>
+        <td><input type="number" class="form-control so-qty" value="${data.quantity ?? 1}" min="0" step="any"><div class="searchable-dropdown-container so-uom-sd" style="margin-top:2px;"></div></td>
+        <td><input type="number" class="form-control so-price" value="${data.unit_price ?? ''}" min="0" step="0.01" placeholder="catalog"></td>
+        <td><button type="button" class="btn-icon btn-icon-danger" onclick="this.closest('tr').remove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
+    tbody.appendChild(row);
+    const active = inventoryItems.filter(i => i.is_active);
+    row._itemDD = new SearchableDropdown(row.querySelector('.so-item-sd'), {
+        id: `so-item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: [{ value: '', label: 'Select item...' },
+            ...active.map(i => ({ value: i.id, label: `${i.sku} — ${i.name}` }))],
+        value: data.item_id || '', placeholder: 'Select item...', searchPlaceholder: 'Search SKU / name…', compact: true,
+        onChange: (v) => _buildSoUomPicker(row, v)
+    });
+    if (data.item_id) _buildSoUomPicker(row, data.item_id, data.uom);
+}
+
+function _buildSoUomPicker(row, itemId, presetUom = null) {
+    const holder = row.querySelector('.so-uom-sd');
+    holder.innerHTML = '';
+    row._lineUom = null;
+    const it = inventoryItems.find(x => x.id === itemId);
+    if (!it || it.item_type !== 'goods') return;
+    const choices = [...new Set([it.unit, it.sale_unit].filter(Boolean))];
+    if (choices.length > 1) {
+        const start = presetUom || it.unit;
+        row._uomDD = new SearchableDropdown(holder, {
+            id: `so-uom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            options: choices.map(u => ({ value: u, label: u })), value: start, compact: true,
+            onChange: (v) => { row._lineUom = v; _defaultSoPrice(row, it, v); }
+        });
+        row._lineUom = start;
+    }
+    _defaultSoPrice(row, it, row._lineUom || it.unit);
+}
+
+function _defaultSoPrice(row, it, uom) {
+    const conv = (it.sale_unit && uom && uom.toLowerCase() === it.sale_unit.toLowerCase()) ? (it.sale_conversion || 1) : 1;
+    const el = row.querySelector('.so-price');
+    const fresh = Math.round((it.sale_price || 0) * conv * 100) / 100;
+    const raw = (el.value || '').trim();
+    if (raw === '' || parseFloat(raw) === row._lastDefaultPrice) el.value = fresh || '';
+    row._lastDefaultPrice = fresh;
+}
+
+async function saveSalesOrder() {
+    const customerId = soCustomerDD?.getValue?.();
+    if (!customerId) { Toast.error('Pick a customer'); return; }
+    const date = document.getElementById('soDate').value;
+    if (!date) { Toast.error('Pick the order date'); return; }
+    const lines = [];
+    for (const row of document.querySelectorAll('#soLines tr')) {
+        const itemId = row._itemDD?.getValue?.();
+        if (!itemId) continue;
+        const qty = parseFloat(row.querySelector('.so-qty').value);
+        if (!(qty > 0)) { Toast.error('Every line needs a quantity above zero'); return; }
+        const priceRaw = (row.querySelector('.so-price').value || '').trim();
+        lines.push({
+            item_id: itemId, quantity: qty,
+            uom: row._lineUom || null,
+            unit_price: priceRaw === '' ? null : Math.round(parseFloat(priceRaw) * 100) / 100
+        });
+    }
+    if (!lines.length) { Toast.error('Add at least one item line'); return; }
+    const btn = document.getElementById('soSaveBtn');
+    btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl('sales-orders'), {
+            method: 'POST',
+            body: JSON.stringify({
+                customer_id: customerId, order_date: date,
+                expected_date: document.getElementById('soExpected').value || null,
+                booked_by: document.getElementById('soBookedBy').value.trim() || null,
+                notes: document.getElementById('soNotes').value.trim() || null,
+                lines
+            })
+        });
+        Toast.success('Draft order saved — confirm it to assign the SO number');
+        AccountsCommon.hideFormPage('salesOrderModal');
+        loadSalesOrders();
+    } catch (err) {
+        Toast.error(err?.message || 'Failed to save order');
+    } finally { btn.disabled = false; }
+}
+
+async function viewSalesOrder(id) {
+    try {
+        const so = await api.request(AccountsCommon.buildUrl('sales-orders/' + id));
+        if (!so) return;
+        const esc = AccountsCommon.escapeHtml;
+        document.getElementById('soFormTitle').textContent = `Order ${so.order_number}`;
+        document.getElementById('soId').value = so.id;
+        document.getElementById('soDate').value = (so.order_date || '').slice(0, 10);
+        document.getElementById('soExpected').value = so.expected_date ? so.expected_date.slice(0, 10) : '';
+        document.getElementById('soBookedBy').value = so.booked_by || '';
+        document.getElementById('soNotes').value = so.notes || '';
+        soCustomerDD = new SearchableDropdown(document.getElementById('soCustomerDD'), {
+            id: 'soCustomerSD', options: [{ value: so.customer_id, label: so.customer_name || 'Customer' }], value: so.customer_id
+        });
+        document.getElementById('soLines').innerHTML = (so.lines || []).map(l => `<tr>
+            <td>${esc(l.item_sku)} — ${esc(l.item_name)}</td>
+            <td>${Number(l.quantity) || 0}${l.uom ? ' ' + esc(l.uom) : ''}${l.uom && Number(l.uom_conversion) !== 1 ? ` <span style="color:var(--text-secondary);font-size:.78rem;">(× ${Number(l.uom_conversion)})</span>` : ''}</td>
+            <td>${l.unit_price != null ? AccountsCommon.formatCurrency(l.unit_price) : '<span style="color:var(--text-secondary);">catalog</span>'}</td>
+            <td></td>
+        </tr>`).join('');
+        const banner = document.getElementById('soStatusBanner');
+        banner.style.display = '';
+        banner.innerHTML = `<div style="background:var(--bg-card-hover);border:1px solid var(--border-color);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.85rem;">
+            Status: ${AccountsCommon.statusBadge(so.status)}${so.status === 'invoiced' ? ' — billed; find the invoice on the Invoices tab.' : ''}
+            ${so.status === 'confirmed' ? ' — convert to an invoice when fulfilling; stock moves only at invoice approval.' : ''}
+            ${so.status === 'draft' ? ' — drafts are editable paperwork; confirm to assign the serial SO number.' : ''}</div>`;
+        _setSoReadOnly(true, so);
+        AccountsCommon.showFormPage('salesOrderModal');
+    } catch (err) {
+        Toast.error('Failed to load the order');
+    }
+}
+
+function _setSoReadOnly(readOnly, so = null) {
+    const modal = document.getElementById('salesOrderModal');
+    modal.querySelectorAll('input').forEach(el => { if (el.type !== 'hidden') el.disabled = readOnly; });
+    modal.querySelectorAll('.searchable-dropdown-container').forEach(el => {
+        el.style.pointerEvents = readOnly ? 'none' : '';
+        el.style.opacity = readOnly ? '0.7' : '';
+    });
+    document.getElementById('soAddLineBtn').style.display = readOnly ? 'none' : '';
+    const footer = document.getElementById('soFormFooter');
+    if (!readOnly) {
+        footer.innerHTML = `<button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('salesOrderModal')">Cancel</button>
+            <button class="btn btn-primary" id="soSaveBtn" onclick="saveSalesOrder()">Save Draft</button>`;
+        return;
+    }
+    const acts = [`<button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('salesOrderModal')">Close</button>`];
+    if (so?.status === 'draft') {
+        acts.push(`<button class="btn btn-danger" onclick="AccountsCommon.hideFormPage('salesOrderModal');deleteSalesOrder('${so.id}')" data-admin-only>Delete</button>`);
+        acts.push(`<button class="btn btn-primary" onclick="AccountsCommon.hideFormPage('salesOrderModal');confirmSalesOrder('${so.id}')" data-admin-only>Confirm Order</button>`);
+    } else if (so?.status === 'confirmed') {
+        acts.push(`<button class="btn btn-danger" onclick="AccountsCommon.hideFormPage('salesOrderModal');cancelSalesOrder('${so.id}')" data-admin-only>Cancel Order</button>`);
+        acts.push(`<button class="btn btn-primary" onclick="AccountsCommon.hideFormPage('salesOrderModal');convertSalesOrder('${so.id}')" data-admin-only>Convert to Invoice</button>`);
+    }
+    footer.innerHTML = acts.join('');
+    accountsRoles.applyRBAC();
+}
+
+// ── Lifecycle actions ───────────────────────────────────────────────────────
+
+async function confirmSalesOrder(id) {
+    try {
+        const so = await api.request(AccountsCommon.buildUrl(`sales-orders/${id}/confirm`), { method: 'POST' });
+        Toast.success(`Order ${so.order_number} confirmed`);
+        loadSalesOrders();
+    } catch (err) { Toast.error(err?.message || 'Failed to confirm order'); }
+}
+
+async function convertSalesOrder(id) {
+    const ok = await Confirm.show({
+        title: 'Convert to invoice?',
+        message: 'Creates a DRAFT invoice from the order lines at the booked prices. Stock and the ledger move only when you approve that invoice.',
+        confirmText: 'Convert'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`sales-orders/${id}/convert-to-invoice`), { method: 'POST' });
+        Toast.success('Draft invoice created — review and approve it on the Invoices tab');
+        loadSalesOrders();
+    } catch (err) { Toast.error(err?.message || 'Failed to convert order'); }
+}
+
+async function cancelSalesOrder(id) {
+    const ok = await Confirm.show({
+        title: 'Cancel this order?',
+        message: 'Use when the customer backs out. An invoiced order cannot be cancelled.',
+        confirmText: 'Cancel Order', type: 'warning'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`sales-orders/${id}/cancel`), { method: 'POST' });
+        Toast.success('Order cancelled');
+        loadSalesOrders();
+    } catch (err) { Toast.error(err?.message || 'Failed to cancel order'); }
+}
+
+async function deleteSalesOrder(id) {
+    const ok = await Confirm.show({
+        title: 'Delete this draft?',
+        message: 'Draft orders have no number and no effect on the books — deleting is safe.',
+        confirmText: 'Delete', type: 'danger'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl('sales-orders/' + id), { method: 'DELETE' });
+        Toast.success('Draft order deleted');
+        loadSalesOrders();
+    } catch (err) { Toast.error(err?.message || 'Failed to delete order'); }
 }

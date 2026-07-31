@@ -114,6 +114,9 @@
                             <button class="sidebar-btn" data-tab="delivery-challans" id="deliveryChallansTab">
                                 <span class="nav-number">4</span><span class="nav-label">Delivery Challans</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="sales-orders" id="salesOrdersTab">
+                                <span class="nav-number">5</span><span class="nav-label">Sales Orders</span>
+                            </button>
                         </div>
                     </div>
 
@@ -131,16 +134,16 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="ar-aging" id="arAgingTab">
-                                <span class="nav-number">5</span><span class="nav-label">AR Aging</span>
+                                <span class="nav-number">6</span><span class="nav-label">AR Aging</span>
                             </button>
                             <button class="sidebar-btn" data-tab="overdue-interest" id="overdueInterestTab">
-                                <span class="nav-number">6</span><span class="nav-label">Overdue Interest</span>
+                                <span class="nav-number">7</span><span class="nav-label">Overdue Interest</span>
                             </button>
                             <button class="sidebar-btn" data-tab="customer-statements" id="customerStatementsTab">
-                                <span class="nav-number">7</span><span class="nav-label">Customer Statements</span>
+                                <span class="nav-number">8</span><span class="nav-label">Customer Statements</span>
                             </button>
                             <button class="sidebar-btn" data-tab="tds-receivable" id="tdsReceivableTab">
-                                <span class="nav-number">8</span><span class="nav-label">TDS Receivable</span>
+                                <span class="nav-number">9</span><span class="nav-label">TDS Receivable</span>
                             </button>
                         </div>
                     </div>
@@ -479,7 +482,46 @@
                 </div>
 
                 <!-- ============================================================ -->
-                <!-- Tab 5: AR Aging -->
+                <!-- Tab 5: Sales Orders -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="sales-orders">
+                    <div class="stats-row">
+                        <div class="stat-card"><div class="stat-value" id="soTotal">0</div><div class="stat-label">Total Orders</div></div>
+                        <div class="stat-card"><div class="stat-value" id="soDraft">0</div><div class="stat-label">Draft</div></div>
+                        <div class="stat-card"><div class="stat-value" id="soConfirmed">0</div><div class="stat-label">Confirmed (to fulfil)</div></div>
+                        <div class="stat-card"><div class="stat-value" id="soInvoiced">0</div><div class="stat-label">Invoiced</div></div>
+                    </div>
+                    <div class="filters-bar">
+                        <select id="soStatusFilter" class="form-control" style="max-width: 160px;" onchange="loadSalesOrders()">
+                            <option value="">All Statuses</option>
+                            <option value="draft">Draft</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="invoiced">Invoiced</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                            <input type="text" id="soSearch" placeholder="Search orders..." oninput="renderSalesOrdersTable()">
+                        </div>
+                        <button class="btn btn-primary" onclick="showSalesOrderForm()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            New Order
+                        </button>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead><tr><th>Order #</th><th>Customer</th><th>Date</th><th>Expected</th><th>Booked By</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="salesOrdersTable">
+                                <tr class="empty-state"><td colspan="7"><div class="empty-message">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    <p>No sales orders booked</p></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 6: AR Aging -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="ar-aging">
                     <div class="stats-row">
@@ -1036,6 +1078,56 @@
                 <div class="acc-form-page__actions-inner" id="challanModalFooter">
                     <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('challanModal')">Cancel</button>
                     <button class="btn btn-primary" id="challanSaveBtn" onclick="saveChallan()">Save Draft</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales order full-page form (create + view) -->
+    <div id="salesOrderModal" class="acc-form-page" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('salesOrderModal'); return false;">Sales Orders</a>
+                </nav>
+                <h1 class="acc-form-page__title" id="soFormTitle">New Sales Order</h1>
+            </div>
+            <form class="acc-form" onsubmit="return false;">
+                <input type="hidden" id="soId">
+                <div id="soStatusBanner" style="display:none;"></div>
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Order Details</div>
+                    <div class="pgrid">
+                        <div class="form-group"><label>Customer <span class="req">*</span></label><div class="searchable-dropdown-container" id="soCustomerDD"></div></div>
+                        <div class="form-group"><label for="soDate">Order Date <span class="req">*</span></label><input type="text" id="soDate" class="form-control" placeholder="Select date"></div>
+                        <div class="form-group"><label for="soExpected">Expected Delivery <span class="opt">(optional)</span></label><input type="text" id="soExpected" class="form-control" placeholder="Select date"></div>
+                        <div class="form-group"><label for="soBookedBy">Booked By <span class="opt">(salesman / route)</span></label><input type="text" id="soBookedBy" class="form-control" maxlength="120" placeholder="e.g. Ravi — Route 4"></div>
+                        <div class="form-group pf-wide"><label for="soNotes">Notes <span class="opt">(optional)</span></label><input type="text" id="soNotes" class="form-control" maxlength="500"></div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Order Lines</div>
+                    <div class="po-lines-wrap">
+                        <div class="data-table-container po-lines-container">
+                            <table class="data-table po-lines-table">
+                                <thead><tr><th style="min-width:260px;">Item *</th><th style="width:150px;">Qty / Unit</th><th style="width:150px;">Agreed Price</th><th style="width:40px;"></th></tr></thead>
+                                <tbody id="soLines"></tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-outline po-add-line-btn" id="soAddLineBtn" style="margin-top: 0.75rem;" onclick="addSoLine()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Add Line
+                        </button>
+                        <small class="field-hint" style="display:block;margin-top:6px;">Agreed price is per entered unit — blank bills at the item's sale price at conversion time.</small>
+                    </div>
+                </div>
+            </form>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner" id="soFormFooter">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('salesOrderModal')">Cancel</button>
+                    <button class="btn btn-primary" id="soSaveBtn" onclick="saveSalesOrder()">Save Draft</button>
                 </div>
             </div>
         </div>
