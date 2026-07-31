@@ -787,7 +787,7 @@ async function initInvoiceItemPicker() {
                 // Default the revenue account: item's own, else first income option already in the line dropdown.
                 addInvoiceLine({
                     item_id: it.id, description: it.name, hsn_sac: it.hsn_sac || '',
-                    quantity: 1, unit_price: it.sale_price,
+                    quantity: 1, unit_price: effectiveItemPrice(it),   // customer's price list, else catalog
                     account_id: it.income_account_id || AccountsCommon.postableAccounts(accounts, 'income')[0]?.id || undefined,
                     ...(it.tax_config_id ? { tax_config_id: it.tax_config_id } : {})
                 });
@@ -965,6 +965,7 @@ async function editInvoice(id) {
         // rendering lines before the catalog arrives degraded alt-unit lines to a locked single-option
         // dropdown (and hid the picker entirely on base-unit lines) on the first edit after page load.
         await initInvoiceItemPicker();
+        await loadInvoicePriceList();   // the edit-loaded customer's rates drive any newly added lines
         if (fxRate > 0) {
             document.getElementById('invoiceExchangeRate').value = fxRate;
             const rh = document.getElementById('invoiceRateHint');
@@ -1107,13 +1108,14 @@ function addInvoiceLine(data = {}) {
                     // Convenience: if the rate still matches the previous unit's catalog default,
                     // rescale it to the newly picked unit (base price × its conversion).
                     if (invIt) {
+                        const basePx = effectiveItemPrice(invIt);   // customer price list, else catalog
                         const convOf = (u) => (altU && u === altU) ? (invIt.sale_conversion || 1) : 1;
                         const rateEl = row.querySelector('.line-rate');
-                        const prevDefault = Math.round(invIt.sale_price * convOf(row._lineUom || startUom) * 100) / 100;
-                        // Rescale only an EMPTY rate or one still at the previous unit's catalog default —
+                        const prevDefault = Math.round(basePx * convOf(row._lineUom || startUom) * 100) / 100;
+                        // Rescale only an EMPTY rate or one still at the previous unit's default —
                         // a deliberately-typed price (including ₹0 free-of-charge) must survive a unit switch.
                         const raw = (rateEl.value || '').trim();
-                        if (raw === '' || parseFloat(raw) === prevDefault) rateEl.value = Math.round(invIt.sale_price * convOf(v) * 100) / 100;
+                        if (raw === '' || parseFloat(raw) === prevDefault) rateEl.value = Math.round(basePx * convOf(v) * 100) / 100;
                     }
                     row._lineUom = v;
                     calculateInvoiceTotals();
@@ -1194,8 +1196,32 @@ function _invoiceCustomerIsZeroRated() {
 
 /** On customer change: re-scope project dropdowns AND, for a zero-rated export, force every line to
  *  "No tax" and recalc so the preview total matches what the backend actually posts (no GST). */
+// ── Customer price list (Feature: price lists → sales) ──────────────────────
+// The assigned list's prices are per-BASE-unit DEFAULTS for new lines (same MRP-inclusive
+// semantics as item.sale_price). Existing lines are never silently repriced — a customer
+// switch only affects lines added afterwards, with a toast so the biller knows which book
+// of rates is in force. Missing/inactive list ⇒ standard prices (fail-safe fallback).
+let invoicePriceMap = new Map();
+let invoicePriceListName = '';
+async function loadInvoicePriceList() {
+    invoicePriceMap = new Map(); invoicePriceListName = '';
+    const custId = document.getElementById('invoiceCustomerId')?.value;
+    const cust = customers.find(c => c.id === custId);
+    if (!cust?.price_list_id) return;
+    try {
+        const rows = await api.request(AccountsCommon.buildUrl(`price-lists/${cust.price_list_id}/prices`), { _skipSpinner: true });
+        (Array.isArray(rows) ? rows : (rows?.data || [])).forEach(r => invoicePriceMap.set(r.item_id, parseFloat(r.price)));
+        const lists = await api.request(AccountsCommon.buildUrl('price-lists'), { _skipSpinner: true }).catch(() => []);
+        invoicePriceListName = (Array.isArray(lists) ? lists : (lists?.data || [])).find(p => p.id === cust.price_list_id)?.name || 'price list';
+        if (invoicePriceMap.size) Toast.info(`Using '${invoicePriceListName}' rates for ${cust.name} — new lines pre-fill them.`);
+    } catch { /* fallback to standard prices */ }
+}
+/** Effective per-BASE-unit price for an item on THIS invoice: customer's list price, else catalog. */
+function effectiveItemPrice(it) { return invoicePriceMap.has(it.id) ? invoicePriceMap.get(it.id) : it.sale_price; }
+
 function onInvoiceCustomerChange() {
     refreshLineProjectDropdowns();
+    loadInvoicePriceList();
     const zeroRated = _invoiceCustomerIsZeroRated();
     if (zeroRated) {
         document.querySelectorAll('#invoiceLines tr').forEach(row => row._lineTaxDropdown?.setValue?.(''));

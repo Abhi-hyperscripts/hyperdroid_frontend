@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         ],
         value: 'cash', compact: true
     });
+    initPosCustomerPicker();   // bill-to picker (Walk-in default; known customers reprice via their list)
     connectStockHub();
     updateNetBadge();
     syncOfflineSales();   // drain anything queued from a previous offline session
@@ -226,13 +227,13 @@ async function queueOfflineSale(sale) {
     sale.at = new Date().toISOString();
     sale.status = 'queued';
     let sub = 0, tax = 0; const r2q = n => Math.round((n + Number.EPSILON) * 100) / 100; // EPSILON: 1.4999999999999998-style float error must round like the server's decimal AwayFromZero
-    sale.cart.forEach(c => { const g = r2q(linePrice(c) * c.qty); const b = g - r2q(g * (c.disc || 0) / 100); sub += b; tax += gstOn(b, taxRateFor(effTaxConfigId(c.item))); });
+    sale.cart.forEach(c => { const g = r2q(salePx(c) * c.qty); const b = g - r2q(g * (c.disc || 0) / 100); sub += b; tax += gstOn(b, taxRateFor(effTaxConfigId(c.item))); });
     sale.total = Math.round((sub + tax) * 100) / 100;
     await posQueuePut(sale);
     // Optimistically decrement the local stock view (in BASE units) so the next offline sale
     // at THIS counter sees honest numbers (server truth returns on sync).
     sale.cart.forEach(c => { const it = posItems.find(i => i.id === c.item.id); if (it && it.track_inventory) it.qty_on_hand -= lineBaseQty(c); });
-    await printReceipt(sale.offlineRef, sale.total, true, sale.cart);
+    await printReceipt(sale.offlineRef, sale.total, true, sale.cart, sale.customerName);
     Toast.success(`Sale saved offline (${sale.offlineRef}) — will sync when back online`);
     cart = [];
     renderCart(); renderGrid(true);
@@ -264,7 +265,8 @@ async function submitSaleToServer(sale, { enforceStock }) {
         if (fresh.sale_unit !== c.item.sale_unit || (fresh.sale_conversion || 1) !== (c.item.sale_conversion || 1) || fresh.unit !== c.item.unit)
             throw new Error(`'${c.item.name}' pack definition changed since this sale was rung up (${c.qty} ${c.uom} @ receipt-time pack of ${c.item.sale_conversion || 1}) — review the item and re-ring or discard.`);
     }
-    const customerId = await ensureWalkInCustomer();
+    // Bill to the customer FROZEN on the sale (picked at the counter), else the Walk-in default.
+    const customerId = sale.customerId || await ensureWalkInCustomer();
     const date = sale.date;
     const groups = [];
     {
@@ -283,7 +285,7 @@ async function submitSaleToServer(sale, { enforceStock }) {
             description: c.item.name,
             hsn_sac: c.item.hsn_sac || '',
             quantity: c.qty,
-            unit_price: linePrice(c),      // per the SELECTED unit; backend converts qty × factor to base for stock
+            unit_price: salePx(c),         // FROZEN per-selected-unit price; backend converts qty × factor to base for stock
             uom: c.uom || null,
             discount_percent: c.disc || 0,
             account_id: c.item.income_account_id || incomeAccounts[0].id,
@@ -627,15 +629,58 @@ function defaultGstConfigId() {
 // Effective tax config for an item: its own, else the tenant default GST (so cart preview == posted receipt).
 function effTaxConfigId(item) { return item.tax_config_id || defaultGstConfigId(); }
 
-/** Base (ex-GST) unit price: MRP-inclusive items back-compute; others are already ex-tax.
- *  Back-out uses the EFFECTIVE config (item's own, else the tenant default) — the payload is
- *  taxed at that same effective config, so reading the raw tax_config_id here left an untagged
- *  MRP item un-backed-out while the server still added GST on top of the MRP. */
+// ── Bill-to customer + their price list (Feature: price lists → sales, POS) ──
+// Walk-in by default. Picking a known customer bills the sale in their name and, when they
+// carry a price list, REPRICES the cart with its per-base-unit rates (an explicit pricing
+// action at the counter — POS has no manual price entry, so nothing user-typed is lost).
+// Prices are FROZEN onto the sale snapshot at Charge, so offline replay posts exactly what
+// the printed receipt promised even if the list changes while queued.
+let posCustomerId = null;         // null = Walk-in Customer (resolved server-side)
+let posCustomerName = 'Walk-in Customer';
+let posPriceMap = new Map();      // item_id → per-base-unit list price
+let posCustomerDD = null;
+
+async function initPosCustomerPicker() {
+    const host = document.getElementById('posCustomer');
+    if (!host || typeof SearchableDropdown !== 'function') return;
+    let custs = [];
+    try {
+        const r = await api.request(AccountsCommon.buildUrl('customers', { limit: 500 }), { _skipSpinner: true });
+        custs = (Array.isArray(r) ? r : (r?.data || r?.items || [])).filter(c => c.is_active !== false && c.name !== 'Walk-in Customer');
+    } catch { }
+    host.innerHTML = '';
+    posCustomerDD = new SearchableDropdown(host, {
+        id: 'posCustomerDD',
+        options: [{ value: '', label: 'Walk-in Customer' }, ...custs.map(c => ({ value: c.id, label: c.name }))],
+        value: '', placeholder: 'Walk-in Customer', searchPlaceholder: 'Search customers…', compact: true,
+        onChange: async (v) => {
+            posCustomerId = v || null;
+            const cust = custs.find(c => c.id === v);
+            posCustomerName = cust?.name || 'Walk-in Customer';
+            posPriceMap = new Map();
+            if (cust?.price_list_id) {
+                try {
+                    const rows = await api.request(AccountsCommon.buildUrl(`price-lists/${cust.price_list_id}/prices`), { _skipSpinner: true });
+                    (Array.isArray(rows) ? rows : (rows?.data || [])).forEach(r => posPriceMap.set(r.item_id, parseFloat(r.price)));
+                    if (posPriceMap.size) Toast.info(`${cust.name}'s price list applied — cart repriced.`);
+                } catch { /* fallback to standard prices */ }
+            }
+            renderCart();   // recompute all automatic prices under the new book of rates
+        }
+    });
+}
+
+/** Base (ex-GST) unit price: the bill-to customer's LIST price when one exists, else the
+ *  catalog price; MRP-inclusive items back-compute. Back-out uses the EFFECTIVE config
+ *  (item's own, else the tenant default) — the payload is taxed at that same effective
+ *  config, so reading the raw tax_config_id here left an untagged MRP item un-backed-out
+ *  while the server still added GST on top of the MRP. */
 function basePrice(i) {
+    const px = posPriceMap.has(i.id) ? posPriceMap.get(i.id) : i.sale_price;
     const rate = taxRateFor(effTaxConfigId(i));
     return i.price_includes_tax && rate > 0
-        ? Math.round((i.sale_price / (1 + rate / 100)) * 100) / 100
-        : i.sale_price;
+        ? Math.round((px / (1 + rate / 100)) * 100) / 100
+        : px;
 }
 
 // ── Multiple UoM at the counter ──────────────────────────────────────────────
@@ -643,6 +688,9 @@ function basePrice(i) {
 // Scans and grid taps ALWAYS target the base-unit line (a scan is one physical piece);
 // the pack line is a separate cart entry. All stock caps compare BASE units.
 function lineConv(c) { return c.uom && c.item.sale_unit && c.uom.toLowerCase() === c.item.sale_unit.toLowerCase() ? (c.item.sale_conversion || 1) : 1; }   // case-insensitive: the backend resolves names OrdinalIgnoreCase — a case-only rename must not silently reprice
+/** Per-selected-unit price for SALE math: the price FROZEN on the snapshot at Charge when
+ *  present (offline replay must post the receipt's numbers), else the live computed price. */
+function salePx(c) { return c.px != null ? c.px : linePrice(c); }
 function linePrice(c) { const conv = lineConv(c); return conv === 1 ? basePrice(c.item) : Math.round(basePrice(c.item) * conv * 100) / 100; }
 function lineBaseQty(c) { return Math.round(c.qty * lineConv(c) * 10000) / 10000; }
 function itemBaseInCart(itemId, exceptLine) { return cart.filter(c => c.item.id === itemId && c !== exceptLine).reduce((s, c) => s + lineBaseQty(c), 0); }
@@ -905,7 +953,8 @@ async function completeSale() {
     // and any invoices already created before a mid-sale network drop ride along in
     // sale.progress so the replay never double-creates them.
     const sale = {
-        cart: cart.map(c => ({ item: { ...c.item }, qty: c.qty, disc: c.disc || 0, uom: c.uom || null })),
+        cart: cart.map(c => ({ item: { ...c.item }, qty: c.qty, disc: c.disc || 0, uom: c.uom || null, px: linePrice(c) })),   // px FROZEN: replay posts the receipt's price
+        customerId: posCustomerId, customerName: posCustomerName,
         date: AccountsCommon.todayLocal(),
         bankId,
         method: posMethodDD?.getValue?.() || 'cash',
@@ -917,7 +966,7 @@ async function completeSale() {
         if (netOffline) { await queueOfflineSale(sale); return; }
         const { invoices, total } = await submitSaleToServer(sale, { enforceStock: true });
         Toast.success(`Sale complete — ${money(total)}`);
-        await printReceipt(invoices.map(i => i.number).join(' · '), total, false, sale.cart);
+        await printReceipt(invoices.map(i => i.number).join(' · '), total, false, sale.cart, sale.customerName);
         await promptSerials(invoices, sale.date);
         cart = [];
         renderCart();
@@ -1009,7 +1058,7 @@ async function promptSerials(invoices, soldDate) {
 
 /** 80mm thermal receipt via the browser's print dialog. offline=true prints a
  *  provisional receipt (queued sale — real invoice number arrives at sync). */
-async function printReceipt(invoiceNumber, total, offline = false, saleCart = null) {
+async function printReceipt(invoiceNumber, total, offline = false, saleCart = null, billTo = null) {
     // Print from the SALE's frozen snapshot, never the live global cart — the 15s catalog
     // refresh / stock pushes can mutate cart mid-submission and the slip would show lines or
     // prices that were never charged.
@@ -1030,7 +1079,7 @@ async function printReceipt(invoiceNumber, total, offline = false, saleCart = nu
     const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
     let gross = 0, totDisc = 0, tax = 0;
     const rows = printCart.map(c => {
-        const unit = linePrice(c);
+        const unit = salePx(c);
         const g = r2(unit * c.qty);
         const disc = r2(g * (c.disc || 0) / 100);
         const net = g - disc;
@@ -1054,6 +1103,7 @@ async function printReceipt(invoiceNumber, total, offline = false, saleCart = nu
         <hr>
         <p><small>${esc(invoiceNumber || '')} · ${new Date().toLocaleString('en-IN')}</small></p>
         ${offline ? '<p><small>Offline sale — tax invoice number will be assigned when the counter reconnects.</small></p>' : ''}
+        ${billTo && billTo !== 'Walk-in Customer' ? `<p><small>Bill to: ${esc(billTo)}</small></p>` : ''}
         <hr>
         <table>${rows}</table>
         <hr>

@@ -588,6 +588,24 @@ function renderCustomersTable() {
 // CUSTOMER MODAL
 // ============================================================================
 
+// ── Price list assignment (Feature: price lists → sales) ────────────────────
+// The list is a DEFAULT: invoice lines for this customer pre-fill the list price
+// (per BASE unit, same MRP-inclusive semantics as the item's own price); users can
+// still override per line. Missing/inactive lists fall back to item.sale_price.
+let customerPriceListDD = null;
+async function initCustomerPriceListDD(selected) {
+    const host = document.getElementById('customerPriceList');
+    if (!host || typeof SearchableDropdown !== 'function') return;
+    let lists = [];
+    try { const r = await api.request(AccountsCommon.buildUrl('price-lists'), { _skipSpinner: true }); lists = (Array.isArray(r) ? r : (r?.data || [])).filter(p => p.is_active !== false); } catch { }
+    host.innerHTML = '';
+    customerPriceListDD = new SearchableDropdown(host, {
+        id: 'customerPriceListDD',
+        options: [{ value: '', label: 'None — standard item prices' }, ...lists.map(p => ({ value: p.id, label: p.name }))],
+        value: selected || '', placeholder: 'None — standard item prices', compact: true
+    });
+}
+
 function showCreateCustomerModal() {
     document.getElementById('customerModalTitle').textContent = 'Create Customer';
     document.getElementById('customerForm').reset();
@@ -596,6 +614,7 @@ function showCreateCustomerModal() {
     document.getElementById('customerCodeRow').style.display = 'none';
     if (document.getElementById('customerGstTreatment')) { document.getElementById('customerGstTreatment').value = 'registered'; onCustomerTreatmentChange(); }
     if (customerRegion) customerRegion.reset('India');   // country defaults to India, state cleared
+    initCustomerPriceListDD('');
     AccountsCommon.showFormPage('customerModal');
 }
 
@@ -621,6 +640,7 @@ function editCustomer(id) {
     document.getElementById('customerPaymentTerms').value = c.payment_terms_days ?? 30;
     document.getElementById('customerCreditLimit').value = c.credit_limit ?? '';
     document.getElementById('customerNotes').value = c.notes || '';
+    initCustomerPriceListDD(c.price_list_id || '');
     AccountsCommon.showFormPage('customerModal');
 }
 
@@ -669,7 +689,10 @@ async function saveCustomer() {
         tax_id: document.getElementById('customerTaxId').value.trim() || null,
         payment_terms_days: parseInt(document.getElementById('customerPaymentTerms').value) || 30,
         credit_limit: creditVal ? parseFloat(creditVal) : null,
-        notes: document.getElementById('customerNotes').value.trim() || null
+        notes: document.getElementById('customerNotes').value.trim() || null,
+        // UPDATE uses partial semantics (null = unchanged), so a cleared selection sends the
+        // EMPTY-GUID sentinel to remove the assignment; CREATE just omits it.
+        price_list_id: customerPriceListDD?.getValue?.() || (id ? '00000000-0000-0000-0000-000000000000' : null)
     };
 
     if (!AccountsCommon.beginSubmit('saveCustomer')) return;
