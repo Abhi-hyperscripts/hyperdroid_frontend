@@ -111,7 +111,8 @@ function showItemModal() {
     document.getElementById('itTrack').checked = true;
     ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule'].forEach(id => document.getElementById(id).innerHTML = '');
     initItemModalDropdowns(null, 'goods', 'none', 'weighted_avg', 'none');
-    AccountsCommon.openModal('itemModal');
+    initItemSaltRows([]);
+    AccountsCommon.showFormPage('itemModal');
 }
 
 function editItem(id) {
@@ -136,7 +137,8 @@ function editItem(id) {
     document.getElementById('itTrack').checked = i.track_inventory;
     ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule'].forEach(id => document.getElementById(id).innerHTML = '');
     initItemModalDropdowns(i.category_id, i.item_type, i.tracking_mode || 'none', i.valuation_method || 'weighted_avg', i.drug_schedule || 'none');
-    AccountsCommon.openModal('itemModal');
+    initItemSaltRows(null, i.id);   // async-loads the item's saved composition
+    AccountsCommon.showFormPage('itemModal');
 }
 
 async function saveItem() {
@@ -168,10 +170,16 @@ async function saveItem() {
     if (!payload.sku || !payload.name) { Toast.error('SKU and name are required'); return; }
     const btn = document.getElementById('saveItemBtn'); btn.disabled = true;
     try {
+        let savedId = id;
         if (id) await api.request(AccountsCommon.buildUrl(`inventory/items/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
-        else await api.request(AccountsCommon.buildUrl('inventory/items'), { method: 'POST', body: JSON.stringify(payload) });
+        else savedId = (await api.request(AccountsCommon.buildUrl('inventory/items'), { method: 'POST', body: JSON.stringify(payload) }))?.id;
+        // Composition rides in a second call (separate endpoint); only for goods.
+        if (savedId && payload.item_type === 'goods') {
+            try { await api.request(AccountsCommon.buildUrl(`inventory/items/${savedId}/salts`), { method: 'PUT', body: JSON.stringify({ salts: collectItemSalts() }) }); }
+            catch (e) { Toast.error('Item saved, but the composition failed: ' + (e?.message || '')); }
+        }
         Toast.success(id ? 'Item updated' : 'Item created');
-        AccountsCommon.closeModal('itemModal');
+        AccountsCommon.hideFormPage('itemModal');
         await loadItems();
     } catch (err) { Toast.error(err.message || 'Failed to save item'); }
     finally { btn.disabled = false; }
@@ -1159,4 +1167,102 @@ async function loadReorder() {
             .filter(x => x.qty > 0).sort((a, b) => b.qty - a.qty).slice(0, 8);
         _chart('acBarV', 'reorderChart', top.map(x => x.label), top.map(x => x.qty), null, cnt);
     } catch { tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Could not load reorder report.</td></tr>`; }
+}
+
+// ============================================================================
+// SALT / COMPOSITION editor (pharma) — rows of (salt dropdown + strength).
+// Sent as the item's FULL composition via PUT items/{id}/salts on save.
+// ============================================================================
+
+let saltsCache = [];
+
+async function ensureSalts() {
+    try { saltsCache = await api.request(AccountsCommon.buildUrl('inventory/salts'), { _skipSpinner: true }); }
+    catch { saltsCache = saltsCache || []; }
+}
+
+async function initItemSaltRows(existing, itemId = null) {
+    const wrap = document.getElementById('itSaltRows');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    await ensureSalts();
+    let rows = existing || [];
+    if (itemId) {
+        try { rows = await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/salts`), { _skipSpinner: true }); }
+        catch { rows = []; }
+    }
+    rows.forEach(r => addItemSaltRow(r));
+}
+
+function addItemSaltRow(data = {}) {
+    const wrap = document.getElementById('itSaltRows');
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;margin-top:6px;align-items:center;';
+    row.innerHTML = `
+        <div class="searchable-dropdown-container it-salt-sd" style="flex:1;min-width:0;"></div>
+        <input type="text" class="form-control it-salt-strength" placeholder="strength e.g. 500mg" maxlength="40" style="max-width:150px;" value="${AccountsCommon.escapeHtml(data.strength || '')}">
+        <button type="button" class="btn-icon btn-icon-danger" onclick="this.parentElement.remove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+    wrap.appendChild(row);
+    const buildOpts = () => [{ value: '', label: 'Select salt...' },
+        ...saltsCache.filter(s => s.is_active).map(s => ({ value: s.id, label: s.name }))];
+    row._saltDD = new SearchableDropdown(row.querySelector('.it-salt-sd'), {
+        id: `it-salt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: buildOpts(), value: data.salt_id || '', placeholder: 'Select salt...',
+        searchPlaceholder: 'Search / add salt…', compact: true,
+        quickAdd: { title: 'Create new salt', onClick: (instance) => openQuickAddSalt(instance, buildOpts) }
+    });
+}
+
+function collectItemSalts() {
+    const out = [];
+    document.querySelectorAll('#itSaltRows > div').forEach(row => {
+        const id = row._saltDD?.getValue?.();
+        if (!id) return;
+        if (out.some(x => x.salt_id === id)) return;   // silently dedupe double picks
+        out.push({ salt_id: id, strength: row.querySelector('.it-salt-strength').value.trim() || null });
+    });
+    return out;
+}
+
+// Quick-add salt modal (built on demand — mirrors the invoice quick-add-account pattern;
+// native prompt() is banned).
+function openQuickAddSalt(dropdownInstance, rebuildOptions) {
+    let m = document.getElementById('quickAddSaltModal');
+    if (!m) {
+        m = document.createElement('div');
+        m.id = 'quickAddSaltModal';
+        m.className = 'modal';
+        m.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="max-width: 420px;">
+                    <div class="modal-header">
+                        <h5 class="modal-title">New Salt / Molecule</h5>
+                        <button class="close-btn" onclick="AccountsCommon.closeModal('quickAddSaltModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group"><label for="qaSaltName">Name *</label>
+                        <input type="text" id="qaSaltName" class="form-control" maxlength="120" placeholder="e.g. Paracetamol"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="AccountsCommon.closeModal('quickAddSaltModal')">Cancel</button>
+                        <button class="btn btn-primary" id="qaSaltSaveBtn">Create</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(m);
+    }
+    document.getElementById('qaSaltName').value = '';
+    document.getElementById('qaSaltSaveBtn').onclick = async () => {
+        const name = document.getElementById('qaSaltName').value.trim();
+        if (!name) { Toast.error('Enter the salt name'); return; }
+        try {
+            const created = await api.request(AccountsCommon.buildUrl('inventory/salts'), { method: 'POST', body: JSON.stringify({ name }) });
+            saltsCache.push(created);
+            dropdownInstance.setOptions?.(rebuildOptions());
+            dropdownInstance.setValue?.(created.id);
+            Toast.success(`Salt '${created.name}' created`);
+            AccountsCommon.closeModal('quickAddSaltModal');
+        } catch (e) { Toast.error(e?.message || 'Failed to create salt'); }
+    };
+    AccountsCommon.openModal('quickAddSaltModal');
 }

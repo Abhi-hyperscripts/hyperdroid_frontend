@@ -823,7 +823,7 @@ function addToCart(itemId) {
     // (The B2B invoice flow still allows advance-order oversell — that's deliberate.)
     if (it.track_inventory) {
         const inCartBase = itemBaseInCart(itemId, null);
-        if (it.qty_on_hand <= 0) { Toast.error(`'${it.name}' is out of stock — receive or adjust stock first.`); return; }
+        if (it.qty_on_hand <= 0) { offerSubstitutes(it); return; }
         if (inCartBase + 1 > it.qty_on_hand) { Toast.error(`Only ${it.qty_on_hand} ${it.unit || ''} of '${it.name}' in stock.`); return; }
     }
     if (line) line.qty += 1; else cart.push({ item: it, qty: 1, disc: 0, uom: null });
@@ -1180,4 +1180,54 @@ async function printReceipt(invoiceNumber, total, offline = false, saleCart = nu
         <script>window.onload = () => window.print();<\/script>
     </body></html>`);
     w.document.close();
+}
+
+// ============================================================================
+// SUBSTITUTES (pharma) — out-of-stock tap offers same-salt alternatives.
+// ============================================================================
+
+async function offerSubstitutes(item) {
+    let subs = [];
+    try { subs = await api.request(AccountsCommon.buildUrl(`inventory/items/${item.id}/substitutes`), { _skipSpinner: true }); }
+    catch { subs = []; }
+    const inStock = (subs || []).filter(s => Number(s.qty_on_hand) > 0);
+    if (!inStock.length) {
+        Toast.error(`'${item.name}' is out of stock — receive or adjust stock first.`);
+        return;
+    }
+    const esc = AccountsCommon.escapeHtml;
+    let m = document.getElementById('posSubsModal');
+    if (!m) {
+        m = document.createElement('div');
+        m.id = 'posSubsModal';
+        m.className = 'modal';
+        m.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="max-width: 520px;">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="posSubsTitle">Substitutes</h5>
+                        <button class="close-btn" onclick="AccountsCommon.closeModal('posSubsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                    <div class="modal-body" id="posSubsBody"></div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="AccountsCommon.closeModal('posSubsModal')">Close</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(m);
+    }
+    document.getElementById('posSubsTitle').textContent = `'${item.name}' is out of stock — same-salt substitutes`;
+    document.getElementById('posSubsBody').innerHTML = inStock.map(s => `
+        <button type="button" class="btn btn-outline" style="display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;text-align:left;"
+            onclick="AccountsCommon.closeModal('posSubsModal'); addToCart('${s.item_id}');">
+            <span style="min-width:0;">
+                <strong>${esc(s.name)}</strong>${s.exact_composition ? ' <span class="status-badge status-active" style="font-size:.68rem;">same composition</span>' : ''}<br>
+                <span style="font-size:.78rem;color:var(--text-secondary);">${esc((s.salts || []).map(x => x.salt_name + (x.strength ? ' ' + x.strength : '')).join(' + '))}</span>
+            </span>
+            <span style="text-align:right;white-space:nowrap;">
+                ${AccountsCommon.formatCurrency(s.sale_price)}<br>
+                <span style="font-size:.78rem;color:var(--color-success);">${Number(s.qty_on_hand)} ${esc(s.unit || '')} in stock</span>
+            </span>
+        </button>`).join('');
+    AccountsCommon.openModal('posSubsModal');
 }

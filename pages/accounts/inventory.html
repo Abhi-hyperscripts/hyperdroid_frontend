@@ -377,53 +377,80 @@
     </div>
 
     <!-- Item modal -->
-    <div class="modal" id="itemModal">
-        <div class="modal-content" style="max-width:720px;">
-            <div class="modal-header"><h3 id="itemModalTitle">New Item</h3><button class="close-btn" onclick="AccountsCommon.closeModal('itemModal')">&times;</button></div>
-            <div class="modal-body">
-                <input type="hidden" id="itemId">
-                <div class="form-row two-col">
-                    <div class="form-group"><label>SKU / Code *</label><input type="text" id="itSku" class="form-control" placeholder="e.g. LAP-DELL-5520"></div>
-                    <div class="form-group"><label>Name *</label><input type="text" id="itName" class="form-control" placeholder="Item name shown on invoices"></div>
-                </div>
-                <div class="form-row two-col">
-                    <div class="form-group"><label>Category</label><div class="searchable-dropdown-container" id="itCategory"></div></div>
-                    <div class="form-group"><label>Type</label><div class="searchable-dropdown-container" id="itType"></div></div>
-                </div>
-                <div class="form-row two-col">
-                    <div class="form-group"><label>Sale Price</label><input type="number" id="itSalePrice" class="form-control" step="0.01" min="0"></div>
-                    <div class="form-group"><label>Purchase Price <span class="opt">(cost hint)</span></label><input type="number" id="itPurchasePrice" class="form-control" step="0.01" min="0"></div>
-                </div>
-                <div class="form-row two-col">
-                    <div class="form-group"><label>HSN / SAC</label><input type="text" id="itHsn" class="form-control" maxlength="20"></div>
-                    <div class="form-group"><label>Unit</label><input type="text" id="itUnit" class="form-control" value="pcs"></div>
-                </div>
-                <div class="form-row two-col">
-                    <div class="form-group"><label>Purchase unit <span class="opt">(pack you buy in, e.g. box)</span></label><input type="text" id="itPurchaseUnit" class="form-control" maxlength="20" placeholder="none"></div>
-                    <div class="form-group"><label>Base units per purchase unit <span class="opt">(e.g. 50 pcs per box)</span></label><input type="number" id="itPurchaseConv" class="form-control" min="0" step="any" placeholder="e.g. 50"></div>
-                </div>
-                <div class="form-row two-col">
-                    <div class="form-group"><label>Sale unit <span class="opt">(pack you sell in, e.g. strip)</span></label><input type="text" id="itSaleUnit" class="form-control" maxlength="20" placeholder="none"></div>
-                    <div class="form-group"><label>Base units per sale unit <span class="opt">(e.g. 10 pcs per strip)</span></label><input type="number" id="itSaleConv" class="form-control" min="0" step="any" placeholder="e.g. 10"></div>
-                </div>
-                <div class="form-group"><label>Barcode <span class="opt">(EAN-13 — scan into this box; leave blank if the SKU is the barcode)</span></label><input type="text" id="itBarcode" class="form-control" maxlength="60" placeholder="e.g. 8901430123457"></div>
-                <div class="form-row two-col">
-                    <div class="form-group"><label>Reorder Level <span class="opt">(in the BASE unit above)</span></label><input type="number" id="itReorder" class="form-control" min="0" value="0"></div>
-                    <div class="form-group"><label>Reorder Qty <span class="opt">(suggested order size, base units)</span></label><input type="number" id="itReorderQty" class="form-control" min="0" value="0"></div>
-                </div>
-                <div class="form-row two-col">
-                    <div class="form-group"><label>Tracking mode</label><div class="searchable-dropdown-container" id="itTracking"></div></div>
-                    <div class="form-group"><label>Cost method</label><div class="searchable-dropdown-container" id="itValuation"></div></div>
-                </div>
-                <div class="form-row two-col">
-                    <div class="form-group"><label>Drug schedule <span class="opt">(pharmacy — H/H1/X are prescription-controlled)</span></label><div class="searchable-dropdown-container" id="itSchedule"></div></div>
-                    <div class="form-group"><label>Warranty (months) <span class="opt">(serial items)</span></label><input type="number" id="itWarranty" class="form-control" min="0" max="240" value="0"></div>
-                </div>
-                <div class="form-group"><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="itTrack" checked> Track stock (uncheck for a pure service)</label></div>
+    <!-- Item full-page form (multi-section master form — separate page per the invoice-screen rule) -->
+    <div id="itemModal" class="acc-form-page" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('itemModal'); return false;">Inventory</a>
+                </nav>
+                <h1 class="acc-form-page__title" id="itemModalTitle">New Item</h1>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('itemModal')">Cancel</button>
-                <button class="btn btn-primary" id="saveItemBtn" onclick="saveItem()">Save Item</button>
+            <form class="acc-form" onsubmit="return false;">
+                <input type="hidden" id="itemId">
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> Identity</div>
+                    <div class="pgrid">
+                        <div class="form-group"><label>SKU / Code <span class="req">*</span></label><input type="text" id="itSku" class="form-control" placeholder="e.g. LAP-DELL-5520"></div>
+                        <div class="form-group"><label>Name <span class="req">*</span></label><input type="text" id="itName" class="form-control" placeholder="Item name shown on invoices"></div>
+                        <div class="form-group"><label>Category</label><div class="searchable-dropdown-container" id="itCategory"></div></div>
+                        <div class="form-group"><label>Type</label><div class="searchable-dropdown-container" id="itType"></div></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Pricing &amp; Tax</div>
+                    <div class="pgrid">
+                        <div class="form-group"><label>Sale Price</label><input type="number" id="itSalePrice" class="form-control" step="0.01" min="0"></div>
+                        <div class="form-group"><label>Purchase Price <span class="opt">(cost hint)</span></label><input type="number" id="itPurchasePrice" class="form-control" step="0.01" min="0"></div>
+                        <div class="form-group"><label>HSN / SAC</label><input type="text" id="itHsn" class="form-control" maxlength="20"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3h-8v4h8z"/></svg> Units &amp; Barcode</div>
+                    <div class="pgrid">
+                        <div class="form-group"><label>Base Unit</label><input type="text" id="itUnit" class="form-control" value="pcs"><small class="field-hint">Stock is counted in this unit.</small></div>
+                        <div class="form-group"><label>Barcode <span class="opt">(EAN-13)</span></label><input type="text" id="itBarcode" class="form-control" maxlength="60" placeholder="e.g. 8901430123457"><small class="field-hint">Scan into this box; blank = SKU is the barcode.</small></div>
+                        <div class="form-group"><label>Purchase unit <span class="opt">(pack you buy in)</span></label><input type="text" id="itPurchaseUnit" class="form-control" maxlength="20" placeholder="e.g. box"></div>
+                        <div class="form-group"><label>Base units per purchase unit</label><input type="number" id="itPurchaseConv" class="form-control" min="0" step="any" placeholder="e.g. 50"></div>
+                        <div class="form-group"><label>Sale unit <span class="opt">(pack you sell in)</span></label><input type="text" id="itSaleUnit" class="form-control" maxlength="20" placeholder="e.g. strip"></div>
+                        <div class="form-group"><label>Base units per sale unit</label><input type="number" id="itSaleConv" class="form-control" min="0" step="any" placeholder="e.g. 10"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9m9 5h-9m9 5h-9M4 7h1m-1 5h1m-1 5h1"/></svg> Stock &amp; Reorder</div>
+                    <div class="pgrid">
+                        <div class="form-group pf-wide"><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="itTrack" checked> Track stock (uncheck for a pure service)</label></div>
+                        <div class="form-group"><label>Tracking mode</label><div class="searchable-dropdown-container" id="itTracking"></div></div>
+                        <div class="form-group"><label>Cost method</label><div class="searchable-dropdown-container" id="itValuation"></div></div>
+                        <div class="form-group"><label>Reorder Level <span class="opt">(base units)</span></label><input type="number" id="itReorder" class="form-control" min="0" value="0"></div>
+                        <div class="form-group"><label>Reorder Qty <span class="opt">(suggested order size)</span></label><input type="number" id="itReorderQty" class="form-control" min="0" value="0"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"/><path d="m8.5 8.5 7 7"/></svg> Pharmacy &amp; Warranty</div>
+                    <div class="pgrid">
+                        <div class="form-group"><label>Drug schedule <span class="opt">(H/H1/X are prescription-controlled)</span></label><div class="searchable-dropdown-container" id="itSchedule"></div></div>
+                        <div class="form-group"><label>Warranty (months) <span class="opt">(serial items)</span></label><input type="number" id="itWarranty" class="form-control" min="0" max="240" value="0"></div>
+                        <div class="form-group pf-wide" id="itSaltsGroup">
+                            <label>Composition <span class="opt">(salts/molecules — powers substitute lookup at billing)</span></label>
+                            <div id="itSaltRows"></div>
+                            <button type="button" class="btn btn-outline btn-sm" style="margin-top:6px;" onclick="addItemSaltRow()">+ Add Salt</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('itemModal')">Cancel</button>
+                    <button class="btn btn-primary" id="saveItemBtn" onclick="saveItem()">Save Item</button>
+                </div>
             </div>
         </div>
     </div>
