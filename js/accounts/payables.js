@@ -341,11 +341,17 @@ function billReceiveItem(item, qty = 1, unitCost = null, description = null) {
         && !parseFloat(rows[0].querySelector('.line-rate')?.value || '0')) {
         rows[0].remove();
     }
-    // Repeat scan → bump the existing line for this item.
+    // Repeat scan → bump the existing line for this item. Scans are BASE units: if the user
+    // switched the line to its alternate unit (e.g. box of 50), one scanned piece adds
+    // 1/conversion of THAT unit — bumping by 1 would silently add a whole box per beep.
     const existing = document.querySelector(`#billLinesBody tr[data-item-id="${item.id}"]`);
     if (existing) {
         const qtyInput = existing.querySelector('.line-qty');
-        qtyInput.value = (parseFloat(qtyInput.value) || 0) + qty;
+        let inc = qty;
+        const lineUom = existing._lineUomDropdown?.getValue?.();
+        if (lineUom && item.purchase_unit && lineUom === item.purchase_unit && (item.purchase_conversion || 0) > 0)
+            inc = Math.round((qty / item.purchase_conversion) * 10000) / 10000;
+        qtyInput.value = Math.round(((parseFloat(qtyInput.value) || 0) + inc) * 10000) / 10000;
         calculateBillTotals();
         return existing;
     }
@@ -607,7 +613,9 @@ async function loadBillIntoModal(id, mode) {
         // at the captured rate so the user edits what the vendor's bill actually says.
         const billFxRate = bill.exchange_rate ? parseFloat(bill.exchange_rate) : 0;
         await billFx.init(bill.currency || AccountsCommon.FX_BASE, billFxRate);
-        initBillItemPicker();
+        // AWAIT the catalog load — addBillLine builds each line's unit picker from inventoryItems
+        // (see receivables edit flow; un-awaited, the first edit after page load lost the pickers).
+        await initBillItemPicker();
         if (billFxRate > 0) {
             lines.forEach(l => {
                 const inr = parseFloat(l.unit_price ?? l.rate ?? 0);
@@ -808,8 +816,10 @@ function addBillLine(data) {
                         const convOf = (u) => (altU && u === altU) ? (invIt.purchase_conversion || 1) : 1;
                         const rateEl = row.querySelector('.line-rate');
                         const prevDefault = Math.round(invIt.purchase_price * convOf(row._lineUom || startUom) * 100) / 100;
-                        const cur = parseFloat(rateEl.value) || 0;
-                        if (!cur || cur === prevDefault) rateEl.value = Math.round(invIt.purchase_price * convOf(v) * 100) / 100;
+                        // Rescale only an EMPTY rate or one still at the previous unit's catalog default —
+                        // a deliberately-typed price (including ₹0) must survive a unit switch.
+                        const raw = (rateEl.value || '').trim();
+                        if (raw === '' || parseFloat(raw) === prevDefault) rateEl.value = Math.round(invIt.purchase_price * convOf(v) * 100) / 100;
                     }
                     row._lineUom = v;
                     calculateBillTotals();

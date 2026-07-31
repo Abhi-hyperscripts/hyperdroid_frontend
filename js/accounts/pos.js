@@ -73,14 +73,20 @@ async function refreshPosItems(silent = true) {
         const res = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true });
         posItems = (Array.isArray(res) ? res : []).filter(i => i.is_active);
         let capped = false;
+        // BASE-unit-aware capping: walk this item's lines in cart order, each consuming from
+        // what the fresh snapshot says remains (pack lines floor to whole packs).
+        const remaining = new Map();
         cart.forEach(line => {
             const fresh = posItems.find(i => i.id === line.item.id);
             if (!fresh) return;
             line.item = fresh;
-            if (fresh.track_inventory && line.qty > fresh.qty_on_hand) {
-                line.qty = Math.max(0, fresh.qty_on_hand);
-                capped = true;
-            }
+            if (!fresh.track_inventory) return;
+            if (!remaining.has(fresh.id)) remaining.set(fresh.id, fresh.qty_on_hand);
+            const avail = remaining.get(fresh.id);
+            const conv = lineConv(line);
+            const maxQty = conv === 1 ? avail : Math.floor(avail / conv);
+            if (line.qty > maxQty) { line.qty = Math.max(0, maxQty); capped = true; }
+            remaining.set(fresh.id, avail - lineBaseQty(line));
         });
         cart = cart.filter(c => c.qty > 0);
         renderCategoryChips();
@@ -186,13 +192,13 @@ async function queueOfflineSale(sale) {
     sale.id = sale.offlineRef;
     sale.at = new Date().toISOString();
     sale.status = 'queued';
-    let sub = 0, tax = 0; const r2q = n => Math.round(n * 100) / 100;
-    sale.cart.forEach(c => { const g = r2q(basePrice(c.item) * c.qty); const b = g - r2q(g * (c.disc || 0) / 100); sub += b; tax += gstOn(b, taxRateFor(effTaxConfigId(c.item))); });
+    let sub = 0, tax = 0; const r2q = n => Math.round((n + Number.EPSILON) * 100) / 100; // EPSILON: 1.4999999999999998-style float error must round like the server's decimal AwayFromZero
+    sale.cart.forEach(c => { const g = r2q(linePrice(c) * c.qty); const b = g - r2q(g * (c.disc || 0) / 100); sub += b; tax += gstOn(b, taxRateFor(effTaxConfigId(c.item))); });
     sale.total = Math.round((sub + tax) * 100) / 100;
     await posQueuePut(sale);
-    // Optimistically decrement the local stock view so the next offline sale
+    // Optimistically decrement the local stock view (in BASE units) so the next offline sale
     // at THIS counter sees honest numbers (server truth returns on sync).
-    sale.cart.forEach(c => { const it = posItems.find(i => i.id === c.item.id); if (it && it.track_inventory) it.qty_on_hand -= c.qty; });
+    sale.cart.forEach(c => { const it = posItems.find(i => i.id === c.item.id); if (it && it.track_inventory) it.qty_on_hand -= lineBaseQty(c); });
     await printReceipt(sale.offlineRef, sale.total, true);
     Toast.success(`Sale saved offline (${sale.offlineRef}) — will sync when back online`);
     cart = [];
@@ -227,7 +233,8 @@ async function submitSaleToServer(sale, { enforceStock }) {
             description: c.item.name,
             hsn_sac: c.item.hsn_sac || '',
             quantity: c.qty,
-            unit_price: basePrice(c.item),
+            unit_price: linePrice(c),      // per the SELECTED unit; backend converts qty × factor to base for stock
+            uom: c.uom || null,
             discount_percent: c.disc || 0,
             account_id: c.item.income_account_id || incomeAccounts[0].id,
             ...(effTaxConfigId(c.item) ? { tax_config_id: effTaxConfigId(c.item) } : {})
@@ -370,11 +377,14 @@ function applyStockPush(updates) {
         if (!it) return;
         it.qty_on_hand = u.qty_on_hand;
         it.avg_cost = u.avg_cost;
-        const line = cart.find(c => c.item.id === u.id);
-        if (line && line.item.track_inventory && line.qty > u.qty_on_hand) {
-            line.qty = Math.max(0, u.qty_on_hand);
-            capped = true;
-        }
+        // BASE-unit-aware capping across every cart line of this item (pack lines → whole packs).
+        let avail = u.qty_on_hand;
+        cart.filter(c => c.item.id === u.id && c.item.track_inventory).forEach(line => {
+            const conv = lineConv(line);
+            const maxQty = conv === 1 ? avail : Math.floor(avail / conv);
+            if (line.qty > maxQty) { line.qty = Math.max(0, maxQty); capped = true; }
+            avail -= lineBaseQty(line);
+        });
     });
     cart = cart.filter(c => c.qty > 0);
     renderGrid(true);
@@ -555,6 +565,17 @@ function basePrice(i) {
         : i.sale_price;
 }
 
+// ── Multiple UoM at the counter ──────────────────────────────────────────────
+// A cart line can be rung in the item's sale pack (e.g. strip) instead of the base unit.
+// Scans and grid taps ALWAYS target the base-unit line (a scan is one physical piece);
+// the pack line is a separate cart entry. All stock caps compare BASE units.
+function lineConv(c) { return c.uom && c.uom === c.item.sale_unit ? (c.item.sale_conversion || 1) : 1; }
+function linePrice(c) { const conv = lineConv(c); return conv === 1 ? basePrice(c.item) : Math.round(basePrice(c.item) * conv * 100) / 100; }
+function lineBaseQty(c) { return Math.round(c.qty * lineConv(c) * 10000) / 10000; }
+function itemBaseInCart(itemId, exceptLine) { return cart.filter(c => c.item.id === itemId && c !== exceptLine).reduce((s, c) => s + lineBaseQty(c), 0); }
+/** Offerable pack for an item at the counter (serial items sell per piece only). */
+function packOf(i) { return i.sale_unit && i.tracking_mode !== 'serial' ? i.sale_unit : null; }
+
 let posCategory = '';   // active category chip ('' = all)
 const POS_PAGE = 60;     // rows appended per scroll batch (infinite scroll)
 let posVisible = POS_PAGE;
@@ -626,41 +647,73 @@ function renderGrid(keepCount) {
 function addToCart(itemId) {
     const it = posItems.find(x => x.id === itemId);
     if (!it) return;
-    const line = cart.find(c => c.item.id === itemId);
+    // Scans/taps are one physical piece — always the BASE-unit line (pack lines are separate).
+    const line = cart.find(c => c.item.id === itemId && !c.uom);
     // Counter sales are physical goods in hand: never ring more than the shelf holds.
     // (The B2B invoice flow still allows advance-order oversell — that's deliberate.)
     if (it.track_inventory) {
-        const inCart = line?.qty || 0;
+        const inCartBase = itemBaseInCart(itemId, null);
         if (it.qty_on_hand <= 0) { Toast.error(`'${it.name}' is out of stock — receive or adjust stock first.`); return; }
-        if (inCart + 1 > it.qty_on_hand) { Toast.error(`Only ${it.qty_on_hand} of '${it.name}' in stock.`); return; }
+        if (inCartBase + 1 > it.qty_on_hand) { Toast.error(`Only ${it.qty_on_hand} ${it.unit || ''} of '${it.name}' in stock.`); return; }
     }
-    if (line) line.qty += 1; else cart.push({ item: it, qty: 1, disc: 0 });
+    if (line) line.qty += 1; else cart.push({ item: it, qty: 1, disc: 0, uom: null });
     renderCart();
 }
 
-function setQty(itemId, qty) {
-    const line = cart.find(c => c.item.id === itemId);
+function setQty(idx, qty) {
+    const line = cart[idx];
     if (!line) return;
     let capped = Math.max(0, qty);
-    if (line.item.track_inventory && capped > line.item.qty_on_hand) {
-        capped = line.item.qty_on_hand;
-        Toast.error(`Only ${line.item.qty_on_hand} of '${line.item.name}' in stock.`);
+    if (line.item.track_inventory) {
+        // Cap in BASE units across every cart line of this item; pack lines cap to whole packs.
+        const availBase = line.item.qty_on_hand - itemBaseInCart(line.item.id, line);
+        const conv = lineConv(line);
+        const maxQty = conv === 1 ? availBase : Math.floor(availBase / conv);
+        if (capped > maxQty) {
+            capped = Math.max(0, maxQty);
+            Toast.error(`Only ${line.item.qty_on_hand} ${line.item.unit || ''} of '${line.item.name}' in stock.`);
+        }
     }
     line.qty = capped;
     if (!line.qty) cart = cart.filter(c => c !== line);
     renderCart();
 }
 
+/** Switch a cart line between the base unit and the item's sale pack. The NUMBER stays
+ *  ("3" pcs → "3" strips — the cashier said three of the now-selected thing); price and
+ *  stock caps re-derive. Merges into an existing line of the target unit if one exists. */
+function setLineUom(idx, uom) {
+    const line = cart[idx];
+    if (!line) return;
+    const target = uom || null;
+    if ((line.uom || null) === target) return;
+    const twin = cart.find(c => c !== line && c.item.id === line.item.id && (c.uom || null) === target);
+    if (twin) { twin.qty += line.qty; cart = cart.filter(c => c !== line); }
+    else line.uom = target;
+    const check = twin || line;
+    if (check.item.track_inventory) {
+        const availBase = check.item.qty_on_hand - itemBaseInCart(check.item.id, check);
+        const conv = lineConv(check);
+        const maxQty = conv === 1 ? availBase : Math.floor(availBase / conv);
+        if (check.qty > maxQty) {
+            check.qty = Math.max(0, maxQty);
+            Toast.error(`Only ${check.item.qty_on_hand} ${check.item.unit || ''} of '${check.item.name}' in stock — quantity adjusted.`);
+        }
+    }
+    cart = cart.filter(c => c.qty > 0);
+    renderCart();
+}
+
 // Per-line trade discount % at the counter. Clamped 0-100; recompute totals live. Sent as
 // discount_percent to the same POST /invoices endpoint (backend charges GST on the net).
-function setLineDisc(itemId, val) {
-    const line = cart.find(c => c.item.id === itemId);
+function setLineDisc(idx, val) {
+    const line = cart[idx];
     if (!line) return;
     line.disc = Math.min(100, Math.max(0, parseFloat(val) || 0));
     // Recompute totals WITHOUT re-rendering the row (keeps focus in the input the user is typing in).
     let sub = 0, tax = 0;
-    const r2 = n => Math.round(n * 100) / 100;
-    cart.forEach(c => { const g = r2(basePrice(c.item) * c.qty); const net = g - r2(g * (c.disc || 0) / 100); sub += net; tax += gstOn(net, taxRateFor(effTaxConfigId(c.item))); });
+    const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+    cart.forEach(c => { const g = r2(linePrice(c) * c.qty); const net = g - r2(g * (c.disc || 0) / 100); sub += net; tax += gstOn(net, taxRateFor(effTaxConfigId(c.item))); });
     document.getElementById('posSub').textContent = money(sub);
     document.getElementById('posTax').textContent = money(tax);
     document.getElementById('posTotal').textContent = money(sub + tax);
@@ -668,27 +721,34 @@ function setLineDisc(itemId, val) {
     if (btn && !btn.disabled) btn.textContent = cart.length ? `Charge ${money(sub + tax)}` : 'Charge ₹0.00';
     // refresh the line's net amount cell
     const rows = document.querySelectorAll('#posCart tr');
-    cart.forEach((c, i) => { const cell = rows[i]?.querySelector('td:last-child'); if (cell) { const g = r2(basePrice(c.item) * c.qty); cell.textContent = money(g - r2(g * (c.disc || 0) / 100)); } });
+    cart.forEach((c, i) => { const cell = rows[i]?.querySelector('td:last-child'); if (cell) { const g = r2(linePrice(c) * c.qty); cell.textContent = money(g - r2(g * (c.disc || 0) / 100)); } });
 }
 
 function renderCart() {
     const tb = document.getElementById('posCart');
-    const r2 = n => Math.round(n * 100) / 100;
-    const lineNet = c => { const g = r2(basePrice(c.item) * c.qty); return g - r2(g * (c.disc || 0) / 100); };
-    tb.innerHTML = cart.length ? cart.map(c => `<tr>
-        <td class="pos-line-name">${esc(c.item.name)}<div class="sub">${money(basePrice(c.item))} ex-GST${(c.disc || 0) > 0 ? ` · −${c.disc}%` : ''}</div></td>
+    const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+    const lineNet = c => { const g = r2(linePrice(c) * c.qty); return g - r2(g * (c.disc || 0) / 100); };
+    tb.innerHTML = cart.length ? cart.map((c, idx) => {
+        const pack = packOf(c.item);
+        const unitChips = pack ? `<div class="sub" style="margin-top:2px;">
+            <button type="button" class="pos-chip ${!c.uom ? 'on' : ''}" onclick="setLineUom(${idx}, null)">${esc(c.item.unit || 'pcs')}</button>
+            <button type="button" class="pos-chip ${c.uom === pack ? 'on' : ''}" onclick="setLineUom(${idx}, '${esc(AccountsCommon.escJs(pack))}')">${esc(pack)}</button>
+        </div>` : '';
+        return `<tr>
+        <td class="pos-line-name">${esc(c.item.name)}<div class="sub">${money(linePrice(c))} ex-GST${c.uom ? ` / ${esc(c.uom)}` : ''}${(c.disc || 0) > 0 ? ` · −${c.disc}%` : ''}</div>${unitChips}</td>
         <td><span class="pos-qty">
-            <button type="button" onclick="setQty('${c.item.id}', ${c.qty - 1})">−</button>
-            <span>${c.qty}</span>
-            <button type="button" onclick="setQty('${c.item.id}', ${c.qty + 1})">+</button>
+            <button type="button" onclick="setQty(${idx}, ${c.qty - 1})">−</button>
+            <span>${c.qty}${c.uom ? `<small style="display:block;font-size:9px;line-height:1;">${esc(c.uom)}</small>` : ''}</span>
+            <button type="button" onclick="setQty(${idx}, ${c.qty + 1})">+</button>
         </span></td>
-        <td><input type="number" class="pos-line-disc" value="${c.disc || ''}" min="0" max="100" step="0.01" placeholder="0" title="Discount %" oninput="setLineDisc('${c.item.id}', this.value)" style="width:52px;padding:4px 6px;text-align:right;"></td>
+        <td><input type="number" class="pos-line-disc" value="${c.disc || ''}" min="0" max="100" step="0.01" placeholder="0" title="Discount %" oninput="setLineDisc(${idx}, this.value)" style="width:52px;padding:4px 6px;text-align:right;"></td>
         <td style="text-align:right;font-weight:600;">${money(lineNet(c))}</td>
-    </tr>`).join('') : '<tr><td class="pos-cart-empty" colspan="4">Cart is empty — tap items or scan a barcode.</td></tr>';
+    </tr>`;
+    }).join('') : '<tr><td class="pos-cart-empty" colspan="4">Cart is empty — tap items or scan a barcode.</td></tr>';
     let sub = 0, tax = 0, count = 0;
     cart.forEach(c => {
         const base = lineNet(c);
-        sub += base; count += c.qty;
+        sub += base; count += lineBaseQty(c);
         tax += gstOn(base, taxRateFor(effTaxConfigId(c.item)));
     });
     document.getElementById('posSub').textContent = money(sub);
@@ -735,7 +795,7 @@ async function completeSale() {
     // and any invoices already created before a mid-sale network drop ride along in
     // sale.progress so the replay never double-creates them.
     const sale = {
-        cart: cart.map(c => ({ item: { ...c.item }, qty: c.qty, disc: c.disc || 0 })),
+        cart: cart.map(c => ({ item: { ...c.item }, qty: c.qty, disc: c.disc || 0, uom: c.uom || null })),
         date: AccountsCommon.todayLocal(),
         bankId,
         method: posMethodDD?.getValue?.() || 'cash',
@@ -841,16 +901,16 @@ async function printReceipt(invoiceNumber, total, offline = false) {
     }
     const w = window.open('', '_blank', 'width=380,height=600');
     if (!w) return;
-    const r2 = n => Math.round(n * 100) / 100;
+    const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
     let gross = 0, totDisc = 0, tax = 0;
     const rows = cart.map(c => {
-        const base = basePrice(c.item);
-        const g = r2(base * c.qty);
+        const unit = linePrice(c);
+        const g = r2(unit * c.qty);
         const disc = r2(g * (c.disc || 0) / 100);
         const net = g - disc;
         gross += g; totDisc += disc;
         tax += gstOn(net, taxRateFor(effTaxConfigId(c.item)));
-        return `<tr><td>${esc(c.item.name)}<br><small>${c.qty} × ${base.toFixed(2)}${disc > 0 ? ` (−${c.disc}%)` : ''}</small></td><td class="r">${net.toFixed(2)}</td></tr>`;
+        return `<tr><td>${esc(c.item.name)}<br><small>${c.qty}${c.uom ? ' ' + esc(c.uom) : ''} × ${unit.toFixed(2)}${disc > 0 ? ` (−${c.disc}%)` : ''}</small></td><td class="r">${net.toFixed(2)}</td></tr>`;
     }).join('');
     const sub = gross;   // MRP/list subtotal before discount
     w.document.write(`<!DOCTYPE html><html><head><title>${esc(invoiceNumber || 'Receipt')}</title><style>

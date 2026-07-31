@@ -151,9 +151,11 @@ async function saveItem() {
         barcode: document.getElementById('itBarcode').value.trim() || null,
         unit: document.getElementById('itUnit').value.trim() || 'pcs',
         purchase_unit: document.getElementById('itPurchaseUnit').value.trim() || null,
-        purchase_conversion: parseFloat(document.getElementById('itPurchaseConv').value) || null,
+        // Send a typed 0 as 0 (not null) so the backend answers "must be > 0" instead of the
+        // confusing "set both or neither" pair error when the user did fill both fields.
+        purchase_conversion: document.getElementById('itPurchaseConv').value.trim() === '' ? null : parseFloat(document.getElementById('itPurchaseConv').value),
         sale_unit: document.getElementById('itSaleUnit').value.trim() || null,
-        sale_conversion: parseFloat(document.getElementById('itSaleConv').value) || null,
+        sale_conversion: document.getElementById('itSaleConv').value.trim() === '' ? null : parseFloat(document.getElementById('itSaleConv').value),
         warranty_months: parseInt(document.getElementById('itWarranty').value) || 0,
         reorder_level: parseFloat(document.getElementById('itReorder').value) || 0,
         reorder_quantity: parseFloat(document.getElementById('itReorderQty').value) || 0,

@@ -961,7 +961,10 @@ async function editInvoice(id) {
         // at the captured rate so the user edits what the client sees.
         const fxRate = inv.exchange_rate ? parseFloat(inv.exchange_rate) : 0;
         await initInvoiceCurrencyDropdown(inv.currency || BASE_CURRENCY);
-        initInvoiceItemPicker();
+        // AWAIT the catalog load: addInvoiceLine builds each line's unit picker from inventoryItems —
+        // rendering lines before the catalog arrives degraded alt-unit lines to a locked single-option
+        // dropdown (and hid the picker entirely on base-unit lines) on the first edit after page load.
+        await initInvoiceItemPicker();
         if (fxRate > 0) {
             document.getElementById('invoiceExchangeRate').value = fxRate;
             const rh = document.getElementById('invoiceRateHint');
@@ -1099,8 +1102,10 @@ function addInvoiceLine(data = {}) {
                         const convOf = (u) => (altU && u === altU) ? (invIt.sale_conversion || 1) : 1;
                         const rateEl = row.querySelector('.line-rate');
                         const prevDefault = Math.round(invIt.sale_price * convOf(row._lineUom || startUom) * 100) / 100;
-                        const cur = parseFloat(rateEl.value) || 0;
-                        if (!cur || cur === prevDefault) rateEl.value = Math.round(invIt.sale_price * convOf(v) * 100) / 100;
+                        // Rescale only an EMPTY rate or one still at the previous unit's catalog default —
+                        // a deliberately-typed price (including ₹0 free-of-charge) must survive a unit switch.
+                        const raw = (rateEl.value || '').trim();
+                        if (raw === '' || parseFloat(raw) === prevDefault) rateEl.value = Math.round(invIt.sale_price * convOf(v) * 100) / 100;
                     }
                     row._lineUom = v;
                     calculateInvoiceTotals();
@@ -2332,7 +2337,7 @@ async function printInvoice() {
                 <td class="c">${i + 1}</td>
                 <td>${esc(l.description || l.account_name || '')}</td>
                 <td class="c">${esc(l.hsn_sac || '')}</td>
-                <td class="r">${Number(l.quantity) || 0}</td>
+                <td class="r">${Number(l.quantity) || 0}${l.uom ? ' ' + esc(l.uom) : ''}</td>
                 <td class="r">${money(docAmt(l.unit_price))}</td>
                 <td class="r">${money(docAmt(l.amount ?? (l.quantity * l.unit_price)))}</td>
             </tr>`).join('');

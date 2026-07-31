@@ -33,12 +33,14 @@ const SearchableDropdown = (function() {
         });
     });
 
-    // HTML escape function to prevent XSS
+    // HTML escape function to prevent XSS. Must be QUOTE-SAFE: escaped values are interpolated
+    // into double-quoted attributes (data-value="…"), and the textContent→innerHTML trick alone
+    // leaves " and ' unescaped — a value like `x" onclick="…"` would break out of the attribute.
     function escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
-        return div.innerHTML;
+        return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     /**

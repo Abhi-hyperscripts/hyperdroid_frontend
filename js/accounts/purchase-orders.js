@@ -313,7 +313,7 @@ async function viewPO(id) {
             return `<tr>
                 <td>${esc(l.description || '-')}</td>
                 <td>${esc(l.account_code ? l.account_code + ' — ' + (l.account_name || '') : (l.account_name || '-'))}</td>
-                <td>${l.quantity}</td>
+                <td>${l.quantity}${l.uom ? ' ' + esc(l.uom) : ''}</td>
                 <td class="text-right">${fmt(l.unit_price)}</td>
                 <td>${esc(taxLabel)}</td>
                 <td class="text-right">${fmt(lineAmt + lineTax)}</td>
@@ -404,6 +404,7 @@ function showCreatePOModal() {
     poVendorSel.value = '';
     poVendorSel.dispatchEvent(new Event('change'));
     poFx.init(AccountsCommon.FX_BASE);
+    initPOItemPicker();   // async-fine here: the create modal opens with a blank line, no stored uom to restore
     document.getElementById('poLines').innerHTML = '';
     addPOLine();
     calculatePOTotals();
@@ -427,6 +428,8 @@ async function editPO(id) {
         // FX POs store line amounts in INR; display them back in the document currency.
         const poFxRate = po.exchange_rate ? parseFloat(po.exchange_rate) : 0;
         await poFx.init(po.currency || AccountsCommon.FX_BASE, poFxRate);
+        // AWAIT the catalog — each line's unit picker is built from inventoryItems.
+        await initPOItemPicker();
         if (poFxRate > 0) {
             lines.forEach(l => {
                 const inr = parseFloat(l.unit_price ?? 0);
@@ -451,6 +454,36 @@ async function editPO(id) {
 // ============================================================================
 // LINE ITEMS
 // ============================================================================
+
+// ── Inventory item picker: adds a pre-filled line from the catalog (mirrors payables) ──
+let inventoryItems = [];
+let poItemPickerDD = null;
+
+async function initPOItemPicker() {
+    const container = document.getElementById('poItemPicker');
+    if (!container || typeof SearchableDropdown !== 'function') return;
+    if (!inventoryItems.length) {
+        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }); } catch { inventoryItems = []; }
+    }
+    const opts = [{ value: '', label: '+ Add from item catalog…' },
+        ...inventoryItems.filter(i => i.is_active).map(i => ({ value: i.id, label: `${i.sku} — ${i.name}` }))];
+    container.innerHTML = '';
+    poItemPickerDD = new SearchableDropdown(container, {
+        id: 'poItemPickerDD', options: opts, value: '', placeholder: '+ Add from item catalog…',
+        searchPlaceholder: 'Search SKU / name…', compact: true,
+        onChange: (v) => {
+            if (!v) return;
+            const it = inventoryItems.find(x => x.id === v);
+            if (it) addPOLine({
+                item_id: it.id, description: it.name, quantity: 1,
+                unit_price: it.purchase_price ?? it.sale_price,
+                account_id: AccountsCommon.postableAccounts(accounts, 'expense')[0]?.id || undefined,
+                ...(it.tax_config_id ? { tax_config_id: it.tax_config_id } : {})
+            });
+            poItemPickerDD.setValue?.('');
+        }
+    });
+}
 
 function addPOLine(data = {}) {
     const tbody = document.getElementById('poLines');
@@ -478,12 +511,46 @@ function addPOLine(data = {}) {
     row.innerHTML = `
         <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
-        <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculatePOTotals()"></td>
+        <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculatePOTotals()"><div class="searchable-dropdown-container line-uom-sd" style="margin-top:2px;"></div></td>
         <td><input type="number" class="form-control line-rate" value="${data.unit_price || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculatePOTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removePOLine(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
+    row._itemId = data.item_id || null;
     tbody.appendChild(row);
+
+    // ── Unit picker (multiple UoM, purchase side) — mirrors the bill line picker ──
+    {
+        const invIt = (inventoryItems || []).find(x => x.id === row._itemId);
+        const baseU = invIt?.unit || null;
+        const altU = invIt?.purchase_unit || null;
+        const uomChoices = [...new Set([baseU, altU, data.uom].filter(Boolean))];
+        if (uomChoices.length > 1) {
+            const startUom = data.uom || baseU;
+            row._lineUomDropdown = new SearchableDropdown(row.querySelector('.line-uom-sd'), {
+                id: `po-line-uom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                options: uomChoices.map(u => ({ value: u, label: u })),
+                value: startUom, compact: true,
+                onChange: (v) => {
+                    if (invIt && invIt.purchase_price != null) {
+                        const convOf = (u) => (altU && u === altU) ? (invIt.purchase_conversion || 1) : 1;
+                        const rateEl = row.querySelector('.line-rate');
+                        const prevDefault = Math.round(invIt.purchase_price * convOf(row._lineUom || startUom) * 100) / 100;
+                        const raw = (rateEl.value || '').trim();
+                        if (raw === '' || parseFloat(raw) === prevDefault) rateEl.value = Math.round(invIt.purchase_price * convOf(v) * 100) / 100;
+                    }
+                    row._lineUom = v;
+                    calculatePOTotals();
+                }
+            });
+            row._lineUom = startUom;
+        } else if (data.uom) {
+            row._lineUomDropdown = new SearchableDropdown(row.querySelector('.line-uom-sd'), {
+                id: `po-line-uom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                options: [{ value: data.uom, label: data.uom }], value: data.uom, compact: true
+            });
+        }
+    }
 
     // Hide the native select (display:none) and wire a SearchableDropdown to
     // the sibling container with quickAdd enabled.
@@ -782,7 +849,11 @@ async function savePO() {
             quantity,
             unit_price,
             tax_config_id: taxConfigId || null,
-            tax_rate: taxRate || 0
+            tax_rate: taxRate || 0,
+            // Preserve the item link + entered unit — a UI edit must not strip them from
+            // API/Copilot-created lines (that silently killed the stock receipt at billing).
+            item_id: row._itemId || null,
+            uom: row._lineUomDropdown?.getValue?.() || null
         });
     });
     if (lineError) { Toast.error(lineError); return; }
