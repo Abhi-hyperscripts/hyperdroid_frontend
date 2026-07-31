@@ -43,6 +43,7 @@ function onTabSwitch(tabId) {
         case 'inv-workorders': loadWorkOrders(); break;
         case 'inv-count': loadStockCounts(); break;
         case 'inv-pricelists': loadPriceLists(); break;
+        case 'inv-schemes': loadSchemes(); break;
         case 'inv-reorder': loadReorder(); break;
         case 'inv-movements': loadMovements(); break;
         case 'inv-serials': loadSerials(); break;
@@ -1007,6 +1008,69 @@ async function cancelStockCount(id, number) {
         await api.request(AccountsCommon.buildUrl(`stock-counts/${id}/cancel`), { method: 'POST', body: JSON.stringify({ reason }) });
         Toast.success('Stock count cancelled'); await loadStockCounts();
     } catch (e) { Toast.error(e.message || 'Cancel failed'); }
+}
+
+// ── Trade schemes (buy N get M free) ────────────────────────────────────────
+let schemes = [];
+let schItemDD = null, schFreeItemDD = null;
+
+async function loadSchemes() {
+    try { schemes = unwrap(await api.request(AccountsCommon.buildUrl('trade-schemes', { includeInactive: true }), { _skipSpinner: true })); }
+    catch { schemes = []; }
+    const fmtD = d => d ? new Date(d).toLocaleDateString('en-IN') : '…';
+    const tb = document.getElementById('schemesTable');
+    tb.innerHTML = schemes.length ? schemes.map(s => `
+        <tr><td>${esc(s.name)}</td><td>${esc(s.item_sku || '')} ${esc(s.item_name || '')}</td>
+        <td>${num(s.buy_qty)}</td>
+        <td>${num(s.free_qty)} × ${esc(s.free_item_sku || s.item_sku || '')} FREE</td>
+        <td>${s.starts_on || s.ends_on ? `${fmtD(s.starts_on)} → ${fmtD(s.ends_on)}` : 'Always'}</td>
+        <td style="text-align:center;">${s.is_active ? '✓' : '—'}</td>
+        <td><button class="btn btn-sm btn-outline" onclick="toggleScheme('${s.id}', ${s.is_active ? 'false' : 'true'})" data-admin-only>${s.is_active ? 'Deactivate' : 'Activate'}</button></td></tr>`).join('')
+        : `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No schemes yet — '10+1' style offers auto-apply on invoices and at the counter.</td></tr>`;
+    accountsRoles.applyRBAC();
+}
+
+async function showSchemeModal() {
+    ['schName', 'schBuyQty', 'schFreeQty', 'schStarts', 'schEnds'].forEach(id => document.getElementById(id).value = '');
+    if (!items.length) await loadItems();
+    const goods = items.filter(i => i.is_active && i.item_type === 'goods');
+    const opts = goods.map(i => ({ value: i.id, label: `${i.sku} — ${i.name}` }));
+    document.getElementById('schItem').innerHTML = '';
+    document.getElementById('schFreeItem').innerHTML = '';
+    schItemDD = new SearchableDropdown(document.getElementById('schItem'), { id: 'schItemDD', options: opts, value: '', placeholder: 'Select item…', searchPlaceholder: 'Search SKU / name…', compact: true });
+    schFreeItemDD = new SearchableDropdown(document.getElementById('schFreeItem'), { id: 'schFreeItemDD', options: [{ value: '', label: 'Same item' }, ...opts.filter(o => { const it = goods.find(g => g.id === o.value); return it?.tracking_mode !== 'serial'; })], value: '', placeholder: 'Same item', searchPlaceholder: 'Search SKU / name…', compact: true });
+    AccountsCommon.openModal('schemeModal');
+}
+
+async function saveScheme() {
+    const payload = {
+        name: document.getElementById('schName').value.trim(),
+        item_id: schItemDD?.getValue?.() || null,
+        buy_qty: parseFloat(document.getElementById('schBuyQty').value) || 0,
+        free_qty: parseFloat(document.getElementById('schFreeQty').value) || 0,
+        free_item_id: schFreeItemDD?.getValue?.() || null,
+        starts_on: document.getElementById('schStarts').value || null,
+        ends_on: document.getElementById('schEnds').value || null
+    };
+    if (!payload.name) { Toast.error('Scheme name is required'); return; }
+    if (!payload.item_id) { Toast.error('Pick the item the customer must buy'); return; }
+    if (payload.buy_qty <= 0 || payload.free_qty <= 0) { Toast.error('Buy and free quantities must be greater than 0'); return; }
+    const btn = document.getElementById('saveSchemeBtn'); btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl('trade-schemes'), { method: 'POST', body: JSON.stringify(payload) });
+        Toast.success('Scheme created — it now auto-applies on invoices and at the counter');
+        AccountsCommon.closeModal('schemeModal');
+        await loadSchemes();
+    } catch (err) { Toast.error(err.message || 'Failed to create scheme'); }
+    finally { btn.disabled = false; }
+}
+
+async function toggleScheme(id, active) {
+    try {
+        await api.request(AccountsCommon.buildUrl(`trade-schemes/${id}/activate`, { active }), { method: 'POST' });
+        Toast.success(active === true || active === 'true' ? 'Scheme activated' : 'Scheme deactivated');
+        await loadSchemes();
+    } catch (err) { Toast.error(err.message || 'Failed'); }
 }
 
 // ── Price Lists ──────────────────────────────────────────────────────────────

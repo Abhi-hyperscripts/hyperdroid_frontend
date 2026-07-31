@@ -83,6 +83,7 @@
                             <button class="sidebar-btn" data-tab="inv-workorders"><span class="nav-number">5</span><span class="nav-label">Work Orders</span></button>
                             <button class="sidebar-btn" data-tab="inv-count"><span class="nav-number">6</span><span class="nav-label">Stock Count</span></button>
                             <button class="sidebar-btn" data-tab="inv-pricelists"><span class="nav-number">7</span><span class="nav-label">Price Lists</span></button>
+                            <button class="sidebar-btn" data-tab="inv-schemes"><span class="nav-number">11</span><span class="nav-label">Schemes</span></button>
                             <button class="sidebar-btn" data-tab="inv-reorder"><span class="nav-number">8</span><span class="nav-label">Reorder Report</span></button>
                             <button class="sidebar-btn" data-tab="inv-movements"><span class="nav-number">9</span><span class="nav-label">Movements</span></button>
                             <button class="sidebar-btn" data-tab="inv-serials"><span class="nav-number">10</span><span class="nav-label">Serials &amp; Warranty</span></button>
@@ -305,6 +306,19 @@
                 </div>
 
                 <!-- PRICE LISTS -->
+                <div class="tab-content" id="inv-schemes">
+                    <div class="filters-bar" style="align-items:flex-end;">
+                        <p style="margin:0;font-size:.85rem;color:var(--text-secondary);flex:1;">Free-goods schemes — buy N get M free (quantities in the item's BASE unit). Active schemes auto-add the free line on invoices and at the POS counter.</p>
+                        <button class="btn btn-primary" onclick="showSchemeModal()" data-admin-only>+ New Scheme</button>
+                    </div>
+                    <div class="data-table-container" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead><tr><th>Scheme</th><th>Buy Item</th><th>Buy Qty</th><th>Free</th><th>Window</th><th>Active</th><th></th></tr></thead>
+                            <tbody id="schemesTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="tab-content" id="inv-pricelists">
                     <div class="filters-bar" style="align-items:flex-end;">
                         <p style="margin:0;font-size:.85rem;color:var(--text-secondary);flex:1;">Named price lists (wholesale, retail MRP, etc.) with per-item prices.</p>
@@ -648,6 +662,27 @@
     </div>
 
     <!-- Price list modal -->
+    <!-- New trade scheme modal -->
+    <div class="modal" id="schemeModal">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header"><h3>New Free-Goods Scheme</h3><button class="close-btn" onclick="AccountsCommon.closeModal('schemeModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Scheme Name *</label><input type="text" id="schName" class="form-control" maxlength="120" placeholder="Monsoon 10+1"></div>
+                <div class="form-group"><label>Buy Item *</label><div class="searchable-dropdown-container" id="schItem"></div></div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Buy Qty * <span class="opt">(base units to qualify)</span></label><input type="number" id="schBuyQty" class="form-control" min="0" step="any" placeholder="10"></div>
+                    <div class="form-group"><label>Free Qty * <span class="opt">(base units given free)</span></label><input type="number" id="schFreeQty" class="form-control" min="0" step="any" placeholder="1"></div>
+                </div>
+                <div class="form-group"><label>Free Item <span class="opt">(leave empty for the SAME item — '10+1')</span></label><div class="searchable-dropdown-container" id="schFreeItem"></div></div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Starts <span class="opt">(optional)</span></label><input type="date" id="schStarts" class="form-control"></div>
+                    <div class="form-group"><label>Ends <span class="opt">(optional)</span></label><input type="date" id="schEnds" class="form-control"></div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('schemeModal')">Cancel</button><button class="btn btn-primary" id="saveSchemeBtn" onclick="saveScheme()">Save</button></div>
+        </div>
+    </div>
+
     <div class="modal" id="priceListModal">
         <div class="modal-content" style="max-width:420px;">
             <div class="modal-header"><h3>New Price List</h3><button class="close-btn" onclick="AccountsCommon.closeModal('priceListModal')">&times;</button></div>
