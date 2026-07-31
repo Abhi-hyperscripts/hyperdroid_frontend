@@ -721,29 +721,45 @@ function setLineDisc(idx, val) {
     if (btn && !btn.disabled) btn.textContent = cart.length ? `Charge ${money(sub + tax)}` : 'Charge ₹0.00';
     // refresh the line's net amount cell
     const rows = document.querySelectorAll('#posCart tr');
-    cart.forEach((c, i) => { const cell = rows[i]?.querySelector('td:last-child'); if (cell) { const g = r2(linePrice(c) * c.qty); cell.textContent = money(g - r2(g * (c.disc || 0) / 100)); } });
+    cart.forEach((c, i) => { const cell = rows[i]?.querySelector('.pos-line-amt'); if (cell) { const g = r2(linePrice(c) * c.qty); cell.textContent = money(g - r2(g * (c.disc || 0) / 100)); } });
 }
 
 function renderCart() {
     const tb = document.getElementById('posCart');
     const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
     const lineNet = c => { const g = r2(linePrice(c) * c.qty); return g - r2(g * (c.disc || 0) / 100); };
+    // One card per line, THREE calm rows a teller can read at arm's length:
+    //   1. Item name (full width, no truncation for normal names) …… line amount, bold
+    //   2. qty stepper · per-unit price context · labelled "Disc %" input
+    //   3. (pack items only) Sell per [base] [pack ×N] toggle
+    const chipStyle = 'padding:3px 12px;font-size:11px;line-height:1.5;border-radius:999px;cursor:pointer;';
+    const chipOff = chipStyle + 'border:1px solid var(--border-color, #3a4358);background:transparent;color:var(--text-secondary,#9aa4b8);';
+    const chipOn = chipStyle + 'border:1px solid var(--brand-primary,#3b6ef5);background:var(--brand-primary,#3b6ef5);color:#fff;';
     tb.innerHTML = cart.length ? cart.map((c, idx) => {
         const pack = packOf(c.item);
-        const unitChips = pack ? `<div class="sub" style="margin-top:2px;">
-            <button type="button" class="pos-chip ${!c.uom ? 'on' : ''}" onclick="setLineUom(${idx}, null)">${esc(c.item.unit || 'pcs')}</button>
-            <button type="button" class="pos-chip ${c.uom === pack ? 'on' : ''}" onclick="setLineUom(${idx}, '${esc(AccountsCommon.escJs(pack))}')">${esc(pack)}</button>
+        const unitChips = pack ? `<div style="display:flex;gap:6px;align-items:center;margin-top:8px;">
+            <span class="sub" style="font-size:10.5px;">Sell per</span>
+            <button type="button" style="${!c.uom ? chipOn : chipOff}" onclick="setLineUom(${idx}, null)">${esc(c.item.unit || 'pcs')}</button>
+            <button type="button" style="${c.uom === pack ? chipOn : chipOff}" onclick="setLineUom(${idx}, '${esc(AccountsCommon.escJs(pack))}')">${esc(pack)} ×${c.item.sale_conversion || 1}</button>
         </div>` : '';
-        return `<tr>
-        <td class="pos-line-name">${esc(c.item.name)}<div class="sub">${money(linePrice(c))} ex-GST${c.uom ? ` / ${esc(c.uom)}` : ''}${(c.disc || 0) > 0 ? ` · −${c.disc}%` : ''}</div>${unitChips}</td>
-        <td><span class="pos-qty">
-            <button type="button" onclick="setQty(${idx}, ${c.qty - 1})">−</button>
-            <span>${c.qty}${c.uom ? `<small style="display:block;font-size:9px;line-height:1;">${esc(c.uom)}</small>` : ''}</span>
-            <button type="button" onclick="setQty(${idx}, ${c.qty + 1})">+</button>
-        </span></td>
-        <td><input type="number" class="pos-line-disc" value="${c.disc || ''}" min="0" max="100" step="0.01" placeholder="0" title="Discount %" oninput="setLineDisc(${idx}, this.value)" style="width:52px;padding:4px 6px;text-align:right;"></td>
-        <td style="text-align:right;font-weight:600;">${money(lineNet(c))}</td>
-    </tr>`;
+        return `<tr><td colspan="4" style="padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;">
+            <div class="pos-line-name" style="font-size:13.5px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.item.name)}</div>
+            <div class="pos-line-amt" style="font-size:14.5px;font-weight:700;flex-shrink:0;">${money(lineNet(c))}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+            <span class="pos-qty" style="flex-shrink:0;">
+                <button type="button" onclick="setQty(${idx}, ${c.qty - 1})">−</button>
+                <span>${c.qty}${c.uom ? ` <small style="font-size:9.5px;">${esc(c.uom)}</small>` : ''}</span>
+                <button type="button" onclick="setQty(${idx}, ${c.qty + 1})">+</button>
+            </span>
+            <span class="sub" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${money(linePrice(c))}${c.uom ? `/${esc(c.uom)}` : ''} ex-GST</span>
+            <label class="sub" style="display:flex;align-items:center;gap:5px;flex-shrink:0;cursor:text;font-size:12px;">Disc
+                <input type="number" class="pos-line-disc" value="${c.disc || ''}" min="0" max="100" step="0.01" placeholder="0" title="Discount %" oninput="setLineDisc(${idx}, this.value)" style="width:64px;padding:7px 8px;text-align:right;font-size:13px;">%
+            </label>
+        </div>
+        ${unitChips}
+    </td></tr>`;
     }).join('') : '<tr><td class="pos-cart-empty" colspan="4">Cart is empty — tap items or scan a barcode.</td></tr>';
     let sub = 0, tax = 0, count = 0;
     cart.forEach(c => {

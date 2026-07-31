@@ -3007,7 +3007,9 @@ a.dv-tile:hover { transform: translateY(-2px);
 .fx-info-btn:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
 
 /* ── Cash Sale (POS) — counter ergonomics: big targets, giant total ── */
-.pos-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+/* Cart panel sized for teller readability: full item names, per-unit price, unit toggle and
+   line amount all visible without truncation (was 360px — too congested with multi-UoM lines). */
+.pos-layout { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 18px; align-items: start; }
 .pos-left { min-width: 0; }
 .pos-search-wrap { position: relative; margin-bottom: 14px; }
 .pos-search-wrap svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);
@@ -3033,10 +3035,14 @@ a.dv-tile:hover { transform: translateY(-2px);
     font-weight: 700; border-bottom: 1px solid var(--border-color); }
 .pos-cart-count { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
     background: var(--bg-tertiary); padding: 3px 10px; border-radius: 999px; }
-.pos-cart-lines { flex: 1; overflow-y: auto; min-height: 90px; max-height: 320px; }
+/* The lines viewport grows with the screen (big baskets scroll here while totals + Charge stay
+   pinned): at least ~3 cards, up to whatever the sticky panel's height allows. The old fixed
+   320px cap crammed a 20-line basket into ~2.5 visible cards. */
+.pos-cart-lines { flex: 1; overflow-y: auto; min-height: 120px; max-height: max(320px, calc(100vh - 540px)); }
 .pos-cart-lines table { width: 100%; border-collapse: collapse; }
 .pos-cart-lines td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); vertical-align: middle; font-size: 0.88rem; }
-.pos-line-name { max-width: 140px; }
+/* No width cap — the card layout gives the name its own full row (legacy 140px cap truncated names). */
+.pos-line-name { max-width: none; }
 .pos-line-name .sub { font-size: 0.72rem; color: var(--text-secondary); }
 .pos-qty { display: inline-flex; align-items: center; gap: 2px; }
 .pos-qty button { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--border-color);
