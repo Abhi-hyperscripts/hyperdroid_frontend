@@ -942,9 +942,9 @@ async function openCountDetail(id) {
         document.getElementById('finalizeCountBtn').style.display = finalized ? 'none' : '';
         const lines = c.lines || [];
         document.getElementById('countLinesTable').innerHTML = lines.length ? lines.map(l => `
-            <tr><td>${esc(l.sku || '')}</td><td>${esc(l.name || '')}</td><td>${num(l.system_qty)}</td>
-            <td>${finalized ? num(l.counted_qty) : `<input type="number" step="any" class="form-control" style="padding:.3rem .5rem;" data-item="${l.item_id}" value="${l.counted_qty ?? ''}">`}</td>
-            <td>${l.counted_qty != null ? num((l.counted_qty - l.system_qty)) : '—'}</td></tr>`).join('')
+            <tr><td>${esc(l.sku || '')}</td><td>${esc(l.name || '')}</td><td>${num(l.system_qty)}${l.unit ? ' ' + esc(l.unit) : ''}</td>
+            <td>${finalized ? num(l.counted_qty) : `<input type="number" step="any" class="form-control" style="padding:.3rem .5rem;" data-item="${l.item_id}" value="${l.counted_qty ?? ''}" title="Count in ${esc(l.unit || 'base units')}">`}</td>
+            <td>${l.counted_qty != null ? num((l.counted_qty - l.system_qty)) + (l.unit ? ' ' + esc(l.unit) : '') : '—'}</td></tr>`).join('')
             : `<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:1rem;">No lines.</td></tr>`;
         AccountsCommon.openModal('countDetailModal');
     } catch (e) { Toast.error(e.message || 'Could not open count'); }
@@ -1085,8 +1085,8 @@ async function loadReorder() {
     try {
         const list = unwrap(await api.request(AccountsCommon.buildUrl('inventory/reorder-report'), { _skipSpinner: true }));
         tb.innerHTML = list.length ? list.map(r => `
-            <tr><td>${esc(r.sku || '')}</td><td>${esc(r.name || r.item_name || '')}</td><td>${num(r.qty_on_hand)}</td>
-            <td>${num(r.reorder_level)}</td><td><strong>${num(r.suggested_order_qty ?? r.reorder_quantity)}</strong></td>
+            <tr><td>${esc(r.sku || '')}</td><td>${esc(r.name || r.item_name || '')}</td><td>${num(r.qty_on_hand)}${r.unit ? ' ' + esc(r.unit) : ''}</td>
+            <td>${num(r.reorder_level)}</td><td><strong>${num(r.suggested_order_qty ?? r.reorder_quantity)}${r.unit ? ' ' + esc(r.unit) : ''}</strong></td>
             <td>${esc(r.preferred_vendor_name || r.vendor_name || '—')}</td></tr>`).join('')
             : `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Nothing below its reorder level. 🎉</td></tr>`;
         // Suggested order quantity by item (most urgent first, top 8) — count-scaled, not currency.

@@ -341,17 +341,26 @@ function billReceiveItem(item, qty = 1, unitCost = null, description = null) {
         && !parseFloat(rows[0].querySelector('.line-rate')?.value || '0')) {
         rows[0].remove();
     }
-    // Repeat scan → bump the existing line for this item. Scans are BASE units: if the user
-    // switched the line to its alternate unit (e.g. box of 50), one scanned piece adds
-    // 1/conversion of THAT unit — bumping by 1 would silently add a whole box per beep.
+    // Repeat scan → bump the existing line for this item. Scans are BASE units: on a line
+    // switched to its alternate unit (e.g. dozen), accumulate a BASE counter on the row and
+    // derive the pack qty from it ONCE per scan — per-beep rounding of 1/conversion never sums
+    // back to whole packs for conversions like 3/6/12/24 (12 beeps of a dozen gave 0.9996 dz,
+    // short-billing the vendor and under-receiving stock). Whole packs snap exactly.
     const existing = document.querySelector(`#billLinesBody tr[data-item-id="${item.id}"]`);
     if (existing) {
         const qtyInput = existing.querySelector('.line-qty');
-        let inc = qty;
         const lineUom = existing._lineUomDropdown?.getValue?.();
-        if (lineUom && item.purchase_unit && lineUom === item.purchase_unit && (item.purchase_conversion || 0) > 0)
-            inc = Math.round((qty / item.purchase_conversion) * 10000) / 10000;
-        qtyInput.value = Math.round(((parseFloat(qtyInput.value) || 0) + inc) * 10000) / 10000;
+        const conv = (lineUom && item.purchase_unit && lineUom === item.purchase_unit && (item.purchase_conversion || 0) > 0)
+            ? item.purchase_conversion : 1;
+        if (conv !== 1) {
+            const scannedBase = (parseFloat(existing.dataset.scannedBase) || ((parseFloat(qtyInput.value) || 0) * conv)) + qty;
+            existing.dataset.scannedBase = scannedBase;
+            const packs = scannedBase / conv;
+            qtyInput.value = Math.abs(packs - Math.round(packs)) < 1e-9 ? Math.round(packs) : Math.round(packs * 10000) / 10000;
+        } else {
+            delete existing.dataset.scannedBase;   // manual/base mode — plain bump
+            qtyInput.value = Math.round(((parseFloat(qtyInput.value) || 0) + qty) * 10000) / 10000;
+        }
         calculateBillTotals();
         return existing;
     }
@@ -529,6 +538,12 @@ function setBillModalMode(mode, bill) {
             else el.removeAttribute('disabled');
             if ('readOnly' in el) el.readOnly = isView;
         });
+        // SearchableDropdowns are DIVs — `disabled` doesn't reach them (see receivables mirror):
+        // a live unit/tax pill on a viewed approved bill can rewrite the displayed totals.
+        form.querySelectorAll('.searchable-dropdown-container').forEach(el => {
+            el.style.pointerEvents = isView ? 'none' : '';
+            el.style.opacity = isView ? '0.7' : '';
+        });
     }
 
     // Status-aware read-only banner.
@@ -654,7 +669,7 @@ function renderBillBatchCapture(bill) {
         const it = inventoryItems.find(i => i.id === l.item_id);
         const hasLot = l.batch_number;
         return `<tr>
-            <td>${esc(it.sku)}</td><td>${esc(it.name)}</td><td style="text-align:right;">${l.quantity ?? l.qty ?? ''}</td>
+            <td>${esc(it.sku)}</td><td>${esc(it.name)}</td><td style="text-align:right;">${l.quantity ?? l.qty ?? ''}${l.uom ? ' ' + esc(l.uom) + ' (' + (Math.round((l.quantity ?? 0) * (l.uom_conversion || 1) * 10000) / 10000) + ' ' + esc(it.unit || 'base') + ')' : ''}</td>
             <td>${hasLot ? `<span class="status-badge status-active">${esc(l.batch_number)}${l.expiry_date ? ' · exp ' + AccountsCommon.formatDate(l.expiry_date) : ''}</span>` : '<span style="color:var(--color-warning);">Lot not recorded</span>'}</td>
             <td class="actions-cell"><button class="btn btn-sm btn-outline" onclick="openBillLotModal('${bill.id}','${l.id}','${esc((it.sku + ' — ' + it.name).replace(/'/g, ''))}')">${hasLot ? 'Update lot' : 'Set lot'}</button></td>
         </tr>`;

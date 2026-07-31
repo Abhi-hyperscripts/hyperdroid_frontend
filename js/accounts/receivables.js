@@ -1018,6 +1018,14 @@ function _setInvoiceModalReadOnly(readOnly) {
         if (readOnly) el.setAttribute('disabled', 'disabled');
         else el.removeAttribute('disabled');
     });
+    // SearchableDropdowns are DIVs — the disabled attribute doesn't reach them. Left live on an
+    // ISSUED invoice, the line unit/tax/account pills and the item picker still respond: one tap
+    // rewrites the displayed (locked-looking) rates and totals — a falsified issued invoice on
+    // screen. Kill pointer events wholesale in read-only mode.
+    modal.querySelectorAll('.searchable-dropdown-container').forEach(el => {
+        el.style.pointerEvents = readOnly ? 'none' : '';
+        el.style.opacity = readOnly ? '0.7' : '';
+    });
     // Also hide Save Draft + Save & Approve in read-only mode. The form was rebuilt as a full-page
     // .acc-form-page whose action bar is .acc-form-page__actions (legacy .modal-footer kept as a fallback).
     modal.querySelectorAll('.acc-form-page__actions button, .modal-footer button').forEach(b => {
@@ -1392,7 +1400,7 @@ async function saveInvoice(approve) {
             hsn_sac: row.querySelector('.line-hsn')?.value || '',
             quantity: parseFloat(row.querySelector('.line-qty')?.value) || 0,
             unit_price: rate,
-            discount_percent: Math.min(100, Math.max(0, parseFloat(row.querySelector('.line-disc')?.value) || 0)),
+            discount_percent: Math.round(Math.min(100, Math.max(0, parseFloat(row.querySelector('.line-disc')?.value) || 0)) * 100) / 100,   // 2dp — backend DECIMAL(5,2) rejects finer
             tax_config_id: taxConfigId,
             tax_rate: taxRate || 0,
             item_id: row._itemId || null,

@@ -72,7 +72,7 @@ async function refreshPosItems(silent = true) {
     try {
         const res = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true });
         posItems = (Array.isArray(res) ? res : []).filter(i => i.is_active);
-        let capped = false;
+        let capped = false, packChanged = false;
         // BASE-unit-aware capping: walk this item's lines in cart order, each consuming from
         // what the fresh snapshot says remains (pack lines floor to whole packs).
         const remaining = new Map();
@@ -80,6 +80,13 @@ async function refreshPosItems(silent = true) {
             const fresh = posItems.find(i => i.id === line.item.id);
             if (!fresh) return;
             line.item = fresh;
+            // Re-anchor the line's unit to the fresh master: a case-rename keeps the line (renamed
+            // label), a removed/renamed-away pack REVERTS the line to base units LOUDLY — the stale
+            // pack badge would otherwise show pack pricing the backend can no longer resolve.
+            if (line.uom) {
+                if (fresh.sale_unit && line.uom.toLowerCase() === fresh.sale_unit.toLowerCase()) line.uom = fresh.sale_unit;
+                else { line.uom = null; packChanged = true; }
+            }
             if (!fresh.track_inventory) return;
             if (!remaining.has(fresh.id)) remaining.set(fresh.id, fresh.qty_on_hand);
             const avail = remaining.get(fresh.id);
@@ -93,6 +100,7 @@ async function refreshPosItems(silent = true) {
         renderGrid(true);
         renderCart();
         if (capped) Toast.error('Stock changed at another counter — cart quantities adjusted.');
+        if (packChanged) Toast.error('An item\'s pack definition changed — affected cart lines reverted to the base unit. Re-check prices.');
         // A successful fetch proves we're back online — drain any offline queue.
         if (netOffline) { netOffline = false; updateNetBadge(); }
         syncOfflineSales();
@@ -118,19 +126,44 @@ function isNetworkError(err) {
     return !navigator.onLine || /failed to fetch|load failed|network\s?error|connection refused|err_(network|internet|connection)/i.test(err?.message || '');
 }
 
-function posDb() {
+function posDb(name) {
     return new Promise((resolve, reject) => {
         // TENANT-SCOPED database name: the offline queue for Company A lives in a DIFFERENT
         // IndexedDB than Company B's, so a sale queued under one company can NEVER sync into
         // another's books on a shared browser. The name derives from the current JWT, so sync
         // (which always opens the CURRENT tenant's DB) only ever drains this tenant's queue.
+        // 'pos2' since multi-UoM: entries now carry per-line uom. A STALE pre-UoM tab replaying a
+        // pack sale would post base prices with no unit (books ≠ printed receipt, silently) — the
+        // new DB name makes new-schema entries invisible to old code; legacy entries are migrated
+        // below and replay fine under current code (uom absent → base units, exactly as rung up).
         const tenantId = AccountsCommon.getTenantId?.();
         if (!tenantId) { reject(new Error('no tenant')); return; }   // not logged in → nothing to sync
-        const r = indexedDB.open('ragenaizer-pos-' + tenantId, 1);
+        const r = indexedDB.open((name || 'ragenaizer-pos2-') + tenantId, 1);
         r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('offline_sales')) r.result.createObjectStore('offline_sales', { keyPath: 'id' }); };
         r.onsuccess = () => resolve(r.result);
         r.onerror = () => reject(r.error);
     });
+}
+
+/** One-time drain of the pre-UoM queue DB into the current one (old entries have no uom — they
+ *  replay correctly under current code). Old tabs keep using the old DB and never see new entries. */
+async function migrateLegacyPosQueue() {
+    try {
+        const legacy = await posDb('ragenaizer-pos-');
+        const entries = await new Promise((resolve, reject) => {
+            const tx = legacy.transaction('offline_sales', 'readonly');
+            const req = tx.objectStore('offline_sales').getAll();
+            req.onsuccess = () => resolve(req.result || []); req.onerror = () => reject(req.error);
+        });
+        for (const e of entries) {
+            await posQueuePut(e);
+            await new Promise((resolve, reject) => {
+                const tx = legacy.transaction('offline_sales', 'readwrite');
+                tx.objectStore('offline_sales').delete(e.id);
+                tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+            });
+        }
+    } catch { /* best effort — legacy DB may not exist */ }
 }
 async function posQueuePut(entry) {
     const db = await posDb();
@@ -199,7 +232,7 @@ async function queueOfflineSale(sale) {
     // Optimistically decrement the local stock view (in BASE units) so the next offline sale
     // at THIS counter sees honest numbers (server truth returns on sync).
     sale.cart.forEach(c => { const it = posItems.find(i => i.id === c.item.id); if (it && it.track_inventory) it.qty_on_hand -= lineBaseQty(c); });
-    await printReceipt(sale.offlineRef, sale.total, true);
+    await printReceipt(sale.offlineRef, sale.total, true, sale.cart);
     Toast.success(`Sale saved offline (${sale.offlineRef}) — will sync when back online`);
     cart = [];
     renderCart(); renderGrid(true);
@@ -214,6 +247,23 @@ async function queueOfflineSale(sale) {
  */
 async function submitSaleToServer(sale, { enforceStock }) {
     if (!incomeAccounts.length) throw new Error('No postable Income account — set up your chart of accounts before syncing offline sales.');
+    // Pack-definition drift guard: the receipt froze money at the SNAPSHOT pack price, but the
+    // server resolves the conversion from the CURRENT item master at post time. If the pack was
+    // redefined (or its unit renamed — incl. a base-unit rename that would silently launder the
+    // pack line to conversion 1) while this sale waited, posting would move different stock than
+    // the printed receipt promised. Fail LOUD so the sale lands in "needing attention" instead.
+    for (const c of sale.cart) {
+        if (!c.uom) continue;
+        // Only meaningful against a LOADED catalog: after a transient items-fetch failure posItems
+        // is [], and erroring here would permanently park every queued pack sale as "needing
+        // attention" with a message blaming a perfectly fine item. Skip; the server still validates.
+        if (!posItems.length) break;
+        const fresh = posItems.find(i => i.id === c.item.id);
+        if (!fresh)
+            throw new Error(`'${c.item.name}' is no longer in the catalog — restore it before this sale can post.`);
+        if (fresh.sale_unit !== c.item.sale_unit || (fresh.sale_conversion || 1) !== (c.item.sale_conversion || 1) || fresh.unit !== c.item.unit)
+            throw new Error(`'${c.item.name}' pack definition changed since this sale was rung up (${c.qty} ${c.uom} @ receipt-time pack of ${c.item.sale_conversion || 1}) — review the item and re-ring or discard.`);
+    }
     const customerId = await ensureWalkInCustomer();
     const date = sale.date;
     const groups = [];
@@ -295,6 +345,7 @@ async function submitSaleToServer(sale, { enforceStock }) {
  * rejections are flagged for attention instead of blocking the rest. */
 async function syncOfflineSales() {
     if (posSyncing) return;
+    await migrateLegacyPosQueue();
     const entries = (await posQueueAll().catch(() => [])).filter(e => e.status !== 'error')
         .sort((a, b) => (a.at || '').localeCompare(b.at || ''));
     if (!entries.length) { updateNetBadge(); return; }
@@ -357,11 +408,23 @@ async function retryErroredSales() {
 }
 
 async function discardOfflineSale(id) {
-    Confirm.show('Discard this offline sale?', 'The queued sale will be deleted and never posted to the books. Only do this if it was rung up by mistake.', async () => {
+    // A multi-slab sale can have PARTIALLY posted before erroring: earlier groups' invoices are
+    // approved (stock out, AR open) and recorded in entry.progress. A plain delete would orphan
+    // them as phantom receivables — cancel them first so the books return to pre-sale truth.
+    const entry = (await posQueueAll().catch(() => [])).find(e => e.id === id);
+    const posted = entry?.progress?.invoices || [];
+    const warn = posted.length
+        ? `Part of this sale already posted (${posted.map(i => i.number || i.invId).join(', ')}). Discarding will CANCEL ${posted.length === 1 ? 'that invoice' : 'those invoices'} (restoring stock) and delete the queued sale.`
+        : 'The queued sale will be deleted and never posted to the books. Only do this if it was rung up by mistake.';
+    Confirm.show('Discard this offline sale?', warn, async () => {
+        for (const inv of posted) {
+            try { await api.request(AccountsCommon.buildUrl(`invoices/${inv.invId}/cancel`), { method: 'POST', body: JSON.stringify({ reason: `POS sale ${entry.offlineRef} discarded` }) }); }
+            catch (err) { Toast.error(`Could not cancel ${inv.number || inv.invId}: ${err.message} — cancel it in Receivables, then discard again.`); return; }
+        }
         await posQueueDelete(id).catch(() => {});
         document.getElementById('posQueueModal')?.remove();
         updateNetBadge();
-        Toast.success('Offline sale discarded');
+        Toast.success(posted.length ? 'Posted invoices cancelled and offline sale discarded' : 'Offline sale discarded');
     });
 }
 
@@ -403,6 +466,13 @@ let _wedgeBuf = '';
 let _wedgeLast = 0;
 document.addEventListener('keydown', (e) => {
     const inSearch = e.target === document.getElementById('posSearch');
+    // Editable fields other than the search box (line Disc %, qty inputs, modals) own their
+    // keystrokes: a scan burst while one is focused would otherwise TYPE the barcode into it —
+    // e.g. an EAN's first digits clamping a focused Disc box to 100% (a free-goods line) while
+    // the trailing Enter still added the item, making the beep look like it "worked".
+    const t = e.target;
+    const inEditable = !inSearch && t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+    if (inEditable) { _wedgeBuf = ''; return; }
     const now = performance.now();
     if (now - _wedgeLast > 45) _wedgeBuf = '';
     _wedgeLast = now;
@@ -535,7 +605,7 @@ function taxRateFor(configId) {
 // equal heads (CGST + SGST), round EACH to 2dp, then sum — so the cart total matches the receipt to the
 // paisa (a flat round(base*rate/100) differed by ~1 paisa on odd amounts). POS walk-in is always the store's
 // own state = intra-state, so the two-head split is always the right model here.
-const gstOn = (base, rate) => { const half = Math.round(base * (rate / 2) / 100 * 100) / 100; return half * 2; };
+const gstOn = (base, rate) => { const half = Math.round((base * (rate / 2) / 100 + Number.EPSILON) * 100) / 100; return half * 2; };   // EPSILON: half-paisa float error must round like the server's AwayFromZero
 
 // The tenant's active-DEFAULT GST config — the SAME one the backend applies to an invoice line that
 // specifies no tax config (ResolveDocumentGstAsync → GetActiveTaxConfig: active GST slabs whose
@@ -557,9 +627,12 @@ function defaultGstConfigId() {
 // Effective tax config for an item: its own, else the tenant default GST (so cart preview == posted receipt).
 function effTaxConfigId(item) { return item.tax_config_id || defaultGstConfigId(); }
 
-/** Base (ex-GST) unit price: MRP-inclusive items back-compute; others are already ex-tax. */
+/** Base (ex-GST) unit price: MRP-inclusive items back-compute; others are already ex-tax.
+ *  Back-out uses the EFFECTIVE config (item's own, else the tenant default) — the payload is
+ *  taxed at that same effective config, so reading the raw tax_config_id here left an untagged
+ *  MRP item un-backed-out while the server still added GST on top of the MRP. */
 function basePrice(i) {
-    const rate = i.tax_config_id ? taxRateFor(i.tax_config_id) : 0;
+    const rate = taxRateFor(effTaxConfigId(i));
     return i.price_includes_tax && rate > 0
         ? Math.round((i.sale_price / (1 + rate / 100)) * 100) / 100
         : i.sale_price;
@@ -569,7 +642,7 @@ function basePrice(i) {
 // A cart line can be rung in the item's sale pack (e.g. strip) instead of the base unit.
 // Scans and grid taps ALWAYS target the base-unit line (a scan is one physical piece);
 // the pack line is a separate cart entry. All stock caps compare BASE units.
-function lineConv(c) { return c.uom && c.uom === c.item.sale_unit ? (c.item.sale_conversion || 1) : 1; }
+function lineConv(c) { return c.uom && c.item.sale_unit && c.uom.toLowerCase() === c.item.sale_unit.toLowerCase() ? (c.item.sale_conversion || 1) : 1; }   // case-insensitive: the backend resolves names OrdinalIgnoreCase — a case-only rename must not silently reprice
 function linePrice(c) { const conv = lineConv(c); return conv === 1 ? basePrice(c.item) : Math.round(basePrice(c.item) * conv * 100) / 100; }
 function lineBaseQty(c) { return Math.round(c.qty * lineConv(c) * 10000) / 10000; }
 function itemBaseInCart(itemId, exceptLine) { return cart.filter(c => c.item.id === itemId && c !== exceptLine).reduce((s, c) => s + lineBaseQty(c), 0); }
@@ -679,10 +752,13 @@ function setQty(idx, qty) {
     renderCart();
 }
 
-// Which cart line is expanded for editing (unit toggle + discount). One at a time; −1 = none.
-let posExpandedIdx = -1;
+// Which cart line is expanded for editing (unit toggle + discount). Tracked by LINE OBJECT
+// identity, not index — merges/removals shift indices and an index-tracked expansion would
+// silently jump to a neighbouring line (wrong-line discount at a busy counter).
+let posExpandedLine = null;
 function togglePosLine(idx) {
-    posExpandedIdx = posExpandedIdx === idx ? -1 : idx;
+    const line = cart[idx];
+    posExpandedLine = posExpandedLine === line ? null : (line || null);
     renderCart();
 }
 
@@ -694,17 +770,22 @@ function setLineUom(idx, uom) {
     if (!line) return;
     const target = uom || null;
     if ((line.uom || null) === target) return;
+    // Never auto-merge into an existing line of the target unit: the NUMBERS are in different
+    // units (3 pcs + 2 strip ≠ "5 strip" — that one tap would ring 50 tablets), and discounts
+    // may differ. The teller adjusts the existing line directly instead.
     const twin = cart.find(c => c !== line && c.item.id === line.item.id && (c.uom || null) === target);
-    if (twin) { twin.qty += line.qty; cart = cart.filter(c => c !== line); }
-    else line.uom = target;
-    const check = twin || line;
-    if (check.item.track_inventory) {
-        const availBase = check.item.qty_on_hand - itemBaseInCart(check.item.id, check);
-        const conv = lineConv(check);
+    if (twin) {
+        Toast.error(`'${line.item.name}' already has a ${target || line.item.unit || 'base'} line — adjust that line's quantity instead.`);
+        return;
+    }
+    line.uom = target;
+    if (line.item.track_inventory) {
+        const availBase = line.item.qty_on_hand - itemBaseInCart(line.item.id, line);
+        const conv = lineConv(line);
         const maxQty = conv === 1 ? availBase : Math.floor(availBase / conv);
-        if (check.qty > maxQty) {
-            check.qty = Math.max(0, maxQty);
-            Toast.error(`Only ${check.item.qty_on_hand} ${check.item.unit || ''} of '${check.item.name}' in stock — quantity adjusted.`);
+        if (line.qty > maxQty) {
+            line.qty = Math.max(0, maxQty);
+            Toast.error(`Only ${line.item.qty_on_hand} ${line.item.unit || ''} of '${line.item.name}' in stock — quantity adjusted.`);
         }
     }
     cart = cart.filter(c => c.qty > 0);
@@ -716,7 +797,8 @@ function setLineUom(idx, uom) {
 function setLineDisc(idx, val) {
     const line = cart[idx];
     if (!line) return;
-    line.disc = Math.min(100, Math.max(0, parseFloat(val) || 0));
+    // Round to 2dp — the backend rejects finer (DECIMAL(5,2)); a typed 12.345 must not 400 at Charge.
+    line.disc = Math.round(Math.min(100, Math.max(0, parseFloat(val) || 0)) * 100) / 100;
     // Recompute totals WITHOUT re-rendering the row (keeps focus in the input the user is typing in).
     let sub = 0, tax = 0;
     const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -733,19 +815,19 @@ function setLineDisc(idx, val) {
 
 function renderCart() {
     const tb = document.getElementById('posCart');
-    if (posExpandedIdx >= cart.length) posExpandedIdx = -1;   // line removed under the expansion
+    if (posExpandedLine && !cart.includes(posExpandedLine)) posExpandedLine = null;   // line removed under the expansion
     const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
     const lineNet = c => { const g = r2(linePrice(c) * c.qty); return g - r2(g * (c.disc || 0) / 100); };
     // ONE compact row per line (≈50px): name + tiny context, always-on qty stepper, bold amount.
     // Tapping the line expands ONE extra row with the occasional controls — unit toggle + a
     // labelled Disc % box — so editing power never costs permanent height (Square/Shopify POS
-    // pattern). posExpandedIdx tracks the single expanded line.
+    // pattern). posExpandedLine (object identity) tracks the single expanded line.
     const chipStyle = 'padding:4px 14px;font-size:12px;line-height:1.5;border-radius:999px;cursor:pointer;';
     const chipOff = chipStyle + 'border:1px solid var(--border-color, #3a4358);background:transparent;color:var(--text-secondary,#9aa4b8);';
     const chipOn = chipStyle + 'border:1px solid var(--brand-primary,#3b6ef5);background:var(--brand-primary,#3b6ef5);color:#fff;';
     tb.innerHTML = cart.length ? cart.map((c, idx) => {
         const pack = packOf(c.item);
-        const open = posExpandedIdx === idx;
+        const open = posExpandedLine === c;
         const context = `${money(linePrice(c))}${c.uom ? `/${esc(c.uom)}` : ''}${(c.disc || 0) > 0 ? ` · −${c.disc}%` : ''}`;
         const expanded = open ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;flex-wrap:wrap;">
             ${pack ? `<div style="display:flex;gap:6px;align-items:center;">
@@ -835,7 +917,7 @@ async function completeSale() {
         if (netOffline) { await queueOfflineSale(sale); return; }
         const { invoices, total } = await submitSaleToServer(sale, { enforceStock: true });
         Toast.success(`Sale complete — ${money(total)}`);
-        await printReceipt(invoices.map(i => i.number).join(' · '), total);
+        await printReceipt(invoices.map(i => i.number).join(' · '), total, false, sale.cart);
         await promptSerials(invoices, sale.date);
         cart = [];
         renderCart();
@@ -848,6 +930,18 @@ async function completeSale() {
         if (isNetworkError(err)) {
             markOffline();
             await queueOfflineSale(sale);
+        } else if (sale.progress?.invoices?.length) {
+            // A multi-slab sale that PARTIALLY posted (earlier groups approved — stock out, AR
+            // open) must not evaporate into a toast: persist it as a needs-attention entry so
+            // Retry resumes idempotently from sale.progress (same offlineRef → same client_refs →
+            // the posted groups dedupe) and Discard cancels the posted invoices. Losing the object
+            // here caused double-posted groups on re-ring and phantom AR.
+            sale.id = sale.offlineRef; sale.at = new Date().toISOString();
+            sale.status = 'error'; sale.error = err.message || 'Posting failed part-way';
+            await posQueuePut(sale).catch(() => {});
+            cart = [];
+            Toast.error(`${err.message || 'Sale failed part-way'} — the sale is saved under "needing attention": fix the cause and Retry (it resumes where it stopped), or Discard to cancel what posted.`);
+            updateNetBadge();
         } else {
             Toast.error(err.message || 'Sale failed — check Receivables for a stranded draft/approved invoice.');
         }
@@ -915,7 +1009,11 @@ async function promptSerials(invoices, soldDate) {
 
 /** 80mm thermal receipt via the browser's print dialog. offline=true prints a
  *  provisional receipt (queued sale — real invoice number arrives at sync). */
-async function printReceipt(invoiceNumber, total, offline = false) {
+async function printReceipt(invoiceNumber, total, offline = false, saleCart = null) {
+    // Print from the SALE's frozen snapshot, never the live global cart — the 15s catalog
+    // refresh / stock pushes can mutate cart mid-submission and the slip would show lines or
+    // prices that were never charged.
+    const printCart = saleCart || cart;
     let org = {};
     if (!offline) {
         try {
@@ -931,7 +1029,7 @@ async function printReceipt(invoiceNumber, total, offline = false) {
     if (!w) return;
     const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
     let gross = 0, totDisc = 0, tax = 0;
-    const rows = cart.map(c => {
+    const rows = printCart.map(c => {
         const unit = linePrice(c);
         const g = r2(unit * c.qty);
         const disc = r2(g * (c.disc || 0) / 100);
