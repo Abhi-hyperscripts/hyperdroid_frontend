@@ -223,7 +223,7 @@
                         </div>
                         <div class="data-table-container" style="margin-top:12px;">
                             <table class="data-table">
-                                <thead><tr><th>SKU</th><th>Item</th><th>Batch / Lot</th><th>Location</th><th>Expiry</th><th>Qty</th><th>Value</th></tr></thead>
+                                <thead><tr><th>SKU</th><th>Item</th><th>Batch / Lot</th><th>Location</th><th>Expiry</th><th>Qty</th><th>Value</th><th></th></tr></thead>
                                 <tbody id="batchBalancesTable"></tbody>
                             </table>
                         </div>
@@ -242,7 +242,7 @@
                         </div>
                         <div class="data-table-container" style="margin-top:8px;">
                             <table class="data-table">
-                                <thead><tr><th>SKU</th><th>Item</th><th>Batch / Lot</th><th>Location</th><th>Expiry</th><th>Days Left</th><th>Qty</th><th>Value at Risk</th></tr></thead>
+                                <thead><tr><th>SKU</th><th>Item</th><th>Batch / Lot</th><th>Location</th><th>Expiry</th><th>Days Left</th><th>Qty</th><th>Value at Risk</th><th></th></tr></thead>
                                 <tbody id="expiryTable"></tbody>
                             </table>
                         </div>
@@ -452,6 +452,25 @@
                     <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('itemModal')">Cancel</button>
                     <button class="btn btn-primary" id="saveItemBtn" onclick="saveItem()">Save Item</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lot write-off modal (expiry / breakage) -->
+    <div class="modal" id="lotWriteOffModal">
+        <div class="modal-content" style="max-width:460px;">
+            <div class="modal-header"><h3>Write Off Lot</h3><button class="close-btn" onclick="AccountsCommon.closeModal('lotWriteOffModal')">&times;</button></div>
+            <div class="modal-body">
+                <p style="font-size:.85rem;color:var(--text-secondary);margin:0 0 10px;" id="lotWoSummary"></p>
+                <div class="form-group"><label>Location *</label><div class="searchable-dropdown-container" id="lotWoLocationDD"></div></div>
+                <div class="form-group"><label>Quantity to write off *</label><input type="number" id="lotWoQty" class="form-control" min="0" step="any"></div>
+                <div class="form-group"><label>Reason *</label><div class="searchable-dropdown-container" id="lotWoReasonDD"></div></div>
+                <div class="form-group"><label>Note <span class="opt">(optional — e.g. inspector reference)</span></label><input type="text" id="lotWoNote" class="form-control" maxlength="300"></div>
+                <p style="font-size:.78rem;color:var(--text-secondary);margin:6px 0 0;">Posts a stock adjustment against THIS lot only (never FEFO) — value moves to Cost of Goods Sold, and the batch register keeps the reason trail.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('lotWriteOffModal')">Cancel</button>
+                <button class="btn btn-danger" id="lotWoBtn" onclick="saveLotWriteOff()">Write Off</button>
             </div>
         </div>
     </div>

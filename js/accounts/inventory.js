@@ -773,10 +773,13 @@ async function loadBatchBalances() {
     const tb = document.getElementById('batchBalancesTable');
     try {
         const list = unwrap(await api.request(AccountsCommon.buildUrl('inventory/batch-balances'), { _skipSpinner: true }));
-        tb.innerHTML = list.length ? list.map(b => `
+        window._lotBalances = list;
+        tb.innerHTML = list.length ? list.map((b, i) => `
             <tr><td>${esc(b.sku || '')}</td><td>${esc(b.item_name || b.name || '')}</td><td>${esc(b.batch_number || '—')}</td>
-            <td>${esc(b.location_name || '—')}</td><td>${expiryCell(b.expiry_date)}</td><td>${num(b.quantity)}</td><td>${fmtMoney(b.value)}</td></tr>`).join('')
-            : `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No batch/lot stock yet. Receive a batch-tracked item with a lot number.</td></tr>`;
+            <td>${esc(b.location_name || '—')}</td><td>${expiryCell(b.expiry_date)}</td><td>${num(b.quantity)}</td><td>${fmtMoney(b.value)}</td>
+            <td>${Number(b.quantity) > 0 ? `<button class="btn btn-outline btn-sm" onclick="showLotWriteOff(${i})" data-admin-only>Write off</button>` : ''}</td></tr>`).join('')
+            : `<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No batch/lot stock yet. Receive a batch-tracked item with a lot number.</td></tr>`;
+        accountsRoles.applyRBAC();
         // Top items by lot value on hand.
         const byItem = {};
         list.forEach(b => { const k = b.item_name || b.name || b.sku || '—'; byItem[k] = (byItem[k] || 0) + (parseFloat(b.value) || 0); });
@@ -792,9 +795,11 @@ async function loadExpiryReport() {
         tb.innerHTML = list.length ? list.map(b => {
             const d = b.expiry_date ? Math.round((new Date(b.expiry_date) - new Date().setHours(0, 0, 0, 0)) / 86400000) : null;
             return `<tr><td>${esc(b.sku || '')}</td><td>${esc(b.item_name || b.name || '')}</td><td>${esc(b.batch_number || '—')}</td>
-            <td>${esc(b.location_name || '—')}</td><td>${expiryCell(b.expiry_date)}</td><td>${d === null ? '—' : d}</td><td>${num(b.quantity_on_hand ?? b.quantity)}</td><td>${fmtMoney(b.value)}</td></tr>`;
+            <td>${esc(b.location_name || '—')}</td><td>${expiryCell(b.expiry_date)}</td><td>${d === null ? '—' : d}</td><td>${num(b.quantity_on_hand ?? b.quantity)}</td><td>${fmtMoney(b.value)}</td>
+            <td>${Number(b.quantity_on_hand ?? b.quantity) > 0 ? `<button class="btn btn-outline btn-sm" onclick="showLotWriteOffByLot('${b.item_id}', '${esc(b.batch_number)}')" data-admin-only>Write off</button>` : ''}</td></tr>`;
         }).join('')
-            : `<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Nothing expiring in the next ${days} days.</td></tr>`;
+            : `<tr><td colspan="9" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Nothing expiring in the next ${days} days.</td></tr>`;
+        accountsRoles.applyRBAC();
         // Value at risk grouped by urgency of expiry.
         const buckets = [
             { label: 'Expired', color: '#ef4444', test: d => d < 0 },
@@ -1267,4 +1272,88 @@ function openQuickAddSalt(dropdownInstance, rebuildOptions) {
         } catch (e) { Toast.error(e?.message || 'Failed to create salt'); }
     };
     AccountsCommon.openModal('quickAddSaltModal');
+}
+
+// ── Lot write-off (expiry / breakage) — named-lot drain, never FEFO ─────────
+
+let lotWoTarget = null;   // { item_id, batch_number, rows: [balance rows for this lot] }
+let lotWoLocationDD = null, lotWoReasonDD = null;
+
+async function showLotWriteOffByLot(itemId, batchNumber) {
+    // Expiry view has no location — resolve from batch balances.
+    let rows = window._lotBalances;
+    if (!rows) {
+        try { rows = unwrap(await api.request(AccountsCommon.buildUrl('inventory/batch-balances'), { _skipSpinner: true })); }
+        catch { rows = []; }
+        window._lotBalances = rows;
+    }
+    const matches = rows.filter(b => b.item_id === itemId && b.batch_number === batchNumber && Number(b.quantity) > 0);
+    if (!matches.length) { Toast.error('No stock of this lot found at any location'); return; }
+    openLotWriteOff(matches);
+}
+
+function showLotWriteOff(idx) {
+    const b = (window._lotBalances || [])[idx];
+    if (!b) return;
+    openLotWriteOff([b]);
+}
+
+function openLotWriteOff(matches) {
+    const b = matches[0];
+    lotWoTarget = { item_id: b.item_id, batch_number: b.batch_number, rows: matches };
+    document.getElementById('lotWoSummary').innerHTML =
+        `<strong>${esc(b.sku || '')} — ${esc(b.item_name || b.name || '')}</strong> · Lot <strong>${esc(b.batch_number)}</strong>` +
+        (b.expiry_date ? ` · expires ${AccountsCommon.formatDate(b.expiry_date)}` : '');
+    lotWoLocationDD = new SearchableDropdown(document.getElementById('lotWoLocationDD'), {
+        id: 'lotWoLocationSD',
+        options: matches.map(m => ({ value: m.location_id, label: `${m.location_name || 'Main Store'} (${num(m.quantity)} on hand)` })),
+        value: matches[0].location_id,
+        onChange: (v) => {
+            const m = lotWoTarget.rows.find(x => x.location_id === v);
+            if (m) document.getElementById('lotWoQty').value = m.quantity;
+        }
+    });
+    document.getElementById('lotWoQty').value = b.quantity;
+    lotWoReasonDD = new SearchableDropdown(document.getElementById('lotWoReasonDD'), {
+        id: 'lotWoReasonSD',
+        options: [
+            { value: 'Expired', label: 'Expired — past its date' },
+            { value: 'Damaged', label: 'Damaged / breakage' },
+            { value: 'Other', label: 'Other write-off' }
+        ],
+        value: b.expiry_date && new Date(b.expiry_date) < new Date() ? 'Expired' : 'Damaged'
+    });
+    document.getElementById('lotWoNote').value = '';
+    AccountsCommon.openModal('lotWriteOffModal');
+}
+
+async function saveLotWriteOff() {
+    const locId = lotWoLocationDD?.getValue?.();
+    const qty = parseFloat(document.getElementById('lotWoQty').value);
+    if (!locId) { Toast.error('Pick the location'); return; }
+    if (!(qty > 0)) { Toast.error('Enter the quantity to write off'); return; }
+    const reason = lotWoReasonDD?.getValue?.() || 'Other';
+    const note = document.getElementById('lotWoNote').value.trim();
+    const btn = document.getElementById('lotWoBtn');
+    btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl('inventory/adjustments'), {
+            method: 'POST',
+            body: JSON.stringify({
+                item_id: lotWoTarget.item_id,
+                adjustment_date: new Date().toISOString().slice(0, 10),
+                quantity_delta: -qty,
+                batch_number: lotWoTarget.batch_number,
+                location_id: locId,
+                notes: `${reason} write-off${note ? ' — ' + note : ''}`
+            })
+        });
+        Toast.success(`Lot ${lotWoTarget.batch_number} written off (${qty})`);
+        AccountsCommon.closeModal('lotWriteOffModal');
+        window._lotBalances = null;
+        const active = document.querySelector('.acc-seg-btn.active')?.dataset?.batchview || 'balances';
+        switchBatchView(active);
+    } catch (err) {
+        Toast.error(err?.message || 'Failed to write off the lot');
+    } finally { btn.disabled = false; }
 }

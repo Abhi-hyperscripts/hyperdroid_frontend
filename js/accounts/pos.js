@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', async function () {
  * Runs every 15s while the tab is visible, on tab focus, and after stock conflicts.
  */
 async function refreshPosItems(silent = true) {
+    posLotMrp.clear();   // lot MRPs can change as lots deplete — refetch with the catalog
     try {
         const res = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true });
         posItems = (Array.isArray(res) ? res : []).filter(i => i.is_active);
@@ -639,6 +640,10 @@ function effTaxConfigId(item) { return item.tax_config_id || defaultGstConfigId(
 let posCustomerId = null;         // null = Walk-in Customer (resolved server-side)
 let posCustomerName = 'Walk-in Customer';
 let posPriceMap = new Map();      // item_id → per-base-unit list price
+// Pharma: retail price for a batch item is the DISPENSED LOT's MRP, not the catalog price.
+// item_id → { mrp, lot } from the POS lookup (FEFO next lot, expired lots already skipped
+// server-side). null mrp cached too, so an item without lot MRP is only fetched once.
+let posLotMrp = new Map();
 let posCustomerDD = null;
 
 async function initPosCustomerPicker() {
@@ -677,11 +682,33 @@ async function initPosCustomerPicker() {
  *  config, so reading the raw tax_config_id here left an untagged MRP item un-backed-out
  *  while the server still added GST on top of the MRP. */
 function basePrice(i) {
+    // A negotiated price-list price wins; else the FEFO lot's MRP (pharma retail); else catalog.
+    const lot = posLotMrp.get(i.id);
+    if (!posPriceMap.has(i.id) && lot && lot.mrp > 0) {
+        // MRP is tax-INCLUSIVE by definition (Legal Metrology) — always back the GST out,
+        // regardless of the item's own price_includes_tax flag. FLOOR to the paisa (never
+        // round up): a rounded-up ex-tax price re-inclusives to MRP + 1p, and charging even
+        // a paisa above MRP is a Legal Metrology violation.
+        const mrpRate = taxRateFor(effTaxConfigId(i));
+        return mrpRate > 0 ? Math.floor((lot.mrp / (1 + mrpRate / 100)) * 100) / 100 : lot.mrp;
+    }
     const px = posPriceMap.has(i.id) ? posPriceMap.get(i.id) : i.sale_price;
     const rate = taxRateFor(effTaxConfigId(i));
     return i.price_includes_tax && rate > 0
         ? Math.round((px / (1 + rate / 100)) * 100) / 100
         : px;
+}
+
+// Lazily fetch the FEFO lot MRP for a batch item (server skips expired lots). Caches
+// negative results so each item is asked at most once per catalog refresh.
+async function ensureLotMrp(it) {
+    if (it.tracking_mode !== 'batch' || posLotMrp.has(it.id)) return;
+    posLotMrp.set(it.id, { mrp: null, lot: null });   // sentinel first — no refetch storms
+    try {
+        const r = await api.request(AccountsCommon.buildUrl('inventory/lookup', { code: it.sku }), { _skipSpinner: true });
+        posLotMrp.set(it.id, { mrp: r?.next_batch_mrp ? parseFloat(r.next_batch_mrp) : null, lot: r?.next_batch_number || null });
+        if (posLotMrp.get(it.id).mrp) renderCart();   // reprice the line that triggered the fetch
+    } catch { /* keep sentinel — catalog price applies */ }
 }
 
 // ── Multiple UoM at the counter ──────────────────────────────────────────────
@@ -827,6 +854,7 @@ function addToCart(itemId) {
         if (inCartBase + 1 > it.qty_on_hand) { Toast.error(`Only ${it.qty_on_hand} ${it.unit || ''} of '${it.name}' in stock.`); return; }
     }
     if (line) line.qty += 1; else cart.push({ item: it, qty: 1, disc: 0, uom: null });
+    ensureLotMrp(it);
     renderCart();
 }
 
@@ -938,7 +966,8 @@ function renderCart() {
         </td></tr>`;
         const pack = packOf(c.item);
         const open = posExpandedLine === c;
-        const context = `${money(linePrice(c))}${c.uom ? `/${esc(c.uom)}` : ''}${(c.disc || 0) > 0 ? ` · −${c.disc}%` : ''}`;
+        const lotPx = !posPriceMap.has(c.item.id) && posLotMrp.get(c.item.id)?.mrp > 0 ? posLotMrp.get(c.item.id) : null;
+        const context = `${money(linePrice(c))}${c.uom ? `/${esc(c.uom)}` : ''}${lotPx ? ` · MRP${lotPx.lot ? ' ' + esc(lotPx.lot) : ''}` : ''}${(c.disc || 0) > 0 ? ` · −${c.disc}%` : ''}`;
         const expanded = open ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;flex-wrap:wrap;">
             ${pack ? `<div style="display:flex;gap:6px;align-items:center;">
                 <span class="sub" style="font-size:11px;">Sell per</span>
