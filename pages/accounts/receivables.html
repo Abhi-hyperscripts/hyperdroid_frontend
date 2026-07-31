@@ -133,11 +133,14 @@
                             <button class="sidebar-btn" data-tab="ar-aging" id="arAgingTab">
                                 <span class="nav-number">5</span><span class="nav-label">AR Aging</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="overdue-interest" id="overdueInterestTab">
+                                <span class="nav-number">6</span><span class="nav-label">Overdue Interest</span>
+                            </button>
                             <button class="sidebar-btn" data-tab="customer-statements" id="customerStatementsTab">
-                                <span class="nav-number">6</span><span class="nav-label">Customer Statements</span>
+                                <span class="nav-number">7</span><span class="nav-label">Customer Statements</span>
                             </button>
                             <button class="sidebar-btn" data-tab="tds-receivable" id="tdsReceivableTab">
-                                <span class="nav-number">7</span><span class="nav-label">TDS Receivable</span>
+                                <span class="nav-number">8</span><span class="nav-label">TDS Receivable</span>
                             </button>
                         </div>
                     </div>
@@ -543,6 +546,53 @@
                 <!-- ============================================================ -->
                 <!-- Tab 5: Customer Statements -->
                 <!-- ============================================================ -->
+                <div class="tab-content" id="overdue-interest">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="intGrandTotal">-</div>
+                            <div class="stat-label">Interest accrued (all customers)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="intCustomerCount">0</div>
+                            <div class="stat-label">Customers owing interest</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="intOverdueBase">-</div>
+                            <div class="stat-label">Overdue principal behind it</div>
+                        </div>
+                    </div>
+                    <div class="filters-bar">
+                        <input type="text" id="intAsOfDate" class="form-control" placeholder="As of (today)" style="max-width: 160px;">
+                        <button class="btn btn-outline" onclick="loadInterestReport()">Recalculate</button>
+                        <small class="field-hint" style="margin:0;align-self:center;">Simple interest: balance × rate% × days overdue ÷ 365. Only customers with a rate on their profile appear (Parties → customer → Interest on Overdue).</small>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer / Invoice</th>
+                                    <th>Due Date</th>
+                                    <th style="text-align:right;">Days Overdue</th>
+                                    <th style="text-align:right;">Balance</th>
+                                    <th style="text-align:right;">Rate</th>
+                                    <th style="text-align:right;">Interest</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="interestTable">
+                                <tr class="empty-state">
+                                    <td colspan="7">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                            <p>No overdue interest — either nothing is overdue, or no customer has an interest rate set</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="tab-content" id="customer-statements">
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="statementCustomerFilterContainer"></div>

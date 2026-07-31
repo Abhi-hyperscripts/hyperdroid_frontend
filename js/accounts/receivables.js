@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         'credit-notes': 'Credit Notes',
         'delivery-challans': 'Delivery Challans',
         'ar-aging': 'AR Aging',
+        'overdue-interest': 'Overdue Interest',
         'customer-statements': 'Customer Statements'
     };
 
@@ -83,6 +84,7 @@ function onTabSwitch(tabId) {
         case 'credit-notes':        loadCreditNotes(); break;
         case 'delivery-challans':   loadChallans(); break;
         case 'ar-aging':            loadARAging(); break;
+        case 'overdue-interest':    loadInterestReport(); break;
         case 'customer-statements': break; // user-triggered
         case 'tds-receivable':      initTdsReceivable(); break;
     }
@@ -2975,5 +2977,73 @@ async function printChallan(id) {
     } catch (err) {
         console.error('[Challans] print error:', err);
         Toast.error('Failed to build the challan print view');
+    }
+}
+
+// ============================================================================
+// OVERDUE INTEREST (interest on late payments)
+// Report-only computation; "Raise interest invoice" creates a normal DRAFT
+// invoice through the standard path — review + approve like any invoice.
+// ============================================================================
+
+async function loadInterestReport() {
+    try {
+        if (typeof flatpickr === 'function' && !document.getElementById('intAsOfDate')._flatpickr)
+            flatpickr('#intAsOfDate', { dateFormat: 'Y-m-d', allowInput: true, onChange: () => loadInterestReport() });
+        const asOf = document.getElementById('intAsOfDate')?.value || '';
+        const params = asOf ? { asOf } : {};
+        const rep = await api.request(AccountsCommon.buildUrl('interest/report', params), { _skipSpinner: true });
+        const esc = AccountsCommon.escapeHtml;
+        document.getElementById('intGrandTotal').textContent = AccountsCommon.formatCurrency(rep.grand_total_interest || 0);
+        document.getElementById('intCustomerCount').textContent = (rep.customers || []).length;
+        document.getElementById('intOverdueBase').textContent =
+            AccountsCommon.formatCurrency((rep.customers || []).reduce((s, c) => s + Number(c.total_overdue || 0), 0));
+        const tbody = document.getElementById('interestTable');
+        if (!(rep.customers || []).length) {
+            tbody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <p>No overdue interest — either nothing is overdue, or no customer has an interest rate set</p></div></td></tr>`;
+            return;
+        }
+        tbody.innerHTML = rep.customers.map(c => {
+            const head = `<tr style="background:var(--bg-card-hover);">
+                <td><strong>${esc(c.customer_name)}</strong></td>
+                <td></td><td></td>
+                <td style="text-align:right;"><strong>${AccountsCommon.formatCurrency(c.total_overdue)}</strong></td>
+                <td style="text-align:right;">${Number(c.interest_rate_pct)}%</td>
+                <td style="text-align:right;"><strong>${AccountsCommon.formatCurrency(c.total_interest)}</strong></td>
+                <td><button class="btn btn-outline btn-sm" onclick="raiseInterestInvoice('${c.customer_id}', '${esc(c.customer_name)}')" data-admin-only>Raise Interest Invoice</button></td>
+            </tr>`;
+            const lines = c.lines.map(l => `<tr>
+                <td style="padding-left:2rem;color:var(--text-secondary);">${esc(l.invoice_number)}</td>
+                <td>${AccountsCommon.formatDate(l.due_date)}</td>
+                <td style="text-align:right;">${l.days_overdue}</td>
+                <td style="text-align:right;">${AccountsCommon.formatCurrency(l.balance_due)}</td>
+                <td style="text-align:right;color:var(--text-secondary);">${Number(l.interest_rate_pct)}%</td>
+                <td style="text-align:right;">${AccountsCommon.formatCurrency(l.interest_amount)}</td>
+                <td></td>
+            </tr>`).join('');
+            return head + lines;
+        }).join('');
+        accountsRoles.applyRBAC();
+    } catch (err) {
+        console.error('[Interest] load error:', err);
+        Toast.error('Failed to load the interest report');
+    }
+}
+
+async function raiseInterestInvoice(customerId, customerName) {
+    const ok = await Confirm.show({
+        title: `Raise interest invoice for ${customerName}?`,
+        message: 'Creates a DRAFT invoice with one line per overdue invoice. Nothing posts until you approve it — edit or drop lines first if you\'ve agreed otherwise. Raising twice for the same period double-charges, so check existing interest invoices.',
+        confirmText: 'Create Draft'
+    });
+    if (!ok) return;
+    try {
+        const asOf = document.getElementById('intAsOfDate')?.value || '';
+        const inv = await api.request(AccountsCommon.buildUrl(`interest/raise/${customerId}`, asOf ? { asOf } : {}), { method: 'POST' });
+        Toast.success(`Draft interest invoice created (${AccountsCommon.formatCurrency(inv.total_amount)}) — review it on the Invoices tab`);
+    } catch (err) {
+        Toast.error(err?.message || 'Failed to raise interest invoice');
     }
 }

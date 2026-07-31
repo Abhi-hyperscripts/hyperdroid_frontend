@@ -640,6 +640,7 @@ function editCustomer(id) {
     document.getElementById('customerPaymentTerms').value = c.payment_terms_days ?? 30;
     document.getElementById('customerCreditLimit').value = c.credit_limit ?? '';
     document.getElementById('customerNotes').value = c.notes || '';
+    document.getElementById('customerInterestRate').value = c.interest_rate_pct ?? '';
     initCustomerPriceListDD(c.price_list_id || '');
     AccountsCommon.showFormPage('customerModal');
 }
@@ -692,7 +693,9 @@ async function saveCustomer() {
         notes: document.getElementById('customerNotes').value.trim() || null,
         // UPDATE uses partial semantics (null = unchanged), so a cleared selection sends the
         // EMPTY-GUID sentinel to remove the assignment; CREATE just omits it.
-        price_list_id: customerPriceListDD?.getValue?.() || (id ? '00000000-0000-0000-0000-000000000000' : null)
+        price_list_id: customerPriceListDD?.getValue?.() || (id ? '00000000-0000-0000-0000-000000000000' : null),
+        // Partial-update: 0 turns interest off (backend treats 0 and NULL alike); blank on CREATE omits.
+        interest_rate_pct: (() => { const v = document.getElementById('customerInterestRate').value.trim(); return v === '' ? (id ? 0 : null) : parseFloat(v); })()
     };
 
     if (!AccountsCommon.beginSubmit('saveCustomer')) return;
