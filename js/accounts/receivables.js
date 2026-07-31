@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         'customer-invoices': 'Invoices',
         'customer-payments': 'Payments',
         'credit-notes': 'Credit Notes',
+        'delivery-challans': 'Delivery Challans',
         'ar-aging': 'AR Aging',
         'customer-statements': 'Customer Statements'
     };
@@ -80,6 +81,7 @@ function onTabSwitch(tabId) {
         case 'customer-invoices':   loadCustomerInvoices(); break;
         case 'customer-payments':   loadCustomerPayments(); break;
         case 'credit-notes':        loadCreditNotes(); break;
+        case 'delivery-challans':   loadChallans(); break;
         case 'ar-aging':            loadARAging(); break;
         case 'customer-statements': break; // user-triggered
         case 'tds-receivable':      initTdsReceivable(); break;
@@ -2525,4 +2527,334 @@ async function printInvoice() {
         console.error('[AR] printInvoice error:', err);
         Toast.error('Failed to build the print view');
     }
+}
+
+// ============================================================================
+// DELIVERY CHALLANS (GST Rule 55 — goods out without an invoice yet)
+// A challan is a transport document: NO stock or ledger effect until it is
+// converted to an invoice and that invoice is approved (stock moves ONCE, there).
+// ============================================================================
+
+let challansCache = [];
+let challanCustomerDD = null;
+let challanPurposeDD = null;
+
+const CHALLAN_PURPOSES = [
+    { value: 'delivery', label: 'Delivery against order' },
+    { value: 'approval', label: 'Sale on approval' },
+    { value: 'job_work', label: 'Job work' },
+    { value: 'other', label: 'Other (Rule 55)' }
+];
+const challanPurposeLabel = (v) => CHALLAN_PURPOSES.find(p => p.value === v)?.label || v;
+
+async function loadChallans() {
+    try {
+        const status = document.getElementById('challanStatusFilter')?.value || '';
+        const params = { limit: 500 };
+        if (status) params.status = status;
+        const res = await api.request(AccountsCommon.buildUrl('delivery-challans', params), { _skipSpinner: true });
+        challansCache = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        // Stats always reflect ALL statuses (a filtered view shouldn't zero the KPIs).
+        let all = challansCache;
+        if (status) {
+            try {
+                const allRes = await api.request(AccountsCommon.buildUrl('delivery-challans', { limit: 500 }), { _skipSpinner: true });
+                all = Array.isArray(allRes) ? allRes : (allRes?.data || allRes?.items || []);
+            } catch { /* keep filtered set for stats */ }
+        }
+        document.getElementById('challanTotal').textContent = all.length;
+        document.getElementById('challanDraft').textContent = all.filter(c => c.status === 'draft').length;
+        document.getElementById('challanIssued').textContent = all.filter(c => c.status === 'issued').length;
+        document.getElementById('challanInvoiced').textContent = all.filter(c => c.status === 'invoiced').length;
+        renderChallansTable();
+    } catch (err) {
+        console.error('[Challans] load error:', err);
+        Toast.error('Failed to load delivery challans');
+    }
+}
+
+function renderChallansTable() {
+    const tbody = document.getElementById('challansTable');
+    if (!tbody) return;
+    const esc = AccountsCommon.escapeHtml;
+    const q = (document.getElementById('challanSearch')?.value || '').trim().toLowerCase();
+    const rows = challansCache.filter(c => !q ||
+        (c.challan_number || '').toLowerCase().includes(q) ||
+        (c.customer_name || '').toLowerCase().includes(q) ||
+        (c.vehicle_no || '').toLowerCase().includes(q));
+    if (!rows.length) {
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+            <p>${q ? 'No challans match your search' : 'No delivery challans yet — create one when goods leave before the invoice'}</p></div></td></tr>`;
+        return;
+    }
+    const icon = {
+        view: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+        issue: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
+        convert: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>',
+        cancel: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+        del: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+    };
+    tbody.innerHTML = rows.map(c => {
+        const acts = [`<button class="btn-icon" onclick="viewChallan('${c.id}')" data-tooltip="View">${icon.view}</button>`];
+        if (c.status === 'draft') {
+            acts.push(`<button class="btn-icon" onclick="issueChallan('${c.id}')" data-tooltip="Issue (assign number)" data-admin-only>${icon.issue}</button>`);
+            acts.push(`<button class="btn-icon btn-icon-danger" onclick="deleteChallan('${c.id}')" data-tooltip="Delete draft" data-admin-only>${icon.del}</button>`);
+        } else if (c.status === 'issued') {
+            acts.push(`<button class="btn-icon" onclick="convertChallan('${c.id}')" data-tooltip="Convert to invoice" data-admin-only>${icon.convert}</button>`);
+            acts.push(`<button class="btn-icon btn-icon-danger" onclick="cancelChallan('${c.id}')" data-tooltip="Cancel (goods came back)" data-admin-only>${icon.cancel}</button>`);
+        }
+        return `<tr>
+            <td><strong>${esc(c.challan_number)}</strong></td>
+            <td>${esc(c.customer_name || '')}</td>
+            <td>${AccountsCommon.formatDate(c.challan_date)}</td>
+            <td>${esc(challanPurposeLabel(c.purpose))}</td>
+            <td>${esc(c.vehicle_no || '—')}</td>
+            <td>${AccountsCommon.statusBadge(c.status)}</td>
+            <td class="table-actions">${acts.join('')}</td>
+        </tr>`;
+    }).join('');
+    accountsRoles.applyRBAC();
+}
+
+// ── Create modal ────────────────────────────────────────────────────────────
+
+async function showChallanModal() {
+    if (!inventoryItems.length) {
+        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }); } catch { inventoryItems = []; }
+    }
+    document.getElementById('challanModalTitle').textContent = 'New Delivery Challan';
+    document.getElementById('challanId').value = '';
+    document.getElementById('challanVehicle').value = '';
+    document.getElementById('challanNotes').value = '';
+    document.getElementById('challanLines').innerHTML = '';
+    document.getElementById('challanStatusBanner').style.display = 'none';
+    _setChallanReadOnly(false);
+    if (typeof flatpickr === 'function') flatpickr('#challanDate', { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+    else document.getElementById('challanDate').value = new Date().toISOString().slice(0, 10);
+
+    challanCustomerDD = new SearchableDropdown(document.getElementById('challanCustomerDD'), {
+        id: 'challanCustomerSD',
+        options: [{ value: '', label: 'Select customer...' },
+            ...customers.filter(c => c.is_active !== false).map(c => ({ value: c.id, label: c.name }))],
+        value: '', placeholder: 'Select customer...', searchPlaceholder: 'Search customers…'
+    });
+    challanPurposeDD = new SearchableDropdown(document.getElementById('challanPurposeDD'), {
+        id: 'challanPurposeSD', options: CHALLAN_PURPOSES, value: 'delivery'
+    });
+    addChallanLine();
+    AccountsCommon.showFormPage('challanModal');
+}
+
+function addChallanLine(data = {}) {
+    const tbody = document.getElementById('challanLines');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><div class="searchable-dropdown-container chl-item-sd"></div></td>
+        <td><input type="number" class="form-control chl-qty" value="${data.quantity ?? 1}" min="0" step="any"><div class="searchable-dropdown-container chl-uom-sd" style="margin-top:2px;"></div></td>
+        <td><input type="number" class="form-control chl-price" value="${data.unit_price ?? ''}" min="0" step="0.01" placeholder="auto"></td>
+        <td><button type="button" class="btn-icon btn-icon-danger" onclick="this.closest('tr').remove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
+    tbody.appendChild(row);
+
+    // Challans carry GOODS only (services never ride a transport document).
+    const goods = inventoryItems.filter(i => i.is_active && i.item_type === 'goods');
+    row._itemDD = new SearchableDropdown(row.querySelector('.chl-item-sd'), {
+        id: `chl-item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: [{ value: '', label: 'Select item...' },
+            ...goods.map(i => ({ value: i.id, label: `${i.sku} — ${i.name}` }))],
+        value: data.item_id || '', placeholder: 'Select item...', searchPlaceholder: 'Search SKU / name…', compact: true,
+        onChange: (v) => _buildChallanUomPicker(row, v)
+    });
+    if (data.item_id) _buildChallanUomPicker(row, data.item_id, data.uom);
+}
+
+// Unit picker mirrors the invoice line: shown only when the item defines a sale
+// unit. The client sends the unit NAME only — the server snapshots the factor.
+function _buildChallanUomPicker(row, itemId, presetUom = null) {
+    const holder = row.querySelector('.chl-uom-sd');
+    holder.innerHTML = '';
+    row._lineUom = null;
+    const it = inventoryItems.find(x => x.id === itemId);
+    if (!it) return;
+    const baseU = it.unit || null;
+    const altU = it.sale_unit || null;
+    const choices = [...new Set([baseU, altU].filter(Boolean))];
+    if (choices.length > 1) {
+        const start = presetUom || baseU;
+        row._uomDD = new SearchableDropdown(holder, {
+            id: `chl-uom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            options: choices.map(u => ({ value: u, label: u })), value: start, compact: true,
+            onChange: (v) => { row._lineUom = v; _defaultChallanPrice(row, it, v); }
+        });
+        row._lineUom = start;
+    }
+    _defaultChallanPrice(row, it, row._lineUom || baseU);
+}
+
+function _defaultChallanPrice(row, it, uom) {
+    // Convenience default only (field stays editable): sale price × the picked
+    // unit's conversion. Only overwrite an empty or still-default value.
+    const conv = (it.sale_unit && uom && uom.toLowerCase() === it.sale_unit.toLowerCase()) ? (it.sale_conversion || 1) : 1;
+    const el = row.querySelector('.chl-price');
+    const fresh = Math.round((it.sale_price || 0) * conv * 100) / 100;
+    const raw = (el.value || '').trim();
+    if (raw === '' || parseFloat(raw) === row._lastDefaultPrice) el.value = fresh || '';
+    row._lastDefaultPrice = fresh;
+}
+
+async function saveChallan() {
+    const customerId = challanCustomerDD?.getValue?.();
+    if (!customerId) { Toast.error('Pick a customer'); return; }
+    const date = document.getElementById('challanDate').value;
+    if (!date) { Toast.error('Pick a challan date'); return; }
+    const lines = [];
+    for (const row of document.querySelectorAll('#challanLines tr')) {
+        const itemId = row._itemDD?.getValue?.();
+        if (!itemId) continue;
+        const qty = parseFloat(row.querySelector('.chl-qty').value);
+        if (!(qty > 0)) { Toast.error('Every line needs a quantity above zero'); return; }
+        const priceRaw = (row.querySelector('.chl-price').value || '').trim();
+        lines.push({
+            item_id: itemId, quantity: qty,
+            uom: row._lineUom || null,
+            unit_price: priceRaw === '' ? null : Math.round(parseFloat(priceRaw) * 100) / 100
+        });
+    }
+    if (!lines.length) { Toast.error('Add at least one item line'); return; }
+    const btn = document.getElementById('challanSaveBtn');
+    btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl('delivery-challans'), {
+            method: 'POST',
+            body: JSON.stringify({
+                customer_id: customerId, challan_date: date,
+                purpose: challanPurposeDD?.getValue?.() || 'delivery',
+                vehicle_no: document.getElementById('challanVehicle').value.trim() || null,
+                notes: document.getElementById('challanNotes').value.trim() || null,
+                lines
+            })
+        });
+        Toast.success('Draft challan saved — issue it to assign the challan number');
+        AccountsCommon.hideFormPage('challanModal');
+        loadChallans();
+    } catch (err) {
+        Toast.error(err?.message || 'Failed to save challan');
+    } finally { btn.disabled = false; }
+}
+
+// ── View (read-only) ────────────────────────────────────────────────────────
+
+async function viewChallan(id) {
+    try {
+        const ch = await api.request(AccountsCommon.buildUrl('delivery-challans/' + id));
+        if (!ch) return;
+        const esc = AccountsCommon.escapeHtml;
+        document.getElementById('challanModalTitle').textContent = `Challan ${ch.challan_number}`;
+        document.getElementById('challanId').value = ch.id;
+        document.getElementById('challanDate').value = (ch.challan_date || '').slice(0, 10);
+        document.getElementById('challanVehicle').value = ch.vehicle_no || '';
+        document.getElementById('challanNotes').value = ch.notes || '';
+        challanCustomerDD = new SearchableDropdown(document.getElementById('challanCustomerDD'), {
+            id: 'challanCustomerSD', options: [{ value: ch.customer_id, label: ch.customer_name || 'Customer' }], value: ch.customer_id
+        });
+        challanPurposeDD = new SearchableDropdown(document.getElementById('challanPurposeDD'), {
+            id: 'challanPurposeSD', options: CHALLAN_PURPOSES, value: ch.purpose
+        });
+        // Static line rows: show the SNAPSHOTTED unit + factor — display honesty.
+        document.getElementById('challanLines').innerHTML = (ch.lines || []).map(l => `<tr>
+            <td>${esc(l.item_sku)} — ${esc(l.item_name)}</td>
+            <td>${Number(l.quantity) || 0}${l.uom ? ' ' + esc(l.uom) : ''}${l.uom && Number(l.uom_conversion) !== 1 ? ` <span style="color:var(--text-secondary);font-size:.78rem;">(× ${Number(l.uom_conversion)})</span>` : ''}</td>
+            <td>${l.unit_price != null ? AccountsCommon.formatCurrency(l.unit_price) : '—'}</td>
+            <td></td>
+        </tr>`).join('');
+        const banner = document.getElementById('challanStatusBanner');
+        banner.style.display = '';
+        banner.innerHTML = `<div style="background:var(--bg-card-hover);border:1px solid var(--border-color);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.85rem;">
+            Status: ${AccountsCommon.statusBadge(ch.status)}${ch.status === 'invoiced' && ch.converted_invoice_id ? ' — this challan has been billed; find the invoice on the Invoices tab.' : ''}
+            ${ch.status === 'issued' ? ' — goods are out on this challan; convert it to an invoice to bill and deduct stock.' : ''}
+            ${ch.status === 'draft' ? ' — drafts are editable paperwork; issue to assign the serial challan number.' : ''}</div>`;
+        _setChallanReadOnly(true, ch);
+        AccountsCommon.showFormPage('challanModal');
+    } catch (err) {
+        Toast.error('Failed to load challan');
+    }
+}
+
+function _setChallanReadOnly(readOnly, ch = null) {
+    const modal = document.getElementById('challanModal');
+    modal.querySelectorAll('input').forEach(el => { if (el.type !== 'hidden') el.disabled = readOnly; });
+    // SearchableDropdowns have no disable API — kill pointer events (invoice-modal pattern).
+    modal.querySelectorAll('.searchable-dropdown-container').forEach(el => {
+        el.style.pointerEvents = readOnly ? 'none' : '';
+        el.style.opacity = readOnly ? '0.7' : '';
+    });
+    document.getElementById('challanAddLineBtn').style.display = readOnly ? 'none' : '';
+    const footer = document.getElementById('challanModalFooter');
+    if (!readOnly) {
+        footer.innerHTML = `<button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('challanModal')">Cancel</button>
+            <button class="btn btn-primary" id="challanSaveBtn" onclick="saveChallan()">Save Draft</button>`;
+        return;
+    }
+    const acts = [`<button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('challanModal')">Close</button>`];
+    if (ch?.status === 'draft') {
+        acts.push(`<button class="btn btn-danger" onclick="AccountsCommon.hideFormPage('challanModal');deleteChallan('${ch.id}')" data-admin-only>Delete</button>`);
+        acts.push(`<button class="btn btn-primary" onclick="AccountsCommon.hideFormPage('challanModal');issueChallan('${ch.id}')" data-admin-only>Issue Challan</button>`);
+    } else if (ch?.status === 'issued') {
+        acts.push(`<button class="btn btn-danger" onclick="AccountsCommon.hideFormPage('challanModal');cancelChallan('${ch.id}')" data-admin-only>Cancel Challan</button>`);
+        acts.push(`<button class="btn btn-primary" onclick="AccountsCommon.hideFormPage('challanModal');convertChallan('${ch.id}')" data-admin-only>Convert to Invoice</button>`);
+    }
+    footer.innerHTML = acts.join('');
+    accountsRoles.applyRBAC();
+}
+
+// ── Lifecycle actions ───────────────────────────────────────────────────────
+
+async function issueChallan(id) {
+    try {
+        const ch = await api.request(AccountsCommon.buildUrl(`delivery-challans/${id}/issue`), { method: 'POST' });
+        Toast.success(`Challan ${ch.challan_number} issued — goods can move with this number`);
+        loadChallans();
+    } catch (err) { Toast.error(err?.message || 'Failed to issue challan'); }
+}
+
+async function convertChallan(id) {
+    const ok = await Confirm.show({
+        title: 'Convert to invoice?',
+        message: 'This creates a DRAFT invoice from the challan lines. Stock and the ledger move only when you approve that invoice.',
+        confirmText: 'Convert'
+    });
+    if (!ok) return;
+    try {
+        const inv = await api.request(AccountsCommon.buildUrl(`delivery-challans/${id}/convert-to-invoice`), { method: 'POST' });
+        Toast.success(`Draft invoice created from the challan — review and approve it on the Invoices tab`);
+        loadChallans();
+    } catch (err) { Toast.error(err?.message || 'Failed to convert challan'); }
+}
+
+async function cancelChallan(id) {
+    const ok = await Confirm.show({
+        title: 'Cancel this challan?',
+        message: 'Use this when the goods came back (or the challan was raised in error). An invoiced challan cannot be cancelled.',
+        confirmText: 'Cancel Challan', type: 'warning'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`delivery-challans/${id}/cancel`), { method: 'POST' });
+        Toast.success('Challan cancelled');
+        loadChallans();
+    } catch (err) { Toast.error(err?.message || 'Failed to cancel challan'); }
+}
+
+async function deleteChallan(id) {
+    const ok = await Confirm.show({
+        title: 'Delete this draft?',
+        message: 'Draft challans have no number and no stock effect — deleting is safe.',
+        confirmText: 'Delete', type: 'danger'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl('delivery-challans/' + id), { method: 'DELETE' });
+        Toast.success('Draft challan deleted');
+        loadChallans();
+    } catch (err) { Toast.error(err?.message || 'Failed to delete challan'); }
 }

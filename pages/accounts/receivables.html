@@ -111,6 +111,9 @@
                             <button class="sidebar-btn" data-tab="credit-notes" id="creditNotesTab">
                                 <span class="nav-number">3</span><span class="nav-label">Credit Notes</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="delivery-challans" id="deliveryChallansTab">
+                                <span class="nav-number">4</span><span class="nav-label">Delivery Challans</span>
+                            </button>
                         </div>
                     </div>
 
@@ -128,13 +131,13 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="ar-aging" id="arAgingTab">
-                                <span class="nav-number">4</span><span class="nav-label">AR Aging</span>
+                                <span class="nav-number">5</span><span class="nav-label">AR Aging</span>
                             </button>
                             <button class="sidebar-btn" data-tab="customer-statements" id="customerStatementsTab">
-                                <span class="nav-number">5</span><span class="nav-label">Customer Statements</span>
+                                <span class="nav-number">6</span><span class="nav-label">Customer Statements</span>
                             </button>
                             <button class="sidebar-btn" data-tab="tds-receivable" id="tdsReceivableTab">
-                                <span class="nav-number">6</span><span class="nav-label">TDS Receivable</span>
+                                <span class="nav-number">7</span><span class="nav-label">TDS Receivable</span>
                             </button>
                         </div>
                     </div>
@@ -394,7 +397,86 @@
                 </div>
 
                 <!-- ============================================================ -->
-                <!-- Tab 4: AR Aging -->
+                <!-- Tab 4: Delivery Challans -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="delivery-challans">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="challanTotal">0</div>
+                            <div class="stat-label">Total Challans</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="challanDraft">0</div>
+                            <div class="stat-label">Draft</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="challanIssued">0</div>
+                            <div class="stat-label">Issued (goods out)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="challanInvoiced">0</div>
+                            <div class="stat-label">Invoiced</div>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <select id="challanStatusFilter" class="form-control" style="max-width: 160px;" onchange="loadChallans()">
+                            <option value="">All Statuses</option>
+                            <option value="draft">Draft</option>
+                            <option value="issued">Issued</option>
+                            <option value="invoiced">Invoiced</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="challanSearch" placeholder="Search challans..." oninput="renderChallansTable()">
+                        </div>
+                        <button class="btn btn-primary" onclick="showChallanModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            New Challan
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Challan #</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Purpose</th>
+                                    <th>Vehicle</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="challansTable">
+                                <tr class="empty-state">
+                                    <td colspan="7">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="1" y="3" width="15" height="13"></rect>
+                                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                                            </svg>
+                                            <p>No delivery challans found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 5: AR Aging -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="ar-aging">
                     <div class="stats-row">
@@ -829,6 +911,81 @@
                 <div class="modal-footer">
                     <button class="btn btn-outline" onclick="AccountsCommon.closeModal('creditNoteModal')">Cancel</button>
                     <button class="btn btn-primary" id="creditNoteSaveBtn" onclick="saveCreditNote()">Create Credit Note</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery challan full-page form (create + view) -->
+    <div id="challanModal" class="acc-form-page" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="AccountsCommon.hideFormPage('challanModal'); return false;">Delivery Challans</a>
+                </nav>
+                <h1 class="acc-form-page__title" id="challanModalTitle">New Delivery Challan</h1>
+            </div>
+            <form id="challanForm" class="acc-form">
+                <input type="hidden" id="challanId">
+                <div id="challanStatusBanner" style="display:none;"></div>
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Challan Details</div>
+                    <div class="pgrid">
+                        <div class="form-group">
+                            <label>Customer <span class="req">*</span></label>
+                            <div class="searchable-dropdown-container" id="challanCustomerDD"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="challanDate">Challan Date <span class="req">*</span></label>
+                            <input type="text" id="challanDate" class="form-control" required placeholder="Select date">
+                        </div>
+                        <div class="form-group">
+                            <label>Purpose <span class="req">*</span></label>
+                            <div class="searchable-dropdown-container" id="challanPurposeDD"></div>
+                            <small class="field-hint">Why goods are moving without an invoice — printed on the challan (GST Rule 55).</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="challanVehicle">Vehicle No. <span class="opt">(optional)</span></label>
+                            <input type="text" id="challanVehicle" class="form-control" placeholder="e.g. MH12AB1234" maxlength="20">
+                        </div>
+                        <div class="form-group pf-wide">
+                            <label for="challanNotes">Notes <span class="opt">(optional)</span></label>
+                            <input type="text" id="challanNotes" class="form-control" placeholder="Optional transport / reference notes" maxlength="500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Goods on this Challan</div>
+                    <div class="po-lines-wrap">
+                        <div class="data-table-container po-lines-container">
+                            <table class="data-table po-lines-table">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width:260px;">Item *</th>
+                                        <th style="width:150px;">Qty / Unit</th>
+                                        <th style="width:150px;">Value / unit</th>
+                                        <th style="width:40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="challanLines"></tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-outline po-add-line-btn" id="challanAddLineBtn" style="margin-top: 0.75rem;" onclick="addChallanLine()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Add Line
+                        </button>
+                        <small class="field-hint" style="display:block;margin-top:6px;">Value is the Rule-55 declared value on the transport copy — it becomes the invoice price at conversion. Leave blank to use the item's sale price.</small>
+                    </div>
+                </div>
+            </form>
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner" id="challanModalFooter">
+                    <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('challanModal')">Cancel</button>
+                    <button class="btn btn-primary" id="challanSaveBtn" onclick="saveChallan()">Save Draft</button>
                 </div>
             </div>
         </div>
