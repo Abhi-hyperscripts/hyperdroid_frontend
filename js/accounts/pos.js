@@ -186,8 +186,8 @@ async function queueOfflineSale(sale) {
     sale.id = sale.offlineRef;
     sale.at = new Date().toISOString();
     sale.status = 'queued';
-    let sub = 0, tax = 0;
-    sale.cart.forEach(c => { const b = basePrice(c.item) * c.qty; sub += b; tax += b * (c.item.tax_config_id ? taxRateFor(c.item.tax_config_id) : 0) / 100; });
+    let sub = 0, tax = 0; const r2q = n => Math.round(n * 100) / 100;
+    sale.cart.forEach(c => { const g = r2q(basePrice(c.item) * c.qty); const b = g - r2q(g * (c.disc || 0) / 100); sub += b; tax += gstOn(b, taxRateFor(effTaxConfigId(c.item))); });
     sale.total = Math.round((sub + tax) * 100) / 100;
     await posQueuePut(sale);
     // Optimistically decrement the local stock view so the next offline sale
@@ -214,7 +214,7 @@ async function submitSaleToServer(sale, { enforceStock }) {
     {
         const map = new Map();
         sale.cart.forEach(c => {
-            const key = c.item.tax_config_id || '';
+            const key = effTaxConfigId(c.item) || '';
             if (!map.has(key)) { map.set(key, []); groups.push(map.get(key)); }
             map.get(key).push(c);
         });
@@ -228,8 +228,9 @@ async function submitSaleToServer(sale, { enforceStock }) {
             hsn_sac: c.item.hsn_sac || '',
             quantity: c.qty,
             unit_price: basePrice(c.item),
+            discount_percent: c.disc || 0,
             account_id: c.item.income_account_id || incomeAccounts[0].id,
-            ...(c.item.tax_config_id ? { tax_config_id: c.item.tax_config_id } : {})
+            ...(effTaxConfigId(c.item) ? { tax_config_id: effTaxConfigId(c.item) } : {})
         }));
         // client_ref makes the create IDEMPOTENT: if the server committed this invoice but the
         // response was lost, the replayed create returns the SAME invoice instead of a duplicate.
@@ -520,6 +521,32 @@ function taxRateFor(configId) {
     return m ? Number(m[1]) : 0;
 }
 
+// GST on a base at `rate`% computed the SAME way the backend posts an INTRA-STATE sale: split into two
+// equal heads (CGST + SGST), round EACH to 2dp, then sum — so the cart total matches the receipt to the
+// paisa (a flat round(base*rate/100) differed by ~1 paisa on odd amounts). POS walk-in is always the store's
+// own state = intra-state, so the two-head split is always the right model here.
+const gstOn = (base, rate) => { const half = Math.round(base * (rate / 2) / 100 * 100) / 100; return half * 2; };
+
+// The tenant's active-DEFAULT GST config — the SAME one the backend applies to an invoice line that
+// specifies no tax config (ResolveDocumentGstAsync → GetActiveTaxConfig: active GST slabs whose
+// configuration.auto_default != 'false', ordered effective_from DESC, created_at ASC, id ASC). The POS must
+// resolve it too, else an item with no tax_config_id previews ₹0 GST in the cart while the receipt (from the
+// posted invoice) charges the default — the "print shows a different number" bug.
+let _defaultGstId;
+function defaultGstConfigId() {
+    if (_defaultGstId !== undefined) return _defaultGstId;
+    const cands = taxConfigs.filter(t => (t.tax_type || 'GST') === 'GST' && t.is_active !== false
+        && String(t.configuration?.auto_default ?? 'true') !== 'false');
+    cands.sort((a, b) =>
+        String(b.effective_from || '').localeCompare(String(a.effective_from || '')) ||
+        String(a.created_at || '').localeCompare(String(b.created_at || '')) ||
+        String(a.id).localeCompare(String(b.id)));
+    _defaultGstId = cands[0]?.id || null;
+    return _defaultGstId;
+}
+// Effective tax config for an item: its own, else the tenant default GST (so cart preview == posted receipt).
+function effTaxConfigId(item) { return item.tax_config_id || defaultGstConfigId(); }
+
 /** Base (ex-GST) unit price: MRP-inclusive items back-compute; others are already ex-tax. */
 function basePrice(i) {
     const rate = i.tax_config_id ? taxRateFor(i.tax_config_id) : 0;
@@ -607,7 +634,7 @@ function addToCart(itemId) {
         if (it.qty_on_hand <= 0) { Toast.error(`'${it.name}' is out of stock — receive or adjust stock first.`); return; }
         if (inCart + 1 > it.qty_on_hand) { Toast.error(`Only ${it.qty_on_hand} of '${it.name}' in stock.`); return; }
     }
-    if (line) line.qty += 1; else cart.push({ item: it, qty: 1 });
+    if (line) line.qty += 1; else cart.push({ item: it, qty: 1, disc: 0 });
     renderCart();
 }
 
@@ -624,22 +651,45 @@ function setQty(itemId, qty) {
     renderCart();
 }
 
+// Per-line trade discount % at the counter. Clamped 0-100; recompute totals live. Sent as
+// discount_percent to the same POST /invoices endpoint (backend charges GST on the net).
+function setLineDisc(itemId, val) {
+    const line = cart.find(c => c.item.id === itemId);
+    if (!line) return;
+    line.disc = Math.min(100, Math.max(0, parseFloat(val) || 0));
+    // Recompute totals WITHOUT re-rendering the row (keeps focus in the input the user is typing in).
+    let sub = 0, tax = 0;
+    const r2 = n => Math.round(n * 100) / 100;
+    cart.forEach(c => { const g = r2(basePrice(c.item) * c.qty); const net = g - r2(g * (c.disc || 0) / 100); sub += net; tax += gstOn(net, taxRateFor(effTaxConfigId(c.item))); });
+    document.getElementById('posSub').textContent = money(sub);
+    document.getElementById('posTax').textContent = money(tax);
+    document.getElementById('posTotal').textContent = money(sub + tax);
+    const btn = document.getElementById('posPayBtn');
+    if (btn && !btn.disabled) btn.textContent = cart.length ? `Charge ${money(sub + tax)}` : 'Charge ₹0.00';
+    // refresh the line's net amount cell
+    const rows = document.querySelectorAll('#posCart tr');
+    cart.forEach((c, i) => { const cell = rows[i]?.querySelector('td:last-child'); if (cell) { const g = r2(basePrice(c.item) * c.qty); cell.textContent = money(g - r2(g * (c.disc || 0) / 100)); } });
+}
+
 function renderCart() {
     const tb = document.getElementById('posCart');
+    const r2 = n => Math.round(n * 100) / 100;
+    const lineNet = c => { const g = r2(basePrice(c.item) * c.qty); return g - r2(g * (c.disc || 0) / 100); };
     tb.innerHTML = cart.length ? cart.map(c => `<tr>
-        <td class="pos-line-name">${esc(c.item.name)}<div class="sub">${money(basePrice(c.item))} ex-GST</div></td>
+        <td class="pos-line-name">${esc(c.item.name)}<div class="sub">${money(basePrice(c.item))} ex-GST${(c.disc || 0) > 0 ? ` · −${c.disc}%` : ''}</div></td>
         <td><span class="pos-qty">
             <button type="button" onclick="setQty('${c.item.id}', ${c.qty - 1})">−</button>
             <span>${c.qty}</span>
             <button type="button" onclick="setQty('${c.item.id}', ${c.qty + 1})">+</button>
         </span></td>
-        <td style="text-align:right;font-weight:600;">${money(basePrice(c.item) * c.qty)}</td>
-    </tr>`).join('') : '<tr><td class="pos-cart-empty">Cart is empty — tap items or scan a barcode.</td></tr>';
+        <td><input type="number" class="pos-line-disc" value="${c.disc || ''}" min="0" max="100" step="0.01" placeholder="0" title="Discount %" oninput="setLineDisc('${c.item.id}', this.value)" style="width:52px;padding:4px 6px;text-align:right;"></td>
+        <td style="text-align:right;font-weight:600;">${money(lineNet(c))}</td>
+    </tr>`).join('') : '<tr><td class="pos-cart-empty" colspan="4">Cart is empty — tap items or scan a barcode.</td></tr>';
     let sub = 0, tax = 0, count = 0;
     cart.forEach(c => {
-        const base = basePrice(c.item) * c.qty;
+        const base = lineNet(c);
         sub += base; count += c.qty;
-        tax += base * (c.item.tax_config_id ? taxRateFor(c.item.tax_config_id) : 0) / 100;
+        tax += gstOn(base, taxRateFor(effTaxConfigId(c.item)));
     });
     document.getElementById('posSub').textContent = money(sub);
     document.getElementById('posTax').textContent = money(tax);
@@ -685,7 +735,7 @@ async function completeSale() {
     // and any invoices already created before a mid-sale network drop ride along in
     // sale.progress so the replay never double-creates them.
     const sale = {
-        cart: cart.map(c => ({ item: { ...c.item }, qty: c.qty })),
+        cart: cart.map(c => ({ item: { ...c.item }, qty: c.qty, disc: c.disc || 0 })),
         date: AccountsCommon.todayLocal(),
         bankId,
         method: posMethodDD?.getValue?.() || 'cash',
@@ -791,12 +841,18 @@ async function printReceipt(invoiceNumber, total, offline = false) {
     }
     const w = window.open('', '_blank', 'width=380,height=600');
     if (!w) return;
+    const r2 = n => Math.round(n * 100) / 100;
+    let gross = 0, totDisc = 0, tax = 0;
     const rows = cart.map(c => {
         const base = basePrice(c.item);
-        return `<tr><td>${esc(c.item.name)}<br><small>${c.qty} × ${base.toFixed(2)}</small></td><td class="r">${(base * c.qty).toFixed(2)}</td></tr>`;
+        const g = r2(base * c.qty);
+        const disc = r2(g * (c.disc || 0) / 100);
+        const net = g - disc;
+        gross += g; totDisc += disc;
+        tax += gstOn(net, taxRateFor(effTaxConfigId(c.item)));
+        return `<tr><td>${esc(c.item.name)}<br><small>${c.qty} × ${base.toFixed(2)}${disc > 0 ? ` (−${c.disc}%)` : ''}</small></td><td class="r">${net.toFixed(2)}</td></tr>`;
     }).join('');
-    let sub = 0, tax = 0;
-    cart.forEach(c => { const b = basePrice(c.item) * c.qty; sub += b; tax += b * (c.item.tax_config_id ? taxRateFor(c.item.tax_config_id) : 0) / 100; });
+    const sub = gross;   // MRP/list subtotal before discount
     w.document.write(`<!DOCTYPE html><html><head><title>${esc(invoiceNumber || 'Receipt')}</title><style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Courier New',monospace; font-size:12px; width:72mm; padding:4mm; }
@@ -817,6 +873,7 @@ async function printReceipt(invoiceNumber, total, offline = false) {
         <hr>
         <table>
             <tr><td>Subtotal</td><td class="r">${sub.toFixed(2)}</td></tr>
+            ${totDisc > 0 ? `<tr><td>Discount</td><td class="r">−${totDisc.toFixed(2)}</td></tr>` : ''}
             <tr><td>GST</td><td class="r">${tax.toFixed(2)}</td></tr>
             <tr><td><strong>TOTAL</strong></td><td class="r"><strong>₹${total.toFixed(2)}</strong></td></tr>
         </table>
