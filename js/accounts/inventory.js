@@ -771,7 +771,7 @@ async function loadExpiryReport() {
         tb.innerHTML = list.length ? list.map(b => {
             const d = b.expiry_date ? Math.round((new Date(b.expiry_date) - new Date().setHours(0, 0, 0, 0)) / 86400000) : null;
             return `<tr><td>${esc(b.sku || '')}</td><td>${esc(b.item_name || b.name || '')}</td><td>${esc(b.batch_number || '—')}</td>
-            <td>${esc(b.location_name || '—')}</td><td>${expiryCell(b.expiry_date)}</td><td>${d === null ? '—' : d}</td><td>${num(b.quantity)}</td><td>${fmtMoney(b.value)}</td></tr>`;
+            <td>${esc(b.location_name || '—')}</td><td>${expiryCell(b.expiry_date)}</td><td>${d === null ? '—' : d}</td><td>${num(b.quantity_on_hand ?? b.quantity)}</td><td>${fmtMoney(b.value)}</td></tr>`;
         }).join('')
             : `<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Nothing expiring in the next ${days} days.</td></tr>`;
         // Value at risk grouped by urgency of expiry.
