@@ -679,6 +679,13 @@ function setQty(idx, qty) {
     renderCart();
 }
 
+// Which cart line is expanded for editing (unit toggle + discount). One at a time; −1 = none.
+let posExpandedIdx = -1;
+function togglePosLine(idx) {
+    posExpandedIdx = posExpandedIdx === idx ? -1 : idx;
+    renderCart();
+}
+
 /** Switch a cart line between the base unit and the item's sale pack. The NUMBER stays
  *  ("3" pcs → "3" strips — the cashier said three of the now-selected thing); price and
  *  stock caps re-derive. Merges into an existing line of the target unit if one exists. */
@@ -726,39 +733,44 @@ function setLineDisc(idx, val) {
 
 function renderCart() {
     const tb = document.getElementById('posCart');
+    if (posExpandedIdx >= cart.length) posExpandedIdx = -1;   // line removed under the expansion
     const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
     const lineNet = c => { const g = r2(linePrice(c) * c.qty); return g - r2(g * (c.disc || 0) / 100); };
-    // One card per line, THREE calm rows a teller can read at arm's length:
-    //   1. Item name (full width, no truncation for normal names) …… line amount, bold
-    //   2. qty stepper · per-unit price context · labelled "Disc %" input
-    //   3. (pack items only) Sell per [base] [pack ×N] toggle
-    const chipStyle = 'padding:3px 12px;font-size:11px;line-height:1.5;border-radius:999px;cursor:pointer;';
+    // ONE compact row per line (≈50px): name + tiny context, always-on qty stepper, bold amount.
+    // Tapping the line expands ONE extra row with the occasional controls — unit toggle + a
+    // labelled Disc % box — so editing power never costs permanent height (Square/Shopify POS
+    // pattern). posExpandedIdx tracks the single expanded line.
+    const chipStyle = 'padding:4px 14px;font-size:12px;line-height:1.5;border-radius:999px;cursor:pointer;';
     const chipOff = chipStyle + 'border:1px solid var(--border-color, #3a4358);background:transparent;color:var(--text-secondary,#9aa4b8);';
     const chipOn = chipStyle + 'border:1px solid var(--brand-primary,#3b6ef5);background:var(--brand-primary,#3b6ef5);color:#fff;';
     tb.innerHTML = cart.length ? cart.map((c, idx) => {
         const pack = packOf(c.item);
-        const unitChips = pack ? `<div style="display:flex;gap:6px;align-items:center;margin-top:8px;">
-            <span class="sub" style="font-size:10.5px;">Sell per</span>
-            <button type="button" style="${!c.uom ? chipOn : chipOff}" onclick="setLineUom(${idx}, null)">${esc(c.item.unit || 'pcs')}</button>
-            <button type="button" style="${c.uom === pack ? chipOn : chipOff}" onclick="setLineUom(${idx}, '${esc(AccountsCommon.escJs(pack))}')">${esc(pack)} ×${c.item.sale_conversion || 1}</button>
+        const open = posExpandedIdx === idx;
+        const context = `${money(linePrice(c))}${c.uom ? `/${esc(c.uom)}` : ''}${(c.disc || 0) > 0 ? ` · −${c.disc}%` : ''}`;
+        const expanded = open ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;flex-wrap:wrap;">
+            ${pack ? `<div style="display:flex;gap:6px;align-items:center;">
+                <span class="sub" style="font-size:11px;">Sell per</span>
+                <button type="button" style="${!c.uom ? chipOn : chipOff}" onclick="event.stopPropagation(); setLineUom(${idx}, null)">${esc(c.item.unit || 'pcs')}</button>
+                <button type="button" style="${c.uom === pack ? chipOn : chipOff}" onclick="event.stopPropagation(); setLineUom(${idx}, '${esc(AccountsCommon.escJs(pack))}')">${esc(pack)} ×${c.item.sale_conversion || 1}</button>
+            </div>` : '<span></span>'}
+            <label class="sub" style="display:flex;align-items:center;gap:6px;cursor:text;font-size:12px;" onclick="event.stopPropagation();">Discount
+                <input type="number" class="pos-line-disc" value="${c.disc || ''}" min="0" max="100" step="0.01" placeholder="0" title="Discount %" oninput="setLineDisc(${idx}, this.value)" style="width:70px;padding:7px 8px;text-align:right;font-size:13px;">%
+            </label>
         </div>` : '';
-        return `<tr><td colspan="4" style="padding:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;">
-            <div class="pos-line-name" style="font-size:13.5px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.item.name)}</div>
-            <div class="pos-line-amt" style="font-size:14.5px;font-weight:700;flex-shrink:0;">${money(lineNet(c))}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
-            <span class="pos-qty" style="flex-shrink:0;">
+        return `<tr><td colspan="4" style="padding:9px 12px;cursor:pointer;${open ? 'background:var(--bg-tertiary,rgba(255,255,255,0.03));' : ''}" onclick="togglePosLine(${idx})">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div style="flex:1;min-width:0;">
+                <div class="pos-line-name" style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.item.name)}</div>
+                <div class="sub" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${context} <span style="opacity:.65;">· tap to edit</span></div>
+            </div>
+            <span class="pos-qty" style="flex-shrink:0;" onclick="event.stopPropagation();">
                 <button type="button" onclick="setQty(${idx}, ${c.qty - 1})">−</button>
                 <span>${c.qty}${c.uom ? ` <small style="font-size:9.5px;">${esc(c.uom)}</small>` : ''}</span>
                 <button type="button" onclick="setQty(${idx}, ${c.qty + 1})">+</button>
             </span>
-            <span class="sub" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${money(linePrice(c))}${c.uom ? `/${esc(c.uom)}` : ''} ex-GST</span>
-            <label class="sub" style="display:flex;align-items:center;gap:5px;flex-shrink:0;cursor:text;font-size:12px;">Disc
-                <input type="number" class="pos-line-disc" value="${c.disc || ''}" min="0" max="100" step="0.01" placeholder="0" title="Discount %" oninput="setLineDisc(${idx}, this.value)" style="width:64px;padding:7px 8px;text-align:right;font-size:13px;">%
-            </label>
+            <div class="pos-line-amt" style="font-size:14px;font-weight:700;flex-shrink:0;min-width:70px;text-align:right;">${money(lineNet(c))}</div>
         </div>
-        ${unitChips}
+        ${expanded}
     </td></tr>`;
     }).join('') : '<tr><td class="pos-cart-empty" colspan="4">Cart is empty — tap items or scan a barcode.</td></tr>';
     let sub = 0, tax = 0, count = 0;
