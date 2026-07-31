@@ -2485,6 +2485,7 @@ async function printInvoice() {
             <h1>${esc(settings.org_legal_name || 'Your Business Name')}</h1>
             <p>${esc(settings.org_address || '')}</p>
             ${settings.org_gstin ? `<p>GSTIN: ${esc(settings.org_gstin)}</p>` : ''}
+            ${settings.org_drug_license1 || settings.org_drug_license2 ? `<p>D.L. No: ${esc([settings.org_drug_license1, settings.org_drug_license2].filter(Boolean).join(', '))}</p>` : ''}
         </div>
         <div class="doc">
             <div class="t">${isExport ? 'Export Invoice' : 'Tax Invoice'}</div>
@@ -2499,6 +2500,7 @@ async function printInvoice() {
             <p><strong>${esc(cust.name || inv.customer_name || '')}</strong></p>
             ${custAddr ? `<p>${esc(custAddr)}</p>` : ''}
             ${cust.gst_number ? `<p>GSTIN: ${esc(cust.gst_number)}</p>` : ''}
+            ${cust.drug_license_no ? `<p>D.L. No: ${esc(cust.drug_license_no)}</p>` : ''}
         </div>
         <div class="block">
             <h3>Details</h3>
@@ -2931,6 +2933,7 @@ async function printChallan(id) {
             <h1>${esc(settings.org_legal_name || 'Your Business Name')}</h1>
             <p>${esc(settings.org_address || '')}</p>
             ${settings.org_gstin ? `<p>GSTIN: ${esc(settings.org_gstin)}</p>` : ''}
+            ${settings.org_drug_license1 || settings.org_drug_license2 ? `<p>D.L. No: ${esc([settings.org_drug_license1, settings.org_drug_license2].filter(Boolean).join(', '))}</p>` : ''}
         </div>
         <div class="doc">
             <div class="t">Delivery Challan</div>
@@ -2946,6 +2949,7 @@ async function printChallan(id) {
             <p><strong>${esc(cust.name || ch.customer_name || '')}</strong></p>
             ${custAddr ? `<p>${esc(custAddr)}</p>` : ''}
             ${cust.gst_number ? `<p>GSTIN: ${esc(cust.gst_number)}</p>` : ''}
+            ${cust.drug_license_no ? `<p>D.L. No: ${esc(cust.drug_license_no)}</p>` : ''}
         </div>
         <div class="block">
             <h3>Transport Details</h3>

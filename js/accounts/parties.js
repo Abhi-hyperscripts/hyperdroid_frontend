@@ -393,6 +393,7 @@ function editVendor(id) {
     document.getElementById('vendorTaxId').value = v.tax_id || '';
     document.getElementById('vendorGstNumber').value = v.gst_number || '';
     document.getElementById('vendorPanNumber').value = v.pan_number || '';
+    document.getElementById('vendorDrugLicense').value = v.drug_license_no || '';
     if (document.getElementById('vendorGstTreatment')) { document.getElementById('vendorGstTreatment').value = v.gst_treatment || 'registered'; onVendorTreatmentChange(); }
     document.getElementById('vendorPaymentTerms').value = v.payment_terms_days ?? 30;
     document.getElementById('vendorBankName').value = v.bank_name || '';
@@ -478,6 +479,7 @@ async function saveVendor() {
         // Backend accepts and prefers gst_number/pan_number over tax_id for TDS
         gst_number: document.getElementById('vendorGstNumber').value.trim() || null,
         pan_number: document.getElementById('vendorPanNumber').value.trim() || null,
+        drug_license_no: document.getElementById('vendorDrugLicense').value.trim() || (document.getElementById('vendorId').value ? '' : null),
         payment_terms_days: parseInt(document.getElementById('vendorPaymentTerms').value) || 30,
         bank_name: document.getElementById('vendorBankName').value.trim() || null,
         bank_account_number: document.getElementById('vendorBankAccount').value.trim() || null,
@@ -641,6 +643,7 @@ function editCustomer(id) {
     document.getElementById('customerCreditLimit').value = c.credit_limit ?? '';
     document.getElementById('customerNotes').value = c.notes || '';
     document.getElementById('customerInterestRate').value = c.interest_rate_pct ?? '';
+    document.getElementById('customerDrugLicense').value = c.drug_license_no || '';
     initCustomerPriceListDD(c.price_list_id || '');
     AccountsCommon.showFormPage('customerModal');
 }
@@ -695,7 +698,8 @@ async function saveCustomer() {
         // EMPTY-GUID sentinel to remove the assignment; CREATE just omits it.
         price_list_id: customerPriceListDD?.getValue?.() || (id ? '00000000-0000-0000-0000-000000000000' : null),
         // Partial-update: 0 turns interest off (backend treats 0 and NULL alike); blank on CREATE omits.
-        interest_rate_pct: (() => { const v = document.getElementById('customerInterestRate').value.trim(); return v === '' ? (id ? 0 : null) : parseFloat(v); })()
+        interest_rate_pct: (() => { const v = document.getElementById('customerInterestRate').value.trim(); return v === '' ? (id ? 0 : null) : parseFloat(v); })(),
+        drug_license_no: document.getElementById('customerDrugLicense').value.trim() || (id ? '' : null)
     };
 
     if (!AccountsCommon.beginSubmit('saveCustomer')) return;

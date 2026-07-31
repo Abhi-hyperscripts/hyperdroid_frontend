@@ -487,12 +487,16 @@ async function loadTenantSettings() {
         if (oln) oln.value = s.org_legal_name || '';
         if (ogs) ogs.value = s.org_gstin || '';
         if (oad) oad.value = s.org_address || '';
+        const od1 = document.getElementById('settingsOrgDl1');
+        const od2 = document.getElementById('settingsOrgDl2');
+        if (od1) od1.value = s.org_drug_license1 || '';
+        if (od2) od2.value = s.org_drug_license2 || '';
 
         // RBAC: only admins may edit. Non-admins see the values read-only.
         const canEdit = accountsRoles.isAdmin();
         const saveBtn = document.getElementById('saveTenantSettingsBtn');
         if (saveBtn) saveBtn.style.display = canEdit ? '' : 'none';
-        [cur, cc, oln, ogs, oad].forEach(el => { if (el) el.disabled = !canEdit; });
+        [cur, cc, oln, ogs, oad, od1, od2].forEach(el => { if (el) el.disabled = !canEdit; });
         if (!canEdit) {
             homeStateDropdown?.disable?.();
             fyStartDropdown?.disable?.();
@@ -516,7 +520,9 @@ async function saveTenantSettings() {
         // Org profile — printed as the seller block on the invoice/proforma print view.
         org_legal_name: document.getElementById('settingsOrgLegalName')?.value.trim() || null,
         org_gstin: (document.getElementById('settingsOrgGstin')?.value || '').trim().toUpperCase() || null,
-        org_address: document.getElementById('settingsOrgAddress')?.value.trim() || null
+        org_address: document.getElementById('settingsOrgAddress')?.value.trim() || null,
+        org_drug_license1: document.getElementById('settingsOrgDl1')?.value.trim() || null,
+        org_drug_license2: document.getElementById('settingsOrgDl2')?.value.trim() || null
     };
 
     if (!AccountsCommon.beginSubmit('saveTenantSettings')) return;

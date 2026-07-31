@@ -1130,7 +1130,7 @@ async function printReceipt(invoiceNumber, total, offline = false, saleCart = nu
         try {
             const s = await api.request(AccountsCommon.buildUrl('settings'), { _skipSpinner: true });
             org = s?.data || s || {};
-            try { localStorage.setItem('acct_org_profile', JSON.stringify({ org_legal_name: org.org_legal_name, org_address: org.org_address, org_gstin: org.org_gstin })); } catch { }
+            try { localStorage.setItem('acct_org_profile', JSON.stringify({ org_legal_name: org.org_legal_name, org_address: org.org_address, org_gstin: org.org_gstin, org_drug_license1: org.org_drug_license1, org_drug_license2: org.org_drug_license2 })); } catch { }
         } catch { }
     } else {
         // Offline: use the org profile cached from the last successful load, if any.
@@ -1162,6 +1162,7 @@ async function printReceipt(invoiceNumber, total, offline = false, saleCart = nu
         <h2 class="c">${esc(org.org_legal_name || 'CASH RECEIPT')}</h2>
         ${org.org_address ? `<p class="c"><small>${esc(org.org_address)}</small></p>` : ''}
         ${org.org_gstin ? `<p class="c"><small>GSTIN: ${esc(org.org_gstin)}</small></p>` : ''}
+        ${org.org_drug_license1 || org.org_drug_license2 ? `<p class="c"><small>D.L. No: ${esc([org.org_drug_license1, org.org_drug_license2].filter(Boolean).join(', '))}</small></p>` : ''}
         <hr>
         <p><small>${esc(invoiceNumber || '')} · ${new Date().toLocaleString('en-IN')}</small></p>
         ${offline ? '<p><small>Offline sale — tax invoice number will be assigned when the counter reconnects.</small></p>' : ''}
