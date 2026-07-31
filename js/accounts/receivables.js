@@ -926,6 +926,9 @@ function showCreateInvoiceModal() {
     initInvoiceProjectDropdown('');
     initInvoiceCurrencyDropdown(BASE_CURRENCY);
     initInvoiceItemPicker();
+    invoiceIsNewDoc = true;             // schemes auto-manage free lines on NEW invoices only
+    invoiceSchemeOptOut.clear();
+    loadInvoiceSchemes();
     addInvoiceLine();
     calculateInvoiceTotals();
     renderInvoiceCustomFields(null);
@@ -941,6 +944,7 @@ const viewInvoice = (id) => editInvoice(id);
 
 async function editInvoice(id) {
     try {
+        invoiceIsNewDoc = false;   // saved lines stay exactly as stored — no scheme auto-management
         const inv = await api.request(AccountsCommon.buildUrl(`invoices/${id}`));
         const isDraft = (inv.status || 'draft') === 'draft';
         const titleEl = document.getElementById('invoiceModalTitle');
@@ -1219,6 +1223,67 @@ async function loadInvoicePriceList() {
 /** Effective per-BASE-unit price for an item on THIS invoice: customer's list price, else catalog. */
 function effectiveItemPrice(it) { return invoicePriceMap.has(it.id) ? invoicePriceMap.get(it.id) : it.sale_price; }
 
+// ── Trade schemes (buy N get M free) on the invoice screen ──────────────────
+// Mirrors POS: ONE auto free line per scheme at 100% discount, qty (BASE units) =
+// floor(Σ paid base of the bought item ÷ buy_qty) × free_qty. Auto-maintenance runs ONLY on
+// NEW invoices — an edited draft keeps its saved lines exactly as stored (re-deriving would
+// double the saved free lines, whose scheme linkage isn't persisted by design).
+let invoiceSchemes = [];
+const invoiceSchemeOptOut = new Set();
+let invoiceIsNewDoc = false;        // set true by the create-modal opener, false by the edit loader
+let _maintainingFreeLines = false;  // recursion guard: addInvoiceLine re-enters calculateInvoiceTotals
+
+async function loadInvoiceSchemes() {
+    try {
+        const r = await api.request(AccountsCommon.buildUrl('trade-schemes', { activeOn: AccountsCommon.todayLocal() }), { _skipSpinner: true });
+        invoiceSchemes = Array.isArray(r) ? r : (r?.data || []);
+    } catch { invoiceSchemes = []; }
+}
+
+function _rowBaseQty(row) {
+    const it = (inventoryItems || []).find(x => x.id === row._itemId);
+    const uom = row._lineUomDropdown?.getValue?.();
+    const conv = (uom && it?.sale_unit && uom.toLowerCase() === it.sale_unit.toLowerCase()) ? (it.sale_conversion || 1) : 1;
+    return (parseFloat(row.querySelector('.line-qty')?.value) || 0) * conv;
+}
+
+function maintainInvoiceFreeLines() {
+    if (_maintainingFreeLines || !invoiceIsNewDoc || !invoiceSchemes.length) return;
+    _maintainingFreeLines = true;
+    try {
+        const rows = [...document.querySelectorAll('#invoiceLines tr')];
+        for (const s of invoiceSchemes) {
+            const freeItemId = s.free_item_id || s.item_id;
+            const freeItem = (inventoryItems || []).find(i => i.id === freeItemId);
+            const existing = rows.find(r => r._freeScheme === s.id);
+            const paidBase = rows.filter(r => !r._freeScheme && r._itemId === s.item_id).reduce((sum, r) => sum + _rowBaseQty(r), 0);
+            const entitled = invoiceSchemeOptOut.has(s.id) || !freeItem ? 0 : Math.floor(paidBase / s.buy_qty) * s.free_qty;
+            if (entitled > 0 && !existing) {
+                addInvoiceLine({
+                    item_id: freeItem.id, description: `FREE — ${s.name}`, hsn_sac: freeItem.hsn_sac || '',
+                    quantity: entitled, unit_price: effectiveItemPrice(freeItem), discount_percent: 100,
+                    account_id: freeItem.income_account_id || AccountsCommon.postableAccounts(accounts, 'income')[0]?.id || undefined,
+                    ...(freeItem.tax_config_id ? { tax_config_id: freeItem.tax_config_id } : {})
+                });
+                const newRow = document.querySelector('#invoiceLines tr:last-child');
+                newRow._freeScheme = s.id;
+                newRow.querySelectorAll('.line-qty, .line-rate, .line-disc, .line-desc').forEach(el => el.readOnly = true);
+                Toast.info(`Free goods added: ${entitled} × ${freeItem.name} (${s.name}). Remove the line to opt out.`);
+            } else if (existing) {
+                if (entitled > 0) {
+                    const q = existing.querySelector('.line-qty');
+                    if (parseFloat(q.value) !== entitled) { q.value = entitled; }
+                } else existing.remove();
+            }
+        }
+    } finally { _maintainingFreeLines = false; }
+}
+
+/** Rows removed by the biller: if it was an auto free line, opt this invoice out of the scheme. */
+function _noteFreeLineRemoval(row) {
+    if (row?._freeScheme) invoiceSchemeOptOut.add(row._freeScheme);
+}
+
 function onInvoiceCustomerChange() {
     refreshLineProjectDropdowns();
     loadInvoicePriceList();
@@ -1337,11 +1402,14 @@ async function openInvoiceQuickAddAccount(dropdownInstance, rebuildOptions) {
 }
 
 function removeInvoiceLine(btn) {
-    btn.closest('tr').remove();
+    const row = btn.closest('tr');
+    _noteFreeLineRemoval(row);   // removing an auto free line opts this invoice out of its scheme
+    row.remove();
     calculateInvoiceTotals();
 }
 
 function calculateInvoiceTotals() {
+    maintainInvoiceFreeLines();   // choke point: every qty/line change lands here (no-op on edits)
     let subtotal = 0;
     let totalTax = 0;
     const r2 = n => Math.round(n * 100) / 100;

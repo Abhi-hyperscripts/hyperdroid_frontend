@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         value: 'cash', compact: true
     });
     initPosCustomerPicker();   // bill-to picker (Walk-in default; known customers reprice via their list)
+    loadPosSchemes();          // active free-goods schemes — auto free lines maintained per cart change
     connectStockHub();
     updateNetBadge();
     syncOfflineSales();   // drain anything queued from a previous offline session
@@ -235,7 +236,7 @@ async function queueOfflineSale(sale) {
     sale.cart.forEach(c => { const it = posItems.find(i => i.id === c.item.id); if (it && it.track_inventory) it.qty_on_hand -= lineBaseQty(c); });
     await printReceipt(sale.offlineRef, sale.total, true, sale.cart, sale.customerName);
     Toast.success(`Sale saved offline (${sale.offlineRef}) — will sync when back online`);
-    cart = [];
+    cart = []; posSchemeOptOut.clear();
     renderCart(); renderGrid(true);
     updateNetBadge();
 }
@@ -691,6 +692,54 @@ function lineConv(c) { return c.uom && c.item.sale_unit && c.uom.toLowerCase() =
 /** Per-selected-unit price for SALE math: the price FROZEN on the snapshot at Charge when
  *  present (offline replay must post the receipt's numbers), else the live computed price. */
 function salePx(c) { return c.px != null ? c.px : linePrice(c); }
+
+// ── Trade schemes (buy N get M free) at the counter ─────────────────────────
+// One AUTO free line per scheme, maintained after every cart change: qty (BASE units) =
+// floor(Σ paid base qty of the bought item ÷ buy_qty) × free_qty, capped to available stock.
+// The free line rides the normal machinery as a 100%-discount line (stock out, zero revenue).
+// Removing it opts the SALE out of that scheme; the sale snapshot freezes it like any line.
+let posSchemes = [];                    // active schemes for today (loaded once per session)
+const posSchemeOptOut = new Set();      // scheme ids the teller removed for THIS sale
+
+async function loadPosSchemes() {
+    try {
+        const r = await api.request(AccountsCommon.buildUrl('trade-schemes', { activeOn: AccountsCommon.todayLocal() }), { _skipSpinner: true });
+        posSchemes = Array.isArray(r) ? r : (r?.data || []);
+    } catch { posSchemes = []; }
+}
+
+function recomputeFreeLines() {
+    if (!posSchemes.length) return;
+    let changed = false;
+    for (const s of posSchemes) {
+        const freeItemId = s.free_item_id || s.item_id;
+        const freeItem = posItems.find(i => i.id === freeItemId);
+        const existing = cart.find(c => c.freeScheme === s.id);
+        const paidBase = cart.filter(c => !c.free && c.item.id === s.item_id).reduce((sum, c) => sum + lineBaseQty(c), 0);
+        let entitled = posSchemeOptOut.has(s.id) || !freeItem ? 0 : Math.floor(paidBase / s.buy_qty) * s.free_qty;
+        if (entitled > 0 && freeItem.track_inventory) {
+            // The free goods leave the shelf too — never promise more than remains after paid lines.
+            const avail = freeItem.qty_on_hand - cart.filter(c => c !== existing && c.item.id === freeItemId).reduce((sum, c) => sum + lineBaseQty(c), 0);
+            if (entitled > avail) { entitled = Math.max(0, Math.floor(avail / s.free_qty) * s.free_qty); if (existing?.qty !== entitled) Toast.error(`'${freeItem.name}' free goods limited by stock.`); }
+        }
+        if (entitled > 0) {
+            if (!existing) { cart.push({ item: freeItem, qty: entitled, disc: 100, uom: null, free: true, freeScheme: s.id, schemeName: s.name }); changed = true; }
+            else if (existing.qty !== entitled) { existing.qty = entitled; changed = true; }
+        } else if (existing) {
+            cart = cart.filter(c => c !== existing); changed = true;
+        }
+    }
+    return changed;
+}
+
+/** Teller removed the free line — opt this sale out of the scheme (won't re-add on recompute). */
+function removeFreeLine(idx) {
+    const line = cart[idx];
+    if (!line?.free) return;
+    posSchemeOptOut.add(line.freeScheme);
+    cart = cart.filter(c => c !== line);
+    renderCart();
+}
 function linePrice(c) { const conv = lineConv(c); return conv === 1 ? basePrice(c.item) : Math.round(basePrice(c.item) * conv * 100) / 100; }
 function lineBaseQty(c) { return Math.round(c.qty * lineConv(c) * 10000) / 10000; }
 function itemBaseInCart(itemId, exceptLine) { return cart.filter(c => c.item.id === itemId && c !== exceptLine).reduce((s, c) => s + lineBaseQty(c), 0); }
@@ -863,6 +912,7 @@ function setLineDisc(idx, val) {
 
 function renderCart() {
     const tb = document.getElementById('posCart');
+    recomputeFreeLines();   // single choke point — every cart mutation lands here
     if (posExpandedLine && !cart.includes(posExpandedLine)) posExpandedLine = null;   // line removed under the expansion
     const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
     const lineNet = c => { const g = r2(linePrice(c) * c.qty); return g - r2(g * (c.disc || 0) / 100); };
@@ -874,6 +924,18 @@ function renderCart() {
     const chipOff = chipStyle + 'border:1px solid var(--border-color, #3a4358);background:transparent;color:var(--text-secondary,#9aa4b8);';
     const chipOn = chipStyle + 'border:1px solid var(--brand-primary,#3b6ef5);background:var(--brand-primary,#3b6ef5);color:#fff;';
     tb.innerHTML = cart.length ? cart.map((c, idx) => {
+        // Auto free-goods line: read-only card — FREE badge, no stepper/disc (qty is scheme-managed),
+        // ✕ opts the sale out of the scheme. Amount ₹0.00 via the normal 100%-discount math.
+        if (c.free) return `<tr><td colspan="4" style="padding:9px 12px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="flex:1;min-width:0;">
+                    <div class="pos-line-name" style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.item.name)}</div>
+                    <div class="sub" style="font-size:11px;"><span style="color:var(--color-success,#3fb96f);font-weight:700;">FREE</span> ×${c.qty}${c.item.unit ? ' ' + esc(c.item.unit) : ''} · ${esc(c.schemeName || 'scheme')}</div>
+                </div>
+                <div class="pos-line-amt" style="font-size:14px;font-weight:700;flex-shrink:0;min-width:70px;text-align:right;">₹0.00</div>
+                <button type="button" class="btn-icon" title="Remove free goods (opt out of the scheme for this sale)" onclick="removeFreeLine(${idx})" style="flex-shrink:0;">✕</button>
+            </div>
+        </td></tr>`;
         const pack = packOf(c.item);
         const open = posExpandedLine === c;
         const context = `${money(linePrice(c))}${c.uom ? `/${esc(c.uom)}` : ''}${(c.disc || 0) > 0 ? ` · −${c.disc}%` : ''}`;
@@ -968,7 +1030,7 @@ async function completeSale() {
         Toast.success(`Sale complete — ${money(total)}`);
         await printReceipt(invoices.map(i => i.number).join(' · '), total, false, sale.cart, sale.customerName);
         await promptSerials(invoices, sale.date);
-        cart = [];
+        cart = []; posSchemeOptOut.clear();
         renderCart();
         // refresh stock counts on the grid
         posItems = (await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true })).filter(i => i.is_active);
@@ -988,7 +1050,7 @@ async function completeSale() {
             sale.id = sale.offlineRef; sale.at = new Date().toISOString();
             sale.status = 'error'; sale.error = err.message || 'Posting failed part-way';
             await posQueuePut(sale).catch(() => {});
-            cart = [];
+            cart = []; posSchemeOptOut.clear();
             Toast.error(`${err.message || 'Sale failed part-way'} — the sale is saved under "needing attention": fix the cause and Retry (it resumes where it stopped), or Discard to cancel what posted.`);
             updateNetBadge();
         } else {
