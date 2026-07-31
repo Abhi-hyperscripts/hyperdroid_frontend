@@ -2593,10 +2593,13 @@ function renderChallansTable() {
         issue: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
         convert: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>',
         cancel: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+        print: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
         del: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
     };
     tbody.innerHTML = rows.map(c => {
         const acts = [`<button class="btn-icon" onclick="viewChallan('${c.id}')" data-tooltip="View">${icon.view}</button>`];
+        if (c.status !== 'draft' && c.status !== 'cancelled')
+            acts.push(`<button class="btn-icon" onclick="printChallan('${c.id}')" data-tooltip="Print (Rule-55 copy)">${icon.print}</button>`);
         if (c.status === 'draft') {
             acts.push(`<button class="btn-icon" onclick="issueChallan('${c.id}')" data-tooltip="Issue (assign number)" data-admin-only>${icon.issue}</button>`);
             acts.push(`<button class="btn-icon btn-icon-danger" onclick="deleteChallan('${c.id}')" data-tooltip="Delete draft" data-admin-only>${icon.del}</button>`);
@@ -2796,6 +2799,8 @@ function _setChallanReadOnly(readOnly, ch = null) {
         return;
     }
     const acts = [`<button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('challanModal')">Close</button>`];
+    if (ch && ch.status !== 'draft' && ch.status !== 'cancelled')
+        acts.push(`<button class="btn btn-outline" onclick="printChallan('${ch.id}')">Print / PDF</button>`);
     if (ch?.status === 'draft') {
         acts.push(`<button class="btn btn-danger" onclick="AccountsCommon.hideFormPage('challanModal');deleteChallan('${ch.id}')" data-admin-only>Delete</button>`);
         acts.push(`<button class="btn btn-primary" onclick="AccountsCommon.hideFormPage('challanModal');issueChallan('${ch.id}')" data-admin-only>Issue Challan</button>`);
@@ -2857,4 +2862,118 @@ async function deleteChallan(id) {
         Toast.success('Draft challan deleted');
         loadChallans();
     } catch (err) { Toast.error(err?.message || 'Failed to delete challan'); }
+}
+
+// ── Rule-55 transport copy ──────────────────────────────────────────────────
+// A delivery challan is NOT a tax invoice: it carries description, quantity and
+// the DECLARED value of goods in transit. Printed for the truck (Rule 55(2)
+// wants triplicate: consignee / transporter / consigner copies).
+async function printChallan(id) {
+    try {
+        const [ch, settingsRes] = await Promise.all([
+            api.request(AccountsCommon.buildUrl('delivery-challans/' + id)),
+            api.request(AccountsCommon.buildUrl('settings'), { _skipSpinner: true }).catch(() => ({}))
+        ]);
+        if (ch.status === 'draft') { Toast.error('Issue the challan first — drafts have no challan number to print'); return; }
+        const settings = settingsRes?.data || settingsRes || {};
+        const cust = customers.find(c => c.id === ch.customer_id) || {};
+        const esc = AccountsCommon.escapeHtml;
+        const inr = (v) => '₹' + (Number(v) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const custAddr = [cust.billing_address_line1, cust.billing_address_line2, cust.city, cust.state, cust.country, cust.postal_code]
+            .filter(Boolean).join(', ');
+        let totalValue = 0;
+        const rows = (ch.lines || []).map((l, i) => {
+            const qty = Number(l.quantity) || 0;
+            const val = l.unit_price != null ? qty * Number(l.unit_price) : null;
+            if (val != null) totalValue += val;
+            return `<tr>
+                <td class="c">${i + 1}</td>
+                <td>${esc(l.item_sku)} — ${esc(l.item_name)}${l.description ? `<br><span class="sub">${esc(l.description)}</span>` : ''}</td>
+                <td class="r">${qty}${l.uom ? ' ' + esc(l.uom) : ''}${l.uom && Number(l.uom_conversion) !== 1 ? ` <span class="sub">(× ${Number(l.uom_conversion)})</span>` : ''}</td>
+                <td class="r">${l.unit_price != null ? inr(l.unit_price) : '—'}</td>
+                <td class="r">${val != null ? inr(val) : '—'}</td>
+            </tr>`;
+        }).join('');
+
+        const w = window.open('', '_blank');
+        if (!w) { Toast.error('Allow pop-ups to print the challan'); return; }
+        w.document.write(`<!DOCTYPE html><html><head><title>${esc(ch.challan_number)}</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; padding: 32px; font-size: 13px; }
+    .head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1a1a1a; padding-bottom: 16px; }
+    .head h1 { font-size: 22px; letter-spacing: 0.5px; }
+    .head .doc { text-align: right; }
+    .head .doc .t { font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+    .rule { font-size: 11px; color: #666; margin-top: 2px; }
+    .meta { display: flex; justify-content: space-between; margin: 18px 0; gap: 24px; }
+    .meta .block { flex: 1; }
+    .meta h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 6px; }
+    .meta p { line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th { background: #f0f0f0; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    th, td { border: 1px solid #ccc; padding: 7px 10px; }
+    td.r, th.r { text-align: right; } td.c, th.c { text-align: center; }
+    .sub { color: #666; font-size: 11.5px; }
+    .totals { margin-top: 12px; margin-left: auto; width: 300px; }
+    .totals td { border: none; padding: 4px 10px; }
+    .totals .grand td { border-top: 2px solid #1a1a1a; font-weight: 700; padding-top: 8px; }
+    .note { margin-top: 18px; font-size: 11.5px; color: #444; border: 1px solid #ddd; padding: 8px 12px; }
+    .sign { margin-top: 48px; display: flex; justify-content: space-between; gap: 24px; }
+    .sign .box { flex: 1; border-top: 1px solid #999; padding-top: 6px; font-size: 12px; color: #555; text-align: center; }
+    .foot { margin-top: 28px; display: flex; justify-content: space-between; font-size: 12px; color: #666; }
+    @media print { body { padding: 12px; } }
+</style></head><body>
+    <div class="head">
+        <div>
+            <h1>${esc(settings.org_legal_name || 'Your Business Name')}</h1>
+            <p>${esc(settings.org_address || '')}</p>
+            ${settings.org_gstin ? `<p>GSTIN: ${esc(settings.org_gstin)}</p>` : ''}
+        </div>
+        <div class="doc">
+            <div class="t">Delivery Challan</div>
+            <div class="rule">Under Rule 55 — not a tax invoice</div>
+            <p><strong>${esc(ch.challan_number)}</strong></p>
+            <p>Date: ${(ch.challan_date || '').split('T')[0]}</p>
+            ${ch.vehicle_no ? `<p>Vehicle: ${esc(ch.vehicle_no)}</p>` : ''}
+        </div>
+    </div>
+    <div class="meta">
+        <div class="block">
+            <h3>Consignee (Ship To)</h3>
+            <p><strong>${esc(cust.name || ch.customer_name || '')}</strong></p>
+            ${custAddr ? `<p>${esc(custAddr)}</p>` : ''}
+            ${cust.gst_number ? `<p>GSTIN: ${esc(cust.gst_number)}</p>` : ''}
+        </div>
+        <div class="block">
+            <h3>Transport Details</h3>
+            <p>Purpose: ${esc(challanPurposeLabel(ch.purpose))}</p>
+            <p>Status: ${esc((ch.status || '').replace('_', ' '))}</p>
+            ${ch.notes ? `<p>${esc(ch.notes)}</p>` : ''}
+        </div>
+    </div>
+    <table>
+        <thead><tr><th class="c" style="width:36px;">#</th><th>Description of Goods</th><th class="r" style="width:120px;">Quantity</th><th class="r" style="width:110px;">Value / unit</th><th class="r" style="width:120px;">Declared Value</th></tr></thead>
+        <tbody>${rows}</tbody>
+    </table>
+    <table class="totals">
+        <tr class="grand"><td>Total declared value</td><td class="r">${inr(totalValue)}</td></tr>
+    </table>
+    <p class="note">Goods moved under delivery challan per CGST Rule 55 — tax invoice to follow on acceptance/supply.
+    Prepare in triplicate: ORIGINAL for consignee · DUPLICATE for transporter · TRIPLICATE for consigner.</p>
+    <div class="sign">
+        <div class="box">Received the above goods in good condition<br><br>Consignee signature &amp; date</div>
+        <div class="box">For ${esc(settings.org_legal_name || 'Your Business Name')}<br><br>Authorised Signatory</div>
+    </div>
+    <div class="foot">
+        <span>Generated by Ragenaizer Accounts</span>
+        <span>${esc(ch.challan_number)}</span>
+    </div>
+    <script>window.onload = () => window.print();<\/script>
+</body></html>`);
+        w.document.close();
+    } catch (err) {
+        console.error('[Challans] print error:', err);
+        Toast.error('Failed to build the challan print view');
+    }
 }
