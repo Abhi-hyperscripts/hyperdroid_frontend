@@ -1072,6 +1072,7 @@ function addInvoiceLine(data = {}) {
         <td><input type="text" class="form-control line-hsn" value="${AccountsCommon.escapeHtml(data.hsn_sac || '')}" placeholder="HSN/SAC"></td>
         <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculateInvoiceTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${data.rate || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateInvoiceTotals()"></td>
+        <td><input type="number" class="form-control line-disc" value="${data.discount_percent || ''}" min="0" max="100" step="0.01" placeholder="0" oninput="calculateInvoiceTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeInvoiceLine(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
@@ -1267,10 +1268,16 @@ function removeInvoiceLine(btn) {
 function calculateInvoiceTotals() {
     let subtotal = 0;
     let totalTax = 0;
+    const r2 = n => Math.round(n * 100) / 100;
     document.querySelectorAll('#invoiceLines tr').forEach(row => {
         const qty = parseFloat(row.querySelector('.line-qty')?.value) || 0;
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
-        const amt = qty * rate;
+        // Net-of-discount, mirroring the backend rounding exactly: gross=round(qty*rate,2),
+        // disc=round(gross*disc%/100,2), net=gross-disc. Tax is charged on the net.
+        const discPct = Math.min(100, Math.max(0, parseFloat(row.querySelector('.line-disc')?.value) || 0));
+        const gross = r2(qty * rate);
+        const discAmt = r2(gross * discPct / 100);
+        const amt = gross - discAmt;
         subtotal += amt;
 
         const taxConfigId = row._lineTaxDropdown?.selectedValue || '';
@@ -1280,10 +1287,13 @@ function calculateInvoiceTotals() {
 
         const amtCell = row.querySelector('.line-amount');
         if (amtCell) {
+            const discNote = discAmt > 0 ? ` − ${discAmt.toFixed(2)} disc` : '';
             if (taxPct > 0) {
                 amtCell.innerHTML = `
                     <div>${(amt + lineTax).toFixed(2)}</div>
-                    <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">${amt.toFixed(2)} + ${lineTax.toFixed(2)} tax</div>`;
+                    <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">${amt.toFixed(2)}${discNote} + ${lineTax.toFixed(2)} tax</div>`;
+            } else if (discAmt > 0) {
+                amtCell.innerHTML = `<div>${amt.toFixed(2)}</div><div style="font-size:0.72rem;color:var(--text-secondary);margin-top:2px;">${gross.toFixed(2)}${discNote}</div>`;
             } else {
                 amtCell.textContent = amt.toFixed(2);
             }
@@ -1340,6 +1350,7 @@ async function saveInvoice(approve) {
             hsn_sac: row.querySelector('.line-hsn')?.value || '',
             quantity: parseFloat(row.querySelector('.line-qty')?.value) || 0,
             unit_price: rate,
+            discount_percent: Math.min(100, Math.max(0, parseFloat(row.querySelector('.line-disc')?.value) || 0)),
             tax_config_id: taxConfigId,
             tax_rate: taxRate || 0,
             item_id: row._itemId || null,
