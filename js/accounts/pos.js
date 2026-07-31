@@ -800,7 +800,7 @@ function renderGrid(keepCount) {
         <thead><tr><th>Item</th><th>SKU</th><th>Category</th><th class="r">Price</th><th class="r">Stock</th><th></th></tr></thead>
         <tbody>${rows.map((i, idx) => `
             <tr class="${idx === 0 ? 'first' : ''}${i.track_inventory && i.qty_on_hand <= 0 ? ' pos-oos' : ''}" onclick="addToCart('${i.id}')">
-                <td class="nm">${esc(i.name)}</td>
+                <td class="nm">${esc(i.name)}${i.rack ? ` <span style="font-size:.72rem;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:4px;padding:0 4px;white-space:nowrap;">📍 ${esc(i.rack)}</span>` : ''}</td>
                 <td class="sku">${esc(i.sku)}</td>
                 <td class="cat">${esc(i.category_name || '—')}</td>
                 <td class="r pr">${money(i.sale_price)}</td>

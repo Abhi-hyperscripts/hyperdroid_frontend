@@ -103,7 +103,7 @@ function initItemModalDropdowns(selectedCat, selectedType) {
 
 function showItemModal() {
     document.getElementById('itemModalTitle').textContent = 'New Item';
-    ['itemId', 'itSku', 'itName', 'itSalePrice', 'itPurchasePrice', 'itHsn', 'itBarcode', 'itPurchaseUnit', 'itPurchaseConv', 'itSaleUnit', 'itSaleConv'].forEach(id => document.getElementById(id).value = '');
+    ['itemId', 'itSku', 'itName', 'itSalePrice', 'itPurchasePrice', 'itHsn', 'itBarcode', 'itPurchaseUnit', 'itPurchaseConv', 'itSaleUnit', 'itSaleConv', 'itRack'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('itUnit').value = 'pcs';
     document.getElementById('itWarranty').value = '0';
     document.getElementById('itReorder').value = '0';
@@ -131,6 +131,7 @@ function editItem(id) {
     document.getElementById('itPurchaseConv').value = i.purchase_conversion ?? '';
     document.getElementById('itSaleUnit').value = i.sale_unit || '';
     document.getElementById('itSaleConv').value = i.sale_conversion ?? '';
+    document.getElementById('itRack').value = i.rack || '';
     document.getElementById('itWarranty').value = i.warranty_months;
     document.getElementById('itReorder').value = i.reorder_level;
     document.getElementById('itReorderQty').value = i.reorder_quantity ?? 0;
@@ -159,6 +160,7 @@ async function saveItem() {
         purchase_conversion: document.getElementById('itPurchaseConv').value.trim() === '' ? null : parseFloat(document.getElementById('itPurchaseConv').value),
         sale_unit: document.getElementById('itSaleUnit').value.trim() || null,
         sale_conversion: document.getElementById('itSaleConv').value.trim() === '' ? null : parseFloat(document.getElementById('itSaleConv').value),
+        rack: document.getElementById('itRack').value.trim() || null,
         warranty_months: parseInt(document.getElementById('itWarranty').value) || 0,
         reorder_level: parseFloat(document.getElementById('itReorder').value) || 0,
         reorder_quantity: parseFloat(document.getElementById('itReorderQty').value) || 0,
