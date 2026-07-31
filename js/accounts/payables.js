@@ -782,13 +782,47 @@ function addBillLine(data) {
     row.innerHTML = `
         <td><select class="form-control line-account" data-no-sd="true">${accountOpts}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(d.description || '')}" placeholder="Description"></td>
-        <td><input type="number" class="form-control line-qty" value="${d.quantity ?? 1}" min="0" step="any" oninput="calculateBillTotals()"></td>
+        <td><input type="number" class="form-control line-qty" value="${d.quantity ?? 1}" min="0" step="any" oninput="calculateBillTotals()"><div class="searchable-dropdown-container line-uom-sd" style="margin-top:2px;"></div></td>
         <td><input type="number" class="form-control line-rate" value="${d.rate ?? 0}" min="0" step="0.01" placeholder="0.00" oninput="calculateBillTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td><div class="searchable-dropdown-container line-cc-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeBillLine(${idx})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
+
+    // ── Unit picker (multiple UoM): shown only when the item defines a purchase unit ──
+    // Price is per SELECTED unit; the backend converts qty × conversion to base for stock.
+    {
+        const invIt = (inventoryItems || []).find(x => x.id === (row.dataset.itemId || null));
+        const baseU = invIt?.unit || null;
+        const altU = invIt?.purchase_unit || null;
+        const uomChoices = [...new Set([baseU, altU, d.uom].filter(Boolean))];
+        if (uomChoices.length > 1) {
+            const startUom = d.uom || baseU;
+            row._lineUomDropdown = new SearchableDropdown(row.querySelector('.line-uom-sd'), {
+                id: `bill-line-uom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                options: uomChoices.map(u => ({ value: u, label: u })),
+                value: startUom, compact: true,
+                onChange: (v) => {
+                    if (invIt && invIt.purchase_price != null) {
+                        const convOf = (u) => (altU && u === altU) ? (invIt.purchase_conversion || 1) : 1;
+                        const rateEl = row.querySelector('.line-rate');
+                        const prevDefault = Math.round(invIt.purchase_price * convOf(row._lineUom || startUom) * 100) / 100;
+                        const cur = parseFloat(rateEl.value) || 0;
+                        if (!cur || cur === prevDefault) rateEl.value = Math.round(invIt.purchase_price * convOf(v) * 100) / 100;
+                    }
+                    row._lineUom = v;
+                    calculateBillTotals();
+                }
+            });
+            row._lineUom = startUom;
+        } else if (d.uom) {
+            row._lineUomDropdown = new SearchableDropdown(row.querySelector('.line-uom-sd'), {
+                id: `bill-line-uom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                options: [{ value: d.uom, label: d.uom }], value: d.uom, compact: true
+            });
+        }
+    }
 
     // Hide the native select + wire a SearchableDropdown with quick-add
     const select = row.querySelector('.line-account');
@@ -1083,7 +1117,9 @@ async function saveBill(approve = false) {
             unit_price: rate,
             tax_config_id,
             tax_rate: tax_rate || 0,
-            cost_centre_id
+            cost_centre_id,
+            // Selected line unit; the backend normalizes an explicit base unit to null.
+            uom: row._lineUomDropdown?.getValue?.() || null
         });
     });
 

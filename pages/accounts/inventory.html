@@ -384,6 +384,14 @@
                     <div class="form-group"><label>HSN / SAC</label><input type="text" id="itHsn" class="form-control" maxlength="20"></div>
                     <div class="form-group"><label>Unit</label><input type="text" id="itUnit" class="form-control" value="pcs"></div>
                 </div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Purchase unit <span class="opt">(pack you buy in, e.g. box)</span></label><input type="text" id="itPurchaseUnit" class="form-control" maxlength="20" placeholder="none"></div>
+                    <div class="form-group"><label>Base units per purchase unit <span class="opt">(e.g. 50 pcs per box)</span></label><input type="number" id="itPurchaseConv" class="form-control" min="0" step="any" placeholder="e.g. 50"></div>
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group"><label>Sale unit <span class="opt">(pack you sell in, e.g. strip)</span></label><input type="text" id="itSaleUnit" class="form-control" maxlength="20" placeholder="none"></div>
+                    <div class="form-group"><label>Base units per sale unit <span class="opt">(e.g. 10 pcs per strip)</span></label><input type="number" id="itSaleConv" class="form-control" min="0" step="any" placeholder="e.g. 10"></div>
+                </div>
                 <div class="form-group"><label>Barcode <span class="opt">(EAN-13 — scan into this box; leave blank if the SKU is the barcode)</span></label><input type="text" id="itBarcode" class="form-control" maxlength="60" placeholder="e.g. 8901430123457"></div>
                 <div class="form-row two-col">
                     <div class="form-group"><label>Reorder Level</label><input type="number" id="itReorder" class="form-control" min="0" value="0"></div>

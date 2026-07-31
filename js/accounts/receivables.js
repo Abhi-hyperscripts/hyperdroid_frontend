@@ -1070,7 +1070,7 @@ function addInvoiceLine(data = {}) {
         <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
         <td><input type="text" class="form-control line-hsn" value="${AccountsCommon.escapeHtml(data.hsn_sac || '')}" placeholder="HSN/SAC"></td>
-        <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculateInvoiceTotals()"></td>
+        <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculateInvoiceTotals()"><div class="searchable-dropdown-container line-uom-sd" style="margin-top:2px;"></div></td>
         <td><input type="number" class="form-control line-rate" value="${data.rate || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateInvoiceTotals()"></td>
         <td><input type="number" class="form-control line-disc" value="${data.discount_percent || ''}" min="0" max="100" step="0.01" placeholder="0" oninput="calculateInvoiceTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
@@ -1078,6 +1078,43 @@ function addInvoiceLine(data = {}) {
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeInvoiceLine(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     row._itemId = data.item_id || null;
     tbody.appendChild(row);
+
+    // ── Unit picker (multiple UoM): shown only when the item defines a sale unit ──
+    // Price is per SELECTED unit; the backend converts qty × conversion to base for stock.
+    {
+        const invIt = (inventoryItems || []).find(x => x.id === row._itemId);
+        const baseU = invIt?.unit || null;
+        const altU = invIt?.sale_unit || null;
+        const uomChoices = [...new Set([baseU, altU, data.uom].filter(Boolean))];
+        if (uomChoices.length > 1) {
+            const startUom = data.uom || baseU;
+            row._lineUomDropdown = new SearchableDropdown(row.querySelector('.line-uom-sd'), {
+                id: `inv-line-uom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                options: uomChoices.map(u => ({ value: u, label: u })),
+                value: startUom, compact: true,
+                onChange: (v) => {
+                    // Convenience: if the rate still matches the previous unit's catalog default,
+                    // rescale it to the newly picked unit (base price × its conversion).
+                    if (invIt) {
+                        const convOf = (u) => (altU && u === altU) ? (invIt.sale_conversion || 1) : 1;
+                        const rateEl = row.querySelector('.line-rate');
+                        const prevDefault = Math.round(invIt.sale_price * convOf(row._lineUom || startUom) * 100) / 100;
+                        const cur = parseFloat(rateEl.value) || 0;
+                        if (!cur || cur === prevDefault) rateEl.value = Math.round(invIt.sale_price * convOf(v) * 100) / 100;
+                    }
+                    row._lineUom = v;
+                    calculateInvoiceTotals();
+                }
+            });
+            row._lineUom = startUom;
+        } else if (data.uom) {
+            // Edit view without the catalog loaded: keep the stored unit visible + intact.
+            row._lineUomDropdown = new SearchableDropdown(row.querySelector('.line-uom-sd'), {
+                id: `inv-line-uom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                options: [{ value: data.uom, label: data.uom }], value: data.uom, compact: true
+            });
+        }
+    }
 
     // Hide the native select + wire SearchableDropdown with quick-add
     const select = row.querySelector('.line-account');
@@ -1354,6 +1391,8 @@ async function saveInvoice(approve) {
             tax_config_id: taxConfigId,
             tax_rate: taxRate || 0,
             item_id: row._itemId || null,
+            // Selected line unit; the backend normalizes an explicit base unit to null.
+            uom: row._lineUomDropdown?.getValue?.() || null,
             project_id: invoiceProjectDropdown?.getValue?.() || null
         });
     });

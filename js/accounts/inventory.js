@@ -102,7 +102,7 @@ function initItemModalDropdowns(selectedCat, selectedType) {
 
 function showItemModal() {
     document.getElementById('itemModalTitle').textContent = 'New Item';
-    ['itemId', 'itSku', 'itName', 'itSalePrice', 'itPurchasePrice', 'itHsn', 'itBarcode'].forEach(id => document.getElementById(id).value = '');
+    ['itemId', 'itSku', 'itName', 'itSalePrice', 'itPurchasePrice', 'itHsn', 'itBarcode', 'itPurchaseUnit', 'itPurchaseConv', 'itSaleUnit', 'itSaleConv'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('itUnit').value = 'pcs';
     document.getElementById('itWarranty').value = '0';
     document.getElementById('itReorder').value = '0';
@@ -125,6 +125,10 @@ function editItem(id) {
     document.getElementById('itHsn').value = i.hsn_sac || '';
     document.getElementById('itBarcode').value = i.barcode || '';
     document.getElementById('itUnit').value = i.unit;
+    document.getElementById('itPurchaseUnit').value = i.purchase_unit || '';
+    document.getElementById('itPurchaseConv').value = i.purchase_conversion ?? '';
+    document.getElementById('itSaleUnit').value = i.sale_unit || '';
+    document.getElementById('itSaleConv').value = i.sale_conversion ?? '';
     document.getElementById('itWarranty').value = i.warranty_months;
     document.getElementById('itReorder').value = i.reorder_level;
     document.getElementById('itReorderQty').value = i.reorder_quantity ?? 0;
@@ -146,6 +150,10 @@ async function saveItem() {
         hsn_sac: document.getElementById('itHsn').value.trim() || null,
         barcode: document.getElementById('itBarcode').value.trim() || null,
         unit: document.getElementById('itUnit').value.trim() || 'pcs',
+        purchase_unit: document.getElementById('itPurchaseUnit').value.trim() || null,
+        purchase_conversion: parseFloat(document.getElementById('itPurchaseConv').value) || null,
+        sale_unit: document.getElementById('itSaleUnit').value.trim() || null,
+        sale_conversion: parseFloat(document.getElementById('itSaleConv').value) || null,
         warranty_months: parseInt(document.getElementById('itWarranty').value) || 0,
         reorder_level: parseFloat(document.getElementById('itReorder').value) || 0,
         reorder_quantity: parseFloat(document.getElementById('itReorderQty').value) || 0,
