@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         'bank-accounts': 'Bank Accounts',
         'bank-transactions': 'Transactions',
         'bank-transfers': 'Inter-Bank Transfer',
+        'pdc-cheques': 'Cheques / PDC',
         'statement-import': 'Import Statement',
         'reconciliation': 'Reconciliation'
     };
@@ -86,6 +87,7 @@ function onTabSwitch(tabId) {
         case 'bank-accounts':      loadBankAccounts(); loadBankDashboard(); break;
         case 'bank-transactions':  loadBankTransactions(); break;
         case 'bank-transfers':     loadRecentTransfers(); break;
+        case 'pdc-cheques':        loadPdcCheques(); break;
         case 'statement-import':   initImportTab(); break;
         case 'reconciliation':     break; // user-triggered
     }
@@ -1663,4 +1665,404 @@ function resetStatementImport() {
 
 function clearStatementFile() {
     resetStatementImport();
+}
+
+// ============================================================================
+// CHEQUES / PDC REGISTER
+// The register tracks cheques with NO money movement; CLEARING is the only
+// money-moving step — the backend posts through the standard payment paths
+// (customer advance for received cheques; allocated vendor payment for issued).
+// ============================================================================
+
+let pdcCache = [];
+let pdcCustomers = [];
+let pdcVendors = [];
+let pdcDirectionDD = null, pdcPartyDD = null, pdcDepositBankDD = null, pdcClearBankDD = null;
+let pdcClearCheque = null;   // the cheque object open in the clear modal
+
+async function loadPdcCheques() {
+    try {
+        const direction = document.getElementById('pdcDirectionFilter')?.value || '';
+        const status = document.getElementById('pdcStatusFilter')?.value || '';
+        const params = { limit: 500 };
+        if (direction) params.direction = direction;
+        if (status) params.status = status;
+        const res = await api.request(AccountsCommon.buildUrl('pdc-cheques', params), { _skipSpinner: true });
+        pdcCache = Array.isArray(res) ? res : (res?.data || res?.items || []);
+
+        // KPIs always cover ALL cheques regardless of filters.
+        let all = pdcCache;
+        if (direction || status) {
+            try {
+                const allRes = await api.request(AccountsCommon.buildUrl('pdc-cheques', { limit: 500 }), { _skipSpinner: true });
+                all = Array.isArray(allRes) ? allRes : (allRes?.data || allRes?.items || []);
+            } catch { /* keep filtered set */ }
+        }
+        const open = (c) => c.status === 'pending' || c.status === 'deposited';
+        const inHand = all.filter(c => c.direction === 'received' && open(c));
+        const outstanding = all.filter(c => c.direction === 'issued' && open(c));
+        const soon = new Date(); soon.setDate(soon.getDate() + 7);
+        const dueSoon = all.filter(c => open(c) && new Date(c.cheque_date) <= soon);
+        const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 90);
+        document.getElementById('pdcPendingIn').textContent = AccountsCommon.formatCurrency(inHand.reduce((s, c) => s + Number(c.amount), 0));
+        document.getElementById('pdcDueSoon').textContent = AccountsCommon.formatCurrency(dueSoon.reduce((s, c) => s + Number(c.amount), 0));
+        document.getElementById('pdcPendingOut').textContent = AccountsCommon.formatCurrency(outstanding.reduce((s, c) => s + Number(c.amount), 0));
+        document.getElementById('pdcBouncedCount').textContent = all.filter(c => c.status === 'bounced' && new Date(c.updated_at) >= cutoff).length;
+        renderPdcTable();
+    } catch (err) {
+        console.error('[PDC] load error:', err);
+        Toast.error('Failed to load the cheque register');
+    }
+}
+
+function renderPdcTable() {
+    const tbody = document.getElementById('pdcTable');
+    if (!tbody) return;
+    const esc = AccountsCommon.escapeHtml;
+    const q = (document.getElementById('pdcSearch')?.value || '').trim().toLowerCase();
+    const rows = pdcCache.filter(c => !q ||
+        (c.cheque_number || '').toLowerCase().includes(q) ||
+        (c.party_name || '').toLowerCase().includes(q) ||
+        (c.bank_name || '').toLowerCase().includes(q));
+    if (!rows.length) {
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="8"><div class="empty-message">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            <p>${q ? 'No cheques match your search' : 'No cheques registered — post-dated cheques you hold or hand out live here'}</p></div></td></tr>`;
+        return;
+    }
+    const icon = {
+        deposit: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+        clear: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+        bounce: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+        print: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+        del: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+    };
+    tbody.innerHTML = rows.map(c => {
+        const acts = [];
+        const open = c.status === 'pending' || c.status === 'deposited';
+        if (c.status === 'pending' && c.direction === 'received')
+            acts.push(`<button class="btn-icon" onclick="showPdcDepositModal('${c.id}')" data-tooltip="Deposit into bank" data-admin-only>${icon.deposit}</button>`);
+        if (open)
+            acts.push(`<button class="btn-icon" onclick="showPdcClearModal('${c.id}')" data-tooltip="Clear (posts money)" data-admin-only>${icon.clear}</button>`);
+        if (open)
+            acts.push(`<button class="btn-icon btn-icon-danger" onclick="bouncePdcCheque('${c.id}')" data-tooltip="Mark bounced" data-admin-only>${icon.bounce}</button>`);
+        if (c.direction === 'issued')
+            acts.push(`<button class="btn-icon" onclick="printPdcCheque('${c.id}')" data-tooltip="Print cheque">${icon.print}</button>`);
+        if (c.status === 'pending')
+            acts.push(`<button class="btn-icon btn-icon-danger" onclick="deletePdcCheque('${c.id}')" data-tooltip="Delete" data-admin-only>${icon.del}</button>`);
+        const dirBadge = c.direction === 'received'
+            ? '<span class="status-badge status-accepted">Received</span>'
+            : '<span class="status-badge status-sent">Issued</span>';
+        const postDated = new Date(c.cheque_date) > new Date() ? ' <span style="color:var(--color-warning);font-size:.75rem;">(post-dated)</span>' : '';
+        return `<tr>
+            <td><strong>${esc(c.cheque_number)}</strong>${c.status === 'bounced' && c.bounce_reason ? `<br><span style="font-size:.75rem;color:var(--color-error);">${esc(c.bounce_reason)}</span>` : ''}</td>
+            <td>${dirBadge}</td>
+            <td>${esc(c.party_name || '')}</td>
+            <td>${esc(c.bank_name || '—')}</td>
+            <td>${AccountsCommon.formatDate(c.cheque_date)}${postDated}</td>
+            <td style="text-align:right;">${AccountsCommon.formatCurrency(c.amount)}</td>
+            <td>${AccountsCommon.statusBadge(c.status)}</td>
+            <td class="table-actions">${acts.join('')}</td>
+        </tr>`;
+    }).join('');
+    accountsRoles.applyRBAC();
+}
+
+// ── Register modal ──────────────────────────────────────────────────────────
+
+async function ensurePdcParties() {
+    if (!pdcCustomers.length) {
+        try { pdcCustomers = await api.request(AccountsCommon.buildUrl('customers'), { _skipSpinner: true }); } catch { pdcCustomers = []; }
+        pdcCustomers = Array.isArray(pdcCustomers) ? pdcCustomers : (pdcCustomers?.data || []);
+    }
+    if (!pdcVendors.length) {
+        try { pdcVendors = await api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }); } catch { pdcVendors = []; }
+        pdcVendors = Array.isArray(pdcVendors) ? pdcVendors : (pdcVendors?.data || []);
+    }
+}
+
+function buildPdcPartyDD(direction) {
+    const list = direction === 'issued' ? pdcVendors : pdcCustomers;
+    pdcPartyDD = new SearchableDropdown(document.getElementById('pdcPartyDD'), {
+        id: 'pdcPartySD',
+        options: [{ value: '', label: direction === 'issued' ? 'Select vendor...' : 'Select customer...' },
+            ...list.filter(p => p.is_active !== false).map(p => ({ value: p.id, label: p.name }))],
+        value: '', placeholder: direction === 'issued' ? 'Select vendor...' : 'Select customer...', searchPlaceholder: 'Search…'
+    });
+}
+
+async function showPdcModal() {
+    await ensurePdcParties();
+    document.getElementById('pdcNumber').value = '';
+    document.getElementById('pdcBankName').value = '';
+    document.getElementById('pdcAmount').value = '';
+    document.getElementById('pdcMemo').value = '';
+    if (typeof flatpickr === 'function') flatpickr('#pdcDate', { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+    pdcDirectionDD = new SearchableDropdown(document.getElementById('pdcDirectionDD'), {
+        id: 'pdcDirectionSD',
+        options: [
+            { value: 'received', label: 'Received — customer\'s cheque we hold' },
+            { value: 'issued', label: 'Issued — our cheque given to a vendor' }
+        ],
+        value: 'received',
+        onChange: (v) => buildPdcPartyDD(v)
+    });
+    buildPdcPartyDD('received');
+    AccountsCommon.openModal('pdcModal');
+}
+
+async function savePdcCheque() {
+    const direction = pdcDirectionDD?.getValue?.() || 'received';
+    const partyId = pdcPartyDD?.getValue?.();
+    if (!partyId) { Toast.error(direction === 'issued' ? 'Pick a vendor' : 'Pick a customer'); return; }
+    const amount = parseFloat(document.getElementById('pdcAmount').value);
+    if (!(amount > 0)) { Toast.error('Enter the cheque amount'); return; }
+    const number = document.getElementById('pdcNumber').value.trim();
+    if (!number) { Toast.error('Enter the cheque number'); return; }
+    const date = document.getElementById('pdcDate').value;
+    if (!date) { Toast.error('Pick the cheque date'); return; }
+    const btn = document.getElementById('pdcSaveBtn');
+    btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl('pdc-cheques'), {
+            method: 'POST',
+            body: JSON.stringify({
+                direction,
+                customer_id: direction === 'received' ? partyId : null,
+                vendor_id: direction === 'issued' ? partyId : null,
+                cheque_number: number,
+                bank_name: document.getElementById('pdcBankName').value.trim() || null,
+                cheque_date: date,
+                amount: Math.round(amount * 100) / 100,
+                memo: document.getElementById('pdcMemo').value.trim() || null
+            })
+        });
+        Toast.success('Cheque registered — no money moves until it clears');
+        AccountsCommon.closeModal('pdcModal');
+        loadPdcCheques();
+    } catch (err) {
+        Toast.error(err?.message || 'Failed to register cheque');
+    } finally { btn.disabled = false; }
+}
+
+// ── Deposit ─────────────────────────────────────────────────────────────────
+
+function pdcBankOptions() {
+    return [{ value: '', label: 'Select bank account...' },
+        ...bankAccountsList.filter(b => b.is_active !== false).map(b => ({ value: b.id, label: b.account_name }))];
+}
+
+function showPdcDepositModal(id) {
+    const ch = pdcCache.find(c => c.id === id);
+    if (!ch) return;
+    document.getElementById('pdcDepositId').value = id;
+    document.getElementById('pdcDepositSummary').innerHTML =
+        `Cheque <strong>${AccountsCommon.escapeHtml(ch.cheque_number)}</strong> from <strong>${AccountsCommon.escapeHtml(ch.party_name || '')}</strong> for <strong>${AccountsCommon.formatCurrency(ch.amount)}</strong>`;
+    pdcDepositBankDD = new SearchableDropdown(document.getElementById('pdcDepositBankDD'), {
+        id: 'pdcDepositBankSD', options: pdcBankOptions(), value: '', placeholder: 'Select bank account...'
+    });
+    if (typeof flatpickr === 'function') flatpickr('#pdcDepositDate', { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+    AccountsCommon.openModal('pdcDepositModal');
+}
+
+async function savePdcDeposit() {
+    const id = document.getElementById('pdcDepositId').value;
+    const bankId = pdcDepositBankDD?.getValue?.();
+    if (!bankId) { Toast.error('Pick the bank account'); return; }
+    try {
+        await api.request(AccountsCommon.buildUrl(`pdc-cheques/${id}/deposit`), {
+            method: 'POST',
+            body: JSON.stringify({ bank_account_id: bankId, deposited_date: document.getElementById('pdcDepositDate').value || null })
+        });
+        Toast.success('Cheque deposited — clear it once the bank confirms');
+        AccountsCommon.closeModal('pdcDepositModal');
+        loadPdcCheques();
+    } catch (err) { Toast.error(err?.message || 'Failed to deposit cheque'); }
+}
+
+// ── Clear ───────────────────────────────────────────────────────────────────
+
+async function showPdcClearModal(id) {
+    const ch = pdcCache.find(c => c.id === id);
+    if (!ch) return;
+    pdcClearCheque = ch;
+    document.getElementById('pdcClearId').value = id;
+    document.getElementById('pdcClearSummary').innerHTML =
+        `Cheque <strong>${AccountsCommon.escapeHtml(ch.cheque_number)}</strong> ${ch.direction === 'received' ? 'from' : 'to'} <strong>${AccountsCommon.escapeHtml(ch.party_name || '')}</strong> for <strong>${AccountsCommon.formatCurrency(ch.amount)}</strong>`;
+    pdcClearBankDD = new SearchableDropdown(document.getElementById('pdcClearBankDD'), {
+        id: 'pdcClearBankSD', options: pdcBankOptions(), value: ch.bank_account_id || '', placeholder: 'Select bank account...'
+    });
+    if (typeof flatpickr === 'function') flatpickr('#pdcClearDate', { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+
+    const allocWrap = document.getElementById('pdcClearAllocs');
+    const advanceNote = document.getElementById('pdcClearAdvanceNote');
+    if (ch.direction === 'issued') {
+        advanceNote.style.display = 'none';
+        allocWrap.style.display = '';
+        document.getElementById('pdcClearAmount').textContent = AccountsCommon.formatCurrency(ch.amount);
+        document.getElementById('pdcClearBillRows').innerHTML = '<tr><td colspan="3" style="color:var(--text-secondary);">Loading open bills…</td></tr>';
+        try {
+            const res = await api.request(AccountsCommon.buildUrl('vendor-bills', { vendorId: ch.vendor_id, limit: 200 }), { _skipSpinner: true });
+            const bills = (Array.isArray(res) ? res : (res?.bills || res?.data || res?.items || []))
+                .filter(b => ['approved', 'partially_paid', 'overdue'].includes(b.status) && parseFloat(b.balance_due ?? 0) > 0);
+            if (!bills.length) {
+                document.getElementById('pdcClearBillRows').innerHTML = '<tr><td colspan="3" style="color:var(--color-error);">No open bills for this vendor — approve the bill first, then clear the cheque.</td></tr>';
+            } else {
+                // Auto-allocate oldest-first up to the cheque amount (still editable).
+                let remaining = Number(ch.amount);
+                document.getElementById('pdcClearBillRows').innerHTML = bills.map(b => {
+                    const due = parseFloat(b.balance_due ?? 0);
+                    const take = Math.min(due, Math.max(0, remaining));
+                    remaining = Math.round((remaining - take) * 100) / 100;
+                    return `<tr data-bill="${b.id}">
+                        <td>${AccountsCommon.escapeHtml(b.bill_number || '')}<br><span style="font-size:.75rem;color:var(--text-secondary);">${AccountsCommon.formatDate(b.bill_date)}</span></td>
+                        <td style="text-align:right;">${AccountsCommon.formatCurrency(due)}</td>
+                        <td><input type="number" class="form-control pdc-alloc" value="${take || ''}" min="0" max="${due}" step="0.01" oninput="updatePdcAllocTotal()"></td>
+                    </tr>`;
+                }).join('');
+            }
+        } catch {
+            document.getElementById('pdcClearBillRows').innerHTML = '<tr><td colspan="3" style="color:var(--color-error);">Failed to load bills</td></tr>';
+        }
+        updatePdcAllocTotal();
+    } else {
+        allocWrap.style.display = 'none';
+        advanceNote.style.display = '';
+    }
+    AccountsCommon.openModal('pdcClearModal');
+}
+
+function updatePdcAllocTotal() {
+    let total = 0;
+    document.querySelectorAll('#pdcClearBillRows .pdc-alloc').forEach(el => { total += parseFloat(el.value) || 0; });
+    total = Math.round((total + Number.EPSILON) * 100) / 100;
+    const el = document.getElementById('pdcClearAllocTotal');
+    el.textContent = AccountsCommon.formatCurrency(total);
+    el.style.color = pdcClearCheque && total !== Number(pdcClearCheque.amount) ? 'var(--color-error)' : 'var(--color-success)';
+}
+
+async function savePdcClear() {
+    const id = document.getElementById('pdcClearId').value;
+    const ch = pdcClearCheque;
+    const bankId = pdcClearBankDD?.getValue?.();
+    if (!bankId) { Toast.error('Pick the bank account'); return; }
+    const body = { bank_account_id: bankId, cleared_date: document.getElementById('pdcClearDate').value || null };
+    if (ch?.direction === 'issued') {
+        const allocations = [];
+        document.querySelectorAll('#pdcClearBillRows tr[data-bill]').forEach(row => {
+            const amt = parseFloat(row.querySelector('.pdc-alloc')?.value) || 0;
+            if (amt > 0) allocations.push({ vendor_bill_id: row.dataset.bill, allocated_amount: Math.round(amt * 100) / 100 });
+        });
+        if (!allocations.length) { Toast.error('Allocate the cheque to at least one bill'); return; }
+        body.allocations = allocations;
+    }
+    const btn = document.getElementById('pdcClearBtn');
+    btn.disabled = true;
+    try {
+        await api.request(AccountsCommon.buildUrl(`pdc-cheques/${id}/clear`), { method: 'POST', body: JSON.stringify(body) });
+        Toast.success(ch?.direction === 'received'
+            ? 'Cheque cleared — posted as a customer advance; allocate it on Receivables → Payments'
+            : 'Cheque cleared — vendor payment posted against the bills');
+        AccountsCommon.closeModal('pdcClearModal');
+        loadPdcCheques();
+    } catch (err) {
+        Toast.error(err?.message || 'Failed to clear cheque');
+    } finally { btn.disabled = false; }
+}
+
+// ── Bounce / delete ─────────────────────────────────────────────────────────
+
+async function bouncePdcCheque(id) {
+    const ok = await Confirm.show({
+        title: 'Mark this cheque as bounced?',
+        message: 'Use when the bank dishonours it. No money had moved, so nothing posts — the register records the dishonour.',
+        confirmText: 'Mark Bounced', type: 'warning'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`pdc-cheques/${id}/bounce`), { method: 'POST', body: JSON.stringify({ reason: 'Dishonoured by bank' }) });
+        Toast.success('Cheque marked bounced');
+        loadPdcCheques();
+    } catch (err) { Toast.error(err?.message || 'Failed to mark bounced'); }
+}
+
+async function deletePdcCheque(id) {
+    const ok = await Confirm.show({
+        title: 'Delete this cheque entry?',
+        message: 'Pending entries have no money behind them — deleting is safe.',
+        confirmText: 'Delete', type: 'danger'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl('pdc-cheques/' + id), { method: 'DELETE' });
+        Toast.success('Cheque entry deleted');
+        loadPdcCheques();
+    } catch (err) { Toast.error(err?.message || 'Failed to delete'); }
+}
+
+// ── Cheque printing (issued cheques) ────────────────────────────────────────
+
+// Indian-system amount in words (lakh / crore), paise-aware — banks reject
+// mismatched words vs figures, so this must be exact.
+function amountInWordsINR(amount) {
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve',
+        'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const two = (n) => n < 20 ? ones[n] : (tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : ''));
+    const three = (n) => (n >= 100 ? ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' : '') : '') + (n % 100 ? two(n % 100) : '');
+    const rupees = Math.floor(amount);
+    const paise = Math.round((amount - rupees) * 100);
+    if (rupees === 0 && paise === 0) return 'Zero Rupees Only';
+    const parts = [];
+    const crore = Math.floor(rupees / 10000000);
+    const lakh = Math.floor((rupees % 10000000) / 100000);
+    const thousand = Math.floor((rupees % 100000) / 1000);
+    const rest = rupees % 1000;
+    if (crore) parts.push(three(crore) + ' Crore');
+    if (lakh) parts.push(two(lakh) + ' Lakh');
+    if (thousand) parts.push(two(thousand) + ' Thousand');
+    if (rest) parts.push(three(rest));
+    let words = parts.length ? parts.join(' ') + (parts.length ? ' Rupees' : '') : '';
+    if (paise) words += (words ? ' and ' : '') + two(paise) + ' Paise';
+    return words + ' Only';
+}
+
+function printPdcCheque(id) {
+    const ch = pdcCache.find(c => c.id === id);
+    if (!ch) return;
+    const esc = AccountsCommon.escapeHtml;
+    const d = new Date(ch.cheque_date);
+    const dateDigits = String(d.getDate()).padStart(2, '0') + String(d.getMonth() + 1).padStart(2, '0') + d.getFullYear();
+    const figures = Number(ch.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const w = window.open('', '_blank');
+    if (!w) { Toast.error('Allow pop-ups to print the cheque'); return; }
+    w.document.write(`<!DOCTYPE html><html><head><title>Cheque ${esc(ch.cheque_number)}</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Courier New', monospace; padding: 24px; color: #111; }
+    .hint { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #666; margin-bottom: 14px; max-width: 640px; }
+    /* Standard CTS-2010 cheque leaf is 202 × 92 mm — rendered here at ~3.78px/mm */
+    .cheque { position: relative; width: 764px; height: 348px; border: 1px dashed #999; }
+    .field { position: absolute; font-size: 15px; font-weight: 600; letter-spacing: 0.5px; }
+    .date { top: 22px; right: 28px; letter-spacing: 8px; font-size: 16px; }
+    .payee { top: 78px; left: 90px; max-width: 540px; }
+    .words { top: 118px; left: 130px; max-width: 480px; line-height: 1.7; }
+    .figures { top: 150px; right: 40px; border: 1.5px solid #111; padding: 5px 12px; font-size: 16px; }
+    .acpayee { position: absolute; top: 8px; left: 60px; transform: rotate(-18deg); border-top: 1.5px solid #111; border-bottom: 1.5px solid #111; font-size: 11px; padding: 1px 6px; font-weight: 700; }
+    .memoline { position: absolute; bottom: 60px; left: 28px; font-size: 11px; color: #555; font-family: 'Segoe UI', Arial, sans-serif; }
+    @media print { .hint { display: none; } .cheque { border: none; } body { padding: 0; } }
+</style></head><body>
+    <p class="hint"><strong>Cheque overlay — ${esc(ch.cheque_number)}.</strong> Load the bank's cheque leaf into the printer and print this page at 100% scale (no fit-to-page).
+    Positions follow the standard CTS-2010 leaf (202×92mm); fine-tune printer margins if your bank's leaf differs. The dashed outline does not print.</p>
+    <div class="cheque">
+        <div class="acpayee">A/c Payee Only</div>
+        <div class="field date">${dateDigits}</div>
+        <div class="field payee">${esc(ch.party_name || '')}</div>
+        <div class="field words">${esc(amountInWordsINR(Number(ch.amount)))}</div>
+        <div class="field figures">₹ ${figures}/-</div>
+        <div class="memoline">${esc(ch.memo || '')} · CHQ ${esc(ch.cheque_number)}${ch.bank_name ? ' · ' + esc(ch.bank_name) : ''}</div>
+    </div>
+    <script>window.onload = () => window.print();<\/script>
+</body></html>`);
+    w.document.close();
 }

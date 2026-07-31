@@ -124,6 +124,9 @@
                             <button class="sidebar-btn" data-tab="bank-transfers" id="bankTransfersTab">
                                 <span class="nav-number">3</span><span class="nav-label">Inter-Bank Transfer</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="pdc-cheques" id="pdcChequesTab">
+                                <span class="nav-number">4</span><span class="nav-label">Cheques / PDC</span>
+                            </button>
                         </div>
                     </div>
 
@@ -142,7 +145,7 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="statement-import" id="statementImportTab">
-                                <span class="nav-number">4</span><span class="nav-label">Import Statement</span>
+                                <span class="nav-number">5</span><span class="nav-label">Import Statement</span>
                             </button>
                         </div>
                     </div>
@@ -161,7 +164,7 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="reconciliation" id="reconciliationTab">
-                                <span class="nav-number">5</span><span class="nav-label">Reconciliation</span>
+                                <span class="nav-number">6</span><span class="nav-label">Reconciliation</span>
                             </button>
                         </div>
                     </div>
@@ -413,7 +416,91 @@
                 </div>
 
                 <!-- ============================================================ -->
-                <!-- Tab 4: Import Statement -->
+                <!-- Tab 4: Cheques / PDC register -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="pdc-cheques">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="pdcPendingIn">-</div>
+                            <div class="stat-label">Cheques in hand (to deposit)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="pdcDueSoon">-</div>
+                            <div class="stat-label">Maturing in 7 days</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="pdcPendingOut">-</div>
+                            <div class="stat-label">Our cheques outstanding</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="pdcBouncedCount">0</div>
+                            <div class="stat-label">Bounced (90 days)</div>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <select id="pdcDirectionFilter" class="form-control" style="max-width: 150px;" onchange="loadPdcCheques()">
+                            <option value="">All Cheques</option>
+                            <option value="received">Received</option>
+                            <option value="issued">Issued</option>
+                        </select>
+                        <select id="pdcStatusFilter" class="form-control" style="max-width: 150px;" onchange="loadPdcCheques()">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="deposited">Deposited</option>
+                            <option value="cleared">Cleared</option>
+                            <option value="bounced">Bounced</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="pdcSearch" placeholder="Search cheque no / party..." oninput="renderPdcTable()">
+                        </div>
+                        <button class="btn btn-primary" onclick="showPdcModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Register Cheque
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Cheque #</th>
+                                    <th>Direction</th>
+                                    <th>Party</th>
+                                    <th>Drawer Bank</th>
+                                    <th>Cheque Date</th>
+                                    <th style="text-align:right;">Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pdcTable">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                                            </svg>
+                                            <p>No cheques registered</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 5: Import Statement -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="statement-import">
                     <!-- Step 1: Upload -->
@@ -615,6 +702,115 @@
     <!-- ================================================================== -->
 
     <!-- Bank Account Modal -->
+    <!-- Register cheque modal (header-only doc — modal allowed) -->
+    <div id="pdcModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Register Cheque</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('pdcModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Direction *</label>
+                            <div class="searchable-dropdown-container" id="pdcDirectionDD"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Party *</label>
+                            <div class="searchable-dropdown-container" id="pdcPartyDD"></div>
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label for="pdcNumber">Cheque Number *</label>
+                            <input type="text" id="pdcNumber" class="form-control" placeholder="e.g. 001234" maxlength="40">
+                        </div>
+                        <div class="form-group">
+                            <label for="pdcBankName">Drawer's Bank</label>
+                            <input type="text" id="pdcBankName" class="form-control" placeholder="e.g. HDFC Bank" maxlength="120">
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label for="pdcDate">Cheque Date *</label>
+                            <input type="text" id="pdcDate" class="form-control" placeholder="Select date">
+                            <small class="field-hint">A future date = post-dated. It cannot clear before this date.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="pdcAmount">Amount *</label>
+                            <input type="number" id="pdcAmount" class="form-control" step="0.01" min="0" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="pdcMemo">Memo</label>
+                        <input type="text" id="pdcMemo" class="form-control" placeholder="What is this cheque for?" maxlength="500">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('pdcModal')">Cancel</button>
+                    <button class="btn btn-primary" id="pdcSaveBtn" onclick="savePdcCheque()">Register</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deposit cheque modal -->
+    <div id="pdcDepositModal" class="modal">
+        <div class="modal-content" style="max-width:440px;">
+            <div class="modal-header"><h3>Deposit Cheque</h3><button class="close-btn" onclick="AccountsCommon.closeModal('pdcDepositModal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="pdcDepositId">
+                <p style="font-size:.85rem;color:var(--text-secondary);margin:0 0 10px;" id="pdcDepositSummary"></p>
+                <div class="form-group"><label>Deposit into bank *</label><div class="searchable-dropdown-container" id="pdcDepositBankDD"></div></div>
+                <div class="form-group"><label>Deposit date *</label><input type="text" id="pdcDepositDate" class="form-control" placeholder="Select date"></div>
+                <p style="font-size:.78rem;color:var(--text-secondary);margin:6px 0 0;">Depositing is just "in transit" — money moves only when the cheque clears.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('pdcDepositModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="savePdcDeposit()">Deposit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear cheque modal -->
+    <div id="pdcClearModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Clear Cheque</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('pdcClearModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="pdcClearId">
+                    <p style="font-size:.85rem;color:var(--text-secondary);margin:0 0 10px;" id="pdcClearSummary"></p>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label>Bank account *</label><div class="searchable-dropdown-container" id="pdcClearBankDD"></div></div>
+                        <div class="form-group"><label>Clearing date *</label><input type="text" id="pdcClearDate" class="form-control" placeholder="Select date"></div>
+                    </div>
+                    <div id="pdcClearAllocs" style="display:none;">
+                        <label style="font-weight:600;font-size:.85rem;">Settle against bills *</label>
+                        <p style="font-size:.78rem;color:var(--text-secondary);margin:2px 0 8px;">An issued cheque pays specific bills. Allocations must add up to exactly the cheque amount.</p>
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead><tr><th>Bill</th><th style="text-align:right;">Balance Due</th><th style="width:160px;">Allocate</th></tr></thead>
+                                <tbody id="pdcClearBillRows"></tbody>
+                            </table>
+                        </div>
+                        <p style="font-size:.82rem;margin:8px 0 0;">Allocated: <strong id="pdcClearAllocTotal">₹0.00</strong> of <strong id="pdcClearAmount">₹0.00</strong></p>
+                    </div>
+                    <div id="pdcClearAdvanceNote" style="display:none;font-size:.82rem;color:var(--text-secondary);background:var(--bg-card-hover);border:1px solid var(--border-color);border-radius:6px;padding:10px 14px;">
+                        Clearing posts the money as an <strong>unallocated customer advance</strong> — allocate it against invoices afterwards on the Receivables → Payments screen.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('pdcClearModal')">Cancel</button>
+                    <button class="btn btn-primary" id="pdcClearBtn" onclick="savePdcClear()">Clear Cheque</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="bankAccountModal" class="modal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
