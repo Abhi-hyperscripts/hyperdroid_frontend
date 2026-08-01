@@ -1245,8 +1245,8 @@ body.hrms-dashboard::before {
 }
 
 /* ── Left icon rail ──────────────────────────────────────────────────────── */
-.pulse-rail {
-  position: fixed;
+nav.pulse-rail {
+  position: fixed !important;
   left: 0;
   top: 52px;              /* below fixed navbar */
   bottom: 0;
@@ -1293,10 +1293,12 @@ body.hrms-dashboard::before {
 }
 [data-theme="dark"] .rail-item.active { color: #eab061; }
 
-/* shift content right of the rail */
-body.hrms-dashboard .hrms-container { margin-left: 78px; }
+/* shift content right of the rail: pad the body so the container's own
+   width/centering rules stay untouched (margin hacks overlapped the rail) */
+body.hrms-dashboard { padding-left: 78px; }
+nav.pulse-rail { z-index: 100; }
 
 @media (max-width: 900px) {
-  .pulse-rail { display: none; }
-  body.hrms-dashboard .hrms-container { margin-left: 0; }
+  nav.pulse-rail { display: none; }
+  body.hrms-dashboard { padding-left: 0; }
 }
