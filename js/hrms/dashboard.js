@@ -37,6 +37,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateClock();
     setInterval(updateClock, 1000);
 
+    // Header subtitle: today's date + org name
+    const subtitle = document.getElementById('pulseSubtitle');
+    if (subtitle) {
+        const dateStr = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+        const orgInfo = (typeof getOrganizationInfo === 'function') ? getOrganizationInfo() : null;
+        const orgName = orgInfo && (orgInfo.organizationName || orgInfo.tenantName);
+        subtitle.textContent = dateStr + (orgName ? ' · ' + orgName : '');
+    }
+
     // Check organization setup status first
     await checkSetupStatus();
 
@@ -100,6 +109,18 @@ function applyDashboardRBAC() {
     if (leaveCard && hrmsRoles.isBasicUser()) {
         // For basic users, go to self-service leave
         leaveCard.onclick = function() { navigateTo('self-service.html#leave'); };
+    }
+
+    // Rail items mirror the card gating
+    hrmsRoles.setElementVisibility('railCompliance', hrmsRoles.isHRAdmin());
+    hrmsRoles.setElementVisibility('railOrganization', hrmsRoles.canAccessOrganization());
+    hrmsRoles.setElementVisibility('railEmployees', hrmsRoles.canAccessEmployees());
+    hrmsRoles.setElementVisibility('railReports', hrmsRoles.canAccessReports());
+    hrmsRoles.setElementVisibility('railRecruitment',
+        hrmsRoles.hasAnyRole(['HRMS_HR_USER', 'HRMS_HR_MANAGER', 'HRMS_HR_ADMIN', 'SUPERADMIN']));
+    const railPayroll = document.getElementById('railPayroll');
+    if (railPayroll && !hrmsRoles.canViewAllPayroll() && !hrmsRoles.isManager()) {
+        railPayroll.onclick = function() { navigateTo('self-service.html#payslips'); };
     }
 
     console.log('Dashboard RBAC applied:', hrmsRoles.getDebugInfo());
@@ -342,6 +363,9 @@ async function loadDashboard() {
         if (hrmsRoles.isHRUser() || hrmsRoles.isManager()) {
             await loadAdminStats();
         } else {
+            // Employees without team visibility get no org pulse
+            const hero = document.getElementById('pulseHero');
+            if (hero) hero.style.display = 'none';
             await loadEmployeeStats();
         }
 
@@ -362,86 +386,306 @@ async function loadDashboard() {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// People Pulse — one loader fills the hero (donut / attention / out today),
+// the stat chips, and the payroll chip. HR roles see org-wide data; managers
+// see their team (the backend scopes /attendance/team and pending-approvals).
+// ═══════════════════════════════════════════════════════════════════════════
+const asList = r => Array.isArray(r) ? r : (r?.data || []);
+const isoDay = d => d.toISOString().split('T')[0];
+
 async function loadAdminStats() {
     const isHR = hrmsRoles.isHRUser();
+    const today = isoDay(new Date());
 
-    // Employees count — HR roles can see all, managers show "-"
-    try {
-        if (isHR) {
-            const employees = await api.request('/hrms/employees?includeInactive=false');
-            const employeeList = Array.isArray(employees) ? employees : (employees?.data || []);
-            document.getElementById('totalEmployees').textContent = employeeList.length || 0;
-        } else {
-            // Managers: try team endpoint for team size
-            try {
-                const team = await api.request('/hrms/employees/direct-reports');
-                const teamList = Array.isArray(team) ? team : (team?.data || []);
-                document.getElementById('totalEmployees').textContent = teamList.length || 0;
-            } catch (e) {
-                document.getElementById('totalEmployees').textContent = '-';
-            }
+    const safe = p => p.then(asList).catch(() => null); // null = endpoint unavailable for this role
+
+    const [employees, departments, offices, pendingLeave, pendingReg, attendance, leaveToday, payrollRuns] =
+        await Promise.all([
+            isHR ? safe(api.request('/hrms/employees?includeInactive=false'))
+                 : safe(api.request('/hrms/employees/direct-reports')),
+            safe(api.request('/hrms/departments')),
+            safe(api.request('/hrms/offices')),
+            safe(api.request('/hrms/leave/pending-approvals' + (isHR ? '?all=true' : ''))),
+            safe(api.request('/hrms/attendance/regularization/pending' + (isHR ? '?all=true' : ''))),
+            safe(api.request(`/hrms/attendance/team?date=${today}`)),
+            isHR ? safe(api.request(`/hrms/leave-types/requests?startDate=${today}&endDate=${today}&status=approved`))
+                 : safe(api.request(`/hrms/leave/team-calendar?startDate=${today}&endDate=${today}`))
+                       .then(l => l ? l.filter(r => r.status === 'approved') : null),
+            isHR ? safe(api.request('/hrms/payroll-processing/runs')) : Promise.resolve(null)
+        ]);
+
+    // ── stat chips
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('totalEmployees', employees ? employees.length : '-');
+    set('totalDepartments', departments ? departments.length : '-');
+    set('totalOffices', offices ? offices.length : '-');
+    const pendingCount = (pendingLeave?.length || 0) + (pendingReg?.length || 0);
+    set('pendingApprovals', (pendingLeave === null && pendingReg === null) ? '-' : pendingCount);
+
+    // ── donut + legend
+    const attList = attendance || [];
+    const present = attList.filter(a => a.check_in_time).length;
+    const onLeave = leaveToday ? leaveToday.length : 0;
+    const total = employees ? employees.length : attList.length;
+    const notIn = Math.max(0, total - present - onLeave);
+    set('presentToday', present);
+    set('onLeave', onLeave);
+    set('notInYet', notIn);
+    set('attRatio', total > 0 ? `${present}/${total}` : '–');
+    set('attAsOf', 'as of ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }));
+    renderAttDonut(present, onLeave, notIn);
+
+    // avg check-in
+    const times = attList.filter(a => a.check_in_time)
+        .map(a => { const d = new Date(a.check_in_time); return d.getHours() * 60 + d.getMinutes(); });
+    if (times.length) {
+        const avg = Math.round(times.reduce((s, m) => s + m, 0) / times.length);
+        set('avgCheckin', String(Math.floor(avg / 60)).padStart(2, '0') + ':' + String(avg % 60).padStart(2, '0'));
+    } else {
+        set('avgCheckin', '–');
+    }
+
+    renderAttention(pendingLeave || [], pendingReg || [], payrollRuns);
+    renderOutToday(leaveToday || []);
+    if (isHR && employees) renderMoments(employees);
+    renderPayrollChip(payrollRuns);
+    loadWeekBars(total);
+}
+
+function renderAttDonut(present, onLeave, notIn) {
+    const svg = document.getElementById('attDonut');
+    if (!svg) return;
+    const total = present + onLeave + notIn;
+    const C = 2 * Math.PI * 52; // r=52
+    const seg = (count, color, offset) =>
+        `<circle cx="64" cy="64" r="52" fill="none" stroke="${color}" stroke-width="13" ` +
+        `stroke-dasharray="${(total ? count / total : 0) * C} ${C}" stroke-dashoffset="${-offset}" ` +
+        (count > 0 ? 'stroke-linecap="round"' : '') + '/>';
+    let html = `<circle cx="64" cy="64" r="52" fill="none" stroke="var(--gray-300)" stroke-width="13" opacity=".3"/>`;
+    if (total > 0) {
+        let off = 0;
+        html += seg(present, 'var(--color-success)', off); off += (present / total) * C;
+        html += seg(onLeave, 'var(--color-warning)', off); off += (onLeave / total) * C;
+    }
+    svg.innerHTML = html;
+}
+
+async function loadWeekBars(totalEmployees) {
+    const bars = document.getElementById('weekBars');
+    const labels = document.getElementById('weekLabels');
+    if (!bars || !labels || !totalEmployees) return;
+
+    // Monday..Sunday of the current week
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    const days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(monday); d.setDate(monday.getDate() + i); return d;
+    });
+
+    const counts = await Promise.all(days.map(d => {
+        if (d > now) return Promise.resolve(null); // future day
+        return api.request(`/hrms/attendance/team?date=${isoDay(d)}`)
+            .then(r => asList(r).filter(a => a.check_in_time).length)
+            .catch(() => null);
+    }));
+
+    bars.innerHTML = counts.map(c => {
+        if (c === null) return '<div class="bar" style="background:var(--bg-secondary)"></div>';
+        const pct = Math.min(100, Math.round((c / totalEmployees) * 100));
+        return `<div class="bar" title="${c} of ${totalEmployees} present"><i style="height:${pct}%"></i></div>`;
+    }).join('');
+    labels.innerHTML = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => `<span>${d}</span>`).join('');
+}
+
+function initialsOf(name) {
+    return (name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+function renderAttention(pendingLeave, pendingReg, payrollRuns) {
+    const list = document.getElementById('attnList');
+    const count = document.getElementById('attnCount');
+    if (!list) return;
+
+    const items = [];
+
+    pendingLeave.forEach(lr => {
+        const from = new Date(lr.start_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        const to = new Date(lr.end_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        const days = lr.total_days ? `${lr.total_days} day${lr.total_days > 1 ? 's' : ''}` : '';
+        items.push({
+            tag: 'leave', tagLabel: 'LEAVE', who: initialsOf(lr.employee_name),
+            t1: `${lr.employee_name || 'Employee'} · ${lr.leave_type_name || 'Leave'}`,
+            t2: `${from}${to !== from ? '–' + to : ''}${days ? ' · ' + days : ''}${lr.reason ? ' · ' + lr.reason : ''}`,
+            acts: `<button class="pulse-mini yes" onclick="event.stopPropagation();actOnLeave('${lr.id}', true, this)">Approve</button>
+                   <button class="pulse-mini" onclick="event.stopPropagation();showRejectForm(this, 'leave', '${lr.id}')">Reject</button>`
+        });
+    });
+
+    pendingReg.forEach(rr => {
+        const day = rr.date ? new Date(rr.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+        items.push({
+            tag: 'attend', tagLabel: 'ATTEND', who: initialsOf(rr.employee_name),
+            t1: `${rr.employee_name || 'Employee'} · Regularization`,
+            t2: `${day}${rr.reason ? ' · ' + rr.reason : ''}`,
+            acts: `<button class="pulse-mini yes" onclick="event.stopPropagation();actOnReg('${rr.id}', true, this)">Approve</button>
+                   <button class="pulse-mini" onclick="event.stopPropagation();showRejectForm(this, 'reg', '${rr.id}')">Reject</button>`
+        });
+    });
+
+    // Payroll: surface the newest non-approved run as a task
+    if (Array.isArray(payrollRuns)) {
+        const open = payrollRuns.filter(r => r.status && r.status !== 'approved' && r.status !== 'paid')
+            .sort((a, b) => (b.payroll_year - a.payroll_year) || (b.payroll_month - a.payroll_month))[0];
+        if (open) {
+            const monthName = new Date(open.payroll_year, open.payroll_month - 1, 1)
+                .toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+            items.push({
+                tag: 'payroll', tagLabel: 'PAYROLL', who: '₹',
+                t1: `${monthName} payroll run`,
+                t2: `${open.total_employees || 0} employees · status ${open.status}`,
+                acts: `<button class="pulse-mini" onclick="event.stopPropagation();navigateIfSetupComplete('payroll.html')">Review run</button>`
+            });
         }
-    } catch (e) {
-        document.getElementById('totalEmployees').textContent = '-';
     }
 
-    // Departments
-    try {
-        const departments = await api.request('/hrms/departments');
-        const deptList = Array.isArray(departments) ? departments : (departments?.data || []);
-        document.getElementById('totalDepartments').textContent = deptList.length || 0;
-    } catch (e) {
-        document.getElementById('totalDepartments').textContent = '-';
+    if (count) count.textContent = items.length ? `${items.length} item${items.length > 1 ? 's' : ''}` : '';
+    if (!items.length) {
+        list.innerHTML = '<div class="pulse-empty">All clear — nothing waiting on you.</div>';
+        return;
     }
 
-    // Offices
-    try {
-        const offices = await api.request('/hrms/offices');
-        const officeList = Array.isArray(offices) ? offices : (offices?.data || []);
-        document.getElementById('totalOffices').textContent = officeList.length || 0;
-    } catch (e) {
-        document.getElementById('totalOffices').textContent = '-';
-    }
+    list.innerHTML = items.map(i =>
+        `<div class="pulse-task">
+            <div class="trow">
+                <div class="who">${escapeHtml(i.who)}</div>
+                <div class="meta"><div class="t1">${escapeHtml(i.t1)}</div><div class="t2">${escapeHtml(i.t2)}</div></div>
+                <span class="pulse-tag ${i.tag}">${i.tagLabel}</span>
+            </div>
+            <div class="pulse-acts">${i.acts}</div>
+        </div>`).join('');
+}
 
-    // Pending leave approvals
+async function actOnLeave(id, approve, btn, reason) {
+    if (btn) btn.disabled = true;
     try {
-        const pendingLeave = await api.request('/hrms/leave/pending-approvals');
-        const pendingList = Array.isArray(pendingLeave) ? pendingLeave : (pendingLeave?.data || []);
-        document.getElementById('pendingApprovals').textContent = pendingList.length || 0;
+        await api.request('/hrms/leave/approve', {
+            method: 'POST',
+            body: JSON.stringify({ leave_request_id: id, approve: approve, rejection_reason: reason || null })
+        });
+        showToast(approve ? 'Leave approved' : 'Leave rejected', 'success');
+        await loadAdminStats();
     } catch (e) {
-        document.getElementById('pendingApprovals').textContent = '-';
+        showToast(e?.message || 'Could not update the leave request', 'error');
+        if (btn) btn.disabled = false;
     }
+}
 
-    // Today's attendance stats
+async function actOnReg(id, approve, btn, reason) {
+    if (btn) btn.disabled = true;
     try {
-        const today = new Date().toISOString().split('T')[0];
-        const teamAttendance = await api.request(`/hrms/attendance/team?date=${today}`);
-        const attendanceList = Array.isArray(teamAttendance) ? teamAttendance : (teamAttendance?.data || []);
-        const presentCount = attendanceList.filter(a => a.check_in_time).length;
-        document.getElementById('presentToday').textContent = presentCount;
+        await api.request(`/hrms/attendance/regularization/${id}/approve`, {
+            method: 'POST',
+            body: JSON.stringify({ approve: approve, rejection_reason: reason || null })
+        });
+        showToast(approve ? 'Regularization approved' : 'Regularization rejected', 'success');
+        await loadAdminStats();
     } catch (e) {
-        document.getElementById('presentToday').textContent = '-';
+        showToast(e?.message || 'Could not update the regularization', 'error');
+        if (btn) btn.disabled = false;
     }
+}
 
-    // Today's approved leave count
-    try {
-        const today = new Date().toISOString().split('T')[0];
-        let leaveCount = 0;
-        if (isHR) {
-            // HR admins can access leave-types/requests (all employees)
-            const leaveRequests = await api.request(`/hrms/leave-types/requests?startDate=${today}&endDate=${today}&status=approved`);
-            const leaveList = Array.isArray(leaveRequests) ? leaveRequests : (leaveRequests?.data || []);
-            leaveCount = leaveList.length;
-        } else {
-            // Managers: use team calendar to count on-leave team members
-            const teamCalendar = await api.request(`/hrms/leave/team-calendar?startDate=${today}&endDate=${today}`);
-            const calendarList = Array.isArray(teamCalendar) ? teamCalendar : (teamCalendar?.data || []);
-            leaveCount = calendarList.filter(r => r.status === 'approved').length;
+// Swap the task's action row for an inline reason field (no native prompt)
+function showRejectForm(btn, kind, id) {
+    const acts = btn.closest('.pulse-acts');
+    if (!acts) return;
+    acts.outerHTML =
+        `<div class="pulse-reject-form">
+            <input type="text" placeholder="Reason (optional)" maxlength="200"
+                   onkeydown="if(event.key==='Enter'){confirmReject(this,'${kind}','${id}')}">
+            <button class="pulse-mini" onclick="confirmReject(this,'${kind}','${id}')">Confirm reject</button>
+            <button class="pulse-mini" onclick="loadAdminStats()">Cancel</button>
+        </div>`;
+}
+
+function confirmReject(el, kind, id) {
+    const form = el.closest('.pulse-reject-form');
+    const reason = form ? (form.querySelector('input')?.value || '') : '';
+    if (kind === 'leave') actOnLeave(id, false, null, reason);
+    else actOnReg(id, false, null, reason);
+}
+
+function renderOutToday(leaveToday) {
+    const el = document.getElementById('outToday');
+    if (!el) return;
+    if (!leaveToday.length) {
+        el.innerHTML = '<div class="pulse-empty">Everyone is expected in today.</div>';
+        return;
+    }
+    el.innerHTML = leaveToday.map(lr => {
+        const back = new Date(lr.end_date);
+        back.setDate(back.getDate() + 1);
+        const backStr = back.toLocaleDateString('en-IN', { weekday: 'short' });
+        return `<div class="pulse-person">
+            <div class="who">${escapeHtml(initialsOf(lr.employee_name))}</div>
+            <div><div class="nm">${escapeHtml(lr.employee_name || 'Employee')}</div>
+                 <div class="why">${escapeHtml(lr.leave_type_name || 'Leave')}</div></div>
+            <span class="until">back ${backStr}</span>
+        </div>`;
+    }).join('');
+}
+
+function renderMoments(employees) {
+    const el = document.getElementById('momentsList');
+    if (!el) return;
+    const now = new Date();
+    const within7 = (d) => {
+        if (!d) return null;
+        const dt = new Date(d);
+        const next = new Date(now.getFullYear(), dt.getMonth(), dt.getDate());
+        if (next < new Date(now.getFullYear(), now.getMonth(), now.getDate())) next.setFullYear(next.getFullYear() + 1);
+        const diff = Math.round((next - now) / 86400000);
+        return diff >= 0 && diff <= 7 ? next : null;
+    };
+    const dayName = d => d.toLocaleDateString('en-IN', { weekday: 'long' });
+
+    const moments = [];
+    employees.forEach(emp => {
+        const name = [emp.first_name, emp.last_name].filter(Boolean).join(' ');
+        const bday = within7(emp.date_of_birth);
+        if (bday) {
+            const age = bday.getFullYear() - new Date(emp.date_of_birth).getFullYear();
+            moments.push({ em: '🎂', text: `${name} turns ${age} on ${dayName(bday)}` });
         }
-        document.getElementById('onLeave').textContent = leaveCount;
-    } catch (e) {
-        document.getElementById('onLeave').textContent = '0';
-    }
+        const anniv = within7(emp.hire_date);
+        if (anniv) {
+            const yrs = anniv.getFullYear() - new Date(emp.hire_date).getFullYear();
+            if (yrs > 0) moments.push({ em: '🎉', text: `${name} completes ${yrs} year${yrs > 1 ? 's' : ''} on ${dayName(anniv)}` });
+        }
+    });
+
+    el.innerHTML = moments.length
+        ? moments.map(m => `<div class="pulse-moment"><span class="em">${m.em}</span> ${escapeHtml(m.text)}</div>`).join('')
+        : '<div class="pulse-empty">No birthdays or anniversaries.</div>';
+}
+
+function renderPayrollChip(payrollRuns) {
+    const chip = document.getElementById('payrollChip');
+    if (!chip || !Array.isArray(payrollRuns) || !payrollRuns.length) return;
+    const done = payrollRuns.filter(r => r.status === 'approved' || r.status === 'paid')
+        .sort((a, b) => (b.payroll_year - a.payroll_year) || (b.payroll_month - a.payroll_month))[0];
+    if (!done || done.total_net == null) return;
+    const n = done.total_net;
+    const fmt = n >= 1e7 ? '₹' + (n / 1e7).toFixed(2) + 'Cr'
+              : n >= 1e5 ? '₹' + (n / 1e5).toFixed(2) + 'L'
+              : '₹' + Math.round(n).toLocaleString('en-IN');
+    document.getElementById('payrollChipVal').textContent = fmt;
+    const monthName = new Date(done.payroll_year, done.payroll_month - 1, 1)
+        .toLocaleDateString('en-IN', { month: 'short' });
+    document.getElementById('payrollChipLabel').textContent = `net payroll · ${monthName}`;
+    chip.style.display = '';
 }
 
 async function loadEmployeeStats() {

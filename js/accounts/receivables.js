@@ -2253,7 +2253,9 @@ function initTdsReceivable() {
         if (el._flatpickr) el._flatpickr.setDate(val, false); else el.value = val;
     };
     setD('tdsFromDate', `${fyStartYear}-04-01`);
-    setD('tdsToDate', now.toISOString().split('T')[0]);
+    // Local today (not toISOString, which is UTC and back-dates the 'To' filter a day in IST 00:00–05:30,
+    // silently excluding today's TDS entries) — consistent with the wave-19 document-date defaults.
+    setD('tdsToDate', AccountsCommon.todayLocal());
     if (!_tdsReceivableInited) { _tdsReceivableInited = true; loadTdsReceivable(); }
 }
 
