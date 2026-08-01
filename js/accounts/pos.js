@@ -99,6 +99,10 @@ async function refreshPosItems(silent = true) {
             remaining.set(fresh.id, avail - lineBaseQty(line));
         });
         cart = cart.filter(c => c.qty > 0);
+        // posLotMrp was cleared above; re-fetch the FEFO lot MRP for every batch item still in the cart
+        // so those lines keep their MRP price instead of silently falling back to the catalog price
+        // (ensureLotMrp re-renders each line as its fetch lands).
+        cart.forEach(c => ensureLotMrp(c.item));
         renderCategoryChips();
         renderGrid(true);
         renderCart();
@@ -681,16 +685,37 @@ async function initPosCustomerPicker() {
  *  (item's own, else the tenant default) — the payload is taxed at that same effective
  *  config, so reading the raw tax_config_id here left an untagged MRP item un-backed-out
  *  while the server still added GST on top of the MRP. */
+// Half-away-from-zero to 2dp — mirrors the backend's MidpointRounding.AwayFromZero so the
+// frontend can predict exactly what GST the server will add per head.
+function round2Away(v) {
+    return Math.sign(v) * Math.round(Math.abs(v) * 100 + 1e-9) / 100;
+}
+// The backend's re-inclusive total for an ex-tax price: two GST heads (rate/2 each) rounded
+// separately, matching the intra-state CGST+SGST posting (the worst case for round-up drift;
+// single-head IGST rounds less, so staying ≤ MRP here keeps it ≤ MRP there too).
+function inclusiveFromExTax(exTax, ratePct) {
+    const head = round2Away(exTax * (ratePct / 2) / 100);
+    return round2Away(exTax + 2 * head);
+}
+// Largest ex-tax price whose backend re-inclusive total does not exceed the MRP.
+function mrpExTax(mrp, ratePct) {
+    let ex = Math.floor((mrp / (1 + ratePct / 100)) * 100) / 100;
+    // Guard against the two-head round-up overshoot; in practice this loops 0–1 times.
+    while (ex > 0 && inclusiveFromExTax(ex, ratePct) > mrp + 1e-9) ex = Math.round((ex - 0.01) * 100) / 100;
+    return ex;
+}
+
 function basePrice(i) {
     // A negotiated price-list price wins; else the FEFO lot's MRP (pharma retail); else catalog.
     const lot = posLotMrp.get(i.id);
     if (!posPriceMap.has(i.id) && lot && lot.mrp > 0) {
-        // MRP is tax-INCLUSIVE by definition (Legal Metrology) — always back the GST out,
-        // regardless of the item's own price_includes_tax flag. FLOOR to the paisa (never
-        // round up): a rounded-up ex-tax price re-inclusives to MRP + 1p, and charging even
-        // a paisa above MRP is a Legal Metrology violation.
+        // MRP is tax-INCLUSIVE by definition (Legal Metrology) — back the GST out. A plain floor of
+        // MRP/(1+rate) isn't enough: the backend re-adds GST as TWO heads (CGST+SGST) each rounded to
+        // the paisa, and two independent round-ups can push the re-inclusive total to MRP + 1p — a
+        // Legal Metrology violation. Floor, then step DOWN a paisa until the backend's own two-head
+        // rounding lands at or below MRP.
         const mrpRate = taxRateFor(effTaxConfigId(i));
-        return mrpRate > 0 ? Math.floor((lot.mrp / (1 + mrpRate / 100)) * 100) / 100 : lot.mrp;
+        return mrpRate > 0 ? mrpExTax(lot.mrp, mrpRate) : lot.mrp;
     }
     const px = posPriceMap.has(i.id) ? posPriceMap.get(i.id) : i.sale_price;
     const rate = taxRateFor(effTaxConfigId(i));

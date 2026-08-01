@@ -521,8 +521,10 @@ async function saveTenantSettings() {
         org_legal_name: document.getElementById('settingsOrgLegalName')?.value.trim() || null,
         org_gstin: (document.getElementById('settingsOrgGstin')?.value || '').trim().toUpperCase() || null,
         org_address: document.getElementById('settingsOrgAddress')?.value.trim() || null,
-        org_drug_license1: document.getElementById('settingsOrgDl1')?.value.trim() || null,
-        org_drug_license2: document.getElementById('settingsOrgDl2')?.value.trim() || null
+        // Send '' (not null) for a blank field so clearing it actually clears — the backend COALESCE
+        // treats null as 'unchanged', which otherwise makes the DL numbers un-erasable.
+        org_drug_license1: (document.getElementById('settingsOrgDl1')?.value || '').trim(),
+        org_drug_license2: (document.getElementById('settingsOrgDl2')?.value || '').trim()
     };
 
     if (!AccountsCommon.beginSubmit('saveTenantSettings')) return;

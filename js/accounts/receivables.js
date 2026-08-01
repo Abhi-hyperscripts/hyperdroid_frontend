@@ -3018,7 +3018,7 @@ async function loadInterestReport() {
                 <td style="text-align:right;"><strong>${AccountsCommon.formatCurrency(c.total_overdue)}</strong></td>
                 <td style="text-align:right;">${Number(c.interest_rate_pct)}%</td>
                 <td style="text-align:right;"><strong>${AccountsCommon.formatCurrency(c.total_interest)}</strong></td>
-                <td><button class="btn btn-outline btn-sm" onclick="raiseInterestInvoice('${c.customer_id}', '${esc(c.customer_name)}')" data-admin-only>Raise Interest Invoice</button></td>
+                <td><button class="btn btn-outline btn-sm" onclick="raiseInterestInvoice('${c.customer_id}', '${esc(AccountsCommon.escJs(c.customer_name))}')" data-admin-only>Raise Interest Invoice</button></td>
             </tr>`;
             const lines = c.lines.map(l => `<tr>
                 <td style="padding-left:2rem;color:var(--text-secondary);">${esc(l.invoice_number)}</td>
@@ -3141,6 +3141,7 @@ async function showSalesOrderForm() {
     document.getElementById('soId').value = '';
     document.getElementById('soBookedBy').value = '';
     document.getElementById('soNotes').value = '';
+    document.getElementById('soExpected').value = '';   // was leaking a viewed order's expected date
     document.getElementById('soLines').innerHTML = '';
     document.getElementById('soStatusBanner').style.display = 'none';
     _setSoReadOnly(false);

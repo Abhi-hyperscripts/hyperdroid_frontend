@@ -796,7 +796,7 @@ async function loadExpiryReport() {
             const d = b.expiry_date ? Math.round((new Date(b.expiry_date) - new Date().setHours(0, 0, 0, 0)) / 86400000) : null;
             return `<tr><td>${esc(b.sku || '')}</td><td>${esc(b.item_name || b.name || '')}</td><td>${esc(b.batch_number || '—')}</td>
             <td>${esc(b.location_name || '—')}</td><td>${expiryCell(b.expiry_date)}</td><td>${d === null ? '—' : d}</td><td>${num(b.quantity_on_hand ?? b.quantity)}</td><td>${fmtMoney(b.value)}</td>
-            <td>${Number(b.quantity_on_hand ?? b.quantity) > 0 ? `<button class="btn btn-outline btn-sm" onclick="showLotWriteOffByLot('${b.item_id}', '${esc(b.batch_number)}')" data-admin-only>Write off</button>` : ''}</td></tr>`;
+            <td>${Number(b.quantity_on_hand ?? b.quantity) > 0 ? `<button class="btn btn-outline btn-sm" onclick="showLotWriteOffByLot('${b.item_id}', '${esc(AccountsCommon.escJs(b.batch_number))}')" data-admin-only>Write off</button>` : ''}</td></tr>`;
         }).join('')
             : `<tr><td colspan="9" style="text-align:center;color:var(--text-secondary);padding:1.5rem;">Nothing expiring in the next ${days} days.</td></tr>`;
         accountsRoles.applyRBAC();
@@ -1188,15 +1188,21 @@ async function ensureSalts() {
     catch { saltsCache = saltsCache || []; }
 }
 
+let _itSaltLoadSeq = 0;
 async function initItemSaltRows(existing, itemId = null) {
     const wrap = document.getElementById('itSaltRows');
     if (!wrap) return;
+    // Sequence token: opening item B while item A's async composition fetch is still in flight must not
+    // let A's rows render into B's form. Every await re-checks that this is still the latest load.
+    const seq = ++_itSaltLoadSeq;
     wrap.innerHTML = '';
     await ensureSalts();
+    if (seq !== _itSaltLoadSeq) return;
     let rows = existing || [];
     if (itemId) {
         try { rows = await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/salts`), { _skipSpinner: true }); }
         catch { rows = []; }
+        if (seq !== _itSaltLoadSeq) return;   // a newer item opened while we waited — abandon this render
     }
     rows.forEach(r => addItemSaltRow(r));
 }
@@ -1275,6 +1281,12 @@ function openQuickAddSalt(dropdownInstance, rebuildOptions) {
 }
 
 // ── Lot write-off (expiry / breakage) — named-lot drain, never FEFO ─────────
+// Local calendar date (YYYY-MM-DD) — toISOString() is UTC and back-dates the adjustment
+// after IST midnight, landing the write-off in the wrong (possibly locked) period.
+function localToday() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 let lotWoTarget = null;   // { item_id, batch_number, rows: [balance rows for this lot] }
 let lotWoLocationDD = null, lotWoReasonDD = null;
@@ -1341,7 +1353,7 @@ async function saveLotWriteOff() {
             method: 'POST',
             body: JSON.stringify({
                 item_id: lotWoTarget.item_id,
-                adjustment_date: new Date().toISOString().slice(0, 10),
+                adjustment_date: localToday(),
                 quantity_delta: -qty,
                 batch_number: lotWoTarget.batch_number,
                 location_id: locId,
