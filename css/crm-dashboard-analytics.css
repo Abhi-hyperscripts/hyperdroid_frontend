@@ -567,3 +567,30 @@ body.crm-dashboard { padding-left: 78px; }
   .crm-wave svg { height: 110px; }
   .crm-wave svg text { display: none; }
 }
+
+/* ── Kill the legacy flex layout on grouped action rows (crm.css uses
+   .crm-container .quick-actions {display:flex; justify-content:center} with
+   flex-basis cards — it fought the pulse grid and overflowed on mobile). ── */
+.crm-container .quick-actions.pulse-mods {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+  justify-content: stretch !important;
+  margin: 0 0 8px !important;
+  max-width: none !important;
+  width: 100%;
+}
+
+.crm-container .quick-actions.pulse-mods .action-card {
+  flex: none !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 720px) {
+  .crm-container .quick-actions.pulse-mods {
+    grid-template-columns: 1fr !important;
+  }
+}
