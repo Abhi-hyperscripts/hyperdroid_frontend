@@ -882,9 +882,13 @@ async function saveWorkOrder() {
         Toast.success('Work order created'); AccountsCommon.closeModal('workOrderModal'); await loadWorkOrders();
     } catch (e) { Toast.error(e.message || 'Failed to create work order'); } finally { btn.disabled = false; }
 }
+const _woIssuing = new Set();
 async function issueWorkOrder(id) {
+    if (_woIssuing.has(id)) return;   // rapid double-click would otherwise double-issue materials to WIP
+    _woIssuing.add(id);
     try { await api.request(AccountsCommon.buildUrl(`work-orders/${id}/issue`), { method: 'POST' }); Toast.success('Materials issued to WIP'); await loadWorkOrders(); }
     catch (e) { Toast.error(e.message || 'Issue failed'); }
+    finally { _woIssuing.delete(id); }
 }
 function showCompleteWorkOrder(id) {
     document.getElementById('woCompleteId').value = id;

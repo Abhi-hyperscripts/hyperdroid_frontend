@@ -2821,12 +2821,16 @@ function _setChallanReadOnly(readOnly, ch = null) {
 
 // ── Lifecycle actions ───────────────────────────────────────────────────────
 
+const _lifecycleInFlight = new Set();
 async function issueChallan(id) {
+    if (_lifecycleInFlight.has('chn-issue-' + id)) return;
+    _lifecycleInFlight.add('chn-issue-' + id);
     try {
         const ch = await api.request(AccountsCommon.buildUrl(`delivery-challans/${id}/issue`), { method: 'POST' });
         Toast.success(`Challan ${ch.challan_number} issued — goods can move with this number`);
         loadChallans();
     } catch (err) { Toast.error(err?.message || 'Failed to issue challan'); }
+    finally { _lifecycleInFlight.delete('chn-issue-' + id); }
 }
 
 async function convertChallan(id) {
@@ -3311,11 +3315,14 @@ function _setSoReadOnly(readOnly, so = null) {
 // ── Lifecycle actions ───────────────────────────────────────────────────────
 
 async function confirmSalesOrder(id) {
+    if (_lifecycleInFlight.has('so-confirm-' + id)) return;
+    _lifecycleInFlight.add('so-confirm-' + id);
     try {
         const so = await api.request(AccountsCommon.buildUrl(`sales-orders/${id}/confirm`), { method: 'POST' });
         Toast.success(`Order ${so.order_number} confirmed`);
         loadSalesOrders();
     } catch (err) { Toast.error(err?.message || 'Failed to confirm order'); }
+    finally { _lifecycleInFlight.delete('so-confirm-' + id); }
 }
 
 async function convertSalesOrder(id) {

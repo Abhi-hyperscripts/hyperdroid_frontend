@@ -342,7 +342,10 @@ async function submitSaleToServer(sale, { enforceStock }) {
             customer_id: customerId, payment_date: date, amount: total, tds_amount: 0,
             bank_account_id: sale.bankId, payment_method: sale.method,
             reference_number: sale.offlineRef ? `POS ${sale.offlineRef}` : 'POS',
-            allocations: invoices.map(i => ({ customer_invoice_id: i.invId, allocated_amount: i.total }))
+            // Skip ₹0 invoices: a cross-GST free-goods scheme (free item in its own tax slab) produces an
+            // all-free ₹0 invoice whose stock still moved, but a ₹0 payment allocation is rejected and
+            // strands the whole sale. The ₹0 invoice needs no payment; only allocate to invoices with value.
+            allocations: invoices.filter(i => i.total > 0).map(i => ({ customer_invoice_id: i.invId, allocated_amount: i.total }))
         }),
         headers: { 'Idempotency-Key': 'pos-' + (sale.offlineRef || invoices[0].invId) }
     });
