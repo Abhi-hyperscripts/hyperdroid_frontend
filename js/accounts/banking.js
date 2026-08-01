@@ -1797,7 +1797,7 @@ async function showPdcModal() {
     document.getElementById('pdcBankName').value = '';
     document.getElementById('pdcAmount').value = '';
     document.getElementById('pdcMemo').value = '';
-    if (typeof flatpickr === 'function') flatpickr('#pdcDate', { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+    { const el = document.getElementById('pdcDate'); if (typeof flatpickr === 'function' && el && !el._flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() }); }
     pdcDirectionDD = new SearchableDropdown(document.getElementById('pdcDirectionDD'), {
         id: 'pdcDirectionSD',
         options: [
@@ -1861,7 +1861,7 @@ function showPdcDepositModal(id) {
     pdcDepositBankDD = new SearchableDropdown(document.getElementById('pdcDepositBankDD'), {
         id: 'pdcDepositBankSD', options: pdcBankOptions(), value: '', placeholder: 'Select bank account...'
     });
-    if (typeof flatpickr === 'function') flatpickr('#pdcDepositDate', { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+    { const el = document.getElementById('pdcDepositDate'); if (typeof flatpickr === 'function' && el && !el._flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() }); }
     AccountsCommon.openModal('pdcDepositModal');
 }
 
@@ -1892,7 +1892,7 @@ async function showPdcClearModal(id) {
     pdcClearBankDD = new SearchableDropdown(document.getElementById('pdcClearBankDD'), {
         id: 'pdcClearBankSD', options: pdcBankOptions(), value: ch.bank_account_id || '', placeholder: 'Select bank account...'
     });
-    if (typeof flatpickr === 'function') flatpickr('#pdcClearDate', { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+    { const el = document.getElementById('pdcClearDate'); if (typeof flatpickr === 'function' && el && !el._flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() }); }
 
     const allocWrap = document.getElementById('pdcClearAllocs');
     const advanceNote = document.getElementById('pdcClearAdvanceNote');

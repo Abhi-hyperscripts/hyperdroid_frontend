@@ -1,770 +1,496 @@
-/* =============================================================
-   Home Page Styles - Sleek Compact Bento Grid
-   Theme-aware with glowing effects
-   ============================================================= */
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOME / LAUNCHER — grouped workspace layout
+   Light: quiet paper workspace. Dark: command-deck graphite with warm accent.
+   All colors derive from theme.css variables plus a small set of home-scoped
+   tokens defined below (with [data-theme="dark"] overrides).
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* =============================================================
-   BACKGROUND - Light Mode (Default)
-   ============================================================= */
+:root {
+  --home-bg: #f7f7f4;                    /* warm paper (light) */
+  --home-accent: #0e7c6b;                /* deep teal (light) */
+  --home-accent-hi: #14a58e;
+  --home-accent-soft: rgba(14, 124, 107, 0.10);
+  --home-panel: #ffffff;
+  --home-line: rgba(0, 0, 0, 0.08);
+  --home-row-hover: #fbfbf9;
+  --home-glow:
+    radial-gradient(1000px 480px at 80% -12%, rgba(14, 124, 107, 0.07), transparent 60%),
+    radial-gradient(800px 420px at 5% -5%, rgba(180, 83, 9, 0.05), transparent 55%);
+}
+
+[data-theme="dark"] {
+  --home-bg: #0b0e14;                    /* command-deck graphite */
+  --home-accent: #e2933d;                /* copper */
+  --home-accent-hi: #f2ab58;
+  --home-accent-soft: rgba(226, 147, 61, 0.12);
+  --home-panel: #151b29;
+  --home-line: rgba(255, 255, 255, 0.07);
+  --home-row-hover: #1a2133;
+  --home-glow:
+    radial-gradient(1000px 480px at 80% -12%, rgba(226, 147, 61, 0.10), transparent 60%),
+    radial-gradient(800px 420px at 5% -5%, rgba(16, 185, 129, 0.07), transparent 55%),
+    radial-gradient(700px 500px at 50% 110%, rgba(99, 102, 241, 0.05), transparent 60%);
+}
+
+/* Entrance: one orchestrated fade-up cascade on load */
+@keyframes home-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.home-hero,
+.home-overview > *,
+.home-group {
+  animation: home-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.home-overview > :nth-child(1) { animation-delay: 0.08s; }
+.home-overview > :nth-child(2) { animation-delay: 0.14s; }
+.home-overview > :nth-child(3) { animation-delay: 0.18s; }
+.home-overview > :nth-child(4) { animation-delay: 0.22s; }
+.home-overview > :nth-child(5) { animation-delay: 0.26s; }
+.home-group:nth-of-type(1) { animation-delay: 0.20s; }
+.home-group:nth-of-type(2) { animation-delay: 0.26s; }
+.home-group:nth-of-type(3) { animation-delay: 0.32s; }
+.home-group:nth-of-type(4) { animation-delay: 0.38s; }
+.home-group:nth-of-type(5) { animation-delay: 0.44s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero, .home-overview > *, .home-group { animation: none; }
+}
+
 body.dashboard {
-    position: relative;
-    background: var(--bg-body);
-    overflow-x: hidden;
+  background-color: var(--home-bg);
+  background-image: var(--home-glow);
+  background-attachment: fixed;
 }
 
-body.dashboard::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 45%),
-        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.04) 0%, transparent 45%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-/* =============================================================
-   BACKGROUND - Dark Mode
-   ============================================================= */
-[data-theme="dark"] body.dashboard {
-    background: #0a0f1a;
-}
-
-[data-theme="dark"] body.dashboard::before {
-    background:
-        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
-        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 45%);
-}
-
-/* =============================================================
-   NAVBAR STYLING
-   ============================================================= */
-body.dashboard .navbar {
-    z-index: 100;
-}
-
-/* =============================================================
-   HOME CONTENT CONTAINER
-   ============================================================= */
 .home-content {
-    min-height: calc(100vh - 60px);
-    padding: 92px 24px 32px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    z-index: 1;
-}
-
-/* =============================================================
-   WELCOME SECTION
-   ============================================================= */
-.welcome-section {
-    text-align: center;
-    margin-bottom: 28px;
-    max-width: 600px;
-}
-
-.welcome-greeting {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-    font-weight: 500;
-}
-
-.welcome-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-    line-height: 1.2;
-    background: linear-gradient(135deg, var(--text-primary) 0%, var(--brand-primary) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.welcome-subtitle {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-}
-
-[data-theme="dark"] .welcome-greeting {
-    color: rgba(255, 255, 255, 0.6);
-}
-
-[data-theme="dark"] .welcome-title {
-    background: linear-gradient(135deg, #ffffff 0%, var(--brand-primary-light) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-[data-theme="dark"] .welcome-subtitle {
-    color: rgba(255, 255, 255, 0.5);
-}
-
-/* =============================================================
-   BENTO GRID - Compact Layout with Center Alignment
-   ============================================================= */
-.bento-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    width: 100%;
-    max-width: 1100px;
-}
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 32px 80px;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.home-hero {
+  padding: 56px 0 30px;
+  border-bottom: 1px solid var(--home-line);
+  margin-bottom: 8px;
+}
+
+.home-eyebrow {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--home-accent);
+  margin: 0 0 16px;
+}
+
+.home-title {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.home-title #userName {
+  background: linear-gradient(120deg, var(--home-accent), var(--home-accent-hi));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--home-accent); /* fallback if clip unsupported */
+}
+
+.home-sub {
+  margin: 12px 0 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+.home-sub .pulse {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-success);
+  margin-right: 8px;
+  vertical-align: 1px;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+  animation: home-pulse 2.4s infinite;
+}
+
+@keyframes home-pulse {
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-sub .pulse { animation: none; }
+}
 
-/* Card ordering: Row 1: Admin, Vision, Chat, Drive | Row 2: Accounts, HRMS, CRM, PMS | Row 3: rest */
-.bento-card.admin       { order: 1; }
-.bento-card.vision      { order: 2; }
-.bento-card.chat        { order: 3; }
-.bento-card.email       { order: 4; }
-.bento-card.drive       { order: 5; }
-.bento-card.accounts    { order: 6; }
-.bento-card.hrms        { order: 7; }
-.bento-card.crm         { order: 8; }
-.bento-card.pms         { order: 9; }
-.bento-card.research    { order: 10; }
-.bento-card.procurement { order: 11; }
-.bento-card.lms         { order: 12; }
-.bento-card.news        { order: 13; }
+/* ── Search ───────────────────────────────────────────────────────────────── */
+.home-search {
+  margin-top: 30px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: var(--home-panel);
+  border: 1px solid var(--home-line);
+  border-radius: 12px;
+  padding: 0 16px;
+  max-width: 540px;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.15s ease;
+}
+
+.home-search:focus-within {
+  border-color: var(--home-accent);
+}
+
+.home-search svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* High-specificity + [data-theme] variants so the global
+   `[data-theme="dark"] input[type="text"]` rule in theme.css (0,2,1)
+   can't repaint the field with its own box inside the pill. */
+.home-search input[type="text"],
+[data-theme="dark"] .home-search input[type="text"],
+[data-theme="light"] .home-search input[type="text"] {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 13px 0;
+  font-size: 14.5px;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+}
+
+.home-search input::placeholder { color: var(--text-muted); }
+
+.home-search kbd {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+  background: var(--home-bg);
+  border: 1px solid var(--home-line);
+  border-radius: 5px;
+  padding: 3px 8px;
+}
+
+/* ── Overview strip (live data — only rendered when Accounts responds) ───── */
+:root {
+  --chart-revenue: #059669;   /* validated pair on light surface */
+  --chart-expense: #b45309;
+}
 
-
-/* =============================================================
-   BENTO CARD - Compact Horizontal Style
-   ============================================================= */
-.bento-card {
-    position: relative;
-    border-radius: 14px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Glow border on hover */
-.card-border {
-    position: absolute;
-    inset: 0;
-    border-radius: 14px;
-    padding: 1.5px;
-    background: transparent;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-/* Card content container */
-.card-content {
-    position: relative;
-    z-index: 1;
-    padding: 14px 16px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: var(--bg-card);
-    border-radius: 14px;
-    border: 1px solid var(--border-color);
-    transition: all 0.3s ease;
-}
-
-/* Light mode card styles */
-.bento-card .card-content {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-/* Dark mode card styles */
-[data-theme="dark"] .card-content {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* =============================================================
-   CARD HOVER EFFECTS
-   ============================================================= */
-.bento-card:hover {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-}
-
-.bento-card:hover .card-border {
-    opacity: 1;
-}
-
-.bento-card:hover .card-content {
-    border-color: transparent;
-}
-
-/* Card-specific hover glow colors */
-.bento-card.vision:hover .card-border {
-    background: linear-gradient(135deg, var(--brand-accent), var(--brand-secondary));
-}
-
-.bento-card.drive:hover .card-border {
-    background: linear-gradient(135deg, var(--color-success), #34d399);
-}
-
-.bento-card.chat:hover .card-border {
-    background: linear-gradient(135deg, var(--color-warning), var(--color-orange));
-}
-
-.bento-card.email:hover .card-border {
-    background: linear-gradient(135deg, #ef4444, #f97316);
-}
-
-.bento-card.hrms:hover .card-border {
-    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
-}
-
-.bento-card.crm:hover .card-border {
-    background: linear-gradient(135deg, var(--color-cyan, #06b6d4), #22d3ee);
-}
-
-.bento-card.research:hover .card-border {
-    background: linear-gradient(135deg, var(--brand-secondary), #a78bfa);
-}
-
-.bento-card.procurement:hover .card-border {
-    background: linear-gradient(135deg, #e11d48, #fb7185);
-}
-
-.bento-card.pms:hover .card-border {
-    background: linear-gradient(135deg, #f59e0b, #fbbf24);
-}
-
-.bento-card.lms:hover .card-border {
-    background: linear-gradient(135deg, #0ea5e9, #38bdf8);
-}
-
-.bento-card.accounts:hover .card-border {
-    background: linear-gradient(135deg, #10b981, #34d399);
-}
-
-.bento-card.news:hover .card-border {
-    background: linear-gradient(135deg, #d4af37, #f5d67b);
-}
-
-.bento-card.admin:hover .card-border {
-    background: linear-gradient(135deg, var(--color-danger), #f87171);
-}
-
-/* Hover shadow glow */
-.bento-card.vision:hover {
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
-}
-
-.bento-card.drive:hover {
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
-}
-
-.bento-card.chat:hover {
-    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
-}
-
-.bento-card.email:hover {
-    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
-}
-
-.bento-card.hrms:hover {
-    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
-}
-
-.bento-card.crm:hover {
-    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.15);
-}
-
-.bento-card.research:hover {
-    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
-}
-
-.bento-card.procurement:hover {
-    box-shadow: 0 8px 24px rgba(225, 29, 72, 0.15);
-}
-
-.bento-card.pms:hover {
-    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
-}
-
-.bento-card.lms:hover {
-    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.15);
-}
-
-.bento-card.accounts:hover {
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
-}
-
-.bento-card.news:hover {
-    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.15);
-}
-
-.bento-card.admin:hover {
-    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
-}
-
-[data-theme="dark"] .bento-card.vision:hover {
-    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.25);
-}
-
-[data-theme="dark"] .bento-card.drive:hover {
-    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.25);
-}
-
-[data-theme="dark"] .bento-card.chat:hover {
-    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.25);
-}
-
-[data-theme="dark"] .bento-card.email:hover {
-    box-shadow: 0 8px 30px rgba(239, 68, 68, 0.25);
-}
-
-[data-theme="dark"] .bento-card.hrms:hover {
-    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.25);
-}
-
-[data-theme="dark"] .bento-card.crm:hover {
-    box-shadow: 0 8px 30px rgba(6, 182, 212, 0.25);
-}
-
-[data-theme="dark"] .bento-card.research:hover {
-    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.25);
-}
-
-[data-theme="dark"] .bento-card.procurement:hover {
-    box-shadow: 0 8px 30px rgba(225, 29, 72, 0.25);
-}
-
-[data-theme="dark"] .bento-card.pms:hover {
-    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.25);
-}
-
-[data-theme="dark"] .bento-card.lms:hover {
-    box-shadow: 0 8px 30px rgba(14, 165, 233, 0.25);
+[data-theme="dark"] {
+  --chart-revenue: #0ea56f;   /* validated pair on #151b29 */
+  --chart-expense: #d97706;
 }
 
-[data-theme="dark"] .bento-card.accounts:hover {
-    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.25);
+.home-overview {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 12px;
+  padding: 28px 0 4px;
 }
 
-[data-theme="dark"] .bento-card.news:hover {
-    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.25);
+.home-chart-card {
+  grid-row: span 2;
+  background: var(--home-panel);
+  border: 1px solid var(--home-line);
+  border-radius: 14px;
+  padding: 16px 18px 10px;
+  box-shadow: var(--shadow-xs);
+  position: relative;
+  min-width: 0;
 }
 
-[data-theme="dark"] .bento-card.admin:hover {
-    box-shadow: 0 8px 30px rgba(239, 68, 68, 0.25);
+.home-chart-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-/* =============================================================
-   CARD HEADER - Horizontal Layout
-   ============================================================= */
-.card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+.home-chart-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
 }
 
-/* =============================================================
-   APP ICONS - Compact
-   ============================================================= */
-.app-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    position: relative;
-    overflow: hidden;
+.home-chart-legend {
+  display: flex;
+  gap: 14px;
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--text-secondary);
 }
 
-.app-icon::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+.home-chart-legend .swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: 0;
 }
 
-.bento-card:hover .app-icon::before {
-    opacity: 0.2;
-    background: radial-gradient(circle at center, white 0%, transparent 70%);
-}
-
-.app-icon svg {
-    width: 18px;
-    height: 18px;
-    position: relative;
-    z-index: 1;
-}
-
-.bento-card.vision .app-icon {
-    background: linear-gradient(135deg, var(--brand-accent), var(--brand-secondary));
-}
-
-.bento-card.vision .app-icon svg {
-    color: white;
-}
-
-.bento-card.drive .app-icon {
-    background: linear-gradient(135deg, var(--color-success), #34d399);
-}
-
-.bento-card.drive .app-icon svg {
-    color: white;
-}
-
-.bento-card.chat .app-icon {
-    background: linear-gradient(135deg, var(--color-warning), var(--color-orange));
-}
-
-.bento-card.chat .app-icon svg {
-    color: white;
-}
-
-.bento-card.email .app-icon {
-    background: linear-gradient(135deg, #ef4444, #f97316);
-}
-
-.bento-card.email .app-icon svg {
-    color: white;
-}
-
-.bento-card.hrms .app-icon {
-    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
-}
-
-.bento-card.hrms .app-icon svg {
-    color: white;
-}
-
-.bento-card.crm .app-icon {
-    background: linear-gradient(135deg, var(--color-cyan, #06b6d4), #22d3ee);
-}
-
-.bento-card.crm .app-icon svg {
-    color: white;
-}
-
-.bento-card.procurement .app-icon {
-    background: linear-gradient(135deg, #e11d48, #fb7185);
-}
-
-.bento-card.procurement .app-icon svg {
-    color: white;
-}
-
-.bento-card.pms .app-icon {
-    background: linear-gradient(135deg, #f59e0b, #fbbf24);
-}
-
-.bento-card.pms .app-icon svg {
-    color: white;
-}
-
-.bento-card.lms .app-icon {
-    background: linear-gradient(135deg, #0ea5e9, #38bdf8);
-}
-
-.bento-card.lms .app-icon svg {
-    color: white;
-}
-
-.bento-card.research .app-icon {
-    background: linear-gradient(135deg, var(--brand-secondary), #a78bfa);
-}
-
-.bento-card.research .app-icon svg {
-    color: white;
-}
-
-.bento-card.news .app-icon {
-    background: linear-gradient(135deg, #d4af37, #f5d67b);
-}
-
-.bento-card.news .app-icon svg {
-    color: white;
-}
-
-.bento-card.accounts .app-icon {
-    background: linear-gradient(135deg, #10b981, #34d399);
-}
-
-.bento-card.accounts .app-icon svg {
-    color: white;
-}
-
-.bento-card.admin .app-icon {
-    background: linear-gradient(135deg, var(--color-danger), #f87171);
-}
-
-.bento-card.admin .app-icon svg {
-    color: white;
-}
-
-/* =============================================================
-   APP STATUS INDICATORS - Compact Pill
-   ============================================================= */
-.app-status {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.6rem;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 12px;
-    background: var(--hover-overlay);
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.app-status.online {
-    background: var(--success-alpha-10);
-    color: var(--color-success-dark);
-}
-
-[data-theme="dark"] .app-status.online {
-    background: rgba(16, 185, 129, 0.15);
-    color: #4ade80;
-}
-
-.app-status.offline {
-    background: var(--danger-alpha-10);
-    color: var(--color-danger-dark);
-}
-
-[data-theme="dark"] .app-status.offline {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
-}
-
-.app-status.admin-badge {
-    background: var(--purple-alpha-10);
-    color: var(--color-purple);
-}
+.home-chart-body { position: relative; margin-top: 6px; }
+.home-chart-body svg { display: block; width: 100%; height: 172px; }
 
-[data-theme="dark"] .app-status.admin-badge {
-    background: rgba(139, 92, 246, 0.2);
-    color: #a78bfa;
+.home-chart-empty {
+  height: 172px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 12.5px;
 }
 
-.status-indicator {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: currentColor;
-    animation: pulse 2s ease-in-out infinite;
+.home-chart-tip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--bg-tooltip, #1f2937);
+  color: #fff;
+  font-size: 11.5px;
+  line-height: 1.5;
+  border-radius: 8px;
+  padding: 7px 10px;
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, calc(-100% - 10px));
+  white-space: nowrap;
+  display: none;
+  z-index: 5;
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.85); }
-}
+.home-chart-tip b { font-weight: 600; }
 
-/* =============================================================
-   CARD BODY - Compact
-   ============================================================= */
-.card-body {
-    flex: 1;
+.home-stat {
+  background: var(--home-panel);
+  border: 1px solid var(--home-line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-xs);
+  min-width: 0;
+  transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
-.card-body h3 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 2px;
-    transition: color 0.3s ease;
+.home-stat:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--home-accent) 35%, var(--home-line));
 }
 
-.card-body p {
-    color: var(--text-secondary);
-    font-size: 0.75rem;
-    line-height: 1.4;
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+@media (prefers-reduced-motion: reduce) {
+  .home-stat:hover { transform: none; }
 }
 
-[data-theme="dark"] .card-body h3 {
-    color: #ffffff;
+.home-stat .label {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
 }
 
-[data-theme="dark"] .card-body p {
-    color: rgba(255, 255, 255, 0.55);
+.home-stat .value {
+  font-family: var(--font-family-mono);
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 5px;
+  letter-spacing: -0.02em;
 }
 
-/* =============================================================
-   CARD FOOTER - Minimal
-   ============================================================= */
-.card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 6px;
-    border-top: 1px solid var(--border-color);
+.home-stat .hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 3px;
 }
 
-[data-theme="dark"] .card-footer {
-    border-top-color: rgba(255, 255, 255, 0.06);
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-.app-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
+@media (max-width: 820px) {
+  .home-overview { grid-template-columns: 1fr 1fr; }
+  .home-chart-card { grid-column: span 2; grid-row: auto; }
 }
 
-.bento-card:hover .app-action {
-    color: var(--brand-primary);
+/* ── Groups ───────────────────────────────────────────────────────────────── */
+.home-group {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 32px;
+  padding: 36px 0;
+  border-bottom: 1px solid var(--home-line);
 }
 
-.bento-card.vision:hover .app-action { color: var(--brand-accent); }
-.bento-card.drive:hover .app-action { color: var(--color-success); }
-.bento-card.chat:hover .app-action { color: var(--color-warning); }
-.bento-card.email:hover .app-action { color: #ef4444; }
-.bento-card.hrms:hover .app-action { color: var(--brand-primary); }
-.bento-card.crm:hover .app-action { color: var(--color-cyan, #06b6d4); }
-.bento-card.research:hover .app-action { color: var(--brand-secondary); }
-.bento-card.lms:hover .app-action { color: #0ea5e9; }
-.bento-card.admin:hover .app-action { color: var(--color-danger); }
+.home-group:last-child { border-bottom: none; }
 
-[data-theme="dark"] .app-action {
-    color: rgba(255, 255, 255, 0.4);
-}
-
-[data-theme="dark"] .bento-card:hover .app-action {
-    color: #ffffff;
-}
+.home-group-label { padding-top: 16px; }
 
-.app-action svg {
-    width: 12px;
-    height: 12px;
-    transition: transform 0.3s ease;
+.home-group-label h2 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin: 0;
 }
-
-.bento-card:hover .app-action svg {
-    transform: translateX(3px);
+
+.home-group-label p {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
 }
 
-/* =============================================================
-   ADMIN CARD VISIBILITY
-   ============================================================= */
-.bento-card.admin {
-    display: none;
+.home-rows {
+  background: var(--home-panel);
+  border: 1px solid var(--home-line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
 }
 
-.bento-card.admin.visible {
-    display: flex;
+/* ── Module rows ──────────────────────────────────────────────────────────── */
+.home-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--home-line);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s ease;
 }
 
-/* =============================================================
-   RESPONSIVE DESIGN
-   ============================================================= */
-@media (max-width: 900px) {
-    .bento-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
+.home-row:last-child { border-bottom: none; }
+.home-row:hover { background: var(--home-row-hover); }
 
-@media (max-width: 480px) {
-    .bento-grid {
-        grid-template-columns: 1fr;
-    }
+.home-row:focus-visible {
+  outline: 2px solid var(--home-accent);
+  outline-offset: -2px;
 }
-
-@media (max-width: 500px) {
-    .home-content {
-        padding: 16px 10px;
-    }
-
-    .welcome-title {
-        font-size: 1.4rem;
-    }
-
-    .welcome-subtitle {
-        font-size: 0.8rem;
-    }
-
-    .bento-grid {
-        gap: 8px;
-    }
-
-    .bento-card {
-        flex: 0 1 calc(50% - 4px);
-        min-width: 0;
-        max-width: none;
-        border-radius: 10px;
-    }
-
-    .card-content {
-        padding: 8px 8px;
-        border-radius: 10px;
-        gap: 4px;
-    }
-
-    .card-header {
-        gap: 4px;
-    }
-
-    .app-icon {
-        width: 24px;
-        height: 24px;
-        border-radius: 6px;
-    }
-
-    .app-icon svg {
-        width: 12px;
-        height: 12px;
-    }
-
-    .app-status {
-        font-size: 0.5rem;
-        padding: 1px 4px;
-        gap: 2px;
-    }
-
-    .status-indicator {
-        width: 3px;
-        height: 3px;
-    }
-
-    .card-body h3 {
-        font-size: 0.72rem;
-        margin-bottom: 0;
-    }
-
-    .card-body p {
-        font-size: 0.58rem;
-        line-height: 1.25;
-        -webkit-line-clamp: 2;
-    }
-
-    .card-footer {
-        padding-top: 3px;
-    }
-
-    .app-action {
-        font-size: 0.58rem;
-        gap: 3px;
-    }
 
-    .app-action svg {
-        width: 9px;
-        height: 9px;
-    }
+.home-row-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--mod-color, var(--brand-primary)) 13%, transparent);
+  color: var(--mod-color, var(--brand-primary));
+}
+
+.home-row-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.home-row-meta { flex: 1; min-width: 0; }
+
+.home-row-name {
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-row-desc {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-tag {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--home-accent);
+  background: var(--home-accent-soft);
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* ── Status ───────────────────────────────────────────────────────────────── */
+.home-row-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-muted);
+  width: 92px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.home-row-status .sdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-disabled);
+  flex-shrink: 0;
+}
+
+.home-row-status.online { color: var(--color-success); }
+.home-row-status.online .sdot {
+  background: var(--color-success);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.7);
+}
+
+/* Offline reads as "asleep", never as an error */
+.home-row.offline .home-row-icon { filter: grayscale(1); opacity: 0.5; }
+.home-row.offline .home-row-name { color: var(--text-secondary); }
+
+.home-row-arrow {
+  color: var(--text-muted);
+  font-size: 15px;
+  width: 18px;
+  text-align: right;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  flex-shrink: 0;
+}
+
+.home-row:hover .home-row-arrow { opacity: 1; }
+
+/* Search-filter miss */
+.home-row.filtered-out { display: none; }
+.home-group.filtered-out { display: none; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 820px) {
+  .home-group {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 28px 0;
+  }
+  .home-group-label { padding-top: 0; }
+  .home-content { padding: 0 18px 56px; }
+  .home-hero { padding: 36px 0 24px; }
+  .home-row-status span:not(.sdot) { display: none; }
+  .home-row-status { width: 20px; }
 }

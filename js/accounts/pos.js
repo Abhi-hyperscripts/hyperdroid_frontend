@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (e.key === 'Enter') {
             e.preventDefault();
             const q = search.value.trim().toLowerCase();
-            const sellable = i => !i.track_inventory || i.qty_on_hand > 0;
+            const sellable = i => !i.track_inventory || posSellable(i) > 0;
             const hit = posItems.find(i => (i.barcode || '').toLowerCase() === q)
                 || posItems.find(i => i.sku.toLowerCase() === q)
                 || filteredItems().find(sellable);
@@ -672,6 +672,12 @@ function defaultGstConfigId() {
 // Effective tax config for an item: its own, else the tenant default GST (so cart preview == posted receipt).
 function effTaxConfigId(item) { return item.tax_config_id || defaultGstConfigId(); }
 
+// SELLABLE on-hand: for a batch item this is the non-expired (dispensable) quantity the backend returns as
+// dispensable_qty — the counter must not treat expired lots as sellable (the sale engine refuses them, so an
+// expired-only item would look in-stock, skip the substitute prompt, and only fail at Charge). Falls back to
+// qty_on_hand for a non-batch item or an older snapshot without the field.
+function posSellable(it) { return it.dispensable_qty != null ? Number(it.dispensable_qty) : it.qty_on_hand; }
+
 // ── Bill-to customer + their price list (Feature: price lists → sales, POS) ──
 // Walk-in by default. Picking a known customer bills the sale in their name and, when they
 // carry a price list, REPRICES the cart with its per-base-unit rates (an explicit pricing
@@ -820,8 +826,9 @@ function recomputeFreeLines() {
         const paidBase = cart.filter(c => !c.free && c.item.id === s.item_id).reduce((sum, c) => sum + lineBaseQty(c), 0);
         let entitled = posSchemeOptOut.has(s.id) || !freeItem ? 0 : Math.floor(paidBase / s.buy_qty) * s.free_qty;
         if (entitled > 0 && freeItem.track_inventory) {
-            // The free goods leave the shelf too — never promise more than remains after paid lines.
-            const avail = freeItem.qty_on_hand - cart.filter(c => c !== existing && c.item.id === freeItemId).reduce((sum, c) => sum + lineBaseQty(c), 0);
+            // The free goods leave the shelf too — never promise more than remains after paid lines, and only
+            // count SELLABLE (non-expired) stock so a scheme can't auto-add an expired free good.
+            const avail = posSellable(freeItem) - cart.filter(c => c !== existing && c.item.id === freeItemId).reduce((sum, c) => sum + lineBaseQty(c), 0);
             if (entitled > avail) { entitled = Math.max(0, Math.floor(avail / s.free_qty) * s.free_qty); if (existing?.qty !== entitled) Toast.error(`'${freeItem.name}' free goods limited by stock.`); }
         }
         if (entitled > 0) {
@@ -900,15 +907,15 @@ function renderGrid(keepCount) {
     }
     grid.innerHTML = `<div class="pos-table-wrap"><table class="pos-table">
         <thead><tr><th>Item</th><th>SKU</th><th>Category</th><th class="r">Price</th><th class="r">Stock</th><th></th></tr></thead>
-        <tbody>${rows.map((i, idx) => `
-            <tr class="${idx === 0 ? 'first' : ''}${i.track_inventory && i.qty_on_hand <= 0 ? ' pos-oos' : ''}" onclick="addToCart('${i.id}')">
+        <tbody>${rows.map((i, idx) => { const sell = posSellable(i); return `
+            <tr class="${idx === 0 ? 'first' : ''}${i.track_inventory && sell <= 0 ? ' pos-oos' : ''}" onclick="addToCart('${i.id}')">
                 <td class="nm">${esc(i.name)}${i.rack ? ` <span style="font-size:.72rem;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:4px;padding:0 4px;white-space:nowrap;">📍 ${esc(i.rack)}</span>` : ''}</td>
                 <td class="sku">${esc(i.sku)}</td>
                 <td class="cat">${esc(i.category_name || '—')}</td>
                 <td class="r pr">${money(i.sale_price)}</td>
-                <td class="r ${i.track_inventory && i.qty_on_hand <= 0 ? 'out' : ''}">${i.track_inventory ? i.qty_on_hand : '—'}</td>
-                <td class="r">${i.track_inventory && i.qty_on_hand <= 0 ? '<span class="pos-add off">✕</span>' : '<span class="pos-add">+</span>'}</td>
-            </tr>`).join('')}
+                <td class="r ${i.track_inventory && sell <= 0 ? 'out' : ''}">${i.track_inventory ? sell : '—'}</td>
+                <td class="r">${i.track_inventory && sell <= 0 ? '<span class="pos-add off">✕</span>' : '<span class="pos-add">+</span>'}</td>
+            </tr>`; }).join('')}
         </tbody></table></div>
         ${all.length > rows.length
             ? `<div class="pos-more" id="posMoreSentinel">Showing ${rows.length} of ${all.length} — scroll for more, type to narrow, or scan.</div>`
@@ -925,8 +932,9 @@ function addToCart(itemId) {
     // (The B2B invoice flow still allows advance-order oversell — that's deliberate.)
     if (it.track_inventory) {
         const inCartBase = itemBaseInCart(itemId, null);
-        if (it.qty_on_hand <= 0) { offerSubstitutes(it); return; }
-        if (inCartBase + 1 > it.qty_on_hand) { Toast.error(`Only ${it.qty_on_hand} ${it.unit || ''} of '${it.name}' in stock.`); return; }
+        const sell = posSellable(it);   // non-expired for batch items — expired-only ⇒ offer a substitute
+        if (sell <= 0) { offerSubstitutes(it); return; }
+        if (inCartBase + 1 > sell) { Toast.error(`Only ${sell} ${it.unit || ''} of '${it.name}' in stock.`); return; }
     }
     if (line) line.qty += 1; else cart.push({ item: it, qty: 1, disc: 0, uom: null });
     ensureLotMrp(it);
@@ -938,13 +946,15 @@ function setQty(idx, qty) {
     if (!line) return;
     let capped = Math.max(0, qty);
     if (line.item.track_inventory) {
-        // Cap in BASE units across every cart line of this item; pack lines cap to whole packs.
-        const availBase = line.item.qty_on_hand - itemBaseInCart(line.item.id, line);
+        // Cap in BASE units across every cart line of this item; pack lines cap to whole packs. Cap against
+        // SELLABLE (non-expired) stock — expired lots aren't dispensable at the counter.
+        const sell = posSellable(line.item);
+        const availBase = sell - itemBaseInCart(line.item.id, line);
         const conv = lineConv(line);
         const maxQty = conv === 1 ? availBase : Math.floor(availBase / conv);
         if (capped > maxQty) {
             capped = Math.max(0, maxQty);
-            Toast.error(`Only ${line.item.qty_on_hand} ${line.item.unit || ''} of '${line.item.name}' in stock.`);
+            Toast.error(`Only ${sell} ${line.item.unit || ''} of '${line.item.name}' in stock.`);
         }
     }
     line.qty = capped;
@@ -980,12 +990,13 @@ function setLineUom(idx, uom) {
     }
     line.uom = target;
     if (line.item.track_inventory) {
-        const availBase = line.item.qty_on_hand - itemBaseInCart(line.item.id, line);
+        const sell = posSellable(line.item);
+        const availBase = sell - itemBaseInCart(line.item.id, line);
         const conv = lineConv(line);
         const maxQty = conv === 1 ? availBase : Math.floor(availBase / conv);
         if (line.qty > maxQty) {
             line.qty = Math.max(0, maxQty);
-            Toast.error(`Only ${line.item.qty_on_hand} ${line.item.unit || ''} of '${line.item.name}' in stock — quantity adjusted.`);
+            Toast.error(`Only ${sell} ${line.item.unit || ''} of '${line.item.name}' in stock — quantity adjusted.`);
         }
     }
     cart = cart.filter(c => c.qty > 0);

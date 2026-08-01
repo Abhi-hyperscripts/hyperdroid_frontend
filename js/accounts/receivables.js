@@ -603,8 +603,13 @@ async function voidCustomerPayment(id, number) {
     } catch (e) { Toast.error(e.message || 'Void failed'); }
 }
 
+// One idempotency key per refund-advance modal-open: a double-click / network retry of the SAME refund reuses
+// it so the backend dedupes (a refund moves REAL bank cash — a duplicate is a double cash-out).
+let _refundAdvIdemKey = null;
+
 // Refund an unapplied customer advance (booking deposit) back to a bank account.
 function openRefundAdvance(paymentId, number, maxAmount, bankId) {
+    _refundAdvIdemKey = crypto.randomUUID();
     document.getElementById('refundAdvId').value = paymentId;
     document.getElementById('refundAdvMax').textContent = AccountsCommon.formatCurrency(maxAmount);
     document.getElementById('refundAdvAmount').value = maxAmount.toFixed(2);
@@ -622,12 +627,21 @@ async function saveRefundAdvance() {
     const bank_account_id = window._refundAdvBankDD?.getValue?.();
     if (!amount || amount <= 0) { Toast.error('Enter a refund amount'); return; }
     if (!bank_account_id) { Toast.error('Pick a bank account'); return; }
+    // Disable the button for the request AND send the per-modal-open key so neither a double-click nor a
+    // network retry refunds the cash twice (a partial refund with pool headroom is not caught by the backend's
+    // amount≤free recheck alone — the key is the real guard; the backend dedupes on it).
+    const btn = document.getElementById('refundAdvBtn'); if (btn) btn.disabled = true;
     try {
-        await api.request(AccountsCommon.buildUrl(`invoices/payments/${id}/refund-advance`), { method: 'POST', body: JSON.stringify({ amount, bank_account_id, refund_date: document.getElementById('refundAdvDate').value }) });
+        await api.request(AccountsCommon.buildUrl(`invoices/payments/${id}/refund-advance`), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(_refundAdvIdemKey && { 'Idempotency-Key': _refundAdvIdemKey }) },
+            body: JSON.stringify({ amount, bank_account_id, refund_date: document.getElementById('refundAdvDate').value })
+        });
         Toast.success('Advance refunded');
         AccountsCommon.closeModal('refundAdvanceModal');
         await loadCustomerPayments();
     } catch (e) { Toast.error(e.message || 'Refund failed'); }
+    finally { if (btn) btn.disabled = false; }
 }
 
 /**
@@ -1874,18 +1888,24 @@ async function openApplyAdvance(invoiceId, customerId, balanceDue, invoiceNumber
             <button class="btn btn-primary" id="advGo">Apply</button>
         </div></div>`;
     document.body.appendChild(overlay);
+    // One key per overlay-open: a double-click / retry of the SAME apply reuses it so the backend dedupes
+    // (otherwise a partial apply with pool headroom over-consumes the advance and over-settles the invoice).
+    const applyIdemKey = crypto.randomUUID();
     overlay.querySelector('#advCancel').onclick = () => overlay.remove();
     overlay.querySelector('#advGo').onclick = async () => {
         const amt = parseFloat(overlay.querySelector('#advApplyAmt').value);
         if (!amt || amt <= 0) { Toast.error('Enter an amount'); return; }
+        const goBtn = overlay.querySelector('#advGo'); goBtn.disabled = true;
         try {
             await api.request(AccountsCommon.buildUrl('invoices/advances/apply'), {
-                method: 'POST', body: JSON.stringify({ invoice_id: invoiceId, amount: amt })
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Idempotency-Key': applyIdemKey },
+                body: JSON.stringify({ invoice_id: invoiceId, amount: amt })
             });
             Toast.success(`Advance ${AccountsCommon.formatCurrency(amt)} applied`);
             overlay.remove();
             loadCustomerInvoices();
-        } catch (err) { Toast.error(err.message || 'Failed to apply advance'); }
+        } catch (err) { goBtn.disabled = false; Toast.error(err.message || 'Failed to apply advance'); }
     };
 }
 
@@ -2665,8 +2685,9 @@ async function showChallanModal() {
     document.getElementById('challanLines').innerHTML = '';
     document.getElementById('challanStatusBanner').style.display = 'none';
     _setChallanReadOnly(false);
-    if (typeof flatpickr === 'function') flatpickr('#challanDate', { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
-    else document.getElementById('challanDate').value = new Date().toISOString().slice(0, 10);
+    if (typeof flatpickr === 'function') {
+        const el = document.getElementById('challanDate'); if (el && !el._flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+    } else document.getElementById('challanDate').value = new Date().toISOString().slice(0, 10);
 
     challanCustomerDD = new SearchableDropdown(document.getElementById('challanCustomerDD'), {
         id: 'challanCustomerSD',
@@ -3180,8 +3201,8 @@ async function showSalesOrderForm() {
     document.getElementById('soStatusBanner').style.display = 'none';
     _setSoReadOnly(false);
     if (typeof flatpickr === 'function') {
-        flatpickr('#soDate', { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
-        flatpickr('#soExpected', { dateFormat: 'Y-m-d', allowInput: true });
+        const dEl = document.getElementById('soDate'); if (dEl && !dEl._flatpickr) flatpickr(dEl, { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+        const eEl = document.getElementById('soExpected'); if (eEl && !eEl._flatpickr) flatpickr(eEl, { dateFormat: 'Y-m-d', allowInput: true });
     }
     soCustomerDD = new SearchableDropdown(document.getElementById('soCustomerDD'), {
         id: 'soCustomerSD',

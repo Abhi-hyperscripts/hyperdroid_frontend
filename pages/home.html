@@ -17,7 +17,6 @@
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -37,462 +36,24 @@
     </nav>
 
     <div class="home-content">
-        <!-- Welcome Section -->
-        <div class="welcome-section">
-            <p class="welcome-greeting">Good <span id="timeGreeting">morning</span>,</p>
-            <h1 class="welcome-title"><span id="userName">User</span></h1>
-            <p class="welcome-subtitle">What would you like to do today?</p>
-        </div>
-
-        <!-- Futuristic Bento Grid -->
-        <div class="bento-grid">
-            <!-- Vision Card -->
-            <div class="bento-card vision" onclick="navigateToModule('vision')" id="visionCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <polygon points="23 7 16 12 23 17 23 7"/>
-                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="visionStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Meetings</h3>
-                        <p>Video conferencing with screen sharing, chat, and recording</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
+        <header class="home-hero">
+            <p class="home-eyebrow" id="orgEyebrow">Workspace</p>
+            <h1 class="home-title">Good <span id="timeGreeting">morning</span>, <span id="userName">there</span>.</h1>
+            <p class="home-sub" id="homeSub"><span class="pulse"></span><span id="homeSubText">Checking your services…</span></p>
+            <div class="home-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" id="moduleSearch" placeholder="Search apps…" autocomplete="off" aria-label="Search apps">
+                <kbd>⌘K</kbd>
             </div>
+        </header>
 
-            <!-- Drive Card -->
-            <div class="bento-card drive" onclick="navigateToModule('drive')" id="driveCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="driveStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Drive</h3>
-                        <p>Secure cloud storage with file sharing and organization</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
+        <!-- Live overview — rendered only when Accounts is licensed and reachable -->
+        <section class="home-overview" id="homeOverview" hidden aria-label="Business overview"></section>
 
-            <!-- Chat Card -->
-            <div class="bento-card chat" onclick="navigateToModule('chat')" id="chatCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="chatStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Chat</h3>
-                        <p>Real-time messaging with direct and group conversations</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Email Card -->
-            <div class="bento-card email" onclick="navigateToModule('email')" id="emailCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                <polyline points="22,6 12,13 2,6"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="emailStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Email</h3>
-                        <p>IMAP/SMTP mailboxes with IDLE push, unified inbox, and real-time notifications</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- HRMS Card -->
-            <div class="bento-card hrms" onclick="navigateToModule('hrms')" id="hrmsCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="hrmsStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>HRMS</h3>
-                        <p>Human resources with attendance, leave, and payroll</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CRM Card -->
-            <div class="bento-card crm" onclick="navigateToModule('crm')" id="crmCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                <line x1="19" y1="8" x2="19" y2="14"/>
-                                <line x1="22" y1="11" x2="16" y2="11"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="crmStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>CRM</h3>
-                        <p>Customer relationship management with leads, deals, and Facebook integration</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Research Card -->
-            <div class="bento-card research" onclick="navigateToModule('research')" id="researchCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M21 21H4.6c-.56 0-.84 0-1.05-.11a1 1 0 0 1-.44-.44C3 20.24 3 19.96 3 19.4V3"/>
-                                <path d="M7 14l4-4 4 4 6-6"/>
-                                <path d="M17 8h4v4"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="researchStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Research</h3>
-                        <p>Market research analytics with AI-powered data analysis and insights</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PMS Card -->
-            <div class="bento-card pms" onclick="navigateToModule('pms')" id="pmsCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                                <rect x="9" y="3" width="6" height="4" rx="1"/>
-                                <path d="M9 14l2 2 4-4"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="pmsStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Projects</h3>
-                        <p>Project management with clients, tasks, time tracking, and timesheets</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Procurement Card -->
-            <div class="bento-card procurement" onclick="navigateToModule('procurement')" id="procurementCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                                <line x1="3" y1="6" x2="21" y2="6"/>
-                                <path d="M16 10a4 4 0 0 1-8 0"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="procurementStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Procurement</h3>
-                        <p>Vendor management, RFQs, quote comparison, and purchase orders</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- LMS Card -->
-            <div class="bento-card lms" onclick="navigateToModule('lms')" id="lmsCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                                <path d="M8 7h8M8 11h6"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="lmsStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Learning</h3>
-                        <p>Course management, training, certifications, and learning paths</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Accounts Card -->
-            <div class="bento-card accounts" onclick="navigateToModule('accounts')" id="accountsCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/>
-                                <path d="M8 10h8"/>
-                                <path d="M8 14h4"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="accountsStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Accounts</h3>
-                        <p>Double-entry accounting with GL, AP, AR, banking, expenses, and financial reports</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PaymentPlans Card -->
-            <div class="bento-card paymentplans" onclick="navigateToModule('paymentplans')" id="paymentplansCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <rect x="2" y="6" width="20" height="14" rx="2"/>
-                                <line x1="2" y1="11" x2="22" y2="11"/>
-                                <path d="M7 16h2"/>
-                                <path d="M12 16h6"/>
-                            </svg>
-                        </div>
-                        <div class="app-status" id="paymentplansStatus">
-                            <span class="status-indicator"></span>
-                            <span>Checking...</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Payment Plans</h3>
-                        <p>Installment plans, recurring payments, automated reminders, and aging dashboards</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KIP News Card (SUPERADMIN only) -->
-            <div class="bento-card news" onclick="navigateToModule('news')" id="newsCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2z"/>
-                                <line x1="7" y1="8" x2="13" y2="8"/>
-                                <line x1="7" y1="12" x2="11" y2="12"/>
-                                <line x1="7" y1="16" x2="13" y2="16"/>
-                            </svg>
-                        </div>
-                        <div class="app-status admin-badge">
-                            <span class="status-indicator"></span>
-                            <span>Admin</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>KIP</h3>
-                        <p>News intelligence with business signal detection and monitoring</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Admin Card (SUPERADMIN only) -->
-            <div class="bento-card admin" onclick="navigateToModule('admin')" id="adminCard">
-                <div class="card-border"></div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <div class="app-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
-                            </svg>
-                        </div>
-                        <div class="app-status admin-badge">
-                            <span class="status-indicator"></span>
-                            <span>Admin</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h3>Admin Panel</h3>
-                        <p>User management, service monitoring, and configuration</p>
-                    </div>
-                    <div class="card-footer">
-                        <span class="app-action">
-                            Launch
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Groups + module rows rendered from the MODULES registry -->
+        <main id="moduleGroups"></main>
     </div>
 
     <script>
@@ -503,28 +64,106 @@
         document.write('<script src="../js/firebase-init.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>
-        // Check authentication
+        // ═══════════════════════════════════════════════════════════════════
+        // Module registry — single source of truth for the launcher.
+        // Visibility = role AND license (same rules as before the redesign):
+        //   - SUPERADMIN passes every role check but does NOT bypass licensing
+        //     (sub-tenant superadmins only see what their tenant pays for; the
+        //     platform root's license already includes every service).
+        //   - admin (per-tenant dashboard) is a built-in: no license required.
+        //   - A token with no licensed_services claim fails OPEN (legacy).
+        // ═══════════════════════════════════════════════════════════════════
+        const ICONS = {
+            vision: '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>',
+            drive: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+            chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+            email: '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+            hrms: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+            crm: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>',
+            research: '<path d="M21 21H4.6c-.56 0-.84 0-1.05-.11a1 1 0 0 1-.44-.44C3 20.24 3 19.96 3 19.4V3"/><path d="M7 14l4-4 4 4 6-6"/><path d="M17 8h4v4"/>',
+            pms: '<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/>',
+            procurement: '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+            lms: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h6"/>',
+            accounts: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><path d="M8 10h8"/><path d="M8 14h4"/>',
+            paymentplans: '<rect x="2" y="6" width="20" height="14" rx="2"/><line x1="2" y1="11" x2="22" y2="11"/><path d="M7 16h2"/><path d="M12 16h6"/>',
+            news: '<path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2z"/><line x1="7" y1="8" x2="13" y2="8"/><line x1="7" y1="12" x2="11" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/>',
+            admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+        };
+
+        const GROUPS = [
+            { id: 'money', label: 'Money', blurb: 'Billing, books, purchasing and collections.' },
+            { id: 'people', label: 'People', blurb: 'Customers, team and growth.' },
+            { id: 'work', label: 'Work', blurb: 'Projects, files and analysis.' },
+            { id: 'comms', label: 'Communication', blurb: 'Talk to your team and customers.' },
+            { id: 'adminGroup', label: 'Administration', blurb: 'Keep the workspace healthy.' }
+        ];
+
+        const MODULES = [
+            { id: 'accounts', group: 'money', role: 'ACCOUNTS_USER', service: 'Accounts', color: '#0e9f6e',
+              title: 'Accounts', desc: 'Invoices, ledger, GST, inventory and banking', href: 'accounts/dashboard.html', health: 'accounts' },
+            { id: 'paymentplans', group: 'money', role: 'PAYMENTPLANS_USER', service: 'PaymentPlans', color: '#b45309',
+              title: 'Payment Plans', desc: 'Installments, reminders and recurring collections', href: 'payment-plans/dashboard.html', health: 'paymentplans' },
+            { id: 'procurement', group: 'money', role: 'PROCUREMENT_USER', service: 'Procurement', color: '#6d5bd0',
+              title: 'Procurement', desc: 'Vendors, quote comparison and purchase orders', href: 'procurement/dashboard.html', health: 'procurement' },
+
+            { id: 'crm', group: 'people', role: 'CRM_USER', service: 'CRM', color: '#2563eb',
+              title: 'CRM', desc: 'Leads, deals and customer conversations', href: 'crm/dashboard.html', health: 'crm' },
+            { id: 'hrms', group: 'people', role: 'HRMS_USER', service: 'HRMS', color: '#be3980',
+              title: 'HRMS', desc: 'Attendance, leave and payroll', href: 'hrms/dashboard.html', health: 'hrms' },
+            { id: 'lms', group: 'people', role: 'LMS_USER', service: 'LMS', color: '#9333ea',
+              title: 'Learning', desc: 'Courses, training and certifications', href: 'lms/dashboard.html', health: 'lms' },
+
+            { id: 'pms', group: 'work', role: 'PMS_USER', service: 'PMS', color: '#0891b2',
+              title: 'Projects', desc: 'Clients, tasks, time tracking and timesheets', href: 'pms/dashboard.html', health: 'pms' },
+            { id: 'drive', group: 'work', role: 'DRIVE_USER', service: 'Drive', color: '#059669',
+              title: 'Drive', desc: 'Secure file storage and sharing', href: 'drive/drive.html', health: 'drive' },
+            { id: 'research', group: 'work', role: 'RESEARCH_USER', service: 'Research', color: '#7c3aed',
+              title: 'Research', desc: 'Market research with AI analysis', href: 'research/dashboard.html', health: 'research' },
+
+            { id: 'vision', group: 'comms', role: 'VISION_USER', service: 'Vision', color: '#0e7490',
+              title: 'Meetings', desc: 'Video calls with recording and captions', href: 'vision/dashboard.html', health: 'vision' },
+            { id: 'email', group: 'comms', role: 'EMAILSERVICE_USER', service: 'EmailService', color: '#c2680c',
+              title: 'Email', desc: 'Shared mailboxes with real-time sync', href: 'email/inbox.html', health: 'email' },
+            { id: 'chat', group: 'comms', role: 'CHAT_USER', service: 'Chat', color: '#db2777',
+              title: 'Chat', desc: 'Direct and group messaging', href: 'chat/chat.html', health: 'chat' },
+
+            { id: 'news', group: 'adminGroup', role: 'SUPERADMIN', service: 'KIP', color: '#64748b',
+              title: 'KIP', desc: 'News intelligence and business signals', href: 'news/admin.html', tag: 'Admin' },
+            { id: 'admin', group: 'adminGroup', role: 'SUPERADMIN', service: null, color: '#64748b',
+              title: 'Admin Panel', desc: 'Users, roles and service health', href: 'auth/dashboard.html', tag: 'Admin' }
+        ];
+
+        let healthTotal = 0;
+        let healthDone = 0;
+        let healthOnline = 0;
+
         document.addEventListener('DOMContentLoaded', () => {
             if (!api.isAuthenticated()) {
                 window.location.href = '/index.html';
                 return;
             }
 
-            // Initialize navigation
             Navigation.init('home', '');
 
-            initializeUser();
-            setTimeGreeting();
-            checkModuleStatus();
-            showAccessibleModules();
+            const accessible = getAccessibleModules();
 
-            // Initialize Firebase push notifications
-            // Use ensureFcmTokenRegistered (checks localStorage first, no-op if already done)
+            // Single-module tenants skip the launcher entirely (preserved behavior)
+            if (accessible.length === 1) {
+                window.location.href = accessible[0].href;
+                return;
+            }
+
+            initializeHero(accessible);
+            renderGroups(accessible);
+            checkModuleStatus(accessible);
+            setupSearch();
+            loadOverview(accessible);
+
+            // Firebase push notifications
             if (typeof ensureFcmTokenRegistered === 'function') {
                 ensureFcmTokenRegistered();
                 setupForegroundMessageHandler();
             } else if (typeof requestNotificationPermission === 'function') {
-                // Fallback for backward compatibility
                 requestNotificationPermission();
                 if (typeof setupForegroundMessageHandler === 'function') {
                     setupForegroundMessageHandler();
@@ -532,201 +171,432 @@
             }
         });
 
-        function setTimeGreeting() {
-            const hour = new Date().getHours();
-            let greeting;
-            if (hour < 12) greeting = 'morning';
-            else if (hour < 17) greeting = 'afternoon';
-            else greeting = 'evening';
-            document.getElementById('timeGreeting').textContent = greeting;
-        }
-
-        function initializeUser() {
+        function getAccessibleModules() {
             const user = api.getUser();
-            if (user) {
-                document.getElementById('userName').textContent = user.firstName || 'User';
-            }
-        }
+            if (!user || !user.roles) return [];
 
-        // Show/hide module cards based on user roles AND licensed services
-        function showAccessibleModules() {
-            const user = api.getUser();
-            if (!user || !user.roles) return;
-
-            const roleMapping = {
-                'visionCard': 'VISION_USER',
-                'driveCard': 'DRIVE_USER',
-                'chatCard': 'CHAT_USER',
-                'emailCard': 'EMAILSERVICE_USER',
-                'hrmsCard': 'HRMS_USER',
-                'crmCard': 'CRM_USER',
-                'researchCard': 'RESEARCH_USER',
-                'pmsCard': 'PMS_USER',
-                'procurementCard': 'PROCUREMENT_USER',
-                'lmsCard': 'LMS_USER',
-                'accountsCard': 'ACCOUNTS_USER',
-                'paymentplansCard': 'PAYMENTPLANS_USER',
-                'newsCard': 'SUPERADMIN',
-                'adminCard': 'SUPERADMIN'
-            };
-
-            // Service name mapping (matches TenantManager service names)
-            const serviceNameMapping = {
-                'visionCard': 'Vision',
-                'driveCard': 'Drive',
-                'chatCard': 'Chat',
-                'emailCard': 'EmailService',
-                'hrmsCard': 'HRMS',
-                'crmCard': 'CRM',
-                'researchCard': 'Research',
-                'pmsCard': 'PMS',
-                'procurementCard': 'Procurement',
-                'lmsCard': 'LMS',
-                'accountsCard': 'Accounts',
-                'paymentplansCard': 'PaymentPlans',
-                'newsCard': 'KIP'
-            };
-
-            // Get licensed services from cached organization info (populated at login from JWT)
             let licensedServices = null;
             const orgInfo = getOrganizationInfo();
             if (orgInfo && orgInfo.licensedServices) {
                 licensedServices = orgInfo.licensedServices;
             }
 
-            const cardToModule = {
-                'visionCard': 'vision', 'driveCard': 'drive', 'chatCard': 'chat', 'emailCard': 'email',
-                'hrmsCard': 'hrms', 'crmCard': 'crm', 'researchCard': 'research',
-                'pmsCard': 'pms', 'procurementCard': 'procurement', 'lmsCard': 'lms', 'accountsCard': 'accounts', 'paymentplansCard': 'paymentplans', 'newsCard': 'news', 'adminCard': 'admin'
-            };
-            const accessibleModules = [];
-
-            for (const [cardId, role] of Object.entries(roleMapping)) {
-                const card = document.getElementById(cardId);
-                if (card) {
-                    const hasRole = user.roles.includes('SUPERADMIN') || user.roles.includes(role);
-
-                    // Check if service is licensed.
-                    // SUPERADMIN does NOT bypass licensing — sub-tenant super
-                    // admins must only see tiles their tenant actually paid
-                    // for. The platform root SuperAdmin's license already
-                    // includes every service, so they still see everything.
-                    // Only adminCard (the per-tenant admin dashboard) is a
-                    // built-in tool that skips the license check — every
-                    // tenant gets it regardless of license. Everything else,
-                    // including KIP, must appear in the tenant's license to
-                    // be visible.
-                    const serviceName = serviceNameMapping[cardId];
-                    const isLicensed = cardId === 'adminCard' ||
-                                       !licensedServices ||
-                                       licensedServices.includes(serviceName);
-
-                    const hasAccess = hasRole && isLicensed;
-
-                    if (hasAccess) {
-                        card.style.display = 'flex';
-                        if (cardId === 'adminCard' || cardId === 'newsCard') {
-                            card.classList.add('visible');
-                        }
-                        accessibleModules.push(cardToModule[cardId]);
-                    } else {
-                        card.style.display = 'none';
-                    }
-                }
-            }
-
-            // Auto-redirect if user has access to exactly one module
-            if (accessibleModules.length === 1) {
-                navigateToModule(accessibleModules[0]);
-                return;
-            }
+            return MODULES.filter(m => {
+                const hasRole = user.roles.includes('SUPERADMIN') || user.roles.includes(m.role);
+                // service === null → built-in tool (admin panel), no license needed.
+                // Missing licensed_services claim → legacy token, fail open.
+                const isLicensed = m.service === null ||
+                                   !licensedServices ||
+                                   licensedServices.includes(m.service);
+                return hasRole && isLicensed;
+            });
         }
 
-        async function checkModuleStatus() {
-            checkServiceHealth('vision', CONFIG.endpoints.vision);
-            checkServiceHealth('drive', CONFIG.endpoints.drive);
-            checkServiceHealth('chat', CONFIG.endpoints.chat);
-            checkServiceHealth('email', CONFIG.endpoints.email);
-            checkServiceHealth('hrms', CONFIG.endpoints.hrms);
-            checkServiceHealth('crm', CONFIG.endpoints.crm);
-            checkServiceHealth('research', CONFIG.endpoints.research);
-            checkServiceHealth('pms', CONFIG.endpoints.pms);
-            checkServiceHealth('procurement', CONFIG.endpoints.procurement);
-            checkServiceHealth('lms', CONFIG.endpoints.lms);
-            checkServiceHealth('accounts', CONFIG.endpoints.accounts);
+        function initializeHero(accessible) {
+            const user = api.getUser();
+            if (user) {
+                document.getElementById('userName').textContent = user.firstName || 'there';
+            }
+
+            const hour = new Date().getHours();
+            document.getElementById('timeGreeting').textContent =
+                hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+
+            const orgInfo = getOrganizationInfo();
+            const orgName = orgInfo && (orgInfo.organizationName || orgInfo.tenantName);
+            document.getElementById('orgEyebrow').textContent =
+                orgName ? orgName + ' · Workspace' : 'Workspace';
+
+            updateSubline(accessible);
         }
 
-        async function checkServiceHealth(moduleName, endpoint) {
-            const statusEl = document.getElementById(`${moduleName}Status`);
-            if (!statusEl) return;
+        function updateSubline(accessible) {
+            const dateStr = new Date().toLocaleDateString('en-IN',
+                { weekday: 'long', day: 'numeric', month: 'long' });
+            const checked = accessible.filter(m => m.health).length;
+            let statusPart = 'checking services…';
+            if (healthDone >= healthTotal && healthTotal > 0) {
+                statusPart = healthOnline + ' of ' + healthTotal + ' services running';
+            }
+            document.getElementById('homeSubText').textContent =
+                dateStr + (checked > 0 ? ' · ' + statusPart : '');
+        }
 
+        function renderGroups(accessible) {
+            const container = document.getElementById('moduleGroups');
+            container.innerHTML = '';
+
+            GROUPS.forEach(group => {
+                const mods = accessible.filter(m => m.group === group.id);
+                if (mods.length === 0) return; // unlicensed groups collapse entirely
+
+                const section = document.createElement('section');
+                section.className = 'home-group';
+                section.dataset.groupId = group.id;
+
+                const label = document.createElement('div');
+                label.className = 'home-group-label';
+                label.innerHTML = '<h2></h2><p></p>';
+                label.querySelector('h2').textContent = group.label;
+                label.querySelector('p').textContent = group.blurb;
+
+                const rows = document.createElement('div');
+                rows.className = 'home-rows';
+
+                mods.forEach(m => {
+                    const row = document.createElement('a');
+                    row.className = 'home-row';
+                    row.id = m.id + 'Card';
+                    row.href = m.href;
+                    row.style.setProperty('--mod-color', m.color);
+                    row.dataset.searchText = (m.title + ' ' + m.desc).toLowerCase();
+
+                    const statusHtml = m.health
+                        ? '<div class="home-row-status" id="' + m.id + 'Status"><span class="sdot"></span><span>Checking</span></div>'
+                        : '<div class="home-row-status online"><span class="sdot"></span><span>Online</span></div>';
+
+                    row.innerHTML =
+                        '<div class="home-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' + ICONS[m.id] + '</svg></div>' +
+                        '<div class="home-row-meta">' +
+                            '<div class="home-row-name"><span></span>' + (m.tag ? '<span class="home-tag">' + m.tag + '</span>' : '') + '</div>' +
+                            '<div class="home-row-desc"></div>' +
+                        '</div>' +
+                        statusHtml +
+                        '<div class="home-row-arrow">→</div>';
+
+                    row.querySelector('.home-row-name span').textContent = m.title;
+                    row.querySelector('.home-row-desc').textContent = m.desc;
+                    rows.appendChild(row);
+                });
+
+                section.appendChild(label);
+                section.appendChild(rows);
+                container.appendChild(section);
+            });
+        }
+
+        function checkModuleStatus(accessible) {
+            const toCheck = accessible.filter(m => m.health && CONFIG.endpoints[m.health]);
+            healthTotal = toCheck.length;
+            healthDone = 0;
+            healthOnline = 0;
+            toCheck.forEach(m => checkServiceHealth(m, accessible));
+        }
+
+        async function checkServiceHealth(module, accessible) {
+            const statusEl = document.getElementById(module.id + 'Status');
+            const row = document.getElementById(module.id + 'Card');
+            const endpoint = CONFIG.endpoints[module.health];
+
+            let online = false;
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-                const response = await fetch(`${endpoint}/health`, {
-                    signal: controller.signal
-                });
-
+                const response = await fetch(endpoint + '/health', { signal: controller.signal });
                 clearTimeout(timeoutId);
+                online = response.ok;
+            } catch (e) { /* offline */ }
 
-                if (response.ok) {
-                    statusEl.className = 'app-status online';
-                    statusEl.innerHTML = '<span class="status-indicator"></span><span>Online</span>';
-                } else {
-                    throw new Error('Service unavailable');
-                }
-            } catch (error) {
-                statusEl.className = 'app-status offline';
-                statusEl.innerHTML = '<span class="status-indicator"></span><span>Offline</span>';
+            healthDone++;
+            if (online) healthOnline++;
+
+            if (statusEl) {
+                statusEl.className = 'home-row-status' + (online ? ' online' : '');
+                statusEl.innerHTML = '<span class="sdot"></span><span>' + (online ? 'Online' : 'Off') + '</span>';
             }
+            if (row) row.classList.toggle('offline', !online);
+
+            updateSubline(accessible);
         }
 
-        function navigateToModule(module) {
-            switch (module) {
-                case 'vision':
-                    window.location.href = 'vision/dashboard.html';
-                    break;
-                case 'drive':
-                    window.location.href = 'drive/drive.html';
-                    break;
-                case 'chat':
-                    window.location.href = 'chat/chat.html';
-                    break;
-                case 'email':
-                    window.location.href = 'email/inbox.html';
-                    break;
-                case 'hrms':
-                    window.location.href = 'hrms/dashboard.html';
-                    break;
-                case 'crm':
-                    window.location.href = 'crm/dashboard.html';
-                    break;
-                case 'research':
-                    window.location.href = 'research/dashboard.html';
-                    break;
-                case 'pms':
-                    window.location.href = 'pms/dashboard.html';
-                    break;
-                case 'procurement':
-                    window.location.href = 'procurement/dashboard.html';
-                    break;
-                case 'lms':
-                    window.location.href = 'lms/dashboard.html';
-                    break;
-                case 'accounts':
-                    window.location.href = 'accounts/dashboard.html';
-                    break;
-                case 'paymentplans':
-                    window.location.href = 'payment-plans/dashboard.html';
-                    break;
-                case 'news':
-                    window.location.href = 'news/admin.html';
-                    break;
-                case 'admin':
-                    window.location.href = 'auth/dashboard.html';
-                    break;
+        // ═══ Live overview: real numbers from Accounts, hidden when unreachable ═══
+        function formatINR(n) {
+            const neg = n < 0;
+            const a = Math.abs(n);
+            let s;
+            if (a >= 1e7) s = '₹' + (a / 1e7).toFixed(2).replace(/\.00$/, '') + 'Cr';
+            else if (a >= 1e5) s = '₹' + (a / 1e5).toFixed(2).replace(/\.00$/, '') + 'L';
+            else if (a >= 1e3) s = '₹' + (a / 1e3).toFixed(1).replace(/\.0$/, '') + 'k';
+            else s = '₹' + Math.round(a).toLocaleString('en-IN');
+            return neg ? '−' + s : s;
+        }
+
+        async function loadOverview(accessible) {
+            if (!accessible.some(m => m.id === 'accounts')) return;
+            const base = CONFIG.endpoints.accounts;
+            const token = (typeof getAuthToken === 'function') ? getAuthToken() : null;
+            if (!base || !token) return;
+
+            const headers = { 'Authorization': 'Bearer ' + token };
+            try {
+                const [kpiRes, trendRes] = await Promise.all([
+                    fetch(base + '/api/accounts/dashboard/kpis', { headers }),
+                    fetch(base + '/api/accounts/dashboard/revenue-trend?months=6', { headers })
+                ]);
+                if (!kpiRes.ok || !trendRes.ok) return;
+                const kpis = await kpiRes.json();
+                const trend = await trendRes.json();
+                renderOverview(kpis, trend);
+            } catch (e) { /* Accounts unreachable — overview stays hidden */ }
+        }
+
+        function renderOverview(kpis, trend) {
+            const el = document.getElementById('homeOverview');
+            if (!el) return;
+
+            const stats = [
+                { label: 'Cash & bank', raw: kpis.total_liquid || 0, value: formatINR(kpis.total_liquid || 0),
+                  hint: '30-day projection ' + formatINR(kpis.projected_balance_30d || 0) },
+                { label: 'Receivables due', raw: kpis.ar_outstanding || 0, value: formatINR(kpis.ar_outstanding || 0),
+                  hint: (kpis.ar_overdue || 0) > 0
+                      ? formatINR(kpis.ar_overdue) + ' overdue · ' + (kpis.ar_open_invoices_count || 0) + ' invoices'
+                      : (kpis.ar_open_invoices_count || 0) + ' open invoice' + (kpis.ar_open_invoices_count === 1 ? '' : 's') },
+                { label: 'Payables due', raw: kpis.ap_outstanding || 0, value: formatINR(kpis.ap_outstanding || 0),
+                  hint: (kpis.ap_open_bills_count || 0) + ' open bill' + (kpis.ap_open_bills_count === 1 ? '' : 's') },
+                { label: 'Net profit', raw: kpis.net_profit_ytd || 0, value: formatINR(kpis.net_profit_ytd || 0),
+                  hint: kpis.fiscal_year_name || 'this fiscal year' }
+            ];
+
+            const chartCard = document.createElement('div');
+            chartCard.className = 'home-chart-card';
+            chartCard.innerHTML =
+                '<div class="home-chart-head">' +
+                    '<h2 class="home-chart-title">Revenue vs expenses</h2>' +
+                    '<div class="home-chart-legend">' +
+                        '<span><span class="swatch" style="background:var(--chart-revenue)"></span>Revenue</span>' +
+                        '<span><span class="swatch" style="background:var(--chart-expense)"></span>Expenses</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="home-chart-body" id="homeChartBody"></div>' +
+                '<div class="home-chart-tip" id="homeChartTip"></div>';
+            el.appendChild(chartCard);
+
+            stats.forEach(s => {
+                const tile = document.createElement('div');
+                tile.className = 'home-stat';
+                tile.innerHTML = '<div class="label"></div><div class="value"></div><div class="hint"></div>';
+                tile.querySelector('.label').textContent = s.label;
+                tile.querySelector('.hint').textContent = s.hint;
+                countUp(tile.querySelector('.value'), s.raw, s.value);
+                el.appendChild(tile);
+            });
+
+            renderTrendChart(trend);
+            el.hidden = false;
+        }
+
+        // Animate a stat from 0 to its final value (skipped under reduced motion)
+        function countUp(node, raw, finalText) {
+            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduced || !isFinite(raw) || raw === 0) {
+                node.textContent = finalText;
+                return;
             }
+            const dur = 700;
+            const start = performance.now();
+            function tick(now) {
+                const p = Math.min(1, (now - start) / dur);
+                const eased = 1 - Math.pow(1 - p, 3);
+                node.textContent = formatINR(raw * eased);
+                if (p < 1) requestAnimationFrame(tick);
+                else node.textContent = finalText;
+            }
+            requestAnimationFrame(tick);
+        }
+
+        function renderTrendChart(trend) {
+            const body = document.getElementById('homeChartBody');
+            if (!body || !trend || !trend.length) return;
+
+            const hasData = trend.some(t => (t.revenue || 0) !== 0 || (t.expenses || 0) !== 0);
+            if (!hasData) {
+                body.innerHTML = '<div class="home-chart-empty">No transactions in the last 6 months yet.</div>';
+                return;
+            }
+
+            const W = 560, H = 172, padL = 8, padR = 46, padT = 14, padB = 22;
+            const iw = W - padL - padR, ih = H - padT - padB;
+            const maxVal = Math.max(...trend.map(t => Math.max(t.revenue || 0, t.expenses || 0)));
+            const yMax = maxVal * 1.15 || 1;
+            const x = i => padL + (trend.length === 1 ? iw / 2 : (i / (trend.length - 1)) * iw);
+            const y = v => padT + ih - (v / yMax) * ih;
+
+            // Monotone-cubic smoothing (no overshoot below the baseline on spikes)
+            function smoothPathOf(key) {
+                const pts = trend.map((t, i) => [x(i), y(t[key] || 0)]);
+                if (pts.length < 3) {
+                    return pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+                }
+                const n = pts.length;
+                const dx = [], dy = [], m = [];
+                for (let i = 0; i < n - 1; i++) {
+                    dx.push(pts[i + 1][0] - pts[i][0]);
+                    dy.push(pts[i + 1][1] - pts[i][1]);
+                    m.push(dy[i] / dx[i]);
+                }
+                const t = [m[0]];
+                for (let i = 1; i < n - 1; i++) {
+                    t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
+                }
+                t.push(m[n - 2]);
+                for (let i = 0; i < n - 1; i++) {
+                    if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+                    else {
+                        const a = t[i] / m[i], b = t[i + 1] / m[i];
+                        const s = a * a + b * b;
+                        if (s > 9) { const tau = 3 / Math.sqrt(s); t[i] = tau * a * m[i]; t[i + 1] = tau * b * m[i]; }
+                    }
+                }
+                let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+                for (let i = 0; i < n - 1; i++) {
+                    const h = dx[i];
+                    d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
+                         ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
+                         ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+                }
+                return d;
+            }
+            const pathOf = smoothPathOf;
+            const baseline = (padT + ih).toFixed(1);
+            const areaPath = smoothPathOf('revenue') +
+                ' L' + x(trend.length - 1).toFixed(1) + ',' + baseline +
+                ' L' + x(0).toFixed(1) + ',' + baseline + ' Z';
+
+            // Recessive grid: 3 horizontal lines, muted month labels
+            let grid = '';
+            for (let g = 1; g <= 3; g++) {
+                const gy = (padT + ih - (g / 3) * ih).toFixed(1);
+                grid += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy +
+                        '" stroke="var(--home-line)" stroke-width="1"/>';
+            }
+            const labels = trend.map((t, i) =>
+                '<text x="' + x(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" ' +
+                'font-size="10" fill="var(--text-muted)" font-family="var(--font-family)">' +
+                (t.label || '').split(' ')[0] + '</text>').join('');
+
+            const last = trend.length - 1;
+            // Anchor the direct label to the latest month with activity, not a
+            // just-started zero month (an endpoint reading "₹0" misleads).
+            let lastActive = last;
+            for (let i = last; i >= 0; i--) {
+                if ((trend[i].revenue || 0) !== 0 || (trend[i].expenses || 0) !== 0) { lastActive = i; break; }
+            }
+            const endDot = (key, color) =>
+                '<circle cx="' + x(lastActive).toFixed(1) + '" cy="' + y(trend[lastActive][key] || 0).toFixed(1) +
+                '" r="3" fill="' + color + '"/>';
+            const endLabel = (key) => {
+                const v = trend[lastActive][key] || 0;
+                if (v === 0) return '';
+                const lx = Math.min(x(lastActive) + 7, W - padR + 4);
+                return '<text x="' + lx.toFixed(1) + '" y="' + (y(v) + 3.5).toFixed(1) +
+                    '" font-size="10.5" fill="var(--text-secondary)" font-family="var(--font-family-mono)">' +
+                    formatINR(v) + '</text>';
+            };
+
+            body.innerHTML =
+                '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" ' +
+                'aria-label="Monthly revenue and expenses, last ' + trend.length + ' months">' +
+                '<defs><linearGradient id="homeRevFill" x1="0" y1="0" x2="0" y2="1">' +
+                '<stop offset="0" stop-color="var(--chart-revenue)" stop-opacity="0.22"/>' +
+                '<stop offset="1" stop-color="var(--chart-revenue)" stop-opacity="0"/>' +
+                '</linearGradient></defs>' +
+                grid +
+                '<path d="' + areaPath + '" fill="url(#homeRevFill)" stroke="none"/>' +
+                '<path class="draw-line" d="' + pathOf('revenue') + '" fill="none" stroke="var(--chart-revenue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+                '<path class="draw-line" d="' + pathOf('expenses') + '" fill="none" stroke="var(--chart-expense)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+                endDot('revenue', 'var(--chart-revenue)') + endDot('expenses', 'var(--chart-expense)') +
+                endLabel('revenue') +
+                '<line id="homeChartCross" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + ih) +
+                '" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3" style="display:none"/>' +
+                labels +
+                '</svg>' +
+                buildTrendTable(trend);
+
+            // Draw-in animation (skipped under reduced motion)
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                body.querySelectorAll('.draw-line').forEach((p, i) => {
+                    const len = p.getTotalLength();
+                    p.style.strokeDasharray = len;
+                    p.style.strokeDashoffset = len;
+                    p.style.transition = 'stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1) ' + (0.15 + i * 0.12) + 's';
+                    requestAnimationFrame(() => requestAnimationFrame(() => { p.style.strokeDashoffset = '0'; }));
+                });
+            }
+
+            // Hover: nearest-month crosshair + tooltip
+            const svg = body.querySelector('svg');
+            const cross = body.querySelector('#homeChartCross');
+            const tip = document.getElementById('homeChartTip');
+
+            svg.addEventListener('mousemove', (e) => {
+                const rect = svg.getBoundingClientRect();
+                const relX = (e.clientX - rect.left) / rect.width * W;
+                let idx = 0, best = Infinity;
+                trend.forEach((t, i) => {
+                    const d = Math.abs(x(i) - relX);
+                    if (d < best) { best = d; idx = i; }
+                });
+                cross.style.display = '';
+                cross.setAttribute('x1', x(idx));
+                cross.setAttribute('x2', x(idx));
+                tip.style.display = 'block';
+                tip.style.left = (x(idx) / W * rect.width) + 'px';
+                tip.style.top = '30px';
+                tip.innerHTML = '<b></b><br>Revenue <b class="tr"></b><br>Expenses <b class="te"></b>';
+                tip.querySelector('b').textContent = trend[idx].label || '';
+                tip.querySelector('.tr').textContent = formatINR(trend[idx].revenue || 0);
+                tip.querySelector('.te').textContent = formatINR(trend[idx].expenses || 0);
+            });
+            svg.addEventListener('mouseleave', () => {
+                cross.style.display = 'none';
+                tip.style.display = 'none';
+            });
+        }
+
+        function buildTrendTable(trend) {
+            let rows = '';
+            trend.forEach(t => {
+                rows += '<tr><th scope="row">' + (t.label || '') + '</th><td>' +
+                        formatINR(t.revenue || 0) + '</td><td>' + formatINR(t.expenses || 0) + '</td></tr>';
+            });
+            return '<table class="sr-only"><caption>Monthly revenue and expenses</caption>' +
+                   '<thead><tr><th scope="col">Month</th><th scope="col">Revenue</th><th scope="col">Expenses</th></tr></thead>' +
+                   '<tbody>' + rows + '</tbody></table>';
+        }
+
+        function setupSearch() {
+            const input = document.getElementById('moduleSearch');
+            if (!input) return;
+
+            input.addEventListener('input', () => {
+                const q = input.value.trim().toLowerCase();
+                document.querySelectorAll('.home-row').forEach(row => {
+                    const hit = !q || (row.dataset.searchText || '').includes(q);
+                    row.classList.toggle('filtered-out', !hit);
+                });
+                document.querySelectorAll('.home-group').forEach(group => {
+                    const anyVisible = group.querySelector('.home-row:not(.filtered-out)');
+                    group.classList.toggle('filtered-out', !anyVisible);
+                });
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    input.value = '';
+                    input.dispatchEvent(new Event('input'));
+                    input.blur();
+                } else if (e.key === 'Enter') {
+                    const first = document.querySelector('.home-row:not(.filtered-out)');
+                    if (first) first.click();
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    input.focus();
+                }
+            });
         }
     </script>
 </body>
