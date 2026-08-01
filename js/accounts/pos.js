@@ -384,13 +384,22 @@ async function _syncOfflineSalesInner() {
         if (!entries.length) { updateNetBadge(); return; }
         updateNetBadge();
         for (const entry of entries) {
+            // Same committed-guard as completeSale: once submitSaleToServer returns, the invoice(s) AND the
+            // payment are committed on the server; the posQueueDelete after it is local cleanup. A failure in
+            // that cleanup (e.g. an IndexedDB abort) must NOT re-file a fully-PAID sale as 'error' — that would
+            // let the teller Discard it, cancelling the invoices but stranding the recorded payment. On a
+            // post-commit failure, leave the entry as-is: the next sync retries idempotently (client_ref +
+            // payment Idempotency-Key) and re-attempts the delete.
+            let committed = false;
             try {
                 const { invoices } = await submitSaleToServer(entry, { enforceStock: false });
-                await posQueueDelete(entry.id);
+                committed = true;
+                await posQueueDelete(entry.id).catch(() => {});
                 Toast.success(`${entry.offlineRef} synced — ${invoices.map(i => i.number).join(' · ')}`);
                 if (entry.cart.some(c => c.item.tracking_mode === 'serial'))
                     Toast.error(`${entry.offlineRef} had serial-tracked items — assign serials in Inventory → Serials`);
             } catch (err) {
+                if (committed) { Toast.error(`${entry.offlineRef} posted; local cleanup will finish on the next sync.`); continue; }
                 if (isNetworkError(err)) { markOffline(); return; }
                 entry.status = 'error'; entry.error = err.message || 'Posting failed';
                 await posQueuePut(entry).catch(() => {});
@@ -451,7 +460,14 @@ async function discardOfflineSale(id) {
     Confirm.show('Discard this offline sale?', warn, async () => {
         for (const inv of posted) {
             try { await api.request(AccountsCommon.buildUrl(`invoices/${inv.invId}/cancel`), { method: 'POST', body: JSON.stringify({ reason: `POS sale ${entry.offlineRef} discarded` }) }); }
-            catch (err) { Toast.error(`Could not cancel ${inv.number || inv.invId}: ${err.message} — cancel it in Receivables, then discard again.`); return; }
+            catch (err) {
+                // An already-cancelled/written-off invoice (from a prior partial discard, or one the user
+                // cancelled manually in Receivables) is a no-op success — SKIP it so a re-run resumes and reaches
+                // the still-live invoices, instead of aborting forever on the first already-cancelled one (which
+                // made the entry permanently un-discardable and left later invoices as phantom AR/stock).
+                if (/already cancelled|already written[_ ]off/i.test(err.message || '')) continue;
+                Toast.error(`Could not cancel ${inv.number || inv.invId}: ${err.message} — cancel it in Receivables, then discard again.`); return;
+            }
         }
         await posQueueDelete(id).catch(() => {});
         document.getElementById('posQueueModal')?.remove();

@@ -906,6 +906,11 @@ async function issueWorkOrder(id) {
     catch (e) { Toast.error(e.message || 'Issue failed'); }
     finally { _woIssuing.delete(id); }
 }
+// Guard a rapid double-click on Complete (mirrors _woIssuing). This is a UX fix: the BACKEND is already
+// race-safe — CompleteWorkOrder locks the WO row FOR UPDATE and rejects any status != 'in_progress', so a
+// second concurrent/retried complete fails cleanly and can NEVER double-produce finished goods. The Set just
+// stops the confusing double-request + error-toast within this tab.
+const _woCompleting = new Set();
 function showCompleteWorkOrder(id) {
     document.getElementById('woCompleteId').value = id;
     document.getElementById('woBatch').value = ''; document.getElementById('woMrp').value = '';
@@ -914,12 +919,15 @@ function showCompleteWorkOrder(id) {
 }
 async function completeWorkOrder() {
     const id = document.getElementById('woCompleteId').value;
+    if (_woCompleting.has(id)) return;   // rapid double-click → don't fire a second /complete
+    _woCompleting.add(id);
     const body = {
         batch_number: document.getElementById('woBatch').value.trim() || null,
         expiry_date: document.getElementById('woExpiry').value || null,
         mrp: parseFloat(document.getElementById('woMrp').value) || null };
     try { await api.request(AccountsCommon.buildUrl(`work-orders/${id}/complete`), { method: 'POST', body: JSON.stringify(body) }); Toast.success('Work order completed'); AccountsCommon.closeModal('woCompleteModal'); await loadWorkOrders(); }
     catch (e) { Toast.error(e.message || 'Complete failed'); }
+    finally { _woCompleting.delete(id); }
 }
 async function cancelWorkOrder(id) {
     if (!await Confirm.show({ title: 'Cancel work order?', message: 'Any issued materials are returned from WIP to inventory.' })) return;

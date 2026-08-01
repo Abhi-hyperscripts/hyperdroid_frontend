@@ -19,7 +19,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Hide settings card for non-admin users
+    // Header subtitle: today's date + org name
+    const subtitle = document.getElementById('pulseSubtitle');
+    if (subtitle) {
+        const dateStr = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+        const orgInfo = (typeof getOrganizationInfo === 'function') ? getOrganizationInfo() : null;
+        const orgName = orgInfo && (orgInfo.organizationName || orgInfo.tenantName);
+        subtitle.textContent = dateStr + (orgName ? ' · ' + orgName : '');
+    }
+
+    // Hide settings card + rail item for non-admin users
     const user = api.getUser();
     const roles = user?.roles || [];
     const isAdmin = roles.includes('CRM_ADMIN') || roles.includes('SUPERADMIN');
@@ -27,12 +36,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!isAdmin) {
         const settingsCard = document.getElementById('cardSettings');
         if (settingsCard) settingsCard.style.display = 'none';
+        const railSettings = document.getElementById('railSettings');
+        if (railSettings) railSettings.style.display = 'none';
     }
-    // Analytics card is SUPERADMIN-only — backend endpoint is gated the
-    // same way, but we hide the card so non-superadmins don't see a 403.
+    // Analytics is SUPERADMIN-only — backend endpoint is gated the
+    // same way, but we hide the entry points so others don't see a 403.
     if (isSuperadmin) {
         const analyticsCard = document.getElementById('cardAnalytics');
         if (analyticsCard) analyticsCard.style.display = '';
+        const railAnalytics = document.getElementById('railAnalytics');
+        if (railAnalytics) railAnalytics.style.display = '';
     }
 
     // WhatsApp Inbox card — SUPERADMIN-only AND only when WhatsApp is
@@ -47,6 +60,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (hasActive) {
                 const waCard = document.getElementById('cardWhatsappInbox');
                 if (waCard) waCard.style.display = '';
+                const railWa = document.getElementById('railWhatsapp');
+                if (railWa) railWa.style.display = '';
             }
         } catch (err) {
             // Endpoint missing / 403 / network blip — leave the card hidden.
@@ -174,12 +189,167 @@ async function loadDashboard() {
             loadStats(),
             loadAnalytics(),
             loadNotifications(),
-            loadRecentLeads()
+            loadRecentLeads(),
+            loadLeadsWave()
         ]);
     } catch (error) {
         console.error('Error loading dashboard:', error);
         showToast('Error loading dashboard data', 'error');
     }
+}
+
+// ═══ Full-bleed leads wave: leads captured per day over the last 30 days ═══
+async function loadLeadsWave() {
+    const band = document.getElementById('crmWave');
+    const host = document.getElementById('crmWaveChart');
+    if (!band || !host) return;
+
+    // Server caps pageSize at 50 — walk pages (newest first) until we're past
+    // the widest window we might draw, or run out of leads. Max 8 pages keeps
+    // the cost bounded for huge tenants.
+    const MAX_WINDOW = 90;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const oldestNeeded = new Date(today); oldestNeeded.setDate(today.getDate() - (MAX_WINDOW - 1));
+
+    const leads = [];
+    try {
+        for (let page = 1; page <= 8; page++) {
+            const resp = await api.request(`/crm/leads?page=${page}&pageSize=50&sort=created_at&order=desc`);
+            const batch = Array.isArray(resp) ? resp : (resp?.data ?? []);
+            if (!batch.length) break;
+            leads.push(...batch);
+            const oldest = batch[batch.length - 1]?.created_at;
+            if (oldest && new Date(oldest) < oldestNeeded) break;
+            if (batch.length < 50) break;
+        }
+    } catch (e) { return; } // wave is decoration-with-data — stay hidden on failure
+
+    // Adaptive window: prefer the last 30 days; if that's empty, widen to 90.
+    const countIn = days => {
+        const from = new Date(today); from.setDate(today.getDate() - (days - 1));
+        return leads.filter(l => l.created_at && new Date(l.created_at) >= from).length;
+    };
+    const DAYS = countIn(30) > 0 ? 30 : (countIn(90) > 0 ? 90 : 0);
+    if (DAYS === 0) return; // nothing in the last 90 days — no band
+
+    const cap = band.querySelector('.wave-cap');
+    if (cap) cap.textContent = 'Leads captured · last ' + DAYS + ' days';
+
+    const start = new Date(today); start.setDate(today.getDate() - (DAYS - 1));
+    const buckets = new Array(DAYS).fill(0);
+    leads.forEach(l => {
+        if (!l.created_at) return;
+        const d = new Date(l.created_at); d.setHours(0, 0, 0, 0);
+        const idx = Math.round((d - start) / 86400000);
+        if (idx >= 0 && idx < DAYS) buckets[idx]++;
+    });
+
+    const W = 1200, H = 150, padT = 26, padB = 18;
+    const ih = H - padT - padB;
+    const yMax = Math.max(...buckets) * 1.15 || 1;
+    const x = i => (i / (DAYS - 1)) * W;
+    const y = v => padT + ih - (v / yMax) * ih;
+
+    // monotone-cubic smoothing (no overshoot on spikes)
+    function smoothPath() {
+        const pts = buckets.map((v, i) => [x(i), y(v)]);
+        const n = pts.length;
+        const dx = [], m = [];
+        for (let i = 0; i < n - 1; i++) {
+            dx.push(pts[i + 1][0] - pts[i][0]);
+            m.push((pts[i + 1][1] - pts[i][1]) / dx[i]);
+        }
+        const t = [m[0]];
+        for (let i = 1; i < n - 1; i++) t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
+        t.push(m[n - 2]);
+        for (let i = 0; i < n - 1; i++) {
+            if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+            else {
+                const a = t[i] / m[i], b = t[i + 1] / m[i];
+                const s = a * a + b * b;
+                if (s > 9) { const tau = 3 / Math.sqrt(s); t[i] = tau * a * m[i]; t[i + 1] = tau * b * m[i]; }
+            }
+        }
+        let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+        for (let i = 0; i < n - 1; i++) {
+            const h = dx[i];
+            d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
+                 ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
+                 ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+        }
+        return d;
+    }
+
+    const line = smoothPath();
+    const area = line + ' L' + W + ',' + H + ' L0,' + H + ' Z';
+    const dayLabel = i => {
+        const d = new Date(start); d.setDate(start.getDate() + i);
+        return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    };
+
+    // peak marker on the busiest day
+    let peak = 0;
+    buckets.forEach((v, i) => { if (v > buckets[peak]) peak = i; });
+    const px2 = Math.min(Math.max(x(peak), 60), W - 80);
+    const marker =
+        `<circle cx="${x(peak).toFixed(1)}" cy="${y(buckets[peak]).toFixed(1)}" r="3.5" fill="var(--brand-primary)"/>` +
+        `<text x="${px2.toFixed(1)}" y="${Math.max(y(buckets[peak]) - 10, 14).toFixed(1)}" text-anchor="middle" ` +
+        `font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="var(--font-family-mono)">` +
+        `${buckets[peak]} · ${dayLabel(peak)}</text>`;
+
+    // sparse date ticks
+    const tickStep = DAYS <= 30 ? 7 : 15;
+    let ticks = '';
+    for (let i = 0; i < DAYS; i += tickStep) {
+        ticks += `<text x="${x(i).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9.5" ` +
+                 `fill="var(--text-muted)" font-family="var(--font-family)">${dayLabel(i)}</text>`;
+    }
+
+    host.innerHTML =
+        `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Leads captured per day, last 30 days">` +
+        `<defs><linearGradient id="crmWaveFill" x1="0" y1="0" x2="0" y2="1">` +
+        `<stop offset="0" stop-color="var(--brand-primary)" stop-opacity="0.28"/>` +
+        `<stop offset="1" stop-color="var(--brand-primary)" stop-opacity="0"/>` +
+        `</linearGradient></defs>` +
+        `<path d="${area}" fill="url(#crmWaveFill)" stroke="none"/>` +
+        `<path class="draw-line" d="${line}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` +
+        marker +
+        `<line id="crmWaveCross" x1="0" y1="${padT}" x2="0" y2="${padT + ih}" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3" style="display:none"/>` +
+        ticks +
+        `</svg>`;
+
+    band.hidden = false;
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const p = host.querySelector('.draw-line');
+        const len = p.getTotalLength();
+        p.style.strokeDasharray = len;
+        p.style.strokeDashoffset = len;
+        p.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s';
+        requestAnimationFrame(() => requestAnimationFrame(() => { p.style.strokeDashoffset = '0'; }));
+    }
+
+    const svg = host.querySelector('svg');
+    const cross = host.querySelector('#crmWaveCross');
+    const tip = document.getElementById('crmWaveTip');
+    svg.addEventListener('mousemove', (e) => {
+        const rect = svg.getBoundingClientRect();
+        const relX = (e.clientX - rect.left) / rect.width * W;
+        const idx = Math.min(DAYS - 1, Math.max(0, Math.round((relX / W) * (DAYS - 1))));
+        cross.style.display = '';
+        cross.setAttribute('x1', x(idx));
+        cross.setAttribute('x2', x(idx));
+        tip.style.display = 'block';
+        tip.style.left = (x(idx) / W * rect.width) + 'px';
+        tip.style.top = '38px';
+        tip.innerHTML = '<b></b><br>Leads <b class="tv"></b>';
+        tip.querySelector('b').textContent = dayLabel(idx);
+        tip.querySelector('.tv').textContent = buckets[idx];
+    });
+    svg.addEventListener('mouseleave', () => {
+        cross.style.display = 'none';
+        tip.style.display = 'none';
+    });
 }
 
 /**
@@ -366,7 +536,7 @@ function setBarWidth(id, percent) {
     if (el) el.style.width = Math.max(percent, 2) + '%';
 }
 
-// ═══ Analytics (ApexCharts) ═══
+// ═══ Analytics (DOM bar renderers — no chart library) ═══
 
 const STATUS_ORDER = ['new', 'assigned', 'contacted', 'qualified', 'follow_up', 'opportunity', 'negotiation', 'won', 'lost', 'unqualified'];
 const STATUS_LABELS = {
@@ -387,13 +557,11 @@ const DISP_LABELS = {
     proposal_sent: 'Proposal Sent', deal_in_progress: 'Deal In Progress'
 };
 
-let _charts = {};
-
 async function loadAnalytics() {
     try {
         const data = await api.request('/crm/dashboard/analytics');
-        renderPipelineChart(data.status_breakdown || {});
-        renderConversionChart(data);
+        renderPipelineChart(data.status_breakdown || {}, data.total_leads || 0);
+        renderConversionFooter(data);
         renderSourceChart(data.leads_by_source || []);
         renderAgentPerformance(data.agent_stats || []);
         renderLostReasonsChart(data.lost_reasons || []);
@@ -403,91 +571,85 @@ async function loadAnalytics() {
     }
 }
 
-function apexDarkTheme() {
-    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    return {
-        theme: { mode: isDark ? 'dark' : 'light' },
-        chart: { background: 'transparent', foreColor: isDark ? '#94a3b8' : '#475569' },
-        grid: { borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }
-    };
+// One horizontal DOM bar row: label | track+fill | count (+ optional %)
+function pulseBar(label, count, max, color, pct) {
+    const width = max > 0 ? Math.max((count / max) * 100, 2) : 2;
+    return `<div class="pbar">
+        <span class="lbl" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+        <span class="track"><span class="fill" style="width:${width}%;background:${color}"></span></span>
+        <span class="cnt">${count}${pct != null ? ` <small>${pct}%</small>` : ''}</span>
+    </div>`;
 }
 
-function renderChart(id, options) {
-    if (_charts[id]) { _charts[id].destroy(); }
-    const el = document.getElementById(id);
+function renderPipelineChart(breakdown, totalLeads) {
+    const el = document.getElementById('chartPipeline');
     if (!el) return;
-    const t = apexDarkTheme();
-    options.chart = { ...options.chart, background: 'transparent', foreColor: t.chart.foreColor };
-    options.theme = t.theme;
-    if (options.grid) options.grid.borderColor = t.grid.borderColor;
-    _charts[id] = new ApexCharts(el, options);
-    _charts[id].render();
-}
-
-function renderPipelineChart(breakdown) {
     const statuses = STATUS_ORDER.filter(s => (breakdown[s] || 0) > 0);
+    // include any statuses the backend returns that STATUS_ORDER doesn't know
+    Object.keys(breakdown).forEach(s => {
+        if ((breakdown[s] || 0) > 0 && !statuses.includes(s)) statuses.push(s);
+    });
     if (statuses.length === 0) {
-        document.getElementById('chartPipeline').innerHTML = '<p class="empty-analytics">No leads yet</p>';
+        el.innerHTML = '<div class="pulse-empty">No leads yet — capture your first lead to see the pipeline.</div>';
         return;
     }
-    renderChart('chartPipeline', {
-        chart: { type: 'bar', height: Math.max(statuses.length * 45, 180), toolbar: { show: false } },
-        series: [{ name: 'Leads', data: statuses.map(s => breakdown[s] || 0) }],
-        xaxis: { categories: statuses.map(s => STATUS_LABELS[s] || s) },
-        colors: statuses.map(s => STATUS_COLORS[s] || '#6366f1'),
-        plotOptions: { bar: { horizontal: true, borderRadius: 3, distributed: true, barHeight: '55%' } },
-        dataLabels: { enabled: true, style: { fontSize: '11px', fontWeight: 600 } },
-        legend: { show: false },
-        grid: { xaxis: { lines: { show: false } }, yaxis: { lines: { show: false } }, padding: { top: -10, bottom: -10 } },
-        tooltip: { y: { formatter: v => v + ' leads' } }
-    });
+    const max = Math.max(...statuses.map(s => breakdown[s] || 0));
+    const total = totalLeads || statuses.reduce((sum, s) => sum + (breakdown[s] || 0), 0);
+    el.innerHTML = statuses.map(s => pulseBar(
+        STATUS_LABELS[s] || capitalizeFirst(s.replace(/_/g, ' ')),
+        breakdown[s] || 0,
+        max,
+        STATUS_COLORS[s] || 'var(--brand-primary)',
+        total > 0 ? Math.round(((breakdown[s] || 0) / total) * 100) : null
+    )).join('');
+    const totalEl = document.getElementById('funnelTotal');
+    if (totalEl) totalEl.textContent = total + ' leads';
 }
 
-function renderConversionChart(data) {
-    const won = data.won_leads || 0;
-    const lost = data.lost_leads || 0;
-    const other = Math.max(0, (data.total_leads || 0) - won - lost);
-
-    renderChart('chartConversion', {
-        chart: { type: 'polarArea', height: 320 },
-        series: [won, lost, other],
-        labels: ['Won', 'Lost', 'In Progress'],
-        colors: ['#10b981', '#ef4444', '#6366f1'],
-        stroke: { colors: ['transparent'] },
-        fill: { opacity: 0.85 },
-        plotOptions: { polarArea: { rings: { strokeWidth: 0 }, spokes: { strokeWidth: 0 } } },
-        legend: { position: 'left', fontSize: '11px', offsetY: 20 },
-        dataLabels: { enabled: false },
-        yaxis: { show: false }
-    });
-
+function renderConversionFooter(data) {
     const stats = document.getElementById('conversionStats');
-    if (stats) stats.innerHTML = `
-        <span class="stat-won">${won} won</span>
-        <span class="stat-lost">${lost} lost</span>
-        <span>${data.total_leads} total</span>
-        ${data.avg_closure_time_days > 0 ? `<span>Avg ${data.avg_closure_time_days}d to close</span>` : ''}
-    `;
+    if (stats) {
+        const total = data.total_leads || 0;
+        const convRate = total > 0 ? Math.round(((data.won_leads || 0) / total) * 100) : 0;
+        stats.innerHTML = `
+            <span class="won"><b>${data.won_leads || 0}</b> won</span>
+            <span class="lost"><b>${data.lost_leads || 0}</b> lost</span>
+            <span><b>${convRate}%</b> conversion</span>
+        `;
+    }
+    const chip = document.getElementById('avgCloseChip');
+    if (chip && data.avg_closure_time_days > 0) {
+        document.getElementById('avgCloseVal').textContent = data.avg_closure_time_days;
+        chip.style.display = '';
+    }
 }
+
+// Merge sources case-insensitively (manual/Manual were two slices before)
+// and prettify snake_case machine names for humans.
+const SOURCE_LABELS = {
+    google_sheets: 'Google Sheets', landing_page: 'Landing page', facebook: 'Facebook',
+    whatsapp: 'WhatsApp', manual: 'Manual', webform: 'Web form', csv_import: 'CSV import'
+};
 
 function renderSourceChart(sources) {
-    if (sources.length === 0) {
-        document.getElementById('chartSource').innerHTML = '<p class="empty-analytics">No data yet</p>';
+    const el = document.getElementById('chartSource');
+    if (!el) return;
+    if (!sources.length) {
+        el.innerHTML = '<div class="pulse-empty">No sources recorded yet.</div>';
         return;
     }
-    const colors = ['#6366f1', '#3b82f6', '#22c55e', '#f97316', '#ec4899', '#eab308', '#a855f7', '#14b8a6'];
-    renderChart('chartSource', {
-        chart: { type: 'polarArea', height: 320 },
-        series: sources.map(s => s.count),
-        labels: sources.map(s => s.source),
-        colors: colors.slice(0, sources.length),
-        stroke: { colors: ['transparent'] },
-        fill: { opacity: 0.85 },
-        plotOptions: { polarArea: { rings: { strokeWidth: 0 }, spokes: { strokeWidth: 0 } } },
-        legend: { position: 'right', fontSize: '11px', offsetY: 20 },
-        dataLabels: { enabled: false },
-        yaxis: { show: false }
+    const merged = {};
+    sources.forEach(s => {
+        const key = (s.source || 'unknown').trim().toLowerCase() || 'unknown';
+        merged[key] = (merged[key] || 0) + (s.count || 0);
     });
+    const rows = Object.entries(merged).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const max = Math.max(...rows.map(r => r[1]));
+    const colors = ['#6366f1', '#3b82f6', '#22c55e', '#f97316', '#ec4899', '#eab308'];
+    el.innerHTML = rows.map(([key, count], i) => pulseBar(
+        SOURCE_LABELS[key] || capitalizeFirst(key.replace(/_/g, ' ')),
+        count, max, colors[i % colors.length]
+    )).join('');
 }
 
 function renderAgentPerformance(agents) {
@@ -520,39 +682,31 @@ function renderAgentPerformance(agents) {
 }
 
 function renderLostReasonsChart(reasons) {
-    if (reasons.length === 0) {
-        document.getElementById('chartLostReasons').innerHTML = '<p class="empty-analytics">No lost leads yet</p>';
-        return;
-    }
-    renderChart('chartLostReasons', {
-        chart: { type: 'bar', height: Math.max(reasons.length * 45, 160), toolbar: { show: false } },
-        series: [{ name: 'Count', data: reasons.map(r => r.count) }],
-        xaxis: { categories: reasons.map(r => r.reason) },
-        colors: ['#ef4444'],
-        plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '65%' } },
-        dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 600 } },
-        grid: { xaxis: { lines: { show: false } }, yaxis: { lines: { show: false } } },
-        legend: { show: false }
-    });
+    const card = document.getElementById('lostReasonsCard');
+    const el = document.getElementById('chartLostReasons');
+    if (!card || !el) return;
+    // No lost leads → no card at all (an empty box teaches nothing)
+    if (!reasons.length) { card.style.display = 'none'; return; }
+    card.style.display = '';
+    const max = Math.max(...reasons.map(r => r.count));
+    el.innerHTML = reasons.map(r =>
+        pulseBar(r.reason || 'Unspecified', r.count, max, 'var(--color-danger)')).join('');
 }
 
 function renderDispositionsChart(breakdown) {
-    const entries = Object.entries(breakdown);
-    if (entries.length === 0) {
-        document.getElementById('chartDispositions').innerHTML = '<p class="empty-analytics">No dispositions set</p>';
+    const el = document.getElementById('chartDispositions');
+    if (!el) return;
+    const entries = Object.entries(breakdown).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) {
+        el.innerHTML = '<div class="pulse-empty">No call outcomes recorded yet.</div>';
         return;
     }
+    const max = Math.max(...entries.map(e => e[1]));
     const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899', '#6366f1', '#14b8a6', '#9ca3af'];
-    renderChart('chartDispositions', {
-        chart: { type: 'bar', height: Math.max(entries.length * 45, 160), toolbar: { show: false } },
-        series: [{ name: 'Count', data: entries.map(e => e[1]) }],
-        xaxis: { categories: entries.map(e => DISP_LABELS[e[0]] || e[0]) },
-        colors: colors.slice(0, entries.length),
-        plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true, barHeight: '65%' } },
-        dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 600 } },
-        grid: { xaxis: { lines: { show: false } }, yaxis: { lines: { show: false } } },
-        legend: { show: false }
-    });
+    el.innerHTML = entries.slice(0, 8).map(([key, count], i) => pulseBar(
+        DISP_LABELS[key] || capitalizeFirst(key.replace(/_/g, ' ')),
+        count, max, colors[i % colors.length]
+    )).join('');
 }
 
 // ═══ Notifications ═══
@@ -607,39 +761,40 @@ function bindNotificationsHandlers() {
 async function loadNotifications() {
     try {
         const data = await api.request('/crm/dashboard/notifications');
-        const banner = document.getElementById('notificationsBanner');
         const list = document.getElementById('notificationsList');
-        const header = document.getElementById('notificationsHeader');
-        if (!banner || !list) return;
+        const count = document.getElementById('attnCount');
+        if (!list) return;
 
         if (data.items.length === 0) {
-            banner.style.display = 'none';
-            if (header) header.style.display = 'none';
+            list.innerHTML = '<div class="pulse-empty">All clear — no overdue follow-ups or pending transfers.</div>';
+            if (count) count.textContent = '';
             return;
         }
 
-        banner.style.display = '';
-        if (header) header.style.display = '';
-        list.innerHTML = data.items.slice(0, 3).map(n => {
-            const cls = n.type.includes('overdue') ? 'notif-overdue'
-                : n.type.includes('due') ? 'notif-due'
-                : 'notif-transfer';
-            const time = new Date(n.timestamp).toLocaleDateString();
-            // Mark Done button only for follow-up notifications (n.followup_id
-            // present). Server populates this for followup_overdue + followup_due
-            // types; transfer/unassigned types don't have it. Click is wired
-            // via event delegation in bindNotificationsHandlers below so
-            // optimistic-remove works without re-rendering the list.
+        if (count) count.textContent = data.items.length + ' item' + (data.items.length > 1 ? 's' : '');
+        list.innerHTML = data.items.slice(0, 5).map(n => {
+            const tag = n.type.includes('overdue') ? ['overdue', 'OVERDUE']
+                : n.type.includes('due') ? ['due', 'DUE TODAY']
+                : ['info', 'PENDING'];
+            const time = new Date(n.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+            // Mark Done only for follow-up notifications (n.followup_id present).
+            // Wired via delegation in bindNotificationsHandlers so optimistic
+            // removal works without re-rendering the list.
             const markDoneBtn = n.followup_id
-                ? `<button type="button" class="notif-mark-done" data-followup-id="${escapeHtml(n.followup_id)}" title="Mark this follow-up complete">Mark done</button>`
+                ? `<div class="pulse-acts"><button type="button" class="pulse-mini yes notif-mark-done" data-followup-id="${escapeHtml(n.followup_id)}" title="Mark this follow-up complete">Mark done</button></div>`
                 : '';
             const onClickAttr = n.entity_id ? `data-lead-id="${escapeHtml(n.entity_id)}"` : '';
-            return `<div class="notif-item ${cls}" ${onClickAttr}>
-                <span class="notif-text">${escapeHtml(n.title)}${n.description ? ' — ' + escapeHtml(n.description).substring(0, 40) : ''}</span>
-                <span class="notif-time">${time}</span>
+            return `<div class="pulse-task notif-item" ${onClickAttr}>
+                <div class="trow">
+                    <div class="meta">
+                        <div class="t1">${escapeHtml(n.title)}</div>
+                        <div class="t2">${n.description ? escapeHtml(n.description).substring(0, 60) + ' · ' : ''}${time}</div>
+                    </div>
+                    <span class="pulse-tag ${tag[0]}">${tag[1]}</span>
+                </div>
                 ${markDoneBtn}
             </div>`;
-        }).join('') + (data.items.length > 3 ? `<div style="text-align:center;padding:4px;"><a href="leads.html" style="color:var(--brand-primary);font-size:0.78rem;">+${data.items.length - 3} more</a></div>` : '');
+        }).join('') + (data.items.length > 5 ? `<a href="leads.html" style="color:var(--brand-primary);font-size:12px;text-align:center;display:block;padding:4px;">+${data.items.length - 5} more in Leads</a>` : '');
 
         bindNotificationsHandlers();
     } catch (e) {
