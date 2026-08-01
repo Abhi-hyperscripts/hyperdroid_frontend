@@ -49,9 +49,8 @@ window.ACCOUNTS_HELP = {
          <p><strong>Example:</strong> 2 × Mouse ₹500 + 1 × Keyboard ₹1,500 by UPI → total ₹2,950 with GST, stock down 3 units, profit margin recorded, receipt printed. One tap. Mixed GST slabs are handled automatically — the sale splits into one invoice per slab behind the scenes, settled by a single payment. Serial-tracked items prompt you for which units were sold, starting their warranties.</p>`,
 
     // ── Dashboard ─────────────────────────────────────────────────────────
-    'accounts:_page':
-        `<p><strong>Your money at a glance.</strong> Everything in Accounts follows one simple idea called <strong>double-entry</strong>: every transaction touches two places — money comes <em>from</em> somewhere and goes <em>to</em> somewhere. This dashboard summarises the result: revenue vs expenses, what customers owe you (<strong>receivables</strong>), and what you owe vendors (<strong>payables</strong>).</p>
-         <p><strong>Example:</strong> you invoice a client ₹1,00,000 and pay ₹30,000 rent. The dashboard now shows revenue ₹1,00,000, expenses ₹30,000, and — until the client pays — ₹1,00,000 sitting in receivables. Profit says ₹70,000, but your bank has only gone DOWN ₹30,000 so far. That gap is why every card here matters.</p>`,
+    // (no 'accounts:_page' entry — the dashboard is self-explanatory; the
+    //  education panel there read as clutter on the redesigned layout.)
 
     // ── General Ledger ────────────────────────────────────────────────────
     'ledger:gl-entries':

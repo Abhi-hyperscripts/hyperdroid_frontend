@@ -2725,7 +2725,7 @@ a.dv-tile:hover { transform: translateY(-2px);
     box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--brand-primary) 70%, transparent); }
 .dv-chip-primary:hover { color: #fff; }
 
-.dv-band4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; margin-bottom: 13px; }
+.dv-band4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 13px; margin-bottom: 13px; }
 .dv-band3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; margin-bottom: 13px; }
 .dv-bottom { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 13px;
     align-items: start; }
@@ -3105,3 +3105,287 @@ a.dv-tile:hover { transform: translateY(-2px);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
 .pos-cam-overlay video { width: min(92vw, 640px); border-radius: 14px; }
 .pos-cam-hint { color: #fff; font-size: 0.9rem; opacity: 0.85; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MONEY PULSE — dashboard alignment with the suite family (rail, Bricolage
+   title, full-bleed revenue wave band, ambient waves).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pulse-title { font-family: 'Bricolage Grotesque', var(--font-family); letter-spacing: -0.01em; }
+
+/* rail */
+nav.pulse-rail {
+  position: fixed !important;
+  left: 0; top: 52px; bottom: 0;
+  width: 78px;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.rail-item {
+  width: 60px;
+  padding: 8px 0 6px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+.rail-item .ric svg { width: 18px; height: 18px; }
+.rail-item span { font-size: 9px; letter-spacing: 0.02em; }
+.rail-item:hover { color: var(--text-secondary); background: var(--bg-secondary); }
+.rail-item.active { background: color-mix(in srgb, var(--color-warning) 10%, transparent); color: var(--color-warning-dark); }
+[data-theme="dark"] .rail-item.active { color: #eab061; }
+
+body.accounts-dashboard { padding-left: 78px; }
+
+/* full-bleed revenue wave band */
+.acct-wave {
+  position: relative;
+  width: 100%;
+  margin: 2px 0 12px;
+  z-index: 1;
+}
+
+.acct-wave #revenueTrendChart { min-height: 170px; }
+
+.wave-cap {
+  position: absolute;
+  top: 2px;
+  left: 24px;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  z-index: 2;
+}
+
+.acct-wave-legend {
+  position: absolute;
+  top: 0;
+  right: 24px;
+  z-index: 2;
+}
+
+.acct-dash-container--body { padding-top: 0 !important; }
+
+@media (max-width: 900px) {
+  nav.pulse-rail { display: none; }
+  body.accounts-dashboard { padding-left: 0; }
+  .wave-cap { left: 16px; }
+  .acct-wave-legend { right: 16px; }
+}
+
+/* ── Ambient waves: two dune layers drifting in opposite directions ─────── */
+@keyframes acct-waves {
+  from { background-position: 0 bottom, 0 bottom; }
+  to   { background-position: 600px bottom, -900px bottom; }
+}
+
+body.accounts-dashboard::after {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  inset: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 160' preserveAspectRatio='none'%3E%3Cpath d='M0 80 Q150 30 300 80 T600 80 V160 H0 Z' fill='%23059669' fill-opacity='0.08'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 200' preserveAspectRatio='none'%3E%3Cpath d='M0 110 Q225 60 450 110 T900 110 V200 H0 Z' fill='%23b45309' fill-opacity='0.05'/%3E%3C/svg%3E");
+  background-repeat: repeat-x, repeat-x;
+  background-size: 600px 160px, 900px 200px;
+  background-position: 0 bottom, 0 bottom;
+  animation: acct-waves 26s linear infinite;
+}
+
+[data-theme="dark"] body.accounts-dashboard::after {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 160' preserveAspectRatio='none'%3E%3Cpath d='M0 80 Q150 30 300 80 T600 80 V160 H0 Z' fill='%2310b981' fill-opacity='0.10'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 200' preserveAspectRatio='none'%3E%3Cpath d='M0 110 Q225 60 450 110 T900 110 V200 H0 Z' fill='%23e2933d' fill-opacity='0.07'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.accounts-dashboard::after { animation: none; }
+}
+
+/* ═══ MONEY PULSE cards — glossy glass over the ambient waves ═══ */
+:root {
+  --acct-glass: rgba(255, 255, 255, 0.55);
+  --acct-glass-line: rgba(0, 0, 0, 0.08);
+  --acct-glass-hi: rgba(255, 255, 255, 0.75);
+}
+
+[data-theme="dark"] {
+  --acct-glass: rgba(21, 27, 41, 0.55);
+  --acct-glass-line: rgba(255, 255, 255, 0.09);
+  --acct-glass-hi: rgba(255, 255, 255, 0.07);
+}
+
+.pulse-hero {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr 0.95fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.pulse-card {
+  position: relative;
+  background: var(--acct-glass);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  border: 1px solid var(--acct-glass-line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow-lg);
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* the gloss: a top sheen that makes the glass read as glass */
+.pulse-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--acct-glass-hi), transparent 38%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.pulse-card > * { position: relative; z-index: 1; }
+
+.pulse-card-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.pulse-card-head h2 { font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0; }
+.pulse-card-head .view-all-link { margin-left: auto; }
+.pulse-card-note { margin-left: auto; font-family: var(--font-family-mono); font-size: 10.5px; color: var(--text-muted); }
+
+/* cash story internals */
+.pulse-hstats { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.phs {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "k v" "k s";
+  align-items: center;
+  column-gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--acct-glass-line);
+  border-radius: 10px;
+  text-decoration: none;
+  background: color-mix(in srgb, var(--bg-card) 30%, transparent);
+}
+.phs:hover { border-color: var(--border-color-strong); }
+.phs .k { grid-area: k; font-size: 11.5px; color: var(--text-secondary); }
+.phs b { grid-area: v; font-family: var(--font-family-mono); font-size: 14px; color: var(--text-primary); }
+.phs i { grid-area: s; font-style: normal; font-size: 10.5px; color: var(--text-muted); text-align: right; }
+.phs .hs-pos { color: var(--color-success-dark); }
+.phs .hs-warn { color: var(--color-warning-dark); }
+[data-theme="dark"] .phs .hs-pos { color: #4fd6a5; }
+[data-theme="dark"] .phs .hs-warn { color: #eab061; }
+
+/* attention inbox */
+.pulse-inbox { display: flex; flex-direction: column; gap: 9px; margin-top: 10px; }
+.pulse-task {
+  display: block;
+  background: color-mix(in srgb, var(--bg-card) 35%, transparent);
+  border: 1px solid var(--acct-glass-line);
+  border-radius: 11px;
+  padding: 11px 13px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.pulse-task:hover { border-color: var(--border-color-strong); }
+.pulse-task .trow { display: flex; align-items: center; gap: 11px; }
+.pulse-task .meta { flex: 1; min-width: 0; }
+.pulse-task .t1 { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+.pulse-task .t2 { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.pulse-tag {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.pulse-tag.overdue { background: color-mix(in srgb, var(--color-danger) 14%, transparent); color: var(--color-danger-dark); }
+.pulse-tag.due { background: color-mix(in srgb, var(--color-warning) 15%, transparent); color: var(--color-warning-dark); }
+.pulse-tag.info { background: color-mix(in srgb, var(--color-info) 14%, transparent); color: var(--color-info-dark); }
+[data-theme="dark"] .pulse-tag.overdue { color: #f87171; }
+[data-theme="dark"] .pulse-tag.due { color: #eab061; }
+[data-theme="dark"] .pulse-tag.info { color: #7cc9e8; }
+.pulse-empty { font-size: 12px; color: var(--text-muted); padding: 10px 2px; }
+
+/* chips */
+.pulse-chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 2px 0 14px; }
+.pulse-chip {
+  display: inline-flex; align-items: baseline; gap: 7px;
+  background: var(--acct-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--acct-glass-line);
+  border-radius: 22px;
+  padding: 8px 16px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.pulse-chip b { font-family: var(--font-family-mono); font-size: 14px; color: var(--text-primary); font-weight: 600; }
+
+/* below grids */
+.pulse-below { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.pulse-below--activity { grid-template-columns: 1.35fr 1fr; }
+
+/* section header + glassy explore tiles */
+.pulse-sect {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 22px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pulse-sect::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+
+.pulse-explore .explore-btn {
+  background: var(--acct-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--acct-glass-line);
+}
+.pulse-explore .explore-btn:hover { border-color: var(--border-color-strong); }
+
+/* action chips row inherits glass */
+.dv-actions .dv-chip {
+  background: var(--acct-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--acct-glass-line);
+}
+
+@media (max-width: 1080px) {
+  .pulse-hero { grid-template-columns: 1fr 1fr; }
+  .pulse-hero .pulse-card:last-child { grid-column: span 2; }
+}
+
+@media (max-width: 720px) {
+  .pulse-hero { grid-template-columns: 1fr; }
+  .pulse-hero .pulse-card:last-child { grid-column: auto; }
+  .pulse-below, .pulse-below--activity { grid-template-columns: 1fr; }
+}
+
+.pulse-below--full { grid-template-columns: 1fr; }

@@ -14,6 +14,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
     <title>Accounts Dashboard - Ragenaizer</title>
     <script>window.CACHE_VERSION = Date.now();</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
     <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
@@ -39,11 +42,59 @@
         </div>
     </nav>
 
+    <!-- Left icon rail -->
+    <nav class="pulse-rail" id="pulseRail" aria-label="Accounts sections">
+        <div class="rail-item active" title="Today">
+            <div class="ric" style="color:var(--color-warning)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h3"/></svg></div>
+            <span>Today</span>
+        </div>
+        <div class="rail-item" onclick="location.href='receivables.html'" title="Receivables — invoices in">
+            <div class="ric" style="color:#10b981"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></div>
+            <span>Money in</span>
+        </div>
+        <div class="rail-item" onclick="location.href='payables.html'" title="Payables — bills out">
+            <div class="ric" style="color:#f59e0b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></div>
+            <span>Money out</span>
+        </div>
+        <div class="rail-item" onclick="location.href='banking.html'" title="Banking">
+            <div class="ric" style="color:#3b82f6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7"/><path d="M4 10v10h16V10"/><path d="M9 20v-6h6v6"/></svg></div>
+            <span>Banking</span>
+        </div>
+        <div class="rail-item" onclick="location.href='inventory.html'" title="Inventory">
+            <div class="ric" style="color:#2DD4BF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg></div>
+            <span>Inventory</span>
+        </div>
+        <div class="rail-item" onclick="location.href='pos.html'" title="POS / Cash sale">
+            <div class="ric" style="color:#ec4899"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
+            <span>POS</span>
+        </div>
+        <div class="rail-item" onclick="location.href='purchase-orders.html'" title="Purchase orders">
+            <div class="ric" style="color:#A78BFA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
+            <span>POs</span>
+        </div>
+        <div class="rail-item" onclick="location.href='reports.html'" title="Reports">
+            <div class="ric" style="color:#8B5CF6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><polyline points="7 14 11 10 14 13 21 6"/></svg></div>
+            <span>Reports</span>
+        </div>
+        <div class="rail-item" onclick="location.href='taxation.html'" title="Taxation / GST">
+            <div class="ric" style="color:#FB923C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div>
+            <span>Tax</span>
+        </div>
+        <div class="rail-item" onclick="location.href='parties.html'" title="Customers & vendors">
+            <div class="ric" style="color:#60A5FA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <span>Parties</span>
+        </div>
+        <div class="rail-item" onclick="location.href='setup.html'" title="Accounts setup">
+            <div class="ric" style="color:#94A3B8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+            <span>Setup</span>
+        </div>
+    </nav>
+
     <div class="acct-dash-container">
         <div class="acct-dash-header">
             <div>
-                <h1>Accounts Dashboard</h1>
-                <p>Financial overview and quick actions</p>
+                <h1 class="pulse-title">Money</h1>
+                <p id="pulseSubtitle">Financial overview and quick actions</p>
             </div>
             <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -54,7 +105,20 @@
                 Refresh
             </button>
         </div>
+    </div>
 
+    <!-- Full-bleed money wave: revenue vs expenses, last 12 months. Lives in
+         the rail-padded body (no viewport math) so it never overlaps the rail. -->
+    <div class="acct-wave" id="acctWave">
+        <span class="wave-cap">Revenue vs expenses · last 12 months</span>
+        <div id="revenueTrendChart"></div>
+        <div class="hero-chart-legend acct-wave-legend">
+            <span><i class="dot dot-green"></i>Revenue</span>
+            <span><i class="dot dot-red"></i>Expenses</span>
+        </div>
+    </div>
+
+    <div class="acct-dash-container acct-dash-container--body">
         <!-- Setup Status — readiness checklist that catches missing config
              (Taxation, Fiscal Year, etc.) BEFORE the CA discovers it while
              trying to invoice. Auto-collapses to a thin "all ready" strip
@@ -77,42 +141,86 @@
             </div>
         </div>
 
-        <!-- ══ HERO — cash today on a full-bleed money-story chart ══ -->
-        <section class="dvhero">
-            <div class="hero-top">
-                <div class="hero-main">
-                    <span class="dv-label">Cash today</span>
-                    <div class="hero-cash" id="tCash" data-countup>—</div>
-                    <p class="hero-verdict" id="dvVerdict">Reading the books…</p>
-                    <p class="dv-context" id="dvContext"></p>
-                </div>
-                <div class="hero-side">
-                    <a class="hero-stat" href="receivables.html">
-                        <span class="dv-label">Coming in · receivables</span>
+        <!-- ══ Pulse hero: cash story / attention inbox / who owes you ══ -->
+        <div class="pulse-hero">
+            <div class="pulse-card">
+                <div class="pulse-card-head"><h2>Cash position</h2></div>
+                <div class="hero-cash" id="tCash" data-countup>—</div>
+                <p class="hero-verdict" id="dvVerdict">Reading the books…</p>
+                <p class="dv-context" id="dvContext"></p>
+                <div class="pulse-hstats">
+                    <a class="phs" href="receivables.html">
+                        <span class="k">Coming in · receivables</span>
                         <b class="hs-pos" id="tAr">—</b>
                         <i id="tArSub"></i>
                     </a>
-                    <a class="hero-stat" href="payables.html">
-                        <span class="dv-label">Going out · payables</span>
+                    <a class="phs" href="payables.html">
+                        <span class="k">Going out · payables</span>
                         <b class="hs-warn" id="tAp">—</b>
                         <i id="tApSub"></i>
                     </a>
-                    <div class="hero-stat">
-                        <span class="dv-label">Projected · 30 days</span>
+                    <div class="phs">
+                        <span class="k">Projected · 30 days</span>
                         <b id="tCashProj">—</b>
                         <i id="tCashSplit"></i>
                     </div>
                 </div>
             </div>
-            <div class="hero-chart">
-                <div id="revenueTrendChart"></div>
-                <div class="hero-chart-legend">
-                    <span><i class="dot dot-green"></i>Revenue</span>
-                    <span><i class="dot dot-red"></i>Expenses</span>
-                    <span class="hero-chart-hint">last 12 months, posted</span>
+
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Needs your attention</h2>
+                    <span class="pulse-card-note" id="attnCount"></span>
+                </div>
+                <div class="pulse-inbox" id="acctAttnList">
+                    <a class="pulse-task" id="attnAr" href="receivables.html#ar-aging" hidden>
+                        <div class="trow">
+                            <div class="meta">
+                                <div class="t1">Overdue receivables — <span id="tArOverVal">—</span></div>
+                                <div class="t2" id="tArOverSub">Chase the oldest first</div>
+                            </div>
+                            <span class="pulse-tag overdue">COLLECT</span>
+                        </div>
+                    </a>
+                    <a class="pulse-task" id="attnAp" href="payables.html#ap-aging" hidden>
+                        <div class="trow">
+                            <div class="meta">
+                                <div class="t1">Overdue payables — <span id="tApOverVal">—</span></div>
+                                <div class="t2" id="tApOverSub">Pay before penalties accrue</div>
+                            </div>
+                            <span class="pulse-tag due">PAY</span>
+                        </div>
+                    </a>
+                    <a class="pulse-task" id="tExpiryTile" href="inventory.html#inv-batches" hidden>
+                        <div class="trow">
+                            <div class="meta">
+                                <div class="t1">Stock expiring soon — <span id="tExpiryVal">—</span></div>
+                                <div class="t2" id="tExpirySub">value at risk</div>
+                            </div>
+                            <span class="pulse-tag due">STOCK</span>
+                        </div>
+                    </a>
+                    <a class="pulse-task" id="attnApprovals" href="admin.html" hidden>
+                        <div class="trow">
+                            <div class="meta">
+                                <div class="t1"><span id="attnApprovalsCount">0</span> approvals waiting</div>
+                                <div class="t2">Review them in Admin</div>
+                            </div>
+                            <span class="pulse-tag info">APPROVE</span>
+                        </div>
+                    </a>
+                    <div class="pulse-empty" id="attnEmpty">All clear — nothing overdue, nothing at risk.</div>
                 </div>
             </div>
-        </section>
+
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Money owed, by age</h2>
+                    <span class="pulse-card-note">collect the green · pay the amber</span>
+                </div>
+                <div id="agingChart" class="acc-chart"></div>
+            </div>
+        </div>
 
         <!-- ══ Action chips ══ -->
         <div class="dv-actions">
@@ -124,93 +232,52 @@
             <a class="dv-chip" href="expenses.html#expense-claims">Expense claim</a>
         </div>
 
-        <!-- ══ Stat band ══ -->
-        <div class="dv-band4">
-            <div class="dv-tile dv-stat">
-                <span class="dv-label">Revenue · this month <span id="tRevMTrend" class="kpi-trend"></span></span>
-                <span class="dv-value" id="tRevM">—</span>
-                <span class="dv-sub">vs last month</span>
-            </div>
-            <div class="dv-tile dv-stat">
-                <span class="dv-label">Net profit · year to date</span>
-                <span class="dv-value" id="tNet">—</span>
-                <span class="dv-sub" id="tNetSub"></span>
-            </div>
-            <a class="dv-tile dv-stat" href="receivables.html#ar-aging">
-                <span class="dv-label">Overdue receivables</span>
-                <span class="dv-value dv-danger" id="tArOverVal">—</span>
-                <span class="dv-sub" id="tArOverSub"></span>
-            </a>
-            <a class="dv-tile dv-stat" href="payables.html#ap-aging">
-                <span class="dv-label">Overdue payables</span>
-                <span class="dv-value dv-warn" id="tApOverVal">—</span>
-                <span class="dv-sub" id="tApOverSub"></span>
-            </a>
-            <a class="dv-tile dv-stat" href="inventory.html#inv-stock" id="tStockTile" style="display:none;">
-                <span class="dv-label">Stock on hand</span>
-                <span class="dv-value" id="tStockVal">—</span>
-                <span class="dv-sub" id="tStockSub"></span>
-            </a>
-            <a class="dv-tile dv-stat" href="inventory.html#inv-batches" id="tExpiryTile" style="display:none;">
-                <span class="dv-label">Expiring soon</span>
-                <span class="dv-value dv-warn" id="tExpiryVal">—</span>
-                <span class="dv-sub" id="tExpirySub">value at risk</span>
+        <!-- ══ Stat chips ══ -->
+        <div class="pulse-chips">
+            <span class="pulse-chip"><b id="tRevM">—</b> <span>revenue this month</span> <span id="tRevMTrend" class="kpi-trend"></span></span>
+            <span class="pulse-chip"><b id="tNet">—</b> <span>net profit YTD</span></span>
+            <span class="pulse-chip" id="tNetSubChip" hidden><span id="tNetSub"></span></span>
+            <a class="pulse-chip" href="inventory.html#inv-stock" id="tStockTile" style="display:none;">
+                <b id="tStockVal">—</b> <span id="tStockSub">stock on hand</span>
             </a>
         </div>
 
-        <!-- ══ Aging pair — full width ══ -->
-        <div class="dv-band2">
-            <div class="dv-tile dv-chart-sm">
-                <div class="dv-tile-head">
-                    <span class="dv-label">Who owes you, by age</span>
-                    <span class="dv-sub">The red end needs calls today</span>
+        <!-- ══ Monthly net + bank ══ -->
+        <div class="pulse-below">
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Monthly net result</h2>
+                    <span class="pulse-card-note">green made money, red lost it</span>
                 </div>
-                <div id="arAgingChart" class="acc-chart"></div>
+                <div id="netTrendChart" class="acc-chart"></div>
             </div>
-            <div class="dv-tile dv-chart-sm">
-                <div class="dv-tile-head">
-                    <span class="dv-label">What you owe, by age</span>
-                    <span class="dv-sub">Pay the oldest first</span>
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Bank &amp; cash</h2>
+                    <a href="banking.html" class="view-all-link">Banking</a>
                 </div>
-                <div id="apAgingChart" class="acc-chart"></div>
+                <div class="bank-rows" id="bankAccountsGrid">
+                    <div class="empty-state"><p>Loading accounts…</p></div>
+                </div>
             </div>
         </div>
 
-        <!-- ══ Bottom: activity + side stack ══ -->
-        <div class="dv-bottom">
-            <div class="dv-tile dv-activity">
-                <div class="dv-tile-head">
-                    <span class="dv-label">Latest activity</span>
+        <!-- ══ Activity ══ -->
+        <div class="pulse-below pulse-below--full">
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Latest activity</h2>
                     <a href="ledger.html" class="view-all-link">Open ledger</a>
                 </div>
                 <div class="dv-feed" id="recentEntriesBody">
                     <div class="empty-state"><p>Loading…</p></div>
                 </div>
             </div>
-            <div class="dv-side">
-                <div class="dv-tile dv-chart-sm">
-                    <div class="dv-tile-head">
-                        <span class="dv-label">Monthly net result</span>
-                        <span class="dv-sub">Green made money, red lost it</span>
-                    </div>
-                    <div id="netTrendChart" class="acc-chart"></div>
-                </div>
-                <div class="dv-tile">
-                    <div class="dv-tile-head">
-                        <span class="dv-label">Bank &amp; cash</span>
-                        <a href="banking.html" class="view-all-link">Banking</a>
-                    </div>
-                    <div class="bank-rows" id="bankAccountsGrid">
-                        <div class="empty-state"><p>Loading accounts…</p></div>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <!-- ══ Explore — full-width horizontal ══ -->
-        <div class="dv-tile dv-explore">
-            <div class="dv-tile-head"><span class="dv-label">Explore</span></div>
-            <div class="explore-grid explore-grid-wide">
+        <!-- ══ Explore ══ -->
+        <div class="pulse-sect">Explore</div>
+        <div class="explore-grid explore-grid-wide pulse-explore">
                 <a class="explore-btn" href="reports.html"><span class="explore-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span>Reports</span></a>
                 <a class="explore-btn" href="taxation.html"><span class="explore-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14l6-6"/><circle cx="9.5" cy="8.5" r="1.5"/><circle cx="14.5" cy="13.5" r="1.5"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg></span><span>Taxation</span></a>
                 <a class="explore-btn" href="budgets.html"><span class="explore-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10h-10z"/></svg></span><span>Budgets</span></a>
@@ -228,7 +295,6 @@
                 <a class="explore-btn" href="recurring.html"><span class="explore-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span>Recurring</span></a>
                 <a class="explore-btn" href="billing.html"><span class="explore-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span>Billing</span></a>
                 <a class="explore-btn" href="admin.html"><span class="explore-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span>Admin</span><span id="pendingApprovalsBadge" class="count-badge-pill" style="display:none;">0</span></a>
-            </div>
         </div>
     </div>
 

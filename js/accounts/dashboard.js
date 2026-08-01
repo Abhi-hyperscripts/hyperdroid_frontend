@@ -7,8 +7,55 @@
 
 document.addEventListener('DOMContentLoaded', async function () {
     if (!await AccountsCommon.initPage('accounts', '../')) return;
+
+    // Header subtitle: today's date + org name (suite family pattern)
+    const subtitle = document.getElementById('pulseSubtitle');
+    if (subtitle) {
+        const dateStr = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+        const orgInfo = (typeof getOrganizationInfo === 'function') ? getOrganizationInfo() : null;
+        const orgName = orgInfo && (orgInfo.organizationName || orgInfo.tenantName);
+        subtitle.textContent = dateStr + (orgName ? ' · ' + orgName : '');
+    }
+
     await loadDashboard();
+    composeAttention();
+    // Re-run once late loaders (expiry tile, approvals badge) have landed
+    setTimeout(composeAttention, 2000);
 });
+
+// ════ Attention inbox: show only the items that carry a real, non-zero value.
+// The data loaders keep writing into the same ids they always did — this just
+// decides which rows deserve the user's morning attention.
+function composeAttention() {
+    const hasMoney = (id) => {
+        const digits = (document.getElementById(id)?.textContent || '').replace(/\D/g, '');
+        return parseInt(digits || '0', 10) > 0;
+    };
+    const show = (id, on) => { const el = document.getElementById(id); if (el) el.hidden = !on; };
+
+    const arOn = hasMoney('tArOverVal');
+    const apOn = hasMoney('tApOverVal');
+    show('attnAr', arOn);
+    show('attnAp', apOn);
+
+    // Expiry task keeps its legacy tile id — the loader toggles style.display,
+    // so mirror that into hidden for the task row.
+    const exp = document.getElementById('tExpiryTile');
+    const expOn = !!exp && exp.style.display !== 'none' && hasMoney('tExpiryVal');
+    if (exp) exp.hidden = !expOn;
+
+    // Pending approvals count comes from the Admin explore badge
+    const badge = document.getElementById('pendingApprovalsBadge');
+    const apprCount = badge && badge.style.display !== 'none' ? parseInt(badge.textContent, 10) || 0 : 0;
+    const cEl = document.getElementById('attnApprovalsCount');
+    if (cEl) cEl.textContent = apprCount;
+    show('attnApprovals', apprCount > 0);
+
+    const items = [arOn, apOn, expOn, apprCount > 0].filter(Boolean).length;
+    show('attnEmpty', items === 0);
+    const count = document.getElementById('attnCount');
+    if (count) count.textContent = items ? `${items} item${items > 1 ? 's' : ''}` : '';
+}
 
 // ============================================================================
 // Dashboard Orchestrator
@@ -224,12 +271,12 @@ function drawHeroChart(categories, revenue, expenses) {
     el.innerHTML = '';
     const t = _acTheme();
     _acCharts['revenueTrendChart'] = new ApexCharts(el, {
-        chart: { type: 'area', height: 150, background: 'transparent', fontFamily: 'inherit',
+        chart: { type: 'area', height: 170, background: 'transparent', fontFamily: 'inherit',
                  sparkline: { enabled: true }, animations: { speed: 900, easing: 'easeout' } },
         theme: { mode: t.isDark ? 'dark' : 'light' },
         colors: ['#10b981', '#ef4444'],
         series: [{ name: 'Revenue', data: revenue }, { name: 'Expenses', data: expenses }],
-        stroke: { curve: 'straight', width: 2.5 },
+        stroke: { curve: 'smooth', width: 2.5 },
         fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.32, opacityTo: 0, stops: [0, 92] } },
         markers: { size: 3, strokeWidth: 0, hover: { size: 5 } },
         xaxis: { categories },
@@ -254,21 +301,29 @@ async function loadAgingCharts() {
             sum('days_120_plus', '90_plus', 'days_90_plus')
         ].map(v => Math.round(v * 100) / 100);
     };
-    const draw = (chartId, buckets, emptyMsg) => {
-        if (buckets.every(v => !v)) { if (typeof _acEmpty === 'function') _acEmpty(chartId, emptyMsg); return; }
-        _registerDashDraw(chartId, () => acBarV(chartId, _AGING_LABELS, buckets, _AGING_COLORS));
-        _dashDraws[chartId]();
-    };
+    // One combined two-series chart: what customers owe you vs what you owe
+    // vendors, across the same aging buckets — smoothed gradient areas so it
+    // matches the hero wave's visual language.
+    let arBuckets = [0, 0, 0, 0, 0], apBuckets = [0, 0, 0, 0, 0];
     try {
         const ar = await api.request(AccountsCommon.buildUrl('invoices/aging'), { _skipSpinner: true });
         const arRows = Array.isArray(ar) ? ar : (ar?.data || ar?.buckets || ar?.customers || []);
-        draw('arAgingChart', bucketize(arRows), 'Nothing outstanding — all invoices collected.');
-    } catch (e) { if (typeof _acEmpty === 'function') _acEmpty('arAgingChart', 'Could not load receivables aging.'); }
+        arBuckets = bucketize(arRows);
+    } catch (e) { /* keep zeros */ }
     try {
         const ap = await api.request(AccountsCommon.buildUrl('vendor-bills/aging'), { _skipSpinner: true });
         const apRows = Array.isArray(ap) ? ap : (ap?.data || ap?.buckets || ap?.vendors || []);
-        draw('apAgingChart', bucketize(apRows), 'Nothing owed — all bills settled.');
-    } catch (e) { if (typeof _acEmpty === 'function') _acEmpty('apAgingChart', 'Could not load payables aging.'); }
+        apBuckets = bucketize(apRows);
+    } catch (e) { /* keep zeros */ }
+
+    if (arBuckets.every(v => !v) && apBuckets.every(v => !v)) {
+        if (typeof _acEmpty === 'function') _acEmpty('agingChart', 'Nothing outstanding either way — clean slate.');
+        return;
+    }
+    _registerDashDraw('agingChart', () => acAreas('agingChart', _AGING_LABELS,
+        [{ name: 'Owed to you', data: arBuckets }, { name: 'You owe', data: apBuckets }],
+        ['#10b981', '#f59e0b'], 265));
+    _dashDraws.agingChart();
 }
 
 function renderTrend(elId, current, previous) {
