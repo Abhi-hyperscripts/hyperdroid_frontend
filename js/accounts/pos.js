@@ -1141,9 +1141,17 @@ async function completeSale() {
         // payment Idempotency-Key are the SAME whether the sale posts live or via offline replay.
         offlineRef: 'OFF-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase()
     };
+    // Once submitSaleToServer returns, the invoice(s) AND the payment are fully committed on the server —
+    // everything after is cosmetic (receipt print, serial prompt, grid refresh). A failure in that cosmetic
+    // tail must NOT fall through to the partial-post/needs-attention handling below: that branch is for a sale
+    // that posted PARTWAY with NO payment, and Discarding it cancels the invoices but can't reverse a payment
+    // that was never made — so mis-routing a fully-PAID sale there would let the teller Discard it and strand
+    // the cash receipt. `committed` short-circuits the catch for any post-commit failure.
+    let committed = false;
     try {
         if (netOffline) { await queueOfflineSale(sale); return; }
         const { invoices, total } = await submitSaleToServer(sale, { enforceStock: true });
+        committed = true;
         Toast.success(`Sale complete — ${money(total)}`);
         await printReceipt(invoices.map(i => i.number).join(' · '), total, false, sale.cart, sale.customerName);
         await promptSerials(invoices, sale.date);
@@ -1155,6 +1163,15 @@ async function completeSale() {
         renderGrid();
     } catch (err) {
         console.error('[POS] completeSale', err);
+        if (committed) {
+            // Sale posted + PAID successfully; only a post-sale cosmetic step failed. Clear the counter and move
+            // on — never re-queue (double-print/double-decrement) or file as needs-attention (Discard would
+            // strand the recorded payment). The receipt may not have printed; the sale is safely in the books.
+            resetSaleState();
+            renderCart();
+            Toast.error('Sale posted successfully — a post-sale step (receipt or stock refresh) failed. Reload if the grid looks stale; the sale is recorded.');
+            return;
+        }
         if (isNetworkError(err)) {
             markOffline();
             await queueOfflineSale(sale);
