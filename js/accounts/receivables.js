@@ -1250,7 +1250,10 @@ function _rowBaseQty(row) {
     const it = (inventoryItems || []).find(x => x.id === row._itemId);
     const uom = row._lineUomDropdown?.getValue?.();
     const conv = (uom && it?.sale_unit && uom.toLowerCase() === it.sale_unit.toLowerCase()) ? (it.sale_conversion || 1) : 1;
-    return (parseFloat(row.querySelector('.line-qty')?.value) || 0) * conv;
+    // Quantize to the DECIMAL(18,4) stock precision (mirrors POS lineBaseQty). Without this, a fractional
+    // conversion like 90 × 0.7 lands at 62.99999999999999 in IEEE-754, so floor(base/buy_qty) under-grants
+    // one free unit exactly at the entitlement threshold (POS already rounds; the invoice path did not).
+    return Math.round(((parseFloat(row.querySelector('.line-qty')?.value) || 0) * conv) * 10000) / 10000;
 }
 
 function maintainInvoiceFreeLines() {
