@@ -355,6 +355,20 @@ async function submitSaleToServer(sale, { enforceStock }) {
 /** Replay queued offline sales, oldest first. Stops on network loss; business
  * rejections are flagged for attention instead of blocking the rest. */
 async function syncOfflineSales() {
+    // Cross-TAB exclusion: posSyncing is per-tab, but two tabs on the same browser share one IndexedDB
+    // queue. Without a shared lock both drain it and both call the non-idempotent approve on the same
+    // (idempotently-created) invoice → double stock-out. Web Locks serializes across tabs; ifAvailable
+    // means a second tab that can't get the lock simply skips this pass instead of queueing behind it.
+    if (navigator.locks?.request) {
+        return navigator.locks.request('pos-offline-sync', { ifAvailable: true }, async (lock) => {
+            if (!lock) return;                 // another tab is draining — skip
+            await _syncOfflineSalesInner();
+        });
+    }
+    return _syncOfflineSalesInner();           // no Web Locks: fall back to the per-tab guard
+}
+
+async function _syncOfflineSalesInner() {
     if (posSyncing) return;
     // Claim the guard SYNCHRONOUSLY, before any await: the 'online' event and a 15s refresh tick can both
     // reach the check in the same event-loop turn while posSyncing is still false, and both would then
