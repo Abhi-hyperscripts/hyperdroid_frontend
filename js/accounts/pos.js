@@ -243,7 +243,7 @@ async function queueOfflineSale(sale) {
     sale.cart.forEach(c => { const it = posItems.find(i => i.id === c.item.id); if (it && it.track_inventory) it.qty_on_hand -= lineBaseQty(c); });
     await printReceipt(sale.offlineRef, sale.total, true, sale.cart, sale.customerName);
     Toast.success(`Sale saved offline (${sale.offlineRef}) — will sync when back online`);
-    cart = []; posSchemeOptOut.clear();
+    resetSaleState();
     renderCart(); renderGrid(true);
     updateNetBadge();
 }
@@ -687,6 +687,19 @@ let posPriceMap = new Map();      // item_id → per-base-unit list price
 let posLotMrp = new Map();
 let posCustomerDD = null;
 
+// Reset ALL per-transaction state after a sale settles (live, offline, or partial-post). Resetting only
+// cart+schemes left the bill-to CUSTOMER and their price list sticky, so the NEXT walk-in was silently sold at
+// the previous customer's negotiated rates AND booked against their AR/name. A new transaction must always
+// start as Walk-in at catalog prices unless the teller explicitly picks a customer.
+function resetSaleState() {
+    cart = [];
+    posSchemeOptOut.clear();
+    posCustomerId = null;
+    posCustomerName = 'Walk-in Customer';
+    posPriceMap = new Map();
+    posCustomerDD?.setValue?.('');
+}
+
 async function initPosCustomerPicker() {
     const host = document.getElementById('posCustomer');
     if (!host || typeof SearchableDropdown !== 'function') return;
@@ -1120,7 +1133,7 @@ async function completeSale() {
         Toast.success(`Sale complete — ${money(total)}`);
         await printReceipt(invoices.map(i => i.number).join(' · '), total, false, sale.cart, sale.customerName);
         await promptSerials(invoices, sale.date);
-        cart = []; posSchemeOptOut.clear();
+        resetSaleState();
         renderCart();
         // refresh stock counts on the grid
         posItems = (await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true })).filter(i => i.is_active);
@@ -1140,7 +1153,7 @@ async function completeSale() {
             sale.id = sale.offlineRef; sale.at = new Date().toISOString();
             sale.status = 'error'; sale.error = err.message || 'Posting failed part-way';
             await posQueuePut(sale).catch(() => {});
-            cart = []; posSchemeOptOut.clear();
+            resetSaleState();
             Toast.error(`${err.message || 'Sale failed part-way'} — the sale is saved under "needing attention": fix the cause and Retry (it resumes where it stopped), or Discard to cancel what posted.`);
             updateNetBadge();
         } else {

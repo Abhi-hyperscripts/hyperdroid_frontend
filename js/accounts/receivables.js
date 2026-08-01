@@ -2334,13 +2334,22 @@ async function loadCustomerStatement() {
         }));
         const payments = (res?.payments || []).map(p => ({
             date: p.payment_date, type: `Payment (${p.payment_method || 'bank'})`, reference: p.payment_number,
-            debit: 0, credit: parseFloat(p.amount) || 0
+            // Credit only the AR-clearing portion (gross − held advance − refunded advance), matching the
+            // header's total_received/total_outstanding — a gross credit overstated collections when the
+            // receipt carried an unapplied or refunded advance.
+            debit: 0, credit: (parseFloat(p.amount) || 0) - (parseFloat(p.advance_remaining) || 0) - (parseFloat(p.advance_refunded) || 0)
         }));
         const credits = (res?.credit_notes || []).map(c => ({
             date: c.credit_date, type: 'Credit Note', reference: c.credit_note_number,
             debit: 0, credit: parseFloat(c.amount) || 0
         }));
-        const txns = res?.transactions || [...invoices, ...payments, ...credits].sort((a, b) => new Date(a.date) - new Date(b.date));
+        // Bad-debt write-offs clear the receivable (credit) on their write-off date — the invoice stays a debit,
+        // this nets it so the closing running balance equals the header's Outstanding.
+        const writeOffs = (res?.write_offs || []).map(w => ({
+            date: w.write_off_date, type: 'Write-off (bad debt)', reference: w.invoice_number,
+            debit: 0, credit: parseFloat(w.amount) || 0
+        }));
+        const txns = res?.transactions || [...invoices, ...payments, ...credits, ...writeOffs].sort((a, b) => new Date(a.date) - new Date(b.date));
 
         const custName = res?.customer_name || res?.customer?.name || 'Customer Statement';
         // Header + KPI cards (replaces the old single-line summary).

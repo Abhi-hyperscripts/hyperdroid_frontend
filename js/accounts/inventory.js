@@ -247,7 +247,15 @@ function renderSerialReconBanner(mismatches) {
     el.style.display = 'block';
 }
 
+// One Idempotency-Key per modal-open for each stock-moving action (adjustment, transfer, assembly build, lot
+// write-off). A retry/replay of the SAME action reuses the key so the backend dedupes it (these paths post no
+// GL, or post stock+GL together — a lost-response resubmit would otherwise double-book stock, so the header
+// marker is the only server-side guard; the btn.disabled only stops a rapid double-click). A fresh modal-open
+// mints a new key so a genuinely new action is never swallowed.
+let _adjIdemKey = null, _transferIdemKey = null, _buildIdemKey = null, _lotWoIdemKey = null;
+
 function showAdjustModal() {
+    _adjIdemKey = crypto.randomUUID();
     document.getElementById('adjQty').value = '';
     document.getElementById('adjCost').value = '';
     document.getElementById('adjNotes').value = '';
@@ -268,6 +276,7 @@ async function saveAdjustment() {
     try {
         await api.request(AccountsCommon.buildUrl('inventory/adjustments'), {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(_adjIdemKey && { 'Idempotency-Key': _adjIdemKey }) },
             body: JSON.stringify({
                 item_id: itemId,
                 adjustment_date: document.getElementById('adjDate').value,
@@ -602,6 +611,7 @@ function addBomLine(line) {
 }
 
 async function openBom(itemId) {
+    _buildIdemKey = crypto.randomUUID();
     const it = items.find(x => x.id === itemId);
     document.getElementById('bomModalTitle').textContent = `BOM — ${it.sku} ${it.name}`;
     document.getElementById('bomItemId').value = itemId;
@@ -642,6 +652,7 @@ async function buildAssembly() {
         await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/bom`), { method: 'PUT', body: JSON.stringify({ lines: collectBomLines() }) });
         const res = await api.request(AccountsCommon.buildUrl('inventory/builds'), {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(_buildIdemKey && { 'Idempotency-Key': _buildIdemKey }) },
             body: JSON.stringify({ finished_item_id: itemId, quantity: qty, build_date: document.getElementById('buildDate').value })
         });
         Toast.success(`Built ${qty} @ ${AccountsCommon.formatCurrency(res.unit_cost)} each`);
@@ -730,6 +741,7 @@ async function saveLocation() {
     } catch (e) { Toast.error(e.message || 'Failed to create location'); } finally { btn.disabled = false; }
 }
 async function showTransferModal() {
+    _transferIdemKey = crypto.randomUUID();
     if (!locations.length) await loadLocations();
     document.getElementById('xfQty').value = '';
     AccountsCommon.setDateField('xfDate', AccountsCommon.todayLocal());
@@ -748,7 +760,9 @@ async function saveTransfer() {
     if (from === to) { Toast.error('Source and destination must differ'); return; }
     const btn = document.getElementById('saveXfBtn'); btn.disabled = true;
     try {
-        await api.request(AccountsCommon.buildUrl('inventory/transfer'), { method: 'POST', body: JSON.stringify({
+        await api.request(AccountsCommon.buildUrl('inventory/transfer'), { method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(_transferIdemKey && { 'Idempotency-Key': _transferIdemKey }) },
+            body: JSON.stringify({
             item_id, from_location_id: from, to_location_id: to, quantity: qty, transfer_date: document.getElementById('xfDate').value }) });
         Toast.success('Stock transferred'); AccountsCommon.closeModal('transferModal'); await loadLocBalances();
     } catch (e) { Toast.error(e.message || 'Transfer failed'); } finally { btn.disabled = false; }
@@ -1322,6 +1336,7 @@ function showLotWriteOff(idx) {
 }
 
 function openLotWriteOff(matches) {
+    _lotWoIdemKey = crypto.randomUUID();
     const b = matches[0];
     lotWoTarget = { item_id: b.item_id, batch_number: b.batch_number, rows: matches };
     document.getElementById('lotWoSummary').innerHTML =
@@ -1364,6 +1379,7 @@ async function saveLotWriteOff() {
     try {
         await api.request(AccountsCommon.buildUrl('inventory/adjustments'), {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(_lotWoIdemKey && { 'Idempotency-Key': _lotWoIdemKey }) },
             body: JSON.stringify({
                 item_id: lotWoTarget.item_id,
                 adjustment_date: localToday(),
