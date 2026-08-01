@@ -2687,7 +2687,7 @@ async function showChallanModal() {
     _setChallanReadOnly(false);
     // Guard the picker init (no leak) but reset the date on EVERY open — else a previously-viewed challan's
     // date (written into the input by viewChallan) persists and a new challan is silently back-dated.
-    const _today = new Date().toISOString().slice(0, 10);
+    const _today = AccountsCommon.todayLocal();
     if (typeof flatpickr === 'function') {
         const el = document.getElementById('challanDate'); if (el && !el._flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true });
         const ce = document.getElementById('challanDate'); if (ce._flatpickr) ce._flatpickr.setDate(_today, false); else ce.value = _today;
@@ -3212,7 +3212,7 @@ async function showSalesOrderForm() {
         const dEl = document.getElementById('soDate'); if (dEl && !dEl._flatpickr) flatpickr(dEl, { dateFormat: 'Y-m-d', allowInput: true });
         const eEl = document.getElementById('soExpected'); if (eEl && !eEl._flatpickr) flatpickr(eEl, { dateFormat: 'Y-m-d', allowInput: true });
     }
-    setViaPicker('soDate', new Date().toISOString().slice(0, 10));   // today
+    setViaPicker('soDate', AccountsCommon.todayLocal());   // today
     setViaPicker('soExpected', '');                                 // cleared (no viewed order's expected date)
     soCustomerDD = new SearchableDropdown(document.getElementById('soCustomerDD'), {
         id: 'soCustomerSD',

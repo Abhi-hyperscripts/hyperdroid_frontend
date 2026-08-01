@@ -1797,7 +1797,7 @@ async function showPdcModal() {
     document.getElementById('pdcBankName').value = '';
     document.getElementById('pdcAmount').value = '';
     document.getElementById('pdcMemo').value = '';
-    { const el = document.getElementById('pdcDate'); const t = new Date().toISOString().slice(0, 10);
+    { const el = document.getElementById('pdcDate'); const t = AccountsCommon.todayLocal();
       if (typeof flatpickr === 'function' && el) { if (!el._flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true }); el._flatpickr ? el._flatpickr.setDate(t, false) : (el.value = t); }
       else if (el) el.value = t; }
     pdcDirectionDD = new SearchableDropdown(document.getElementById('pdcDirectionDD'), {
@@ -1863,7 +1863,7 @@ function showPdcDepositModal(id) {
     pdcDepositBankDD = new SearchableDropdown(document.getElementById('pdcDepositBankDD'), {
         id: 'pdcDepositBankSD', options: pdcBankOptions(), value: '', placeholder: 'Select bank account...'
     });
-    { const el = document.getElementById('pdcDepositDate'); const t = new Date().toISOString().slice(0, 10);
+    { const el = document.getElementById('pdcDepositDate'); const t = AccountsCommon.todayLocal();
       if (typeof flatpickr === 'function' && el) { if (!el._flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true }); el._flatpickr ? el._flatpickr.setDate(t, false) : (el.value = t); }
       else if (el) el.value = t; }
     AccountsCommon.openModal('pdcDepositModal');
@@ -1896,7 +1896,7 @@ async function showPdcClearModal(id) {
     pdcClearBankDD = new SearchableDropdown(document.getElementById('pdcClearBankDD'), {
         id: 'pdcClearBankSD', options: pdcBankOptions(), value: ch.bank_account_id || '', placeholder: 'Select bank account...'
     });
-    { const el = document.getElementById('pdcClearDate'); const t = new Date().toISOString().slice(0, 10);
+    { const el = document.getElementById('pdcClearDate'); const t = AccountsCommon.todayLocal();
       if (typeof flatpickr === 'function' && el) { if (!el._flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true }); el._flatpickr ? el._flatpickr.setDate(t, false) : (el.value = t); }
       else if (el) el.value = t; }
 
