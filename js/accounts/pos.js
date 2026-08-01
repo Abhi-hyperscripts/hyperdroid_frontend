@@ -240,7 +240,7 @@ async function queueOfflineSale(sale) {
     await posQueuePut(sale);
     // Optimistically decrement the local stock view (in BASE units) so the next offline sale
     // at THIS counter sees honest numbers (server truth returns on sync).
-    sale.cart.forEach(c => { const it = posItems.find(i => i.id === c.item.id); if (it && it.track_inventory) it.qty_on_hand -= lineBaseQty(c); });
+    sale.cart.forEach(c => { const it = posItems.find(i => i.id === c.item.id); if (it && it.track_inventory) { const b = lineBaseQty(c); it.qty_on_hand -= b; if (it.dispensable_qty != null) it.dispensable_qty = Math.max(0, Number(it.dispensable_qty) - b); } });
     await printReceipt(sale.offlineRef, sale.total, true, sale.cart, sale.customerName);
     Toast.success(`Sale saved offline (${sale.offlineRef}) — will sync when back online`);
     resetSaleState();
@@ -676,7 +676,10 @@ function effTaxConfigId(item) { return item.tax_config_id || defaultGstConfigId(
 // dispensable_qty — the counter must not treat expired lots as sellable (the sale engine refuses them, so an
 // expired-only item would look in-stock, skip the substitute prompt, and only fail at Charge). Falls back to
 // qty_on_hand for a non-batch item or an older snapshot without the field.
-function posSellable(it) { return it.dispensable_qty != null ? Number(it.dispensable_qty) : it.qty_on_hand; }
+// Cap by qty_on_hand as well as dispensable_qty: local stock mutations (offline sale decrement, online
+// StockChanged push) update qty_on_hand but may leave dispensable_qty stale — Math.min ensures the sellable
+// figure can never exceed what's actually on hand, so the oversell guard holds between full refetches.
+function posSellable(it) { return it.dispensable_qty != null ? Math.min(Number(it.dispensable_qty), Number(it.qty_on_hand)) : it.qty_on_hand; }
 
 // ── Bill-to customer + their price list (Feature: price lists → sales, POS) ──
 // Walk-in by default. Picking a known customer bills the sale in their name and, when they

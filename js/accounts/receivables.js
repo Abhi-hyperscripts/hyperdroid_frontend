@@ -2685,9 +2685,13 @@ async function showChallanModal() {
     document.getElementById('challanLines').innerHTML = '';
     document.getElementById('challanStatusBanner').style.display = 'none';
     _setChallanReadOnly(false);
+    // Guard the picker init (no leak) but reset the date on EVERY open — else a previously-viewed challan's
+    // date (written into the input by viewChallan) persists and a new challan is silently back-dated.
+    const _today = new Date().toISOString().slice(0, 10);
     if (typeof flatpickr === 'function') {
-        const el = document.getElementById('challanDate'); if (el && !el._flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
-    } else document.getElementById('challanDate').value = new Date().toISOString().slice(0, 10);
+        const el = document.getElementById('challanDate'); if (el && !el._flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true });
+        const ce = document.getElementById('challanDate'); if (ce._flatpickr) ce._flatpickr.setDate(_today, false); else ce.value = _today;
+    } else document.getElementById('challanDate').value = _today;
 
     challanCustomerDD = new SearchableDropdown(document.getElementById('challanCustomerDD'), {
         id: 'challanCustomerSD',
@@ -3196,14 +3200,20 @@ async function showSalesOrderForm() {
     document.getElementById('soId').value = '';
     document.getElementById('soBookedBy').value = '';
     document.getElementById('soNotes').value = '';
-    document.getElementById('soExpected').value = '';   // was leaking a viewed order's expected date
     document.getElementById('soLines').innerHTML = '';
     document.getElementById('soStatusBanner').style.display = 'none';
     _setSoReadOnly(false);
+    // Init the pickers once (guarded so re-opening the form doesn't leak instances), then EXPLICITLY reset the
+    // dates on EVERY open — defaultDate only applies at construction, so with the guard the date must be reset
+    // through the live instance, else a previously-VIEWED order's date (written straight into the input by
+    // viewSalesOrder) persists and a new order is silently back-dated. setViaPicker handles both cases.
+    const setViaPicker = (id, val) => { const el = document.getElementById(id); if (!el) return; if (el._flatpickr) el._flatpickr.setDate(val || null, false); else el.value = val; };
     if (typeof flatpickr === 'function') {
-        const dEl = document.getElementById('soDate'); if (dEl && !dEl._flatpickr) flatpickr(dEl, { dateFormat: 'Y-m-d', allowInput: true, defaultDate: new Date() });
+        const dEl = document.getElementById('soDate'); if (dEl && !dEl._flatpickr) flatpickr(dEl, { dateFormat: 'Y-m-d', allowInput: true });
         const eEl = document.getElementById('soExpected'); if (eEl && !eEl._flatpickr) flatpickr(eEl, { dateFormat: 'Y-m-d', allowInput: true });
     }
+    setViaPicker('soDate', new Date().toISOString().slice(0, 10));   // today
+    setViaPicker('soExpected', '');                                 // cleared (no viewed order's expected date)
     soCustomerDD = new SearchableDropdown(document.getElementById('soCustomerDD'), {
         id: 'soCustomerSD',
         options: [{ value: '', label: 'Select customer...' },
