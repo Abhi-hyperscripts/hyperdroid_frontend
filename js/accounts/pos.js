@@ -353,12 +353,17 @@ async function submitSaleToServer(sale, { enforceStock }) {
  * rejections are flagged for attention instead of blocking the rest. */
 async function syncOfflineSales() {
     if (posSyncing) return;
-    await migrateLegacyPosQueue();
-    const entries = (await posQueueAll().catch(() => [])).filter(e => e.status !== 'error')
-        .sort((a, b) => (a.at || '').localeCompare(b.at || ''));
-    if (!entries.length) { updateNetBadge(); return; }
-    posSyncing = true; updateNetBadge();
+    // Claim the guard SYNCHRONOUSLY, before any await: the 'online' event and a 15s refresh tick can both
+    // reach the check in the same event-loop turn while posSyncing is still false, and both would then
+    // replay the same queued sale — the invoice/payment are server-idempotent but the APPROVE step is not,
+    // so a double-approve slips through. Setting the flag now makes the guard actually exclusive.
+    posSyncing = true;
     try {
+        await migrateLegacyPosQueue();
+        const entries = (await posQueueAll().catch(() => [])).filter(e => e.status !== 'error')
+            .sort((a, b) => (a.at || '').localeCompare(b.at || ''));
+        if (!entries.length) { updateNetBadge(); return; }
+        updateNetBadge();
         for (const entry of entries) {
             try {
                 const { invoices } = await submitSaleToServer(entry, { enforceStock: false });

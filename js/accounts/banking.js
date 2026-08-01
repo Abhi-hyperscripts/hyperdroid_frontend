@@ -1954,6 +1954,11 @@ async function savePdcClear() {
             if (amt > 0) allocations.push({ vendor_bill_id: row.dataset.bill, allocated_amount: Math.round(amt * 100) / 100 });
         });
         if (!allocations.length) { Toast.error('Allocate the cheque to at least one bill'); return; }
+        const allocSum = Math.round(allocations.reduce((s, a) => s + a.allocated_amount, 0) * 100) / 100;
+        if (allocSum !== Math.round(Number(ch.amount) * 100) / 100) {
+            Toast.error(`Allocations (${AccountsCommon.formatCurrency(allocSum)}) must add up to exactly the cheque amount (${AccountsCommon.formatCurrency(ch.amount)}).`);
+            return;
+        }
         body.allocations = allocations;
     }
     const btn = document.getElementById('pdcClearBtn');

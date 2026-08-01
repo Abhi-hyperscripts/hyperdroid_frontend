@@ -1344,6 +1344,8 @@ async function saveLotWriteOff() {
     const qty = parseFloat(document.getElementById('lotWoQty').value);
     if (!locId) { Toast.error('Pick the location'); return; }
     if (!(qty > 0)) { Toast.error('Enter the quantity to write off'); return; }
+    const onHand = Number(lotWoTarget.rows.find(x => x.location_id === locId)?.quantity);
+    if (onHand >= 0 && qty > onHand) { Toast.error(`Cannot write off more than the ${onHand} on hand at this location.`); return; }
     const reason = lotWoReasonDD?.getValue?.() || 'Other';
     const note = document.getElementById('lotWoNote').value.trim();
     const btn = document.getElementById('lotWoBtn');

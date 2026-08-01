@@ -2723,6 +2723,7 @@ async function saveChallan() {
         const qty = parseFloat(row.querySelector('.chl-qty').value);
         if (!(qty > 0)) { Toast.error('Every line needs a quantity above zero'); return; }
         const priceRaw = (row.querySelector('.chl-price').value || '').trim();
+        if (priceRaw !== '' && !(parseFloat(priceRaw) >= 0)) { Toast.error('Line value cannot be negative'); return; }
         lines.push({
             item_id: itemId, quantity: qty,
             uom: row._lineUom || null,
@@ -3219,6 +3220,7 @@ async function saveSalesOrder() {
         const qty = parseFloat(row.querySelector('.so-qty').value);
         if (!(qty > 0)) { Toast.error('Every line needs a quantity above zero'); return; }
         const priceRaw = (row.querySelector('.so-price').value || '').trim();
+        if (priceRaw !== '' && !(parseFloat(priceRaw) >= 0)) { Toast.error('Agreed price cannot be negative'); return; }
         lines.push({
             item_id: itemId, quantity: qty,
             uom: row._lineUom || null,
