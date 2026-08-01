@@ -695,6 +695,12 @@ const SearchableDropdown = (function() {
             instances.delete(this.id);
             if (this._docClickHandler) { document.removeEventListener('click', this._docClickHandler); this._docClickHandler = null; }
             this._detachReposition();
+            // Detach the wrapper-level subscriptions convertSelectToSearchable attached on the linked <select> /
+            // parent form (change/reset listeners + the options MutationObserver). These live on elements OUTSIDE
+            // this dropdown's container, so without explicit teardown they leak on every re-conversion.
+            if (this._linkedChangeHandler && this._linkedSelectEl) { this._linkedSelectEl.removeEventListener('change', this._linkedChangeHandler); this._linkedChangeHandler = null; }
+            if (this._linkedResetHandler && this._linkedResetForm) { this._linkedResetForm.removeEventListener('reset', this._linkedResetHandler); this._linkedResetHandler = null; }
+            if (this._linkedOptionsObserver) { this._linkedOptionsObserver.disconnect(); this._linkedOptionsObserver = null; }
             // NOTE: do NOT restore the linkedSelect's visibility here. This runs on the REUSE paths
             // (constructor same-id teardown, self-eviction, uom rebuild) where the container is kept and a new
             // instance is about to render over it — un-hiding the native <select> would leave a duplicate
@@ -805,6 +811,13 @@ function convertSelectToSearchable(selectId, options = {}) {
         }
     };
     select.addEventListener('change', syncFromLinked);
+    // Track the wrapper-level subscriptions on the instance so _teardownListeners()/destroy() can detach them.
+    // Re-converting the SAME select id (dependent dropdowns, PMS Time Tracking project switch, etc.) runs the
+    // constructor's same-id teardown on the prior instance — which now also removes these — instead of stacking
+    // a fresh change/reset/observer set on the live <select> every time (unbounded listeners + retained dead
+    // instances whose observer closures keep rewriting the shared <select>).
+    dropdown._linkedSelectEl = select;
+    dropdown._linkedChangeHandler = syncFromLinked;
 
     // form.reset() does NOT fire 'change' on selects, so we also need to listen
     // on the parent form's 'reset' event. Without this, reopening a modal after
@@ -813,11 +826,14 @@ function convertSelectToSearchable(selectId, options = {}) {
     // visible text and data-value attribute stay frozen at the previous values).
     const parentForm = select.closest('form');
     if (parentForm) {
-        parentForm.addEventListener('reset', () => {
+        const resetHandler = () => {
             // 'reset' fires before the form actually resets the controls; wait
             // one tick so we read the post-reset value of the linked select.
             setTimeout(syncFromLinked, 0);
-        });
+        };
+        parentForm.addEventListener('reset', resetHandler);
+        dropdown._linkedResetForm = parentForm;
+        dropdown._linkedResetHandler = resetHandler;
     }
 
     // Watch for external code rewriting the linked <select>.innerHTML — for
@@ -844,6 +860,7 @@ function convertSelectToSearchable(selectId, options = {}) {
             syncFromLinked();
         });
         optionsObserver.observe(select, { childList: true, subtree: true, characterData: true });
+        dropdown._linkedOptionsObserver = optionsObserver;
     }
 
     // Expose the dropdown instance on the linked <select> for callers that

@@ -1424,8 +1424,14 @@ function removeInvoiceLine(btn) {
 function calculateInvoiceTotals() {
     maintainInvoiceFreeLines();   // choke point: every qty/line change lands here (no-op on edits)
     let subtotal = 0;
-    let totalTax = 0;
     const r2 = n => Math.round(n * 100) / 100;
+    // Tax must be summed the way the backend BOOKS it: PER DOCUMENT (per tax config), not per line. The
+    // backend taxes the aggregated taxable base once per config — so Σ(round(lineNet×rate)) or an unrounded
+    // per-line sum can overstate the document tax by a paisa vs the posted invoice. Accumulate the net base
+    // per config here, then round once per config below. (Country-agnostic: a single round(base×rate) matches
+    // the backend's standard tax + inter-state IGST exactly; an intra-state GST two-head split is finalized
+    // authoritatively at approval — the note under the total flags that the shown tax is indicative.)
+    const baseByConfig = new Map();
     document.querySelectorAll('#invoiceLines tr').forEach(row => {
         const qty = parseFloat(row.querySelector('.line-qty')?.value) || 0;
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
@@ -1439,8 +1445,8 @@ function calculateInvoiceTotals() {
 
         const taxConfigId = row._lineTaxDropdown?.selectedValue || '';
         const taxPct = _invoiceTaxRateFor(taxConfigId);
-        const lineTax = (amt * taxPct) / 100;
-        totalTax += lineTax;
+        if (taxPct > 0) baseByConfig.set(taxConfigId, (baseByConfig.get(taxConfigId) || 0) + amt);
+        const lineTax = (amt * taxPct) / 100;   // indicative per-row figure only (not summed into the doc total)
 
         const amtCell = row.querySelector('.line-amount');
         if (amtCell) {
@@ -1456,6 +1462,10 @@ function calculateInvoiceTotals() {
             }
         }
     });
+
+    // Document tax: round each config group's aggregated base once (per-document), matching the backend.
+    let totalTax = 0;
+    for (const [cfgId, base] of baseByConfig) totalTax += r2(base * _invoiceTaxRateFor(cfgId) / 100);
 
     const cur = invoiceCurrency();
     const sym = cur === BASE_CURRENCY ? '' : currencySymbol(cur);

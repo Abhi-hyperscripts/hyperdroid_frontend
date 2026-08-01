@@ -232,8 +232,10 @@ async function queueOfflineSale(sale) {
     sale.id = sale.offlineRef;
     sale.at = new Date().toISOString();
     sale.status = 'queued';
-    let sub = 0, tax = 0; const r2q = n => Math.round((n + Number.EPSILON) * 100) / 100; // EPSILON: 1.4999999999999998-style float error must round like the server's decimal AwayFromZero
-    sale.cart.forEach(c => { const g = r2q(salePx(c) * c.qty); const b = g - r2q(g * (c.disc || 0) / 100); sub += b; tax += gstOn(b, taxRateFor(effTaxConfigId(c.item))); });
+    let sub = 0; const r2q = n => Math.round((n + Number.EPSILON) * 100) / 100; // EPSILON: 1.4999999999999998-style float error must round like the server's decimal AwayFromZero
+    const netOf = c => { const g = r2q(salePx(c) * c.qty); return g - r2q(g * (c.disc || 0) / 100); };
+    sale.cart.forEach(c => { sub += netOf(c); });
+    const tax = posGroupedTax(sale.cart, netOf);   // per-slab, so the offline total matches the replayed invoice
     sale.total = Math.round((sub + tax) * 100) / 100;
     await posQueuePut(sale);
     // Optimistically decrement the local stock view (in BASE units) so the next offline sale
@@ -637,6 +639,19 @@ function taxRateFor(configId) {
 // own state = intra-state, so the two-head split is always the right model here.
 const gstOn = (base, rate) => { const half = Math.round((base * (rate / 2) / 100 + Number.EPSILON) * 100) / 100; return half * 2; };   // EPSILON: half-paisa float error must round like the server's AwayFromZero
 
+// Total GST for a cart the SAME way the backend books it: PER SLAB (tax config), not per line. The server
+// (submitSaleToServer) splits the cart by tax_config_id, sums each group's net, and applies gstOn ONCE per
+// group. Summing gstOn(lineNet) per line instead over-rounds — e.g. two ₹5.30 lines at 18% give per-line
+// 0.96+0.96=1.92 but per-slab round(10.60×9%)×2=1.90 — so the Charge button / receipt wouldn't foot to the
+// booked invoice. netOf(c) returns a line's post-discount net (each caller already computes it identically).
+function posGroupedTax(lines, netOf) {
+    const bySlab = new Map();
+    lines.forEach(c => { const k = effTaxConfigId(c.item) || ''; bySlab.set(k, (bySlab.get(k) || 0) + netOf(c)); });
+    let tax = 0;
+    for (const [k, net] of bySlab) tax += gstOn(net, taxRateFor(k));
+    return tax;
+}
+
 // The tenant's active-DEFAULT GST config — the SAME one the backend applies to an invoice line that
 // specifies no tax config (ResolveDocumentGstAsync → GetActiveTaxConfig: active GST slabs whose
 // configuration.auto_default != 'false', ordered effective_from DESC, created_at ASC, id ASC). The POS must
@@ -972,9 +987,11 @@ function setLineDisc(idx, val) {
     // Round to 2dp — the backend rejects finer (DECIMAL(5,2)); a typed 12.345 must not 400 at Charge.
     line.disc = Math.round(Math.min(100, Math.max(0, parseFloat(val) || 0)) * 100) / 100;
     // Recompute totals WITHOUT re-rendering the row (keeps focus in the input the user is typing in).
-    let sub = 0, tax = 0;
+    let sub = 0;
     const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
-    cart.forEach(c => { const g = r2(linePrice(c) * c.qty); const net = g - r2(g * (c.disc || 0) / 100); sub += net; tax += gstOn(net, taxRateFor(effTaxConfigId(c.item))); });
+    const netOf = c => { const g = r2(linePrice(c) * c.qty); return g - r2(g * (c.disc || 0) / 100); };
+    cart.forEach(c => { sub += netOf(c); });
+    const tax = posGroupedTax(cart, netOf);   // per-slab, matching the booked invoice
     document.getElementById('posSub').textContent = money(sub);
     document.getElementById('posTax').textContent = money(tax);
     document.getElementById('posTotal').textContent = money(sub + tax);
@@ -1041,12 +1058,9 @@ function renderCart() {
         ${expanded}
     </td></tr>`;
     }).join('') : '<tr><td class="pos-cart-empty" colspan="4">Cart is empty — tap items or scan a barcode.</td></tr>';
-    let sub = 0, tax = 0, count = 0;
-    cart.forEach(c => {
-        const base = lineNet(c);
-        sub += base; count += lineBaseQty(c);
-        tax += gstOn(base, taxRateFor(effTaxConfigId(c.item)));
-    });
+    let sub = 0, count = 0;
+    cart.forEach(c => { sub += lineNet(c); count += lineBaseQty(c); });
+    const tax = posGroupedTax(cart, lineNet);   // per-slab, matching the booked invoice
     document.getElementById('posSub').textContent = money(sub);
     document.getElementById('posTax').textContent = money(tax);
     document.getElementById('posTotal').textContent = money(sub + tax);
@@ -1215,16 +1229,17 @@ async function printReceipt(invoiceNumber, total, offline = false, saleCart = nu
     const w = window.open('', '_blank', 'width=380,height=600');
     if (!w) return;
     const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
-    let gross = 0, totDisc = 0, tax = 0;
+    let gross = 0, totDisc = 0;
+    const netOf = c => { const g = r2(salePx(c) * c.qty); return g - r2(g * (c.disc || 0) / 100); };
     const rows = printCart.map(c => {
         const unit = salePx(c);
         const g = r2(unit * c.qty);
         const disc = r2(g * (c.disc || 0) / 100);
         const net = g - disc;
         gross += g; totDisc += disc;
-        tax += gstOn(net, taxRateFor(effTaxConfigId(c.item)));
         return `<tr><td>${esc(c.item.name)}<br><small>${c.qty}${c.uom ? ' ' + esc(c.uom) : ''} × ${unit.toFixed(2)}${disc > 0 ? ` (−${c.disc}%)` : ''}</small></td><td class="r">${net.toFixed(2)}</td></tr>`;
     }).join('');
+    const tax = posGroupedTax(printCart, netOf);   // per-slab, so the receipt GST line foots to the booked total
     const sub = gross;   // MRP/list subtotal before discount
     w.document.write(`<!DOCTYPE html><html><head><title>${esc(invoiceNumber || 'Receipt')}</title><style>
         * { margin:0; padding:0; box-sizing:border-box; }
