@@ -2684,6 +2684,9 @@ function addChallanLine(data = {}) {
 // unit. The client sends the unit NAME only — the server snapshots the factor.
 function _buildChallanUomPicker(row, itemId, presetUom = null) {
     const holder = row.querySelector('.chl-uom-sd');
+    // Destroy the prior uom dropdown (generated id, same still-connected holder → the constructor's
+    // same-id teardown can't catch it) before wiping, so its document listener doesn't leak on item change.
+    row._uomDD?._teardownListeners?.(); row._uomDD = null;
     holder.innerHTML = '';
     row._lineUom = null;
     const it = inventoryItems.find(x => x.id === itemId);
@@ -3189,6 +3192,9 @@ function addSoLine(data = {}) {
 
 function _buildSoUomPicker(row, itemId, presetUom = null) {
     const holder = row.querySelector('.so-uom-sd');
+    // Destroy the prior uom dropdown before wiping (see _buildChallanUomPicker) so its document listener
+    // doesn't leak when the line's item changes.
+    row._uomDD?._teardownListeners?.(); row._uomDD = null;
     holder.innerHTML = '';
     row._lineUom = null;
     const it = inventoryItems.find(x => x.id === itemId);

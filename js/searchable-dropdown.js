@@ -75,6 +75,17 @@ const SearchableDropdown = (function() {
                 ? { title: 'Add new', onClick: options.quickAdd }
                 : (options.quickAdd || null);
 
+            // If a prior instance was registered under this SAME id, tear it down first. The accounts
+            // full-page forms re-create dropdowns on fixed container ids (itCatDD, challanCustomerSD,
+            // soCustomerSD, …) on every open; without this, each reopen orphans the prior instance's
+            // persistent document 'click' listener (bindEvents' self-cleanup only removes its OWN handler),
+            // stacking listeners → unbounded memory + per-click CPU growth across a back-office session.
+            const prior = instances.get(this.id);
+            // Listener-only teardown: render() below replaces the SAME container's innerHTML, so we must NOT
+            // remove the container (full destroy() does) — only detach the prior instance's leaked document/window
+            // listeners and registry entry.
+            if (prior && prior !== this && typeof prior._teardownListeners === 'function') prior._teardownListeners();
+
             this.render();
             this.bindEvents();
 
@@ -247,6 +258,10 @@ const SearchableDropdown = (function() {
             // listener → unbounded memory + per-click CPU growth within a session.
             if (this._docClickHandler) document.removeEventListener('click', this._docClickHandler);
             this._docClickHandler = (e) => {
+                // Self-evict if our container has been removed from the DOM (e.g. a deleted invoice/challan/SO
+                // line row whose dropdown used a generated id, so the constructor's same-id teardown can't catch
+                // it). Without this, the instance lingers in the registry with this persistent listener forever.
+                if (!this.container || !this.container.isConnected) { this._teardownListeners(); return; }
                 if (this.isOpen && !this.container.contains(e.target)) {
                     this.close();
                 }
@@ -672,18 +687,23 @@ const SearchableDropdown = (function() {
             }
         }
 
-        destroy() {
+        // Detach everything this instance attached OUTSIDE its own container (the persistent document 'click'
+        // listener + the window reposition listeners) and drop it from the registry — WITHOUT touching the
+        // container DOM. Safe to call when the container will be reused (constructor same-id teardown, in-place
+        // uom rebuild) or is already detached (deleted line row). This is the leak-safe teardown.
+        _teardownListeners() {
             instances.delete(this.id);
-            // Tear down the persistent listeners this instance attached outside its own container, so a
-            // destroyed dropdown leaves nothing behind on document/window.
             if (this._docClickHandler) { document.removeEventListener('click', this._docClickHandler); this._docClickHandler = null; }
             this._detachReposition();
-            // Restore the original select element visibility
             if (this.linkedSelect) {
                 this.linkedSelect.style.display = '';
                 this.linkedSelect.removeAttribute('data-searchable');
             }
-            // Remove the container from DOM entirely
+        }
+
+        destroy() {
+            this._teardownListeners();
+            // Full disposal also removes the container from the DOM entirely.
             if (this.container && this.container.parentNode) {
                 this.container.parentNode.removeChild(this.container);
             }
