@@ -13,6 +13,9 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
     <title>Home - Ragenaizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -36,24 +39,36 @@
     </nav>
 
     <div class="home-content">
-        <header class="home-hero">
-            <p class="home-eyebrow" id="orgEyebrow">Workspace</p>
-            <h1 class="home-title">Good <span id="timeGreeting">morning</span>, <span id="userName">there</span>.</h1>
-            <p class="home-sub" id="homeSub"><span class="pulse"></span><span id="homeSubText">Checking your services…</span></p>
-            <div class="home-search">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                </svg>
-                <input type="text" id="moduleSearch" placeholder="Search apps…" autocomplete="off" aria-label="Search apps">
-                <kbd>⌘K</kbd>
-            </div>
+        <!-- Clock + greeting -->
+        <header class="mc-clockwrap">
+            <p class="mc-eyebrow" id="orgEyebrow">Workspace</p>
+            <div class="mc-clock" id="mcClock" aria-live="off">--:--</div>
+            <p class="mc-greet">Good <span id="timeGreeting">morning</span>, <span id="userName">there</span>.</p>
+            <p class="mc-meta"><span class="pulse"></span><span id="homeSubText">Checking your services…</span></p>
         </header>
 
-        <!-- Live overview — rendered only when Accounts is licensed and reachable -->
-        <section class="home-overview" id="homeOverview" hidden aria-label="Business overview"></section>
+        <!-- Command bar -->
+        <div class="home-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" id="moduleSearch" placeholder="Search your apps…" autocomplete="off" aria-label="Search apps">
+            <kbd>⌘K</kbd>
+        </div>
 
-        <!-- Groups + module rows rendered from the MODULES registry -->
-        <main id="moduleGroups"></main>
+        <!-- Business pulse (live from Accounts; hidden when unlicensed/unreachable) -->
+        <div class="mc-chips" id="mcChips" hidden></div>
+    </div>
+
+    <!-- Ambient full-bleed revenue band -->
+    <div class="mc-band" id="mcBand" hidden>
+        <div id="mcBandChart"></div>
+        <div class="home-chart-tip" id="homeChartTip"></div>
+    </div>
+
+    <div class="home-content" style="padding-top:0">
+        <!-- Grouped app rows -->
+        <main id="moduleGroups" aria-label="Your apps"></main>
     </div>
 
     <script>
@@ -66,7 +81,7 @@
     <script>
         // ═══════════════════════════════════════════════════════════════════
         // Module registry — single source of truth for the launcher.
-        // Visibility = role AND license (same rules as before the redesign):
+        // Visibility = role AND license (identical semantics to the old page):
         //   - SUPERADMIN passes every role check but does NOT bypass licensing
         //     (sub-tenant superadmins only see what their tenant pays for; the
         //     platform root's license already includes every service).
@@ -100,42 +115,36 @@
 
         const MODULES = [
             { id: 'accounts', group: 'money', role: 'ACCOUNTS_USER', service: 'Accounts', color: '#0e9f6e',
-              title: 'Accounts', desc: 'Invoices, ledger, GST, inventory and banking', href: 'accounts/dashboard.html', health: 'accounts' },
-            { id: 'paymentplans', group: 'money', role: 'PAYMENTPLANS_USER', service: 'PaymentPlans', color: '#b45309',
+              title: 'Accounts', desc: 'Invoices, ledger, GST, inventory and banking', href: 'accounts/dashboard.html', health: 'accounts', pulse: true },
+            { id: 'paymentplans', group: 'money', role: 'PAYMENTPLANS_USER', service: 'PaymentPlans', color: '#d97706',
               title: 'Payment Plans', desc: 'Installments, reminders and recurring collections', href: 'payment-plans/dashboard.html', health: 'paymentplans' },
-            { id: 'procurement', group: 'money', role: 'PROCUREMENT_USER', service: 'Procurement', color: '#6d5bd0',
+            { id: 'procurement', group: 'money', role: 'PROCUREMENT_USER', service: 'Procurement', color: '#7c6cf0',
               title: 'Procurement', desc: 'Vendors, quote comparison and purchase orders', href: 'procurement/dashboard.html', health: 'procurement' },
-
-            { id: 'crm', group: 'people', role: 'CRM_USER', service: 'CRM', color: '#2563eb',
+            { id: 'crm', group: 'people', role: 'CRM_USER', service: 'CRM', color: '#3b82f6',
               title: 'CRM', desc: 'Leads, deals and customer conversations', href: 'crm/dashboard.html', health: 'crm' },
-            { id: 'hrms', group: 'people', role: 'HRMS_USER', service: 'HRMS', color: '#be3980',
+            { id: 'hrms', group: 'people', role: 'HRMS_USER', service: 'HRMS', color: '#ec4899',
               title: 'HRMS', desc: 'Attendance, leave and payroll', href: 'hrms/dashboard.html', health: 'hrms' },
-            { id: 'lms', group: 'people', role: 'LMS_USER', service: 'LMS', color: '#9333ea',
+            { id: 'lms', group: 'people', role: 'LMS_USER', service: 'LMS', color: '#a855f7',
               title: 'Learning', desc: 'Courses, training and certifications', href: 'lms/dashboard.html', health: 'lms' },
-
-            { id: 'pms', group: 'work', role: 'PMS_USER', service: 'PMS', color: '#0891b2',
+            { id: 'pms', group: 'work', role: 'PMS_USER', service: 'PMS', color: '#06b6d4',
               title: 'Projects', desc: 'Clients, tasks, time tracking and timesheets', href: 'pms/dashboard.html', health: 'pms' },
-            { id: 'drive', group: 'work', role: 'DRIVE_USER', service: 'Drive', color: '#059669',
+            { id: 'drive', group: 'work', role: 'DRIVE_USER', service: 'Drive', color: '#10b981',
               title: 'Drive', desc: 'Secure file storage and sharing', href: 'drive/drive.html', health: 'drive' },
-            { id: 'research', group: 'work', role: 'RESEARCH_USER', service: 'Research', color: '#7c3aed',
+            { id: 'research', group: 'work', role: 'RESEARCH_USER', service: 'Research', color: '#8b5cf6',
               title: 'Research', desc: 'Market research with AI analysis', href: 'research/dashboard.html', health: 'research' },
-
-            { id: 'vision', group: 'comms', role: 'VISION_USER', service: 'Vision', color: '#0e7490',
+            { id: 'vision', group: 'comms', role: 'VISION_USER', service: 'Vision', color: '#14b8a6',
               title: 'Meetings', desc: 'Video calls with recording and captions', href: 'vision/dashboard.html', health: 'vision' },
-            { id: 'email', group: 'comms', role: 'EMAILSERVICE_USER', service: 'EmailService', color: '#c2680c',
+            { id: 'email', group: 'comms', role: 'EMAILSERVICE_USER', service: 'EmailService', color: '#f59e0b',
               title: 'Email', desc: 'Shared mailboxes with real-time sync', href: 'email/inbox.html', health: 'email' },
-            { id: 'chat', group: 'comms', role: 'CHAT_USER', service: 'Chat', color: '#db2777',
+            { id: 'chat', group: 'comms', role: 'CHAT_USER', service: 'Chat', color: '#f43f5e',
               title: 'Chat', desc: 'Direct and group messaging', href: 'chat/chat.html', health: 'chat' },
-
-            { id: 'news', group: 'adminGroup', role: 'SUPERADMIN', service: 'KIP', color: '#64748b',
+            { id: 'news', group: 'adminGroup', role: 'SUPERADMIN', service: 'KIP', color: '#94a3b8',
               title: 'KIP', desc: 'News intelligence and business signals', href: 'news/admin.html', tag: 'Admin' },
-            { id: 'admin', group: 'adminGroup', role: 'SUPERADMIN', service: null, color: '#64748b',
+            { id: 'admin', group: 'adminGroup', role: 'SUPERADMIN', service: null, color: '#94a3b8',
               title: 'Admin Panel', desc: 'Users, roles and service health', href: 'auth/dashboard.html', tag: 'Admin' }
         ];
 
-        let healthTotal = 0;
-        let healthDone = 0;
-        let healthOnline = 0;
+        let healthTotal = 0, healthDone = 0, healthOnline = 0;
 
         document.addEventListener('DOMContentLoaded', () => {
             if (!api.isAuthenticated()) {
@@ -154,10 +163,11 @@
             }
 
             initializeHero(accessible);
+            startClock();
             renderGroups(accessible);
             checkModuleStatus(accessible);
             setupSearch();
-            loadOverview(accessible);
+            loadPulse(accessible);
 
             // Firebase push notifications
             if (typeof ensureFcmTokenRegistered === 'function') {
@@ -183,8 +193,6 @@
 
             return MODULES.filter(m => {
                 const hasRole = user.roles.includes('SUPERADMIN') || user.roles.includes(m.role);
-                // service === null → built-in tool (admin panel), no license needed.
-                // Missing licensed_services claim → legacy token, fail open.
                 const isLicensed = m.service === null ||
                                    !licensedServices ||
                                    licensedServices.includes(m.service);
@@ -208,6 +216,19 @@
                 orgName ? orgName + ' · Workspace' : 'Workspace';
 
             updateSubline(accessible);
+        }
+
+        function startClock() {
+            const el = document.getElementById('mcClock');
+            function tick() {
+                const now = new Date();
+                const hh = String(now.getHours()).padStart(2, '0');
+                const mm = String(now.getMinutes()).padStart(2, '0');
+                const ss = String(now.getSeconds()).padStart(2, '0');
+                el.innerHTML = hh + ':' + mm + '<span class="sec">' + ss + '</span>';
+            }
+            tick();
+            setInterval(tick, 1000);
         }
 
         function updateSubline(accessible) {
@@ -250,22 +271,21 @@
                     row.href = m.href;
                     row.style.setProperty('--mod-color', m.color);
                     row.dataset.searchText = (m.title + ' ' + m.desc).toLowerCase();
-
-                    const statusHtml = m.health
-                        ? '<div class="home-row-status" id="' + m.id + 'Status"><span class="sdot"></span><span>Checking</span></div>'
-                        : '<div class="home-row-status online"><span class="sdot"></span><span>Online</span></div>';
+                    if (!m.health) row.classList.add('online'); // built-ins ride on Auth
 
                     row.innerHTML =
-                        '<div class="home-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' + ICONS[m.id] + '</svg></div>' +
-                        '<div class="home-row-meta">' +
-                            '<div class="home-row-name"><span></span>' + (m.tag ? '<span class="home-tag">' + m.tag + '</span>' : '') + '</div>' +
-                            '<div class="home-row-desc"></div>' +
+                        '<div class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' + ICONS[m.id] + '</svg></div>' +
+                        '<div class="row-mid">' +
+                            '<div class="row-name"><span></span>' + (m.tag ? '<span class="home-tag">' + m.tag + '</span>' : '') + '</div>' +
+                            '<div class="row-desc"></div>' +
                         '</div>' +
-                        statusHtml +
-                        '<div class="home-row-arrow">→</div>';
+                        '<div class="row-status">' +
+                            '<span class="sdot"></span><span id="' + m.id + 'Status">' + (m.health ? 'Checking' : 'Online') + '</span>' +
+                        '</div>' +
+                        '<div class="row-arrow">→</div>';
 
-                    row.querySelector('.home-row-name span').textContent = m.title;
-                    row.querySelector('.home-row-desc').textContent = m.desc;
+                    row.querySelector('.row-name span').textContent = m.title;
+                    row.querySelector('.row-desc').textContent = m.desc;
                     rows.appendChild(row);
                 });
 
@@ -284,8 +304,8 @@
         }
 
         async function checkServiceHealth(module, accessible) {
-            const statusEl = document.getElementById(module.id + 'Status');
-            const row = document.getElementById(module.id + 'Card');
+            const app = document.getElementById(module.id + 'Card');
+            const srStatus = document.getElementById(module.id + 'Status');
             const endpoint = CONFIG.endpoints[module.health];
 
             let online = false;
@@ -300,16 +320,15 @@
             healthDone++;
             if (online) healthOnline++;
 
-            if (statusEl) {
-                statusEl.className = 'home-row-status' + (online ? ' online' : '');
-                statusEl.innerHTML = '<span class="sdot"></span><span>' + (online ? 'Online' : 'Off') + '</span>';
+            if (app) {
+                app.classList.toggle('online', online);
+                app.classList.toggle('offline', !online);
             }
-            if (row) row.classList.toggle('offline', !online);
-
+            if (srStatus) srStatus.textContent = online ? 'Online' : 'Off';
             updateSubline(accessible);
         }
 
-        // ═══ Live overview: real numbers from Accounts, hidden when unreachable ═══
+        // ═══ Business pulse: chips + full-bleed ambient revenue band ═══
         function formatINR(n) {
             const neg = n < 0;
             const a = Math.abs(n);
@@ -321,8 +340,9 @@
             return neg ? '−' + s : s;
         }
 
-        async function loadOverview(accessible) {
-            if (!accessible.some(m => m.id === 'accounts')) return;
+        async function loadPulse(accessible) {
+            const mod = accessible.find(m => m.pulse);
+            if (!mod) return;
             const base = CONFIG.endpoints.accounts;
             const token = (typeof getAuthToken === 'function') ? getAuthToken() : null;
             if (!base || !token) return;
@@ -331,67 +351,45 @@
             try {
                 const [kpiRes, trendRes] = await Promise.all([
                     fetch(base + '/api/accounts/dashboard/kpis', { headers }),
-                    fetch(base + '/api/accounts/dashboard/revenue-trend?months=6', { headers })
+                    fetch(base + '/api/accounts/dashboard/revenue-trend?months=12', { headers })
                 ]);
                 if (!kpiRes.ok || !trendRes.ok) return;
-                const kpis = await kpiRes.json();
-                const trend = await trendRes.json();
-                renderOverview(kpis, trend);
-            } catch (e) { /* Accounts unreachable — overview stays hidden */ }
+                renderChips(await kpiRes.json());
+                renderBand(await trendRes.json());
+            } catch (e) { /* Accounts unreachable — pulse stays hidden */ }
         }
 
-        function renderOverview(kpis, trend) {
-            const el = document.getElementById('homeOverview');
+        function renderChips(kpis) {
+            const el = document.getElementById('mcChips');
             if (!el) return;
 
-            const stats = [
-                { label: 'Cash & bank', raw: kpis.total_liquid || 0, value: formatINR(kpis.total_liquid || 0),
-                  hint: '30-day projection ' + formatINR(kpis.projected_balance_30d || 0) },
-                { label: 'Receivables due', raw: kpis.ar_outstanding || 0, value: formatINR(kpis.ar_outstanding || 0),
-                  hint: (kpis.ar_overdue || 0) > 0
-                      ? formatINR(kpis.ar_overdue) + ' overdue · ' + (kpis.ar_open_invoices_count || 0) + ' invoices'
-                      : (kpis.ar_open_invoices_count || 0) + ' open invoice' + (kpis.ar_open_invoices_count === 1 ? '' : 's') },
-                { label: 'Payables due', raw: kpis.ap_outstanding || 0, value: formatINR(kpis.ap_outstanding || 0),
-                  hint: (kpis.ap_open_bills_count || 0) + ' open bill' + (kpis.ap_open_bills_count === 1 ? '' : 's') },
-                { label: 'Net profit', raw: kpis.net_profit_ytd || 0, value: formatINR(kpis.net_profit_ytd || 0),
-                  hint: kpis.fiscal_year_name || 'this fiscal year' }
+            const chips = [
+                { k: 'revenue ' + (kpis.fiscal_year_name || 'FY'), raw: kpis.revenue_ytd || 0, hero: true },
+                { k: 'net profit', raw: kpis.net_profit_ytd || 0 },
+                { k: 'cash & bank', raw: kpis.total_liquid || 0 },
+                { k: 'receivables', raw: kpis.ar_outstanding || 0,
+                  warn: (kpis.ar_overdue_count || 0) > 0 ? kpis.ar_overdue_count + ' overdue' : null },
+                { k: 'payables', raw: kpis.ap_outstanding || 0 }
             ];
 
-            const chartCard = document.createElement('div');
-            chartCard.className = 'home-chart-card';
-            chartCard.innerHTML =
-                '<div class="home-chart-head">' +
-                    '<h2 class="home-chart-title">Revenue vs expenses</h2>' +
-                    '<div class="home-chart-legend">' +
-                        '<span><span class="swatch" style="background:var(--chart-revenue)"></span>Revenue</span>' +
-                        '<span><span class="swatch" style="background:var(--chart-expense)"></span>Expenses</span>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="home-chart-body" id="homeChartBody"></div>' +
-                '<div class="home-chart-tip" id="homeChartTip"></div>';
-            el.appendChild(chartCard);
-
-            stats.forEach(s => {
-                const tile = document.createElement('div');
-                tile.className = 'home-stat';
-                tile.innerHTML = '<div class="label"></div><div class="value"></div><div class="hint"></div>';
-                tile.querySelector('.label').textContent = s.label;
-                tile.querySelector('.hint').textContent = s.hint;
-                countUp(tile.querySelector('.value'), s.raw, s.value);
-                el.appendChild(tile);
+            el.innerHTML = '';
+            chips.forEach(c => {
+                const a = document.createElement('a');
+                a.className = 'mc-chip' + (c.hero ? ' hero' : '');
+                a.href = 'accounts/dashboard.html';
+                a.innerHTML = '<span class="v"></span><span class="k"></span>' +
+                              (c.warn ? '<span class="warn"></span>' : '');
+                a.querySelector('.k').textContent = c.k;
+                if (c.warn) a.querySelector('.warn').textContent = '· ' + c.warn;
+                countUp(a.querySelector('.v'), c.raw, formatINR(c.raw));
+                el.appendChild(a);
             });
-
-            renderTrendChart(trend);
             el.hidden = false;
         }
 
-        // Animate a stat from 0 to its final value (skipped under reduced motion)
         function countUp(node, raw, finalText) {
             const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (reduced || !isFinite(raw) || raw === 0) {
-                node.textContent = finalText;
-                return;
-            }
+            if (reduced || !isFinite(raw) || raw === 0) { node.textContent = finalText; return; }
             const dur = 700;
             const start = performance.now();
             function tick(now) {
@@ -404,40 +402,30 @@
             requestAnimationFrame(tick);
         }
 
-        function renderTrendChart(trend) {
-            const body = document.getElementById('homeChartBody');
-            if (!body || !trend || !trend.length) return;
+        // Ambient full-bleed revenue band: one series (area), months on hover.
+        function renderBand(trend) {
+            const band = document.getElementById('mcBand');
+            const host = document.getElementById('mcBandChart');
+            if (!band || !host || !trend || !trend.length) return;
+            if (!trend.some(t => (t.revenue || 0) !== 0)) return; // nothing to show — stay hidden
 
-            const hasData = trend.some(t => (t.revenue || 0) !== 0 || (t.expenses || 0) !== 0);
-            if (!hasData) {
-                body.innerHTML = '<div class="home-chart-empty">No transactions in the last 6 months yet.</div>';
-                return;
-            }
-
-            const W = 560, H = 172, padL = 8, padR = 46, padT = 14, padB = 22;
-            const iw = W - padL - padR, ih = H - padT - padB;
-            const maxVal = Math.max(...trend.map(t => Math.max(t.revenue || 0, t.expenses || 0)));
-            const yMax = maxVal * 1.15 || 1;
-            const x = i => padL + (trend.length === 1 ? iw / 2 : (i / (trend.length - 1)) * iw);
+            const W = 1200, H = 168, padT = 26, padB = 20;
+            const ih = H - padT - padB;
+            const yMax = Math.max(...trend.map(t => t.revenue || 0)) * 1.15 || 1;
+            const x = i => (trend.length === 1 ? W / 2 : (i / (trend.length - 1)) * W);
             const y = v => padT + ih - (v / yMax) * ih;
 
-            // Monotone-cubic smoothing (no overshoot below the baseline on spikes)
-            function smoothPathOf(key) {
-                const pts = trend.map((t, i) => [x(i), y(t[key] || 0)]);
-                if (pts.length < 3) {
-                    return pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-                }
+            function smoothPath() {
+                const pts = trend.map((t, i) => [x(i), y(t.revenue || 0)]);
                 const n = pts.length;
-                const dx = [], dy = [], m = [];
+                if (n < 3) return pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+                const dx = [], m = [];
                 for (let i = 0; i < n - 1; i++) {
                     dx.push(pts[i + 1][0] - pts[i][0]);
-                    dy.push(pts[i + 1][1] - pts[i][1]);
-                    m.push(dy[i] / dx[i]);
+                    m.push((pts[i + 1][1] - pts[i][1]) / dx[i]);
                 }
                 const t = [m[0]];
-                for (let i = 1; i < n - 1; i++) {
-                    t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
-                }
+                for (let i = 1; i < n - 1; i++) t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
                 t.push(m[n - 2]);
                 for (let i = 0; i < n - 1; i++) {
                     if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
@@ -456,76 +444,52 @@
                 }
                 return d;
             }
-            const pathOf = smoothPathOf;
-            const baseline = (padT + ih).toFixed(1);
-            const areaPath = smoothPathOf('revenue') +
-                ' L' + x(trend.length - 1).toFixed(1) + ',' + baseline +
-                ' L' + x(0).toFixed(1) + ',' + baseline + ' Z';
 
-            // Recessive grid: 3 horizontal lines, muted month labels
-            let grid = '';
-            for (let g = 1; g <= 3; g++) {
-                const gy = (padT + ih - (g / 3) * ih).toFixed(1);
-                grid += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy +
-                        '" stroke="var(--home-line)" stroke-width="1"/>';
-            }
-            const labels = trend.map((t, i) =>
-                '<text x="' + x(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" ' +
-                'font-size="10" fill="var(--text-muted)" font-family="var(--font-family)">' +
-                (t.label || '').split(' ')[0] + '</text>').join('');
+            const line = smoothPath();
+            const area = line + ' L' + W + ',' + H + ' L0,' + H + ' Z';
 
+            // Direct label on the latest month with activity
             const last = trend.length - 1;
-            // Anchor the direct label to the latest month with activity, not a
-            // just-started zero month (an endpoint reading "₹0" misleads).
             let lastActive = last;
             for (let i = last; i >= 0; i--) {
-                if ((trend[i].revenue || 0) !== 0 || (trend[i].expenses || 0) !== 0) { lastActive = i; break; }
+                if ((trend[i].revenue || 0) !== 0) { lastActive = i; break; }
             }
-            const endDot = (key, color) =>
-                '<circle cx="' + x(lastActive).toFixed(1) + '" cy="' + y(trend[lastActive][key] || 0).toFixed(1) +
-                '" r="3" fill="' + color + '"/>';
-            const endLabel = (key) => {
-                const v = trend[lastActive][key] || 0;
-                if (v === 0) return '';
-                const lx = Math.min(x(lastActive) + 7, W - padR + 4);
-                return '<text x="' + lx.toFixed(1) + '" y="' + (y(v) + 3.5).toFixed(1) +
-                    '" font-size="10.5" fill="var(--text-secondary)" font-family="var(--font-family-mono)">' +
-                    formatINR(v) + '</text>';
-            };
+            const v = trend[lastActive].revenue || 0;
+            const lx = Math.min(x(lastActive), W - 70);
+            const marker =
+                '<circle cx="' + x(lastActive).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="3.5" fill="var(--chart-revenue)"/>' +
+                '<text x="' + (lx + 10).toFixed(1) + '" y="' + Math.max(y(v) - 8, 14).toFixed(1) +
+                '" font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="var(--font-family-mono)">' +
+                formatINR(v) + ' · ' + ((trend[lastActive].label || '').split(' ')[0]) + '</text>';
 
-            body.innerHTML =
+            host.innerHTML =
                 '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" ' +
-                'aria-label="Monthly revenue and expenses, last ' + trend.length + ' months">' +
-                '<defs><linearGradient id="homeRevFill" x1="0" y1="0" x2="0" y2="1">' +
-                '<stop offset="0" stop-color="var(--chart-revenue)" stop-opacity="0.22"/>' +
+                'aria-label="Monthly revenue, last ' + trend.length + ' months">' +
+                '<defs><linearGradient id="mcRev" x1="0" y1="0" x2="0" y2="1">' +
+                '<stop offset="0" stop-color="var(--chart-revenue)" stop-opacity="0.30"/>' +
                 '<stop offset="1" stop-color="var(--chart-revenue)" stop-opacity="0"/>' +
                 '</linearGradient></defs>' +
-                grid +
-                '<path d="' + areaPath + '" fill="url(#homeRevFill)" stroke="none"/>' +
-                '<path class="draw-line" d="' + pathOf('revenue') + '" fill="none" stroke="var(--chart-revenue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
-                '<path class="draw-line" d="' + pathOf('expenses') + '" fill="none" stroke="var(--chart-expense)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
-                endDot('revenue', 'var(--chart-revenue)') + endDot('expenses', 'var(--chart-expense)') +
-                endLabel('revenue') +
-                '<line id="homeChartCross" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + ih) +
+                '<path d="' + area + '" fill="url(#mcRev)" stroke="none"/>' +
+                '<path class="draw-line" d="' + line + '" fill="none" stroke="var(--chart-revenue)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+                marker +
+                '<line id="mcCross" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + ih) +
                 '" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3" style="display:none"/>' +
-                labels +
                 '</svg>' +
                 buildTrendTable(trend);
 
-            // Draw-in animation (skipped under reduced motion)
+            band.hidden = false;
+
             if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                body.querySelectorAll('.draw-line').forEach((p, i) => {
-                    const len = p.getTotalLength();
-                    p.style.strokeDasharray = len;
-                    p.style.strokeDashoffset = len;
-                    p.style.transition = 'stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1) ' + (0.15 + i * 0.12) + 's';
-                    requestAnimationFrame(() => requestAnimationFrame(() => { p.style.strokeDashoffset = '0'; }));
-                });
+                const p = host.querySelector('.draw-line');
+                const len = p.getTotalLength();
+                p.style.strokeDasharray = len;
+                p.style.strokeDashoffset = len;
+                p.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s';
+                requestAnimationFrame(() => requestAnimationFrame(() => { p.style.strokeDashoffset = '0'; }));
             }
 
-            // Hover: nearest-month crosshair + tooltip
-            const svg = body.querySelector('svg');
-            const cross = body.querySelector('#homeChartCross');
+            const svg = host.querySelector('svg');
+            const cross = host.querySelector('#mcCross');
             const tip = document.getElementById('homeChartTip');
 
             svg.addEventListener('mousemove', (e) => {
@@ -541,11 +505,10 @@
                 cross.setAttribute('x2', x(idx));
                 tip.style.display = 'block';
                 tip.style.left = (x(idx) / W * rect.width) + 'px';
-                tip.style.top = '30px';
-                tip.innerHTML = '<b></b><br>Revenue <b class="tr"></b><br>Expenses <b class="te"></b>';
+                tip.style.top = '40px';
+                tip.innerHTML = '<b></b><br>Revenue <b class="tr"></b>';
                 tip.querySelector('b').textContent = trend[idx].label || '';
                 tip.querySelector('.tr').textContent = formatINR(trend[idx].revenue || 0);
-                tip.querySelector('.te').textContent = formatINR(trend[idx].expenses || 0);
             });
             svg.addEventListener('mouseleave', () => {
                 cross.style.display = 'none';
@@ -557,10 +520,10 @@
             let rows = '';
             trend.forEach(t => {
                 rows += '<tr><th scope="row">' + (t.label || '') + '</th><td>' +
-                        formatINR(t.revenue || 0) + '</td><td>' + formatINR(t.expenses || 0) + '</td></tr>';
+                        formatINR(t.revenue || 0) + '</td></tr>';
             });
-            return '<table class="sr-only"><caption>Monthly revenue and expenses</caption>' +
-                   '<thead><tr><th scope="col">Month</th><th scope="col">Revenue</th><th scope="col">Expenses</th></tr></thead>' +
+            return '<table class="sr-only"><caption>Monthly revenue</caption>' +
+                   '<thead><tr><th scope="col">Month</th><th scope="col">Revenue</th></tr></thead>' +
                    '<tbody>' + rows + '</tbody></table>';
         }
 
