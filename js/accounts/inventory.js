@@ -175,8 +175,10 @@ async function saveItem() {
         let savedId = id;
         if (id) await api.request(AccountsCommon.buildUrl(`inventory/items/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
         else savedId = (await api.request(AccountsCommon.buildUrl('inventory/items'), { method: 'POST', body: JSON.stringify(payload) }))?.id;
-        // Composition rides in a second call (separate endpoint); only for goods.
-        if (savedId && payload.item_type === 'goods') {
+        // Composition rides in a second call (separate endpoint); only for goods. Guard: on an EDIT whose
+        // composition is still async-loading (rows empty), skip the write entirely — otherwise we'd PUT an
+        // empty set and WIPE the item's stored salts. A new item (no id) always writes (nothing to wipe).
+        if (savedId && payload.item_type === 'goods' && (!id || _itemSaltsReady)) {
             try { await api.request(AccountsCommon.buildUrl(`inventory/items/${savedId}/salts`), { method: 'PUT', body: JSON.stringify({ salts: collectItemSalts() }) }); }
             catch (e) { Toast.error('Item saved, but the composition failed: ' + (e?.message || '')); }
         }
@@ -1193,12 +1195,16 @@ async function ensureSalts() {
 }
 
 let _itSaltLoadSeq = 0;
+// False while an edit's composition is still async-loading — saveItem must NOT write the /salts endpoint
+// during this window (the rows are empty, so it would PUT { salts: [] } and WIPE the stored composition).
+let _itemSaltsReady = false;
 async function initItemSaltRows(existing, itemId = null) {
     const wrap = document.getElementById('itSaltRows');
     if (!wrap) return;
     // Sequence token: opening item B while item A's async composition fetch is still in flight must not
     // let A's rows render into B's form. Every await re-checks that this is still the latest load.
     const seq = ++_itSaltLoadSeq;
+    _itemSaltsReady = false;
     wrap.innerHTML = '';
     await ensureSalts();
     if (seq !== _itSaltLoadSeq) return;
@@ -1209,6 +1215,7 @@ async function initItemSaltRows(existing, itemId = null) {
         if (seq !== _itSaltLoadSeq) return;   // a newer item opened while we waited — abandon this render
     }
     rows.forEach(r => addItemSaltRow(r));
+    if (seq === _itSaltLoadSeq) _itemSaltsReady = true;   // composition now reflects the stored rows — safe to save
 }
 
 function addItemSaltRow(data = {}) {

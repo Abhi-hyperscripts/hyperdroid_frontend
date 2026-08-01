@@ -695,15 +695,20 @@ const SearchableDropdown = (function() {
             instances.delete(this.id);
             if (this._docClickHandler) { document.removeEventListener('click', this._docClickHandler); this._docClickHandler = null; }
             this._detachReposition();
-            if (this.linkedSelect) {
-                this.linkedSelect.style.display = '';
-                this.linkedSelect.removeAttribute('data-searchable');
-            }
+            // NOTE: do NOT restore the linkedSelect's visibility here. This runs on the REUSE paths
+            // (constructor same-id teardown, self-eviction, uom rebuild) where the container is kept and a new
+            // instance is about to render over it — un-hiding the native <select> would leave a duplicate
+            // control stacked next to the searchable dropdown (e.g. re-conversion via convertSelectToSearchable).
+            // The linkedSelect is only un-hidden on TRUE disposal (destroy()).
         }
 
         destroy() {
             this._teardownListeners();
-            // Full disposal also removes the container from the DOM entirely.
+            // True disposal: restore the original native <select> and remove the container from the DOM.
+            if (this.linkedSelect) {
+                this.linkedSelect.style.display = '';
+                this.linkedSelect.removeAttribute('data-searchable');
+            }
             if (this.container && this.container.parentNode) {
                 this.container.parentNode.removeChild(this.container);
             }

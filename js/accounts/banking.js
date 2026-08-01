@@ -2036,8 +2036,11 @@ function printPdcCheque(id) {
     const ch = pdcCache.find(c => c.id === id);
     if (!ch) return;
     const esc = AccountsCommon.escapeHtml;
-    const d = new Date(ch.cheque_date);
-    const dateDigits = String(d.getDate()).padStart(2, '0') + String(d.getMonth() + 1).padStart(2, '0') + d.getFullYear();
+    // Parse the date-only string's components directly — `new Date("2026-08-15")` is UTC midnight, and
+    // getDate()/getMonth() then read it in the browser's LOCAL zone, printing the PREVIOUS day for a
+    // bookkeeper in any UTC-negative timezone. DDMMYYYY for the cheque boxes.
+    const ds = String(ch.cheque_date || '').slice(0, 10).split('-');   // [YYYY, MM, DD]
+    const dateDigits = ds.length === 3 ? ds[2].padStart(2, '0') + ds[1].padStart(2, '0') + ds[0] : '';
     const figures = Number(ch.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const w = window.open('', '_blank');
     if (!w) { Toast.error('Allow pop-ups to print the cheque'); return; }

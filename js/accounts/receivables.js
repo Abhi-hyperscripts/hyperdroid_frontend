@@ -1277,6 +1277,10 @@ function maintainInvoiceFreeLines() {
                 const newRow = document.querySelector('#invoiceLines tr:last-child');
                 newRow._freeScheme = s.id;
                 newRow.querySelectorAll('.line-qty, .line-rate, .line-disc, .line-desc').forEach(el => el.readOnly = true);
+                // The free qty is computed in BASE units — lock the unit picker too, else the biller could flip
+                // it to an alt sale unit (e.g. 'box', ×12) and the backend would snapshot that conversion,
+                // silently issuing 12× the intended free stock. Disabled keeps getValue() at the base unit.
+                newRow._lineUomDropdown?.setDisabled?.(true);
                 Toast.info(`Free goods added: ${entitled} × ${freeItem.name} (${s.name}). Remove the line to opt out.`);
             } else if (existing) {
                 if (entitled > 0) {
