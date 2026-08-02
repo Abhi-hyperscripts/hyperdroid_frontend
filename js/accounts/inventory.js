@@ -63,11 +63,27 @@ async function loadItems() {
     } catch (err) { console.error('[Inventory] loadItems', err); Toast.error('Failed to load items'); }
 }
 
+let itemVisFilter = '';   // '' | sellable | notsold | purchasable | notbought
+function setItemVisFilter(v) {
+    itemVisFilter = v;
+    document.querySelectorAll('#itemVisChips .vis-chip').forEach(b => b.classList.toggle('on', b.dataset.vis === v));
+    renderItems();
+}
+function matchesVis(i) {
+    switch (itemVisFilter) {
+        case 'sellable': return i.is_sellable !== false;
+        case 'notsold': return i.is_sellable === false;
+        case 'purchasable': return i.is_purchasable !== false;
+        case 'notbought': return i.is_purchasable === false;
+        default: return true;
+    }
+}
+
 function renderItems() {
     const tb = document.getElementById('itemsTable');
     if (!tb) return;
     const q = (document.getElementById('itemSearch')?.value || '').toLowerCase();
-    const rows = items.filter(i => !q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q));
+    const rows = items.filter(i => (!q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)) && matchesVis(i));
     if (!rows.length) {
         tb.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-secondary);">No items yet. Click "+ New Item" to create your product catalog.</td></tr>';
         return;

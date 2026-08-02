@@ -100,9 +100,20 @@
             <main class="organization-content">
                 <!-- 1. ITEMS -->
                 <div class="tab-content active" id="inv-items">
-                    <div class="filters-bar" style="align-items:flex-end;gap:12px;">
+                    <style>
+                        #itemVisChips .vis-chip { border:1px solid var(--border-color); background:transparent; color:var(--text-secondary); padding:5px 12px; border-radius:999px; font-size:.8rem; cursor:pointer; line-height:1.4; }
+                        #itemVisChips .vis-chip.on { background:var(--brand-primary); color:#fff; border-color:var(--brand-primary); }
+                    </style>
+                    <div class="filters-bar" style="align-items:flex-end;gap:12px;flex-wrap:wrap;">
                         <div class="form-group" style="margin:0;max-width:300px;"><input type="text" id="itemSearch" class="form-control" placeholder="Search SKU / name…"></div>
                         <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--text-secondary);"><input type="checkbox" id="itemShowInactive"> Show inactive</label>
+                        <div id="itemVisChips" style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button type="button" class="vis-chip on" data-vis="" onclick="setItemVisFilter('')">All</button>
+                            <button type="button" class="vis-chip" data-vis="sellable" onclick="setItemVisFilter('sellable')">Sellable</button>
+                            <button type="button" class="vis-chip" data-vis="notsold" onclick="setItemVisFilter('notsold')">Not sold</button>
+                            <button type="button" class="vis-chip" data-vis="purchasable" onclick="setItemVisFilter('purchasable')">Purchasable</button>
+                            <button type="button" class="vis-chip" data-vis="notbought" onclick="setItemVisFilter('notbought')">Not bought</button>
+                        </div>
                         <span style="flex:1"></span>
                         <button class="btn btn-outline" onclick="showLabelModal()">Print Labels</button>
                         <button class="btn btn-outline" onclick="showImportModal()" data-admin-only>Import CSV</button>
