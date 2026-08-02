@@ -39,6 +39,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/rail-drawer.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-charts.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -285,6 +286,16 @@
                                     </button>
                                 </div>
                             </div>
+                            <!-- Chart strip — one canvas, redrawn per report type
+                                 by renderReportChart(); hidden when a report has
+                                 no meaningful visual. -->
+                            <div class="hrms-charts" id="reportChartWrap" style="display:none;">
+                                <div class="hrms-chart-card">
+                                    <h3 class="hrms-chart-title" id="reportChartTitle">Overview</h3>
+                                    <p class="hrms-chart-sub" id="reportChartSub"></p>
+                                    <div class="hrms-chart" id="reportChart"></div>
+                                </div>
+                            </div>
                             <div class="output-table" id="reportTable">
                                 <p class="placeholder-text">Select a report from the sidebar and click "Generate Report" to view data</p>
                             </div>
@@ -316,6 +327,8 @@
     <script>document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
+    <script>document.write('<script src="../../js/hrms/hrms-charts.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/hrms/reports.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <!-- AI Copilot Widget -->
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="hrms" data-title="HR Assistant"><\/script>');</script>

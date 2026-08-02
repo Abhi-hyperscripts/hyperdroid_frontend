@@ -494,6 +494,37 @@ function updateStats() {
         return termDate >= monthStart && termDate <= today;
     });
     document.getElementById('exitCount').textContent = exitEmployees.length;
+
+    renderWorkforceCharts();
+}
+
+// Headcount donuts built from the in-memory employees array — no extra calls.
+// Hidden entirely when there's nothing to plot.
+function renderWorkforceCharts() {
+    const wrap = document.getElementById('empChartsWrap');
+    if (!wrap || typeof acDonut !== 'function' || typeof ApexCharts === 'undefined') return;
+    const active = employees.filter(e => e.employment_status === 'active');
+    if (!active.length) { wrap.style.display = 'none'; return; }
+
+    const group = (key, fallback) => {
+        const m = {};
+        active.forEach(e => { const k = e[key] || fallback; m[k] = (m[k] || 0) + 1; });
+        return Object.entries(m).sort((a, b) => b[1] - a[1]);
+    };
+    const draw = () => {
+        const dept = group('department_name', 'Unassigned');
+        const office = group('office_name', 'Unassigned');
+        acDonut('empDeptChart', dept.map(r => r[0]), dept.map(r => r[1]), null, v => `${v}`);
+        acBarV('empOfficeChart', office.map(r => r[0]), office.map(r => r[1]), _acPalette, v => `${v}`);
+    };
+    wrap.style.display = '';
+    try {
+        draw();
+        _acActiveRender = draw;   // redraw on theme toggle
+    } catch (e) {
+        console.warn('[employees] chart render failed:', e);
+        wrap.style.display = 'none';
+    }
 }
 
 function filterEmployees() {

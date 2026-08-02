@@ -1,0 +1,74 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   HRMS CHARTS — glass chart cards for the HRMS pages.
+   Matches the suite treatment used by .acc-chart-card / .pulse-card.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.hrms-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+  margin: 16px 0 18px;
+}
+
+.hrms-chart-card {
+  position: relative;
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent);
+  border-radius: 16px;
+  padding: 16px 18px;
+  min-width: 0;
+  overflow: hidden;
+}
+.hrms-chart-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 5%, transparent), transparent 26%);
+  pointer-events: none;
+}
+.hrms-chart-card > * { position: relative; z-index: 1; }
+
+.hrms-chart-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+.hrms-chart-sub {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  margin: 2px 0 10px;
+}
+.hrms-chart { min-height: 250px; }
+.hrms-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0 18px;
+}
+
+/* ApexCharts tooltip readable on glass */
+.hrms-chart .apexcharts-tooltip {
+  background: color-mix(in srgb, var(--bg-card) 95%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent) !important;
+  color: var(--text-primary) !important;
+}
+
+@media (max-width: 768px) {
+  .hrms-charts { grid-template-columns: 1fr; }
+}
+
+/* Inside the reports output panel the wrapper supplies no gutter (its header
+   and table each pad themselves), so the chart card was flush against the
+   panel border. Match .output-table's 16px. */
+.report-output .hrms-charts {
+  padding: 0 16px;
+  margin: 16px 0;
+}

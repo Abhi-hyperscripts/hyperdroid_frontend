@@ -465,6 +465,9 @@ async function runReport() {
 
         renderReportTable(config.columns, reportData);
         document.getElementById('recordCount').textContent = `${reportData.length} records`;
+        // Chart the same result set. Pass the RAW response — several configs
+        // run a dataExtractor that drops the summary scalars we want.
+        renderReportChart(currentReportType, response, reportData);
 
         hideLoading();
     } catch (error) {
@@ -993,5 +996,110 @@ function resetFilters() {
     const paginationContainer = document.getElementById('reportPagination');
     if (paginationContainer) {
         paginationContainer.innerHTML = '';
+    }
+}
+
+
+// ─── Report chart ────────────────────────────────────────────────────────────
+// One canvas under the output header, redrawn per report type. Every report
+// endpoint already returns pre-aggregated rows, so each entry is a one-liner.
+// Reports with no meaningful visual (flat registers, directories) hide the strip.
+const REPORT_CHARTS = {
+    'employee-headcount': {
+        title: 'Headcount by department', sub: 'Share of active employees',
+        draw: (raw, rows) => {
+            const d = (raw && raw.by_department) || rows || [];
+            acDonut('reportChart', d.map(x => x.department_name), d.map(x => x.count), null, v => `${v}`);
+        }
+    },
+    'employee-demographics': {
+        title: 'Headcount by department', sub: 'Distribution across the org',
+        draw: (raw, rows) => acDonut('reportChart', rows.map(x => x.department_name), rows.map(x => x.count), null, v => `${v}`)
+    },
+    'employee-turnover': {
+        title: 'Attrition rate by department', sub: 'Higher bars need attention',
+        draw: (raw, rows) => acBarV('reportChart', rows.map(x => x.department_name), rows.map(x => Math.round((x.attrition_rate || 0) * 10) / 10), _acPalette, v => `${v}%`)
+    },
+    'monthly-attendance': {
+        title: 'Attendance rate by department', sub: 'Present days ÷ working days',
+        draw: (raw, rows) => acBarV('reportChart', rows.map(x => x.department_name), rows.map(x => Math.round((x.attendance_rate || 0) * 10) / 10), _acPalette, v => `${v}%`)
+    },
+    'daily-attendance': {
+        title: 'Daily attendance', sub: 'Present vs absent vs on leave',
+        draw: (raw, rows) => {
+            const byDay = {};
+            (rows || []).forEach(r => {
+                const k = String(r.date || '').slice(0, 10);
+                if (!k) return;
+                (byDay[k] = byDay[k] || { p: 0, a: 0, l: 0 });
+                byDay[k].p += r.present || 0; byDay[k].a += r.absent || 0; byDay[k].l += r.on_leave || 0;
+            });
+            const keys = Object.keys(byDay).sort();
+            if (!keys.length) return _acEmpty('reportChart');
+            const lbl = k => new Date(k).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+            acColumns('reportChart', keys.map(lbl), [
+                { name: 'Present', data: keys.map(k => byDay[k].p) },
+                { name: 'Absent', data: keys.map(k => byDay[k].a) },
+                { name: 'On leave', data: keys.map(k => byDay[k].l) }
+            ], ['#10b981', '#ef4444', '#f59e0b'], v => `${v}`);
+        }
+    },
+    'late-arrivals': {
+        title: 'Late arrivals by department', sub: 'Count over the selected window',
+        draw: (raw, rows) => { const d = (raw && raw.by_department) || rows || []; acBarV('reportChart', d.map(x => x.department_name), d.map(x => x.late_arrivals), _acPalette, v => `${v}`); }
+    },
+    'absenteeism': {
+        title: 'Absent days by department', sub: 'Total across the window',
+        draw: (raw, rows) => { const d = (raw && raw.by_department) || rows || []; acBarV('reportChart', d.map(x => x.department_name), d.map(x => x.absent_days), _acPalette, v => `${v}d`); }
+    },
+    'overtime-report': {
+        title: 'Average working hours by department', sub: 'Overtime pressure',
+        draw: (raw, rows) => { const d = (raw && raw.by_department) || rows || []; acBarV('reportChart', d.map(x => x.department_name), d.map(x => Math.round((x.average_working_hours || 0) * 10) / 10), _acPalette, v => `${v}h`); }
+    },
+    'leave-trend': {
+        title: 'Leave days taken per month', sub: 'Utilisation across the year',
+        draw: (raw, rows) => acBarV('reportChart', rows.map(x => (x.month_name || '').slice(0, 3)), rows.map(x => x.days_taken), null, v => `${v}d`)
+    },
+    'leave-utilization': {
+        title: 'Leave utilisation by type', sub: 'Days taken vs available',
+        draw: (raw, rows) => {
+            const byType = {};
+            (rows || []).forEach(r => {
+                const k = r.leave_type_name || r.leave_type_code || '—';
+                byType[k] = (byType[k] || 0) + (r.used_days || r.days_taken || 0);
+            });
+            const e = Object.entries(byType).filter(([, v]) => v > 0);
+            if (!e.length) return _acEmpty('reportChart');
+            acDonut('reportChart', e.map(x => x[0]), e.map(x => x[1]), null, v => `${v}d`);
+        }
+    },
+    'salary-summary': {
+        title: 'Payroll cost by department', sub: 'Share of total gross',
+        draw: (raw, rows) => acDonut('reportChart', rows.map(x => x.department_name), rows.map(x => x.total_gross), null, v => formatCurrency(v))
+    },
+    'tax-report': {
+        title: 'TDS by month', sub: 'Tax deducted across the year',
+        draw: (raw, rows) => acBarV('reportChart', rows.map(x => (x.month_name || '').slice(0, 3)), rows.map(x => x.total_tds), null, v => formatCurrency(v))
+    }
+};
+
+function renderReportChart(type, raw, rows) {
+    const wrap = document.getElementById('reportChartWrap');
+    if (!wrap) return;
+    const spec = REPORT_CHARTS[type];
+    if (!spec || typeof ApexCharts === 'undefined' || !rows || !rows.length) {
+        wrap.style.display = 'none';
+        return;
+    }
+    wrap.style.display = '';
+    document.getElementById('reportChartTitle').textContent = spec.title;
+    document.getElementById('reportChartSub').textContent = spec.sub;
+    try {
+        spec.draw(raw, rows);
+        // Redraw on theme toggle (ApexCharts bakes colours in at render time).
+        _acActiveRender = () => { try { spec.draw(raw, rows); } catch (e) {} };
+    } catch (e) {
+        console.warn('[reports] chart render failed:', e);
+        wrap.style.display = 'none';
     }
 }

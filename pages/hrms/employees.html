@@ -81,6 +81,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/rail-drawer.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-charts.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -265,6 +266,21 @@
                         <div class="stat-card danger">
                             <div class="stat-value" id="exitCount">-</div>
                             <div class="stat-label">Exits This Month</div>
+                        </div>
+                    </div>
+
+                    <!-- Workforce charts — built from the already-loaded
+                         employees array, so no extra network calls. -->
+                    <div class="hrms-charts" id="empChartsWrap" style="display:none;">
+                        <div class="hrms-chart-card">
+                            <h3 class="hrms-chart-title">Headcount by department</h3>
+                            <p class="hrms-chart-sub">Active employees across the org</p>
+                            <div class="hrms-chart" id="empDeptChart"></div>
+                        </div>
+                        <div class="hrms-chart-card">
+                            <h3 class="hrms-chart-title">Headcount by office</h3>
+                            <p class="hrms-chart-sub">Where the team sits</p>
+                            <div class="hrms-chart" id="empOfficeChart"></div>
                         </div>
                     </div>
 
@@ -1972,6 +1988,8 @@
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-pagination.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
+    <script>document.write('<script src="../../js/hrms/hrms-charts.js?v=' + CACHE_VERSION + '"><\/script>');</script>
         document.write('<script src="../../js/hrms/employees.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employee-banking.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employee-manager-bulk.js?v=' + CACHE_VERSION + '"><\/script>');
