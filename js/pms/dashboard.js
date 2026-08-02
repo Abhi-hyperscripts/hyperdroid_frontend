@@ -62,6 +62,79 @@ async function loadStats() {
     setTextContent('hoursThisWeek', weeklyHours);
     setTextContent('pendingTimesheets', pendingCount);
     setTextContent('teamMembers', memberCount);
+
+    renderDeliveryCharts();
+}
+
+// Delivery charts: hours/week, hours by project, task pipeline. Built from
+// the same endpoints the stat tiles use. Hidden entirely when nothing is
+// logged yet, so a fresh tenant doesn't see three empty axes.
+async function renderDeliveryCharts() {
+    const wrap = document.getElementById('pmsChartsWrap');
+    if (!wrap || typeof acDonut !== 'function' || typeof ApexCharts === 'undefined') return;
+    try {
+        const today = new Date();
+        const from = new Date(today.getTime() - 55 * 864e5).toISOString().slice(0, 10);
+        const to = today.toISOString().slice(0, 10);
+        const asList = r => Array.isArray(r) ? r : (r?.data ?? []);
+
+        const [entries, projects, tasks] = await Promise.all([
+            api.request(`/pms/time-entries/my?fromDate=${from}&toDate=${to}`, { _skipSpinner: true }).then(asList).catch(() => []),
+            api.request('/pms/projects', { _skipSpinner: true }).then(asList).catch(() => []),
+            api.request('/pms/tasks', { _skipSpinner: true }).then(asList).catch(() => [])
+        ]);
+
+        if (!entries.length && !tasks.length) { wrap.style.display = 'none'; return; }
+
+        // hours per ISO week
+        const weekKey = d => {
+            const dt = new Date(d);
+            const monday = new Date(dt);
+            monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+            return monday.toISOString().slice(0, 10);
+        };
+        const byWeek = {};
+        entries.forEach(e => {
+            const k = weekKey(e.log_date || e.created_at);
+            byWeek[k] = (byWeek[k] || 0) + (e.total_minutes || 0);
+        });
+        const weeks = Object.keys(byWeek).sort();
+        const weekLbl = k => new Date(k).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+        // hours by project
+        const nameOf = {};
+        projects.forEach(p => { nameOf[p.id] = p.project_name || p.name || 'Untitled'; });
+        const byProject = {};
+        entries.forEach(e => {
+            const k = nameOf[e.project_id] || 'Unassigned';
+            byProject[k] = (byProject[k] || 0) + (e.total_minutes || 0);
+        });
+        const projRows = Object.entries(byProject).sort((a, b) => b[1] - a[1]).slice(0, 7);
+
+        // task pipeline
+        const LABELS = { todo: 'To do', in_progress: 'In progress', in_review: 'In review', done: 'Done' };
+        const byStatus = {};
+        tasks.forEach(t => {
+            const s = t.status || 'todo';
+            if (s === 'cancelled') return;
+            byStatus[s] = (byStatus[s] || 0) + 1;
+        });
+        const order = ['todo', 'in_progress', 'in_review', 'done'].filter(s => byStatus[s]);
+
+        wrap.style.display = '';
+        const hrs = m => Math.round((m / 60) * 10) / 10;
+        const draw = () => {
+            acBarV('pmsHoursChart', weeks.map(weekLbl), weeks.map(k => hrs(byWeek[k])), null, v => `${v}h`);
+            acDonut('pmsProjectChart', projRows.map(r => r[0]), projRows.map(r => hrs(r[1])), null, v => `${v}h`);
+            acBarV('pmsTaskChart', order.map(s => LABELS[s] || s), order.map(s => byStatus[s]),
+                   ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981'], v => `${v}`);
+        };
+        draw();
+        _acActiveRender = draw;
+    } catch (e) {
+        console.warn('[pms] charts unavailable:', e && e.message);
+        wrap.style.display = 'none';
+    }
 }
 
 async function fetchClientCount() {
