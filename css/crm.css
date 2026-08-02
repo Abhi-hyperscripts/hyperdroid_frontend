@@ -6720,3 +6720,15 @@ body.crm-leads-page .lp-toolbar .crm-filter-group--no-label { flex-shrink: 0; di
   body.crm-leads-page .lp-hero-total { border-right: none; border-bottom: 1px solid var(--lp-glass-line); padding: 0 0 14px; }
   body.crm-leads-page .lp-toolbar { flex-wrap: wrap; }
 }
+
+/* Form-answers funnel button, soft-disabled state: stays hoverable so its
+   explanatory tooltip can render (a hard `disabled` attr suppressed all
+   mouse events and the button just read as dead). */
+#formAnswersFilterBtn.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+#formAnswersFilterBtn.is-disabled:hover {
+  background: transparent;
+  border-color: var(--border-color);
+}

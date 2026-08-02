@@ -279,6 +279,7 @@
         renderActivityMixChart(data.effort || {});
         renderCallsFunnelChart(data.effort || {}, data.outcome || {});
         renderTimelineChart(data.timeline || []);
+        renderHeroWave(data.timeline || []);
 
         // Total-actions pill
         const totalBubble = document.getElementById('effortTotal');
@@ -287,6 +288,111 @@
             totalBubble.textContent = `${total} action${total === 1 ? '' : 's'}`;
             totalBubble.style.display = total > 0 ? 'inline-block' : 'none';
         }
+    }
+
+    // ── Hero wave: total actions/day as the header backdrop ────────────
+    // Monotone-cubic line over the selected window (Lead Desk pattern).
+    // Hidden for the Today window (single bucket = no line to draw).
+    function renderHeroWave(timeline) {
+        const band = document.getElementById('mdWave');
+        const capEl = document.getElementById('mdWaveCap');
+        const tip = document.getElementById('mdWaveTip');
+        if (!band) return;
+        const buckets = Array.isArray(timeline) ? timeline.map(d => d.total ?? 0) : [];
+        if (buckets.length <= 1 || buckets.every(v => v === 0)) {
+            band.hidden = true;
+            if (capEl) capEl.textContent = '';
+            return;
+        }
+        const DAYS = buckets.length;
+        const W = 1200, H = 96, padT = 56, padB = 6;
+        const ih = H - padT - padB;
+        const yMax = Math.max(...buckets) * 1.15 || 1;
+        const x = i => (i / (DAYS - 1)) * W;
+        const y = v => padT + ih - (v / yMax) * ih;
+
+        function smoothPath() {
+            const pts = buckets.map((v, i) => [x(i), y(v)]);
+            const n = pts.length;
+            const dx = [], m = [];
+            for (let i = 0; i < n - 1; i++) {
+                dx.push(pts[i + 1][0] - pts[i][0]);
+                m.push((pts[i + 1][1] - pts[i][1]) / dx[i]);
+            }
+            const t = [m[0]];
+            for (let i = 1; i < n - 1; i++) t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
+            t.push(m[n - 2]);
+            for (let i = 0; i < n - 1; i++) {
+                if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+                else {
+                    const a = t[i] / m[i], b = t[i + 1] / m[i];
+                    const s = a * a + b * b;
+                    if (s > 9) { const tau = 3 / Math.sqrt(s); t[i] = tau * a * m[i]; t[i + 1] = tau * b * m[i]; }
+                }
+            }
+            let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+            for (let i = 0; i < n - 1; i++) {
+                const h = dx[i];
+                d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
+                     ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
+                     ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+            }
+            return d;
+        }
+
+        const line = smoothPath();
+        const area = line + ' L' + W + ',' + H + ' L0,' + H + ' Z';
+        let peak = 0;
+        buckets.forEach((v, i) => { if (v > buckets[peak]) peak = i; });
+        const dayLabel = i => {
+            const d = new Date(timeline[i].day);
+            return isNaN(d) ? '' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        };
+
+        band.innerHTML =
+            `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Actions per day in the selected window">` +
+            `<defs><linearGradient id="mdWaveFill" x1="0" y1="0" x2="0" y2="1">` +
+            `<stop offset="0" stop-color="var(--brand-primary)" stop-opacity="0.24"/>` +
+            `<stop offset="1" stop-color="var(--brand-primary)" stop-opacity="0"/>` +
+            `</linearGradient></defs>` +
+            `<path d="${area}" fill="url(#mdWaveFill)" stroke="none"/>` +
+            `<path class="draw-line" d="${line}" fill="none" stroke="var(--brand-primary)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" opacity="0.95"/>` +
+            `<circle cx="${x(peak).toFixed(1)}" cy="${y(buckets[peak]).toFixed(1)}" r="3.5" fill="var(--brand-primary)"/>` +
+            `<line id="mdWaveCross" x1="0" y1="${padT}" x2="0" y2="${padT + ih}" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3" style="display:none"/>` +
+            `</svg>`;
+        band.hidden = false;
+        if (capEl) capEl.textContent = 'Actions/day · ' + DAYS + 'd';
+
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            const p = band.querySelector('.draw-line');
+            const len = p.getTotalLength();
+            p.style.strokeDasharray = len;
+            p.style.strokeDashoffset = len;
+            p.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s';
+            requestAnimationFrame(() => requestAnimationFrame(() => { p.style.strokeDashoffset = '0'; }));
+        }
+
+        const svg = band.querySelector('svg');
+        const cross = band.querySelector('#mdWaveCross');
+        svg.addEventListener('mousemove', (e) => {
+            if (!tip) return;
+            const rect = svg.getBoundingClientRect();
+            const relX = (e.clientX - rect.left) / rect.width * W;
+            const idx = Math.min(DAYS - 1, Math.max(0, Math.round((relX / W) * (DAYS - 1))));
+            cross.style.display = '';
+            cross.setAttribute('x1', x(idx));
+            cross.setAttribute('x2', x(idx));
+            tip.style.display = 'block';
+            tip.style.left = Math.min(Math.max(x(idx) / W * rect.width, 70), rect.width - 70) + 'px';
+            tip.style.top = '46px';
+            tip.textContent = '';
+            const b = document.createElement('b'); b.textContent = String(buckets[idx]);
+            tip.append(dayLabel(idx) + ' · ', b, ' actions');
+        });
+        svg.addEventListener('mouseleave', () => {
+            cross.style.display = 'none';
+            if (tip) tip.style.display = 'none';
+        });
     }
 
     // ── Charts ─────────────────────────────────────────────────────────

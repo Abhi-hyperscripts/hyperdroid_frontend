@@ -14,327 +14,19 @@
     <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-my-day.css?v=' + CACHE_VERSION + '">');</script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
-    <style>
-    /* My Day page chrome — matches analytics.html convention so the nav
-       bar doesn't cover the title. */
-    .md-container { max-width: 1400px; margin: 0 auto; padding: 80px 24px 60px; }
-    .md-header { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom: 8px; }
-    .md-title h1 { margin: 0 0 4px; font-size: 1.6rem; }
-    .md-title p { color: var(--text-secondary); margin: 0; font-size: 0.85em; }
-
-    /* Period selector — segmented control. Three quick presets +
-       custom date range. Today is default. */
-    .md-period {
-        display:inline-flex; gap:2px; padding:3px;
-        background: rgba(var(--bg-card-rgb, 15,23,42), 0.4);
-        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.18);
-        border-radius: 10px;
-    }
-    .md-period button {
-        appearance:none; background:transparent; border:none;
-        padding: 6px 14px; border-radius: 7px; cursor: pointer;
-        color: var(--text-secondary); font-size: 0.88em; font-weight: 500;
-        transition: all 0.15s;
-    }
-    .md-period button:hover { color: var(--text-primary); }
-    .md-period button.active {
-        background: var(--brand-primary); color: #fff;
-    }
-
-    /* Section heading. */
-    .md-section-head {
-        display:flex; align-items:baseline; gap:10px;
-        margin: 28px 0 12px;
-    }
-    .md-section-head h2 {
-        margin:0; font-size: 1.05rem; font-weight: 600;
-        color: var(--text-primary);
-    }
-    .md-section-head .md-section-sub {
-        font-size: 0.82em; color: var(--text-secondary);
-    }
-
-    /* Stat tile grid — 4 columns desktop, 2 mobile. */
-    .md-stat-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-    }
-    @media (max-width: 768px) {
-        .md-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-
-    /* Stat tile — glass card with big number + label + tiny caption. */
-    .md-tile {
-        background:
-            linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%),
-            rgba(var(--bg-card-rgb, 15,23,42), 0.55);
-        backdrop-filter: blur(16px) saturate(1.4);
-        -webkit-backdrop-filter: blur(16px) saturate(1.4);
-        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.18);
-        border-radius: 12px;
-        padding: 14px 16px;
-        display: flex; flex-direction: column; gap: 4px;
-        min-width: 0;
-    }
-    [data-theme="light"] .md-tile {
-        background:
-            linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%),
-            rgba(255,255,255,0.55);
-        border-color: rgba(var(--brand-primary-rgb, 99,102,241), 0.25);
-    }
-    .md-tile-value {
-        font-size: 1.6rem; font-weight: 700; line-height: 1.1;
-        color: var(--text-primary);
-    }
-    .md-tile-label {
-        font-size: 0.75em; color: var(--text-secondary);
-        text-transform: uppercase; letter-spacing: 0.04em;
-    }
-    .md-tile-caption {
-        font-size: 0.78em; color: var(--text-secondary);
-        margin-top: 2px;
-    }
-
-    /* "What I missed" tiles take the warning treatment when count > 0. */
-    .md-tile-warn { border-color: rgba(239, 68, 68, 0.35); }
-    .md-tile-warn .md-tile-value { color: var(--color-error, #ef4444); }
-    .md-tile-zero { opacity: 0.6; }
-
-    /* Missed-panel list. Top-5 items under the count. */
-    .md-missed-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-    }
-    @media (max-width: 768px) {
-        .md-missed-grid { grid-template-columns: 1fr; }
-    }
-    .md-missed-card {
-        background:
-            linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%),
-            rgba(var(--bg-card-rgb, 15,23,42), 0.55);
-        backdrop-filter: blur(16px) saturate(1.4);
-        -webkit-backdrop-filter: blur(16px) saturate(1.4);
-        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.18);
-        border-radius: 12px;
-        padding: 14px 16px;
-    }
-    [data-theme="light"] .md-missed-card {
-        background:
-            linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%),
-            rgba(255,255,255,0.55);
-        border-color: rgba(var(--brand-primary-rgb, 99,102,241), 0.25);
-    }
-    .md-missed-head {
-        display:flex; justify-content:space-between; align-items:baseline;
-        gap: 8px; margin-bottom: 10px;
-    }
-    .md-missed-title {
-        font-size: 0.92rem; font-weight: 600; color: var(--text-primary);
-    }
-    .md-missed-count {
-        font-size: 1.4rem; font-weight: 700; color: var(--color-error, #ef4444);
-        line-height: 1;
-    }
-    .md-missed-card.empty .md-missed-count { color: var(--color-success, #22c55e); }
-    .md-missed-list { list-style: none; padding: 0; margin: 0; }
-    .md-missed-list li {
-        padding: 8px 0; border-top: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.10);
-        font-size: 0.86em; display: flex; justify-content: space-between; gap: 10px;
-        cursor: pointer; transition: background 0.12s;
-        border-radius: 4px;
-    }
-    .md-missed-list li:first-child { border-top: none; }
-    .md-missed-list li:hover {
-        background: rgba(var(--brand-primary-rgb, 99,102,241), 0.06);
-    }
-    .md-missed-list li:hover .md-item-title {
-        color: var(--brand-primary);
-    }
-    .md-missed-list .md-item-title {
-        color: var(--text-primary); overflow: hidden;
-        text-overflow: ellipsis; white-space: nowrap;
-    }
-    .md-missed-list .md-item-meta {
-        color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums;
-    }
-    .md-missed-empty {
-        text-align: center; padding: 18px 0;
-        color: var(--text-secondary); font-size: 0.86em;
-    }
-    .md-missed-foot {
-        margin-top: 8px; font-size: 0.78em; color: var(--text-secondary);
-        text-align: right;
-    }
-    .md-missed-foot a {
-        color: var(--brand-primary); text-decoration: none;
-    }
-    .md-missed-foot a:hover { text-decoration: underline; }
-
-    /* Total bubble — small pill counting all effort actions for a quick
-       at-a-glance sense of "how busy was today". */
-    .md-total-bubble {
-        display:inline-block; padding: 2px 10px; border-radius: 999px;
-        background: rgba(var(--brand-primary-rgb, 99,102,241), 0.18);
-        color: var(--brand-primary); font-size: 0.78em; font-weight: 600;
-    }
-
-    .md-empty-state {
-        text-align:center; padding: 40px 20px;
-        color: var(--text-secondary);
-    }
-
-    .md-loading { text-align:center; padding: 40px 0; color: var(--text-secondary); }
-
-    /* Rep picker — admin/manager-only. Lives in the header next to the
-       period selector. Hidden by default; revealed when the viewable-reps
-       endpoint returns more than just self. The actual control is a
-       SearchableDropdown (convertSelectToSearchable wraps it); we just size
-       the wrapper here. */
-    .md-rep-picker {
-        display: none; align-items: center; gap: 8px;
-        margin-right: 10px; min-width: 240px;
-    }
-    .md-rep-picker.visible { display: inline-flex; }
-    .md-rep-picker label {
-        font-size: 0.85em; color: var(--text-secondary);
-        font-weight: 500; white-space: nowrap;
-    }
-    /* The hidden native <select> drives state; SearchableDropdown renders the
-       visible control on top. Keep the wrapper sized large enough for the
-       longest rep name + team hint. */
-    #repSelect { display: none !important; }
-    .md-rep-picker .searchable-dropdown { min-width: 260px; }
-
-    /* Override the default single-row option layout so each rep renders
-       on two lines: full name on top, team on the bottom in muted text.
-       The default flex-row layout truncates long names + crams the team
-       name on the right where it gets squashed. */
-    .md-rep-picker .searchable-dropdown-option {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
-        padding: 8px 12px;
-    }
-    .md-rep-picker .searchable-dropdown-option-label {
-        white-space: normal;       /* allow long names to wrap if needed */
-        overflow: visible;
-        text-overflow: clip;
-        font-weight: 500;
-        line-height: 1.25;
-    }
-    .md-rep-picker .searchable-dropdown-option-desc {
-        margin-left: 0;            /* drop the inline gap from the default */
-        font-size: 11px;
-        line-height: 1.2;
-        color: var(--text-secondary);
-        opacity: 0.85;
-    }
-    .md-rep-picker .searchable-dropdown-option.selected
-        .searchable-dropdown-option-desc {
-        color: var(--brand-primary);
-        opacity: 0.85;
-    }
-    /* Native check icon — push it to the right edge regardless of the
-       column layout so it doesn't end up underneath the team line. */
-    .md-rep-picker .searchable-dropdown-option {
-        position: relative;
-        padding-right: 28px;
-    }
-    .md-rep-picker .searchable-dropdown-option .searchable-dropdown-check {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-    @media (max-width: 640px) {
-        .md-rep-picker { margin-right: 0; width: 100%; min-width: 0; }
-        .md-rep-picker .searchable-dropdown { flex: 1; min-width: 0; }
-    }
-
-    /* ── Charts section ─────────────────────────────────────────────── */
-    .md-charts-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-        gap: 14px;
-        margin-top: 14px;
-    }
-    @media (max-width: 900px) {
-        .md-charts-grid { grid-template-columns: 1fr; }
-    }
-    .md-chart-card {
-        background:
-            linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%),
-            rgba(var(--bg-card-rgb, 15,23,42), 0.55);
-        backdrop-filter: blur(16px) saturate(1.4);
-        -webkit-backdrop-filter: blur(16px) saturate(1.4);
-        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.18);
-        border-radius: 12px;
-        padding: 16px 18px;
-        min-width: 0; /* allow shrink inside grid */
-    }
-    [data-theme="light"] .md-chart-card {
-        background:
-            linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%),
-            rgba(255,255,255,0.55);
-        border-color: rgba(var(--brand-primary-rgb, 99,102,241), 0.25);
-    }
-    .md-chart-head {
-        display:flex; align-items:baseline; justify-content:space-between;
-        gap: 10px; margin-bottom: 6px;
-    }
-    .md-chart-head h3 {
-        margin: 0; font-size: 0.95rem; font-weight: 600;
-        color: var(--text-primary);
-    }
-    .md-chart-head .md-chart-sub {
-        font-size: 0.78em; color: var(--text-secondary);
-    }
-    .md-chart-body { min-height: 240px; }
-    .md-chart-empty {
-        display:flex; align-items:center; justify-content:center;
-        height: 240px; color: var(--text-secondary); font-size: 0.88em;
-        text-align: center; padding: 0 20px;
-    }
-    /* ApexCharts tooltip needs to be readable in dark mode. */
-    [data-theme="dark"] .apexcharts-tooltip,
-    .apexcharts-tooltip {
-        background: rgba(15, 23, 42, 0.95) !important;
-        color: #f1f5f9 !important;
-        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.4) !important;
-    }
-    .apexcharts-tooltip-title {
-        background: rgba(var(--brand-primary-rgb, 99,102,241), 0.18) !important;
-        border-bottom-color: rgba(var(--brand-primary-rgb, 99,102,241), 0.3) !important;
-        color: #f1f5f9 !important;
-    }
-
-    /* Viewing-other banner — small badge under the title that makes it
-       obvious you're looking at someone else's report, not your own. */
-    .md-viewing-other {
-        display: none; align-items: center; gap: 6px;
-        margin-top: 6px;
-        padding: 4px 10px;
-        background: rgba(var(--brand-primary-rgb, 99,102,241), 0.12);
-        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.3);
-        color: var(--brand-primary);
-        border-radius: 999px;
-        font-size: 0.78em; font-weight: 600;
-        width: fit-content;
-    }
-    .md-viewing-other.visible { display: inline-flex; }
-    </style>
 </head>
-<body>
+<body class="crm-page dashboard crm-myday-page">
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="../home.html" style="display:flex; align-items:center; text-decoration:none;">
@@ -344,12 +36,46 @@
         <div class="navbar-menu" id="navbarMenu"></div>
     </nav>
 
-    <main class="md-container">
-        <nav class="breadcrumb-nav" style="margin-bottom: 12px;">
-            <a href="dashboard.html">CRM</a>
-            <span class="separator">/</span>
-            <span class="current">My Day</span>
-        </nav>
+    <nav class="pulse-rail" id="pulseRail" aria-label="CRM sections">
+        <div class="rail-item" onclick="window.location='dashboard.html'" title="Today">
+            <div class="ric" style="color:var(--color-warning)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h3"/></svg></div>
+            <span>Today</span>
+        </div>
+        <div class="rail-item active" title="My Day">
+            <div class="ric" style="color:#4CC9F0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <span>My Day</span>
+        </div>
+        <div class="rail-item" onclick="window.location='leads.html'" title="Leads">
+            <div class="ric" style="color:#60A5FA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg></div>
+            <span>Leads</span>
+        </div>
+        <div class="rail-item" onclick="window.location='deals.html'" title="Deals">
+            <div class="ric" style="color:#A78BFA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+            <span>Deals</span>
+        </div>
+        <div class="rail-item" onclick="window.location='contacts.html'" title="Contacts">
+            <div class="ric" style="color:#F472B6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span>Contacts</span>
+        </div>
+        <div class="rail-item" onclick="window.location='calls.html'" title="Calls Inbox">
+            <div class="ric" style="color:#2DD4BF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+            <span>Calls</span>
+        </div>
+        <div class="rail-item" onclick="window.location='sequences.html'" title="Sequences">
+            <div class="ric" style="color:#FB923C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+            <span>Sequences</span>
+        </div>
+        <div class="rail-item" onclick="window.location='settings.html'" title="Settings">
+            <div class="ric" style="color:var(--text-muted)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+            <span>Settings</span>
+        </div>
+    </nav>
+
+    <!-- ══ Hero: title + controls floating over the period's activity wave ══ -->
+    <header class="mdp-hero">
+        <div class="mdp-wavebg" id="mdWave" hidden></div>
+        <span class="mdp-wavecap" id="mdWaveCap"></span>
+        <div class="mdp-wavetip" id="mdWaveTip"></div>
         <div class="md-header">
             <div class="md-title">
                 <h1 id="reportTitle">My Day</h1>
@@ -370,9 +96,11 @@
                 </div>
             </div>
         </div>
+    </header>
 
+    <main class="md-container">
         <!-- Helper — first-time explainer. Users can collapse it. -->
-        <details style="margin-bottom: 18px;">
+        <details class="md-explainer" style="margin-bottom: 18px;">
             <summary style="cursor:pointer; color: var(--text-secondary); font-size: 0.85em;">
                 What is this page?
             </summary>

@@ -84,7 +84,13 @@
         // no-source-id buckets). None of them have form questions to filter by.
         const isPseudo = source && typeof source === 'string' && source.startsWith('__');
         const enabled = !!source && !isPseudo;
-        btn.disabled = !enabled;
+        // Soft-disable: a hard `disabled` attribute suppresses ALL mouse
+        // events, so the explanatory data-tooltip below could never show and
+        // the button just read as dead. Keep it hoverable; the click guard
+        // in openFormAnswersModal() enforces the gating.
+        btn.disabled = false;
+        btn.classList.toggle('is-disabled', !enabled);
+        btn.setAttribute('aria-disabled', String(!enabled));
         // Use data-tooltip so the global tooltip.js renders the custom themed
         // bubble (matches the action buttons on the leads page). Native `title`
         // would short-circuit it via the browser's built-in tooltip and look

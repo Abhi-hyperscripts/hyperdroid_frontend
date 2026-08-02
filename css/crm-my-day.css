@@ -1,0 +1,368 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   MY DAY — "Rep Pulse" redesign (Lead Desk design language).
+   Glass rail + hero with the period's activity wave as the header backdrop;
+   effort/outcome tiles as pulse cards with mono numerals; "What I missed"
+   as an attention inbox. Every class the JS render contract injects
+   (.md-tile, .md-missed-*, .md-chart-*) keeps its name — restyled only.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.crm-myday-page {
+  --mdp-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  --mdp-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  --mdp-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  --mdp-hover: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  padding-top: 52px;
+  padding-left: 78px;
+}
+
+/* ── ambient backdrop: two drifting light fields behind everything ────────── */
+body.crm-myday-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 480px at 12% 108%, color-mix(in srgb, var(--brand-primary) 16%, transparent), transparent 68%),
+    radial-gradient(760px 420px at 88% -10%, color-mix(in srgb, #f59e0b 10%, transparent), transparent 70%);
+  background-repeat: no-repeat;
+  animation: mdp-drift 26s ease-in-out infinite alternate;
+}
+@keyframes mdp-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 60px -40px, -50px 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.crm-myday-page::after { animation: none; }
+}
+
+/* ── glass icon rail (same recipe as the other Pulse pages) ───────────────── */
+body.crm-myday-page nav.pulse-rail {
+  position: fixed !important;
+  left: 0; top: 52px; bottom: 0;
+  width: 78px;
+  border-right: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+body.crm-myday-page .rail-item {
+  width: 60px; padding: 8px 0 6px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; color: var(--text-muted); text-align: center;
+}
+body.crm-myday-page .rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+body.crm-myday-page .rail-item .ric svg { width: 18px; height: 18px; }
+body.crm-myday-page .rail-item span { font-size: 9px; letter-spacing: 0.02em; }
+body.crm-myday-page .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+body.crm-myday-page .rail-item.active { background: color-mix(in srgb, #4CC9F0 12%, transparent); color: #4CC9F0; }
+
+/* ── hero: title + controls floating over the activity wave ───────────────── */
+.mdp-hero {
+  position: relative;
+  border-bottom: 1px solid var(--mdp-line);
+}
+.mdp-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.mdp-wavebg[hidden] { display: none; }
+.mdp-wavebg svg { width: 100%; height: 100%; display: block; }
+.mdp-wavecap {
+  position: absolute;
+  right: 26px;
+  bottom: 10px;
+  z-index: 2;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.mdp-wavetip {
+  position: absolute;
+  display: none;
+  z-index: 6;
+  transform: translateX(-50%);
+  background: var(--mdp-glass-dense);
+  border: 1px solid var(--mdp-line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+}
+.mdp-wavetip b { color: var(--text-primary); font-weight: 600; font-family: var(--font-family-mono); }
+
+.mdp-hero .md-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 26px 30px 20px;
+}
+.md-title h1 {
+  margin: 0 0 4px;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.md-title p { color: var(--text-secondary); margin: 0; font-size: 0.85em; }
+
+/* header controls pass pointer events; hero gaps fall through to the wave */
+.mdp-hero .md-header { pointer-events: none; }
+.mdp-hero .md-header > * { pointer-events: auto; }
+
+/* ── period selector: frost segmented control ─────────────────────────────── */
+.md-period {
+  display: inline-flex; gap: 2px; padding: 3px;
+  background: var(--mdp-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--mdp-line);
+  border-radius: 10px;
+}
+.md-period button {
+  appearance: none; background: transparent; border: none;
+  padding: 6px 14px; border-radius: 7px; cursor: pointer;
+  color: var(--text-secondary); font-size: 0.88em; font-weight: 500;
+  transition: all 0.15s;
+}
+.md-period button:hover { color: var(--text-primary); }
+.md-period button.active { background: var(--brand-primary); color: #fff; }
+
+/* ── content container ────────────────────────────────────────────────────── */
+.md-container { max-width: 1440px; margin: 0 auto; padding: 20px 30px 60px; }
+
+.md-explainer summary { cursor: pointer; color: var(--text-secondary); font-size: 0.85em; }
+.md-explainer p { color: var(--text-secondary); font-size: 0.85em; margin-top: 6px; line-height: 1.5; }
+
+.md-section-head { display: flex; align-items: baseline; gap: 10px; margin: 28px 0 12px; }
+.md-section-head h2 {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.12rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.md-section-head .md-section-sub { font-size: 0.82em; color: var(--text-secondary); }
+
+/* ── stat tiles: pulse cards with mono numerals ───────────────────────────── */
+.md-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 768px) {
+  .md-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.md-tile {
+  position: relative;
+  background: var(--mdp-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--mdp-line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.md-tile::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 5%, transparent), transparent 30%);
+  pointer-events: none;
+}
+.md-tile:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--brand-primary) 30%, transparent); }
+.md-tile-value {
+  font-family: var(--font-family-mono);
+  font-size: 1.7rem; font-weight: 600; line-height: 1.1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.md-tile-label {
+  font-size: 0.72em; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.md-tile-caption { font-size: 0.78em; color: var(--text-secondary); margin-top: 2px; }
+.md-tile-warn { border-color: color-mix(in srgb, var(--color-error, #ef4444) 40%, transparent); }
+.md-tile-warn .md-tile-value { color: var(--color-error, #ef4444); }
+.md-tile-zero { opacity: 0.55; }
+
+/* ── attention inbox ("What I missed") ────────────────────────────────────── */
+.md-missed-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 768px) {
+  .md-missed-grid { grid-template-columns: 1fr; }
+}
+.md-missed-card {
+  position: relative;
+  background: var(--mdp-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--mdp-line);
+  border-left: 2.5px solid var(--color-error, #ef4444);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.md-missed-card.empty { border-left-color: color-mix(in srgb, var(--color-success, #22c55e) 55%, transparent); }
+.md-missed-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.md-missed-title { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); }
+.md-missed-count {
+  font-family: var(--font-family-mono);
+  font-size: 1.4rem; font-weight: 600; color: var(--color-error, #ef4444);
+  line-height: 1;
+}
+.md-missed-card.empty .md-missed-count { color: var(--color-success, #22c55e); }
+.md-missed-list { list-style: none; padding: 0; margin: 0; }
+.md-missed-list li {
+  padding: 8px 6px; border-top: 1px solid var(--mdp-line);
+  font-size: 0.86em; display: flex; justify-content: space-between; gap: 10px;
+  cursor: pointer; transition: background 0.12s;
+  border-radius: 6px;
+}
+.md-missed-list li:first-child { border-top: none; }
+.md-missed-list li:hover { background: var(--mdp-hover); }
+.md-missed-list li:hover .md-item-title { color: var(--brand-primary); }
+.md-missed-list .md-item-title { color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.md-missed-list .md-item-meta { color: var(--text-secondary); white-space: nowrap; font-family: var(--font-family-mono); font-size: 0.92em; }
+.md-missed-empty { text-align: center; padding: 18px 0; color: var(--text-secondary); font-size: 0.86em; }
+.md-missed-foot { margin-top: 8px; font-size: 0.78em; color: var(--text-secondary); text-align: right; }
+.md-missed-foot a { color: var(--brand-primary); text-decoration: none; }
+.md-missed-foot a:hover { text-decoration: underline; }
+
+.md-total-bubble {
+  display: inline-block; padding: 2px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+  color: var(--brand-primary);
+  font-family: var(--font-family-mono);
+  font-size: 0.78em; font-weight: 600;
+}
+
+.md-empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+.md-loading { text-align: center; padding: 40px 0; color: var(--text-secondary); }
+
+/* ── rep picker (unchanged behavior, frost skin) ──────────────────────────── */
+.md-rep-picker { display: none; align-items: center; gap: 8px; margin-right: 10px; min-width: 240px; }
+.md-rep-picker.visible { display: inline-flex; }
+.md-rep-picker label { font-size: 0.85em; color: var(--text-secondary); font-weight: 500; white-space: nowrap; }
+#repSelect { display: none !important; }
+.md-rep-picker .searchable-dropdown { min-width: 260px; }
+.md-rep-picker .searchable-dropdown-option {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  padding: 8px 12px; position: relative; padding-right: 28px;
+}
+.md-rep-picker .searchable-dropdown-option-label {
+  white-space: normal; overflow: visible; text-overflow: clip;
+  font-weight: 500; line-height: 1.25;
+}
+.md-rep-picker .searchable-dropdown-option-desc {
+  margin-left: 0; font-size: 11px; line-height: 1.2;
+  color: var(--text-secondary); opacity: 0.85;
+}
+.md-rep-picker .searchable-dropdown-option.selected .searchable-dropdown-option-desc {
+  color: var(--brand-primary); opacity: 0.85;
+}
+.md-rep-picker .searchable-dropdown-option .searchable-dropdown-check {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+}
+@media (max-width: 640px) {
+  .md-rep-picker { margin-right: 0; width: 100%; min-width: 0; }
+  .md-rep-picker .searchable-dropdown { flex: 1; min-width: 0; }
+}
+
+/* ── chart cards ──────────────────────────────────────────────────────────── */
+.md-charts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+@media (max-width: 900px) {
+  .md-charts-grid { grid-template-columns: 1fr; }
+}
+.md-chart-card {
+  position: relative;
+  background: var(--mdp-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--mdp-line);
+  border-radius: 16px;
+  padding: 16px 18px;
+  min-width: 0;
+  overflow: hidden;
+}
+.md-chart-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 4%, transparent), transparent 26%);
+  pointer-events: none;
+}
+.md-chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.md-chart-head h3 {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 0.98rem; font-weight: 600; color: var(--text-primary);
+}
+.md-chart-head .md-chart-sub { font-size: 0.78em; color: var(--text-secondary); }
+.md-chart-body { min-height: 240px; position: relative; z-index: 1; }
+.md-chart-empty {
+  display: flex; align-items: center; justify-content: center;
+  height: 240px; color: var(--text-secondary); font-size: 0.88em;
+  text-align: center; padding: 0 20px;
+}
+
+/* ApexCharts tooltip readable on glass */
+[data-theme="dark"] .apexcharts-tooltip,
+.apexcharts-tooltip {
+  background: rgba(15, 23, 42, 0.95) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 40%, transparent) !important;
+}
+.apexcharts-tooltip-title {
+  background: color-mix(in srgb, var(--brand-primary) 18%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--brand-primary) 30%, transparent) !important;
+  color: #f1f5f9 !important;
+}
+
+/* viewing-other badge */
+.md-viewing-other {
+  display: none; align-items: center; gap: 6px;
+  margin-top: 6px; padding: 4px 10px;
+  background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  color: var(--brand-primary);
+  border-radius: 999px;
+  font-size: 0.78em; font-weight: 600;
+  width: fit-content;
+}
+.md-viewing-other.visible { display: inline-flex; }
+
+/* ── mobile: rail hidden, hero stacks, no left offset ─────────────────────── */
+@media (max-width: 1023px) {
+  body.crm-myday-page { padding-left: 0; padding-top: 0; }
+  body.crm-myday-page nav.pulse-rail { display: none; }
+  .mdp-wavebg, .mdp-wavecap { display: none; }
+  .mdp-hero .md-header { padding: 18px 16px 14px; }
+  .md-container { padding: 16px 16px 48px; }
+}

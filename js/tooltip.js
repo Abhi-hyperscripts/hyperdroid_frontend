@@ -141,8 +141,18 @@
         if (target && target !== currentTarget) {
             clearTimeout(showTimeout);
             showTooltip(target);
+        } else if (!target && currentTarget) {
+            // Moving onto a non-tooltip element hides the bubble. Without
+            // this, hiding the hovered element some OTHER way (tab switch
+            // sets the pane display:none, a re-render swaps the node) never
+            // fires mouseout and the tooltip sticks on screen forever with
+            // stale text.
+            hideTooltip();
         }
     });
+    // Clicks that hide/replace the hovered element (tab switches, menu
+    // actions) also kill the bubble.
+    document.addEventListener('click', hideTooltip, true);
 
     document.addEventListener('mouseout', function(e) {
         const target = e.target.closest('[data-tooltip]');

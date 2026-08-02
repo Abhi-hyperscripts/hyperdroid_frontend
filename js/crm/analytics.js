@@ -417,10 +417,67 @@ function renderFunnel() {
         </div>`).join('');
 }
 
+// Hero backdrop: mirror the new-leads/day series behind the page title
+// (Lead Desk hero-wave pattern — ambient, no axes; the real chart with
+// full interaction sits in the Daily trend card below).
+function renderHeroWave() {
+    const band = document.getElementById('anxWave');
+    const capEl = document.getElementById('anxWaveCap');
+    if (!band) return;
+    const series = _payload.daily_series || [];
+    const buckets = series.map(d => Number(d.leads) || 0);
+    if (buckets.length <= 1 || buckets.every(v => v === 0)) {
+        band.hidden = true;
+        if (capEl) capEl.textContent = '';
+        return;
+    }
+    const DAYS = buckets.length;
+    const W = 1200, H = 100, padT = 58, padB = 6;
+    const ih = H - padT - padB;
+    const yMax = Math.max(...buckets) * 1.15 || 1;
+    const x = i => (i / (DAYS - 1)) * W;
+    const y = v => padT + ih - (v / yMax) * ih;
+    const pts = buckets.map((v, i) => [x(i), y(v)]);
+    const n = pts.length;
+    const dx = [], m = [];
+    for (let i = 0; i < n - 1; i++) { dx.push(pts[i + 1][0] - pts[i][0]); m.push((pts[i + 1][1] - pts[i][1]) / dx[i]); }
+    const t = [m[0]];
+    for (let i = 1; i < n - 1; i++) t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
+    t.push(m[n - 2]);
+    for (let i = 0; i < n - 1; i++) {
+        if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+        else {
+            const a = t[i] / m[i], b = t[i + 1] / m[i];
+            const s2 = a * a + b * b;
+            if (s2 > 9) { const tau = 3 / Math.sqrt(s2); t[i] = tau * a * m[i]; t[i + 1] = tau * b * m[i]; }
+        }
+    }
+    let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+    for (let i = 0; i < n - 1; i++) {
+        const h = dx[i];
+        d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
+             ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
+             ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+    }
+    const area = d + ' L' + W + ',' + H + ' L0,' + H + ' Z';
+    band.innerHTML =
+        `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">` +
+        `<defs><linearGradient id="anxWaveFill" x1="0" y1="0" x2="0" y2="1">` +
+        `<stop offset="0" stop-color="var(--brand-primary)" stop-opacity="0.22"/>` +
+        `<stop offset="1" stop-color="var(--brand-primary)" stop-opacity="0"/>` +
+        `</linearGradient></defs>` +
+        `<path d="${area}" fill="url(#anxWaveFill)" stroke="none"/>` +
+        `<path d="${d}" fill="none" stroke="var(--brand-primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>` +
+        `</svg>`;
+    band.hidden = false;
+    if (capEl) capEl.textContent = 'New leads/day · ' + DAYS + 'd';
+}
+
 function renderDailyChart() {
     const series = _payload.daily_series || [];
     const metricEl = document.getElementById('anaTrendMetric');
     const metric = metricEl ? metricEl.value : 'leads';
+    renderHeroWave();
 
     // Backend `day` is ::date but the .NET JSON serializer appends T00:00:00.
     // Parse cleanly so the axis reads "Apr 4" not "04-04T00:00:00".
