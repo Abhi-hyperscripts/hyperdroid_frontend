@@ -361,3 +361,32 @@ body.crm-dashboard::after {
   z-index: 0;
 }
 .pulse-card > * { position: relative; z-index: 1; }
+
+/* ── Ambient wave animation (same band every other dashboard carries) ─────────
+   Two SVG wave layers drifting in opposite directions along the page bottom.
+   Fixed + z-index:-1 so it sits behind all content; reduced-motion aware. */
+@keyframes pms-waves {
+  from { background-position: 0 bottom, 0 bottom; }
+  to   { background-position: 600px bottom, -900px bottom; }
+}
+
+body.pms-dashboard::after {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 160' preserveAspectRatio='none'%3E%3Cpath d='M0 80 Q150 30 300 80 T600 80 V160 H0 Z' fill='%233b82f6' fill-opacity='0.07'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 200' preserveAspectRatio='none'%3E%3Cpath d='M0 110 Q225 60 450 110 T900 110 V200 H0 Z' fill='%238b5cf6' fill-opacity='0.05'/%3E%3C/svg%3E");
+  background-repeat: repeat-x, repeat-x;
+  background-size: 600px 160px, 900px 200px;
+  background-position: 0 bottom, 0 bottom;
+  animation: pms-waves 26s linear infinite;
+}
+
+[data-theme="dark"] body.pms-dashboard::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 160' preserveAspectRatio='none'%3E%3Cpath d='M0 80 Q150 30 300 80 T600 80 V160 H0 Z' fill='%233b82f6' fill-opacity='0.11'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 200' preserveAspectRatio='none'%3E%3Cpath d='M0 110 Q225 60 450 110 T900 110 V200 H0 Z' fill='%238b5cf6' fill-opacity='0.08'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.pms-dashboard::after { animation: none; }
+}
