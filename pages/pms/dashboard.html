@@ -148,135 +148,34 @@
             </div>
         </div>
 
-        <!-- Stats Overview -->
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card">
-                <div class="stat-icon clients">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" id="activeClients">-</div>
-                    <div class="stat-label">Active Clients</div>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon projects">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" id="activeProjects">-</div>
-                    <div class="stat-label">Active Projects</div>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon tasks">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 11 12 14 22 4"/>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" id="openTasks">-</div>
-                    <div class="stat-label">Open Tasks</div>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon hours">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" id="hoursThisWeek">-</div>
-                    <div class="stat-label">Hours This Week</div>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon timesheets">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                        <polyline points="10 9 9 9 8 9"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" id="pendingTimesheets">-</div>
-                    <div class="stat-label">Pending Timesheets</div>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon members">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" id="teamMembers">-</div>
-                    <div class="stat-label">Team Members</div>
-                </div>
-            </div>
+        <!-- Stat chips (statsGrid id kept for the JS contract) -->
+        <div class="pulse-chips" id="statsGrid">
+            <span class="pulse-chip"><b id="activeClients">-</b> clients</span>
+            <span class="pulse-chip"><b id="activeProjects">-</b> active projects</span>
+            <span class="pulse-chip"><b id="openTasks">-</b> open tasks</span>
+            <span class="pulse-chip"><b id="hoursThisWeek">-</b> hours this week</span>
+            <span class="pulse-chip"><b id="pendingTimesheets">-</b> pending timesheets</span>
+            <span class="pulse-chip"><b id="teamMembers">-</b> team members</span>
         </div>
 
-        <!-- Delivery charts — hours logged over time and where effort goes -->
-        <div class="hrms-charts" id="pmsChartsWrap" style="display:none;">
-            <div class="hrms-chart-card">
-                <h3 class="hrms-chart-title">Hours logged per week</h3>
-                <p class="hrms-chart-sub">Team effort over the last 8 weeks</p>
-                <div class="hrms-chart" id="pmsHoursChart"></div>
+        <!-- Team + activity -->
+        <div class="pulse-below">
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Who logged time</h2>
+                    <span class="pulse-card-note" id="teamHoursNote"></span>
+                </div>
+                <div class="pulse-bars" id="chartTeamHours"><div class="pulse-empty">Loading…</div></div>
             </div>
-            <div class="hrms-chart-card">
-                <h3 class="hrms-chart-title">Where the hours go</h3>
-                <p class="hrms-chart-sub">Share of logged time by project</p>
-                <div class="hrms-chart" id="pmsProjectChart"></div>
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Latest activity</h2>
+                    <a class="pulse-mini" href="activity.html" style="margin-left:auto;text-decoration:none;">View all</a>
+                </div>
+                <div class="pulse-inbox" id="recentActivityFeed">
+                    <div class="pulse-empty">Loading activity…</div>
+                </div>
             </div>
-            <div class="hrms-chart-card">
-                <h3 class="hrms-chart-title">Task pipeline</h3>
-                <p class="hrms-chart-sub">Open work by status</p>
-                <div class="hrms-chart" id="pmsTaskChart"></div>
-            </div>
-        </div>
-
-        <!-- Recent Activity Section -->
-        <div class="section-header">
-            <h3 class="section-title">Recent Activity</h3>
-        </div>
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Action</th>
-                        <th>Entity</th>
-                        <th>Details</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody id="recentActivityBody">
-                    <tr>
-                        <td colspan="5" class="empty-state">
-                            <p>Loading activity...</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
 
         <!-- Quick Actions -->

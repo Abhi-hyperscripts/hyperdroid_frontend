@@ -165,10 +165,41 @@ async function renderPulse() {
         }
         setTextContent('attnCount', flagged.length ? `${flagged.length} items` : '');
 
+        // ── who logged time (team-wide) ──
+        renderTeamHours(from, to, nameOf);
+
         // ── full-bleed wave: hours per day ──
         renderPulseWave(entries, from, to);
     } catch (e) {
         console.warn('[pms] pulse render failed:', e && e.message);
+    }
+}
+
+// Team-wide hours by person. /time-entries/my is personal, so this walks the
+// project time entries the user can see and groups by logger.
+async function renderTeamHours(from, to, nameOf) {
+    const host = document.getElementById('chartTeamHours');
+    if (!host) return;
+    try {
+        const asList = r => Array.isArray(r) ? r : (r?.data ?? []);
+        const projects = Object.keys(nameOf);
+        const chunks = await Promise.all(projects.slice(0, 12).map(pid =>
+            api.request(`/pms/time-entries?projectId=${pid}&fromDate=${from}&toDate=${to}`, { _skipSpinner: true })
+                .then(asList).catch(() => [])));
+        const rows = chunks.flat();
+        if (!rows.length) { host.innerHTML = '<div class="pulse-empty">No time logged in this window.</div>'; return; }
+
+        const byUser = {};
+        rows.forEach(e => {
+            const k = e.user_name || e.user_display_name || 'Unknown';
+            byUser[k] = (byUser[k] || 0) + (e.total_minutes || 0);
+        });
+        const ranked = Object.entries(byUser).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        const hrs = m => Math.round((m / 60) * 10) / 10;
+        pulseBars('chartTeamHours', ranked.map(([label, mins]) => ({ label, value: hrs(mins) })), v => `${v}h`);
+        setTextContent('teamHoursNote', `${hrs(rows.reduce((a, e) => a + (e.total_minutes || 0), 0))}h team total`);
+    } catch (e) {
+        host.innerHTML = '<div class="pulse-empty">Team hours unavailable.</div>';
     }
 }
 
@@ -333,66 +364,59 @@ async function fetchTeamMemberCount() {
  * Fetch and populate recent activity table
  */
 async function loadRecentActivity() {
-    const tbody = document.getElementById('recentActivityBody');
-    if (!tbody) return;
-
+    const host = document.getElementById('recentActivityFeed');
+    if (!host) return;
     try {
-        // Fetch recent activity - try getting from recent projects
         let activities = [];
         try {
             const projResponse = await api.request('/pms/projects', { _skipSpinner: true });
             const projects = Array.isArray(projResponse) ? projResponse : (projResponse?.data ?? []);
             if (projects.length > 0) {
-                // Fetch activity for the most recent project
-                const recentProject = projects[0];
-                const actResponse = await api.request(`/pms/activity/project/${recentProject.id}`, { _skipSpinner: true });
+                const actResponse = await api.request(`/pms/activity/project/${projects[0].id}`, { _skipSpinner: true });
                 activities = Array.isArray(actResponse) ? actResponse : (actResponse?.data ?? []);
             }
-        } catch { /* activity endpoint may not be available */ }
-        activities = activities.slice(0, 10);
+        } catch { /* activity endpoint optional */ }
 
-        if (!activities || activities.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="empty-state">
-                        <p>No recent activity found.</p>
-                    </td>
-                </tr>
-            `;
+        // Collapse the bulk-import noise: consecutive rows from the same user
+        // for the same action+entity become one line with a total count. The
+        // old table listed every "Bulk Created · Time Entry · Count: 2" row.
+        const rolled = [];
+        activities.forEach(a => {
+            const last = rolled[rolled.length - 1];
+            const sameBucket = last
+                && last.user_name === a.user_name
+                && last.action === a.action
+                && last.entity_type === a.entity_type;
+            const n = Number((a.details && (a.details.count ?? a.details.Count)) || 1) || 1;
+            if (sameBucket) { last.n += n; last.times += 1; }
+            else rolled.push({ ...a, n, times: 1 });
+        });
+
+        if (!rolled.length) {
+            host.innerHTML = '<div class="pulse-empty">No activity yet.</div>';
             return;
         }
 
-        tbody.innerHTML = activities.map(activity => `
-            <tr>
-                <td>
-                    <div class="lead-info">
-                        <div class="lead-avatar">${getInitials(activity.user_name || activity.performed_by || 'U')}</div>
-                        <div>
-                            <div class="lead-name">${escapeHtml(activity.user_name || activity.performed_by || '-')}</div>
+        host.innerHTML = rolled.slice(0, 6).map(a => {
+            const who = a.user_name || 'Someone';
+            const what = capitalizeFirst(String(a.action || 'updated').replace(/_/g, ' '));
+            const ent = String(a.entity_type || '').replace(/_/g, ' ');
+            const qty = a.n > 1 ? ` <b>×${a.n}</b>` : '';
+            return `
+                <div class="pulse-task">
+                    <div class="trow">
+                        <div class="meta">
+                            <div class="t1">${escapeHtml(who)} · ${escapeHtml(what)}${qty}</div>
+                            <div class="t2">${escapeHtml(ent)}${a.created_at ? ' · ' + formatDate(a.created_at) : ''}</div>
                         </div>
                     </div>
-                </td>
-                <td><span class="status-badge ${(activity.action || '').toLowerCase().replace(/_/g, '-')}">${capitalizeFirst(activity.action || '-')}</span></td>
-                <td>${capitalizeFirst(activity.entity_type || activity.entity || '-')}</td>
-                <td>${formatActivityDetails(activity.description || activity.details, activity.action, activity.entity_type)}</td>
-                <td>${formatDate(activity.created_at || activity.timestamp)}</td>
-            </tr>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading recent activity:', error);
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="empty-state">
-                    <p>Unable to load recent activity</p>
-                </td>
-            </tr>
-        `;
+                </div>`;
+        }).join('');
+    } catch (e) {
+        host.innerHTML = '<div class="pulse-empty">Activity unavailable.</div>';
     }
 }
 
-/**
- * Refresh dashboard data
- */
 function refreshDashboard() {
     const btn = document.getElementById('refreshBtn');
     if (btn) btn.classList.add('loading');
