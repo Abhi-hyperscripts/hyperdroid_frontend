@@ -792,7 +792,7 @@ async function initInvoiceItemPicker() {
     const container = document.getElementById('invoiceItemPicker');
     if (!container || typeof SearchableDropdown !== 'function') return;
     if (!inventoryItems.length) {
-        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }); } catch { inventoryItems = []; }
+        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true }); } catch { inventoryItems = []; }
     }
     const opts = [{ value: '', label: '+ Add from item catalog…' },
         ...inventoryItems.filter(i => i.is_active).map(i => ({ value: i.id, label: `${i.sku} — ${i.name} (${AccountsCommon.formatCurrency(i.sale_price)})` }))];
@@ -2678,7 +2678,7 @@ function renderChallansTable() {
 
 async function showChallanModal() {
     if (!inventoryItems.length) {
-        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }); } catch { inventoryItems = []; }
+        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true }); } catch { inventoryItems = []; }
     }
     document.getElementById('challanModalTitle').textContent = 'New Delivery Challan';
     document.getElementById('challanId').value = '';
@@ -3196,7 +3196,7 @@ function renderSalesOrdersTable() {
 
 async function showSalesOrderForm() {
     if (!inventoryItems.length) {
-        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }); } catch { inventoryItems = []; }
+        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true }); } catch { inventoryItems = []; }
     }
     document.getElementById('soFormTitle').textContent = 'New Sales Order';
     document.getElementById('soId').value = '';

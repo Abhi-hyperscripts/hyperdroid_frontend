@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     AccountsCommon.setupTabs({ 'pos-counter': 'Counter' });
     accountsRoles.applyRBAC();
     const [itemsRes, taxRes, bankRes, coaRes] = await Promise.all([
-        api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }).catch(() => []),
+        api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true }).catch(() => []),
         api.request(AccountsCommon.buildUrl('tax/configurations'), { _skipSpinner: true }).catch(() => []),
         api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => []),
         api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => [])
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 async function refreshPosItems(silent = true) {
     posLotMrp.clear();   // lot MRPs can change as lots deplete — refetch with the catalog
     try {
-        const res = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true });
+        const res = await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true });
         posItems = (Array.isArray(res) ? res : []).filter(i => i.is_active);
         let capped = false, packChanged = false;
         // BASE-unit-aware capping: walk this item's lines in cart order, each consuming from
@@ -1180,7 +1180,7 @@ async function completeSale() {
         resetSaleState();
         renderCart();
         // refresh stock counts on the grid
-        posItems = (await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true })).filter(i => i.is_active);
+        posItems = (await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true })).filter(i => i.is_active);
         renderCategoryChips();
         renderGrid();
     } catch (err) {

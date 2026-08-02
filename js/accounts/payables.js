@@ -297,7 +297,7 @@ async function initBillItemPicker() {
     const container = document.getElementById('billItemPicker');
     if (!container || typeof SearchableDropdown !== 'function') return;
     if (!inventoryItems.length) {
-        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }); } catch { inventoryItems = []; }
+        try { inventoryItems = await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'purchase' }), { _skipSpinner: true }); } catch { inventoryItems = []; }
     }
     const opts = [{ value: '', label: '+ Add from item catalog…' },
         ...inventoryItems.filter(i => i.is_active).map(i => ({ value: i.id, label: `${i.sku} — ${i.name}` }))];
@@ -453,7 +453,7 @@ async function runBillCsvImport() {
                 try {
                     // New product from the dealer: numeric codes are barcodes, others become the SKU.
                     const isBarcode = /^\d{8,14}$/.test(code);
-                    item = await api.request(AccountsCommon.buildUrl('inventory/items'), {
+                    item = await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'purchase' }), {
                         method: 'POST',
                         body: JSON.stringify({
                             sku: isBarcode ? 'ITM-' + code.slice(-6) : code,

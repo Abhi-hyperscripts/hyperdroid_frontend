@@ -75,7 +75,7 @@ function renderItems() {
     const isAdmin = accountsRoles.isAdmin();
     tb.innerHTML = rows.map(i => `<tr>
         <td><code>${esc(i.sku)}</code></td>
-        <td>${esc(i.name)}</td>
+        <td>${esc(i.name)}${i.is_sellable === false ? ' <span class="status-badge" style="background:var(--bg-tertiary);color:var(--text-secondary);font-size:.68rem;">Not sold</span>' : ''}${i.is_purchasable === false ? ' <span class="status-badge" style="background:var(--bg-tertiary);color:var(--text-secondary);font-size:.68rem;">Not bought</span>' : ''}</td>
         <td>${esc(i.category_name || '-')}</td>
         <td>${i.item_type === 'goods' ? (i.tracking_mode === 'serial' ? 'Goods · serial' : 'Goods') : 'Service'}</td>
         <td>${fmtMoney(i.sale_price)}</td>
@@ -109,6 +109,8 @@ function showItemModal() {
     document.getElementById('itReorder').value = '0';
     document.getElementById('itReorderQty').value = '0';
     document.getElementById('itTrack').checked = true;
+    document.getElementById('itSellable').checked = true;
+    document.getElementById('itPurchasable').checked = true;
     ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule'].forEach(id => document.getElementById(id).innerHTML = '');
     initItemModalDropdowns(null, 'goods', 'none', 'weighted_avg', 'none');
     initItemSaltRows([]);
@@ -136,6 +138,8 @@ function editItem(id) {
     document.getElementById('itReorder').value = i.reorder_level;
     document.getElementById('itReorderQty').value = i.reorder_quantity ?? 0;
     document.getElementById('itTrack').checked = i.track_inventory;
+    document.getElementById('itSellable').checked = i.is_sellable !== false;
+    document.getElementById('itPurchasable').checked = i.is_purchasable !== false;
     ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule'].forEach(id => document.getElementById(id).innerHTML = '');
     initItemModalDropdowns(i.category_id, i.item_type, i.tracking_mode || 'none', i.valuation_method || 'weighted_avg', i.drug_schedule || 'none');
     initItemSaltRows(null, i.id);   // async-loads the item's saved composition
@@ -165,6 +169,8 @@ async function saveItem() {
         reorder_level: parseFloat(document.getElementById('itReorder').value) || 0,
         reorder_quantity: parseFloat(document.getElementById('itReorderQty').value) || 0,
         track_inventory: document.getElementById('itTrack').checked,
+        is_sellable: document.getElementById('itSellable').checked,
+        is_purchasable: document.getElementById('itPurchasable').checked,
         tracking_mode: trackDD?.getValue?.() || 'none',
         valuation_method: valDD?.getValue?.() || 'weighted_avg',
         drug_schedule: schedDD?.getValue?.() || 'none'
