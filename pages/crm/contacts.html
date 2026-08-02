@@ -27,6 +27,10 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-contacts.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard crm-page crm-contacts-page">
@@ -42,54 +46,69 @@
         </div>
     </nav>
 
-    <div class="crm-container">
-        <div class="crm-header">
-            <div class="header-content">
-                <nav class="breadcrumb-nav">
-                    <a href="dashboard.html">CRM</a>
-                    <span class="separator">/</span>
-                    <span class="current">Contacts</span>
-                </nav>
-                <h1>Contacts</h1>
-                <p>Manage your customer and prospect contacts</p>
-            </div>
-            <!-- New Contact button hidden — contacts are created via Lead Conversion only -->
+    <nav class="pulse-rail" id="pulseRail" aria-label="CRM sections">
+        <div class="rail-item" onclick="window.location='dashboard.html'" title="Today">
+            <div class="ric" style="color:var(--color-warning)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h3"/></svg></div>
+            <span>Today</span>
         </div>
+        <div class="rail-item" onclick="window.location='my-day.html'" title="My Day">
+            <div class="ric" style="color:#4CC9F0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <span>My Day</span>
+        </div>
+        <div class="rail-item" onclick="window.location='leads.html'" title="Leads">
+            <div class="ric" style="color:#60A5FA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg></div>
+            <span>Leads</span>
+        </div>
+        <div class="rail-item" onclick="window.location='deals.html'" title="Deals">
+            <div class="ric" style="color:#A78BFA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+            <span>Deals</span>
+        </div>
+        <div class="rail-item active" title="Contacts">
+            <div class="ric" style="color:#F472B6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span>Contacts</span>
+        </div>
+        <div class="rail-item" onclick="window.location='analytics.html'" title="Analytics">
+            <div class="ric" style="color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+            <span>Analytics</span>
+        </div>
+        <div class="rail-item" onclick="window.location='sequences.html'" title="Sequences">
+            <div class="ric" style="color:#FB923C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+            <span>Sequences</span>
+        </div>
+        <div class="rail-item" onclick="window.location='settings.html'" title="Settings">
+            <div class="ric" style="color:var(--text-muted)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+            <span>Settings</span>
+        </div>
+    </nav>
 
-        <!-- Search & Filter Toolbar -->
-        <div class="crm-toolbar">
-            <div class="crm-search-wrapper">
-                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <!-- ══ Hero: title + count + search over the contacts-created wave ══ -->
+    <header class="rlx-hero">
+        <div class="rlx-wavebg" id="rlxWave" hidden></div>
+        <span class="rlx-wavecap" id="rlxWaveCap"></span>
+        <div class="rlx-headrow">
+            <div>
+                <div class="rlx-id">
+                    <h1>Contacts</h1>
+                    <span class="rlx-count" id="rlxCount">—</span>
+                </div>
+                <p class="rlx-sub">Everyone you've converted — call, WhatsApp, or email them in one tap.</p>
+            </div>
+            <div class="rlx-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="11" cy="11" r="8"/>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
-                <input type="text" class="crm-search-input" id="contactSearch" placeholder="Search contacts by name, email, phone..." oninput="filterContacts()">
+                <input type="text" id="contactSearch" placeholder="Search contacts by name, email, phone, company..." oninput="filterContacts()">
             </div>
         </div>
+    </header>
 
-        <!-- Contacts Table -->
-        <div class="data-table-container">
-            <table class="data-table" id="contactsTable">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Company</th>
-                        <th>Source</th>
-                        <th>Job Title</th>
-                        <th>Created</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="contactsTableBody">
-                    <!-- Populated by JavaScript -->
-                </tbody>
-            </table>
-        </div>
+    <div class="rlx-wrap">
+        <!-- Identity card grid — populated by JavaScript -->
+        <div class="rlx-grid" id="contactsGrid"></div>
 
         <!-- Empty State -->
-        <div class="empty-state" id="emptyState" style="display: none;">
+        <div class="rlx-empty" id="emptyState" style="display: none;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
@@ -97,8 +116,7 @@
                 <line x1="20" y1="8" x2="20" y2="14"/>
             </svg>
             <h3>No contacts yet</h3>
-            <p>Contacts are created automatically when you convert a lead. Go to Leads to get started.</p>
-            <a href="leads.html" class="btn btn-primary">Go to Leads</a>
+            <p>Contacts are created automatically when you convert a lead. <a href="leads.html">Go to Leads</a> to get started.</p>
         </div>
 
         <!-- Loading State -->

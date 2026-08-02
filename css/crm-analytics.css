@@ -694,3 +694,9 @@ body.crm-analytics-page .wr-toolbar {
   .anx-hero .ana-header { padding: 16px 16px 4px; }
   .anx-hero .ana-tabs { padding: 0 16px; }
 }
+
+/* mobile rail kill must come AFTER the rail's display:flex rule above —
+   same specificity, so source order decides */
+@media (max-width: 1023px) {
+  nav.pulse-rail { display: none !important; }
+}

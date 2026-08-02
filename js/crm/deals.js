@@ -183,11 +183,99 @@ async function loadPipeline() {
         populateOwnerFilter();
         renderCurrentView();
         updatePipelineSummary();
+        renderDealsHeroWave();
+        renderStageFlowline();
     } catch (error) {
         console.error('Failed to load pipeline:', error);
         allDeals = [];
         renderCurrentView();
     }
+}
+
+
+// ── Stage-value hairline: pipeline value share by stage, stage colors ──
+// Mirrors the Lead Desk flowline. Follows the FILTERED set like the strip.
+function renderStageFlowline() {
+    const bar = document.getElementById('dflFlow');
+    if (!bar || !dealStages.length) return;
+    const deals = getFilteredDeals();
+    const per = dealStages.map(st => ({
+        color: getStageColor(st),
+        name: st.stage_name,
+        value: deals.filter(d => d.stage_id === st.id)
+                    .reduce((sum, d) => sum + (parseFloat(d.deal_value) || 0), 0)
+    })).filter(x => x.value > 0);
+    const total = per.reduce((a, x) => a + x.value, 0);
+    if (!total) { bar.innerHTML = ''; return; }
+    bar.innerHTML = per.map(x =>
+        `<i style="flex-basis:${Math.max((x.value / total) * 100, 0.6)}%;background:${x.color}" title="${escapeHtml(x.name)}: ${formatCurrency(x.value, defaultCurrency)}"></i>`
+    ).join('');
+}
+
+// ── Hero wave: deal value entering the pipeline per day (last 30-90d) ──
+// Lead Desk hero pattern — ambient backdrop behind the title, no axes.
+function renderDealsHeroWave() {
+    const band = document.getElementById('dflWave');
+    const capEl = document.getElementById('dflWaveCap');
+    if (!band) return;
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const countIn = days => {
+        const from = new Date(today); from.setDate(today.getDate() - (days - 1));
+        return allDeals.filter(d => d.created_at && new Date(d.created_at) >= from).length;
+    };
+    const DAYS = countIn(30) > 0 ? 30 : (countIn(90) > 0 ? 90 : 0);
+    if (DAYS === 0) { band.hidden = true; if (capEl) capEl.textContent = ''; return; }
+
+    const start = new Date(today); start.setDate(today.getDate() - (DAYS - 1));
+    const buckets = new Array(DAYS).fill(0);
+    allDeals.forEach(d => {
+        if (!d.created_at) return;
+        const dt = new Date(d.created_at); dt.setHours(0, 0, 0, 0);
+        const idx = Math.round((dt - start) / 86400000);
+        if (idx >= 0 && idx < DAYS) buckets[idx] += (parseFloat(d.deal_value) || 0);
+    });
+    if (buckets.every(v => v === 0)) { band.hidden = true; if (capEl) capEl.textContent = ''; return; }
+
+    const W = 1200, H = 100, padT = 56, padB = 6;
+    const ih = H - padT - padB;
+    const yMax = Math.max(...buckets) * 1.15 || 1;
+    const x = i => (i / (DAYS - 1)) * W;
+    const y = v => padT + ih - (v / yMax) * ih;
+    const pts = buckets.map((v, i) => [x(i), y(v)]);
+    const n = pts.length;
+    const dx = [], m = [];
+    for (let i = 0; i < n - 1; i++) { dx.push(pts[i + 1][0] - pts[i][0]); m.push((pts[i + 1][1] - pts[i][1]) / dx[i]); }
+    const t = [m[0]];
+    for (let i = 1; i < n - 1; i++) t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
+    t.push(m[n - 2]);
+    for (let i = 0; i < n - 1; i++) {
+        if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+        else {
+            const a = t[i] / m[i], b = t[i + 1] / m[i];
+            const s2 = a * a + b * b;
+            if (s2 > 9) { const tau = 3 / Math.sqrt(s2); t[i] = tau * a * m[i]; t[i + 1] = tau * b * m[i]; }
+        }
+    }
+    let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+    for (let i = 0; i < n - 1; i++) {
+        const h = dx[i];
+        d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
+             ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
+             ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+    }
+    const area = d + ' L' + W + ',' + H + ' L0,' + H + ' Z';
+    band.innerHTML =
+        '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">' +
+        '<defs><linearGradient id="dflWaveFill" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="var(--brand-primary)" stop-opacity="0.22"/>' +
+        '<stop offset="1" stop-color="var(--brand-primary)" stop-opacity="0"/>' +
+        '</linearGradient></defs>' +
+        '<path d="' + area + '" fill="url(#dflWaveFill)" stroke="none"/>' +
+        '<path d="' + d + '" fill="none" stroke="var(--brand-primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>' +
+        '</svg>';
+    band.hidden = false;
+    if (capEl) capEl.textContent = 'Deal value/day · ' + DAYS + 'd';
 }
 
 /**
@@ -350,6 +438,7 @@ function applyDealFilters() {
 
     renderCurrentView();
     updatePipelineSummary();
+    renderStageFlowline();
 }
 
 function clearDealFilters() {
@@ -713,7 +802,7 @@ function renderKanbanBoard() {
         return `
             <div class="kanban-column" data-stage-id="${stage.id}"
                  ondragover="handleDragOver(event)" ondrop="handleDrop(event, '${stage.id}')">
-                <div class="kanban-column-header" style="border-top-color: ${stageColor};">
+                <div class="kanban-column-header" style="border-top-color: ${stageColor}; color: ${stageColor};">
                     <div class="kanban-column-title">
                         <span class="kanban-stage-dot" style="background: ${stageColor};"></span>
                         <span>${escapeHtml(stage.stage_name)}</span>
@@ -937,7 +1026,7 @@ function renderListView() {
     const tbody = document.getElementById('dealsTableBody');
     if (!tbody) return;
 
-    if (!allDeals || allDeals.length === 0) {
+    if (!allDeals || getFilteredDeals().length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" class="crm-empty-state">
@@ -955,7 +1044,7 @@ function renderListView() {
         return;
     }
 
-    tbody.innerHTML = allDeals.map(deal => {
+    tbody.innerHTML = getFilteredDeals().map(deal => {
         const stage = dealStages.find(s => s.id === deal.stage_id);
         const stageName = stage ? stage.stage_name : '-';
         const isWon = stage && stage.stage_type === 'won';

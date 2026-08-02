@@ -130,60 +130,168 @@ function populateCompanyDropdown() {
 
 // ─── Rendering ──────────────────────────────────────────────────────────────
 
-function renderContacts() {
-    const tbody = document.getElementById('contactsTableBody');
+function renderContacts(list) {
+    // Rolodex grid. `list` defaults to the full set; filterContacts passes a
+    // filtered array (no more global-swap hack).
+    const grid = document.getElementById('contactsGrid');
     const emptyState = document.getElementById('emptyState');
-    const tableContainer = document.querySelector('.data-table-container');
+    if (!grid) return;
+
+    const rows = Array.isArray(list) ? list : contacts;
+    const countEl = document.getElementById('rlxCount');
+    if (countEl) countEl.textContent = contacts.length || '0';
 
     if (!contacts.length) {
-        tbody.innerHTML = '';
-        tableContainer.style.display = 'none';
+        grid.innerHTML = '';
+        grid.style.display = 'none';
         emptyState.style.display = 'block';
+        renderContactsHeroWave();
+        return;
+    }
+    grid.style.display = 'grid';
+    emptyState.style.display = 'none';
+
+    if (!rows.length) {
+        grid.innerHTML = `<div class="rlx-empty">No contacts match your search</div>`;
+        renderContactsHeroWave();
         return;
     }
 
-    tableContainer.style.display = 'block';
-    emptyState.style.display = 'none';
+    grid.innerHTML = rows.map(contact => renderContactCard(contact)).join('');
+    renderContactsHeroWave();
+}
 
-    tbody.innerHTML = contacts.map(contact => {
-        const companyName = getCompanyName(contact.company_id);
-        const fullName = escapeHtml(`${contact.first_name || ''} ${contact.last_name || ''}`.trim());
-        const initials = getInitials(contact.first_name, contact.last_name);
+// One contact = one identity card: avatar hue, name, role @ company,
+// direct action chips (call / WhatsApp / email), source + age footer.
+function renderContactCard(contact) {
+    const companyName = getCompanyName(contact.company_id);
+    const fullName = escapeHtml(`${contact.first_name || ''} ${contact.last_name || ''}`.trim()) || '—';
+    const initials = getInitials(contact.first_name, contact.last_name);
+    const phone = contact.phone || contact.mobile || '';
+    const waDigits = phone.replace(/[^0-9]/g, '');
+    const wa = waDigits ? (waDigits.length === 10 ? '91' + waDigits : waDigits) : '';
+    const roleLine = [contact.job_title, companyName].filter(Boolean).map(escapeHtml).join(' · ');
 
-        return `
-            <tr>
-                <td>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--brand-primary); color: var(--text-inverse); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600; flex-shrink: 0;">
-                            ${escapeHtml(initials)}
-                        </div>
-                        <span style="font-weight: 500; cursor: pointer;" onclick="openContactDetailPanel('${contact.id}')">${fullName}</span>
-                    </div>
-                </td>
-                <td>${escapeHtml(contact.email) || '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td>${(contact.phone || contact.mobile) ? crmPhoneLink(contact.phone || contact.mobile) : '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td>${companyName ? escapeHtml(companyName) : '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td>${contact.contact_source ? `<span class="badge badge-neutral">${escapeHtml(contact.contact_source)}</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td>${escapeHtml(contact.job_title) || '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td style="white-space: nowrap;">${formatDate(contact.created_at)}</td>
-                <td class="actions-cell">
-                    <button class="action-btn" title="Edit" onclick="openEditContactModal('${contact.id}')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                    </button>
-                    ${canDeleteContact() ? `
-                    <button class="action-btn delete" title="Delete" onclick="openDeleteModal('${contact.id}')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                    </button>` : ''}
-                </td>
-            </tr>
-        `;
-    }).join('');
+    const chips = [
+        phone ? `<a class="rlx-chip" href="tel:${escapeHtml(phone)}" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    ${escapeHtml(phone)}</a>` : '',
+        wa ? `<a class="rlx-chip wa" href="https://wa.me/${wa}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2a10 10 0 0 0-8.6 15.09L2 22l5.05-1.32A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3 .79.8-2.92-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+                    WhatsApp</a>` : '',
+        contact.email ? `<a class="rlx-chip" href="mailto:${escapeHtml(contact.email)}" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    ${escapeHtml(contact.email)}</a>` : ''
+    ].filter(Boolean).join('');
+
+    return `
+        <div class="rlx-card" onclick="openContactDetailPanel('${contact.id}')">
+            <div class="rlx-manage">
+                <button type="button" title="Edit" onclick="event.stopPropagation(); openEditContactModal('${contact.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                ${canDeleteContact() ? `
+                <button type="button" class="rlx-del" title="Delete" onclick="event.stopPropagation(); openDeleteModal('${contact.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>` : ''}
+            </div>
+            <div class="rlx-top">
+                <div class="rlx-av" style="background:${contactAvatarBg(contact)}">${escapeHtml(initials)}</div>
+                <div class="rlx-idcol">
+                    <div class="rlx-name">${fullName}</div>
+                    <div class="rlx-role">${roleLine || '<span style="color:var(--text-muted)">No role on file</span>'}</div>
+                </div>
+            </div>
+            <div class="rlx-chips">${chips || '<span class="rlx-chip" style="cursor:default">No contact details</span>'}</div>
+            <div class="rlx-foot">
+                <span class="rlx-src">${escapeHtml(contact.contact_source || 'manual')}</span>
+                <span class="rlx-age">${contactTimeAgo(contact.created_at)}</span>
+            </div>
+        </div>
+    `;
+}
+
+// Deterministic avatar hue per contact (same recipe as the Leads page).
+function contactAvatarBg(contact) {
+    const key = contact.id || `${contact.first_name}${contact.last_name}`;
+    let h = 0;
+    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+    const hues = [212, 262, 158, 24, 330, 190, 48, 288];
+    const hue = hues[h % hues.length];
+    return `linear-gradient(135deg, hsl(${hue} 62% 46%), hsl(${(hue + 28) % 360} 58% 38%))`;
+}
+
+function contactTimeAgo(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d)) return '';
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (days <= 0) return 'today';
+    if (days < 30) return days + 'd ago';
+    if (days < 365) return Math.floor(days / 30) + 'mo ago';
+    return Math.floor(days / 365) + 'y ago';
+}
+
+// Hero wave: contacts created per day over the last 30-90 days.
+function renderContactsHeroWave() {
+    const band = document.getElementById('rlxWave');
+    const capEl = document.getElementById('rlxWaveCap');
+    if (!band) return;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const countIn = days => {
+        const from = new Date(today); from.setDate(today.getDate() - (days - 1));
+        return contacts.filter(c => c.created_at && new Date(c.created_at) >= from).length;
+    };
+    const DAYS = countIn(30) > 0 ? 30 : (countIn(90) > 0 ? 90 : 0);
+    if (DAYS === 0) { band.hidden = true; if (capEl) capEl.textContent = ''; return; }
+    const start = new Date(today); start.setDate(today.getDate() - (DAYS - 1));
+    const buckets = new Array(DAYS).fill(0);
+    contacts.forEach(c => {
+        if (!c.created_at) return;
+        const d = new Date(c.created_at); d.setHours(0, 0, 0, 0);
+        const idx = Math.round((d - start) / 86400000);
+        if (idx >= 0 && idx < DAYS) buckets[idx]++;
+    });
+    if (buckets.every(v => v === 0)) { band.hidden = true; if (capEl) capEl.textContent = ''; return; }
+    const W = 1200, H = 100, padT = 56, padB = 6;
+    const ih = H - padT - padB;
+    const yMax = Math.max(...buckets) * 1.15 || 1;
+    const x = i => (i / (DAYS - 1)) * W;
+    const y = v => padT + ih - (v / yMax) * ih;
+    const pts = buckets.map((v, i) => [x(i), y(v)]);
+    const n = pts.length;
+    const dx = [], m = [];
+    for (let i = 0; i < n - 1; i++) { dx.push(pts[i + 1][0] - pts[i][0]); m.push((pts[i + 1][1] - pts[i][1]) / dx[i]); }
+    const t = [m[0]];
+    for (let i = 1; i < n - 1; i++) t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
+    t.push(m[n - 2]);
+    for (let i = 0; i < n - 1; i++) {
+        if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+        else {
+            const a = t[i] / m[i], b = t[i + 1] / m[i];
+            const s2 = a * a + b * b;
+            if (s2 > 9) { const tau = 3 / Math.sqrt(s2); t[i] = tau * a * m[i]; t[i + 1] = tau * b * m[i]; }
+        }
+    }
+    let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+    for (let i = 0; i < n - 1; i++) {
+        const h = dx[i];
+        d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
+             ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
+             ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+    }
+    const area = d + ' L' + W + ',' + H + ' L0,' + H + ' Z';
+    band.innerHTML =
+        '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">' +
+        '<defs><linearGradient id="rlxWaveFill" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="var(--brand-primary)" stop-opacity="0.22"/>' +
+        '<stop offset="1" stop-color="var(--brand-primary)" stop-opacity="0"/>' +
+        '</linearGradient></defs>' +
+        '<path d="' + area + '" fill="url(#rlxWaveFill)" stroke="none"/>' +
+        '<path d="' + d + '" fill="none" stroke="var(--brand-primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>' +
+        '</svg>';
+    band.hidden = false;
+    if (capEl) capEl.textContent = 'New contacts/day · ' + DAYS + 'd';
 }
 
 function getCompanyName(companyId) {
@@ -224,35 +332,7 @@ function filterContacts() {
                jobTitle.includes(query);
     });
 
-    renderFilteredContacts(filtered);
-}
-
-function renderFilteredContacts(filteredContacts) {
-    const tbody = document.getElementById('contactsTableBody');
-    const emptyState = document.getElementById('emptyState');
-    const tableContainer = document.querySelector('.data-table-container');
-
-    if (!filteredContacts.length) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                    No contacts match your search
-                </td>
-            </tr>
-        `;
-        tableContainer.style.display = 'block';
-        emptyState.style.display = 'none';
-        return;
-    }
-
-    tableContainer.style.display = 'block';
-    emptyState.style.display = 'none';
-
-    // Temporarily swap contacts for rendering, then restore
-    const originalContacts = contacts;
-    contacts = filteredContacts;
-    renderContacts();
-    contacts = originalContacts;
+    renderContacts(filtered);
 }
 
 // ─── Modal: Create ──────────────────────────────────────────────────────────
@@ -434,17 +514,10 @@ function closeModal(modalId) {
 // ─── Loading State ──────────────────────────────────────────────────────────
 
 function showLoading(show) {
-    const loadingEl = document.getElementById('loadingState');
-    const tableContainer = document.querySelector('.data-table-container');
-    const emptyState = document.getElementById('emptyState');
-
-    if (show) {
-        loadingEl.style.display = 'flex';
-        tableContainer.style.display = 'none';
-        emptyState.style.display = 'none';
-    } else {
-        loadingEl.style.display = 'none';
-    }
+    const loading = document.getElementById('loadingState');
+    const grid = document.getElementById('contactsGrid');
+    if (loading) loading.style.display = show ? 'flex' : 'none';
+    if (grid) grid.style.display = show ? 'none' : 'grid';
 }
 
 // ==================== Contact Detail Slide Panel ====================

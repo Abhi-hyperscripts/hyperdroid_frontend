@@ -1,0 +1,341 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DEAL FLOW — deals pipeline redesign (Lead Desk design language).
+   Loads AFTER crm-pipeline.css and reskins it: glass rail + hero with the
+   deal-inflow wave as the header backdrop, pulse-card KPIs, frost kanban
+   columns with stage-colored halos, mono money values. All class names the
+   drag/drop + render machinery uses are untouched.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.crm-deals-page {
+  --dfl-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  --dfl-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  --dfl-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  padding-left: 78px;
+  padding-top: 52px;
+}
+@media (max-width: 1023px) {
+  body.crm-deals-page { padding-left: 0; padding-top: 0; }
+  body.crm-deals-page nav.pulse-rail { display: none; }
+}
+
+/* ambient backdrop */
+body.crm-deals-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 480px at 15% 112%, color-mix(in srgb, var(--brand-primary) 15%, transparent), transparent 68%),
+    radial-gradient(760px 420px at 92% -8%, color-mix(in srgb, #22c55e 10%, transparent), transparent 70%);
+  background-repeat: no-repeat;
+  animation: dfl-drift 27s ease-in-out infinite alternate;
+}
+@keyframes dfl-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 55px -35px, -45px 35px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.crm-deals-page::after { animation: none; }
+}
+
+/* glass icon rail */
+body.crm-deals-page nav.pulse-rail {
+  position: fixed !important;
+  left: 0; top: 52px; bottom: 0;
+  width: 78px;
+  border-right: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+body.crm-deals-page .rail-item {
+  width: 60px; padding: 8px 0 6px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; color: var(--text-muted); text-align: center;
+}
+body.crm-deals-page .rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+body.crm-deals-page .rail-item .ric svg { width: 18px; height: 18px; }
+body.crm-deals-page .rail-item span { font-size: 9px; letter-spacing: 0.02em; }
+body.crm-deals-page .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+body.crm-deals-page .rail-item.active { background: color-mix(in srgb, #A78BFA 13%, transparent); color: #A78BFA; }
+
+/* ── hero: title + view toggle over the deal-inflow wave ──────────────────── */
+.dfl-hero {
+  position: relative;
+  border-bottom: 1px solid var(--dfl-line);
+  margin-bottom: 14px;
+}
+.dfl-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.dfl-wavebg[hidden] { display: none; }
+.dfl-wavebg svg { width: 100%; height: 100%; display: block; }
+.dfl-wavecap {
+  position: absolute;
+  right: 26px;
+  bottom: 10px;
+  z-index: 2;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.dfl-hero .dfl-headrow {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px 30px 16px;
+  pointer-events: none;
+}
+.dfl-hero .dfl-headrow > * { pointer-events: auto; }
+.dfl-hero h1 {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.dfl-sub { margin: 2px 0 0; color: var(--text-secondary); font-size: 0.85em; }
+
+/* view toggle: frost segmented */
+body.crm-deals-page .crm-view-toggle {
+  background: var(--dfl-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--dfl-line);
+  border-radius: 10px;
+  padding: 3px;
+}
+body.crm-deals-page .view-toggle-btn { border-radius: 7px; }
+
+/* ── KPI band: pulse cards ────────────────────────────────────────────────── */
+body.crm-deals-page .crm-stats-grid { margin-bottom: 14px; }
+body.crm-deals-page .crm-stat-card {
+  position: relative;
+  background: var(--dfl-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--dfl-line);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+body.crm-deals-page .crm-stat-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 4%, transparent), transparent 30%);
+  pointer-events: none;
+}
+body.crm-deals-page .crm-stat-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+body.crm-deals-page .crm-stat-value {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── toolbar + saved views: frost ─────────────────────────────────────────── */
+body.crm-deals-page .pipeline-toolbar {
+  background: var(--dfl-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--dfl-line);
+  border-radius: 14px;
+}
+body.crm-deals-page .pipeline-search,
+body.crm-deals-page .pipeline-filter {
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  border-color: var(--dfl-line);
+}
+body.crm-deals-page .saved-view-chip,
+body.crm-deals-page .saved-view-save {
+  background: var(--dfl-glass);
+  border-color: var(--dfl-line);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+body.crm-deals-page .pipeline-bulk-bar {
+  background: var(--dfl-glass-dense);
+  border: 1px solid var(--dfl-line);
+  border-radius: 12px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* ── kanban: glass columns with stage halos ───────────────────────────────── */
+body.crm-deals-page .kanban-column {
+  background: var(--dfl-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--dfl-line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+body.crm-deals-page .kanban-column-header {
+  position: relative;
+  background: transparent;
+  border-bottom: 1px solid var(--dfl-line);
+}
+/* stage halo: soft glow bleeding down from the colored top edge */
+body.crm-deals-page .kanban-column-header::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 46px;
+  background: linear-gradient(180deg, color-mix(in srgb, currentColor 14%, transparent), transparent);
+  color: inherit;
+  pointer-events: none;
+  opacity: 0.9;
+}
+body.crm-deals-page .kanban-column.drag-over {
+  border-color: color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-primary) 40%, transparent),
+              0 8px 30px color-mix(in srgb, var(--brand-primary) 18%, transparent);
+}
+body.crm-deals-page .kanban-column-value {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+}
+body.crm-deals-page .kanban-count { font-family: var(--font-family-mono); }
+
+/* deal cards: dense frost */
+body.crm-deals-page .kanban-deal-card {
+  background: var(--dfl-glass-dense);
+  border: 1px solid var(--dfl-line);
+  border-radius: 12px;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+body.crm-deals-page .kanban-deal-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--brand-primary) 35%, transparent);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
+}
+body.crm-deals-page .kanban-deal-card.dragging {
+  transform: rotate(1.5deg) scale(1.02);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+body.crm-deals-page .deal-card-value {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+body.crm-deals-page .deal-card-days { font-family: var(--font-family-mono); }
+
+/* list view: glass wrapper */
+body.crm-deals-page .pipeline-list .crm-table-wrapper {
+  background: var(--dfl-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--dfl-line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+body.crm-deals-page .deal-value-cell {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1023px) {
+  .dfl-wavebg, .dfl-wavecap { display: none; }
+  .dfl-hero .dfl-headrow { padding: 16px 16px 12px; }
+}
+
+/* hero sits flush above the KPI band (the old header padding is gone) */
+body.crm-deals-page .crm-container { padding-top: 8px; }
+/* caption bottom-right — the stat strip owns the hero's bottom-left */
+.dfl-wavecap { right: 30px; left: auto; bottom: 14px; }
+
+/* ── stat strip: numerals over the wave, hairline separators, no boxes ────── */
+.dfl-statstrip {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 4px 30px 18px;
+  flex-wrap: wrap;
+  pointer-events: none;
+}
+.dfl-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 28px;
+  border-left: 1px solid var(--dfl-line);
+  min-width: 0;
+}
+.dfl-stat:first-child { border-left: 0; padding-left: 0; }
+.dfl-stat-v {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.dfl-stat-l {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.dfl-stat.won .dfl-stat-v { color: var(--color-success, #22c55e); }
+.dfl-stat.lost .dfl-stat-v { color: var(--color-error, #ef4444); }
+.dfl-stat.forecast .dfl-stat-v { color: var(--brand-primary); }
+
+/* stage-value hairline closes the hero (GitHub-language-bar style) */
+.dfl-flowline {
+  display: flex;
+  height: 3px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+.dfl-flowline i { display: block; min-width: 2px; }
+
+/* ── toolbar: naked control row (box removed — controls sit on the page) ──── */
+body.crm-deals-page .pipeline-toolbar {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 0;
+  border-radius: 0;
+  padding: 2px 0 0;
+}
+body.crm-deals-page .pipeline-search,
+body.crm-deals-page .pipeline-filter {
+  background: var(--dfl-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--dfl-line);
+  border-radius: 10px;
+}
+
+@media (max-width: 900px) {
+  .dfl-statstrip { gap: 14px 0; }
+  .dfl-stat { padding: 0 16px; }
+  .dfl-stat-v { font-size: 1.2rem; }
+}
+
+/* mobile rail kill must come AFTER the rail's display:flex rule above —
+   same specificity, so source order decides */
+@media (max-width: 1023px) {
+  nav.pulse-rail { display: none !important; }
+}
