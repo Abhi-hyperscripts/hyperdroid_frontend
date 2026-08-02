@@ -339,3 +339,57 @@ body.crm-deals-page .pipeline-filter {
 @media (max-width: 1023px) {
   nav.pulse-rail { display: none !important; }
 }
+
+/* ── bulk-select bar: stacking + spacing ─────────────────────────────────────
+   The glass on .kanban-column creates a backdrop-filter stacking context, so
+   the bar's "Move to…" dropdown menu (z-index 1000) was painting BEHIND the
+   board. Lift the whole bar above the split so its overlay wins. */
+body.crm-deals-page .pipeline-bulk-bar {
+  position: relative;
+  z-index: 60;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  padding: 12px 16px;
+  /* breathing room from the filter row above and the board below */
+  margin: 14px 0 16px;
+  background: var(--dfl-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  border-radius: 12px;
+}
+/* the open dropdown must clear the board too */
+body.crm-deals-page .pipeline-bulk-bar .searchable-dropdown.open { z-index: 1201; }
+body.crm-deals-page .pipeline-bulk-bar .searchable-dropdown-menu { z-index: 1200; }
+
+/* count chip: never wraps to two lines, reads as a unit */
+body.crm-deals-page .bulk-bar-count {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+  font-family: var(--font-family-mono);
+  font-size: 12.5px;
+}
+
+/* the stage picker takes a sane share instead of stretching edge-to-edge,
+   and the action buttons sit together on the right */
+body.crm-deals-page .pipeline-bulk-bar .searchable-dropdown-container,
+body.crm-deals-page .pipeline-bulk-select {
+  flex: 0 1 300px;
+  min-width: 220px;
+  max-width: 340px;
+}
+body.crm-deals-page .pipeline-bulk-bar > .btn:first-of-type { margin-left: auto; }
+body.crm-deals-page .pipeline-bulk-bar .btn {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 12.5px;
+}
+
+/* filter row sits clear of whatever follows it (bulk bar or saved views) */
+body.crm-deals-page .pipeline-toolbar { padding: 2px 0 4px; margin-bottom: 4px; }
+body.crm-deals-page .saved-views-bar { margin: 10px 0 14px; }
