@@ -362,6 +362,7 @@ async function loadDashboard() {
         // HR users and managers can see org-level stats
         if (hrmsRoles.isHRUser() || hrmsRoles.isManager()) {
             await loadAdminStats();
+            renderAttendanceWave();   // org-level band; same gate as the pulse hero
         } else {
             // Employees without team visibility get no org pulse
             const hero = document.getElementById('pulseHero');
@@ -393,6 +394,91 @@ async function loadDashboard() {
 // ═══════════════════════════════════════════════════════════════════════════
 const asList = r => Array.isArray(r) ? r : (r?.data || []);
 const isoDay = d => d.toISOString().split('T')[0];
+
+
+// ── Full-bleed attendance wave ──────────────────────────────────────────────
+// Present-per-day over the last 30 days from /hrms/reports/daily-attendance
+// (rows come back per date x office x department, so roll up by date).
+// Same monotone-cubic band the CRM / Accounts / PMS dashboards carry.
+async function renderAttendanceWave() {
+    const band = document.getElementById('hrmsWave');
+    const host = document.getElementById('hrmsWaveChart');
+    if (!band || !host) return;
+    try {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const start = new Date(today.getTime() - 29 * 864e5);
+        const iso = d => d.toISOString().slice(0, 10);
+        const rows = await api.request(
+            `/hrms/reports/daily-attendance?fromDate=${iso(start)}&toDate=${iso(today)}`,
+            { _skipSpinner: true }).then(r => Array.isArray(r) ? r : (r?.data ?? [])).catch(() => []);
+        if (!rows.length) { band.hidden = true; return; }
+
+        const DAYS = 30;
+        const present = new Array(DAYS).fill(0);
+        rows.forEach(r => {
+            const d = new Date(String(r.date || '').slice(0, 10));
+            const idx = Math.round((d - start) / 864e5);
+            if (idx >= 0 && idx < DAYS) present[idx] += (r.present || 0);
+        });
+        if (present.every(v => v === 0)) { band.hidden = true; return; }
+
+        const W = 1200, H = 150, padT = 30, padB = 20;
+        const ih = H - padT - padB;
+        const yMax = Math.max(...present) * 1.15 || 1;
+        const x = i => (i / (DAYS - 1)) * W;
+        const y = v => padT + ih - (v / yMax) * ih;
+        const pts = present.map((v, i) => [x(i), y(v)]);
+        const n = pts.length, dx = [], m = [];
+        for (let i = 0; i < n - 1; i++) { dx.push(pts[i + 1][0] - pts[i][0]); m.push((pts[i + 1][1] - pts[i][1]) / dx[i]); }
+        const t = [m[0]];
+        for (let i = 1; i < n - 1; i++) t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
+        t.push(m[n - 2]);
+        for (let i = 0; i < n - 1; i++) {
+            if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+            else {
+                const a = t[i] / m[i], b = t[i + 1] / m[i], s2 = a * a + b * b;
+                if (s2 > 9) { const tau = 3 / Math.sqrt(s2); t[i] = tau * a * m[i]; t[i + 1] = tau * b * m[i]; }
+            }
+        }
+        let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+        for (let i = 0; i < n - 1; i++) {
+            const h = dx[i];
+            d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
+                 ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
+                 ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+        }
+        const peak = present.indexOf(Math.max(...present));
+        const lbl = i => { const dt = new Date(start); dt.setDate(start.getDate() + i);
+                           return dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); };
+        let ticks = '';
+        for (let i = 0; i < DAYS; i += 7) {
+            ticks += `<text x="${x(i).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">${lbl(i)}</text>`;
+        }
+        host.innerHTML =
+            `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Employees present per day, last 30 days">` +
+            `<defs><linearGradient id="hrmsWaveFill" x1="0" y1="0" x2="0" y2="1">` +
+            `<stop offset="0" stop-color="var(--brand-primary)" stop-opacity="0.28"/>` +
+            `<stop offset="1" stop-color="var(--brand-primary)" stop-opacity="0"/></linearGradient></defs>` +
+            `<path d="${d} L${W},${H} L0,${H} Z" fill="url(#hrmsWaveFill)" stroke="none"/>` +
+            `<path class="draw-line" d="${d}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` +
+            `<circle cx="${x(peak).toFixed(1)}" cy="${y(present[peak]).toFixed(1)}" r="3.5" fill="var(--brand-primary)"/>` +
+            `<text x="${Math.min(Math.max(x(peak), 60), W - 80).toFixed(1)}" y="${Math.max(y(present[peak]) - 10, 14).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="var(--font-family-mono)">${present[peak]} present · ${lbl(peak)}</text>` +
+            ticks + `</svg>`;
+        band.hidden = false;
+
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            const path = host.querySelector('.draw-line');
+            const len = path.getTotalLength();
+            path.style.strokeDasharray = len;
+            path.style.strokeDashoffset = len;
+            path.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s';
+            requestAnimationFrame(() => requestAnimationFrame(() => { path.style.strokeDashoffset = '0'; }));
+        }
+    } catch (e) {
+        console.warn('[hrms] attendance wave unavailable:', e && e.message);
+        band.hidden = true;
+    }
+}
 
 async function loadAdminStats() {
     const isHR = hrmsRoles.isHRUser();

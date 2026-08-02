@@ -1362,3 +1362,48 @@ body.hrms-dashboard::after {
   z-index: 0;
 }
 .pulse-card > * { position: relative; z-index: 1; }
+
+/* ── Full-bleed attendance wave (mirrors .crm-wave) ──────────────────────── */
+.hrms-wave {
+  position: relative;
+  width: 100%;
+  margin: 4px 0 10px;
+  z-index: 1;
+}
+
+.hrms-container--body { padding-top: 0 !important; }
+
+.hrms-wave[hidden] { display: none; }
+.hrms-wave svg { display: block; width: 100%; height: 150px; }
+
+.wave-cap {
+  position: absolute;
+  top: 2px;
+  left: 24px;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  z-index: 2;
+}
+
+.home-chart-tip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--bg-tooltip, #1f2937);
+  color: #fff;
+  font-size: 11.5px;
+  line-height: 1.5;
+  border-radius: 8px;
+  padding: 7px 10px;
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, calc(-100% - 8px));
+  white-space: nowrap;
+  display: none;
+  z-index: 5;
+}
+
+.home-chart-tip b { font-weight: 600; }
+
+
