@@ -170,3 +170,66 @@ body.acct-skin .data-table td:last-child {
   -webkit-backdrop-filter: blur(12px);
   box-shadow: -8px 0 12px -8px rgba(0, 0, 0, 0.25);
 }
+
+/* ── Document pages (invoice / BOM / work order / PO …) ───────────────────────
+   .acc-form-page swaps in over the list view via AccountsCommon.showFormPage.
+   Its cards were still matte var(--bg-card) — give them the same glass as the
+   rest of the app, plus a top sheen so they read as glossy rather than flat. */
+body.acct-skin .acc-form-page { background: transparent; }
+
+body.acct-skin .acc-form .form-section,
+body.acct-skin .acc-form-page .form-section {
+  position: relative;
+  background: var(--ask-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--ask-line);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+}
+body.acct-skin .acc-form .form-section::before,
+body.acct-skin .acc-form-page .form-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 5%, transparent), transparent 26%);
+  pointer-events: none;
+}
+body.acct-skin .acc-form .form-section > *,
+body.acct-skin .acc-form-page .form-section > * { position: relative; z-index: 1; }
+
+body.acct-skin .acc-form .section-head,
+body.acct-skin .acc-form-page .section-head { border-bottom-color: var(--ask-line); }
+
+/* the fixed save/cancel bar: dense frost so form content blurs under it */
+body.acct-skin .acc-form-page__actions {
+  background: var(--ask-glass-dense);
+  backdrop-filter: blur(20px) saturate(1.12);
+  -webkit-backdrop-filter: blur(20px) saturate(1.12);
+  border-top: 1px solid var(--ask-line);
+}
+
+/* line-item grids inside documents */
+body.acct-skin .line-items-table { font-variant-numeric: tabular-nums; }
+body.acct-skin .line-items-table th { background: transparent; border-bottom: 1px solid var(--ask-line); }
+body.acct-skin .line-items-table td { border-bottom: 1px solid var(--ask-line); }
+
+/* doc title picks up the display face */
+body.acct-skin .acc-form-page__title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  letter-spacing: -0.01em;
+}
+
+/* modals already carry glass from glassmorphic-modal.css — add the same top
+   sheen the cards use so they read glossy rather than flat-translucent */
+body.acct-skin .modal-content { position: relative; }
+body.acct-skin .modal-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 6%, transparent), transparent 22%);
+  pointer-events: none;
+  z-index: 0;
+}
+body.acct-skin .modal-content > * { position: relative; z-index: 1; }
