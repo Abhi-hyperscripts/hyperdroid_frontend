@@ -102,11 +102,19 @@ async function renderPulse() {
         const today = new Date();
         const from = new Date(today.getTime() - 29 * 864e5).toISOString().slice(0, 10);
         const to = today.toISOString().slice(0, 10);
-        const [entries, projects, tasks] = await Promise.all([
-            api.request(`/pms/time-entries/my?fromDate=${from}&toDate=${to}`, { _skipSpinner: true }).then(asList).catch(() => []),
+        const [projects, tasks] = await Promise.all([
             api.request('/pms/projects', { _skipSpinner: true }).then(asList).catch(() => []),
             api.request('/pms/tasks', { _skipSpinner: true }).then(asList).catch(() => [])
         ]);
+
+        // Team-wide, not personal. Every other dashboard's wave is org-level
+        // (all leads captured / all attendance / all invoiced), so charting only
+        // the signed-in user's hours made PMS the odd one out — and rendered
+        // nothing at all for a manager who logs no time himself.
+        const entryChunks = await Promise.all(projects.slice(0, 12).map(pr =>
+            api.request(`/pms/time-entries?projectId=${pr.id}&fromDate=${from}&toDate=${to}`, { _skipSpinner: true })
+                .then(asList).catch(() => [])));
+        const entries = entryChunks.flat();
 
         // ── project pipeline bars ──
         const byStatus = {};
@@ -166,7 +174,7 @@ async function renderPulse() {
         setTextContent('attnCount', flagged.length ? `${flagged.length} items` : '');
 
         // ── who logged time (team-wide) ──
-        renderTeamHours(from, to, nameOf);
+        renderTeamHours(entries);
 
         // ── full-bleed wave: hours per day ──
         renderPulseWave(entries, from, to);
@@ -177,30 +185,19 @@ async function renderPulse() {
 
 // Team-wide hours by person. /time-entries/my is personal, so this walks the
 // project time entries the user can see and groups by logger.
-async function renderTeamHours(from, to, nameOf) {
+function renderTeamHours(rows) {
     const host = document.getElementById('chartTeamHours');
     if (!host) return;
-    try {
-        const asList = r => Array.isArray(r) ? r : (r?.data ?? []);
-        const projects = Object.keys(nameOf);
-        const chunks = await Promise.all(projects.slice(0, 12).map(pid =>
-            api.request(`/pms/time-entries?projectId=${pid}&fromDate=${from}&toDate=${to}`, { _skipSpinner: true })
-                .then(asList).catch(() => [])));
-        const rows = chunks.flat();
-        if (!rows.length) { host.innerHTML = '<div class="pulse-empty">No time logged in this window.</div>'; return; }
-
-        const byUser = {};
-        rows.forEach(e => {
-            const k = e.user_name || e.user_display_name || 'Unknown';
-            byUser[k] = (byUser[k] || 0) + (e.total_minutes || 0);
-        });
-        const ranked = Object.entries(byUser).sort((a, b) => b[1] - a[1]).slice(0, 6);
-        const hrs = m => Math.round((m / 60) * 10) / 10;
-        pulseBars('chartTeamHours', ranked.map(([label, mins]) => ({ label, value: hrs(mins) })), v => `${v}h`);
-        setTextContent('teamHoursNote', `${hrs(rows.reduce((a, e) => a + (e.total_minutes || 0), 0))}h team total`);
-    } catch (e) {
-        host.innerHTML = '<div class="pulse-empty">Team hours unavailable.</div>';
-    }
+    if (!rows || !rows.length) { host.innerHTML = '<div class="pulse-empty">No time logged in this window.</div>'; return; }
+    const byUser = {};
+    rows.forEach(e => {
+        const k = e.user_name || e.user_display_name || 'Unknown';
+        byUser[k] = (byUser[k] || 0) + (e.total_minutes || 0);
+    });
+    const ranked = Object.entries(byUser).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const hrs = m => Math.round((m / 60) * 10) / 10;
+    pulseBars('chartTeamHours', ranked.map(([label, mins]) => ({ label, value: hrs(mins) })), v => `${v}h`);
+    setTextContent('teamHoursNote', `${hrs(rows.reduce((a, e) => a + (e.total_minutes || 0), 0))}h team total`);
 }
 
 // Monotone-cubic wave of hours logged per day (suite hero-wave pattern).
