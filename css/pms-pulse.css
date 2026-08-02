@@ -1,0 +1,363 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PMS DASHBOARD — "Delivery Pulse".
+   Same pulse language as the CRM / HRMS / Accounts dashboards: persistent
+   glass rail, Bricolage hero, full-bleed data wave, glass pulse-cards and
+   stat chips. Classes mirror crm-dashboard-analytics.css so the three
+   dashboards stay visually identical; only the body scope, the wave class
+   and the rail accent differ.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pulse-title { font-family: 'Bricolage Grotesque', var(--font-family); letter-spacing: -0.01em; }
+
+/* rail */
+nav.pulse-rail {
+  position: fixed !important;
+  left: 0; top: 52px; bottom: 0;
+  width: 78px;
+  border-right: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.rail-item {
+  width: 60px;
+  padding: 8px 0 6px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+.rail-item .ric svg { width: 18px; height: 18px; }
+.rail-item span { font-size: 9px; letter-spacing: 0.02em; }
+.rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+.rail-item.active { background: color-mix(in srgb, var(--brand-primary) 12%, transparent); color: var(--brand-primary); }
+[data-theme="dark"] .rail-item.active { color: #eab061; }
+
+body.pms-dashboard { padding-left: 78px; }
+
+/* hero */
+.pulse-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 0.9fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.pulse-card {
+  position: relative;
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow-xs);
+  min-width: 0;
+}
+
+.pulse-card-head { display: flex; align-items: baseline; gap: 10px; }
+.pulse-card-head h2 { font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0; }
+.pulse-card-note { margin-left: auto; font-family: var(--font-family-mono); font-size: 11px; color: var(--text-muted); }
+
+.pulse-empty { font-size: 12px; color: var(--text-muted); padding: 10px 2px; }
+
+/* horizontal DOM bars (funnel / sources / dispositions / lost reasons) */
+.pulse-bars { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+
+.pbar { display: flex; align-items: center; gap: 10px; }
+.pbar .lbl {
+  width: 108px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  text-align: right;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pbar .track {
+  flex: 1;
+  height: 18px;
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.pbar .fill {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  min-width: 2px;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pbar .cnt {
+  width: 58px;
+  white-space: nowrap;
+  font-family: var(--font-family-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+.pbar .cnt small { color: var(--text-muted); font-weight: 400; font-size: 10px; }
+
+.pulse-footer {
+  display: flex;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+.pulse-footer b { font-family: var(--font-family-mono); color: var(--text-primary); }
+.pulse-footer .won b { color: var(--color-success-dark); }
+.pulse-footer .lost b { color: var(--color-danger-dark); }
+[data-theme="dark"] .pulse-footer .won b { color: #4fd6a5; }
+[data-theme="dark"] .pulse-footer .lost b { color: #f87171; }
+
+/* attention inbox */
+.pulse-inbox { display: flex; flex-direction: column; gap: 9px; margin-top: 14px; }
+
+.pulse-task {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 11px;
+  padding: 11px 13px;
+  cursor: pointer;
+}
+
+.pulse-task .trow { display: flex; align-items: center; gap: 11px; }
+.pulse-task .meta { flex: 1; min-width: 0; }
+.pulse-task .t1 { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+.pulse-task .t2 { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+.pulse-tag {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.pulse-tag.overdue { background: color-mix(in srgb, var(--color-danger) 14%, transparent); color: var(--color-danger-dark); }
+.pulse-tag.due { background: color-mix(in srgb, var(--color-warning) 15%, transparent); color: var(--color-warning-dark); }
+.pulse-tag.info { background: color-mix(in srgb, var(--color-info) 14%, transparent); color: var(--color-info-dark); }
+[data-theme="dark"] .pulse-tag.overdue { color: #f87171; }
+[data-theme="dark"] .pulse-tag.due { color: #eab061; }
+[data-theme="dark"] .pulse-tag.info { color: #7cc9e8; }
+
+.pulse-acts { display: flex; gap: 7px; margin-top: 9px; }
+.pulse-mini {
+  font: 600 11px var(--font-family);
+  padding: 6px 13px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.pulse-mini:hover { color: var(--text-primary); border-color: var(--border-color-strong); }
+.pulse-mini.yes { background: color-mix(in srgb, var(--color-success) 14%, transparent); border-color: transparent; color: var(--color-success-dark); }
+[data-theme="dark"] .pulse-mini.yes { color: #4fd6a5; }
+.pulse-mini:disabled { opacity: 0.5; cursor: default; }
+
+/* chips */
+.pulse-chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0 16px; }
+.pulse-chip {
+  display: inline-flex; align-items: baseline; gap: 7px;
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent);
+  border-radius: 22px;
+  padding: 8px 16px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.pulse-chip b { font-family: var(--font-family-mono); font-size: 14px; color: var(--text-primary); font-weight: 600; }
+
+/* below grid */
+.pulse-below {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.pulse-below #lostReasonsCard { grid-column: span 2; }
+
+/* agent table tune-up inside pulse card */
+.pulse-below .agent-performance { margin-top: 10px; }
+
+/* section headers + grouped actions */
+.pulse-sect {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 24px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pulse-sect::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+
+.quick-actions.pulse-mods {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 1080px) {
+  .pulse-hero { grid-template-columns: 1fr 1fr; }
+  .pulse-hero .pulse-card:last-child { grid-column: span 2; }
+  .pulse-below { grid-template-columns: 1fr; }
+  .pulse-below #lostReasonsCard { grid-column: auto; }
+}
+
+@media (max-width: 900px) {
+  nav.pulse-rail { display: none; }
+  body.pms-dashboard { padding-left: 0; }
+}
+
+@media (max-width: 720px) {
+  .pulse-hero { grid-template-columns: 1fr; }
+  .pulse-hero .pulse-card:last-child { grid-column: auto; }
+  .pbar .lbl { width: 84px; font-size: 10.5px; }
+}
+
+
+/* ── Full-bleed leads wave (same grand band as the home screen) ──────────── */
+.pms-wave {
+  position: relative;
+  width: 100%;
+  margin: 4px 0 10px;
+  z-index: 1;
+}
+
+.pms-container--body { padding-top: 0 !important; }
+
+.pms-wave[hidden] { display: none; }
+.pms-wave svg { display: block; width: 100%; height: 150px; }
+
+.wave-cap {
+  position: absolute;
+  top: 2px;
+  left: 24px;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  z-index: 2;
+}
+
+.home-chart-tip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--bg-tooltip, #1f2937);
+  color: #fff;
+  font-size: 11.5px;
+  line-height: 1.5;
+  border-radius: 8px;
+  padding: 7px 10px;
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, calc(-100% - 8px));
+  white-space: nowrap;
+  display: none;
+  z-index: 5;
+}
+
+.home-chart-tip b { font-weight: 600; }
+
+@media (max-width: 900px) {
+  .wave-cap { left: 18px; }
+}
+
+@media (max-width: 700px) {
+  .pms-wave svg { height: 110px; }
+  .pms-wave svg text { display: none; }
+}
+
+/* ── Kill the legacy flex layout on grouped action rows (crm.css uses
+   .crm-container .quick-actions {display:flex; justify-content:center} with
+   flex-basis cards — it fought the pulse grid and overflowed on mobile). ── */
+.crm-container .quick-actions.pulse-mods {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+  justify-content: stretch !important;
+  margin: 0 0 8px !important;
+  max-width: none !important;
+  width: 100%;
+}
+
+.crm-container .quick-actions.pulse-mods .action-card {
+  flex: none !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 720px) {
+  .crm-container .quick-actions.pulse-mods {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Ambient waves: two dune layers drifting in opposite directions along
+   the bottom of the viewport. Visible-but-calm; stilled for reduced motion. */
+@keyframes crm-waves {
+  from { background-position: 0 bottom, 0 bottom; }
+  to   { background-position: 600px bottom, -900px bottom; }
+}
+
+body.crm-dashboard::after {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 160' preserveAspectRatio='none'%3E%3Cpath d='M0 80 Q150 30 300 80 T600 80 V160 H0 Z' fill='%233b82f6' fill-opacity='0.07'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 200' preserveAspectRatio='none'%3E%3Cpath d='M0 110 Q225 60 450 110 T900 110 V200 H0 Z' fill='%23a855f7' fill-opacity='0.05'/%3E%3C/svg%3E");
+  background-repeat: repeat-x, repeat-x;
+  background-size: 600px 160px, 900px 200px;
+  background-position: 0 bottom, 0 bottom;
+  animation: crm-waves 26s linear infinite;
+}
+
+[data-theme="dark"] body.crm-dashboard::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 160' preserveAspectRatio='none'%3E%3Cpath d='M0 80 Q150 30 300 80 T600 80 V160 H0 Z' fill='%233b82f6' fill-opacity='0.11'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 200' preserveAspectRatio='none'%3E%3Cpath d='M0 110 Q225 60 450 110 T900 110 V200 H0 Z' fill='%23a855f7' fill-opacity='0.08'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.crm-dashboard::after { animation: none; }
+}
+
+/* glossy sheen — matches the suite's card treatment */
+.pulse-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 5%, transparent), transparent 26%);
+  pointer-events: none;
+  z-index: 0;
+}
+.pulse-card > * { position: relative; z-index: 1; }

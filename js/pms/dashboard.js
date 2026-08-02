@@ -1,7 +1,7 @@
 // PMS Dashboard JavaScript
 
 // Initialize
-document.addEventListener('DOMContentLoaded', async () => {
+async function pmsBoot() {
     Navigation.init('pms', '../');
 
     if (!api.isAuthenticated()) {
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch { /* JWT parse fails are non-fatal */ }
 
     await loadDashboard();
-});
+}
 
 /**
  * Load all dashboard data
@@ -34,7 +34,8 @@ async function loadDashboard() {
     try {
         await Promise.all([
             loadStats(),
-            loadRecentActivity()
+            loadRecentActivity(),
+            renderPulse()          // independent: never gated on the stat tiles
         ]);
     } catch (error) {
         console.error('Error loading dashboard:', error);
@@ -62,78 +63,182 @@ async function loadStats() {
     setTextContent('hoursThisWeek', weeklyHours);
     setTextContent('pendingTimesheets', pendingCount);
     setTextContent('teamMembers', memberCount);
-
-    renderDeliveryCharts();
 }
 
-// Delivery charts: hours/week, hours by project, task pipeline. Built from
-// the same endpoints the stat tiles use. Hidden entirely when nothing is
-// logged yet, so a fresh tenant doesn't see three empty axes.
-async function renderDeliveryCharts() {
-    const wrap = document.getElementById('pmsChartsWrap');
-    if (!wrap || typeof acDonut !== 'function' || typeof ApexCharts === 'undefined') return;
+// ── Delivery Pulse ──────────────────────────────────────────────────────────
+// Same visual language as the CRM / HRMS / Accounts dashboards: a full-bleed
+// wave of hours logged per day, three glass pulse-cards (project pipeline,
+// attention inbox, hours by project) and mono stat chips.
+const PULSE_STATUS = {
+    not_started: { label: 'Not started', color: '#94a3b8' },
+    in_progress: { label: 'In progress', color: '#3b82f6' },
+    on_hold:     { label: 'On hold',     color: '#f59e0b' },
+    completed:   { label: 'Completed',   color: '#10b981' },
+    cancelled:   { label: 'Cancelled',   color: '#ef4444' }
+};
+
+function pulseBars(hostId, rows, fmt) {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    if (!rows.length) { host.innerHTML = '<div class="pulse-empty">Nothing yet</div>'; return; }
+    const max = Math.max(...rows.map(r => r.value)) || 1;
+    host.innerHTML = rows.map(r => `
+        <div class="pbar">
+            <span class="lbl" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span>
+            <span class="track"><i class="fill" style="width:${Math.max((r.value / max) * 100, 2)}%;background:${r.color || 'var(--brand-primary)'}"></i></span>
+            <span class="cnt">${fmt ? fmt(r.value) : r.value}${r.pct != null ? ` <small>${r.pct}%</small>` : ''}</span>
+        </div>`).join('');
+}
+
+
+async function renderPulse() {
+    const asList = r => Array.isArray(r) ? r : (r?.data ?? []);
+    const sub = document.getElementById('pulseSubtitle');
+    if (sub) {
+        sub.textContent = new Date().toLocaleDateString('en-IN',
+            { weekday: 'long', day: 'numeric', month: 'long' }) + ' · Delivery';
+    }
     try {
         const today = new Date();
-        const from = new Date(today.getTime() - 55 * 864e5).toISOString().slice(0, 10);
+        const from = new Date(today.getTime() - 29 * 864e5).toISOString().slice(0, 10);
         const to = today.toISOString().slice(0, 10);
-        const asList = r => Array.isArray(r) ? r : (r?.data ?? []);
-
         const [entries, projects, tasks] = await Promise.all([
             api.request(`/pms/time-entries/my?fromDate=${from}&toDate=${to}`, { _skipSpinner: true }).then(asList).catch(() => []),
             api.request('/pms/projects', { _skipSpinner: true }).then(asList).catch(() => []),
             api.request('/pms/tasks', { _skipSpinner: true }).then(asList).catch(() => [])
         ]);
 
-        if (!entries.length && !tasks.length) { wrap.style.display = 'none'; return; }
+        // ── project pipeline bars ──
+        const byStatus = {};
+        projects.forEach(p => { const k = p.status || 'not_started'; byStatus[k] = (byStatus[k] || 0) + 1; });
+        const total = projects.length || 1;
+        pulseBars('chartProjectStatus', Object.keys(PULSE_STATUS)
+            .filter(k => byStatus[k])
+            .map(k => ({ label: PULSE_STATUS[k].label, value: byStatus[k], color: PULSE_STATUS[k].color,
+                         pct: Math.round((byStatus[k] / total) * 100) })));
+        setTextContent('projTotalNote', `${projects.length} projects`);
+        const done = byStatus.completed || 0, active = byStatus.in_progress || 0;
+        const foot = document.getElementById('projFooter');
+        if (foot) foot.innerHTML = `<span class="won"><b>${done}</b> completed</span><span><b>${active}</b> in flight</span>`;
 
-        // hours per ISO week
-        const weekKey = d => {
-            const dt = new Date(d);
-            const monday = new Date(dt);
-            monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
-            return monday.toISOString().slice(0, 10);
-        };
-        const byWeek = {};
-        entries.forEach(e => {
-            const k = weekKey(e.log_date || e.created_at);
-            byWeek[k] = (byWeek[k] || 0) + (e.total_minutes || 0);
-        });
-        const weeks = Object.keys(byWeek).sort();
-        const weekLbl = k => new Date(k).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-
-        // hours by project
+        // ── hours by project bars ──
         const nameOf = {};
         projects.forEach(p => { nameOf[p.id] = p.project_name || p.name || 'Untitled'; });
         const byProject = {};
+        let totalMins = 0;
         entries.forEach(e => {
             const k = nameOf[e.project_id] || 'Unassigned';
             byProject[k] = (byProject[k] || 0) + (e.total_minutes || 0);
+            totalMins += e.total_minutes || 0;
         });
-        const projRows = Object.entries(byProject).sort((a, b) => b[1] - a[1]).slice(0, 7);
-
-        // task pipeline
-        const LABELS = { todo: 'To do', in_progress: 'In progress', in_review: 'In review', done: 'Done' };
-        const byStatus = {};
-        tasks.forEach(t => {
-            const s = t.status || 'todo';
-            if (s === 'cancelled') return;
-            byStatus[s] = (byStatus[s] || 0) + 1;
-        });
-        const order = ['todo', 'in_progress', 'in_review', 'done'].filter(s => byStatus[s]);
-
-        wrap.style.display = '';
         const hrs = m => Math.round((m / 60) * 10) / 10;
-        const draw = () => {
-            acBarV('pmsHoursChart', weeks.map(weekLbl), weeks.map(k => hrs(byWeek[k])), null, v => `${v}h`);
-            acDonut('pmsProjectChart', projRows.map(r => r[0]), projRows.map(r => hrs(r[1])), null, v => `${v}h`);
-            acBarV('pmsTaskChart', order.map(s => LABELS[s] || s), order.map(s => byStatus[s]),
-                   ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981'], v => `${v}`);
-        };
-        draw();
-        _acActiveRender = draw;
+        pulseBars('chartHoursByProject',
+            Object.entries(byProject).sort((a, b) => b[1] - a[1]).slice(0, 6)
+                .map(([label, mins]) => ({ label, value: hrs(mins) })), v => `${v}h`);
+        setTextContent('hoursTotalNote', `${hrs(totalMins)}h logged`);
+
+        // ── attention inbox: overdue / due-today tasks ──
+        const inbox = document.getElementById('attentionList');
+        const todayISO = to;
+        const open = tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled' && t.due_date);
+        const flagged = open.map(t => {
+            const d = String(t.due_date).slice(0, 10);
+            return { t, d, overdue: d < todayISO, due: d === todayISO };
+        }).filter(x => x.overdue || x.due)
+          .sort((a, b) => a.d.localeCompare(b.d));
+
+        if (inbox) {
+            if (!flagged.length) {
+                inbox.innerHTML = '<div class="pulse-empty">Nothing overdue — you\'re clear.</div>';
+            } else {
+                inbox.innerHTML = flagged.slice(0, 5).map(x => `
+                    <div class="pulse-task">
+                        <div class="trow">
+                            <div class="meta">
+                                <div class="t1">${escapeHtml(x.t.title || 'Untitled task')}</div>
+                                <div class="t2">${escapeHtml(nameOf[x.t.project_id] || 'Project')} · due ${new Date(x.d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
+                            </div>
+                            <span class="pulse-tag ${x.overdue ? 'overdue' : 'due'}">${x.overdue ? 'OVERDUE' : 'DUE TODAY'}</span>
+                        </div>
+                    </div>`).join('');
+            }
+        }
+        setTextContent('attnCount', flagged.length ? `${flagged.length} items` : '');
+
+        // ── full-bleed wave: hours per day ──
+        renderPulseWave(entries, from, to);
     } catch (e) {
-        console.warn('[pms] charts unavailable:', e && e.message);
-        wrap.style.display = 'none';
+        console.warn('[pms] pulse render failed:', e && e.message);
+    }
+}
+
+// Monotone-cubic wave of hours logged per day (suite hero-wave pattern).
+function renderPulseWave(entries, from, to) {
+    const band = document.getElementById('pmsWave');
+    const host = document.getElementById('pmsWaveChart');
+    if (!band || !host) return;
+
+    const start = new Date(from);
+    const DAYS = Math.round((new Date(to) - start) / 864e5) + 1;
+    const buckets = new Array(DAYS).fill(0);
+    entries.forEach(e => {
+        const d = new Date(String(e.log_date || e.created_at).slice(0, 10));
+        const idx = Math.round((d - start) / 864e5);
+        if (idx >= 0 && idx < DAYS) buckets[idx] += (e.total_minutes || 0) / 60;
+    });
+    if (buckets.every(v => v === 0)) { band.hidden = true; return; }
+
+    const W = 1200, H = 150, padT = 30, padB = 20;
+    const ih = H - padT - padB;
+    const yMax = Math.max(...buckets) * 1.15 || 1;
+    const x = i => (i / (DAYS - 1)) * W;
+    const y = v => padT + ih - (v / yMax) * ih;
+    const pts = buckets.map((v, i) => [x(i), y(v)]);
+    const n = pts.length, dx = [], m = [];
+    for (let i = 0; i < n - 1; i++) { dx.push(pts[i + 1][0] - pts[i][0]); m.push((pts[i + 1][1] - pts[i][1]) / dx[i]); }
+    const t = [m[0]];
+    for (let i = 1; i < n - 1; i++) t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
+    t.push(m[n - 2]);
+    for (let i = 0; i < n - 1; i++) {
+        if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+        else {
+            const a = t[i] / m[i], b = t[i + 1] / m[i], s2 = a * a + b * b;
+            if (s2 > 9) { const tau = 3 / Math.sqrt(s2); t[i] = tau * a * m[i]; t[i + 1] = tau * b * m[i]; }
+        }
+    }
+    let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+    for (let i = 0; i < n - 1; i++) {
+        const h = dx[i];
+        d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
+             ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
+             ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+    }
+    const peak = buckets.indexOf(Math.max(...buckets));
+    const lbl = i => { const dt = new Date(start); dt.setDate(start.getDate() + i);
+                       return dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); };
+    let ticks = '';
+    for (let i = 0; i < DAYS; i += 7) {
+        ticks += `<text x="${x(i).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">${lbl(i)}</text>`;
+    }
+    host.innerHTML =
+        `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Hours logged per day, last 30 days">` +
+        `<defs><linearGradient id="pmsWaveFill" x1="0" y1="0" x2="0" y2="1">` +
+        `<stop offset="0" stop-color="var(--brand-primary)" stop-opacity="0.28"/>` +
+        `<stop offset="1" stop-color="var(--brand-primary)" stop-opacity="0"/></linearGradient></defs>` +
+        `<path d="${d} L${W},${H} L0,${H} Z" fill="url(#pmsWaveFill)" stroke="none"/>` +
+        `<path class="draw-line" d="${d}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` +
+        `<circle cx="${x(peak).toFixed(1)}" cy="${y(buckets[peak]).toFixed(1)}" r="3.5" fill="var(--brand-primary)"/>` +
+        `<text x="${Math.min(Math.max(x(peak), 60), W - 80).toFixed(1)}" y="${Math.max(y(buckets[peak]) - 10, 14).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="var(--font-family-mono)">${Math.round(buckets[peak] * 10) / 10}h · ${lbl(peak)}</text>` +
+        ticks + `</svg>`;
+    band.hidden = false;
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const path = host.querySelector('.draw-line');
+        const len = path.getTotalLength();
+        path.style.strokeDasharray = len;
+        path.style.strokeDashoffset = len;
+        path.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s';
+        requestAnimationFrame(() => requestAnimationFrame(() => { path.style.strokeDashoffset = '0'; }));
     }
 }
 
@@ -351,3 +456,25 @@ function setTextContent(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
 }
+
+// ── Bootstrap ───────────────────────────────────────────────────────────────
+// Placed at the end of the file so every function above is defined. The page
+// loads scripts via document.write and the CDN chart bundle can push this file
+// past DOMContentLoaded, so a bare listener is not enough — check readyState.
+(function bootPms() {
+    const run = () => {
+        window.__pmsBooted = 'running';
+        Promise.resolve()
+            .then(() => pmsBoot())
+            .then(() => { window.__pmsBooted = 'ok'; })
+            .catch(e => {
+                window.__pmsBooted = 'error: ' + (e && e.message ? e.message : String(e));
+                console.error('[pms] dashboard boot failed:', e);
+            });
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run);
+    } else {
+        run();
+    }
+})();
