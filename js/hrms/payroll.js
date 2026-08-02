@@ -14531,7 +14531,39 @@ function updateSalaryReportSummary(data) {
 /**
  * Update department-wise breakdown section
  */
+// Salary charts. Money figures, so they pass payroll.js's own country-aware
+// formatCurrency — the shared lib defaults to plain numbers.
+function renderPayrollCharts(employees) {
+    const wrap = document.getElementById('payrollChartsWrap');
+    if (!wrap || typeof acDonut !== 'function' || typeof ApexCharts === 'undefined') return;
+    const rows = (employees || []).filter(e => (e.ctc || 0) > 0);
+    if (!rows.length) { wrap.style.display = 'none'; return; }
+
+    const code = salaryReportData.currency_code;
+    const sym = salaryReportData.currency_symbol;
+    const fmt = v => formatCurrency(v, code, sym);
+
+    const deptMap = {};
+    rows.forEach(e => { const k = e.department || 'Unassigned'; deptMap[k] = (deptMap[k] || 0) + (e.ctc || 0); });
+    const dept = Object.entries(deptMap).sort((a, b) => b[1] - a[1]);
+    const top = [...rows].sort((a, b) => (b.ctc || 0) - (a.ctc || 0)).slice(0, 8);
+
+    wrap.style.display = '';
+    const draw = () => {
+        acDonut('salaryDeptChart', dept.map(r => r[0]), dept.map(r => r[1]), null, fmt);
+        acBarH('salaryTopChart', top.map(e => e.employee_name), top.map(e => e.ctc || 0), fmt);
+    };
+    try {
+        draw();
+        _acActiveRender = draw;
+    } catch (e) {
+        console.warn('[payroll] chart render failed:', e);
+        wrap.style.display = 'none';
+    }
+}
+
 function updateDepartmentBreakdown(employees) {
+    renderPayrollCharts(employees);
     const container = document.getElementById('departmentBreakdown');
     if (!container) return;
 

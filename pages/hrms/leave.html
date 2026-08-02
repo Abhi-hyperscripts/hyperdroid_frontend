@@ -38,6 +38,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/rail-drawer.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-charts.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -158,6 +159,20 @@
                             <select id="requestDepartment" class="form-select">
                                 <option value="">All Departments</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <!-- Leave analytics — from /hrms/reports/leave (pre-aggregated) -->
+                    <div class="hrms-charts" id="leaveChartsWrap" style="display:none;">
+                        <div class="hrms-chart-card">
+                            <h3 class="hrms-chart-title">Leave days per month</h3>
+                            <p class="hrms-chart-sub">When the team is away</p>
+                            <div class="hrms-chart" id="leaveMonthChart"></div>
+                        </div>
+                        <div class="hrms-chart-card">
+                            <h3 class="hrms-chart-title">Leave mix by type</h3>
+                            <p class="hrms-chart-sub">Which balances are being used</p>
+                            <div class="hrms-chart" id="leaveTypeChart"></div>
                         </div>
                     </div>
 
@@ -769,6 +784,8 @@
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-pagination.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/leave.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

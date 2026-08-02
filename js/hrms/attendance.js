@@ -710,6 +710,54 @@ function updateDailyStats(present, absent, late, onLeave) {
     document.getElementById('absentCount').textContent = absent;
     document.getElementById('lateCount').textContent = late;
     document.getElementById('onLeaveCount').textContent = onLeave;
+    renderAttendanceTrend();
+}
+
+// 30-day trend from /hrms/reports/daily-attendance, which returns one row per
+// date x office x department — roll up by date. Re-fetches when the office
+// filter or date changes; hidden when the window has no records.
+let _attTrendKey = null;
+async function renderAttendanceTrend() {
+    const wrap = document.getElementById('attChartsWrap');
+    if (!wrap || typeof acColumns !== 'function' || typeof ApexCharts === 'undefined') return;
+
+    const toDate = document.getElementById('attendanceDate')?.value || new Date().toISOString().slice(0, 10);
+    const officeId = (typeof officeDropdown !== 'undefined' && officeDropdown) ? officeDropdown.getValue() : '';
+    const key = `${toDate}|${officeId}`;
+    if (key === _attTrendKey) return;      // nothing changed
+    _attTrendKey = key;
+
+    try {
+        const from = new Date(Date.parse(toDate) - 29 * 864e5).toISOString().slice(0, 10);
+        let url = `/hrms/reports/daily-attendance?fromDate=${from}&toDate=${toDate}`;
+        if (officeId) url += `&officeId=${officeId}`;
+        const rows = await api.request(url) || [];
+
+        const byDay = {};
+        rows.forEach(r => {
+            const k = String(r.date || '').slice(0, 10);
+            if (!k) return;
+            (byDay[k] = byDay[k] || { p: 0, a: 0, l: 0 });
+            byDay[k].p += r.present || 0;
+            byDay[k].a += r.absent || 0;
+            byDay[k].l += r.on_leave || 0;
+        });
+        const keys = Object.keys(byDay).sort();
+        if (!keys.length) { wrap.style.display = 'none'; return; }
+
+        wrap.style.display = '';
+        const lbl = k => new Date(k).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        const draw = () => acColumns('attTrendChart', keys.map(lbl), [
+            { name: 'Present', data: keys.map(k => byDay[k].p) },
+            { name: 'Absent', data: keys.map(k => byDay[k].a) },
+            { name: 'On leave', data: keys.map(k => byDay[k].l) }
+        ], ['#10b981', '#ef4444', '#f59e0b'], v => `${v}`);
+        draw();
+        _acActiveRender = draw;
+    } catch (e) {
+        console.warn('[attendance] trend unavailable:', e && e.message);
+        wrap.style.display = 'none';
+    }
 }
 
 // Team Regularization Requests (Admin/Manager view)

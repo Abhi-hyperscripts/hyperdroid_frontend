@@ -38,6 +38,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/rail-drawer.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-charts.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -1049,6 +1050,21 @@
                         <div class="summary-label">Average CTC</div>
                         <div class="summary-sublabel">Per employee</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Payroll cost charts. The dept breakdown below shows HEADCOUNT,
+                 so these show MONEY — no duplication. -->
+            <div class="hrms-charts" id="payrollChartsWrap" style="display:none;">
+                <div class="hrms-chart-card">
+                    <h3 class="hrms-chart-title">Annual CTC by department</h3>
+                    <p class="hrms-chart-sub">Where the salary spend sits</p>
+                    <div class="hrms-chart" id="salaryDeptChart"></div>
+                </div>
+                <div class="hrms-chart-card">
+                    <h3 class="hrms-chart-title">Top earners by CTC</h3>
+                    <p class="hrms-chart-sub">Highest annual cost to company</p>
+                    <div class="hrms-chart" id="salaryTopChart"></div>
                 </div>
             </div>
 
@@ -4442,6 +4458,8 @@
         document.write('<script src="../../js/table-pagination.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/payslip-modal.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/payroll.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

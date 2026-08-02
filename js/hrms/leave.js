@@ -743,8 +743,41 @@ async function loadPendingRequests() {
 
         const response = await api.request(url);
         updateLeaveRequestsTable(response || []);
+        renderLeaveCharts();
     } catch (error) {
         console.error('Error loading pending requests:', error);
+    }
+}
+
+// Leave analytics strip. /hrms/reports/leave returns by_month[] and by_type[]
+// already aggregated, so this is one call and two draws. Hidden when the year
+// has no leave on record.
+let _leaveChartsLoaded = false;
+async function renderLeaveCharts() {
+    const wrap = document.getElementById('leaveChartsWrap');
+    if (!wrap || _leaveChartsLoaded) return;
+    if (typeof acDonut !== 'function' || typeof ApexCharts === 'undefined') return;
+    _leaveChartsLoaded = true;
+    try {
+        const year = new Date().getFullYear();
+        const rep = await api.request(`/hrms/reports/leave?year=${year}`);
+        const byMonth = (rep && rep.by_month) || [];
+        const byType = ((rep && rep.by_type) || []).filter(t => (t.days_taken || 0) > 0);
+        if (!byMonth.some(m => m.days_taken > 0) && !byType.length) { wrap.style.display = 'none'; return; }
+        wrap.style.display = '';
+        const draw = () => {
+            acBarV('leaveMonthChart',
+                byMonth.map(m => (m.month_name || '').slice(0, 3)),
+                byMonth.map(m => m.days_taken || 0), null, v => `${v}d`);
+            acDonut('leaveTypeChart',
+                byType.map(t => t.leave_type_name),
+                byType.map(t => t.days_taken), null, v => `${v}d`);
+        };
+        draw();
+        _acActiveRender = draw;
+    } catch (e) {
+        console.warn('[leave] charts unavailable:', e && e.message);
+        wrap.style.display = 'none';
     }
 }
 

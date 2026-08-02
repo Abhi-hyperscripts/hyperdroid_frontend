@@ -39,6 +39,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/rail-drawer.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-charts.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -193,6 +194,16 @@
                         <div class="stat-mini">
                             <span class="stat-mini-value" id="onLeaveCount">-</span>
                             <span class="stat-mini-label">On Leave</span>
+                        </div>
+                    </div>
+
+                    <!-- 30-day attendance trend — the stat tiles above are
+                         today-only, this is the shape over time. -->
+                    <div class="hrms-charts" id="attChartsWrap" style="display:none;">
+                        <div class="hrms-chart-card" style="grid-column:1/-1;">
+                            <h3 class="hrms-chart-title">Attendance over the last 30 days</h3>
+                            <p class="hrms-chart-sub">Present vs absent vs on leave, per day</p>
+                            <div class="hrms-chart" id="attTrendChart"></div>
                         </div>
                     </div>
 
@@ -475,6 +486,8 @@
         document.write('<script src="../../js/hrms/hrms-monthpicker.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-pagination.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/attendance.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

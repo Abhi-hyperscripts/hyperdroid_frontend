@@ -199,7 +199,11 @@
                             <button class="sidebar-btn" data-tab="registeredDevices" id="registeredDevicesTab">
                                 <span class="nav-number">5</span><span class="nav-label">Registered Devices</span>
                             </button>
-                            <button class="sidebar-btn" data-tab="nfcCards" id="nfcCardsTab">
+                            <!-- NFC Cards hidden — feature not confirmed for release.
+                                 Tab content and JS remain intact; unhide to restore.
+                                 !important is required: sidebar-nav.css sets
+                                 .sidebar-btn { display: flex !important }. -->
+                            <button class="sidebar-btn" data-tab="nfcCards" id="nfcCardsTab" style="display:none !important;">
                                 <span class="nav-number">6</span><span class="nav-label">NFC Cards</span>
                             </button>
                         </div>
@@ -1988,8 +1992,8 @@
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-pagination.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
-    <script>document.write('<script src="../../js/hrms/hrms-charts.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employees.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employee-banking.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employee-manager-bulk.js?v=' + CACHE_VERSION + '"><\/script>');
