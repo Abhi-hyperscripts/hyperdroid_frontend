@@ -1,390 +1,450 @@
-/* Calls Inbox — page-specific CSS layered on top of crm.css.
-   Reuses .crm-stats-grid / .crm-stat-card / .crm-stat-icon / etc from
-   the global CRM theme; only the items below are net-new. */
+/* ═══════════════════════════════════════════════════════════════════════════
+   CALL DECK — calls inbox redesign (Lead Desk design language, teal accent).
+   Same information architecture (clickable stat quick-filters → chip filter
+   row → live table → drawer), reskinned to the suite: glass rail + Bricolage
+   hero + frost surfaces. All ci-* class names and IDs preserved — the render
+   contract in calls-inbox.js is untouched.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.crm-calls-inbox-page .crm-container {
-    padding-bottom: 64px;
-}
-
-/* Make the stats cards behave like buttons (cursor, focus ring) without
-   replacing the visual style. */
-.crm-stat-card.ci-stat-clickable {
-    cursor: pointer;
-    user-select: none;
-}
-.crm-stat-card.ci-stat-clickable:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
+body.crm-calls-inbox-page {
+  --cid-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  --cid-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  --cid-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  --cid-accent: #2DD4BF;
+  padding-left: 78px;
+  padding-top: 52px;
 }
 
-/* ── Help disclosure ("What is this?") — same disclosure pattern used on
-   other pages. Lives in the header-actions slot so it sits with the
-   page-level actions visually. */
-.ci-help {
-    font-size: 0.85rem;
+/* ambient backdrop */
+body.crm-calls-inbox-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 480px at 12% 112%, color-mix(in srgb, var(--cid-accent) 10%, transparent), transparent 68%),
+    radial-gradient(760px 420px at 90% -8%, color-mix(in srgb, var(--brand-primary) 12%, transparent), transparent 70%);
+  background-repeat: no-repeat;
+  animation: cid-drift 27s ease-in-out infinite alternate;
 }
+@keyframes cid-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 55px -35px, -45px 35px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.crm-calls-inbox-page::after { animation: none; }
+}
+
+/* glass icon rail */
+body.crm-calls-inbox-page nav.pulse-rail {
+  position: fixed !important;
+  left: 0; top: 52px; bottom: 0;
+  width: 78px;
+  border-right: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+body.crm-calls-inbox-page .rail-item {
+  width: 60px; padding: 8px 0 6px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; color: var(--text-muted); text-align: center;
+}
+body.crm-calls-inbox-page .rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+body.crm-calls-inbox-page .rail-item .ric svg { width: 18px; height: 18px; }
+body.crm-calls-inbox-page .rail-item span { font-size: 9px; letter-spacing: 0.02em; }
+body.crm-calls-inbox-page .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+body.crm-calls-inbox-page .rail-item.active { background: color-mix(in srgb, var(--cid-accent) 13%, transparent); color: var(--cid-accent); }
+
+/* ── hero ─────────────────────────────────────────────────────────────────── */
+.cid-hero {
+  position: relative;
+  border-bottom: 1px solid var(--cid-line);
+  margin-bottom: 18px;
+}
+.cid-headrow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 24px 30px 18px;
+}
+.cid-id { display: flex; align-items: baseline; gap: 10px; }
+.cid-hero h1 {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.cid-count { font-family: var(--font-family-mono); font-size: 0.95rem; color: var(--text-muted); }
+.cid-sub { margin: 2px 0 0; color: var(--text-secondary); font-size: 0.85em; }
+
+body.crm-calls-inbox-page .crm-container { max-width: 1500px; padding-top: 0; padding-bottom: 64px; }
+
+/* helper accordion in hero */
+.ci-help { position: relative; }
 .ci-help > summary {
-    cursor: pointer;
-    color: var(--text-secondary);
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color-light);
-    background: var(--bg-secondary);
-    list-style: none;
-    user-select: none;
+  list-style: none;
+  cursor: pointer;
+  padding: 7px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--cid-line);
+  background: var(--cid-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  white-space: nowrap;
+  user-select: none;
 }
 .ci-help > summary::-webkit-details-marker { display: none; }
-.ci-help > summary:hover { background: var(--bg-tertiary); }
+.ci-help[open] > summary { color: var(--text-primary); border-color: var(--brand-primary); }
 .ci-help-body {
-    margin-top: 8px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    max-width: 480px;
-    font-size: 0.85rem;
-    line-height: 1.5;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 300;
+  width: min(440px, 90vw);
+  background: var(--cid-glass-dense);
+  backdrop-filter: blur(24px) saturate(1.12);
+  -webkit-backdrop-filter: blur(24px) saturate(1.12);
+  border: 1px solid var(--cid-line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-xl);
+  padding: 14px 16px;
+  color: var(--text-secondary);
+  font-size: 0.86em;
+  line-height: 1.55;
 }
 
-/* ── Filter chip + search row ────────────────────────────────────────── */
+/* ── stat quick-filters: frost pulse cards ────────────────────────────────── */
+body.crm-calls-inbox-page .crm-stats-grid { margin-bottom: 14px; }
+body.crm-calls-inbox-page .crm-stat-card {
+  position: relative;
+  background: var(--cid-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--cid-line);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+body.crm-calls-inbox-page .crm-stat-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 4%, transparent), transparent 30%);
+  pointer-events: none;
+}
+body.crm-calls-inbox-page .crm-stat-value {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+}
+.ci-stat-clickable { cursor: pointer; user-select: none; }
+.ci-stat-clickable:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--cid-accent) 40%, transparent);
+}
+.ci-stat-clickable:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+/* ── filter row: naked controls, frost chips ──────────────────────────────── */
 .ci-filterbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px 14px;
-    padding: 12px 14px;
-    margin-bottom: 14px;
-    border-radius: 10px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color-light);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 2px 0 12px;
 }
-.ci-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
+.ci-chips { display: flex; gap: 4px; flex-wrap: wrap; }
 .ci-chip {
-    padding: 6px 14px;
-    border-radius: 999px;
-    border: 1px solid var(--border-color-light);
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-    font-size: 0.82rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 6px 13px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: all 0.14s ease;
 }
-.ci-chip:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-}
+.ci-chip:hover { color: var(--text-primary); }
 .ci-chip--active {
-    background: var(--brand-primary);
-    color: #fff;
-    border-color: var(--brand-primary);
-}
-.ci-chip--active:hover {
-    background: var(--brand-primary-hover, var(--brand-primary));
-    color: #fff;
-}
-.ci-search-wrap {
-    position: relative;
-    flex: 1 1 220px;
-    max-width: 360px;
-}
-.ci-search-wrap > svg {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-secondary);
-    pointer-events: none;
-}
-.ci-search-wrap > input {
-    padding-left: 32px;
-}
-.ci-daterange {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.ci-daterange-label {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    margin: 0;
-}
-.ci-daterange > select {
-    width: auto;
-    min-width: 140px;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  border-color: var(--cid-line);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-/* ── Table — uses .crm-table-wrapper / .crm-table from global crm.css, so
-   appearance matches leads.html exactly. Only thing we add here is the
-   row pointer cursor to telegraph the "click for detail drawer" behaviour. */
-#ciTable tbody tr {
-    cursor: pointer;
+.ci-search-wrap { position: relative; flex: 0 1 340px; min-width: 220px; }
+.ci-search-wrap svg {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px; color: var(--text-muted); pointer-events: none;
 }
+.ci-search-wrap input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 34px;
+  border-radius: 10px;
+  border: 1px solid var(--cid-line);
+  background: var(--cid-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.ci-search-wrap input:focus { border-color: var(--border-focus, var(--brand-primary)); }
+.ci-search-wrap input::placeholder { color: var(--text-muted); }
+
+.ci-daterange { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.ci-daterange-label { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.ci-daterange select {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--cid-line);
+  background: var(--cid-glass);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+/* ── the deck: glass table ────────────────────────────────────────────────── */
+body.crm-calls-inbox-page .crm-table-wrapper {
+  background: var(--cid-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--cid-line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+body.crm-calls-inbox-page #ciTable thead th {
+  background: transparent;
+  border-bottom: 1px solid var(--cid-line);
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+}
+#ciTable tbody tr {
+  cursor: pointer;
+  border-bottom: 1px solid var(--cid-line);
+  transition: background 0.12s ease;
+}
+#ciTable tbody tr:hover { background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
 
 .ci-dir-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
+  width: 30px; height: 30px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.ci-dir-in  { color: var(--color-success, #16a34a); background: rgba(34,197,94,0.10); }
-.ci-dir-out { color: var(--brand-primary);          background: rgba(99,102,241,0.10); }
+.ci-dir-icon svg { width: 14px; height: 14px; }
+.ci-dir-in  { background: color-mix(in srgb, var(--cid-accent) 14%, transparent); color: var(--cid-accent); }
+.ci-dir-out { background: color-mix(in srgb, var(--brand-primary) 14%, transparent); color: var(--brand-primary); }
 
-.ci-phone {
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-}
-.ci-time { color: var(--text-secondary); font-size: 0.83rem; }
-.ci-mute { color: var(--text-secondary); font-size: 0.85rem; }
+.ci-phone { font-family: var(--font-family-mono); font-size: 12.5px; color: var(--text-primary); }
+.ci-time { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.ci-mute { color: var(--text-muted); }
 
 .ci-chip-status {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 999px;
-    font-size: 0.74rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
-.ci-chip-completed { background: rgba(34,197,94,0.10); color: var(--color-success, #16a34a); }
-.ci-chip-missed    { background: rgba(220,38,38,0.10); color: var(--color-error, #dc2626); }
-.ci-chip-pending   { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+.ci-chip-completed { background: color-mix(in srgb, var(--color-success, #22c55e) 14%, transparent); color: var(--color-success, #22c55e); }
+.ci-chip-missed    { background: color-mix(in srgb, var(--color-error, #ef4444) 14%, transparent); color: var(--color-error, #ef4444); }
+.ci-chip-pending   { background: color-mix(in srgb, var(--brand-primary) 14%, transparent); color: var(--brand-primary); }
 
-.ci-lead-link {
-    color: var(--brand-primary);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.85rem;
-}
+.ci-lead-link { color: var(--brand-primary); text-decoration: none; font-size: 12.5px; }
 .ci-lead-link:hover { text-decoration: underline; }
-
+.ci-lead-sub { display: block; font-size: 10.5px; color: var(--text-muted); font-family: var(--font-family-mono); }
 .ci-convert-btn {
-    background: rgba(245,158,11,0.10);
-    color: var(--color-warning, #d97706);
-    border: 1px solid rgba(245,158,11,0.3);
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s;
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--color-warning, #f59e0b) 45%, transparent);
+  background: color-mix(in srgb, var(--color-warning, #f59e0b) 10%, transparent);
+  color: var(--color-warning, #f59e0b);
+  padding: 4px 11px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  cursor: pointer;
 }
-.ci-convert-btn:hover {
-    background: rgba(245,158,11,0.20);
-}
+.ci-convert-btn:hover { background: color-mix(in srgb, var(--color-warning, #f59e0b) 18%, transparent); }
 
 .ci-row-action {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 1.4rem;
-    font-weight: 700;
-    cursor: pointer;
-    padding: 0 8px;
-    line-height: 1;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
 }
-.ci-row-action:hover { color: var(--brand-primary); }
+.ci-row-action:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
 
-/* ── Empty / loading state ──────────────────────────────────────────────── */
-.ci-state {
-    padding: 36px 18px;
-    text-align: center;
-    color: var(--text-secondary);
-}
+/* audio players sit on glass */
+#ciTable audio, #ciDrawerBody audio { border-radius: 999px; }
+
+/* states */
+.ci-state { text-align: center; padding: 56px 20px; color: var(--text-secondary); }
+.ci-state-error { color: var(--color-error, #ef4444); }
 .ci-empty-icon {
-    margin: 0 auto 10px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
+  width: 56px; height: 56px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--cid-accent) 10%, transparent);
+  color: var(--cid-accent);
 }
-.ci-empty-title {
-    font-size: 1rem;
-    color: var(--text-primary);
-    font-weight: 600;
-    margin: 0 0 4px;
-}
-.ci-empty-sub {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin: 0;
-    max-width: 420px;
-    margin-left: auto;
-    margin-right: auto;
-}
+.ci-empty-icon svg { width: 24px; height: 24px; }
+.ci-empty-title { font-family: 'Bricolage Grotesque', var(--font-family); font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin: 0 0 4px; }
+.ci-empty-sub { font-size: 0.86em; max-width: 420px; margin: 0 auto; }
 
 .ci-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 4px;
-    margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 2px 40px;
 }
-.ci-count {
-    color: var(--text-secondary);
-    font-size: 0.83rem;
-}
+.ci-count { font-family: var(--font-family-mono); font-size: 11.5px; color: var(--text-muted); }
 
-/* ── Slide-in drawer body ──────────────────────────────────────────────── */
-.ci-drawer-section {
-    margin-bottom: 22px;
-    padding-bottom: 22px;
-    border-bottom: 1px solid var(--border-color-light);
+/* ── drawer ───────────────────────────────────────────────────────────────── */
+#ciDrawer {
+  background: var(--cid-glass-dense);
+  backdrop-filter: blur(24px) saturate(1.12);
+  -webkit-backdrop-filter: blur(24px) saturate(1.12);
+  border-left: 1px solid var(--cid-line);
 }
-.ci-drawer-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
+#ciDrawer .panel-header { border-bottom: 1px solid var(--cid-line); }
+#ciDrawer .panel-title { font-family: 'Bricolage Grotesque', var(--font-family); letter-spacing: 0.02em; }
+
+.ci-drawer-section { margin-bottom: 20px; }
 .ci-drawer-h {
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    margin: 0 0 10px;
-    font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
 }
 .ci-drawer-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 6px 0;
-    font-size: 0.88rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--cid-line);
+  font-size: 13px;
 }
-.ci-drawer-k {
-    color: var(--text-secondary);
-    font-size: 0.83rem;
-}
-.ci-drawer-v {
-    color: var(--text-primary);
-    font-weight: 500;
-    text-align: right;
-    word-break: break-word;
-}
-.ci-mono { font-family: var(--font-mono, monospace); font-size: 0.78rem; }
+.ci-drawer-row:last-child { border-bottom: 0; }
+.ci-drawer-k { color: var(--text-secondary); }
+.ci-drawer-v { color: var(--text-primary); text-align: right; word-break: break-all; }
+.ci-mono { font-family: var(--font-family-mono); font-size: 12px; }
+.ci-drawer-actions { display: flex; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--cid-line); }
 
-.ci-life {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.ci-life li {
-    display: flex;
-    gap: 12px;
-    padding: 8px 0;
-    position: relative;
-}
+.ci-life { list-style: none; margin: 0; padding: 0; }
+.ci-life li { display: flex; gap: 10px; padding: 5px 0; }
 .ci-life-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--brand-primary);
-    margin-top: 4px;
-    flex-shrink: 0;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--cid-accent);
+  margin-top: 5px;
+  flex-shrink: 0;
 }
-.ci-life-label {
-    font-size: 0.88rem;
-    color: var(--text-primary);
-    font-weight: 500;
-}
-.ci-life-when {
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    margin-top: 2px;
-}
+.ci-life-label { color: var(--text-primary); font-size: 13px; font-weight: 500; }
+.ci-life-when { color: var(--text-muted); font-size: 11.5px; font-family: var(--font-family-mono); }
 
 .ci-transcript {
-    background: var(--bg-secondary);
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 0.84rem;
-    color: var(--text-primary);
-    white-space: pre-wrap;
-    line-height: 1.5;
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  border: 1px solid var(--cid-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  max-height: 260px;
+  overflow-y: auto;
 }
 
-.ci-drawer-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-/* ── Lead detail popup (opened from "View lead →" on the calls inbox) ──
-   Same .gm-overlay/.gm-modal scaffold as the Convert modal — these rules
-   style the key/value grid + section headings inside .gm-body so the
-   popup reads at a glance without the full lead page chrome. */
-.ci-lead-grid {
-    display: grid;
-    grid-template-columns: minmax(110px, 0.4fr) 1fr;
-    gap: 10px 18px;
-    margin-bottom: 12px;
-}
+/* ── lead popup grid ──────────────────────────────────────────────────────── */
+.ci-lead-grid { display: flex; flex-direction: column; }
 .ci-lead-row {
-    display: contents;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--cid-line);
+  font-size: 13px;
 }
-.ci-lead-k {
-    color: var(--text-secondary, #a8afbb);
-    font-size: 0.85em;
-    font-weight: 600;
-    align-self: center;
-}
-.ci-lead-v {
-    color: var(--text-primary, #e6e8ee);
-    font-size: 0.92em;
-    word-break: break-word;
-}
-.ci-lead-v a {
-    color: var(--brand-primary, #6366f1);
-    text-decoration: none;
-}
-.ci-lead-v a:hover {
-    text-decoration: underline;
-}
-.ci-lead-section {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));
-}
+.ci-lead-row:last-child { border-bottom: 0; }
+.ci-lead-k { color: var(--text-secondary); }
+.ci-lead-v { color: var(--text-primary); text-align: right; }
+.ci-lead-section { margin-top: 14px; }
 .ci-lead-sec-h {
-    margin: 0 0 6px;
-    color: var(--text-primary, #e6e8ee);
-    font-size: 0.95em;
-    font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
 }
 .ci-lead-notes {
-    color: var(--text-secondary, #a8afbb);
-    font-size: 0.92em;
-    line-height: 1.55;
-    white-space: pre-wrap;
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  border: 1px solid var(--cid-line);
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
 }
-.ci-state-error {
-    color: var(--color-error, #ef4444);
-}
-/* Status pill — uses brand status colours where defined; falls back to
-   neutral so an unknown status doesn't appear blank. */
 .ci-status {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 0.78em;
-    font-weight: 600;
-    background: rgba(255,255,255,0.07);
-    color: var(--text-primary, #e6e8ee);
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
-.ci-status-new        { background: rgba(59,130,246,0.18);  color: #93c5fd; }
-.ci-status-contacted  { background: rgba(20,184,166,0.18);  color: #5eead4; }
-.ci-status-qualified  { background: rgba(34,197,94,0.18);   color: #86efac; }
-.ci-status-won        { background: rgba(16,185,129,0.18);  color: #6ee7b7; }
-.ci-status-lost,
-.ci-status-unqualified{ background: rgba(239,68,68,0.18);   color: #fca5a5; }
+.ci-status-new         { background: color-mix(in srgb, #3b82f6 15%, transparent); color: #7db2f8; }
+.ci-status-contacted   { background: color-mix(in srgb, #eab308 14%, transparent); color: #e4c153; }
+.ci-status-qualified   { background: color-mix(in srgb, #22c55e 15%, transparent); color: #5fd78b; }
+.ci-status-won         { background: color-mix(in srgb, #22c55e 15%, transparent); color: #5fd78b; }
+.ci-status-lost        { background: color-mix(in srgb, #ef4444 14%, transparent); color: #f28b8b; }
+.ci-status-unqualified { background: color-mix(in srgb, #9ca3af 14%, transparent); color: #a7adb8; }
+[data-theme="light"] .ci-status-new         { color: #1d4ed8; }
+[data-theme="light"] .ci-status-contacted   { color: #a16207; }
+[data-theme="light"] .ci-status-qualified,
+[data-theme="light"] .ci-status-won         { color: #15803d; }
+[data-theme="light"] .ci-status-lost        { color: #b91c1c; }
+[data-theme="light"] .ci-status-unqualified { color: #64748b; }
+
+/* ── mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  body.crm-calls-inbox-page { padding-left: 0; padding-top: 0; }
+  .cid-headrow { padding: 16px 16px 12px; }
+  .ci-daterange { margin-left: 0; }
+}
+@media (max-width: 1023px) {
+  body.crm-calls-inbox-page nav.pulse-rail { display: none !important; }
+}

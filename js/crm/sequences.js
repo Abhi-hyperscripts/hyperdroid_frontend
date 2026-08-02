@@ -58,6 +58,13 @@
     function renderList() {
         const empty = document.getElementById('seqEmptyState');
         const container = document.getElementById('seqList');
+        const countEl = document.getElementById('sqxCount');
+        if (countEl) {
+            const active = _sequences.filter(s => s.is_active).length;
+            countEl.textContent = _sequences.length
+                ? `${_sequences.length} · ${active} active`
+                : '0';
+        }
         if (!_sequences.length) {
             empty.style.display = '';
             container.innerHTML = '';
@@ -67,38 +74,68 @@
         container.innerHTML = _sequences.map(renderRow).join('');
     }
 
+    // Cadence-timeline card. The signature: steps drawn as a horizontal
+    // mini-timeline (channel icon + delay marker per node) so the shape of
+    // the cadence reads at a glance. Steps are optional on the list payload —
+    // the timeline row is simply omitted when absent.
+    const STEP_META = {
+        email:             { label: 'Email',    svg: '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>' },
+        whatsapp_template: { label: 'WhatsApp', svg: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>' },
+        call_task:         { label: 'Call',     svg: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>' },
+        followup:          { label: 'Follow-up', svg: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>' },
+        status_flip:       { label: 'Status',   svg: '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>' },
+        wait:              { label: 'Wait',     svg: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' }
+    };
+
+    function stepDelayLabel(step, idx) {
+        const d = parseInt(step.delay_days, 10) || 0;
+        const h = parseInt(step.delay_hours, 10) || 0;
+        if (idx === 0 && d === 0 && h === 0) return 'Day 0';
+        if (d === 0 && h === 0) return 'same day';
+        const parts = [];
+        if (d) parts.push('+' + d + 'd');
+        if (h) parts.push(h + 'h');
+        return parts.join(' ');
+    }
+
+    function renderTimeline(steps) {
+        const sorted = [...steps].sort((a, b) => (a.step_order || 0) - (b.step_order || 0));
+        return `<div class="sqx-timeline">` + sorted.map((st, i) => {
+            const meta = STEP_META[st.step_type] || { label: st.step_type, svg: STEP_META.wait.svg };
+            return (i > 0 ? '<i class="sqx-link"></i>' : '') +
+                `<div class="sqx-node t-${esc(st.step_type)}">` +
+                `<span class="sicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg></span>` +
+                `<span class="slabel">${esc(meta.label)}</span>` +
+                `<span class="sdelay">${esc(stepDelayLabel(st, i))}</span>` +
+                `</div>`;
+        }).join('') + `</div>`;
+    }
+
     function renderRow(seq) {
-        // The list endpoint doesn't nest steps (keeps the payload small).
-        // We omit the step-count chip rather than show a stale '–'; the
-        // user sees the real count when they click Edit.
         const hasSteps = Array.isArray(seq.steps) && seq.steps.length > 0;
-        const stepCount = hasSteps ? seq.steps.length : null;
         const exitParts = parseExitChips(seq);
         return `
-            <div class="seq-row ${seq.is_active ? '' : 'seq-row-paused'}" data-seq-id="${esc(seq.id)}">
-                <div class="seq-row-main">
-                    <div class="seq-row-title">
-                        <h3>${esc(seq.name)}</h3>
-                        ${seq.is_active
-                            ? '<span class="seq-badge seq-badge-active">Active</span>'
-                            : '<span class="seq-badge seq-badge-paused">Paused</span>'}
-                    </div>
-                    ${seq.description
-                        ? `<p class="seq-row-desc">${esc(seq.description)}</p>`
-                        : ''}
-                    <div class="seq-row-meta">
-                        ${stepCount != null
-                            ? `<span class="seq-meta-chip"><strong>${stepCount}</strong> ${stepCount === 1 ? 'step' : 'steps'}</span>`
-                            : ''}
-                        ${exitParts.map(c => `<span class="seq-meta-chip">${c}</span>`).join('')}
-                    </div>
-                </div>
-                <div class="seq-row-actions">
-                    <button class="btn btn-sm btn-outline" onclick="editSequence('${seq.id}')" title="Edit sequence">Edit</button>
+            <div class="sqx-card ${seq.is_active ? '' : 'paused'}" data-seq-id="${esc(seq.id)}">
+                <div class="sqx-cardhead">
+                    <h3 class="sqx-name">${esc(seq.name)}</h3>
                     ${seq.is_active
-                        ? `<button class="btn btn-sm btn-outline-warning" onclick="toggleActive('${seq.id}', false)" title="Pause — new enrolments blocked, in-flight ones pause">Pause</button>`
-                        : `<button class="btn btn-sm btn-outline-success" onclick="toggleActive('${seq.id}', true)" title="Activate — sequence accepts new enrolments again">Activate</button>`
-                    }
+                        ? '<span class="sqx-pill on">Active</span>'
+                        : '<span class="sqx-pill off">Paused</span>'}
+                </div>
+                ${seq.description ? `<p class="sqx-desc">${esc(seq.description)}</p>` : ''}
+                ${hasSteps ? renderTimeline(seq.steps) : ''}
+                ${exitParts.length
+                    ? `<div class="sqx-exits">${exitParts.map(c => `<span class="sqx-exit">${c}</span>`).join('')}</div>`
+                    : ''}
+                <div class="sqx-foot">
+                    <span class="sqx-steps-n">${hasSteps ? seq.steps.length + (seq.steps.length === 1 ? ' step' : ' steps') : ''}</span>
+                    <div class="sqx-actions">
+                        <button class="btn" onclick="editSequence('${esc(seq.id)}')" title="Edit sequence">Edit</button>
+                        ${seq.is_active
+                            ? `<button class="btn warn" onclick="toggleActive('${esc(seq.id)}', false)" title="Pause — new enrolments blocked, in-flight ones pause">Pause</button>`
+                            : `<button class="btn ok" onclick="toggleActive('${esc(seq.id)}', true)" title="Activate — sequence accepts new enrolments again">Activate</button>`
+                        }
+                    </div>
                 </div>
             </div>
         `;

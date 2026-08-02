@@ -1,0 +1,79 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SETTINGS — suite-skin pass (Lead Desk design language).
+   PAINT ONLY. The structural bones stay exactly as they are — including the
+   left settings sidebar, which is the system-wide pattern used by every
+   app's settings page. No pulse-rail here, no layout shifts, no hero wave.
+   Scoped to body.crm-settings-page so the shared sidebar-nav.css is
+   untouched everywhere else.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.crm-settings-page {
+  --stg-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  --stg-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  --stg-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+}
+
+/* ambient backdrop */
+body.crm-settings-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 480px at 90% 112%, color-mix(in srgb, var(--brand-primary) 12%, transparent), transparent 68%),
+    radial-gradient(700px 400px at 5% -8%, color-mix(in srgb, #64748b 10%, transparent), transparent 70%);
+  background-repeat: no-repeat;
+}
+
+/* settings sidebar: same place, glass paint (this page only) */
+body.crm-settings-page .sidebar-nav-panel,
+[data-theme="dark"] body.crm-settings-page .sidebar-nav-panel,
+[data-theme="light"] body.crm-settings-page .sidebar-nav-panel {
+  background: var(--stg-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border-right: 1px solid var(--stg-line);
+  box-shadow: none;
+}
+
+/* ── type: Bricolage headings ─────────────────────────────────────────────── */
+body.crm-settings-page .crm-header h1,
+body.crm-settings-page .sidebar-header h3,
+body.crm-settings-page .section-title,
+body.crm-settings-page .section-header h2,
+body.crm-settings-page .section-header h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  letter-spacing: -0.01em;
+}
+body.crm-settings-page .crm-header h1 { font-size: 1.7rem; }
+
+/* ── frost surfaces (paint only — layout untouched) ───────────────────────── */
+body.crm-settings-page .integration-card,
+body.crm-settings-page .settings-toggle-card,
+body.crm-settings-page .empty-state-card,
+body.crm-settings-page .stage-item,
+body.crm-settings-page .team-card,
+body.crm-settings-page .mailbox-card,
+body.crm-settings-page .template-card,
+body.crm-settings-page .campaign-card,
+body.crm-settings-page .automation-card,
+body.crm-settings-page .glass-card {
+  background: var(--stg-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--stg-line);
+}
+body.crm-settings-page .danger-card {
+  background: color-mix(in srgb, var(--color-error, #ef4444) 6%, var(--stg-glass));
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid color-mix(in srgb, var(--color-error, #ef4444) 35%, transparent);
+}
+
+/* numeric touches */
+body.crm-settings-page .stage-item [class*="win"],
+body.crm-settings-page .badge,
+body.crm-settings-page .usage-badge {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,289 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CADENCE STUDIO — sequences redesign (Lead Desk design language).
+   Each sequence renders as a cadence card whose steps are drawn as a
+   horizontal mini-timeline (channel icon + delay marker per step) — the
+   shape of the cadence at a glance. Builder modal keeps its markup/logic;
+   this file only dresses it. css/sequences.css stays loaded untouched
+   (lead-journey.js on the Leads page consumes its classes).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.crm-sequences-page {
+  --sqx-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  --sqx-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  --sqx-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  --sqx-accent: #FB923C;
+  padding-left: 78px;
+  padding-top: 52px;
+}
+
+/* ambient backdrop — the sequences orange + suite blue */
+body.crm-sequences-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 480px at 88% 112%, color-mix(in srgb, var(--sqx-accent) 10%, transparent), transparent 68%),
+    radial-gradient(760px 420px at 8% -8%, color-mix(in srgb, var(--brand-primary) 13%, transparent), transparent 70%);
+  background-repeat: no-repeat;
+  animation: sqx-drift 28s ease-in-out infinite alternate;
+}
+@keyframes sqx-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: -55px 35px, 45px -35px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.crm-sequences-page::after { animation: none; }
+}
+
+/* glass icon rail */
+body.crm-sequences-page nav.pulse-rail {
+  position: fixed !important;
+  left: 0; top: 52px; bottom: 0;
+  width: 78px;
+  border-right: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+body.crm-sequences-page .rail-item {
+  width: 60px; padding: 8px 0 6px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; color: var(--text-muted); text-align: center;
+}
+body.crm-sequences-page .rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+body.crm-sequences-page .rail-item .ric svg { width: 18px; height: 18px; }
+body.crm-sequences-page .rail-item span { font-size: 9px; letter-spacing: 0.02em; }
+body.crm-sequences-page .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+body.crm-sequences-page .rail-item.active { background: color-mix(in srgb, var(--sqx-accent) 13%, transparent); color: var(--sqx-accent); }
+
+/* ── hero ─────────────────────────────────────────────────────────────────── */
+.sqx-hero {
+  position: relative;
+  border-bottom: 1px solid var(--sqx-line);
+  margin-bottom: 20px;
+}
+.sqx-headrow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 30px 18px;
+}
+.sqx-id { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.sqx-hero h1 {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.sqx-count { font-family: var(--font-family-mono); font-size: 0.95rem; color: var(--text-muted); }
+.sqx-sub { margin: 2px 0 0; color: var(--text-secondary); font-size: 0.85em; max-width: 720px; }
+
+/* ── content ──────────────────────────────────────────────────────────────── */
+.sqx-wrap { max-width: 1440px; margin: 0 auto; padding: 0 30px 60px; }
+
+/* helper accordion, restyled quiet */
+.sqx-wrap .seq-helper {
+  background: var(--sqx-glass);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  border: 1px solid var(--sqx-line);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+}
+.sqx-wrap .seq-helper summary { cursor: pointer; color: var(--text-secondary); font-size: 0.86em; }
+.sqx-wrap .seq-helper-body { color: var(--text-secondary); font-size: 0.86em; line-height: 1.55; margin-top: 8px; }
+
+/* card grid */
+#seqList.sqx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 16px;
+}
+
+.sqx-card {
+  position: relative;
+  background: var(--sqx-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--sqx-line);
+  border-left: 2.5px solid var(--sqx-accent);
+  border-radius: 16px;
+  padding: 16px 18px 14px;
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.sqx-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+}
+.sqx-card.paused { border-left-color: color-mix(in srgb, var(--text-muted) 60%, transparent); opacity: 0.82; }
+
+.sqx-cardhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.sqx-name {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 0;
+}
+.sqx-pill {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sqx-pill.on { background: color-mix(in srgb, var(--color-success, #22c55e) 15%, transparent); color: var(--color-success, #22c55e); }
+.sqx-pill.off { background: color-mix(in srgb, var(--text-muted) 14%, transparent); color: var(--text-muted); }
+
+.sqx-desc { margin: 4px 0 0; color: var(--text-secondary); font-size: 12.5px; line-height: 1.45; }
+
+/* ── the signature: cadence timeline ──────────────────────────────────────── */
+.sqx-timeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-top: 14px;
+  overflow-x: auto;
+  padding: 4px 2px 6px;
+  scrollbar-width: thin;
+}
+.sqx-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 68px;
+  flex-shrink: 0;
+}
+.sqx-node .sicon {
+  width: 34px; height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--sqx-accent) 12%, transparent);
+  color: var(--sqx-accent);
+  border: 1px solid color-mix(in srgb, var(--sqx-accent) 30%, transparent);
+}
+.sqx-node .sicon svg { width: 15px; height: 15px; }
+.sqx-node .slabel { font-size: 10px; color: var(--text-secondary); white-space: nowrap; }
+.sqx-node .sdelay {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+/* connector between nodes */
+.sqx-link {
+  flex: 0 0 26px;
+  height: 1px;
+  margin-top: 17px;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--sqx-accent) 45%, transparent),
+    color-mix(in srgb, var(--sqx-accent) 20%, transparent));
+  position: relative;
+}
+.sqx-link::after {
+  content: '';
+  position: absolute;
+  right: -1px; top: -2.5px;
+  border: 3px solid transparent;
+  border-left-color: color-mix(in srgb, var(--sqx-accent) 45%, transparent);
+}
+
+/* per-channel icon tints */
+.sqx-node.t-email .sicon { background: color-mix(in srgb, #60A5FA 12%, transparent); color: #60A5FA; border-color: color-mix(in srgb, #60A5FA 30%, transparent); }
+.sqx-node.t-whatsapp_template .sicon { background: color-mix(in srgb, #22c55e 12%, transparent); color: #22c55e; border-color: color-mix(in srgb, #22c55e 30%, transparent); }
+.sqx-node.t-call_task .sicon { background: color-mix(in srgb, #2DD4BF 12%, transparent); color: #2DD4BF; border-color: color-mix(in srgb, #2DD4BF 30%, transparent); }
+.sqx-node.t-followup .sicon { background: color-mix(in srgb, #FB923C 12%, transparent); color: #FB923C; border-color: color-mix(in srgb, #FB923C 30%, transparent); }
+.sqx-node.t-status_flip .sicon { background: color-mix(in srgb, #A78BFA 12%, transparent); color: #A78BFA; border-color: color-mix(in srgb, #A78BFA 30%, transparent); }
+.sqx-node.t-wait .sicon { background: color-mix(in srgb, var(--text-muted) 12%, transparent); color: var(--text-muted); border-color: color-mix(in srgb, var(--text-muted) 30%, transparent); }
+
+/* exit chips + footer */
+.sqx-exits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.sqx-exit {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--sqx-line);
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+.sqx-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--sqx-line);
+}
+.sqx-steps-n { font-family: var(--font-family-mono); font-size: 11px; color: var(--text-muted); }
+.sqx-actions { display: flex; gap: 6px; }
+.sqx-actions .btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--sqx-line);
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  color: var(--text-primary);
+}
+.sqx-actions .btn:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+.sqx-actions .btn.warn:hover { border-color: var(--color-warning, #f59e0b); color: var(--color-warning, #f59e0b); }
+.sqx-actions .btn.ok:hover { border-color: var(--color-success, #22c55e); color: var(--color-success, #22c55e); }
+
+/* empty state */
+.sqx-wrap .seq-empty {
+  background: var(--sqx-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px dashed var(--sqx-line);
+  border-radius: 16px;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* ── builder modal dressing (markup untouched) ────────────────────────────── */
+#seqBuilderOverlay .gm-modal { border: 1px solid var(--sqx-line); }
+#seqBuilderOverlay .seq-fieldset {
+  background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  border: 1px solid var(--sqx-line);
+  border-radius: 12px;
+}
+#seqBuilderOverlay .btn-outline {
+  border: 1px solid var(--sqx-line);
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: 8px;
+}
+#seqBuilderOverlay .btn-outline:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+
+@media (max-width: 1023px) {
+  body.crm-sequences-page { padding-left: 0; padding-top: 0; }
+  .sqx-headrow { padding: 16px 16px 12px; }
+  .sqx-wrap { padding: 0 16px 48px; }
+  #seqList.sqx-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 1023px) {
+  body.crm-sequences-page nav.pulse-rail { display: none !important; }
+}

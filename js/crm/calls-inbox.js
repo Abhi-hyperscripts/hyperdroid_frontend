@@ -145,8 +145,12 @@
         // "View lead" opens a popup inside this page instead of
         // navigating to leads.html — that way the user keeps the calls
         // inbox + filter state and can quickly peek at lead context.
+        // The inbox rows already join lead_name + lead_number — render the
+        // identity instead of a generic "View lead" when we have it.
+        const leadLabel = c.lead_name ? escapeHtml(c.lead_name) : 'View lead →';
+        const leadSub = c.lead_number ? `<span class="ci-lead-sub">${escapeHtml(c.lead_number)}</span>` : '';
         const leadCell = c.lead_id
-            ? `<a class="ci-lead-link" href="#" onclick="event.preventDefault(); event.stopPropagation(); openLeadPopup('${escapeHtml(c.lead_id)}')">View lead →</a>`
+            ? `<a class="ci-lead-link" href="#" onclick="event.preventDefault(); event.stopPropagation(); openLeadPopup('${escapeHtml(c.lead_id)}')">${leadLabel}</a>${leadSub}`
             : `<button class="ci-convert-btn" onclick="event.stopPropagation(); openConvertModal('${escapeHtml(c.id)}')">Convert to Lead</button>`;
         return `
             <tr data-call-id="${escapeHtml(c.id)}" onclick="openCallDrawer('${escapeHtml(c.id)}')">
@@ -197,10 +201,12 @@
         const empty = $('ciEmpty');
         const count = $('ciCount');
         const loadMore = $('ciLoadMore');
+        const heroCount = document.getElementById('cidCount');
         if (!_rows.length) {
             wrap.style.display = 'none';
             empty.style.display = 'block';
             count.textContent = '';
+            if (heroCount) heroCount.textContent = '0';
             loadMore.style.display = 'none';
             return;
         }
@@ -208,6 +214,7 @@
         wrap.style.display = '';
         empty.style.display = 'none';
         count.textContent = `${_rows.length} call${_rows.length === 1 ? '' : 's'}`;
+        if (heroCount) heroCount.textContent = `${_rows.length}${_hasMore ? '+' : ''}`;
         loadMore.style.display = _hasMore ? '' : 'none';
     }
 
@@ -339,7 +346,13 @@
         title.textContent = 'Lead detail';
         sub.textContent = 'Loading…';
         body.innerHTML = '<div class="ci-state">Loading lead…</div>';
-        fullBtn.setAttribute('href', `leads.html?leadId=${encodeURIComponent(leadId)}`);
+        // leads.js doesn't read a ?leadId= param (and any query string would
+        // suppress its persisted-filter restore) — use the same sessionStorage
+        // handoff my-day.js uses, which auto-opens the lead workspace.
+        fullBtn.setAttribute('href', 'leads.html');
+        fullBtn.onclick = () => {
+            try { sessionStorage.setItem('crm_openLeadId', encodeURIComponent(leadId)); } catch (_) {}
+        };
         overlay.classList.add('active');
 
         try {
@@ -464,7 +477,7 @@
                 body: JSON.stringify(body),
             });
             if (resp && resp.success) {
-                const msg = resp.alreadyExisted
+                const msg = (resp.already_existed ?? resp.alreadyExisted)
                     ? (resp.assigned ? 'Already a lead — team assigned' : 'Already a lead')
                     : (resp.assigned ? 'Converted to lead and assigned to team' : 'Converted to lead');
                 if (typeof Toast !== 'undefined') Toast.success(msg);
@@ -569,7 +582,7 @@
         bindRealtime();
 
         // CRM_ADMIN-only "Retry failed" button. Surface it as soon as
-        // we can confirm the role; CONFIG.getUser() reads the cached
+        // we can confirm the role; api.getUser() reads the cached
         // user payload from login, no extra round-trip.
         wireRetryFailedButton();
     });
@@ -577,7 +590,7 @@
     function wireRetryFailedButton() {
         const btn = document.getElementById('ciRetryFailedBtn');
         if (!btn) return;
-        const user = (typeof CONFIG !== 'undefined' && CONFIG.getUser) ? CONFIG.getUser() : null;
+        const user = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
         const roles = (user && (user.roles || user.Roles)) || [];
         const isAdmin = roles.some(r => r === 'CRM_ADMIN' || r === 'SUPERADMIN');
         if (!isAdmin) return; // stays hidden for non-admins
