@@ -1,0 +1,703 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEAD DESK — from-scratch leads workspace.
+   Command appbar → view tabs + pipeline hairline → split story-list /
+   always-open lead workspace. Every color flows from theme.css variables so
+   light and dark are first-class; status tints get per-theme pairs below.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.crm-leads-page {
+  --ldk-line: var(--border-color);
+  --ldk-hover: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  --ldk-sel: color-mix(in srgb, var(--brand-primary) 9%, transparent);
+  /* status tint pairs (light defaults) */
+  --st-new-bg: #dbeafe;     --st-new-fg: #1d4ed8;
+  --st-asg-bg: #e0e7ff;     --st-asg-fg: #4338ca;
+  --st-con-bg: #fef3c7;     --st-con-fg: #a16207;
+  --st-qua-bg: #dcfce7;     --st-qua-fg: #15803d;
+  --st-unq-bg: #f1f5f9;     --st-unq-fg: #64748b;
+  --st-cvt-bg: #ede9fe;     --st-cvt-fg: #6d28d9;
+}
+
+[data-theme="dark"] body.crm-leads-page {
+  --st-new-bg: rgba(59, 130, 246, 0.16);  --st-new-fg: #7db2f8;
+  --st-asg-bg: rgba(99, 102, 241, 0.16);  --st-asg-fg: #9aa1f6;
+  --st-con-bg: rgba(234, 179, 8, 0.14);   --st-con-fg: #e4c153;
+  --st-qua-bg: rgba(34, 197, 94, 0.15);   --st-qua-fg: #5fd78b;
+  --st-unq-bg: rgba(156, 163, 175, 0.14); --st-unq-fg: #a7adb8;
+  --st-cvt-bg: rgba(139, 92, 246, 0.16);  --st-cvt-fg: #ab8df3;
+}
+
+/* full-height app: page never scrolls, panes do */
+body.crm-leads-page { overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+body.crm-leads-page .crm-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* ── command appbar (below the untouched site navbar) ─────────────────────── */
+.ldk-appbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--ldk-line);
+  flex-shrink: 0;
+}
+
+.ldk-id { display: flex; align-items: baseline; gap: 9px; flex-shrink: 0; }
+.ldk-id h1 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 19px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+.ldk-count { font-family: var(--font-family-mono); font-size: 12.5px; color: var(--text-muted); }
+
+.ldk-omni { flex: 1; max-width: 560px; margin: 0 auto; min-width: 0; }
+.ldk-omni .crm-search-wrap { margin: 0; }
+.ldk-omni .crm-search-input {
+  height: 38px;
+  font-size: 13.5px;
+  background: var(--bg-secondary);
+  border-color: var(--ldk-line);
+  border-radius: 10px;
+}
+
+.ldk-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.ldk-actions .btn { border-radius: 9px; font-size: 12.5px; white-space: nowrap; }
+
+.ldk-more-wrap { position: relative; }
+#ldkMoreBtn { font-size: 16px; line-height: 1; padding: 7px 12px; }
+.ldk-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1300;
+  min-width: 210px;
+  background: var(--bg-card);
+  border: 1px solid var(--ldk-line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ldk-menu[hidden] { display: none; }
+.ldk-menu .btn, .ldk-menu a.btn {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  border: none !important;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  color: var(--text-primary);
+}
+.ldk-menu .btn:hover, .ldk-menu a.btn:hover { background: var(--ldk-hover); }
+
+/* ── view tabs row ────────────────────────────────────────────────────────── */
+.ldk-viewsrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  height: 44px;
+  border-bottom: 1px solid var(--ldk-line);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.ldk-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.ldk-tabs::-webkit-scrollbar { display: none; }
+
+.ldk-vtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  white-space: nowrap;
+  font-family: var(--font-family);
+}
+.ldk-vtab b { font-family: var(--font-family-mono); font-size: 11px; font-weight: 600; color: var(--text-muted); }
+.ldk-vtab:hover { color: var(--text-primary); }
+.ldk-vtab.active { color: var(--text-primary); background: var(--bg-secondary); border-color: var(--ldk-line); }
+.ldk-vtab.active b { color: var(--brand-primary); }
+.ldk-flame { color: #f97316; font-size: 11px; }
+.ldk-xfer { color: var(--color-warning); font-size: 11px; margin-left: 4px; }
+
+/* filter popover anchors to the views row */
+.ldk-viewsrow .lp-filter-panel { top: calc(100% + 6px); right: 14px; }
+
+/* ── pipeline hairline ────────────────────────────────────────────────────── */
+.ldk-flowline { display: flex; height: 3px; flex-shrink: 0; background: var(--bg-secondary); }
+.ldk-flowline .lp-flow-seg { display: block; min-width: 2px; transition: opacity 0.16s ease; }
+.ldk-flowline.has-active .lp-flow-seg:not(.active) { opacity: 0.2; }
+
+/* ── active filter chips row (collapses when empty) ───────────────────────── */
+.ldk-chipsrow { flex-shrink: 0; }
+.ldk-chipsrow .lp-chips { padding: 8px 20px 0; max-width: none; }
+.ldk-chipsrow .lp-chips:empty { display: none; padding: 0; }
+
+/* ── split panes ──────────────────────────────────────────────────────────── */
+.ldk-split { flex: 1; display: flex; min-height: 0; }
+
+.ldk-list {
+  width: 440px;
+  min-width: 360px;
+  border-right: 1px solid var(--ldk-line);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+
+.ldk-listtools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--ldk-line);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.ldk-listtools input[type="checkbox"] { accent-color: var(--brand-primary); }
+.ldk-sort {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-family);
+}
+.ldk-sort:hover { color: var(--text-primary); }
+.ldk-sort .sort-ind { color: var(--brand-primary); font-size: 9px; }
+
+.ldk-rows { flex: 1; overflow-y: auto; }
+
+.ldk-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ldk-line);
+  cursor: pointer;
+  position: relative;
+}
+.ldk-row:hover { background: var(--ldk-hover); }
+.ldk-row.sel { background: var(--ldk-sel); }
+.ldk-row.sel::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2.5px;
+  background: var(--brand-primary);
+}
+
+.ldk-cb { flex-shrink: 0; accent-color: var(--brand-primary); opacity: 0.35; }
+.ldk-row:hover .ldk-cb, .ldk-cb:checked { opacity: 1; }
+
+.ldk-row .lav {
+  width: 36px; height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ldk-row .lmid { flex: 1; min-width: 0; }
+.ldk-row .lname {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ldk-row .lsub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ldk-row .lsub .ldk-disp { color: var(--color-warning-dark); }
+[data-theme="dark"] .ldk-row .lsub .ldk-disp { color: #f0a35e; }
+.ldk-row .lsub .ldk-due { color: var(--text-secondary); }
+.ldk-row .lsub .ldk-due.hot { color: var(--color-danger); font-weight: 600; }
+
+.ldk-row .lright { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.ldk-row .ltime { font-family: var(--font-family-mono); font-size: 10px; color: var(--text-muted); }
+
+.ldk-pill {
+  font-family: var(--font-family-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 2.5px 8px;
+  border-radius: 5px;
+  text-transform: uppercase;
+}
+.ldk-pill.p-new { background: var(--st-new-bg); color: var(--st-new-fg); }
+.ldk-pill.p-assigned { background: var(--st-asg-bg); color: var(--st-asg-fg); }
+.ldk-pill.p-contacted { background: var(--st-con-bg); color: var(--st-con-fg); }
+.ldk-pill.p-qualified { background: var(--st-qua-bg); color: var(--st-qua-fg); }
+.ldk-pill.p-unqualified { background: var(--st-unq-bg); color: var(--st-unq-fg); }
+.ldk-pill.p-converted { background: var(--st-cvt-bg); color: var(--st-cvt-fg); }
+
+.ldk-empty {
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* pagination docks to the pane */
+.ldk-list .crm-pagination {
+  border: none;
+  border-top: 1px solid var(--ldk-line);
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* definitive compact footer: fits a 440px pane with air on both ends */
+.ldk-list .crm-pagination {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  grid-template-columns: none !important;
+  padding: 8px 14px !important;
+  font-size: 11px;
+  min-height: 0;
+}
+.ldk-list .crm-pagesize { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 11px; white-space: nowrap; margin: 0; }
+.ldk-list .crm-pagesize-select { width: 58px; height: 26px; padding: 2px 6px; font-size: 11.5px; }
+.ldk-list .crm-pagination-info { white-space: nowrap; font-size: 11px; color: var(--text-muted); }
+.ldk-list .crm-pagination-center { display: inline-flex; }
+.ldk-list .crm-pagination-spacer { display: none; }
+.ldk-list .crm-pagination > div:last-child,
+.ldk-list .crm-pagination-pages { margin-left: auto; display: inline-flex; gap: 3px; flex-shrink: 0; }
+.ldk-list .crm-page-btn {
+  min-width: 24px; height: 24px;
+  padding: 0 5px;
+  font-size: 11px;
+  border-radius: 6px;
+  line-height: 1;
+}
+.ldk-list .crm-page-ellipsis { font-size: 11px; color: var(--text-muted); align-self: center; }
+
+/* ── detail host: the slide-panel becomes a static workspace on desktop ──── */
+.ldk-detailhost { flex: 1; min-width: 0; display: flex; }
+
+@media (min-width: 1024px) {
+  .ldk-detailhost .slide-panel-overlay { display: none !important; }
+  .ldk-detailhost .slide-panel {
+    position: static !important;
+    /* flex items honour z-index even when static — the slide-panel's 1050
+       was stacking the pane above the appbar dropdowns */
+    z-index: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    box-shadow: none !important;
+    border-left: none;
+    background: var(--bg-body);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    visibility: visible !important;
+  }
+  .ldk-detailhost .panel-close-btn { display: none; }
+  .ldk-detailhost .panel-header { border-bottom: 1px solid var(--ldk-line); }
+  .ldk-detailhost .panel-body { flex: 1; overflow-y: auto; }
+}
+
+/* mobile: the panel keeps its native overlay behaviour; the list is the page */
+@media (max-width: 1023px) {
+  body.crm-leads-page { overflow: auto; height: auto; display: block; }
+  .ldk-split { display: block; }
+  .ldk-list { width: 100%; min-width: 0; border-right: none; }
+  .ldk-rows { overflow: visible; }
+  .ldk-appbar { flex-wrap: wrap; }
+  .ldk-omni { order: 3; max-width: none; flex-basis: 100%; }
+}
+
+/* clear the fixed site navbar */
+body.crm-leads-page { padding-top: 52px; }
+body.crm-leads-page nav.pulse-rail { top: 52px; }
+
+/* compact pane pagination: one row, no wrapping columns */
+
+/* ── Polish pass: spacing, alignment, stray backgrounds ─────────────────── */
+
+/* stray zebra/assigned tints from legacy rules — rows own their background */
+#leadsTableBody .ldk-row { background: transparent; opacity: 1; }
+#leadsTableBody .ldk-row:hover { background: var(--ldk-hover); }
+#leadsTableBody .ldk-row.sel { background: var(--ldk-sel); }
+
+/* one left rhythm: 16px from appbar to tabs to list */
+.ldk-appbar { padding: 10px 16px; }
+.ldk-viewsrow { padding: 0 8px; }
+.ldk-listtools { padding: 9px 16px 9px 18px; }
+
+/* equalized control heights in the appbar */
+.ldk-actions .btn { height: 36px; display: inline-flex; align-items: center; gap: 6px; }
+#ldkMoreBtn { height: 36px; }
+
+/* name truncation lives on its own span (flex rows don't ellipsize text nodes) */
+.ldk-row .lname { min-width: 0; }
+.ldk-row .lname .lname-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* sort control reads as a control */
+.ldk-sort { border: 1px solid var(--ldk-line); border-radius: 7px; padding: 3px 10px; }
+
+/* detail pane: consistent frame, hero not flush, no dead band before actions */
+.ldk-detailhost .panel-header { padding: 13px 24px; }
+.ldk-detailhost .panel-body { padding: 18px 24px 36px; }
+.ldk-detailhost .lead-detail-info { margin-bottom: 4px; }
+.ldk-detailhost #leadSeqBadgeSlot:empty { display: none; }
+.ldk-detailhost .lead-detail-actions {
+  position: static;
+  margin: 14px 0 4px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--ldk-line);
+  border-bottom: none;
+  background: transparent;
+}
+.ldk-detailhost .lead-timeline-section { margin-top: 14px; }
+body.crm-leads-page .ld-hero { padding: 0 0 14px; }
+
+
+/* ── Glossy glass surfaces (tokens --lp-glass* defined in crm.css) ───────── */
+.ldk-appbar,
+.ldk-viewsrow {
+  background: var(--lp-glass);
+  backdrop-filter: blur(16px) saturate(1.12);
+  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  border-color: var(--lp-glass-line);
+}
+
+.ldk-list {
+  background: var(--lp-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border-right-color: var(--lp-glass-line);
+  position: relative;
+}
+
+/* the gloss: top sheen on each pane */
+.ldk-list::before,
+.ldk-detailhost .slide-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--lp-glass-hi, rgba(255,255,255,0.06)), transparent 22%);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+.ldk-list > * { position: relative; z-index: 1; }
+
+@media (min-width: 1024px) {
+  .ldk-detailhost .slide-panel {
+    background: color-mix(in srgb, var(--lp-glass) 70%, transparent) !important;
+    backdrop-filter: blur(18px) saturate(1.12);
+    -webkit-backdrop-filter: blur(18px) saturate(1.12);
+    position: static !important; /* keep the flex-pane mode */
+  }
+  .ldk-detailhost .slide-panel > * { position: relative; z-index: 1; }
+  .ldk-detailhost .panel-header { background: transparent; border-bottom-color: var(--lp-glass-line); }
+}
+
+body.crm-leads-page {
+  --lp-glass-hi: rgba(255, 255, 255, 0.65);
+}
+[data-theme="dark"] body.crm-leads-page {
+  --lp-glass-hi: rgba(255, 255, 255, 0.05);
+}
+
+/* hairlines pick up the glass line colour */
+.ldk-listtools, .ldk-row, .ldk-list .crm-pagination { border-color: var(--lp-glass-line); }
+
+/* Quick-actions bar → footer of the workspace pane.
+   leads.js physically moves .lead-detail-actions out of .panel-body to be a
+   direct child of #leadDetailPanel, so it sits outside the scroll flow and
+   can never overlap scrolling content. */
+.ldk-detailhost #leadDetailPanel { display: flex; flex-direction: column; }
+.ldk-detailhost #leadDetailPanel .panel-header { flex: 0 0 auto; }
+.ldk-detailhost #leadDetailPanel .panel-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.ldk-detailhost #leadDetailPanel > .lead-detail-actions {
+  position: static;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 10px 20px;
+  border-top: 1px solid var(--lp-glass-line);
+  border-bottom: 0;
+  background: var(--lp-glass);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* if a render ever leaves the bar inside the scroll body, keep it inert in-flow */
+.ldk-detailhost .panel-body .lead-detail-actions { position: static !important; }
+
+/* backdrop-filter gives the appbar/viewsrow their own stacking contexts, which
+   painted their popovers (filters panel, ⋯ menu) UNDER the split panes. Raise
+   the whole bars above the split so their overlays win. */
+.ldk-appbar { position: relative; z-index: 210; }
+.ldk-viewsrow { position: relative; z-index: 200; }
+
+/* ── filters popover internal layout ──────────────────────────────────────────
+   Reorder the grid: dropdown filters first (2 rows), then the date pair
+   side-by-side, "Form answers" last. Keeps the date-mode select inline with
+   its "from" label instead of stretching and wrapping. */
+.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(1) { order: 1; } /* Source */
+.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(5) { order: 2; } /* Status */
+.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(6) { order: 3; } /* Team */
+.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(7) { order: 4; } /* Owner */
+.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(8) { order: 5; } /* Email engagement */
+.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(9) { order: 6; } /* Campaign */
+.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(3) { order: 7; } /* Date from */
+.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(4) { order: 8; } /* Date to */
+.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(2) { order: 9; align-self: end; } /* Form answers */
+
+.lp-filter-panel .crm-filter-group > label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.lp-filter-panel .crm-date-mode-select {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: 130px;
+}
+
+/* mobile navbar is position:relative (in flow) — the fixed-navbar offset
+   would otherwise leave a dead strip above it */
+@media (max-width: 1023px) {
+  body.crm-leads-page { padding-top: 0; }
+}
+
+/* footer symmetry: the list's pagination bar and the workspace's actions bar
+   are both flush pane footers — square corners, hairline top, same glass */
+.ldk-list .crm-pagination {
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--lp-glass-line) !important;
+  background: var(--lp-glass) !important;
+  margin: 0 !important;
+}
+
+/* ── glass on every floating surface ─────────────────────────────────────────
+   Popovers, menus and dropdown lists get the same glass as the panes — no
+   solid matte cards floating over a glass page. Strong blur keeps text
+   readable over busy content behind. */
+body.crm-leads-page .lp-filter-panel,
+body.crm-leads-page .ldk-menu,
+body.crm-leads-page .searchable-dropdown-menu {
+  background: var(--lp-glass);
+  backdrop-filter: blur(28px) saturate(1.15);
+  -webkit-backdrop-filter: blur(28px) saturate(1.15);
+  border-color: var(--lp-glass-line);
+}
+
+/* floating surfaces use DENSE frost: ancestors with backdrop-filter cap how
+   much the popover's own blur can sample, so opacity must carry readability */
+body.crm-leads-page { --lp-glass-dense: rgba(255, 255, 255, 0.93); }
+[data-theme="dark"] body.crm-leads-page { --lp-glass-dense: rgba(19, 25, 39, 0.93); }
+body.crm-leads-page .lp-filter-panel,
+body.crm-leads-page .ldk-menu,
+body.crm-leads-page .searchable-dropdown-menu {
+  background: var(--lp-glass-dense);
+}
+
+/* (appbar tooltips are drawn by js/tooltip.js, which flips them below the
+   navbar when there's no room above — no CSS needed here) */
+
+/* ── grand capture wave band (dashboard parity) ──────────────────────────────
+   Full-bleed monotone-cubic line of leads created per day, sitting between
+   the navbar and the command appbar. Hidden until data arrives; hidden on
+   mobile where vertical space is scarce. */
+.ldk-waveband {
+  position: relative;
+  height: 116px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-bottom: 1px solid var(--lp-glass-line);
+}
+.ldk-waveband[hidden] { display: none; }
+.ldk-waveband .wave-cap {
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  z-index: 2;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.ldk-wavechart { position: absolute; inset: 0; }
+.ldk-wavechart svg { width: 100%; height: 100%; display: block; }
+.ldk-wavetip {
+  position: absolute;
+  display: none;
+  z-index: 3;
+  transform: translateX(-50%);
+  background: var(--lp-glass-dense);
+  border: 1px solid var(--lp-glass-line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+}
+.ldk-wavetip b { color: var(--text-primary); font-weight: 600; }
+.ldk-wavetip .tv { font-family: var(--font-family-mono); }
+@media (max-width: 1023px) {
+  .ldk-waveband { display: none; }
+}
+
+/* wave legend + multi-series tooltip rows */
+.ldk-wavelegend {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  z-index: 2;
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.ldk-wavelegend span { display: inline-flex; align-items: center; gap: 6px; }
+.ldk-wavelegend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.ldk-wavetip .tr { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.ldk-wavetip .tr i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.ldk-wavetip .tr .tv { margin-left: auto; padding-left: 10px; }
+
+/* theme-aware series colors: deeper on light, brighter on dark */
+body.crm-leads-page { --wave-s2: #16a34a; --wave-s3: #7c3aed; }
+[data-theme="dark"] body.crm-leads-page { --wave-s2: #22c55e; --wave-s3: #a78bfa; }
+
+/* ── hero integration: wave is the header's BACKDROP, not a separate band ────
+   .ldk-hero wraps appbar + viewsrow; the chart fills the hero behind them.
+   Bars go transparent (no glass smear over the line); empty header zones
+   pass pointer events through to the chart for the crosshair. */
+.ldk-hero { position: relative; flex-shrink: 0; }
+.ldk-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.ldk-wavebg[hidden] { display: none; }
+.ldk-hero .ldk-appbar,
+.ldk-hero .ldk-viewsrow {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.ldk-hero .ldk-appbar { border-bottom: 0; }
+.ldk-hero .ldk-appbar, .ldk-hero .ldk-viewsrow { pointer-events: none; }
+.ldk-hero .ldk-appbar > *, .ldk-hero .ldk-viewsrow > * { pointer-events: auto; }
+.ldk-wavelegend {
+  position: absolute;
+  right: 18px;
+  bottom: 12px;
+  top: auto;
+  z-index: 5;
+  pointer-events: none;
+}
+.ldk-wavelegend .wl-cap {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+.ldk-wavetip { z-index: 6; }
+@media (max-width: 1023px) {
+  .ldk-wavebg, .ldk-wavelegend { display: none; }
+}
+
+/* ── de-matte the small chrome: tabs, search, sort, pager chips ──────────────
+   Solid --bg-secondary fills read as matte stickers over the glass hero.
+   Everything gets translucent frost tints instead. */
+body.crm-leads-page { --lp-chip-glass: rgba(255, 255, 255, 0.5); }
+[data-theme="dark"] body.crm-leads-page { --lp-chip-glass: rgba(148, 163, 184, 0.10); }
+
+.ldk-vtab.active {
+  background: var(--lp-chip-glass);
+  border-color: var(--lp-glass-line);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.ldk-vtab:hover:not(.active) { background: color-mix(in srgb, var(--lp-chip-glass) 55%, transparent); }
+
+.ldk-omni .crm-search-input {
+  background: var(--lp-chip-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: var(--lp-glass-line);
+}
+.ldk-omni .crm-search-input:focus {
+  background: color-mix(in srgb, var(--lp-chip-glass) 70%, transparent);
+  border-color: var(--border-focus, var(--brand-primary));
+}
+
+.ldk-flowline { background: transparent; }
+
+.ldk-list .crm-pagination .crm-page-btn,
+.ldk-list .crm-pagesize .searchable-dropdown-toggle,
+.ldk-list .crm-pagesize select {
+  background: var(--lp-chip-glass);
+  border-color: var(--lp-glass-line);
+}
+.ldk-list .crm-pagination .crm-page-btn.active {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}

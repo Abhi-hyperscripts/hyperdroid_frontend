@@ -100,7 +100,12 @@
         // Clamp to viewport
         if (left < 4) left = 4;
         if (left + tipRect.width > window.innerWidth - 4) left = window.innerWidth - tipRect.width - 4;
-        if (top < 4) {
+        // The navbar paints above the tooltip layer — a tooltip that would
+        // overlap it gets hidden behind it, so treat the navbar's bottom
+        // edge (not the viewport top) as the flip boundary.
+        const nav = document.querySelector('.navbar, nav');
+        const navBottom = nav ? Math.max(0, nav.getBoundingClientRect().bottom) : 0;
+        if (top < Math.max(4, navBottom + 4)) {
             // Show below instead
             top = rect.bottom + 8;
             arrowEl.style.top = '';

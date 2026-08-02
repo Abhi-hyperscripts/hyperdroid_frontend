@@ -14,6 +14,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
     <title>Leads - CRM | Ragenaizer</title>
     <script>window.CACHE_VERSION = Date.now();</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
     <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
@@ -21,7 +24,8 @@
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/crm-leaddesk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
@@ -57,152 +61,61 @@
         </div>
     </nav>
 
+    <!-- Left icon rail -->
+    <nav class="pulse-rail" id="pulseRail" aria-label="CRM sections">
+        <div class="rail-item" onclick="location.href='dashboard.html'" title="Today">
+            <div class="ric" style="color:var(--color-warning)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h3"/></svg></div>
+            <span>Today</span>
+        </div>
+        <div class="rail-item" onclick="location.href='my-day.html'" title="My Day">
+            <div class="ric" style="color:#4CC9F0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <span>My Day</span>
+        </div>
+        <div class="rail-item active" title="Leads">
+            <div class="ric" style="color:#60A5FA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg></div>
+            <span>Leads</span>
+        </div>
+        <div class="rail-item" onclick="location.href='deals.html'" title="Deals">
+            <div class="ric" style="color:#A78BFA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+            <span>Deals</span>
+        </div>
+        <div class="rail-item" onclick="location.href='contacts.html'" title="Contacts">
+            <div class="ric" style="color:#F585C0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span>Contacts</span>
+        </div>
+        <div class="rail-item" onclick="location.href='calls.html'" title="Calls Inbox">
+            <div class="ric" style="color:#2DD4BF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+            <span>Calls</span>
+        </div>
+        <div class="rail-item" onclick="location.href='sequences.html'" title="Sequences">
+            <div class="ric" style="color:#FB923C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+            <span>Sequences</span>
+        </div>
+        <div class="rail-item" onclick="location.href='settings.html'" title="Settings">
+            <div class="ric" style="color:#94A3B8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+            <span>Settings</span>
+        </div>
+    </nav>
+
     <div class="crm-container">
+
+        <!-- ══ Hero header: the capture wave is the BACKDROP of the command
+             zone — title, search, actions and tabs float over it. ══ -->
+        <div class="ldk-hero">
+        <div class="ldk-wavebg" id="ldkWave" hidden>
+            <div class="ldk-wavechart" id="ldkWaveChart"></div>
+        </div>
+        <span class="ldk-wavelegend"></span>
+        <div class="ldk-wavetip" id="ldkWaveTip"></div>
+
         <!-- Header -->
-        <div class="crm-header">
-            <div class="header-content">
-                <nav class="breadcrumb-nav">
-                    <a href="dashboard.html">CRM</a>
-                    <span class="separator">/</span>
-                    <span class="current">Leads</span>
-                </nav>
-                <div class="crm-header-row">
-                    <h1>Leads</h1>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <a href="reassign-queue.html" id="reassignQueueBtn" class="btn btn-outline-secondary" style="display:none;border-color:rgba(239,68,68,0.4);color:var(--color-error,#ef4444);">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                                <path d="M22 11l-3-3m0 0l-3 3m3-3v8"/>
-                            </svg>
-                            Reassign Queue
-                            <span id="reassignQueueBadge" class="transfer-badge" style="background:var(--color-error,#ef4444);color:#fff;margin-left:4px;">0</span>
-                        </a>
-                        <button class="btn btn-outline-primary" id="discoverLeadsBtn" onclick="openDiscoveryPanel()" style="display:none;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                <line x1="11" y1="8" x2="11" y2="14"></line>
-                                <line x1="8" y1="11" x2="14" y2="11"></line>
-                            </svg>
-                            Discover Leads
-                        </button>
-                        <button class="btn btn-outline-secondary" id="pendingTransfersBtn" onclick="openPendingTransfersModal()" style="display:none;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="15 3 21 3 21 9"/><line x1="21" y1="3" x2="14" y2="10"/>
-                                <polyline points="9 21 3 21 3 15"/><line x1="3" y1="21" x2="10" y2="14"/>
-                            </svg>
-                            Transfers <span id="pendingTransfersBadge" class="transfer-badge" style="display:none;">0</span>
-                        </button>
-                        <button class="btn btn-outline-primary" id="importLeadsBtn" onclick="openImportWizard()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="17 8 12 3 7 8"/>
-                                <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                            Import Leads
-                        </button>
-                        <button class="btn btn-outline-primary" id="exportLeadsBtn" onclick="exportLeadsToExcel()" data-tooltip="Download filtered rows as .xlsx (matches current filters)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="7 10 12 15 17 10"/>
-                                <line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
-                            <span id="exportLeadsBtnLabel">Export Excel</span>
-                        </button>
-                        <button class="btn btn-primary" id="newLeadBtn" onclick="openNewLeadModal()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            New Lead
-                        </button>
-                        <!-- Filter-options gear: persisted filters get sticky and can
-                             confuse a rep into thinking "missing leads" — exposing a
-                             one-click "Clear all filters" makes the persisted state
-                             recoverable without devtools or a logout. Sits at the
-                             far end of the action toolbar so it's discoverable but
-                             not in the primary-action path. -->
-                        <div style="position:relative; display:inline-block;">
-                            <button type="button" id="filterMenuBtn" class="btn btn-outline-primary"
-                                    onclick="toggleFilterMenu(event)"
-                                    title="Filter options"
-                                    aria-label="Filter options">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="3"/>
-                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                                </svg>
-                            </button>
-                            <div id="filterMenu" class="crm-columns-menu" hidden role="menu" aria-label="Filter options">
-                                <div role="menuitem" tabindex="0" class="crm-columns-menu-item" onclick="clearAllFilters()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();clearAllFilters();}">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                        <line x1="6" y1="6" x2="18" y2="18"/>
-                                    </svg>
-                                    Clear all filters
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- ══ LEAD DESK command bar (site navbar above stays untouched) ══ -->
+        <div class="ldk-appbar">
+            <div class="ldk-id">
+                <h1 class="pulse-title">Leads</h1>
+                <span class="ldk-count" id="lpTotalNum">—</span>
             </div>
-        </div>
-
-        <!-- Stats Cards -->
-        <div class="crm-stats-grid" id="leadStatsGrid">
-            <div class="crm-stat-card">
-                <div class="crm-stat-icon stat-total">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </div>
-                <div class="crm-stat-value" id="statTotalLeads">-</div>
-                <div class="crm-stat-label">Total Leads</div>
-            </div>
-            <div class="crm-stat-card">
-                <div class="crm-stat-icon stat-new">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="16"/>
-                        <line x1="8" y1="12" x2="16" y2="12"/>
-                    </svg>
-                </div>
-                <div class="crm-stat-value" id="statNewLeads">-</div>
-                <div class="crm-stat-label">New</div>
-            </div>
-            <div class="crm-stat-card">
-                <div class="crm-stat-icon stat-qualified">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                </div>
-                <div class="crm-stat-value" id="statQualifiedLeads">-</div>
-                <div class="crm-stat-label">Qualified</div>
-            </div>
-            <div class="crm-stat-card">
-                <div class="crm-stat-icon stat-converted">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                        <polyline points="17 6 23 6 23 12"/>
-                    </svg>
-                </div>
-                <div class="crm-stat-value" id="statConvertedLeads">-</div>
-                <div class="crm-stat-label">Converted</div>
-            </div>
-        </div>
-
-        <!-- Filter Bar -->
-        <!-- Row 1 — search + source + the form-answers narrow-by-question
-             modal + columns picker. Source sits next to "Form answers"
-             because the form-answers modal only makes sense once a single
-             source is picked (different forms ask different questions).
-             Action controls share this row so they don't get squeezed when
-             the dimension row below wraps on smaller viewports. -->
-        <div class="crm-filter-bar crm-filter-bar--actions">
-            <div class="crm-filter-group crm-search-group" style="flex:1; min-width:240px;">
-                <label for="filterSearch">Search</label>
+            <div class="ldk-omni">
                 <div class="crm-search-wrap">
                     <!-- Search-scope toggle. Default = scoped to the current filter
                          set (intuitive for narrowing). Toggling to "all leads" bypasses
@@ -231,6 +144,74 @@
                     <input type="text" id="filterSearch" class="form-control form-control-sm crm-search-input" placeholder="Search leads..." oninput="applyFilters()">
                 </div>
             </div>
+            <div id="lpActiveChips" class="lp-chips" aria-label="Active filters"></div>
+            
+            <div class="ldk-actions">
+                <button type="button" id="filtersToggleBtn" class="btn btn-sm btn-outline-primary" onclick="toggleLeadsFiltersPanel()" title="Show or hide the filter rows">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    Filters <span id="filtersActiveCount" class="transfer-badge" style="display:none;">0</span>
+                </button>
+                <button class="btn btn-primary" id="newLeadBtn" onclick="openNewLeadModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            New Lead
+                        </button>
+                <div class="ldk-more-wrap">
+                    <button type="button" id="ldkMoreBtn" class="btn btn-outline-primary" onclick="ldkToggleMore(event)" aria-label="More actions" title="More actions">⋯</button>
+                    <div id="ldkMoreMenu" class="ldk-menu" hidden>
+                        <button class="btn btn-outline-primary" id="importLeadsBtn" onclick="openImportWizard()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Import Leads
+                        </button>
+                        <button class="btn btn-outline-primary" id="exportLeadsBtn" onclick="exportLeadsToExcel()" data-tooltip="Download filtered rows as .xlsx (matches current filters)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            <span id="exportLeadsBtnLabel">Export Excel</span>
+                        </button>
+                        <button class="btn btn-outline-primary" id="discoverLeadsBtn" onclick="openDiscoveryPanel()" style="display:none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <line x1="11" y1="8" x2="11" y2="14"></line>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                            </svg>
+                            Discover Leads
+                        </button>
+                        <button class="btn btn-outline-secondary" id="pendingTransfersBtn" onclick="openPendingTransfersModal()" style="display:none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 3 21 3 21 9"/><line x1="21" y1="3" x2="14" y2="10"/>
+                                <polyline points="9 21 3 21 3 15"/><line x1="3" y1="21" x2="10" y2="14"/>
+                            </svg>
+                            Transfers <span id="pendingTransfersBadge" class="transfer-badge" style="display:none;">0</span>
+                        </button>
+                        <a href="reassign-queue.html" id="reassignQueueBtn" class="btn btn-outline-secondary" style="display:none;border-color:rgba(239,68,68,0.4);color:var(--color-error,#ef4444);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                                <path d="M22 11l-3-3m0 0l-3 3m3-3v8"/>
+                            </svg>
+                            Reassign Queue
+                            <span id="reassignQueueBadge" class="transfer-badge" style="background:var(--color-error,#ef4444);color:#fff;margin-left:4px;">0</span>
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" onclick="clearAllFilters()">Clear all filters</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Views + anchored filter popover -->
+        <div class="ldk-viewsrow">
+            <div class="ldk-tabs" id="ldkTabs"></div>
+            <div id="leadsFiltersPanel" class="lp-filter-panel">
+        <div class="crm-filter-bar crm-filter-bar--dimensions">
             <div class="crm-filter-group">
                 <label for="filterSource">Source</label>
                 <select id="filterSource" class="form-select form-select-sm" onchange="applyFilters()">
@@ -240,32 +221,12 @@
             <div class="crm-filter-group crm-filter-group--no-label">
                 <button type="button" id="formAnswersFilterBtn" class="btn btn-sm btn-outline-primary"
                         onclick="openFormAnswersModal()" disabled
-                        title="Pick a single source above to filter by form answers">
+                        title="Pick a single source to filter by form answers">
                     <span id="formAnswersActiveDot" class="fa-active-dot" hidden></span>
                     <span>Form answers</span>
                     <span id="formAnswersActiveCount" class="badge bg-primary ms-1" style="display:none;">0</span>
                 </button>
             </div>
-            <div class="crm-filter-group crm-filter-group--no-label" style="position:relative;">
-                <button type="button" id="columnsPickerBtn" class="btn btn-sm btn-outline-primary crm-columns-btn"
-                        onclick="toggleColumnsPicker(event)"
-                        title="Show / hide columns in the Leads table"
-                        aria-label="Show or hide columns">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="18" rx="1"/>
-                        <rect x="14" y="3" width="7" height="18" rx="1"/>
-                    </svg>
-                </button>
-                <div id="columnsPickerMenu" class="crm-columns-menu" hidden role="menu" aria-label="Visible columns"></div>
-            </div>
-        </div>
-
-        <!-- Row 2 — dimension filters (status / team / owner / campaign /
-             email engagement / created-date range). Each narrows the leads
-             list. The --dimensions modifier turns each cell into an equal-
-             width flex item so the 6 visible controls share the row evenly
-             on wide viewports and wrap onto a second line on narrow ones. -->
-        <div class="crm-filter-bar crm-filter-bar--dimensions">
             <!-- Created-date range. Both ends optional — leaving them blank
                  = no date filter (the default, "show all"). Sits at the
                  start of the row because the date window is the broadest
@@ -373,6 +334,15 @@
         <div class="crm-filter-bar crm-filter-bar--custom" id="leadFieldsFilterBar" style="display:none;">
             <div class="crm-filter-bar-label" aria-hidden="true">Custom filters</div>
         </div>
+        <div class="lp-panel-foot">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllFilters()">Clear all</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="toggleLeadsFiltersPanel()">Done</button>
+        </div>
+        </div><!-- /leadsFiltersPanel -->
+        </div>
+        </div><!-- /ldk-hero -->
+        <div class="ldk-flowline" id="lpFlowBar" aria-label="Pipeline by status"></div>
+        
 
         <!-- Filter by form answers — sidebar + values pane layout.
              Built for the 20+ question / 25+ values per question case:
@@ -457,48 +427,93 @@
             <span id="helpInboxBannerText">1 help request waiting for you</span>
         </button>
 
-        <!-- Leads Table -->
-        <div class="crm-table-wrapper data-table-container">
-            <table class="crm-table data-table" id="leadsTable">
-                <thead>
-                    <tr>
-                        <th class="th-checkbox">
-                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
-                        </th>
-                        <th data-col="leadId">Lead ID</th>
-                        <th data-col="name">Name</th>
-                        <th data-col="email">Email</th>
-                        <th data-col="phone" class="hide-mobile">Phone</th>
-                        <th data-col="source" class="hide-mobile">Source</th>
-                        <th data-col="status">Status</th>
-                        <th data-col="engagement" class="hide-mobile">Email</th>
-                        <th data-col="team" class="hide-mobile">Team</th>
-                        <th data-col="owner" class="hide-mobile">Owner</th>
-                        <th data-col="created" class="hide-mobile">Created</th>
-                        <th data-col="latestSummary" class="hide-mobile">Summary</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="leadsTableBody">
-                    <tr>
-                        <td colspan="11" class="crm-empty-state">
-                            <div class="crm-empty-content">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                    <circle cx="9" cy="7" r="4"/>
-                                    <line x1="23" y1="11" x2="17" y2="11"/>
-                                    <line x1="20" y1="8" x2="20" y2="14"/>
-                                </svg>
-                                <p>Loading leads...</p>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- ══ Split: story list + always-open lead workspace ══ -->
+        <!-- Dummy table keeps lead-fields-runtime's header-injection selector
+             chain landing on a harmless target (its real target went away
+             with the spreadsheet). -->
+        <table class="crm-leads-table" hidden aria-hidden="true"><thead><tr></tr></thead><tbody></tbody></table>
+        <div class="ldk-split">
+            <div class="ldk-list">
+                <div class="ldk-listtools">
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" title="Select all on this page">
+                    <span id="ldkListCount">Loading…</span>
+                    <button type="button" class="ldk-sort" onclick="toggleLeadsSort('created')" title="Sort by created date">
+                        Created <span class="sort-ind" id="sortIndCreated"></span>
+                    </button>
+                </div>
+                <div class="ldk-rows" id="leadsTableBody">
+                    <div class="ldk-empty">Loading leads…</div>
+                </div>
+                <div class="crm-pagination" id="leadsPagination"></div>
+            </div>
+            <div class="ldk-detailhost" id="ldkDetailHost">
+<div class="slide-panel-overlay" id="leadDetailOverlay" onclick="closeLeadDetailPanel()"></div>
+    <div class="slide-panel" id="leadDetailPanel" style="--panel-width: 640px;">
+        <div class="panel-header">
+            <h3 class="panel-title" id="leadDetailName">Lead Details</h3>
+            <button class="panel-close-btn" onclick="closeLeadDetailPanel()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
         </div>
+        <div class="panel-body">
+            <!-- Lead info summary -->
+            <div id="leadDetailInfo" class="lead-detail-info"></div>
 
-        <!-- Pagination -->
-        <div class="crm-pagination" id="leadsPagination"></div>
+            <!-- Sequence enrollment badge — populated by lead-journey.js'
+                 refreshSequenceBadgeForLead. Empty when no active enrollment. -->
+            <div id="leadSeqBadgeSlot"></div>
+
+            <!-- Quick actions -->
+            <div class="lead-detail-actions" id="leadDetailActions">
+                <button class="btn btn-sm btn-outline-primary" onclick="openStatusChangeModal(window._leadDetailId)">Change Status</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="openLogActivityModal(window._leadDetailId)">Log Activity</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="openScheduleFollowupModal(window._leadDetailId)">Schedule Follow-up</button>
+                <button class="btn btn-sm btn-outline-success" onclick="openLeadCallPicker(window._leadDetailId)" id="leadDetailCallBtn" style="display:none;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>Call
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="openTransferRequestModal(window._leadDetailId)">Transfer to Team</button>
+                <button class="btn btn-sm btn-outline-warning" onclick="openHelpRequestModal(window._leadDetailId)" id="leadDetailNeedHelpBtn">Need Help</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="openSequenceEnrollModal(window._leadDetailId)" id="leadDetailEnrollSeqBtn" title="Enroll this lead in a multi-step sequence">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
+                        <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/>
+                    </svg>Enroll in Sequence
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="openLeadQrModal(window._leadDetailId)" title="Show QR code that opens the lead's public customer card">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <path d="M14 14h3v3M14 21h7M21 14v7M17 17h4"/>
+                    </svg>QR Code
+                </button>
+            </div>
+
+            <!-- Timeline -->
+            <div class="lead-timeline-section">
+                <div class="lead-timeline-header">
+                    <h4>Activity Timeline</h4>
+                    <div class="lead-timeline-toolbar">
+                        <input type="text" id="timelineSearch" class="form-control form-control-sm" placeholder="Search timeline..." oninput="filterTimeline(this.value)">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="printLeadTimeline()" title="Print / Save as PDF">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 6 2 18 2 18 9"/>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                <rect x="6" y="14" width="12" height="8"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="leadTimeline" class="lead-timeline"></div>
+            </div>
+        </div>
+    </div>
+
+                </div>
+        </div>
     </div>
 
     <!-- Bulk WhatsApp Send Modal — 4-step wizard.
@@ -1364,71 +1379,6 @@
     </div>
 
     <!-- ═══ Lead Detail / Timeline Panel ═══ -->
-    <div class="slide-panel-overlay" id="leadDetailOverlay" onclick="closeLeadDetailPanel()"></div>
-    <div class="slide-panel" id="leadDetailPanel" style="--panel-width: 520px;">
-        <div class="panel-header">
-            <h3 class="panel-title" id="leadDetailName">Lead Details</h3>
-            <button class="panel-close-btn" onclick="closeLeadDetailPanel()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
-        </div>
-        <div class="panel-body">
-            <!-- Lead info summary -->
-            <div id="leadDetailInfo" class="lead-detail-info"></div>
-
-            <!-- Sequence enrollment badge — populated by lead-journey.js'
-                 refreshSequenceBadgeForLead. Empty when no active enrollment. -->
-            <div id="leadSeqBadgeSlot"></div>
-
-            <!-- Quick actions -->
-            <div class="lead-detail-actions" id="leadDetailActions">
-                <button class="btn btn-sm btn-outline-primary" onclick="openStatusChangeModal(window._leadDetailId)">Change Status</button>
-                <button class="btn btn-sm btn-outline-primary" onclick="openLogActivityModal(window._leadDetailId)">Log Activity</button>
-                <button class="btn btn-sm btn-outline-primary" onclick="openScheduleFollowupModal(window._leadDetailId)">Schedule Follow-up</button>
-                <button class="btn btn-sm btn-outline-success" onclick="openLeadCallPicker(window._leadDetailId)" id="leadDetailCallBtn" style="display:none;">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>Call
-                </button>
-                <button class="btn btn-sm btn-outline-secondary" onclick="openTransferRequestModal(window._leadDetailId)">Transfer to Team</button>
-                <button class="btn btn-sm btn-outline-warning" onclick="openHelpRequestModal(window._leadDetailId)" id="leadDetailNeedHelpBtn">Need Help</button>
-                <button class="btn btn-sm btn-outline-primary" onclick="openSequenceEnrollModal(window._leadDetailId)" id="leadDetailEnrollSeqBtn" title="Enroll this lead in a multi-step sequence">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
-                        <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/>
-                    </svg>Enroll in Sequence
-                </button>
-                <button class="btn btn-sm btn-outline-secondary" onclick="openLeadQrModal(window._leadDetailId)" title="Show QR code that opens the lead's public customer card">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
-                        <rect x="3" y="3" width="7" height="7" rx="1"/>
-                        <rect x="14" y="3" width="7" height="7" rx="1"/>
-                        <rect x="3" y="14" width="7" height="7" rx="1"/>
-                        <path d="M14 14h3v3M14 21h7M21 14v7M17 17h4"/>
-                    </svg>QR Code
-                </button>
-            </div>
-
-            <!-- Timeline -->
-            <div class="lead-timeline-section">
-                <div class="lead-timeline-header">
-                    <h4>Activity Timeline</h4>
-                    <div class="lead-timeline-toolbar">
-                        <input type="text" id="timelineSearch" class="form-control form-control-sm" placeholder="Search timeline..." oninput="filterTimeline(this.value)">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="printLeadTimeline()" title="Print / Save as PDF">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="6 9 6 2 18 2 18 9"/>
-                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                                <rect x="6" y="14" width="12" height="8"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div id="leadTimeline" class="lead-timeline"></div>
-            </div>
-        </div>
-    </div>
-
     <div class="slide-panel-overlay" id="discoveryOverlay" onclick="closeDiscoveryPanel()"></div>
     <div class="slide-panel" id="discoveryPanel" style="--panel-width: 480px;">
         <div class="panel-header">

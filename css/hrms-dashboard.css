@@ -1252,7 +1252,9 @@ nav.pulse-rail {
   bottom: 0;
   width: 78px;
   border-right: 1px solid var(--border-color);
-  background: var(--bg-card);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1285,7 +1287,7 @@ nav.pulse-rail {
 .rail-item .ric svg { width: 18px; height: 18px; }
 .rail-item span { font-size: 9px; letter-spacing: 0.02em; }
 
-.rail-item:hover { color: var(--text-secondary); background: var(--bg-secondary); }
+.rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
 
 .rail-item.active {
   background: color-mix(in srgb, var(--color-warning) 10%, transparent);

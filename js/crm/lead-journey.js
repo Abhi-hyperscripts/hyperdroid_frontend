@@ -359,39 +359,67 @@
                 }
             } catch {}
 
+            // Hero: identity + live badges + one-tap contact. Everything else
+            // groups into labelled sections below (empty sections vanish).
+            const avBg = (typeof leadAvatarBg === 'function')
+                ? leadAvatarBg(lead) : 'linear-gradient(135deg,#2563eb,#7c3aed)';
+            const avTxt = (typeof leadInitials === 'function') ? leadInitials(lead) : '?';
+            const emailBtn = window._tenantHasMailbox && lead.email
+                ? `<button type="button" onclick="openComposeForLead(window._leadDetailId)" class="lead-email-send-btn" data-tooltip="Send email" aria-label="Send email"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>`
+                : '';
+            const item = (label, valueHtml, extraCls = '') => valueHtml
+                ? `<div class="lead-detail-item ${extraCls}"><span class="lead-detail-label">${label}</span><span>${valueHtml}</span></div>`
+                : '';
+            const dateOnly = (v) => v ? new Date(v).toLocaleDateString() : '';
+            const section = (title, rows) => rows.join('')
+                ? `<div class="ld-sect">${title}</div><div class="lead-detail-grid">${rows.join('')}</div>`
+                : '';
+
             document.getElementById('leadDetailInfo').innerHTML = `
-                <div class="lead-detail-grid">
-                    ${lead.lead_number ? `<div class="lead-detail-item"><span class="lead-detail-label">Lead ID</span><span class="crm-lead-number">${esc(lead.lead_number)}</span></div>` : ''}
-                    ${lead.email ? `<div class="lead-detail-item"><span class="lead-detail-label">Email</span><span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(lead.email)}${window._tenantHasMailbox ? `<button type="button" onclick="openComposeForLead(window._leadDetailId)" class="lead-email-send-btn" data-tooltip="Send email" aria-label="Send email" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-card);color:var(--brand-primary);cursor:pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>` : ''}</span></div>` : ''}
-                    ${lead.phone ? `<div class="lead-detail-item"><span class="lead-detail-label">Phone</span><span>${crmPhoneLink(lead.phone)}</span></div>` : ''}
-                    ${lead.alternate_phone ? `<div class="lead-detail-item"><span class="lead-detail-label">Alt. Phone</span><span>${crmPhoneLink(lead.alternate_phone)}</span></div>` : ''}
-                    ${lead.company_name ? `<div class="lead-detail-item"><span class="lead-detail-label">Company</span><span>${esc(lead.company_name)}</span></div>` : ''}
-                    ${lead.job_title ? `<div class="lead-detail-item"><span class="lead-detail-label">Job Title</span><span>${esc(lead.job_title)}</span></div>` : ''}
-                    ${lead.lead_source ? `<div class="lead-detail-item"><span class="lead-detail-label">Source</span><span>${esc(lead.lead_source)}</span></div>` : ''}
-                    <div class="lead-detail-item"><span class="lead-detail-label">Status</span><span class="crm-status-badge status-${lead.status}" style="width:fit-content">${formatStatus(lead.status)}</span></div>
-                    ${lead.disposition ? `<div class="lead-detail-item"><span class="lead-detail-label">Disposition</span><span class="crm-disposition-badge disp-${lead.disposition}" style="width:fit-content">${formatDisposition(lead.disposition)}</span></div>` : ''}
-                    ${lead.city ? `<div class="lead-detail-item"><span class="lead-detail-label">City</span><span>${esc(lead.city)}</span></div>` : ''}
-                    ${lead.state ? `<div class="lead-detail-item"><span class="lead-detail-label">State</span><span>${esc(lead.state)}</span></div>` : ''}
-                    ${lead.country ? `<div class="lead-detail-item"><span class="lead-detail-label">Country</span><span>${esc(lead.country)}</span></div>` : ''}
-                    ${lead.address ? `<div class="lead-detail-item"><span class="lead-detail-label">Address</span><span>${esc(lead.address)}</span></div>` : ''}
-                    ${lead.pincode ? `<div class="lead-detail-item"><span class="lead-detail-label">Pincode</span><span>${esc(lead.pincode)}</span></div>` : ''}
-                    ${lead.website ? `<div class="lead-detail-item"><span class="lead-detail-label">Website</span><span>${esc(lead.website)}</span></div>` : ''}
-                    ${lead.product_interest ? `<div class="lead-detail-item"><span class="lead-detail-label">Interest</span><span>${esc(lead.product_interest)}</span></div>` : ''}
-                    ${lead.estimated_value ? `<div class="lead-detail-item"><span class="lead-detail-label">Est. Value</span><span>₹${Number(lead.estimated_value).toLocaleString()}</span></div>` : ''}
-                    ${lead.campaign_name ? `<div class="lead-detail-item"><span class="lead-detail-label">Campaign</span><span>${esc(lead.campaign_name)}</span></div>` : ''}
-                    ${lead.team_name ? `<div class="lead-detail-item"><span class="lead-detail-label">Team</span><span class="crm-team-badge">${esc(lead.team_name)}</span></div>` : ''}
-                    ${lead.owner_name ? `<div class="lead-detail-item"><span class="lead-detail-label">Owner</span><span>${esc(lead.owner_name)}</span></div>` : ''}
-                    ${lead.notes ? `<div class="lead-detail-item" style="grid-column:1/-1"><span class="lead-detail-label">Notes</span><span>${esc(lead.notes)}</span></div>` : ''}
-                    ${customFieldsHtml}
-                    ${lead.lost_reason ? `<div class="lead-detail-item"><span class="lead-detail-label">Lost Reason</span><span style="color:var(--color-error);">${esc(lead.lost_reason)}</span></div>` : ''}
-                    ${lead.next_followup_date ? `<div class="lead-detail-item"><span class="lead-detail-label">Next Follow-up</span><span>${new Date(lead.next_followup_date).toLocaleDateString()}</span></div>` : ''}
-                    ${lead.first_contact_date ? `<div class="lead-detail-item"><span class="lead-detail-label">First Contact</span><span>${new Date(lead.first_contact_date).toLocaleDateString()}</span></div>` : ''}
-                    ${lead.last_interaction_at ? `<div class="lead-detail-item"><span class="lead-detail-label">Last Interaction</span><span>${new Date(lead.last_interaction_at).toLocaleDateString()}</span></div>` : ''}
-                    ${lead.followup_count > 0 ? `<div class="lead-detail-item"><span class="lead-detail-label">Follow-ups</span><span>${lead.followup_count}</span></div>` : ''}
-                    ${lead.expected_closure_date ? `<div class="lead-detail-item"><span class="lead-detail-label">Expected Close</span><span>${new Date(lead.expected_closure_date).toLocaleDateString()}</span></div>` : ''}
-                    ${lead.won_deal_value ? `<div class="lead-detail-item"><span class="lead-detail-label">Deal Value</span><span>₹${Number(lead.won_deal_value).toLocaleString()}</span></div>` : ''}
-                    <div class="lead-detail-item"><span class="lead-detail-label">Created</span><span>${new Date(lead.created_at).toLocaleString()}</span></div>
+                <div class="ld-hero">
+                    <span class="lead-avatar ld-avatar" style="background:${avBg}">${esc(avTxt)}</span>
+                    <div class="ld-hero-main">
+                        <div class="ld-hero-badges">
+                            <span class="crm-status-badge status-${lead.status}">${formatStatus(lead.status)}</span>
+                            ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}">${formatDisposition(lead.disposition)}</span>` : ''}
+                            ${lead.team_name ? `<span class="crm-team-badge">${esc(lead.team_name)}</span>` : ''}
+                            ${lead.lead_number ? `<span class="crm-lead-number">${esc(lead.lead_number)}</span>` : ''}
+                        </div>
+                        <div class="ld-hero-contact">
+                            ${lead.phone ? `<span class="ld-contact-chip">${crmPhoneLink(lead.phone)}</span>` : ''}
+                            ${lead.email ? `<span class="ld-contact-chip">${esc(lead.email)}${emailBtn}</span>` : ''}
+                            ${[lead.city, lead.state].filter(Boolean).length ? `<span class="ld-contact-chip ld-muted">${esc([lead.city, lead.state].filter(Boolean).join(', '))}</span>` : ''}
+                            ${lead.owner_name ? `<span class="ld-contact-chip ld-muted">Owner · ${esc(lead.owner_name)}</span>` : ''}
+                        </div>
+                    </div>
                 </div>
+                ${section('About', [
+                    item('Company', lead.company_name ? esc(lead.company_name) : ''),
+                    item('Job title', lead.job_title ? esc(lead.job_title) : ''),
+                    item('Source', lead.lead_source ? esc(lead.lead_source) : ''),
+                    item('Campaign', lead.campaign_name ? esc(lead.campaign_name) : ''),
+                    item('Alt. phone', lead.alternate_phone ? crmPhoneLink(lead.alternate_phone) : ''),
+                    item('Website', lead.website ? esc(lead.website) : ''),
+                    item('Address', lead.address ? esc(lead.address) : ''),
+                    item('Country', lead.country ? esc(lead.country) : ''),
+                    item('Pincode', lead.pincode ? esc(lead.pincode) : ''),
+                ])}
+                ${section('Deal', [
+                    item('Interest', lead.product_interest ? esc(lead.product_interest) : ''),
+                    item('Est. value', lead.estimated_value ? '₹' + Number(lead.estimated_value).toLocaleString() : ''),
+                    item('Deal value', lead.won_deal_value ? '₹' + Number(lead.won_deal_value).toLocaleString() : ''),
+                    item('Expected close', dateOnly(lead.expected_closure_date)),
+                    item('Lost reason', lead.lost_reason ? `<span style="color:var(--color-error);">${esc(lead.lost_reason)}</span>` : ''),
+                ])}
+                ${customFieldsHtml ? `<div class="ld-sect">Custom fields</div><div class="lead-detail-grid">${customFieldsHtml}</div>` : ''}
+                ${section('Activity', [
+                    item('Next follow-up', dateOnly(lead.next_followup_date)),
+                    item('Follow-ups', lead.followup_count > 0 ? String(lead.followup_count) : ''),
+                    item('First contact', dateOnly(lead.first_contact_date)),
+                    item('Last interaction', dateOnly(lead.last_interaction_at)),
+                    item('Created', lead.created_at ? new Date(lead.created_at).toLocaleString() : ''),
+                ])}
+                ${lead.notes ? `<div class="ld-sect">Notes</div><div class="lead-detail-grid"><div class="lead-detail-item" style="grid-column:1/-1"><span>${esc(lead.notes)}</span></div></div>` : ''}
             `;
 
             // Load timeline

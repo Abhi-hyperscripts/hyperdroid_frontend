@@ -93,6 +93,16 @@ function toggleSearchScope() {
     try { localStorage.setItem(_searchScopeStorageKey(), next); } catch (_) {}
     applyFilters();
 }
+
+// "Search everything" mode ignores every narrowing filter — so the moment the
+// user explicitly interacts with a filter (view tab, popover widget), flip
+// back to filtered mode. Otherwise the tab highlights but the list silently
+// doesn't change, which reads as a broken page.
+function _exitSearchScopeAll() {
+    if (!_isSearchScopeAll()) return;
+    _applySearchScopeUI('filtered');
+    try { localStorage.setItem(_searchScopeStorageKey(), 'filtered'); } catch (_) {}
+}
 function _restoreSearchScope() {
     let scope = 'filtered';
     try { scope = localStorage.getItem(_searchScopeStorageKey()) || 'filtered'; } catch (_) {}
@@ -455,6 +465,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (window.CrmSetupGuard && await window.CrmSetupGuard.ensureConfigured()) {
         return;
     }
+    _restoreFiltersPanelState();
+    // Any filter interaction inside the popover exits "search everything"
+    // mode first (capture phase → runs before the widget's own onchange).
+    const _fpanel = document.getElementById('leadsFiltersPanel');
+    if (_fpanel) _fpanel.addEventListener('change', () => _exitSearchScopeAll(), true);
+    // Split view: opening a lead also highlights its row in the list pane.
+    // lead-journey.js has defined openLeadDetailPanel by DOM-ready (script
+    // order), so wrapping here is safe.
+    const _origOpenLead = window.openLeadDetailPanel;
+    if (typeof _origOpenLead === 'function') {
+        window.openLeadDetailPanel = function (id) {
+            ldkHighlightRow(id);
+            const switching = window._leadDetailId !== id;
+            const result = _origOpenLead(id);
+            // Opening a different lead resets the workspace scroll — otherwise
+            // the pane stays wherever the previous lead's timeline left it.
+            if (switching) {
+                Promise.resolve(result).then(() => {
+                    const body = document.querySelector('#leadDetailPanel .panel-body');
+                    if (body) body.scrollTop = 0;
+                });
+            }
+            return result;
+        };
+    }
     loadMyRole();
     // Probe whether the tenant has any configured shared mailbox. The
     // result gates the inline "send email" buttons in the leads table and
@@ -488,6 +523,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }).catch(() => {});
     loadLeadStats();
+    loadLeadsWave();
     loadSourceFilter();
     loadCampaignFilter();
     loadMyTeamsFilter();
@@ -1106,20 +1142,112 @@ function refreshLeadView() {
     loadLeadStats();
 }
 
+// ── Pipeline Flow band ──────────────────────────────────────────────────────
+// The stats endpoint honours the current filter set, so the flow bar is a live
+// picture of exactly the universe the table is showing. Clicking a segment
+// filters the list to that status; clicking the active segment clears it.
+const _LP_FLOW_STAGES = [
+    { key: 'new_leads', status: 'new', label: 'New', color: '#3b82f6' },
+    { key: 'assigned', status: 'assigned', label: 'Assigned', color: '#6366f1' },
+    { key: 'contacted', status: 'contacted', label: 'Contacted', color: '#eab308' },
+    { key: 'qualified', status: 'qualified', label: 'Qualified', color: '#22c55e' },
+    { key: 'unqualified', status: 'unqualified', label: 'Unqualified', color: '#9ca3af' },
+    { key: 'converted', status: 'converted', label: 'Converted', color: '#8b5cf6' },
+];
+
+function lpFilterByStatus(status) {
+    const el = document.getElementById('filterStatus');
+    if (!el) return;
+    _exitSearchScopeAll();
+    const wrapper = (typeof _sdWrapperFor === 'function') ? _sdWrapperFor('filterStatus') : null;
+    const current = wrapper && typeof wrapper.getValue === 'function' ? wrapper.getValue() : el.value;
+    const next = current === status ? '' : status;   // toggle off when re-clicked
+    el.value = next;
+    if (wrapper && typeof wrapper.setValue === 'function') wrapper.setValue(next, false);
+    applyFilters();
+}
+
 async function loadLeadStats() {
     try {
-        const params = buildFilterParams();
-        // pageSize/page are list-only — strip from the stats query.
-        params.delete('page'); params.delete('pageSize');
-        const qs = params.toString();
-        const stats = await api.request('/crm/leads/stats' + (qs ? '?' + qs : ''));
-        document.getElementById('statTotalLeads').textContent = stats.total_leads ?? '-';
-        document.getElementById('statNewLeads').textContent = stats.new_leads ?? '-';
-        document.getElementById('statQualifiedLeads').textContent = stats.qualified ?? '-';
-        document.getElementById('statConvertedLeads').textContent = stats.converted ?? '-';
+        // Tabs, hairline and the appbar total always show the GLOBAL universe —
+        // never the filtered one. Otherwise activating any tab collapses every
+        // other tab's count to 0 and the page reads as "no data anywhere".
+        const stats = await api.request('/crm/leads/stats');
+        renderPipelineFlow(stats);
     } catch (error) {
         console.error('Failed to load lead stats:', error);
     }
+}
+
+const _LDK_TABS = [
+    { label: 'All', status: '', key: 'total_leads' },
+    { label: 'Unworked new', status: 'new', key: 'new_leads' },
+    { label: 'My follow-ups', status: 'follow_up_scheduled', key: null, flame: true },
+    { label: 'Contacted', status: 'contacted', key: 'contacted' },
+    { label: 'Qualified', status: 'qualified', key: 'qualified' },
+    { label: 'Converted', status: 'converted', key: 'converted' },
+];
+
+function renderPipelineFlow(stats) {
+    const numEl = document.getElementById('lpTotalNum');
+    const bar = document.getElementById('lpFlowBar');
+    const tabsEl = document.getElementById('ldkTabs');
+
+    const total = stats.total_leads ?? 0;
+    if (numEl) numEl.textContent = total.toLocaleString('en-IN');
+
+    const statusEl = document.getElementById('filterStatus');
+    const wrapper = (typeof _sdWrapperFor === 'function') ? _sdWrapperFor('filterStatus') : null;
+    const activeStatus = wrapper && typeof wrapper.getValue === 'function' ? wrapper.getValue() : (statusEl?.value || '');
+
+    if (tabsEl) {
+        tabsEl.innerHTML = _LDK_TABS.map(t => {
+            const active = (activeStatus || '') === t.status ? ' active' : '';
+            const count = t.key != null ? (stats[t.key] ?? 0) : null;
+            return `<button type="button" class="ldk-vtab${active}" onclick="lpFilterByStatus('${t.status}')">` +
+                   `${t.flame ? '<span class="ldk-flame">⚑</span>' : ''}${t.label}` +
+                   `${count != null ? ` <b>${count}</b>` : ''}</button>`;
+        }).join('');
+    }
+
+    if (bar) {
+        const stages = _LP_FLOW_STAGES.map(s => ({ ...s, count: stats[s.key] ?? 0 })).filter(s => s.count > 0);
+        const sum = stages.reduce((a, s) => a + s.count, 0);
+        bar.classList.toggle('has-active', !!activeStatus);
+        bar.innerHTML = stages.map(s => {
+            const pct = Math.max((s.count / sum) * 100, 0.6);
+            const active = activeStatus === s.status ? ' active' : '';
+            return `<i class="lp-flow-seg${active}" style="flex-basis:${pct}%;background:${s.color}"
+                        title="${s.label}: ${s.count}"></i>`;
+        }).join('');
+    }
+}
+
+// 14-day capture skyline in the hero's total block. Unfiltered on purpose —
+// it answers "is the top of the funnel flowing?", not "what am I looking at".
+async function loadCaptureSkyline() {
+    const host = document.getElementById('lpCapture');
+    if (!host) return;
+    try {
+        const resp = await api.request('/crm/leads?page=1&pageSize=50&sortBy=created&sortDir=desc');
+        const rows = Array.isArray(resp) ? resp : (resp?.data ?? []);
+        const DAYS = 14;
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const start = new Date(today); start.setDate(today.getDate() - (DAYS - 1));
+        const buckets = new Array(DAYS).fill(0);
+        let week = 0;
+        rows.forEach(l => {
+            if (!l.created_at) return;
+            const d = new Date(l.created_at); d.setHours(0, 0, 0, 0);
+            const idx = Math.round((d - start) / 86400000);
+            if (idx >= 0 && idx < DAYS) buckets[idx]++;
+            if ((today - d) / 86400000 < 7) week++;
+        });
+        const max = Math.max(...buckets, 1);
+        host.innerHTML = buckets.map(v =>
+            `<i style="height:${Math.max((v / max) * 100, 6)}%" class="${v > 0 ? 'on' : ''}"></i>`).join('') +
+            `<span>${week > 0 ? '+' + week + ' this week' : 'none this week'}</span>`;
+    } catch (e) { host.innerHTML = ''; }
 }
 
 /**
@@ -1358,7 +1486,145 @@ function buildFilterParams() {
         }
     }
 
+    // Header sort (Created column). Backend: sortBy=created|activity,
+    // sortDir=asc|desc; ignored server-side when hasFollowup=true.
+    if (_leadsSortDir) { params.set('sortBy', _leadsSortBy); params.set('sortDir', _leadsSortDir); }
+
+    _updateFiltersActiveCount(params);
     return params;
+}
+
+// ==================== Header sort + collapsible filter rows ====================
+let _leadsSortBy = 'created';
+let _leadsSortDir = '';   // '' = backend default (created desc)
+
+function toggleLeadsSort(col) {
+    _leadsSortBy = col;
+    _leadsSortDir = _leadsSortDir === '' ? 'asc' : (_leadsSortDir === 'asc' ? 'desc' : '');
+    const ind = document.getElementById('sortIndCreated');
+    if (ind) ind.textContent = _leadsSortDir === 'asc' ? '▲' : (_leadsSortDir === 'desc' ? '▼' : '');
+    loadLeads(1);
+}
+
+// The widget panel is a summoned popover — closed by default; the chip strip
+// in the toolbar carries the filter state at a glance.
+function toggleLeadsFiltersPanel() {
+    const panel = document.getElementById('leadsFiltersPanel');
+    if (!panel) return;
+    const open = panel.classList.toggle('open');
+    const btn = document.getElementById('filtersToggleBtn');
+    if (btn) btn.classList.toggle('active', open);
+}
+
+function _restoreFiltersPanelState() {
+    // Escape closes the panel (portal'd date/select popovers make an
+    // outside-click closer unreliable, so Esc + Done + toggle are the exits).
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.getElementById('leadsFiltersPanel')?.classList.remove('open');
+            document.getElementById('filtersToggleBtn')?.classList.remove('active');
+        }
+    });
+}
+
+// Badge on the Filters button = how many narrowing params are active, so a
+// closed panel can never silently hide why the list looks short.
+function _updateFiltersActiveCount(params) {
+    const el = document.getElementById('filtersActiveCount');
+    if (el) {
+        const ignore = new Set(['page', 'pageSize', 'search', 'sortBy', 'sortDir', 'dateMode']);
+        let n = 0;
+        for (const [k] of params.entries()) { if (!ignore.has(k)) n++; }
+        el.textContent = n;
+        el.style.display = n > 0 ? '' : 'none';
+    }
+    renderActiveFilterChips();
+}
+
+// ── Active-filter chips: each narrowing widget with a value becomes a
+// removable "Label · Value ×" token in the toolbar. Removal reuses the exact
+// clearAllFilters per-widget recipe (flatpickr.clear / wrapper.setValue).
+const _LP_CHIP_SELECTS = [
+    { id: 'filterSource', label: 'Source' },
+    { id: 'filterStatus', label: 'Status' },
+    { id: 'filterTeam', label: 'Team' },
+    { id: 'filterOwner', label: 'Owner' },
+    { id: 'filterEmailStatus', label: 'Email' },
+    { id: 'filterCampaign', label: 'Campaign' },
+];
+
+function _lpSelectedText(el, value) {
+    const opt = [...el.options].find(o => o.value === value);
+    return opt ? opt.textContent.trim() : value;
+}
+
+function clearOneLeadFilter(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el._flatpickr && typeof el._flatpickr.clear === 'function') el._flatpickr.clear();
+    else el.value = '';
+    const wrapper = (typeof _sdWrapperFor === 'function') ? _sdWrapperFor(id) : null;
+    if (wrapper && typeof wrapper.setValue === 'function') wrapper.setValue('', false);
+    applyFilters();
+}
+
+function clearLeadDateFilter() {
+    ['filterDateFrom', 'filterDateTo'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el._flatpickr && typeof el._flatpickr.clear === 'function') el._flatpickr.clear();
+        else el.value = '';
+    });
+    applyFilters();
+}
+
+function clearLeadCustomFilters() {
+    if (typeof window.setLeadFieldsFilterValues === 'function') window.setLeadFieldsFilterValues({});
+    if (typeof FormAnswersFilter !== 'undefined' && typeof FormAnswersFilter.reset === 'function') FormAnswersFilter.reset();
+    applyFilters();
+}
+
+function renderActiveFilterChips() {
+    const host = document.getElementById('lpActiveChips');
+    if (!host) return;
+    if (_isSearchScopeAll()) { host.innerHTML = ''; return; }
+
+    const chips = [];
+    const chip = (label, valueText, clearCall) =>
+        `<span class="lp-chip"><i>${escapeHtml(label)}</i>${escapeHtml(valueText)}` +
+        `<button type="button" onclick="${clearCall}" aria-label="Remove ${escapeHtml(label)} filter">×</button></span>`;
+
+    for (const def of _LP_CHIP_SELECTS) {
+        const el = document.getElementById(def.id);
+        if (!el) continue;
+        const wrapper = (typeof _sdWrapperFor === 'function') ? _sdWrapperFor(def.id) : null;
+        const value = wrapper && typeof wrapper.getValue === 'function' ? wrapper.getValue() : el.value;
+        if (value) chips.push(chip(def.label, _lpSelectedText(el, value), `clearOneLeadFilter('${def.id}')`));
+    }
+
+    const from = document.getElementById('filterDateFrom')?.value;
+    const to = document.getElementById('filterDateTo')?.value;
+    if (from || to) {
+        const modeEl = document.getElementById('filterDateMode');
+        const mode = modeEl ? _lpSelectedText(modeEl, modeEl.value) : 'Created';
+        chips.push(chip(mode, [from || '…', to || '…'].join(' → '), 'clearLeadDateFilter()'));
+    }
+
+    let customN = 0;
+    if (typeof window.getLeadFieldsFilter === 'function') {
+        customN += Object.keys(window.getLeadFieldsFilter() || {}).length;
+    }
+    if (typeof window.getLeadFieldsBuiltinFilters === 'function') {
+        customN += Object.values(window.getLeadFieldsBuiltinFilters() || {}).filter(Boolean).length;
+    }
+    if (typeof FormAnswersFilter !== 'undefined' && typeof FormAnswersFilter.getFilter === 'function') {
+        customN += Object.keys(FormAnswersFilter.getFilter() || {}).length;
+    }
+    if (customN > 0) {
+        chips.push(chip('Custom', customN + ' filter' + (customN > 1 ? 's' : ''), 'clearLeadCustomFilters()'));
+    }
+
+    host.innerHTML = chips.join('');
 }
 
 // ==================== Filter by form answers ====================
@@ -1415,8 +1681,8 @@ function applyFilters() {
     // refresh-triggering action restores the same view. See _persistFilters.
     _persistFilters();
     loadLeads();
-    // Stats card mirrors the filtered list — kick a fresh stats load on every
-    // filter change so KPIs reflect whatever the user is currently looking at.
+    // Re-render tabs/hairline so the active-tab highlight tracks the filter;
+    // counts themselves stay global (see loadLeadStats).
     loadLeadStats();
 }
 
@@ -1426,135 +1692,164 @@ function applyFilters() {
  * Render the leads table
  */
 function renderLeadsTable(leads) {
-    const tbody = document.getElementById('leadsTableBody');
+    const host = document.getElementById('leadsTableBody');
+    if (!host) return;
+
+    const countEl = document.getElementById('ldkListCount');
+    if (countEl) countEl.textContent = totalLeads > 0
+        ? totalLeads.toLocaleString('en-IN') + ' lead' + (totalLeads !== 1 ? 's' : '')
+        : (leads && leads.length ? leads.length + ' leads' : '0 leads');
 
     if (!leads || leads.length === 0) {
-        // Members can't create leads — they get assigned. Match the toolbar gating
-        // applied in loadMyRole() so the empty state isn't a dead-end CTA.
+        // Context-aware empty state: a filtered view that came up empty offers
+        // "Clear filters"; a genuinely empty book offers the create path.
+        // Members can't create leads — they get assigned (matches loadMyRole()).
+        const fp = buildFilterParams();
+        ['page', 'pageSize', 'sortBy', 'sortDir'].forEach(k => fp.delete(k));
+        const hasFilters = [...fp.keys()].length > 0;
         const isMember = myTeamRole === 'member' || myTeamRole === 'none';
-        const cta = isMember
-            ? `<p style="color:var(--text-secondary);font-size:0.85rem;margin-top:6px;">Leads will appear here once your team lead assigns them to you.</p>`
-            : `<button class="btn btn-sm btn-primary" onclick="openNewLeadModal()">Add your first lead</button>`;
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="11" class="crm-empty-state">
-                    <div class="crm-empty-content">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <line x1="23" y1="11" x2="17" y2="11"/>
-                            <line x1="20" y1="8" x2="20" y2="14"/>
-                        </svg>
-                        <p>No leads found</p>
-                        ${cta}
-                    </div>
-                </td>
-            </tr>
-        `;
+        const msg = hasFilters ? 'No leads match this view' : 'No leads yet';
+        const cta = hasFilters
+            ? `<button class="btn btn-sm btn-secondary" onclick="clearAllFilters()">Clear filters</button>`
+            : (isMember
+                ? `<p>Leads will appear here once your team lead assigns them to you.</p>`
+                : `<button class="btn btn-sm btn-primary" onclick="openNewLeadModal()">Add your first lead</button>`);
+        host.innerHTML = `
+            <div class="ldk-empty">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/>
+                </svg>
+                <p>${msg}</p>
+                ${cta}
+            </div>`;
         return;
     }
 
-    tbody.innerHTML = leads.map(lead => {
-        const isAssigned = !!(lead.team_id || lead.teamName || lead.team_name);
-        const rowClass = isAssigned ? ' class="crm-lead-assigned"' : '';
-        const cbTooltip = isAssigned
-            ? 'title="Already assigned to a team — bulk-assign will skip, but the lead can still be included in campaigns or exports."'
-            : '';
-        return `
-        <tr data-lead-id="${lead.id}"${rowClass}>
-            <td class="td-checkbox">
-                <input type="checkbox" class="lead-checkbox" value="${lead.id}"
-                    onchange="toggleLeadSelection('${lead.id}', this.checked)"
-                    ${selectedLeadIds.has(lead.id) ? 'checked' : ''}
-                    ${cbTooltip}>
-            </td>
-            <td data-col="leadId">
-                <span class="crm-lead-number">${escapeHtml(lead.leadNumber || lead.lead_number || '-')}</span>
-            </td>
-            <td data-col="name" onclick="openLeadDetailPanel('${lead.id}')" style="cursor:pointer;">
-                <div class="crm-cell-primary">
-                    ${getCustomFieldsBadge(lead.custom_fields)}${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}
-                </div>
-                ${lead.company_name ? `<div class="crm-cell-secondary">${escapeHtml(lead.company_name)}</div>` : (lead.company ? `<div class="crm-cell-secondary">${escapeHtml(lead.company)}</div>` : '')}
-            </td>
-            <td data-col="email">
-                ${lead.email
-                    ? (window._tenantHasMailbox
-                        ? `<span class="crm-cell-secondary" style="display:inline-flex;align-items:center;gap:6px;">
-                              <button type="button" class="lead-email-send-btn" onclick="event.stopPropagation(); openComposeForLeadFromTable('${lead.id}', '${escapeHtml(lead.email)}', '${escapeHtml([lead.first_name, lead.last_name].filter(Boolean).join(' ') || '')}')" data-tooltip="Send email" aria-label="Send email" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-card);color:var(--brand-primary);cursor:pointer;flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
-                              ${escapeHtml(lead.email)}
-                           </span>`
-                        : `<span class="crm-cell-secondary">${escapeHtml(lead.email)}</span>`)
-                    : `<span class="crm-cell-secondary">-</span>`}
-            </td>
-            <td data-col="phone">
-                <span class="crm-cell-secondary">${lead.phone ? crmPhoneLink(lead.phone) : '-'}</span>
-            </td>
-            <td data-col="source">
-                <span class="crm-source-badge source-${lead.lead_source || 'manual'}">${formatSource(lead.lead_source)}</span>
-            </td>
-            <td data-col="status">
-                <div class="crm-status-cell">
-                    ${(lead.team_id || lead.team_name) ? `<span class="crm-status-badge status-${lead.status || 'new'}" onclick="openStatusChangeModal('${lead.id}')" style="cursor:pointer;" data-tooltip="Click to change status">${formatStatus(lead.status)}</span>` : `<span class="crm-status-badge status-new" data-tooltip="Assign to team first">${formatStatus(lead.status)}</span>`}
-                    ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}" title="${formatDisposition(lead.disposition)}">${formatDisposition(lead.disposition)}</span>` : ''}
-                    ${lead.next_followup_date ? formatFollowupIndicator(lead.next_followup_date) : ''}
-                    ${lead.has_pending_transfer ? '<span class="crm-transfer-pending-badge" data-tooltip="Transfer/Reassignment pending approval">⇄ Transfer Pending</span>' : ''}
-                </div>
-            </td>
-            <td data-col="engagement">
-                ${renderEmailEngagement(lead)}
-            </td>
-            <td data-col="team">
-                ${lead.teamName || lead.team_name ? renderTeamBadge(lead) : '<span class="crm-cell-secondary">—</span>'}
-            </td>
-            <td data-col="owner">
-                ${renderOwnerCell(lead)}
-            </td>
-            <td data-col="created">
-                <span class="crm-cell-secondary">${formatDate(lead.created_at)}</span>
-            </td>
-            <td data-col="latestSummary">${renderLatestSummaryCell(lead)}</td>
-            <td>
-                <div class="crm-actions">
-                    ${(lead.team_id || lead.team_name) ? `<button class="crm-action-btn" onclick="openLogActivityModal('${lead.id}')" data-tooltip="Log Activity">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-                        </svg>
-                    </button>` : ''}
-                    <button class="crm-action-btn" onclick="editLead('${lead.id}')" data-tooltip="Edit Lead">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                    </button>
-                    ${canDeleteLead() && (lead.team_id || lead.team_name) ? `<button class="crm-action-btn" onclick="openReassignModal('${lead.id}')" data-tooltip="Reassign to Member">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="8.5" cy="7" r="4"/>
-                            <polyline points="17 11 19 13 23 9"/>
-                        </svg>
-                    </button>` : ''}
-                    ${lead.status === 'qualified' ? `
-                    <button class="crm-action-btn action-convert" onclick="openConvertModal('${lead.id}')" data-tooltip="Convert to Contact + Deal">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                            <polyline points="17 6 23 6 23 12"/>
-                        </svg>
-                    </button>
-                    ` : ''}
-                    ${canDeleteLead() ? `<button class="crm-action-btn action-delete" onclick="deleteLead('${lead.id}')" data-tooltip="Delete Lead">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                    </button>` : ''}
-                </div>
-            </td>
-        </tr>
-    `;
-    }).join('');
-    applyColumnVisibility();
-    applyColumnOrder();
+    host.innerHTML = leads.map(lead => ldkRow(lead)).join('');
+
+    // Keep the workspace anchored: re-highlight the open lead, or open the
+    // first row so the right pane is never a dead placeholder on desktop.
+    if (window._leadDetailId) {
+        ldkHighlightRow(window._leadDetailId);
+    } else if (window.innerWidth > 1023 && !sessionStorage.getItem('crm_openLeadId')) {
+        const first = host.querySelector('.ldk-row[data-lead-id]');
+        if (first) openLeadDetailPanel(first.getAttribute('data-lead-id'));
+    }
+}
+
+// One lead = one story row: identity, a computed narrative line, status, age.
+function ldkRow(lead) {
+    const name = ([lead.first_name, lead.last_name].filter(Boolean).join(' ') ||
+                  lead.company_name || lead.company || '—');
+    const flame = lead.next_followup_date ? '<span class="ldk-flame" title="Follow-up scheduled">⚑</span>' : '';
+    const xfer = lead.has_pending_transfer ? '<span class="ldk-xfer" title="Transfer pending approval">⇄</span>' : '';
+    const checked = selectedLeadIds.has(lead.id) ? 'checked' : '';
+    const sel = window._leadDetailId === lead.id ? ' sel' : '';
+    return `
+        <div class="ldk-row${sel}" data-lead-id="${lead.id}" onclick="openLeadDetailPanel('${lead.id}')">
+            <input type="checkbox" class="lead-checkbox ldk-cb" value="${lead.id}" ${checked}
+                onclick="event.stopPropagation()"
+                onchange="toggleLeadSelection('${lead.id}', this.checked)">
+            <span class="lav" style="background:${leadAvatarBg(lead)}">${escapeHtml(leadInitials(lead))}</span>
+            <div class="lmid">
+                <div class="lname"><span class="lname-t">${escapeHtml(name)}</span>${flame}${xfer}</div>
+                <div class="lsub">${ldkStory(lead)}</div>
+            </div>
+            <div class="lright">
+                <span class="ldk-pill p-${lead.status || 'new'}">${formatStatus(lead.status)}</span>
+                <span class="ltime" title="${formatDate(lead.created_at)}">${leadTimeAgo(lead.created_at)}</span>
+            </div>
+        </div>`;
+}
+
+// The narrative line: the most decision-relevant fact about this lead, in
+// priority order — due follow-up > disposition + recency > fresh capture >
+// ownership recency. Data all comes from the list payload; no extra calls.
+function ldkStory(lead) {
+    const bits = [];
+    if (lead.next_followup_date) {
+        const due = new Date(lead.next_followup_date);
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const dueDay = new Date(due); dueDay.setHours(0, 0, 0, 0);
+        const diff = Math.round((dueDay - today) / 86400000);
+        const when = diff < 0 ? `overdue ${-diff}d` : diff === 0 ? 'due today' : diff === 1 ? 'due tomorrow' : `due in ${diff}d`;
+        bits.push(`<span class="ldk-due${diff <= 0 ? ' hot' : ''}">follow-up ${when}</span>`);
+    }
+    if (lead.disposition) bits.push(`<span class="ldk-disp">${escapeHtml(formatDisposition(lead.disposition))}</span>`);
+    if (bits.length === 0) {
+        if ((lead.status || 'new') === 'new') {
+            bits.push(`New from ${escapeHtml(formatSource(lead.lead_source))} · never contacted`);
+        } else if (lead.status === 'converted') {
+            bits.push(`Converted${lead.won_deal_value ? ' · ₹' + Number(lead.won_deal_value).toLocaleString('en-IN') : ''}`);
+        } else if (lead.owner_name || lead.ownerName) {
+            const owner = lead.owner_name || lead.ownerName;
+            const touch = lead.last_interaction_at ? `touched ${leadTimeAgo(lead.last_interaction_at)}` : `untouched since ${leadTimeAgo(lead.created_at)}`;
+            bits.push(`With ${escapeHtml(owner.split(' ')[0])} · ${touch}`);
+        } else {
+            bits.push(`${escapeHtml(formatSource(lead.lead_source))}${lead.last_interaction_at ? ' · touched ' + leadTimeAgo(lead.last_interaction_at) : ''}`);
+        }
+    } else if (lead.last_interaction_at) {
+        bits.push(`touched ${leadTimeAgo(lead.last_interaction_at)}`);
+    }
+    if (lead.company_name && bits.length < 3) bits.push(escapeHtml(lead.company_name));
+    return bits.join(' · ');
+}
+
+function ldkHighlightRow(leadId) {
+    document.querySelectorAll('.ldk-row.sel').forEach(r => r.classList.remove('sel'));
+    document.querySelector(`.ldk-row[data-lead-id="${leadId}"]`)?.classList.add('sel');
+}
+
+function ldkToggleMore(ev) {
+    ev?.stopPropagation();
+    const menu = document.getElementById('ldkMoreMenu');
+    if (menu) menu.hidden = !menu.hidden;
+}
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('ldkMoreMenu');
+    if (!menu || menu.hidden) return;
+    // Close on outside click AND after choosing any menu item — a menu that
+    // stays open floats above whatever modal the item just launched.
+    if (!e.target.closest('.ldk-more-wrap') || e.target.closest('#ldkMoreMenu button, #ldkMoreMenu a')) {
+        menu.hidden = true;
+    }
+});
+
+// ==================== Row identity helpers ====================
+// Deterministic avatar hue per lead so the same lead always wears the same
+// colour across pages and sessions.
+const _LEAD_AVATAR_HUES = [212, 262, 158, 24, 330, 190, 48, 288];
+
+function leadInitials(lead) {
+    const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ') ||
+                 lead.company_name || lead.company || '?';
+    return name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+function leadAvatarBg(lead) {
+    const key = String(lead.id || lead.email || lead.phone || 'x');
+    let h = 0;
+    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+    const hue = _LEAD_AVATAR_HUES[h % _LEAD_AVATAR_HUES.length];
+    return `linear-gradient(135deg, hsl(${hue} 55% 42%), hsl(${(hue + 28) % 360} 60% 30%))`;
+}
+
+function leadTimeAgo(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    if (isNaN(d)) return '-';
+    const secs = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (secs < 60) return 'just now';
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return days + 'd ago';
+    const months = Math.floor(days / 30);
+    if (months < 12) return months + 'mo ago';
+    return Math.floor(months / 12) + 'y ago';
 }
 
 // ==================== Column Visibility ====================
@@ -3123,4 +3418,190 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Lead Desk: the quick-actions bar is rendered inside the scrolling panel-body by
+// lead-journey.js; relocate it to be the workspace pane's footer (direct child of
+// #leadDetailPanel) so it sits outside the scroll flow. Observer keeps this true
+// across every re-render (status change, refresh, lead switch).
+document.addEventListener('DOMContentLoaded', () => {
+    const panel = document.getElementById('leadDetailPanel');
+    if (!panel) return;
+    const relocateActionsBar = () => {
+        const bar = panel.querySelector('.panel-body .lead-detail-actions');
+        if (!bar) return;
+        panel.querySelectorAll(':scope > .lead-detail-actions').forEach(el => el.remove());
+        panel.appendChild(bar);
+    };
+    new MutationObserver(relocateActionsBar).observe(panel, { childList: true, subtree: true });
+    relocateActionsBar();
+});
+
+// ═══ Grand capture wave (dashboard parity, multi-series) ════════════════════
+// Three series of events/day over the same window: leads captured (created),
+// first contacted, converted. One y-axis (counts), legend top-right, shared
+// crosshair tooltip.
+async function loadLeadsWave() {
+    const band = document.getElementById('ldkWave');
+    const host = document.getElementById('ldkWaveChart');
+    if (!band || !host) return;
+
+    const MAX_WINDOW = 90;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const oldestNeeded = new Date(today); oldestNeeded.setDate(today.getDate() - (MAX_WINDOW - 1));
+
+    const rows = [];
+    try {
+        for (let page = 1; page <= 8; page++) {
+            const resp = await api.request(`/crm/leads?page=${page}&pageSize=50&sort=created_at&order=desc`);
+            const batch = Array.isArray(resp) ? resp : (resp?.data ?? []);
+            if (!batch.length) break;
+            rows.push(...batch);
+            const oldest = batch[batch.length - 1]?.created_at;
+            if (oldest && new Date(oldest) < oldestNeeded) break;
+            if (batch.length < 50) break;
+        }
+    } catch (e) { return; } // decoration-with-data — stay hidden on failure
+
+    const SERIES = [
+        { key: 'created_at',         label: 'Captured',  color: 'var(--brand-primary)', fill: true  },
+        { key: 'first_contact_date', label: 'Contacted', color: 'var(--wave-s2, #16a34a)', fill: false },
+        { key: 'converted_at',       label: 'Converted', color: 'var(--wave-s3, #7c3aed)', fill: false },
+    ];
+
+    const inWindow = (dateStr, days) => {
+        if (!dateStr) return false;
+        const from = new Date(today); from.setDate(today.getDate() - (days - 1));
+        return new Date(dateStr) >= from;
+    };
+    const countIn = days => rows.reduce((n, l) =>
+        n + (SERIES.some(s => inWindow(l[s.key], days)) ? 1 : 0), 0);
+    const DAYS = countIn(30) > 0 ? 30 : (countIn(90) > 0 ? 90 : 0);
+    if (DAYS === 0) return;
+
+    const capText = 'Lead flow · ' + DAYS + 'd';
+
+    const start = new Date(today); start.setDate(today.getDate() - (DAYS - 1));
+    SERIES.forEach(s => {
+        s.buckets = new Array(DAYS).fill(0);
+        rows.forEach(l => {
+            const v = l[s.key];
+            if (!v) return;
+            const d = new Date(v); d.setHours(0, 0, 0, 0);
+            const idx = Math.round((d - start) / 86400000);
+            if (idx >= 0 && idx < DAYS) s.buckets[idx]++;
+        });
+    });
+
+    const W = 1200, H = 104, padT = 46, padB = 8;
+    const ih = H - padT - padB;
+    const yMax = Math.max(...SERIES.flatMap(s => s.buckets)) * 1.15 || 1;
+    const x = i => (i / (DAYS - 1)) * W;
+    const y = v => padT + ih - (v / yMax) * ih;
+
+    // monotone-cubic smoothing (no overshoot on spikes)
+    function smoothPath(buckets) {
+        const pts = buckets.map((v, i) => [x(i), y(v)]);
+        const n = pts.length;
+        const dx = [], m = [];
+        for (let i = 0; i < n - 1; i++) {
+            dx.push(pts[i + 1][0] - pts[i][0]);
+            m.push((pts[i + 1][1] - pts[i][1]) / dx[i]);
+        }
+        const t = [m[0]];
+        for (let i = 1; i < n - 1; i++) t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
+        t.push(m[n - 2]);
+        for (let i = 0; i < n - 1; i++) {
+            if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+            else {
+                const a = t[i] / m[i], b = t[i + 1] / m[i];
+                const s = a * a + b * b;
+                if (s > 9) { const tau = 3 / Math.sqrt(s); t[i] = tau * a * m[i]; t[i + 1] = tau * b * m[i]; }
+            }
+        }
+        let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+        for (let i = 0; i < n - 1; i++) {
+            const h = dx[i];
+            d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
+                 ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
+                 ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+        }
+        return d;
+    }
+
+    const dayLabel = i => {
+        const d = new Date(start); d.setDate(start.getDate() + i);
+        return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    };
+
+    // peak marker on the busiest captured day
+    const capBuckets = SERIES[0].buckets;
+    let peak = 0;
+    capBuckets.forEach((v, i) => { if (v > capBuckets[peak]) peak = i; });
+    const marker =
+        `<circle cx="${x(peak).toFixed(1)}" cy="${y(capBuckets[peak]).toFixed(1)}" r="3.5" fill="var(--brand-primary)"/>`;
+
+    const ticks = '';
+
+    const paths = SERIES.map(s => {
+        const line = smoothPath(s.buckets);
+        const fill = s.fill
+            ? `<path d="${line} L${W},${H} L0,${H} Z" fill="url(#ldkWaveFill)" stroke="none"/>`
+            : '';
+        return fill +
+            `<path class="draw-line" d="${line}" fill="none" stroke="${s.color}" stroke-width="2.2" ` +
+            `stroke-linejoin="round" stroke-linecap="round" opacity="0.95"/>`;
+    }).join('');
+
+    host.innerHTML =
+        `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" ` +
+        `aria-label="Leads captured, contacted and converted per day, last ${DAYS} days">` +
+        `<defs><linearGradient id="ldkWaveFill" x1="0" y1="0" x2="0" y2="1">` +
+        `<stop offset="0" stop-color="var(--brand-primary)" stop-opacity="0.26"/>` +
+        `<stop offset="1" stop-color="var(--brand-primary)" stop-opacity="0"/>` +
+        `</linearGradient></defs>` +
+        paths + marker +
+        `<line id="ldkWaveCross" x1="0" y1="${padT}" x2="0" y2="${padT + ih}" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3" style="display:none"/>` +
+        ticks +
+        `</svg>`;
+
+    // legend — identity is never color-alone: dot + label per series
+    const legend = document.querySelector('.ldk-hero .ldk-wavelegend');
+    if (legend) legend.innerHTML = `<span class="wl-cap">${capText}</span>` + SERIES.map(s =>
+        `<span><i style="background:${s.color}"></i>${s.label}</span>`).join('');
+
+    band.hidden = false;
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        host.querySelectorAll('.draw-line').forEach((p, i) => {
+            const len = p.getTotalLength();
+            p.style.strokeDasharray = len;
+            p.style.strokeDashoffset = len;
+            p.style.transition = `stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1) ${0.15 + i * 0.12}s`;
+        });
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            host.querySelectorAll('.draw-line').forEach(p => { p.style.strokeDashoffset = '0'; });
+        }));
+    }
+
+    const svg = host.querySelector('svg');
+    const cross = host.querySelector('#ldkWaveCross');
+    const tip = document.getElementById('ldkWaveTip');
+    svg.addEventListener('mousemove', (e) => {
+        const rect = svg.getBoundingClientRect();
+        const relX = (e.clientX - rect.left) / rect.width * W;
+        const idx = Math.min(DAYS - 1, Math.max(0, Math.round((relX / W) * (DAYS - 1))));
+        cross.style.display = '';
+        cross.setAttribute('x1', x(idx));
+        cross.setAttribute('x2', x(idx));
+        tip.style.display = 'block';
+        tip.style.left = Math.min(Math.max(x(idx) / W * rect.width, 70), rect.width - 70) + 'px';
+        tip.style.top = '50px';
+        tip.innerHTML = `<b>${dayLabel(idx)}</b>` + SERIES.map(s =>
+            `<span class="tr"><i style="background:${s.color}"></i>${s.label} <b class="tv">${s.buckets[idx]}</b></span>`).join('');
+    });
+    svg.addEventListener('mouseleave', () => {
+        cross.style.display = 'none';
+        tip.style.display = 'none';
+    });
 }
