@@ -377,6 +377,7 @@ async function _syncOfflineSalesInner() {
     // replay the same queued sale — the invoice/payment are server-idempotent but the APPROVE step is not,
     // so a double-approve slips through. Setting the flag now makes the guard actually exclusive.
     posSyncing = true;
+    let syncedAny = false;   // did we ACTUALLY post any queued sale this pass?
     try {
         await migrateLegacyPosQueue();
         const entries = (await posQueueAll().catch(() => [])).filter(e => e.status !== 'error')
@@ -394,6 +395,7 @@ async function _syncOfflineSalesInner() {
             try {
                 const { invoices } = await submitSaleToServer(entry, { enforceStock: false });
                 committed = true;
+                syncedAny = true;
                 await posQueueDelete(entry.id).catch(() => {});
                 Toast.success(`${entry.offlineRef} synced — ${invoices.map(i => i.number).join(' · ')}`);
                 if (entry.cart.some(c => c.item.tracking_mode === 'serial'))
@@ -409,7 +411,11 @@ async function _syncOfflineSalesInner() {
     } finally {
         posSyncing = false;
         updateNetBadge();
-        refreshPosItems();
+        // Only refresh when we ACTUALLY synced a queued sale (stock changed). refreshPosItems() itself
+        // calls syncOfflineSales(), so refreshing on an empty-queue pass mutually recurses into a constant
+        // re-render loop (the POS "flickers" while an item sits in the cart, and hammers inventory/lookup
+        // ~6×/sec). On the normal online path the queue is empty → syncedAny stays false → no refresh.
+        if (syncedAny) refreshPosItems();
     }
 }
 
