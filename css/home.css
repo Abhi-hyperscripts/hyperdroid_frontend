@@ -295,7 +295,9 @@ body.dashboard {
 }
 
 .home-rows {
-  background: var(--home-panel);
+  background: color-mix(in srgb, var(--home-panel) 60%, transparent);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
   border: 1px solid var(--home-line);
   border-radius: 14px;
   overflow: hidden;
