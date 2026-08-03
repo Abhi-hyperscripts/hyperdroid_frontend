@@ -376,6 +376,7 @@ async function loadServices() {
         const services = await api.getAllServices();
         const allRegisteredServices = services || [];
 
+        setTimeout(renderServiceCharts, 0);   // after allServices is populated below
         // Filter services by license - only show services that are licensed for this tenant
         allServices = allRegisteredServices.filter(service => {
             const serviceName = service.name || '';
@@ -518,6 +519,7 @@ async function loadUsers() {
         allUsers = users || [];
 
         // Show total active users count in tab (with null check)
+        setTimeout(renderUserCharts, 0);
         const activeUsers = allUsers.filter(u => u.isActive !== false);
         const usersCountEl = document.getElementById('usersCount');
         if (usersCountEl) usersCountEl.textContent = activeUsers.length;
@@ -3295,4 +3297,97 @@ async function activateSubTenant() {
         btn.disabled = false;
         btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Activate';
     }
+}
+
+
+// ─── Admin visuals ──────────────────────────────────────────────────────────
+// Built from the lists already fetched for the cards/tables below, so these
+// add no network calls. Each strip hides itself when there's nothing to plot.
+
+function renderServiceCharts() {
+    const wrap = document.getElementById('svcChartsWrap');
+    if (!wrap || typeof acDonut !== 'function' || typeof ApexCharts === 'undefined') return;
+    const rows = Array.isArray(allServices) ? allServices : [];
+    if (!rows.length) { wrap.style.display = 'none'; return; }
+
+    const running = rows.filter(r => String(r.status || '').toLowerCase() === 'running').length;
+    const offline = rows.length - running;
+
+    // hours since last heartbeat, worst first
+    const now = Date.now();
+    const stale = rows
+        .map(r => ({
+            name: r.name || 'Service',
+            hrs: r.last_seen ? Math.max(0, Math.round(((now - Date.parse(r.last_seen)) / 36e5) * 10) / 10) : null
+        }))
+        .filter(r => r.hrs != null)
+        .sort((a, b) => b.hrs - a.hrs)
+        .slice(0, 6);
+
+    wrap.style.display = '';
+    const draw = () => {
+        acDonut('svcHealthChart', ['Running', 'Offline'], [running, offline],
+                ['#10b981', '#ef4444'], v => `${v}`);
+        if (stale.length) {
+            acBarV('svcStaleChart', stale.map(r => r.name), stale.map(r => r.hrs),
+                   _acPalette, v => v >= 24 ? `${Math.round(v / 24)}d` : `${v}h`);
+        } else {
+            _acEmpty('svcStaleChart', 'No heartbeat data');
+        }
+    };
+    try { draw(); _acActiveRender = draw; }
+    catch (e) { console.warn('[admin] service charts failed:', e); wrap.style.display = 'none'; }
+}
+
+function renderUserCharts() {
+    const wrap = document.getElementById('userChartsWrap');
+    if (!wrap || typeof acBarV !== 'function' || typeof ApexCharts === 'undefined') return;
+    const rows = Array.isArray(allUsers) ? allUsers : [];
+    if (!rows.length) { wrap.style.display = 'none'; return; }
+
+    // accounts created per month, last 6 months
+    const buckets = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        buckets.push({
+            key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+            label: d.toLocaleString('en', { month: 'short' }),
+            n: 0
+        });
+    }
+    const idx = Object.fromEntries(buckets.map((b, i) => [b.key, i]));
+    rows.forEach(u => {
+        const k = String(u.createDate || u.created_at || '').slice(0, 7);
+        if (idx[k] != null) buckets[idx[k]].n++;
+    });
+
+    // entitlement by product, derived from the role prefix (CRM_USER -> CRM)
+    const PRODUCT = {
+        CRM: 'CRM', HRMS: 'HRMS', ACCOUNTS: 'Accounts', PMS: 'Projects',
+        DRIVE: 'Drive', VISION: 'Meetings', CHAT: 'Chat', EMAILSERVICE: 'Email',
+        AIENGINE: 'AI', LMS: 'LMS', PROCUREMENT: 'Procurement'
+    };
+    const byProduct = {};
+    rows.filter(u => u.isActive !== false).forEach(u => {
+        const seen = new Set();
+        (u.roles || []).forEach(r => {
+            const prefix = String(r).split('_')[0].toUpperCase();
+            const label = PRODUCT[prefix];
+            if (label && !seen.has(label)) { seen.add(label); byProduct[label] = (byProduct[label] || 0) + 1; }
+        });
+    });
+    const ranked = Object.entries(byProduct).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+    wrap.style.display = '';
+    const draw = () => {
+        acBarV('userGrowthChart', buckets.map(b => b.label), buckets.map(b => b.n), null, v => `${v}`);
+        if (ranked.length) {
+            acBarV('userProductChart', ranked.map(r => r[0]), ranked.map(r => r[1]), _acPalette, v => `${v}`);
+        } else {
+            _acEmpty('userProductChart', 'No product roles assigned');
+        }
+    };
+    try { draw(); _acActiveRender = draw; }
+    catch (e) { console.warn('[admin] user charts failed:', e); wrap.style.display = 'none'; }
 }

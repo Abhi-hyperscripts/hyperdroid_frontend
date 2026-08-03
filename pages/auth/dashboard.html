@@ -24,6 +24,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/auth-admin-skin.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-charts.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/rail-drawer.css?v=' + CACHE_VERSION + '">');</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -214,6 +215,21 @@
                         </div>
                     </div>
 
+                    <!-- Fleet visuals — built from the same /services payload the
+                         cards below use, so no extra calls. -->
+                    <div class="hrms-charts" id="svcChartsWrap" style="display:none;">
+                        <div class="hrms-chart-card">
+                            <h3 class="hrms-chart-title">Fleet health</h3>
+                            <p class="hrms-chart-sub">Running vs offline right now</p>
+                            <div class="hrms-chart" id="svcHealthChart"></div>
+                        </div>
+                        <div class="hrms-chart-card">
+                            <h3 class="hrms-chart-title">Least recently seen</h3>
+                            <p class="hrms-chart-sub">Hours since last heartbeat</p>
+                            <div class="hrms-chart" id="svcStaleChart"></div>
+                        </div>
+                    </div>
+
                     <div class="services-grid-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Platform Services</div>
                     <div class="services-grid" id="servicesGrid">
                         <div class="loading-spinner">
@@ -249,6 +265,20 @@
                             </svg>
                             Create User
                         </button>
+                    </div>
+
+                    <!-- People visuals from the same user list rendered below -->
+                    <div class="hrms-charts" id="userChartsWrap" style="display:none;">
+                        <div class="hrms-chart-card">
+                            <h3 class="hrms-chart-title">Users added per month</h3>
+                            <p class="hrms-chart-sub">Account growth</p>
+                            <div class="hrms-chart" id="userGrowthChart"></div>
+                        </div>
+                        <div class="hrms-chart-card">
+                            <h3 class="hrms-chart-title">Product access</h3>
+                            <p class="hrms-chart-sub">Users entitled per app</p>
+                            <div class="hrms-chart" id="userProductChart"></div>
+                        </div>
                     </div>
 
                     <div class="users-table-container">
@@ -1253,6 +1283,8 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-charts.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auth/admin.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auth/admin-platform-compliance.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
