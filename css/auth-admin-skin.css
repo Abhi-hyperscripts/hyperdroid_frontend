@@ -1,0 +1,118 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN SKIN — suite-language paint pass for the Auth admin dashboard.
+   PAINT ONLY. The page keeps its structure, including the left settings
+   sidebar (system-wide pattern — it never moves). Scoped to
+   body.auth-admin-page so nothing else picks these rules up.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.auth-admin-page {
+  --adm-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  --adm-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  --adm-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+}
+
+/* ambient backdrop — cool/neutral, this is the platform-control surface */
+body.auth-admin-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 480px at 88% 112%, color-mix(in srgb, var(--brand-primary) 12%, transparent), transparent 68%),
+    radial-gradient(720px 400px at 6% -8%, color-mix(in srgb, #8b5cf6 9%, transparent), transparent 70%);
+  background-repeat: no-repeat;
+}
+
+/* ── type ─────────────────────────────────────────────────────────────────── */
+body.auth-admin-page h1,
+body.auth-admin-page .sidebar-header h3,
+body.auth-admin-page .section-title,
+body.auth-admin-page .services-grid-label {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  letter-spacing: -0.01em;
+}
+body.auth-admin-page .health-stat-value,
+body.auth-admin-page .summary-stat-value,
+body.auth-admin-page .services-count-badge {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+}
+body.auth-admin-page .data-table td,
+body.auth-admin-page .data-table th { font-variant-numeric: tabular-nums; }
+
+/* ── sidebar: same place, glass paint ─────────────────────────────────────── */
+body.auth-admin-page .sidebar-nav-panel,
+[data-theme="dark"] body.auth-admin-page .sidebar-nav-panel,
+[data-theme="light"] body.auth-admin-page .sidebar-nav-panel {
+  background: var(--adm-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border-right: 1px solid var(--adm-line);
+  box-shadow: none;
+}
+
+/* ── frost surfaces ───────────────────────────────────────────────────────── */
+body.auth-admin-page .health-stat,
+body.auth-admin-page .service-card,
+body.auth-admin-page .license-status-card,
+body.auth-admin-page .license-info-card,
+body.auth-admin-page .license-services-card,
+body.auth-admin-page .subtenants-info-card,
+body.auth-admin-page .role-category-card,
+body.auth-admin-page .profile-section,
+body.auth-admin-page .data-table-container,
+body.auth-admin-page .empty-state {
+  position: relative;
+  background: var(--adm-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--adm-line);
+  overflow: hidden;
+}
+
+/* gloss sheen on the headline cards */
+body.auth-admin-page .health-stat::after,
+body.auth-admin-page .service-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 5%, transparent), transparent 30%);
+  pointer-events: none;
+}
+body.auth-admin-page .health-stat > *,
+body.auth-admin-page .service-card > * { position: relative; z-index: 1; }
+
+body.auth-admin-page .health-stat { transition: transform 0.15s ease, border-color 0.15s ease; }
+body.auth-admin-page .health-stat:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+
+body.auth-admin-page .data-table thead th {
+  background: transparent;
+  border-bottom: 1px solid var(--adm-line);
+}
+body.auth-admin-page .data-table tbody tr { border-bottom: 1px solid var(--adm-line); }
+body.auth-admin-page .data-table tbody tr:hover { background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+
+/* modals pick up the same gloss over their existing glass */
+body.auth-admin-page .modal-content { position: relative; }
+body.auth-admin-page .modal-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 6%, transparent), transparent 22%);
+  pointer-events: none;
+  z-index: 0;
+}
+body.auth-admin-page .modal-content > * { position: relative; z-index: 1; }
+
+/* inputs / search */
+body.auth-admin-page .form-control,
+body.auth-admin-page .apikey-input-wrapper,
+body.auth-admin-page select {
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  border-color: var(--adm-line);
+}
