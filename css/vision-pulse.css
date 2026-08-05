@@ -609,7 +609,8 @@ body.vision-dashboard .vis-day-count {
 
 body.vision-dashboard .vis-rows {
   border-radius: 14px;
-  overflow: hidden;
+  /* NOT overflow:hidden — a row's "more" menu is absolutely positioned inside
+     this container and was getting clipped by it. Round the end rows instead. */
   background: color-mix(in srgb, var(--bg-card) 55%, transparent);
   backdrop-filter: blur(18px) saturate(1.12);
   -webkit-backdrop-filter: blur(18px) saturate(1.12);
@@ -839,4 +840,394 @@ body.vision-dashboard .vis-more-info { font-family: var(--font-family-mono); fon
   body.vision-dashboard .vis-row { grid-template-columns: 58px 1fr; row-gap: 8px; }
   body.vision-dashboard .vis-row-actions { grid-column: 1 / -1; justify-content: flex-end; }
   body.vision-dashboard .vis-row-icons { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODALS & SLIDE PANELS — the last surfaces still on the old chrome.
+   Every dialog on this page shared a filled header bar, a bright circular
+   close button, matte inputs and a full-bleed saturated submit. They now
+   read like the rest of the page: dense glass, Bricolage title, mono
+   micro-labels, quiet actions.
+   Dense (93%) rather than the 55% used for in-page panes — a floating
+   surface has to carry its own readability over whatever sits behind it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* NOTE: .modal-content only for `position` — .slide-panel is `position: fixed`
+   and slides in with translateX(100%); making it `relative` drops it out of the
+   viewport-anchored layer entirely and the panel renders nowhere. */
+body.vision-dashboard .modal-content { position: relative; }
+
+body.vision-dashboard .modal-content,
+body.vision-dashboard .slide-panel {
+  background: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  backdrop-filter: blur(24px) saturate(1.15);
+  -webkit-backdrop-filter: blur(24px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 11%, transparent);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+body.vision-dashboard .slide-panel { border-radius: 18px 0 0 18px; }
+/* top gloss so the surface reads glossy, not flat-translucent */
+body.vision-dashboard .modal-content::before,
+body.vision-dashboard .slide-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-inverse, #fff) 6%, transparent), transparent 24%);
+  pointer-events: none;
+  z-index: 0;
+}
+body.vision-dashboard .modal-content > *,
+body.vision-dashboard .slide-panel > * { position: relative; z-index: 1; }
+
+/* ── header: a rule, not a filled bar ─────────────────────────────────────── */
+body.vision-dashboard .modal-header,
+body.vision-dashboard .panel-header {
+  background: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent);
+  padding: 18px 22px 14px;
+}
+body.vision-dashboard .modal-title,
+body.vision-dashboard .panel-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  text-transform: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* the close button was a saturated blue disc — make it a quiet ghost */
+body.vision-dashboard .modal-header .close-btn,
+body.vision-dashboard .panel-close-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+body.vision-dashboard .modal-header .close-btn:hover,
+body.vision-dashboard .panel-close-btn:hover {
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  color: var(--text-primary);
+}
+
+body.vision-dashboard .modal-body { padding: 20px 22px 22px; }
+
+/* ── labels: mono micro-caps, matching the ledger control strip ───────────── */
+body.vision-dashboard .modal-body .form-group > label:not(.toggle-switch),
+body.vision-dashboard .modal-body .schedule-field > small {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 400;
+}
+
+/* ── inputs ───────────────────────────────────────────────────────────────── */
+body.vision-dashboard .modal-body input[type="text"],
+body.vision-dashboard .modal-body input[type="date"],
+body.vision-dashboard .modal-body input[type="email"],
+body.vision-dashboard .modal-body input[type="time"],
+body.vision-dashboard .modal-body textarea,
+body.vision-dashboard .modal-body .form-control {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 9px 12px;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+body.vision-dashboard .modal-body input:focus,
+body.vision-dashboard .modal-body textarea:focus,
+body.vision-dashboard .modal-body .form-control:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+}
+body.vision-dashboard .modal-body textarea { min-height: 84px; resize: vertical; }
+/* the notes box was a near-empty 150px slab — let it start compact */
+body.vision-dashboard #meetingSettingsModal textarea { min-height: 92px; }
+
+/* ── segmented controls: meeting type + settings tabs ─────────────────────── */
+body.vision-dashboard .meeting-type-segmented,
+body.vision-dashboard .ms-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+body.vision-dashboard .segment-btn,
+body.vision-dashboard .ms-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+body.vision-dashboard .segment-btn:hover,
+body.vision-dashboard .ms-tab:hover { color: var(--text-primary); }
+/* active reads as selected, not as a saturated slab */
+body.vision-dashboard .segment-btn.active,
+body.vision-dashboard .ms-tab.active {
+  background: color-mix(in srgb, var(--brand-primary) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 40%, transparent);
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+/* ── helper copy ──────────────────────────────────────────────────────────── */
+body.vision-dashboard .form-help,
+body.vision-dashboard .modal-body .toggle-help {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 5px;
+}
+
+body.vision-dashboard .settings-warning {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
+}
+
+/* the AI tab's explainer block */
+body.vision-dashboard #meetingSettingsModal .ms-tab-pane .info-note,
+body.vision-dashboard #meetingSettingsModal .ms-tab-pane > div:first-child:not(.ms-row):not(.form-group) {
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+/* ── primary action: right-aligned, not a full-bleed bar ──────────────────── */
+body.vision-dashboard .modal-body form > .form-group:last-child:has(> .btn-primary),
+body.vision-dashboard .modal-body > .form-group:last-child:has(> .btn-primary),
+body.vision-dashboard .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent);
+  margin-bottom: 0;
+}
+body.vision-dashboard .modal-body .btn-primary {
+  /* .form-group is a column flex container, so `width: auto` alone still
+     stretches the button edge-to-edge — align-self is what actually sizes it. */
+  align-self: flex-end;
+  width: auto;
+  min-width: 150px;
+  height: 36px;
+  padding: 0 20px;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  background: var(--brand-primary);
+  color: var(--text-inverse, #fff);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+body.vision-dashboard .modal-body .btn-primary:hover { background: var(--brand-primary-hover); }
+
+/* ── dropdowns inside dialogs ─────────────────────────────────────────────────
+   The project picker's menu ran past the dialog's bottom edge and got clipped
+   mid-row. Cap it so it always fits inside the surface it opens in, and keep
+   it dense — a translucent menu over a translucent dialog is unreadable. */
+/* SearchableDropdown portals its menu to document.body (to escape modal
+   stacking contexts), so it is never a descendant of .modal-content — any
+   selector scoped there silently matches nothing. Target the portaled node
+   directly; it still sits inside body.vision-dashboard, so page scoping holds. */
+body.vision-dashboard .searchable-dropdown-menu--portaled,
+body.vision-dashboard .modal-content .searchable-dropdown-menu {
+  background: color-mix(in srgb, var(--bg-card) 97%, transparent);
+  backdrop-filter: blur(22px) saturate(1.15);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
+  border-radius: 11px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+/* The list scrolls, so its bottom row lands mid-text and reads as a clipping
+   bug. Fade it — a soft edge says "more below" at any scroll position, without
+   depending on the row height dividing evenly into the max-height. */
+body.vision-dashboard .searchable-dropdown-menu--portaled .searchable-dropdown-options,
+body.vision-dashboard .modal-content .searchable-dropdown-options {
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 24px), transparent);
+}
+
+/* ── slide panels ─────────────────────────────────────────────────────────── */
+body.vision-dashboard .panel-body { padding: 18px 20px; }
+body.vision-dashboard .panel-empty h3,
+body.vision-dashboard .panel-body h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 0.98rem;
+  color: var(--text-primary);
+}
+
+/* ── overrides for two rules that outrank the block above ─────────────────────
+   glassmorphic-modal.css paints .close-btn with `background: !important`, and
+   .form-group is a column flex container, so a stretched .btn-full ignores
+   `width: auto` (align-items: stretch governs the cross size, not width). */
+body.vision-dashboard .modal-header .close-btn,
+body.vision-dashboard .modal-header .close-btn:hover {
+  background: none !important;
+  color: var(--text-muted) !important;
+  border-radius: 9px;
+  width: 30px;
+  height: 30px;
+  box-shadow: none;
+  padding: 0;
+}
+body.vision-dashboard .modal-header .close-btn:hover {
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent) !important;
+  color: var(--text-primary) !important;
+  transform: none;
+}
+body.vision-dashboard .modal-header .close-btn svg {
+  stroke: currentColor !important;
+  width: 15px;
+  height: 15px;
+}
+
+/* right-align the submit instead of a full-bleed bar */
+body.vision-dashboard .modal-body .btn-full {
+  align-self: flex-end;
+  width: auto;
+  min-width: 160px;
+}
+
+/* ── settings-modal specifics ─────────────────────────────────────────────── */
+/* .settings-row draws a border-bottom and only clears it on :last-child. The
+   toggles sit in a two-column grid, so the LEFT one is never last and kept a
+   stray rule hanging under its help text. The modal groups clearly enough
+   without them. */
+body.vision-dashboard .modal-body .settings-row { border-bottom: none; }
+
+/* toggle labels are sentence-case UI text, not micro-labels */
+body.vision-dashboard .modal-body label.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-primary);
+  margin-bottom: 0;
+  cursor: pointer;
+}
+body.vision-dashboard .modal-body .settings-row > small,
+body.vision-dashboard .modal-body .form-group > small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* selects (schedule time pickers, meeting mode) match the text inputs */
+body.vision-dashboard .modal-body select,
+body.vision-dashboard .modal-body .form-select {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 9px 12px;
+  height: auto;
+}
+body.vision-dashboard .modal-body select:focus,
+body.vision-dashboard .modal-body .form-select:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--brand-primary) 55%, transparent);
+}
+
+/* the action row already carries the divider; drop the group's own margin */
+body.vision-dashboard .modal-body .ms-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--text-primary) 9%, transparent);
+  margin-bottom: 0;
+}
+
+/* ── row menu: clipping + stacking ────────────────────────────────────────── */
+body.vision-dashboard .vis-rows > .vis-row:first-child {
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+body.vision-dashboard .vis-rows > .vis-row:last-child {
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+}
+/* styles.css raises the row holding an open menu via .meeting-card-v2, which
+   this redesign no longer uses — without it the menu paints under later rows. */
+body.vision-dashboard .vis-row:has(.share-dot-dropdown.open) {
+  position: relative;
+  z-index: 20;
+}
+body.vision-dashboard .share-dot-dropdown.open-up {
+  top: auto;
+  bottom: 100%;
+  margin-bottom: 6px;
+}
+
+/* A flipped-up row menu paints under .vis-controls, which sits at z-index 5 in
+   the same stacking context — the row's own z-index can't beat it from inside
+   .vis-ledger. Raise the ledger only while a menu is open, so the control strip
+   keeps its normal precedence the rest of the time. (The strip's own dropdowns
+   portal to body at a far higher z-index, so they are unaffected either way.) */
+body.vision-dashboard .vis-ledger:has(.share-dot-dropdown.open) {
+  position: relative;
+  z-index: 30;
+}
+
+/* The settings Notes box opened at ~140px (rows="6") holding two lines of
+   text. styles.css pins it with `height: auto !important` on
+   `#meetingSettingsModal .settings-row textarea`, so this has to match that
+   weight to land. Still resizable by drag. */
+body.vision-dashboard #meetingSettingsModal textarea,
+body.vision-dashboard #meetingSettingsModal .settings-row textarea {
+  height: 96px !important;
+  min-height: 96px !important;
 }

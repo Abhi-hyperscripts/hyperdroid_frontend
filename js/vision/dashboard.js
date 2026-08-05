@@ -1878,9 +1878,20 @@ function toggleShareMenu(event) {
     const wasOpen = dropdown.classList.contains('open');
 
     // Close all open menus first
-    document.querySelectorAll('.share-dot-dropdown.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.share-dot-dropdown.open').forEach(d => {
+        d.classList.remove('open');
+        d.classList.remove('open-up');
+    });
 
-    if (!wasOpen) dropdown.classList.add('open');
+    if (!wasOpen) {
+        dropdown.classList.add('open');
+        // The menu always opened downward, so on rows near the bottom of the
+        // viewport its last item ("Send Email Invite") rendered off-screen and
+        // could not be reached. Flip it above the trigger when it doesn't fit.
+        dropdown.classList.remove('open-up');
+        const rect = dropdown.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight - 8) dropdown.classList.add('open-up');
+    }
 }
 
 // Close menus on any outside click
