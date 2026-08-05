@@ -792,3 +792,103 @@ body.email-page .email-cmp-editor-wrap .tox-tinymce { flex: 1 1 auto; min-height
 /* let the dialog use the window rather than sitting in a fixed box */
 body.email-page .email-cmp-modal { max-height: 100%; display: flex; flex-direction: column; }
 body.email-page .email-cmp-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WHY THE MEETINGS LEDGER READS BETTER THAN THIS LIST
+   It is not colour — both use the same tokens. It is four things the ledger
+   has and this pane did not: air, a real header, labelled controls, and a
+   hard split between primary and secondary text. Applied here, kept tighter
+   because a mailbox has to show many more rows than a meeting ledger does.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. A header instead of a small bold word. */
+body.email-page .email-list-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 18px 2px;
+}
+body.email-page #folderTitle {
+  font-size: 1.35rem !important;
+  line-height: 1.15;
+}
+body.email-page .email-list-title::after {
+  content: 'every message in this view';
+  display: none;
+}
+body.email-page .email-list-title-count {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* 2. Focused/Other as a real segmented control rather than two loose words. */
+/* The select-all checkbox and refresh button are siblings of the two tabs, so
+   putting the pill on the container swallowed them — a checkbox rendered
+   inside a segmented control. Keep the container a plain row and pill only
+   the tabs themselves. */
+body.email-page .email-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 18px 0;
+  padding: 0;
+  background: none;
+  border: none;
+  width: auto;
+}
+body.email-page .email-filter-tabs #btnRefresh { margin-left: auto; }
+body.email-page .email-filter-tab {
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--em-line);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+body.email-page .email-filter-tab:hover { color: var(--text-secondary); }
+body.email-page .email-filter-tab.active {
+  background: color-mix(in srgb, var(--em-accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--em-accent) 38%, transparent);
+  color: var(--em-accent);
+  font-weight: 600;
+}
+
+/* 3. Air. The ledger's rows breathe; these were packed edge to edge. */
+body.email-page .email-list-search { margin: 12px 18px; width: calc(100% - 36px); }
+body.email-page .email-row { padding-top: 11px; padding-bottom: 11px; padding-right: 14px; }
+body.email-page .email-rows { padding-bottom: 12px; }
+
+/* 4. Hierarchy. Sender and subject were near-identical weights competing with
+      the snippet; the ledger separates title / meta hard. */
+body.email-page .email-row .row-sender { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+body.email-page .email-row .row-subject { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+body.email-page .email-row .row-snippet { font-size: 11.5px; color: color-mix(in srgb, var(--text-muted) 82%, transparent); }
+body.email-page .email-row.unread .row-sender { color: var(--text-secondary); font-weight: 600; }
+body.email-page .email-row.unread .row-subject { color: var(--text-primary); font-weight: 700; }
+
+/* day dividers get the ledger's rule treatment rather than a plain band */
+body.email-page .email-date-separator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px 7px;
+  border-bottom: none;
+  background: none;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+body.email-page .email-date-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}

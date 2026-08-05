@@ -1550,18 +1550,10 @@ async function saveInvoice(approve) {
         return;
     }
 
-    // The backend requires all-or-nothing tax tagging: every line the SAME config, or none (default).
-    // Catch both "mixed slabs" and "some taxed + some exempt" here with a clear message instead of a 400.
-    const taggedCount = lines.filter(l => l.tax_config_id).length;
-    const distinctTaxConfigs = [...new Set(lines.map(l => l.tax_config_id).filter(Boolean))];
-    if (distinctTaxConfigs.length > 1) {
-        Toast.error('All line items must use the same tax rate. Set every line to the same GST/tax option before saving.');
-        return;
-    }
-    if (taggedCount > 0 && taggedCount < lines.length) {
-        Toast.error('Either apply the same tax option to every line, or set them all to "No tax". Mixing taxed and tax-exempt lines is not allowed.');
-        return;
-    }
+    // Per-line tax: mixed slabs and a taxed + "No tax" mix are BOTH valid — the backend groups the
+    // lines by tax config and taxes each group at its own rate, and an untagged line is genuinely
+    // exempt. The old all-or-nothing pre-checks that lived here are gone with the backend guards
+    // they mirrored; re-adding one would silently disable the per-line dropdown again.
 
     // Backend CreateCustomerInvoiceRequest has NO `status` field — passing
     // status:'approved' here was silently dropped, so "Save & Approve" only ever
