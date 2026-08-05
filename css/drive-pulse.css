@@ -1,0 +1,641 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DRIVE — Pulse redesign.
+   The page was a bare heading, a full-width "N bytes used" slab, and a grid of
+   identical boxes each carrying four always-visible buttons. No rail, no
+   search, no sort, no dates, and no thumbnails on a file manager.
+   Loaded last, scoped to body.drive-page.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.drive-page {
+  --dv-accent: #FB923C;                                   /* Drive's rail accent */
+  --dv-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  --dv-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  --dv-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  padding-left: 78px;
+}
+
+body.drive-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 480px at 90% 112%, color-mix(in srgb, var(--dv-accent) 9%, transparent), transparent 68%),
+    radial-gradient(720px 400px at 4% -8%, color-mix(in srgb, var(--brand-primary) 10%, transparent), transparent 70%);
+  background-repeat: no-repeat;
+}
+
+/* ── rail ─────────────────────────────────────────────────────────────────── */
+body.drive-page .pulse-rail {
+  position: fixed !important;
+  top: 52px; left: 0; bottom: 0;
+  width: 78px;
+  z-index: 40 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  background: var(--dv-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border-right: 1px solid var(--dv-line);
+}
+body.drive-page .rail-item {
+  width: 62px;
+  padding: 9px 0 7px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: background 0.14s ease;
+}
+body.drive-page .rail-item:hover { background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+body.drive-page .rail-item.active { background: color-mix(in srgb, var(--dv-accent) 15%, transparent); }
+body.drive-page .rail-item .ric { width: 20px; height: 20px; }
+body.drive-page .rail-item .ric svg { width: 100%; height: 100%; display: block; }
+body.drive-page .rail-item span {
+  font-family: var(--font-family-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+body.drive-page .rail-item.active span { color: var(--dv-accent); }
+
+/* ── hero ─────────────────────────────────────────────────────────────────── */
+body.drive-page .dv-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 22px 0 16px;
+}
+body.drive-page .dv-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0;
+}
+body.drive-page .dv-crumb {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+body.drive-page .dv-crumb a { color: var(--text-secondary); text-decoration: none; cursor: pointer; }
+body.drive-page .dv-crumb a:hover { color: var(--dv-accent); }
+body.drive-page .dv-crumb .sep { opacity: 0.4; }
+body.drive-page .dv-crumb .cur { color: var(--text-primary); font-weight: 600; }
+
+body.drive-page .dv-hero-actions { display: flex; align-items: center; gap: 8px; }
+
+/* ── storage meter — the signature element ────────────────────────────────────
+   Replaces a full-width slab that only ever said "N bytes used": a segmented
+   bar showing what the space is actually made of, plus mono counts. */
+body.drive-page .dv-meter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  padding: 16px 20px;
+  border-radius: 15px;
+  background: var(--dv-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--dv-line);
+  margin-bottom: 16px;
+}
+body.drive-page .dv-meter-head {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+body.drive-page .dv-meter-used {
+  font-family: var(--font-family-mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+body.drive-page .dv-meter-label {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+body.drive-page .dv-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+  gap: 2px;
+}
+body.drive-page .dv-bar span { display: block; height: 100%; border-radius: 3px; }
+body.drive-page .dv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 11px;
+}
+body.drive-page .dv-legend i {
+  width: 8px; height: 8px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+body.drive-page .dv-legend span {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+body.drive-page .dv-legend b { color: var(--text-secondary); font-weight: 600; }
+
+body.drive-page .dv-counts { display: flex; gap: 8px; flex-wrap: wrap; }
+body.drive-page .dv-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--dv-line);
+  white-space: nowrap;
+}
+body.drive-page .dv-chip b {
+  font-family: var(--font-family-mono);
+  font-size: 14px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+body.drive-page .dv-chip span { font-size: 11.5px; color: var(--text-muted); }
+
+/* ── control strip ────────────────────────────────────────────────────────── */
+body.drive-page .dv-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 13px;
+  background: var(--dv-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--dv-line);
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 5;
+}
+body.drive-page .dv-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 240px;
+  min-width: 190px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--dv-line);
+  color: var(--text-muted);
+}
+body.drive-page .dv-search:focus-within { border-color: color-mix(in srgb, var(--dv-accent) 50%, transparent); }
+body.drive-page .dv-search input {
+  flex: 1; min-width: 0;
+  background: none; border: none; outline: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+}
+body.drive-page .dv-seg {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--dv-line);
+}
+body.drive-page .dv-seg button {
+  height: 26px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: none;
+  color: var(--text-muted);
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+body.drive-page .dv-seg button:hover { color: var(--text-secondary); }
+body.drive-page .dv-seg button.active {
+  background: color-mix(in srgb, var(--dv-accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--dv-accent) 38%, transparent);
+  color: var(--dv-accent);
+}
+body.drive-page .dv-ctl-lbl {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: 2px;
+}
+body.drive-page .dv-spacer { flex: 1 1 auto; }
+
+/* ── item grid ────────────────────────────────────────────────────────────── */
+body.drive-page .drive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: 12px;
+}
+
+body.drive-page .drive-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-radius: 14px;
+  background: var(--dv-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--dv-line);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+body.drive-page .drive-item:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--dv-accent) 34%, transparent);
+}
+
+/* preview tile — a real thumbnail for images, a tinted glyph otherwise */
+body.drive-page .dv-tile {
+  position: relative;
+  height: 108px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  border-bottom: 1px solid var(--dv-line);
+  overflow: hidden;
+}
+body.drive-page .dv-tile img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+body.drive-page .dv-tile svg { width: 34px; height: 34px; }
+body.drive-page .dv-tile.is-folder { background: color-mix(in srgb, var(--dv-accent) 10%, transparent); }
+
+body.drive-page .dv-body { padding: 10px 12px 11px; min-width: 0; }
+body.drive-page .drive-item-name {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body.drive-page .drive-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+body.drive-page .drive-item-meta .sep { opacity: 0.45; }
+
+/* type tag on the tile */
+body.drive-page .dv-tag {
+  position: absolute;
+  top: 8px; left: 8px;
+  font-family: var(--font-family-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--bg-card) 82%, transparent);
+  border: 1px solid var(--dv-line);
+  color: var(--text-secondary);
+}
+
+/* actions: hidden until hover — twenty buttons competed for attention before */
+body.drive-page .drive-item-actions {
+  position: absolute;
+  top: 7px; right: 7px;
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--dv-glass-dense);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--dv-line);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.14s ease;
+  z-index: 2;
+}
+body.drive-page .drive-item:hover .drive-item-actions,
+body.drive-page .drive-item:focus-within .drive-item-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+body.drive-page .drive-item-actions .action-btn {
+  display: grid;
+  place-items: center;
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+body.drive-page .drive-item-actions .action-btn:hover {
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+  color: var(--text-primary);
+}
+body.drive-page .drive-item-actions .action-btn-danger:hover {
+  background: color-mix(in srgb, var(--color-error) 16%, transparent);
+  color: var(--color-error);
+}
+
+/* star + share badges */
+body.drive-page .star-card-btn {
+  position: absolute;
+  bottom: 9px; right: 9px;
+  width: 22px; height: 22px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+body.drive-page .drive-item:hover .star-card-btn,
+body.drive-page .star-card-btn.starred { opacity: 1; }
+body.drive-page .star-card-btn:hover { background: color-mix(in srgb, var(--text-primary) 10%, transparent); }
+
+/* ── list view ────────────────────────────────────────────────────────────── */
+body.drive-page .drive-table-wrap {
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--dv-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--dv-line);
+}
+body.drive-page .drive-table-wrap .data-table { width: 100%; border-collapse: collapse; }
+body.drive-page .drive-table-wrap thead th {
+  background: none;
+  border-bottom: 1px solid var(--dv-line);
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 400;
+  text-align: left;
+  padding: 11px 14px;
+}
+body.drive-page .drive-table-wrap tbody td {
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+  padding: 10px 14px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+body.drive-page .drive-table-wrap tbody tr:last-child td { border-bottom: none; }
+body.drive-page .drive-table-wrap tbody tr:hover { background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+
+/* ── blank states ─────────────────────────────────────────────────────────── */
+body.drive-page .dv-blank {
+  padding: 56px 24px;
+  text-align: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-card) 42%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px dashed color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+body.drive-page .dv-blank h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+body.drive-page .dv-blank p { font-size: 12.5px; color: var(--text-muted); margin: 0 0 16px; }
+
+/* the root-level notice was a permanent amber alert; make it a quiet hint */
+body.drive-page .upload-notice {
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  border: 1px solid var(--dv-line);
+  border-radius: 11px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 9px 13px;
+}
+body.drive-page .upload-notice svg { color: var(--text-muted); }
+
+/* ── buttons ──────────────────────────────────────────────────────────────── */
+body.drive-page .drive-actions .btn,
+body.drive-page .dv-hero-actions .btn {
+  height: 34px;
+  padding: 0 15px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+body.drive-page .dv-hero-actions .btn-primary {
+  background: var(--dv-accent);
+  border: 1px solid color-mix(in srgb, var(--dv-accent) 60%, transparent);
+  color: #1a1005;
+}
+body.drive-page .dv-hero-actions .btn-primary:hover { filter: brightness(1.07); }
+body.drive-page .dv-hero-actions .btn-secondary,
+body.drive-page .dv-hero-actions .btn-icon {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--dv-line);
+  color: var(--text-secondary);
+}
+body.drive-page .dv-hero-actions .btn-secondary:hover,
+body.drive-page .dv-hero-actions .btn-icon:hover { border-color: color-mix(in srgb, var(--dv-accent) 45%, transparent); }
+
+/* ── modals ───────────────────────────────────────────────────────────────── */
+body.drive-page .modal-content {
+  position: relative;
+  background: var(--dv-glass-dense);
+  backdrop-filter: blur(24px) saturate(1.15);
+  -webkit-backdrop-filter: blur(24px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 11%, transparent);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+body.drive-page .modal-header {
+  background: none;
+  border-bottom: 1px solid var(--dv-line);
+  padding: 18px 22px 14px;
+}
+body.drive-page .modal-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+body.drive-page .modal-header .close-btn,
+body.drive-page .modal-header .close-btn:hover {
+  background: none !important;
+  color: var(--text-muted) !important;
+  border-radius: 9px;
+  width: 30px; height: 30px;
+  box-shadow: none;
+  padding: 0;
+}
+body.drive-page .modal-header .close-btn:hover {
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent) !important;
+  color: var(--text-primary) !important;
+  transform: none;
+}
+body.drive-page .modal-header .close-btn svg { stroke: currentColor !important; }
+body.drive-page .modal-body { padding: 20px 22px 22px; }
+body.drive-page .modal-body .form-group > label {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+body.drive-page .modal-body input[type="text"],
+body.drive-page .modal-body textarea,
+body.drive-page .modal-body .form-control {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--dv-line);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 9px 12px;
+}
+body.drive-page .modal-body input:focus,
+body.drive-page .modal-body textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--dv-accent) 55%, transparent);
+}
+body.drive-page .modal-body .btn-primary {
+  align-self: flex-end;
+  width: auto;
+  min-width: 150px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--dv-accent);
+  border: 1px solid color-mix(in srgb, var(--dv-accent) 60%, transparent);
+  color: #1a1005;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* upload dropzone */
+body.drive-page .upload-dropzone {
+  border: 1px dashed color-mix(in srgb, var(--text-primary) 16%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  padding: 34px 20px;
+}
+body.drive-page .upload-dropzone:hover {
+  border-color: color-mix(in srgb, var(--dv-accent) 50%, transparent);
+  background: color-mix(in srgb, var(--dv-accent) 7%, transparent);
+}
+
+/* ── mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  body.drive-page { padding-left: 0; }
+  body.drive-page .pulse-rail { display: none; }
+  body.drive-page .dv-meter { grid-template-columns: 1fr; gap: 14px; }
+}
+
+/* ── tabs ─────────────────────────────────────────────────────────────────────
+   The two tabs carried hardcoded inline colours and a 2px underline. Restyled
+   as the same segmented control used everywhere else; the inline styles are
+   overridden rather than edited so switchDriveTab() keeps working untouched. */
+body.drive-page .drive-view-tabs {
+  border-bottom: none !important;
+  gap: 4px !important;
+  padding: 4px;
+  margin-bottom: 16px !important;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--dv-line);
+  width: fit-content;
+}
+body.drive-page .drive-tab {
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  padding: 0 14px !important;
+  height: 30px;
+  border-radius: 7px !important;
+  border: 1px solid transparent !important;
+  font-size: 12.5px !important;
+  color: var(--text-muted) !important;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+body.drive-page .drive-tab:hover { color: var(--text-secondary) !important; }
+body.drive-page .drive-tab.active {
+  background: color-mix(in srgb, var(--dv-accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--dv-accent) 38%, transparent) !important;
+  color: var(--dv-accent) !important;
+}
+
+/* the view toggle rendered as a bare dot — give the icon a real box */
+body.drive-page #viewToggleBtn {
+  width: 34px;
+  padding: 0 !important;
+  display: grid;
+  place-items: center;
+}
+body.drive-page #viewToggleBtn svg { width: 17px; height: 17px; }
+
+/* The tag is an absolutely positioned child of a grid container, so the
+   container's place-items:center was resizing it — it rendered as a tall dark
+   band with the label clipped to a few characters. Pin it to its content. */
+body.drive-page .dv-tag {
+  width: max-content;
+  height: max-content;
+  line-height: 1.5;
+}
+
+/* The preview tile rendered as a narrow vertical strip the width of its icon
+   instead of spanning the card. drive.css sets `align-items: center` on
+   .drive-item, and in a column flex container that shrinks every child to its
+   own content width — so the tile collapsed around the 34px glyph and its
+   background read as a rectangular band behind the icon. */
+body.drive-page .drive-item { align-items: stretch; }
+body.drive-page .dv-tile,
+body.drive-page .dv-body { width: 100%; }

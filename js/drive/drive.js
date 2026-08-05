@@ -375,9 +375,69 @@ function updateUploadButtonState() {
     }
 }
 
+let driveQuery = '';
+let driveType = 'all';
+let driveSort = 'name';
+
+function driveTypeOf(file) {
+    const ct = (file.contentType || '').toLowerCase();
+    const ext = (file.fileName || '').split('.').pop().toLowerCase();
+    if (ct.startsWith('image/')) return 'image';
+    if (ct === 'application/pdf' || ['doc', 'docx', 'txt', 'rtf', 'md', 'ppt', 'pptx'].includes(ext)) return 'doc';
+    if (['csv', 'xls', 'xlsx', 'json', 'xml', 'tsv'].includes(ext)) return 'data';
+    return 'other';
+}
+
+function setDriveType(t) {
+    driveType = t;
+    document.querySelectorAll('#dvTypeSeg button').forEach(b => b.classList.toggle('active', b.dataset.dvType === t));
+    applyDriveFilters();
+}
+
+function setDriveSort(s) {
+    driveSort = s;
+    document.querySelectorAll('#dvSortSeg button').forEach(b => b.classList.toggle('active', b.dataset.dvSort === s));
+    applyDriveFilters();
+}
+
+// Search, type and sort all narrow the same list, so they run through one path
+// rather than each re-reading the server.
+function applyDriveFilters() {
+    driveQuery = (document.getElementById('dvSearch')?.value || '').trim().toLowerCase();
+    let folders = (cachedFolders || []).slice();
+    let files = (cachedFiles || []).slice();
+
+    if (driveType !== 'all') {
+        folders = [];                                  // a folder has no file type
+        files = files.filter(f => driveTypeOf(f) === driveType);
+    }
+    if (driveQuery) {
+        folders = folders.filter(f => (f.folderName || '').toLowerCase().includes(driveQuery));
+        files = files.filter(f => (f.fileName || '').toLowerCase().includes(driveQuery));
+    }
+
+    const byName = (a, b) => a.localeCompare(b);
+    if (driveSort === 'name') {
+        folders.sort((a, b) => byName(a.folderName || '', b.folderName || ''));
+        files.sort((a, b) => byName(a.fileName || '', b.fileName || ''));
+    } else if (driveSort === 'size') {
+        folders.sort((a, b) => (b.totalSize || 0) - (a.totalSize || 0));
+        files.sort((a, b) => (b.fileSize || 0) - (a.fileSize || 0));
+    } else {
+        files.sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0));
+    }
+
+    paintDriveContents(folders, files, true);
+}
+
 function renderDriveContents(folders, files) {
     cachedFolders = folders;
     cachedFiles = files;
+    updateStorageBreakdown(folders, files);
+    applyDriveFilters();
+}
+
+function paintDriveContents(folders, files, filtered) {
 
     const container = document.getElementById('driveContents');
     const emptyState = document.getElementById('emptyState');
@@ -385,6 +445,20 @@ function renderDriveContents(folders, files) {
     container.innerHTML = '';
 
     if (folders.length === 0 && files.length === 0) {
+        const narrowing = driveQuery || driveType !== 'all';
+        if (narrowing) {
+            // "This folder is empty" would be a lie when a chip or a search
+            // term is what emptied it.
+            emptyState.style.display = 'none';
+            const total = (cachedFolders || []).length + (cachedFiles || []).length;
+            container.innerHTML = `
+                <div class="dv-blank" style="grid-column: 1 / -1;">
+                    <h3>Nothing matches</h3>
+                    <p>${total} item${total === 1 ? '' : 's'} in this folder</p>
+                    <button type="button" class="btn btn-secondary" onclick="clearDriveFilters()">Clear filters</button>
+                </div>`;
+            return;
+        }
         emptyState.style.display = 'flex';
         return;
     }
@@ -404,7 +478,53 @@ function renderDriveContents(folders, files) {
         files.forEach(file => {
             container.appendChild(createFileCard(file));
         });
+        loadDriveThumbnails();
     }
+}
+
+function clearDriveFilters() {
+    const box = document.getElementById('dvSearch');
+    if (box) box.value = '';
+    driveQuery = '';
+    setDriveType('all');
+}
+
+// The storage panel only ever printed a total. Break it down by what is
+// actually stored so the number means something.
+const DRIVE_TYPE_COLOURS = { image: '#A78BFA', doc: '#FB923C', data: '#22c55e', other: '#64748B', folders: '#4CC9F0' };
+const DRIVE_TYPE_LABELS = { image: 'Images', doc: 'Documents', data: 'Data', other: 'Other', folders: 'In folders' };
+
+function updateStorageBreakdown(folders, files) {
+    const bar = document.getElementById('dvBar');
+    const legend = document.getElementById('dvLegend');
+    const counts = document.getElementById('dvCounts');
+    if (!bar || !legend || !counts) return;
+
+    const buckets = { image: 0, doc: 0, data: 0, other: 0 };
+    (files || []).forEach(f => { buckets[driveTypeOf(f)] += (f.fileSize || 0); });
+    // At root there are no loose files — everything lives inside folders, so a
+    // breakdown of "files here" would read as an empty drive. Count the folders'
+    // own totals as one segment instead.
+    const inFolders = (folders || []).reduce((a, f) => a + (f.totalSize || 0), 0);
+    const total = Object.values(buckets).reduce((a, b) => a + b, 0) + inFolders;
+
+    if (!total) {
+        bar.innerHTML = '';
+        legend.innerHTML = '<span>No files in this folder yet</span>';
+    } else {
+        const segs = Object.entries(buckets).filter(([, v]) => v > 0);
+        if (inFolders > 0) segs.push(['folders', inFolders]);
+        bar.innerHTML = segs
+            .map(([k, v]) => `<span style="width:${(v / total * 100).toFixed(2)}%;background:${DRIVE_TYPE_COLOURS[k]}"></span>`)
+            .join('');
+        legend.innerHTML = segs
+            .map(([k, v]) => `<span><i style="background:${DRIVE_TYPE_COLOURS[k]}"></i>${DRIVE_TYPE_LABELS[k]} <b>${formatBytes(v)}</b></span>`)
+            .join('');
+    }
+
+    counts.innerHTML =
+        `<span class="dv-chip"><b>${(files || []).length}</b><span>file${(files || []).length === 1 ? '' : 's'}</span></span>` +
+        `<span class="dv-chip"><b>${(folders || []).length}</b><span>folder${(folders || []).length === 1 ? '' : 's'}</span></span>`;
 }
 
 function renderTableView(folders, files) {
@@ -533,15 +653,17 @@ function createFolderCard(folder) {
     card.setAttribute('data-name', folder.folderName);
 
     card.innerHTML = `
-        <div class="drive-item-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
-            ${formatShareBadge(folder.shares)}
+        <div class="dv-tile is-folder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FB923C" stroke-width="1.6"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         </div>
-        <div class="drive-item-info">
-            <span class="drive-item-name" title="${folder.folderName}">${folder.folderName}</span>
-            <span class="drive-item-meta">${folder.fileCount} files, ${formatBytes(folder.totalSize)}</span>
+        <div class="dv-body">
+            <span class="drive-item-name" title="${escapeHtml(folder.folderName)}">${escapeHtml(folder.folderName)}</span>
+            <span class="drive-item-meta">
+                <span>${folder.fileCount} file${folder.fileCount === 1 ? '' : 's'}</span>
+                <span class="sep">·</span>
+                <span>${formatBytes(folder.totalSize)}</span>
+                ${formatShareBadge(folder.shares)}
+            </span>
         </div>
         <div class="drive-item-actions">
             <button class="action-btn" onclick="event.stopPropagation(); openFolder('${folder.folderId}', '${escapeHtml(folder.folderName)}')" data-tooltip="Open">
@@ -583,41 +705,41 @@ function createFileCard(file) {
     card.setAttribute('data-name', file.fileName);
 
     const icon = getFileIcon(file.contentType, file.fileName);
+    const ext = (file.fileName.split('.').pop() || '').toUpperCase().slice(0, 4);
+    const isImage = (file.contentType || '').toLowerCase().startsWith('image/');
+
+    // A file manager that shows a generic glyph for every image is guessing on
+    // the user's behalf. Images get a real thumbnail, fetched lazily below.
+    const tile = `<div class="dv-tile"${isImage ? ` data-thumb="${file.fileId}"` : ''}>`
+        + icon
+        + `<span class="dv-tag">${escapeHtml(ext)}</span></div>`;
 
     card.innerHTML = `
+        ${tile}
+        <div class="dv-body">
+            <span class="drive-item-name" title="${escapeHtml(file.fileName)}">${escapeHtml(file.fileName)}</span>
+            <span class="drive-item-meta">
+                <span>${formatBytes(file.fileSize)}</span>
+                <span class="sep">·</span>
+                <span>${formatDriveDate(file.createdAt)}</span>
+                ${formatShareBadge(file.shares)}
+            </span>
+        </div>
         <button class="star-card-btn ${file.isStarred ? 'starred' : ''}" onclick="event.stopPropagation(); toggleStarFile('${file.fileId}', ${file.isStarred})" title="${file.isStarred ? 'Unstar' : 'Star'}">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="${file.isStarred ? 'var(--color-warning)' : 'none'}" stroke="${file.isStarred ? 'var(--color-warning)' : 'currentColor'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="${file.isStarred ? 'var(--color-warning)' : 'none'}" stroke="${file.isStarred ? 'var(--color-warning)' : 'currentColor'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </button>
-        <div class="drive-item-icon">
-            ${icon}
-            ${formatShareBadge(file.shares)}
-        </div>
-        <div class="drive-item-info">
-            <span class="drive-item-name" title="${file.fileName}">${file.fileName}</span>
-            <span class="drive-item-meta">${formatBytes(file.fileSize)}</span>
-        </div>
         <div class="drive-item-actions">
-            <button class="action-btn" onclick="event.stopPropagation(); downloadFile('${file.fileId}')" data-tooltip="Download">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
+            <button class="action-btn" onclick="event.stopPropagation(); downloadFile('${file.fileId}')" data-tooltip="Open">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
             <button class="action-btn" onclick="event.stopPropagation(); shareItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" data-tooltip="Share">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                </svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </button>
             <button class="action-btn" onclick="event.stopPropagation(); renameItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" data-tooltip="Rename">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${file.fileId}', 'file', '${escapeHtml(file.fileName)}')" data-tooltip="Delete">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
         </div>
     `;
@@ -626,6 +748,46 @@ function createFileCard(file) {
     card.addEventListener('contextmenu', (e) => showContextMenu(e, file, 'file'));
 
     return card;
+}
+
+// createdAt was returned by the API all along but never shown, so every file
+// looked equally old. Short relative form for the common case.
+function formatDriveDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (days <= 0) return 'today';
+    if (days === 1) return 'yesterday';
+    if (days < 7) return days + 'd ago';
+    return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
+
+// Thumbnails need a presigned URL each, so they are fetched after render and
+// only for images actually on screen. Failures leave the glyph in place.
+async function loadDriveThumbnails() {
+    const tiles = document.querySelectorAll('.dv-tile[data-thumb]');
+    for (const tile of tiles) {
+        if (tile.dataset.thumbLoaded) continue;
+        tile.dataset.thumbLoaded = '1';
+        try {
+            const r = await api.getDownloadUrl(tile.dataset.thumb);
+            if (!r || !r.success || !r.url) continue;
+            const img = new Image();
+            img.alt = '';
+            // No loading="lazy" here: on a detached Image() the lazy hint can
+            // stop the fetch from ever starting, so onload never fires and the
+            // thumbnail silently never appears.
+            img.onload = () => {
+                const tag = tile.querySelector('.dv-tag');
+                tile.innerHTML = '';
+                tile.appendChild(img);
+                if (tag) tile.appendChild(tag);          // keep the type tag on top
+            };
+            img.onerror = () => { /* leave the glyph in place */ };
+            img.src = r.url;
+        } catch (_) { /* keep the glyph */ }
+    }
 }
 
 function getFileIcon(contentType, fileName) {
