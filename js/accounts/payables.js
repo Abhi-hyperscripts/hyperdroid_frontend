@@ -1043,18 +1043,23 @@ function calculateBillTotals() {
     const tbody = document.getElementById('billLinesBody');
     if (!tbody) return;
     let subtotal = 0;
-    let totalTax = 0;
+    const r2 = n => Math.round(n * 100) / 100;
+    // Match how the backend BOOKS the bill: subtotal = Σ round(qty×rate, 2), and tax summed PER DOCUMENT
+    // (per tax config) — the backend taxes each config's aggregated base ONCE. An unrounded per-line sum
+    // (or Σ round(line tax)) drifts a paisa vs the posted bill. Accumulate the base per config, round once
+    // below. Mirrors the hardened invoice-modal path (calculateInvoiceTotals).
+    const baseByConfig = new Map();
 
     tbody.querySelectorAll('tr').forEach(row => {
         const qty = parseFloat(row.querySelector('.line-qty')?.value) || 0;
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
-        const amt = qty * rate;
+        const amt = r2(qty * rate);
         subtotal += amt;
 
         const taxConfigId = row._lineTaxDropdown?.selectedValue || '';
         const taxPct = _billTaxRateFor(taxConfigId);
-        const lineTax = (amt * taxPct) / 100;
-        totalTax += lineTax;
+        if (taxPct > 0) baseByConfig.set(taxConfigId, (baseByConfig.get(taxConfigId) || 0) + amt);
+        const lineTax = (amt * taxPct) / 100;   // indicative per-row figure only (not summed into the doc total)
 
         const amtCell = row.querySelector('.line-amount');
         if (amtCell) {
@@ -1067,6 +1072,10 @@ function calculateBillTotals() {
             }
         }
     });
+
+    // Document tax: round each config group's aggregated base once (per-document), matching the backend.
+    let totalTax = 0;
+    for (const [cfgId, base] of baseByConfig) totalTax += r2(base * _billTaxRateFor(cfgId) / 100);
 
     const sub = document.getElementById('billSubtotal');
     const tax = document.getElementById('billTax');
