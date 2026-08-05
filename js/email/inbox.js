@@ -2059,9 +2059,58 @@ function escapeHtml(s) {
     })[c]);
 }
 
+// Senders ship colours for whichever background their template assumes, and
+// plenty of them (GitHub's notification mail among them) assume dark. We render
+// every message on a white card so the sender's own HTML looks the way they
+// built it — which turns those light greys into near-invisible text on white.
+// Rather than blacklist hex values, measure: any inline colour too light to sit
+// on white is dropped so the text inherits the card's own ink.
+// WCAG contrast against white is (1.0 + 0.05) / (L + 0.05). Solving for a
+// 3:1 floor gives L = 0.30 — anything lighter cannot reach 3:1 on #fff no
+// matter what, so it is dropped. Derived rather than eyeballed: my first
+// guess of 0.62 let rgb(200,205,210) through at roughly 1.5:1.
+const LIGHT_ON_WHITE_LUMA = 0.30;
+
+function _parseCssColour(v) {
+    const s = (v || '').trim().toLowerCase();
+    let m = s.match(/^#([0-9a-f]{3})$/);
+    if (m) return [0, 1, 2].map(i => parseInt(m[1][i] + m[1][i], 16));
+    m = s.match(/^#([0-9a-f]{6})$/);
+    if (m) return [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16));
+    m = s.match(/^rgba?\(([^)]+)\)$/);
+    if (m) {
+        const p = m[1].split(',').map(x => parseFloat(x));
+        if (p.length >= 3 && p.every(n => !isNaN(n))) return p.slice(0, 3);
+    }
+    return null;
+}
+
+// Relative luminance, sRGB gamma-corrected (WCAG).
+function _luma(rgb) {
+    const c = rgb.map(v => {
+        const x = Math.min(255, Math.max(0, v)) / 255;
+        return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+function stripUnreadableColours(root) {
+    root.querySelectorAll('[style]').forEach(el => {
+        const style = el.getAttribute('style') || '';
+        if (!/(^|;)\s*color\s*:/i.test(style)) return;
+        const m = style.match(/(^|;)\s*color\s*:\s*([^;]+)/i);
+        if (!m) return;
+        const rgb = _parseCssColour(m[2]);
+        if (!rgb) return;
+        if (_luma(rgb) < LIGHT_ON_WHITE_LUMA) return;      // dark enough, leave it
+        el.setAttribute('style', style.replace(/(^|;)\s*color\s*:[^;]+;?/i, '$1'));
+    });
+}
+
 function sanitizeHtml(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     doc.querySelectorAll('script, iframe, object, embed, link, meta, style').forEach(n => n.remove());
+    stripUnreadableColours(doc);
     doc.querySelectorAll('*').forEach(el => {
         [...el.attributes].forEach(attr => {
             const n = attr.name.toLowerCase();
