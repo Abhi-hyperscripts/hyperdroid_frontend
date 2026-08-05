@@ -577,6 +577,14 @@ body.email-page #composeSend:hover { filter: brightness(1.07); }
    ═══════════════════════════════════════════════════════════════════════════ */
 
 body.email-page .email-cmp-overlay {
+  /* The overlay centres inside the whole viewport, but a 52px fixed navbar
+     sits over the top of it — so a tall dialog "centred" was actually tucked
+     under the navbar with no gap. Reserve the navbar's height plus a margin
+     and centre in what is left. */
+  align-items: center;
+  justify-content: center;
+  padding: 76px 28px 32px;
+  box-sizing: border-box;
   background: rgba(6, 9, 16, 0.62) !important;
   backdrop-filter: blur(6px) saturate(0.9);
   -webkit-backdrop-filter: blur(6px) saturate(0.9);
@@ -588,8 +596,8 @@ body.email-page .email-cmp-modal {
   /* 880 was tuned to stop the Cc/Bcc control drifting from its row; that is
      now held by flex on the control itself, so the dialog can be as wide as
      writing actually wants. */
-  max-width: 1120px !important;
-  width: calc(100vw - 80px);
+  max-width: 1280px !important;
+  width: 100%;
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--text-primary) 11%, transparent);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
@@ -782,5 +790,5 @@ body.email-page .tox-tinymce:focus-within {
 body.email-page .email-cmp-editor-wrap { min-height: 440px; display: flex; }
 body.email-page .email-cmp-editor-wrap .tox-tinymce { flex: 1 1 auto; min-height: 440px !important; }
 /* let the dialog use the window rather than sitting in a fixed box */
-body.email-page .email-cmp-modal { max-height: calc(100vh - 72px); }
+body.email-page .email-cmp-modal { max-height: 100%; display: flex; flex-direction: column; }
 body.email-page .email-cmp-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
