@@ -63,6 +63,10 @@ function ensureComposeTmce() {
         statusbar: false,
         plugins: 'lists link image table code preview anchor autolink',
         toolbar: 'blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image table | code preview',
+        // Capping the compose modal at 880px left the toolbar too wide for one
+        // row, so it wrapped and stranded four buttons on a second line.
+        // Sliding keeps a single row and moves the overflow behind a chevron.
+        toolbar_mode: 'sliding',
         toolbar_mode: 'wrap',
         valid_elements: '*[*]',
         extended_valid_elements: '*[*]',
@@ -1883,11 +1887,19 @@ function openCompose(mode, replyTo) {
         const qDate = formatFullDate(replyTo.received_at || replyTo.sent_at || replyTo.created_at);
         // Marked up as a quote block rather than left as raw "> " lines, so the
         // editor renders it with a rule and wraps long lines.
+        // The block is already wrapped in <blockquote>, which draws the rule —
+        // prefixing every line with "> " on top of that doubled the quoting,
+        // and nested replies compounded it into ">>", ">>>". Strip any inbound
+        // markers and let the blockquote carry the meaning.
         const quoted = (replyTo.body_text || stripHtml(replyTo.body_html || '') || '')
-            .split('\n').map(l => '> ' + l).join('\n');
-        // Three empty paragraphs at the top so the caret has breathing room
-        // above the quoted block.
-        initialBodyHtml = `<p><br></p><p><br></p><p><br></p><p>On ${qDate}, ${escapeHtml(fromName)} wrote:</p><blockquote>${escapeHtml(quoted).replace(/\n/g, '<br>')}</blockquote>`;
+            .split('\n')
+            .map(l => l.replace(/^\s*(?:>\s?)+/, ''))
+            .join('\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+        // One empty paragraph is enough for the caret; three left ~100px of
+        // dead white space above the quote.
+        initialBodyHtml = `<p><br></p><p>On ${qDate}, ${escapeHtml(fromName)} wrote:</p><blockquote>${escapeHtml(quoted).replace(/\n/g, '<br>')}</blockquote>`;
     }
 
     window.EmailComposer.open({

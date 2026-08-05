@@ -764,3 +764,17 @@ body.email-page .email-row .row-sender {
    move it fully into the gutter so the two never collide. */
 body.email-page .email-row.unread::before { left: 2px; }
 body.email-page .email-row { padding-left: 10px; }
+
+/* TinyMCE's default focus ring is a heavy 2px blue box that overrode the inset
+   border on the editor panel and shouted louder than anything else in the
+   dialog. */
+body.email-page .tox-tinymce--toolbar-sticky-off .tox-editor-header,
+body.email-page .tox .tox-edit-area::before { border: none !important; }
+body.email-page .tox-tinymce:focus-within {
+  border-color: color-mix(in srgb, var(--em-accent) 55%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--em-accent) 16%, transparent);
+}
+
+/* The editor was scrolling inside ~270px while the dialog had spare height. */
+body.email-page .email-cmp-editor-wrap { min-height: 340px; display: flex; }
+body.email-page .email-cmp-editor-wrap .tox-tinymce { flex: 1 1 auto; min-height: 340px !important; }

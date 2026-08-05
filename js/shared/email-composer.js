@@ -322,7 +322,11 @@
             menubar: false, promotion: false, branding: false, statusbar: false,
             plugins: 'lists link image table code preview anchor autolink',
             toolbar: 'blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image table | linkpreview unfurltoggle | code preview',
-            toolbar_mode: 'wrap',
+            // 'wrap' spilled the toolbar onto a second row once the compose
+            // dialog was capped at 880px, stranding four buttons on their own
+            // line. 'sliding' keeps one row and puts the overflow behind a
+            // chevron, which is what the width actually calls for.
+            toolbar_mode: 'sliding',
             valid_elements: '*[*]', extended_valid_elements: '*[*]',
             paste_remove_styles: false, paste_remove_styles_if_webkit: false,
             paste_webkit_styles: 'all', paste_data_images: true, paste_as_text: false,
@@ -343,7 +347,14 @@
             link_assume_external_targets: 'https',
             keep_styles: true, forced_root_block: 'p', element_format: 'html',
             verify_html: false, cleanup: false, convert_urls: false, entity_encoding: 'raw',
-            content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+            // The editor body is an iframe, so page CSS cannot reach it —
+            // quoted replies need their rule and their line wrapping from here.
+            content_style: [
+                'body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #1f2430; margin: 14px 16px; }',
+                'blockquote { margin: 12px 0; padding: 2px 0 2px 14px; border-left: 3px solid #d3d8e0; color: #55607a; }',
+                'body, p, div, td, blockquote { overflow-wrap: anywhere; }',
+                'a { color: #1a53c0; }'
+            ].join('\n'),
             placeholder: 'Write your message…',
             setup: editor => {
                 // Toolbar link-preview button + paste auto-unfurl come
