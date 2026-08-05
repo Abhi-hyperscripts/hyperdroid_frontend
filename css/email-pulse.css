@@ -422,3 +422,63 @@ body.email-page .row-account {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PANES AS FLOATING CARDS
+   The dashboards and Chat read well because their panes are separate rounded
+   glass cards with a gap between them — glass only reads as glass when it has
+   something to float over. Email's three panes were butted edge-to-edge and
+   separated by hairlines, so the same tokens rendered as one flat slab.
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.email-page .email-shell {
+  gap: 10px;
+  padding: 10px 12px 12px;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+body.email-page .email-rail,
+body.email-page .email-list,
+body.email-page .email-read {
+  border-radius: 16px;
+  border: 1px solid var(--em-line);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+  min-height: 0;
+}
+/* the hairlines existed to divide adjoining panes — the gap does that now */
+body.email-page .email-rail { border-right: 1px solid var(--em-line); }
+body.email-page .email-list { border-right: 1px solid var(--em-line); }
+
+body.email-page .email-read {
+  background: color-mix(in srgb, var(--bg-card) 48%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+}
+body.email-page .email-list {
+  background: color-mix(in srgb, var(--bg-card) 52%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+}
+
+/* the reading pane was a wide dark void with its content pinned top-left;
+   give the message a measured column and real vertical rhythm.
+   Scoped to the message itself — applying it to every child also clipped the
+   Reply/Forward toolbar's background short of the pane's right edge. */
+body.email-page #readBody,
+body.email-page .email-read-body { max-width: 980px; width: 100%; }
+body.email-page .email-read-body.html-mode { margin: 4px 0 24px; }
+body.email-page .email-read-body.text-mode { padding: 4px 0 24px; }
+
+/* ambient wash behind the floating panes, matching the other apps */
+body.email-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 480px at 88% 112%, color-mix(in srgb, var(--em-accent) 12%, transparent), transparent 68%),
+    radial-gradient(720px 400px at 4% -8%, color-mix(in srgb, var(--brand-primary) 9%, transparent), transparent 70%);
+  background-repeat: no-repeat;
+}
