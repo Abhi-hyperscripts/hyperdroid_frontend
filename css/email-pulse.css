@@ -7,7 +7,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 body.email-page {
-  --em-accent: #F585C0;                                   /* Mail's rail accent */
+  --em-accent: #6366F1;                                   /* Mail's rail accent — indigo */
   --em-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
   --em-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
   --em-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
@@ -67,7 +67,7 @@ body.email-page .email-rail {
 body.email-page .email-compose-btn {
   background: var(--em-accent);
   border: 1px solid color-mix(in srgb, var(--em-accent) 60%, transparent);
-  color: #2a0d1d;
+  color: #ffffff;
   font-weight: 600;
   border-radius: 10px;
 }
@@ -313,4 +313,59 @@ body.email-page .from-select:focus {
 @media (max-width: 1024px) {
   body.email-page .pulse-rail { display: none; }
   body.email-page .email-shell { margin-left: 0; }
+}
+
+/* ── message body: render sender HTML on the surface it was written for ──────
+   Email HTML carries the sender's own colours, written for a white background
+   — the signature greys in a typical footer are #666-ish. Painting that over a
+   dark pane produced dark-on-dark text: the message was literally unreadable.
+   Mail clients solve this by giving the body its own light surface rather than
+   trying to recolour arbitrary sender markup, which cannot be done safely.
+   Plain-text bodies have no colours of their own, so they keep the dark theme. */
+body.email-page .email-read-body.html-mode {
+  background: #ffffff;
+  color: #1f2430;
+  border-radius: 12px;
+  border: 1px solid var(--em-line);
+  padding: 22px 24px;
+  margin: 4px 20px 20px;
+  overflow-x: auto;
+}
+body.email-page .email-read-body.html-mode a { color: #1a53c0; }
+body.email-page .email-read-body.html-mode table { max-width: 100%; }
+body.email-page .email-read-body.html-mode img { max-width: 100%; height: auto; }
+/* Sender styling occasionally sets an explicit near-white text colour for its
+   own dark template; keep that legible on the light card. */
+body.email-page .email-read-body.html-mode [style*="color:#fff"],
+body.email-page .email-read-body.html-mode [style*="color: #fff"],
+body.email-page .email-read-body.html-mode [style*="color:#FFF"],
+body.email-page .email-read-body.html-mode [style*="color: #FFF"] { color: #1f2430 !important; }
+
+body.email-page .email-read-body.text-mode {
+  color: var(--text-primary);
+  padding: 4px 20px 20px;
+  white-space: pre-wrap;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+/* header block above the body */
+body.email-page .read-subject,
+body.email-page .email-read h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+body.email-page .addr-label {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+body.email-page .addr-value { font-size: 12.5px; color: var(--text-secondary); }
+body.email-page .read-date {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  color: var(--text-muted);
 }
