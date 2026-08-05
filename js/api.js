@@ -301,6 +301,11 @@ class API {
                 // keep working — they just ignore the extra field.
                 const apiErr = new Error(errorMessage || 'Request failed');
                 apiErr.status = response.status;
+                // Carry the parsed body too. Some endpoints answer a non-2xx
+                // with a structured reason (e.g. 409 + {reason:'limit_reached',
+                // max_pins}) that the caller needs to show a useful message
+                // instead of a generic failure.
+                apiErr.data = data;
                 throw apiErr;
             }
 
@@ -1464,6 +1469,30 @@ class API {
     // Users & Status
     async searchChatUsers(query, limit = 20) {
         return this.request(`/chat/users/search?query=${encodeURIComponent(query)}&limit=${limit}`);
+    }
+
+    // ── Pinned messages ──────────────────────────────────────────────────
+    // chat.js has called these since pinning shipped, but they were never
+    // added here, so every pin/unpin threw "is not a function" and the
+    // pinned bar never populated.
+    async getPinnedMessages(conversationId) {
+        return this.request(`/chat/conversations/${conversationId}/pinned-messages`);
+    }
+
+    async pinMessage(messageId) {
+        try {
+            return await this.request(`/chat/messages/${messageId}/pin`, { method: 'POST' });
+        } catch (err) {
+            // The server answers "too many pins" with 409 + a structured body.
+            // That is a normal outcome the caller renders as its own message,
+            // not a failure — hand the body back instead of throwing.
+            if (err && err.status === 409 && err.data && err.data.reason) return err.data;
+            throw err;
+        }
+    }
+
+    async unpinMessage(messageId) {
+        return this.request(`/chat/messages/${messageId}/pin`, { method: 'DELETE' });
     }
 
     async getUnreadCounts() {

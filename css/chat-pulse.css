@@ -686,11 +686,22 @@ body.chat-page .chat-input-actions { display: flex; align-items: center; }
       pointing at any message inserted a ~29px row and pushed every message
       below it down — the thread jumped as the cursor moved. Float the cluster
       instead: it now occupies no space and fades in over the bubble's edge. */
-body.chat-page .message-content { position: relative; }
+/* .message-content carries overflow:hidden for text wrapping, so anything
+   absolutely positioned against it that sits outside its box gets clipped
+   away — which is exactly where the hover toolbar needs to be. Anchor to
+   .message instead (overflow:visible) and keep .message-content unpositioned,
+   so the toolbar's containing block is an ANCESTOR of the clipping box and
+   the clip no longer applies to it. */
+body.chat-page .message { position: relative; }
+body.chat-page .message-content { position: static; }
 body.chat-page .message-actions {
   display: flex;
   position: absolute;
-  top: -13px;
+  /* Beside the bubble, not over it — anchored above the top edge the toolbar
+     sat on top of a single-line message and hid its text. Own messages are
+     right-aligned so the free space is to their left, and vice versa. */
+  top: 50%;
+  transform: translateY(-50%);
   margin-top: 0;
   opacity: 0;
   pointer-events: none;
@@ -711,5 +722,5 @@ body.chat-page .message:focus-within .message-actions {
   pointer-events: auto;
 }
 /* anchor it inside the bubble's own side so it never runs off the pane */
-body.chat-page .message.own .message-actions { left: 4px; }
-body.chat-page .message:not(.own) .message-actions { right: 4px; }
+body.chat-page .message.own .message-actions { right: 100%; margin-right: 8px; }
+body.chat-page .message:not(.own) .message-actions { left: 100%; margin-left: 8px; }
