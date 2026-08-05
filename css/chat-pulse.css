@@ -62,7 +62,9 @@ body.chat-page .rail-item {
   transition: background 0.14s ease, color 0.14s ease;
 }
 body.chat-page .rail-item:hover { background: color-mix(in srgb, var(--text-primary) 6%, transparent); color: var(--text-secondary); }
-body.chat-page .rail-item.active { background: color-mix(in srgb, var(--brand-primary) 14%, transparent); }
+/* Chat's own accent — the active pill and label follow the icon's colour
+   rather than defaulting to brand blue, matching how the other rails read. */
+body.chat-page .rail-item.active { background: color-mix(in srgb, #2DD4BF 15%, transparent); }
 body.chat-page .rail-item .ric { width: 20px; height: 20px; }
 body.chat-page .rail-item .ric svg { width: 100%; height: 100%; display: block; }
 body.chat-page .rail-item span {
@@ -71,7 +73,7 @@ body.chat-page .rail-item span {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-body.chat-page .rail-item.active span { color: var(--brand-primary); }
+body.chat-page .rail-item.active span { color: #2DD4BF; }
 
 /* container clears the rail */
 body.chat-page .chat-container {
