@@ -702,3 +702,65 @@ body.email-page .email-cmp-footer .btn-send {
   font-weight: 600;
 }
 body.email-page #emailComposerSendBtn:hover { filter: brightness(1.07); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPACING / TARGET AUDIT — measured, not eyeballed.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Compose and its dropdown were flush against each other at gap: 0 — they read
+   as one broken control. (Reported; confirmed by measurement.) */
+body.email-page .email-compose-group {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+body.email-page .email-compose-btn { flex: 1 1 auto; }
+body.email-page .email-compose-menu-btn {
+  flex: 0 0 auto;
+  width: 40px;
+  border-radius: 10px;
+}
+
+/* Nine controls sat at 22x22, under the 24px minimum — and these are the
+   per-account sync/new-folder buttons in a dense rail, i.e. exactly where a
+   miss costs you. */
+body.email-page .email-sync-folders-btn,
+body.email-page .email-new-folder-btn,
+body.email-page .email-search-help-btn {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+}
+body.email-page .email-sync-folders-btn:hover,
+body.email-page .email-new-folder-btn:hover,
+body.email-page .email-search-help-btn:hover {
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+  color: var(--text-primary);
+}
+/* keep the account header from getting cramped now the buttons are larger */
+body.email-page .email-account-header { gap: 6px; }
+
+/* The snippet overflowed its column by ~1400px and was hard-clipped with no
+   ellipsis, so previews ended mid-word with no indication of truncation. */
+body.email-page .email-row .row-snippet {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.email-page .email-row .row-subject,
+body.email-page .email-row .row-sender {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The unread edge marker sat at left:4px, the same band as the checkbox —
+   move it fully into the gutter so the two never collide. */
+body.email-page .email-row.unread::before { left: 2px; }
+body.email-page .email-row { padding-left: 10px; }
