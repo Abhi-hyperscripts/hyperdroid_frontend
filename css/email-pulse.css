@@ -369,3 +369,56 @@ body.email-page .read-date {
   font-size: 11px;
   color: var(--text-muted);
 }
+
+/* ── unified inbox ────────────────────────────────────────────────────────────
+   Sits above the per-account trees. With four accounts, the day starts here
+   rather than in one arbitrary mailbox. */
+body.email-page .email-unified-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 4px 6px 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border: 1px solid var(--em-line);
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+body.email-page .email-unified-row:hover {
+  border-color: color-mix(in srgb, var(--em-accent) 40%, transparent);
+  color: var(--text-primary);
+}
+body.email-page .email-unified-row.active {
+  background: color-mix(in srgb, var(--em-accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--em-accent) 42%, transparent);
+  color: var(--em-accent);
+}
+body.email-page .email-unified-row svg { width: 15px; height: 15px; flex-shrink: 0; }
+body.email-page .email-unified-label { font-size: 13px; font-weight: 600; }
+body.email-page .email-unified-sub {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+body.email-page .email-unified-row.active .email-unified-sub { color: color-mix(in srgb, var(--em-accent) 75%, transparent); }
+
+/* which account a merged row came from — only rendered in the unified view */
+body.email-page .row-account {
+  grid-column: 3;
+  justify-self: start;
+  font-family: var(--font-family-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+  border-radius: 4px;
+  padding: 1px 5px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -482,6 +482,25 @@ function renderAccountTree() {
     const tree = document.getElementById('accountsTree');
     tree.innerHTML = '';
 
+    // Unified inbox sits above the per-account trees: it is where a
+    // multi-account user actually starts the day.
+    const targets = unifiedInboxTargets();
+    if (targets.length > 1) {
+        const unread = State.mailboxes.reduce((n, mbx) => {
+            const inbox = (State.foldersByMailbox[mbx.id] || []).find(f => f.folder_type === 'inbox');
+            return n + (inbox?.unread_count || 0);
+        }, 0);
+        const all = document.createElement('div');
+        all.className = 'email-unified-row' + (State.unified ? ' active' : '');
+        all.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span class="email-unified-label">All inboxes</span>
+            <span class="email-unified-sub">${targets.length} accounts</span>
+            ${unread > 0 ? `<span class="folder-count">${unread}</span>` : ''}`;
+        all.addEventListener('click', () => selectUnifiedInbox());
+        tree.appendChild(all);
+    }
+
     State.mailboxes.forEach(mbx => {
         const folders = State.foldersByMailbox[mbx.id] || [];
         const collapsed = State.accountCollapse[mbx.id] === true;
@@ -546,7 +565,7 @@ function renderAccountTree() {
             // -20px nudge so it sits just to the LEFT of the folder icon
             // instead of pushing the whole row right by another 20px.
             row.style.paddingLeft = `${30 + depth * 14}px`;
-            if (f.id === State.selectedFolderId && mbx.id === State.selectedMailboxId) {
+            if (!State.unified && f.id === State.selectedFolderId && mbx.id === State.selectedMailboxId) {
                 row.classList.add('active');
             }
             const isCollapsed = !!State.folderCollapse[f.id];
@@ -620,7 +639,35 @@ function renderAccountTree() {
     });
 }
 
+// With four accounts, "go to the inbox" meant visiting four inboxes in turn —
+// the list endpoint requires a mailbox_id, so there is no server-side unified
+// view. Fan out one request per mailbox and merge by date instead.
+function selectUnifiedInbox() {
+    State.unified = true;
+    State.selectedMessageId = null;
+    document.getElementById('folderTitle').textContent = 'All inboxes';
+    const mobileTitle = document.getElementById('mobileListTitle');
+    if (mobileTitle) mobileTitle.textContent = 'All inboxes';
+    clearBulkSelection();
+    renderEmptyRead();
+    renderAccountTree();
+    loadMessages();
+}
+
+function unifiedInboxTargets() {
+    // Only mailboxes that actually resolved an inbox folder; a mailbox whose
+    // folder load failed contributes nothing rather than erroring the merge.
+    const out = [];
+    State.mailboxes.forEach(mbx => {
+        const folders = State.foldersByMailbox[mbx.id] || [];
+        const inbox = folders.find(f => f.folder_type === 'inbox');
+        if (inbox) out.push({ mailboxId: mbx.id, folderId: inbox.id, address: mbx.email_address });
+    });
+    return out;
+}
+
 function selectFolder(mailboxId, folderId, folderType, folderName) {
+    State.unified = false;
     State.selectedMailboxId = mailboxId;
     State.selectedFolderId = folderId;
     State.selectedFolderType = folderType;
@@ -676,7 +723,7 @@ async function syncFolderInBackground(mailboxId, folderId) {
 // ==================== Messages ====================
 
 async function loadMessages() {
-    if (!State.selectedMailboxId || !State.selectedFolderId) return;
+    if (!State.unified && (!State.selectedMailboxId || !State.selectedFolderId)) return;
 
     // Reset pagination state whenever we load a new folder/search.
     State.messages = [];
@@ -738,6 +785,30 @@ async function fetchMessagesPage(offset, limit) {
         // "search everywhere in this account" when they type.
         if (State.selectedMailboxId) params.set('mailbox_id', State.selectedMailboxId);
         return await api.request(`/email/messages/search?${params}`, { _skipSpinner: true });
+    }
+    if (State.unified) {
+        const targets = unifiedInboxTargets();
+        if (targets.length === 0) return { items: [], total: 0 };
+        // Each mailbox is asked for offset+limit so the merged window is
+        // correct after sorting — a plain per-source `limit` would starve the
+        // busiest account once you scroll.
+        const pages = await Promise.all(targets.map(t =>
+            api.request(`/email/messages?mailbox_id=${t.mailboxId}&folder_id=${t.folderId}`
+                + `&limit=${offset + limit}&offset=0`, { _skipSpinner: true })
+                .then(r => ({ t, items: Array.isArray(r?.items) ? r.items : [], total: r?.total || 0 }))
+                .catch(() => ({ t, items: [], total: 0 }))));
+        const merged = [];
+        let total = 0;
+        pages.forEach(p => {
+            total += p.total;
+            p.items.forEach(m => merged.push(Object.assign({}, m, {
+                _mailboxId: p.t.mailboxId,
+                _accountAddress: p.t.address
+            })));
+        });
+        const ts = m => Date.parse(m.received_at || m.sent_at || m.created_at) || 0;
+        merged.sort((a, b) => ts(b) - ts(a));
+        return { items: merged.slice(offset, offset + limit), total };
     }
     const url = `/email/messages?mailbox_id=${State.selectedMailboxId}`
         + `&folder_id=${State.selectedFolderId}`
@@ -1012,6 +1083,7 @@ function renderRow(m) {
                 <span class="row-date">${formatShortDate(date)}</span>
             </div>
             ${m.has_attachments ? `<svg class="row-attach" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>` : ''}
+            ${m._accountAddress ? `<span class="row-account" title="${escapeHtml(m._accountAddress)}">${escapeHtml(m._accountAddress)}</span>` : ''}
             <div class="row-subject">${escapeHtml(m.subject || '(no subject)')}</div>
             <div class="row-snippet">${escapeHtml(m.snippet || '')}</div>
         </div>`;
@@ -1054,6 +1126,17 @@ function isOtherSender(m) {
 
 async function openMessage(messageId) {
     State.selectedMessageId = messageId;
+
+    // In the merged view the "current mailbox" is whichever account this
+    // message belongs to — otherwise Reply would send from the wrong address.
+    if (State.unified) {
+        const m = State.messages.find(x => x.id === messageId);
+        if (m && m._mailboxId) {
+            State.selectedMailboxId = m._mailboxId;
+            const from = document.getElementById('composeFrom');
+            if (from) from.value = m._mailboxId;
+        }
+    }
     document.querySelectorAll('.email-row').forEach(r => {
         r.classList.toggle('active', r.dataset.messageId === messageId);
     });
