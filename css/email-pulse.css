@@ -481,7 +481,11 @@ body.email-page .email-list {
 body.email-page #readBody,
 body.email-page .email-read-body { max-width: 980px; width: 100%; }
 body.email-page .email-read-body.html-mode { margin: 4px 0 24px; }
-body.email-page .email-read-body.text-mode { padding: 4px 0 24px; }
+/* Was `padding: 4px 0 24px` — written when text bodies sat directly on the
+   dark pane and only needed a measure. Now that they render on a card it
+   zeroed the card's own left/right padding, so the text ran flush against the
+   white edge. Only the outer spacing belongs here. */
+body.email-page .email-read-body.text-mode { margin: 4px 0 24px; }
 
 /* ambient wash behind the floating panes, matching the other apps */
 body.email-page::after {
