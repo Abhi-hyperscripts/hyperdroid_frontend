@@ -1008,3 +1008,91 @@ body.email-page .email-cmp-overlay { z-index: 2000 !important; }
 body.email-page .email-rail,
 body.email-page .email-list,
 body.email-page .email-read { z-index: 1; }
+
+/* ── attachments ──────────────────────────────────────────────────────────────
+   Moved above the body: on a long thread they sat below hundreds of quoted
+   lines, so the one thing you opened the mail for was the hardest to reach. */
+body.email-page .email-read-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 4px 0 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--em-line);
+}
+body.email-page .email-read-attachments h4 {
+  width: 100%;
+  margin: 0 0 4px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+body.email-page .email-attachment {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--em-line);
+  background: color-mix(in srgb, var(--bg-card) 62%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  text-decoration: none;
+  max-width: 320px;
+  transition: border-color 0.14s ease, transform 0.14s ease;
+}
+body.email-page .email-attachment:hover {
+  border-color: color-mix(in srgb, var(--em-accent) 45%, transparent);
+  transform: translateY(-1px);
+}
+body.email-page .email-attachment .att-icon {
+  display: grid;
+  place-items: center;
+  width: 30px; height: 30px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--em-accent) 16%, transparent);
+  color: var(--em-accent);
+}
+body.email-page .email-attachment .att-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+body.email-page .email-attachment .att-meta { min-width: 0; display: flex; flex-direction: column; }
+body.email-page .email-attachment .att-name {
+  font-size: 12.5px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body.email-page .email-attachment .att-size {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* in-flight: the chip says so, and further clicks are ignored in JS */
+body.email-page .email-attachment.is-downloading { pointer-events: none; }
+body.email-page .email-attachment.is-downloading .att-icon { color: transparent; }
+body.email-page .email-attachment.is-downloading .att-icon::after {
+  content: '';
+  position: absolute;
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--em-accent) 30%, transparent);
+  border-top-color: var(--em-accent);
+  animation: emAttSpin 0.7s linear infinite;
+}
+@keyframes emAttSpin { to { transform: rotate(360deg); } }
+body.email-page .email-attachment.is-downloading .att-size::after { content: ' · downloading…'; color: var(--em-accent); }
+
+/* brief confirmation, so a finished download is distinguishable from a
+   click that did nothing */
+body.email-page .email-attachment.is-done .att-icon {
+  background: color-mix(in srgb, var(--color-success) 20%, transparent);
+  color: var(--color-success);
+}
+body.email-page .email-attachment.is-done .att-size::after { content: ' · saved'; color: var(--color-success); }

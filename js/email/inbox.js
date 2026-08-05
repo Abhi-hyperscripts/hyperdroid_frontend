@@ -1259,8 +1259,8 @@ function renderMessage(msg, attachments) {
                 </div>
                 <div class="read-date">${formatFullDate(msg.received_at || msg.sent_at || msg.created_at)}</div>
             </div>
-            <div class="email-read-body ${safeHtml ? 'html-mode' : 'text-mode'}" id="readBody">${safeHtml || escapeHtml(msg.body_text || '(no body)')}</div>
             ${realAttachments.length ? renderAttachmentsBlock(realAttachments) : ''}
+            <div class="email-read-body ${safeHtml ? 'html-mode' : 'text-mode'}" id="readBody">${safeHtml || escapeHtml(msg.body_text || '(no body)')}</div>
         </div>
     `;
 
@@ -1345,7 +1345,17 @@ function replaceWithPlaceholder(img, label) {
     img.replaceWith(span);
 }
 
+// Downloads gave no feedback at all between the click and the browser's save
+// dialog — on a multi-MB attachment that is several seconds of apparent
+// nothing, so people click again and again and each click starts another
+// fetch. Track the in-flight ones and show it on the chip.
+const _attachmentsInFlight = new Set();
+
 async function downloadAttachment(attId, filename) {
+    if (_attachmentsInFlight.has(attId)) return;      // ignore repeat clicks
+    _attachmentsInFlight.add(attId);
+    const chip = document.querySelector(`.email-attachment[data-attachment-id="${attId}"]`);
+    if (chip) chip.classList.add('is-downloading');
     try {
         const resp = await fetch(`${CONFIG.emailApiBaseUrl}/attachments/${attId}/download`, {
             headers: { 'Authorization': `Bearer ${getAuthToken()}` }
@@ -1360,8 +1370,15 @@ async function downloadAttachment(attId, filename) {
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 2000);
+        if (chip) {
+            chip.classList.add('is-done');
+            setTimeout(() => chip.classList.remove('is-done'), 2200);
+        }
     } catch (err) {
         Toast.error(`Download failed: ${err.message}`);
+    } finally {
+        _attachmentsInFlight.delete(attId);
+        if (chip) chip.classList.remove('is-downloading');
     }
 }
 
