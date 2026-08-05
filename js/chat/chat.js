@@ -306,10 +306,31 @@ function renderConversations(convos) {
     const container = document.getElementById('conversationsList');
 
     if (!convos || convos.length === 0) {
+        // "No conversations yet" is wrong when a chip or a search term is what
+        // emptied the list — say which, and offer the way back.
+        const query = (document.getElementById('searchConversations')?.value || '').trim();
+        const filtering = query || (typeof threadFilter !== 'undefined' && threadFilter !== 'all');
+        let title, hint;
+        if (showingArchived) {
+            title = 'No archived conversations';
+            hint = 'Archived chats will appear here';
+        } else if (filtering) {
+            const FILTER_LABEL = { direct: 'direct messages', group: 'group chats', unread: 'unread threads' };
+            title = query
+                ? `Nothing matches "${escapeHtml(query)}"`
+                : `No ${FILTER_LABEL[threadFilter] || 'conversations'}`;
+            hint = `${conversations.length} conversation${conversations.length === 1 ? '' : 's'} in total`;
+        } else {
+            title = 'No conversations yet';
+            hint = 'Start a new chat to begin messaging';
+        }
         container.innerHTML = `
-            <div class="text-secondary" style="text-align: center; padding: 40px 20px;">
-                <p>${showingArchived ? 'No archived conversations' : 'No conversations yet'}</p>
-                <p style="font-size: 13px;">${showingArchived ? 'Archived chats will appear here' : 'Start a new chat to begin messaging'}</p>
+            <div class="ch-blank">
+                <p class="ch-blank-title">${title}</p>
+                <p class="ch-blank-hint">${hint}</p>
+                ${filtering && !showingArchived
+                    ? '<button type="button" class="ch-blank-btn" onclick="clearThreadFilters()">Show all</button>'
+                    : ''}
             </div>
         `;
         return;
@@ -394,20 +415,46 @@ function renderConversations(convos) {
     }).join('');
 }
 
-function filterConversations(query) {
-    if (!query.trim()) {
-        renderConversations(conversations);
-        return;
+let threadFilter = 'all';
+
+// Search and the All/Direct/Groups/Unread chips are both filters, so they run
+// through one path — otherwise typing a query would silently drop the chip.
+function applyThreadFilters() {
+    const query = (document.getElementById('searchConversations')?.value || '').trim().toLowerCase();
+    let list = conversations;
+
+    if (threadFilter === 'direct') list = list.filter(c => c.conversation_type !== 'group');
+    else if (threadFilter === 'group') list = list.filter(c => c.conversation_type === 'group');
+    else if (threadFilter === 'unread') list = list.filter(c => (c.unread_count || 0) > 0);
+
+    if (query) {
+        list = list.filter(conv => {
+            const name = conv.conversation_type === 'group'
+                ? (conv.group_name || '')
+                : (getOtherParticipantName(conv) || '');
+            return name.toLowerCase().includes(query);
+        });
     }
 
-    const filtered = conversations.filter(conv => {
-        const name = conv.conversation_type === 'group'
-            ? conv.group_name
-            : getOtherParticipantName(conv);
-        return name.toLowerCase().includes(query.toLowerCase());
-    });
+    renderConversations(list);
+}
 
-    renderConversations(filtered);
+function setThreadFilter(filter) {
+    threadFilter = filter;
+    document.querySelectorAll('.ch-filter').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.chFilter === filter);
+    });
+    applyThreadFilters();
+}
+
+function clearThreadFilters() {
+    const box = document.getElementById('searchConversations');
+    if (box) box.value = '';
+    setThreadFilter('all');
+}
+
+function filterConversations(_query) {
+    applyThreadFilters();
 }
 
 async function selectConversation(conversationId) {
@@ -533,7 +580,36 @@ function renderMessages(messages) {
         html += renderMessage(msg);
     }
     container.innerHTML = html;
+    applyMessageGrouping();
     scrollToBottom();
+}
+
+// Consecutive messages from the same sender within 5 minutes read as one block:
+// the repeat avatar, name and per-bubble timestamp are noise. Done as a DOM
+// pass rather than inside renderMessage so the full-render and append-one
+// paths share the same logic instead of drifting apart.
+const MSG_GROUP_WINDOW_MS = 5 * 60 * 1000;
+function applyMessageGrouping() {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+    let prev = null;
+    for (const node of container.children) {
+        if (!node.classList || !node.classList.contains('message')) {
+            // a date divider or system notice ends the run
+            prev = null;
+            continue;
+        }
+        node.classList.remove('is-grouped', 'has-next');
+        const sameRun = prev
+            && prev.dataset.senderId === node.dataset.senderId
+            && node.dataset.senderId !== ''
+            && Math.abs((Number(node.dataset.ts) || 0) - (Number(prev.dataset.ts) || 0)) < MSG_GROUP_WINDOW_MS;
+        if (sameRun) {
+            node.classList.add('is-grouped');
+            prev.classList.add('has-next');
+        }
+        prev = node;
+    }
 }
 
 function renderMessage(msg) {
@@ -667,7 +743,7 @@ function renderMessage(msg) {
     }
 
     return `
-        <div class="message ${isOwn ? 'own' : ''} ${msg.is_pinned ? 'is-pinned' : ''}" data-message-id="${msg.id}">
+        <div class="message ${isOwn ? 'own' : ''} ${msg.is_pinned ? 'is-pinned' : ''}" data-message-id="${msg.id}" data-sender-id="${escapeHtml(String(msg.sender_id || ''))}" data-ts="${Date.parse(msg.created_at) || 0}">
             <div class="message-avatar">${initials}</div>
             <div class="message-content">
                 <span class="message-sender">${escapeHtml(senderName)}</span>
@@ -713,6 +789,7 @@ function appendMessage(msg) {
     }
 
     container.insertAdjacentHTML('beforeend', renderMessage(msg));
+    applyMessageGrouping();
     scrollToBottom();
 }
 
@@ -746,6 +823,8 @@ function prependMessages(messages) {
     }
 
     container.insertAdjacentHTML('afterbegin', html);
+    // regroup: an older page can extend the run the current top message starts
+    applyMessageGrouping();
     // Maintain scroll position after prepending
     container.scrollTop = container.scrollHeight - prevScrollHeight;
 }

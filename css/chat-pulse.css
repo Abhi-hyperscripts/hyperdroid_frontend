@@ -1,0 +1,713 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CHAT — Pulse language overhaul.
+   Loaded last, scoped to body.chat-page. The page kept its own look while the
+   rest of the suite moved to the Pulse language: no rail, no Bricolage, no
+   mono, and a message list that hugged the top of a very tall pane.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.chat-page {
+  --ch-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  --ch-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  --ch-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+}
+
+/* ambient backdrop — one quiet wash, replacing the blotchy multi-orb gradient */
+body.chat-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 480px at 88% 110%, color-mix(in srgb, var(--brand-primary) 11%, transparent), transparent 68%),
+    radial-gradient(720px 400px at 4% -8%, color-mix(in srgb, #8b5cf6 8%, transparent), transparent 70%);
+  background-repeat: no-repeat;
+}
+/* the old ambient helper fought the wash above */
+body.chat-page .gradient-bg-ambient { background-image: none; }
+
+/* ── rail ─────────────────────────────────────────────────────────────────────
+   Chat is a single-screen app, so like Vision's the rail is a cross-app
+   switcher rather than invented sections.
+   `body.dashboard > *` in styles.css forces position:relative and flattens
+   z-index, so both need !important. */
+body.chat-page .pulse-rail {
+  position: fixed !important;
+  top: 52px;
+  left: 0;
+  bottom: 0;
+  width: 78px;
+  z-index: 40 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  background: var(--ch-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border-right: 1px solid var(--ch-line);
+}
+body.chat-page .rail-item {
+  width: 62px;
+  padding: 9px 0 7px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+body.chat-page .rail-item:hover { background: color-mix(in srgb, var(--text-primary) 6%, transparent); color: var(--text-secondary); }
+body.chat-page .rail-item.active { background: color-mix(in srgb, var(--brand-primary) 14%, transparent); }
+body.chat-page .rail-item .ric { width: 20px; height: 20px; }
+body.chat-page .rail-item .ric svg { width: 100%; height: 100%; display: block; }
+body.chat-page .rail-item span {
+  font-family: var(--font-family-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+body.chat-page .rail-item.active span { color: var(--brand-primary); }
+
+/* container clears the rail */
+body.chat-page .chat-container {
+  margin-left: calc(78px + var(--space-3));
+}
+
+/* ── sidebar → thread panel ───────────────────────────────────────────────── */
+body.chat-page .chat-sidebar {
+  background: var(--ch-glass);
+  border: 1px solid var(--ch-line);
+  border-radius: 16px;
+}
+body.chat-page .chat-sidebar-header { padding: 16px 16px 10px; border-bottom: none; }
+body.chat-page .chat-sidebar-header h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+body.chat-page .signalr-dot { width: 7px; height: 7px; }
+
+body.chat-page .chat-sidebar-actions button,
+body.chat-page .new-chat-btn,
+body.chat-page .archived-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--ch-line);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: none;
+}
+body.chat-page .chat-sidebar-actions button svg { width: 15px; height: 15px; }
+body.chat-page .new-chat-btn {
+  border-color: color-mix(in srgb, var(--brand-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+  color: var(--brand-primary);
+}
+body.chat-page .chat-sidebar-actions button:hover { border-color: color-mix(in srgb, var(--brand-primary) 45%, transparent); }
+
+/* search */
+body.chat-page .chat-search { padding: 0 16px 2px; }
+body.chat-page .chat-search input,
+body.chat-page #searchConversations {
+  height: 34px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--ch-line);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+body.chat-page #searchConversations:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--brand-primary) 45%, transparent);
+}
+
+/* segmented thread filter (new) */
+body.chat-page .ch-filters {
+  display: flex;
+  gap: 5px;
+  /* the chips were sitting flush under the search field — give the row its
+     own breathing space, and a hairline so it reads as a separate control
+     band rather than part of the search box */
+  margin: 4px 16px 0;
+  padding: 12px 0 12px;
+  border-top: 1px solid var(--ch-line);
+}
+body.chat-page .ch-filter {
+  flex: 1;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-muted);
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+body.chat-page .ch-filter:hover { color: var(--text-secondary); }
+body.chat-page .ch-filter.active {
+  background: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+  border-color: color-mix(in srgb, var(--brand-primary) 38%, transparent);
+  color: var(--brand-primary);
+}
+
+/* conversation rows */
+body.chat-page .conversations-list { padding: 0 10px 10px !important; }
+body.chat-page .conversation-item {
+  border-radius: 11px;
+  padding: 10px 10px;
+  border: 1px solid transparent;
+  background: none;
+  gap: 11px;
+}
+body.chat-page .conversation-item:hover { background: color-mix(in srgb, var(--text-primary) 5%, transparent); }
+body.chat-page .conversation-item.active {
+  background: color-mix(in srgb, var(--brand-primary) 13%, transparent);
+  border-color: color-mix(in srgb, var(--brand-primary) 32%, transparent);
+}
+body.chat-page .conversation-name { font-size: 13px; font-weight: 600; }
+body.chat-page .conversation-preview { font-size: 11.5px; color: var(--text-muted); }
+body.chat-page .conversation-time {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+body.chat-page .unread-badge {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--brand-primary);
+  color: var(--text-inverse, #fff);
+  display: grid;
+  place-items: center;
+}
+
+/* section label between groups of threads (new) */
+body.chat-page .ch-group-label {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 12px 8px 6px;
+}
+
+/* ── main pane ────────────────────────────────────────────────────────────── */
+body.chat-page .chat-main {
+  background: var(--ch-glass);
+  border: 1px solid var(--ch-line);
+  border-radius: 16px;
+}
+
+body.chat-page .chat-header {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--ch-line);
+  background: none;
+}
+body.chat-page .chat-header h3,
+body.chat-page #chatHeaderName {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+body.chat-page #chatHeaderStatus {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+body.chat-page .chat-header-actions button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+body.chat-page .chat-header-actions button:hover {
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  color: var(--text-primary);
+}
+
+/* ── messages ─────────────────────────────────────────────────────────────────
+   The list was justify-content:flex-start in a full-height pane, so a short
+   conversation sat marooned at the top with ~700px of empty gradient beneath
+   it before the composer. Push the first child down instead of using
+   justify-content:flex-end, which clips the top of an overflowing list. */
+body.chat-page .chat-messages {
+  padding: 18px 22px 10px;
+  gap: 2px;
+}
+body.chat-page .chat-messages > *:first-child { margin-top: auto; }
+
+body.chat-page .message { max-width: min(72%, 680px); gap: 9px; }
+
+/* grouping: consecutive messages from one sender collapse into a block */
+body.chat-page .message + .message { margin-top: 8px; }
+body.chat-page .message.is-grouped { margin-top: 1px; }
+body.chat-page .message.is-grouped .message-avatar { visibility: hidden; height: 0; }
+body.chat-page .message.is-grouped .message-sender { display: none; }
+
+body.chat-page .message-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 10.5px;
+  font-weight: 600;
+  border-radius: 9px;
+  align-self: flex-end;
+}
+body.chat-page .message-sender {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+  display: block;
+}
+
+body.chat-page .message-bubble {
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
+  border: 1px solid var(--ch-line);
+  border-radius: 14px 14px 14px 5px;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+body.chat-page .message.own .message-bubble {
+  background: color-mix(in srgb, var(--brand-primary) 88%, transparent);
+  border-color: color-mix(in srgb, var(--brand-primary) 60%, transparent);
+  color: var(--text-inverse, #fff);
+  border-radius: 14px 14px 5px 14px;
+}
+/* a grouped run reads as one block, so only the ends keep the pointed corner */
+body.chat-page .message.is-grouped .message-bubble { border-radius: 14px; }
+body.chat-page .message.own.is-grouped .message-bubble { border-radius: 14px; }
+
+body.chat-page .message-time {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+/* a timestamp under every bubble was noise on a run sent in the same minute —
+   keep it for the last message of a run, reveal the rest on hover */
+body.chat-page .message.has-next .message-time { opacity: 0; transition: opacity 0.14s ease; }
+body.chat-page .message.has-next:hover .message-time { opacity: 1; }
+
+/* day divider */
+body.chat-page .date-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 10px;
+}
+body.chat-page .date-divider::before,
+body.chat-page .date-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+}
+body.chat-page .date-divider span {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+body.chat-page .system-message {
+  align-self: center;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 5px 0;
+}
+
+/* message hover actions */
+body.chat-page .msg-action-btn {
+  width: 25px;
+  height: 25px;
+  border-radius: 7px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-glass-dense);
+  color: var(--text-muted);
+}
+body.chat-page .msg-action-btn:hover { color: var(--text-primary); }
+
+/* ── composer ─────────────────────────────────────────────────────────────── */
+body.chat-page .chat-input-area {
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--ch-line);
+  background: none;
+}
+body.chat-page .chat-input-container {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--ch-line);
+  border-radius: 13px;
+  padding: 6px 8px 6px 12px;
+  gap: 8px;
+}
+body.chat-page .chat-input-container:hover {
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+body.chat-page .chat-input-container:focus-within {
+  border-color: color-mix(in srgb, var(--brand-primary) 45%, transparent);
+}
+body.chat-page #messageInput {
+  font-size: 13px;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+}
+body.chat-page .send-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--brand-primary);
+  border: none;
+  color: var(--text-inverse, #fff);
+  display: grid;
+  place-items: center;
+}
+body.chat-page .send-btn:hover { background: var(--brand-primary-hover); }
+body.chat-page .attach-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+}
+body.chat-page .attach-btn:hover { background: color-mix(in srgb, var(--text-primary) 8%, transparent); color: var(--text-primary); }
+
+/* ── empty state ──────────────────────────────────────────────────────────── */
+body.chat-page .chat-empty-state h1,
+body.chat-page .chat-empty-state h2,
+body.chat-page .bento-card-main h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  letter-spacing: -0.01em;
+  background: none;
+  -webkit-text-fill-color: var(--text-primary);
+  color: var(--text-primary);
+}
+body.chat-page .chat-empty-state .bento-card,
+body.chat-page .chat-empty-state .feature-card {
+  background: var(--ch-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid var(--ch-line);
+}
+
+/* ── modals: same treatment as the rest of the suite ──────────────────────── */
+body.chat-page .chat-modal-content,
+body.chat-page .modal-content {
+  position: relative;
+  background: var(--ch-glass-dense);
+  backdrop-filter: blur(24px) saturate(1.15);
+  -webkit-backdrop-filter: blur(24px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 11%, transparent);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+body.chat-page .chat-modal-header {
+  background: none;
+  border-bottom: 1px solid var(--ch-line);
+  padding: 18px 22px 14px;
+}
+body.chat-page .chat-modal-header h3,
+body.chat-page .chat-modal-header h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+body.chat-page .chat-modal-header .close-btn,
+body.chat-page .chat-modal .close-btn,
+body.chat-page .chat-modal-close {
+  background: none !important;
+  color: var(--text-muted) !important;
+  border-radius: 9px;
+  width: 30px;
+  height: 30px;
+  box-shadow: none;
+  padding: 0;
+}
+body.chat-page .chat-modal-header .close-btn:hover,
+body.chat-page .chat-modal .close-btn:hover,
+body.chat-page .chat-modal-close:hover {
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent) !important;
+  color: var(--text-primary) !important;
+  transform: none;
+}
+body.chat-page .chat-modal .close-btn svg,
+body.chat-page .chat-modal-close svg { stroke: currentColor !important; }
+
+body.chat-page .chat-modal-body { padding: 20px 22px; }
+body.chat-page .chat-modal-body label {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+body.chat-page .chat-modal-body input[type="text"] {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--ch-line);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 9px 12px;
+}
+body.chat-page .chat-modal-body input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--brand-primary) 55%, transparent);
+}
+
+/* the type toggle */
+body.chat-page .conversation-type-toggle,
+body.chat-page .chat-type-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--ch-line);
+}
+body.chat-page .conversation-type-toggle button,
+body.chat-page .chat-type-toggle button {
+  flex: 1;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+body.chat-page .conversation-type-toggle button.active,
+body.chat-page .chat-type-toggle button.active {
+  background: color-mix(in srgb, var(--brand-primary) 18%, transparent);
+  border-color: color-mix(in srgb, var(--brand-primary) 40%, transparent);
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+/* User-search results ran past the dialog's bottom edge and the last row was
+   sliced. Cap the list and fade its end so a partial row reads as "more
+   below" rather than as clipping. */
+body.chat-page .user-search-results {
+  max-height: 188px;
+  overflow-y: auto;
+  background: var(--ch-glass-dense);
+  backdrop-filter: blur(22px) saturate(1.15);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
+  border-radius: 11px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4);
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 22px), transparent);
+}
+
+body.chat-page .chat-modal-footer {
+  border-top: 1px solid var(--ch-line);
+  padding: 14px 22px 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+body.chat-page .chat-modal-footer .btn-primary,
+body.chat-page .chat-modal .btn-primary {
+  align-self: flex-end;
+  width: auto;
+  min-width: 140px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--brand-primary);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  color: var(--text-inverse, #fff);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* pinned strip */
+body.chat-page .pinned-bar {
+  background: color-mix(in srgb, var(--brand-primary) 9%, transparent);
+  border-bottom: 1px solid var(--ch-line);
+}
+body.chat-page .pinned-bar-title {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brand-primary);
+}
+
+/* typing indicator */
+body.chat-page .typing-indicator {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── mobile: the rail would eat a third of a phone screen ─────────────────── */
+@media (max-width: 1024px) {
+  body.chat-page .pulse-rail { display: none; }
+  body.chat-page .chat-container { margin-left: var(--space-3); }
+}
+
+/* sidebar empty state */
+body.chat-page .ch-blank { padding: 42px 18px; text-align: center; }
+body.chat-page .ch-blank-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  margin: 0 0 5px;
+}
+body.chat-page .ch-blank-hint { font-size: 11.5px; color: var(--text-muted); margin: 0 0 14px; }
+body.chat-page .ch-blank-btn {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: 1px solid var(--ch-line);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+body.chat-page .ch-blank-btn:hover { border-color: color-mix(in srgb, var(--brand-primary) 45%, transparent); color: var(--text-primary); }
+
+/* the two blur orbs made the pane read blotchy against the new single wash */
+body.chat-page .empty-state-orb { display: none; }
+body.chat-page .bento-card-main p { font-size: 12.5px; color: var(--text-muted); }
+body.chat-page .bento-card-sm span {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DETAIL PASS — alignment and spacing defects found by inspecting the
+   rendered panels at device scale rather than at page zoom.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Two dividers stacked under the search box: .chat-search carries its own
+      edge-to-edge border-bottom, and the filter row adds an inset one. Keep a
+      single inset rule so the controls read as one band. */
+body.chat-page .chat-search { border-bottom: none; }
+
+/* 2. The thread rows started 20px from the panel edge (6px list padding +
+      10px row padding) while the search field and chips start at 16px, so the
+      left edge stepped in and out down the panel. */
+body.chat-page .conversations-list { padding: 6px 6px 10px !important; }
+
+/* 3. The kebab reserved ~40px at the row's right edge even while invisible,
+      so the timestamp floated in the middle with dead space beside it. Take
+      the button out of flow and let the meta column sit flush; fade the time
+      on hover so the two never overlap. */
+body.chat-page .conversation-item { position: relative; }
+body.chat-page .conversation-menu-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.14s ease;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+}
+body.chat-page .conversation-item:hover .conversation-menu-btn { opacity: 1; }
+body.chat-page .conversation-menu-btn:hover {
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+  color: var(--text-primary);
+}
+body.chat-page .conversation-item:hover .conversation-meta { opacity: 0; }
+body.chat-page .conversation-meta { transition: opacity 0.14s ease; }
+
+/* 4. A second SignalR dot sat unlabelled at the far right of the chat header,
+      duplicating the one beside "Messages" in the sidebar. One connection
+      indicator per screen. */
+body.chat-page #signalrStatusDotChat { display: none; }
+
+/* 5. The composer wrapper is .chat-input-container; the rules above were
+      written against .message-input-wrapper, which this page does not have,
+      so the composer kept its old flat paint and 16px/8px lopsided padding. */
+body.chat-page .send-btn { flex-shrink: 0; }
+body.chat-page .chat-input-actions { display: flex; align-items: center; }
+
+/* 6. Message hover actions were `display:none` → `flex` in normal flow, so
+      pointing at any message inserted a ~29px row and pushed every message
+      below it down — the thread jumped as the cursor moved. Float the cluster
+      instead: it now occupies no space and fades in over the bubble's edge. */
+body.chat-page .message-content { position: relative; }
+body.chat-page .message-actions {
+  display: flex;
+  position: absolute;
+  top: -13px;
+  margin-top: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.14s ease;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--ch-glass-dense);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 11%, transparent);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
+  z-index: 3;
+}
+body.chat-page .message:hover .message-actions,
+body.chat-page .message:focus-within .message-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* anchor it inside the bubble's own side so it never runs off the pane */
+body.chat-page .message.own .message-actions { left: 4px; }
+body.chat-page .message:not(.own) .message-actions { right: 4px; }
