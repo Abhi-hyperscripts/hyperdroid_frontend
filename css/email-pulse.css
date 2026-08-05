@@ -980,3 +980,14 @@ body.email-page .email-cmp-modal::before {
   z-index: 0;
 }
 body.email-page .email-cmp-modal > * { position: relative; z-index: 1; }
+
+/* Regression guard: adding `position: relative` to the three panes (needed so
+   the gloss ::before could be positioned) turned them into positioned boxes.
+   The compose overlay was relying on being the only positioned element late in
+   the DOM, so the reading pane began painting over it — elementFromPoint on
+   the dialog's close button returned .addr-from from the message header, i.e.
+   the X was physically unclickable. Pin the overlay above the panes. */
+body.email-page .email-cmp-overlay { z-index: 2000 !important; }
+body.email-page .email-rail,
+body.email-page .email-list,
+body.email-page .email-read { z-index: 1; }

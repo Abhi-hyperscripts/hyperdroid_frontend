@@ -230,7 +230,9 @@
         // Close handlers
         overlay.querySelector('.email-cmp-close').addEventListener('click', close);
         overlay.querySelector('#emailComposerCancelBtn').addEventListener('click', close);
-        overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+        // Deliberately NOT closing on a backdrop click. A half-written reply is
+        // expensive to lose, and the click that discards it is the same one you
+        // make reaching for the window behind. Close is via the X or Cancel.
         // Send / attach
         overlay.querySelector('#emailComposerSendBtn').addEventListener('click', submit);
         overlay.querySelector('#emailComposerAttachBtn').addEventListener('click', () => {
