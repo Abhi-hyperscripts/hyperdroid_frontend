@@ -204,10 +204,6 @@
         </div>
     </div>
 
-    <div class="vis-listhead">
-        <h2>All meetings</h2>
-        <span>search, filter and open any room</span>
-    </div>
 
     <div class="dashboard-content">
         <!-- Dashboard Header -->
@@ -228,12 +224,30 @@
             </div>
         </div>
 
-        <!-- Filter Bar -->
-        <div class="dashboard-filter-bar">
-            <div class="dashboard-filter-bar-border"></div>
-            <div class="dashboard-filter-bar-inner">
-            <div class="filter-bar-context">
-                <div id="projectDropdownContainer" class="filter-bar-dropdown filter-bar-project"></div>
+        <!-- ══ Room ledger: controls ══
+             The old chrome was a two-row filter bar with four of the six
+             filters buried behind a "Filters" toggle, then a separate results
+             bar, then a card grid. Filters are inline now — the dropdown
+             container IDs are unchanged so the existing JS still populates
+             them; only the toggle button and its panel are gone. -->
+        <div class="vis-ledger-head">
+            <div>
+                <h2>All meetings</h2>
+                <span class="vis-ledger-sub">every room in this workspace</span>
+            </div>
+            <span class="vis-count" id="resultsCount">Loading…</span>
+        </div>
+
+        <div class="vis-controls">
+            <div class="vis-search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" id="dashboardSearch" placeholder="Search meetings…" oninput="debounceSearch()">
+            </div>
+            <div class="vis-ctl vis-ctl-project">
+                <span class="vis-ctl-lbl">Project</span>
+                <div id="projectDropdownContainer" class="filter-bar-dropdown"></div>
                 <div id="projectActions" class="project-actions" style="display: none;">
                     <button class="btn-icon-xs" id="projectRenameBtn" onclick="showRenameProjectModal()" title="Rename project">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
@@ -245,69 +259,41 @@
                 <select id="dashboardProjectFilter" class="filter-select" style="display:none;" onchange="setProjectFilter(this.value)">
                     <option value="">All Projects</option>
                 </select>
+            </div>
+            <div class="vis-ctl">
+                <span class="vis-ctl-lbl">When</span>
                 <div id="dashboardMonthPicker" class="filter-bar-monthpicker"></div>
             </div>
-            <div class="filter-bar-top">
-                <div class="dashboard-search">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                    </svg>
-                    <input type="text" id="dashboardSearch" placeholder="Search meetings..." oninput="debounceSearch()">
-                </div>
-                <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilterPanel()">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                    </svg>
-                    <span>Filters</span>
-                    <span class="filter-count-badge" id="filterCountBadge" style="display:none;">0</span>
-                </button>
+            <div class="vis-ctl">
+                <span class="vis-ctl-lbl">Status</span>
+                <div id="statusDropdownContainer" class="filter-panel-dropdown"></div>
             </div>
-            <div class="filter-panel" id="filterPanel">
-                <div class="filter-panel-row">
-                    <div class="filter-group">
-                        <span class="filter-label">Source</span>
-                        <div id="sourceDropdownContainer" class="filter-panel-dropdown"></div>
-                    </div>
-                    <div class="filter-group">
-                        <span class="filter-label">Type</span>
-                        <div id="typeDropdownContainer" class="filter-panel-dropdown"></div>
-                    </div>
-                    <div class="filter-group">
-                        <span class="filter-label">Status</span>
-                        <div id="statusDropdownContainer" class="filter-panel-dropdown"></div>
-                    </div>
-                    <div class="filter-group">
-                        <span class="filter-label">Sort</span>
-                        <div id="sortDropdownContainer" class="filter-panel-dropdown"></div>
-                    </div>
-                </div>
-                <div class="filter-active-summary" id="filterActiveSummary" style="display:none;">
-                    <span id="activeFilterText"></span>
-                    <button class="filter-clear-btn" onclick="clearAllFilters()">Clear all</button>
-                </div>
+            <div class="vis-ctl">
+                <span class="vis-ctl-lbl">Type</span>
+                <div id="typeDropdownContainer" class="filter-panel-dropdown"></div>
             </div>
-            </div><!-- /.dashboard-filter-bar-inner -->
-        </div>
-
-        <!-- Results Bar -->
-        <div class="dashboard-results-bar" id="dashboardResultsBar">
-            <span id="resultsCount">Loading...</span>
-        </div>
-
-        <!-- Meetings Grid -->
-        <div class="meetings-grid" id="meetingsGrid">
-            <div class="dashboard-loading">
-                <div class="loading-spinner"></div>
-                <p>Loading meetings...</p>
+            <div class="vis-ctl">
+                <span class="vis-ctl-lbl">Source</span>
+                <div id="sourceDropdownContainer" class="filter-panel-dropdown"></div>
             </div>
-        </div>
-
-        <!-- Pagination -->
-        <div class="dashboard-pagination" id="dashboardPagination" style="display: none;">
-            <button class="btn btn-secondary btn-load-more" id="loadMoreBtn" onclick="loadMoreMeetings()">
-                Load More
+            <div class="vis-ctl">
+                <span class="vis-ctl-lbl">Sort</span>
+                <div id="sortDropdownContainer" class="filter-panel-dropdown"></div>
+            </div>
+            <button class="vis-clear" id="filterActiveSummary" style="display:none;" onclick="clearAllFilters()">
+                <span id="activeFilterText"></span>
+                <span class="vis-clear-x">Clear</span>
             </button>
-            <span class="pagination-info" id="paginationInfo"></span>
+        </div>
+
+        <!-- ══ Room ledger: day-grouped rows (was a card grid) ══ -->
+        <div class="vis-ledger" id="meetingsGrid">
+            <div class="vis-skeleton"><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+
+        <div class="vis-more" id="dashboardPagination" style="display: none;">
+            <button class="vis-more-btn" id="loadMoreBtn" onclick="loadMoreMeetings()">Load more</button>
+            <span class="vis-more-info" id="paginationInfo"></span>
         </div>
     </div>
 

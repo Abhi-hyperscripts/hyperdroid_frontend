@@ -25,11 +25,12 @@ let dashboardState = {
     search: '',
     source_filter: 'all',
     type_filter: 'all',
-    status_filter: 'scheduled',
+    status_filter: 'all',
     sort_by: 'recent',
     project_id: null,
     month_filter: null,  // null = all months
     year_filter: new Date().getFullYear(),
+    workspace_total: 0,
     isLoading: false,
     projects: []
 };
@@ -260,176 +261,195 @@ function getMonthFilteredMeetings(meetings) {
     });
 }
 
-function renderMeetingsList(fullReplace = true) {
+function renderMeetingsList() {
     const grid = document.getElementById('meetingsGrid');
     const filtered = getMonthFilteredMeetings(dashboardState.meetings);
 
     if (filtered.length === 0) {
-        const hasFilters = dashboardState.search || dashboardState.source_filter !== 'all' || dashboardState.type_filter !== 'all' || dashboardState.status_filter !== 'all' || dashboardState.month_filter !== null;
+        const hasFilters = dashboardState.search
+            || dashboardState.source_filter !== 'all'
+            || dashboardState.type_filter !== 'all'
+            || dashboardState.status_filter !== 'all'
+            || dashboardState.project_id
+            || dashboardState.month_filter !== null;
         grid.innerHTML = `
-            <div class="empty-state">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                <h3>No meetings found</h3>
-                <p>${hasFilters ? 'Try adjusting your filters' : 'Create your first meeting to get started'}</p>
-                <button onclick="showCreateMeetingQuickModal()" class="btn btn-primary" style="margin-top: 12px;">+ New Meeting</button>
-            </div>
-        `;
+            <div class="vis-blank">
+                <h3>${hasFilters ? 'Nothing matches those filters' : 'No meetings yet'}</h3>
+                <p>${hasFilters
+                    ? (dashboardState.workspace_total
+                        ? 'This workspace has ' + dashboardState.workspace_total + ' meeting' + (dashboardState.workspace_total === 1 ? '' : 's') + ' in total.'
+                        : 'Try a different search or clear the filters.')
+                    : 'Create a room and share the link — anyone with it can join.'}</p>
+                <div class="vis-blank-actions">
+                    ${hasFilters ? '<button class="vis-more-btn" onclick="clearAllFilters()">Clear filters</button>' : ''}
+                    <button class="vis-join" onclick="showCreateMeetingQuickModal()">New meeting</button>
+                </div>
+            </div>`;
         return;
     }
 
-    if (fullReplace) {
-        grid.innerHTML = filtered.map(m => createDashboardMeetingCard(m)).join('');
-    } else {
-        // Append new meetings (for Load More).
-        //
-        // This used to slice from `filtered.length - page_size`, which assumes the
-        // page just fetched contributed exactly page_size cards to the FILTERED
-        // list. It doesn't: a client-side filter can drop some of the new page,
-        // and the final page is usually short. Both cases made startIdx point too
-        // far back, re-appending cards that were already on screen (duplicate
-        // cards AND duplicate `id="meeting-<id>"` values, so subsequent live
-        // status updates via getElementById then hit the wrong element).
-        //
-        // Count what's actually rendered instead of inferring it from page size.
-        const alreadyRendered = grid.querySelectorAll('.meeting-card-v2').length;
-        if (alreadyRendered === 0) {
-            // The grid currently holds the "No meetings found" empty-state (or
-            // nothing) — appending would leave that block sitting above the new
-            // cards. Do a full render, which clears it.
-            grid.innerHTML = filtered.map(m => createDashboardMeetingCard(m)).join('');
-            return;
-        }
-        const newMeetings = filtered.slice(alreadyRendered);
-        grid.insertAdjacentHTML('beforeend', newMeetings.map(m => createDashboardMeetingCard(m)).join(''));
-    }
+    grid.innerHTML = buildMeetingLedger(filtered);
 }
 
-// ============================================
-// MEETING CARD V2
-// ============================================
+// Group rows under day headers. The whole ledger is rebuilt on Load More
+// rather than appended to: day grouping means a new page can extend a day
+// that is already on screen, and the old append path (slice by rendered
+// count) had already produced duplicate rows once. Re-rendering a few
+// hundred rows is cheap and removes that class of bug outright.
+function buildMeetingLedger(rows) {
+    const UNDATED = 0;
+    const groups = new Map();
 
-function createDashboardMeetingCard(meeting) {
+    rows.forEach(m => {
+        const raw = m.start_time || m.created_at;
+        const d = raw ? new Date(raw) : null;
+        const key = (d && !isNaN(d.getTime()))
+            ? new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+            : UNDATED;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(m);
+    });
+
+    // newest day first; undated rows sink to the bottom
+    const keys = [...groups.keys()].sort((a, b) => {
+        if (a === UNDATED) return 1;
+        if (b === UNDATED) return -1;
+        return b - a;
+    });
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const DAY = 86400000;
+
+    return keys.map(key => {
+        const items = groups.get(key);
+        let label;
+        if (key === UNDATED) {
+            label = 'No date set';
+        } else {
+            const diff = Math.round((key - today.getTime()) / DAY);
+            if (diff === 0) label = 'Today';
+            else if (diff === 1) label = 'Tomorrow';
+            else if (diff === -1) label = 'Yesterday';
+            else label = new Date(key).toLocaleDateString([], {
+                weekday: 'short', day: 'numeric', month: 'short',
+                year: new Date(key).getFullYear() === today.getFullYear() ? undefined : 'numeric'
+            });
+        }
+        return `
+            <section class="vis-day">
+                <header class="vis-day-head">
+                    <span class="vis-day-label">${escapeHtml(label)}</span>
+                    <span class="vis-day-count">${items.length} meeting${items.length === 1 ? '' : 's'}</span>
+                    <span class="vis-day-rule"></span>
+                </header>
+                <div class="vis-rows">${items.map(createMeetingRow).join('')}</div>
+            </section>`;
+    }).join('');
+}
+
+function createMeetingRow(meeting) {
     const type = meeting.meeting_type || 'regular';
     const isStarted = meeting.is_started || false;
     const isRecording = meeting.is_recording || false;
-    const isActive = meeting.is_active !== false; // default true
+    const isActive = meeting.is_active !== false;
     const recCount = meeting.recording_count || 0;
     const participantCount = meeting.allowed_participant_count || 0;
     const showGuestLink = meeting.allow_guests && type !== 'participant-controlled';
+    const canManage = canManageMeetingObj(meeting);
+    const name = meeting.meeting_name || 'Untitled';
 
-    const dateStr = meeting.start_time
-        ? new Date(meeting.start_time).toLocaleDateString([], { month: 'short', day: 'numeric' })
-            + ', ' + new Date(meeting.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
-        : '';
-
-    const typeBadge = getTypeBadgeHTML(type);
-    const sourceBadge = getSourceBadgeHTML(meeting.source_service);
-
-    // The dashboard also lists meetings you were merely invited to (see the
-    // allowed-participants clause in DatabaseLayer_Dashboard's WHERE). Settings
-    // and Delete used to render for those too — and the API let them through on
-    // tenant scope alone. The server now requires host / project-owner /
-    // SUPERADMIN, so only show the affordances to someone who can actually use
-    // them rather than surfacing a button that 403s.
-    const canManageMeeting = canManageMeetingObj(meeting);
-
-    // Defensive: don't trust a stale `is_started` flag if the meeting's
-    // scheduled end has passed by more than 15 minutes. The webhook that
-    // resets is_started can be missed (LiveKit restart, dropped delivery)
-    // which would otherwise leave a meeting marked LIVE forever.
+    // Don't trust a stale is_started if the scheduled end passed >15min ago —
+    // a missed webhook (LiveKit restart, dropped delivery) would otherwise
+    // leave a room marked LIVE forever.
     const endTime = meeting.end_time ? new Date(meeting.end_time).getTime() : null;
-    const STALE_GRACE_MS = 15 * 60 * 1000;
-    const isLikelyStale = endTime && Date.now() > endTime + STALE_GRACE_MS;
+    const isLikelyStale = endTime && Date.now() > endTime + 15 * 60 * 1000;
     const isLive = isStarted && isActive && !isLikelyStale;
-    const liveIndicator = isLive
-        ? '<span class="meeting-live-indicator"><span class="live-dot"></span>LIVE</span>'
-        : '';
 
-    // Build meta items — dots only between project and date, badges flow with gap
-    const metaTextParts = [];
-    metaTextParts.push(`<span class="mcv2-meta-project"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${escapeHtml(meeting.project_name || 'Unknown')}</span>`);
-    if (dateStr) metaTextParts.push(`<span class="mcv2-meta-date">${dateStr}</span>`);
+    // time rail
+    const scheduled = meeting.start_time ? new Date(meeting.start_time) : null;
+    const created = meeting.created_at ? new Date(meeting.created_at) : null;
+    const hasSched = scheduled && !isNaN(scheduled.getTime());
+    const stamp = hasSched ? scheduled : (created && !isNaN(created.getTime()) ? created : null);
+    const hhmm = d => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    let timeCell;
+    if (stamp) {
+        // An open-link room usually has no scheduled slot — it is created and
+        // shared. Show when it was made rather than a row of dashes, and say
+        // which of the two the number is.
+        timeCell = `<div class="vis-row-time${hasSched ? '' : ' is-undated'}">${hhmm(stamp)}`
+            + `<small>${hasSched ? 'start' : 'created'}</small></div>`;
+    } else {
+        timeCell = '<div class="vis-row-time is-undated">—<small>no date</small></div>';
+    }
 
-    const metaBadges = [];
-    metaBadges.push(typeBadge);
-    if (sourceBadge) metaBadges.push(sourceBadge);
-    if (recCount > 0) metaBadges.push(`<span class="badge badge-recording badge-clickable" onclick="event.stopPropagation(); playRecording('${meeting.id}')" title="${recCount} recording${recCount > 1 ? 's' : ''}">${recCount} rec</span>`);
-    if (showGuestLink) metaBadges.push(`<span class="badge badge-guest badge-clickable" onclick="event.stopPropagation(); copyGuestLink('${meeting.id}')" title="Copy guest link"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:2px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Copy Guest Link</span>`);
-    if (type === 'participant-controlled') metaBadges.push(`<span class="badge badge-participants" id="participant-badge-${meeting.id}">${participantCount}</span>`);
+    const PILL = {
+        'regular': '<span class="vis-pill open">Open</span>',
+        'hosted': '<span class="vis-pill hosted">Hosted</span>',
+        'participant-controlled': '<span class="vis-pill private">Invite only</span>'
+    };
 
-    const cardClass = isActive ? 'meeting-card-v2' : 'meeting-card-v2 mcv2-ended';
+    const sub = [`<span>${escapeHtml(meeting.project_name || 'No project')}</span>`];
+    if (meeting.source_service) sub.push(`<span class="sep">·</span><span>${escapeHtml(meeting.source_service)}</span>`);
+    if (recCount > 0) sub.push(`<span class="vis-tag" onclick="event.stopPropagation(); playRecording('${meeting.id}')" title="Play recording">${recCount} rec</span>`);
+    if (showGuestLink) sub.push(`<span class="vis-tag" onclick="event.stopPropagation(); copyGuestLink('${meeting.id}')" title="Copy guest link">guest link</span>`);
+    if (type === 'participant-controlled') sub.push(`<span class="vis-tag" id="participant-badge-${meeting.id}" title="Allowed participants">${participantCount} invited</span>`);
+
+    const manageIcons = !canManage ? '' : `
+        <button class="vis-ico" onclick="event.stopPropagation(); showMeetingSettingsModal('${meeting.id}', '${type}')" title="Settings">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button class="vis-ico danger" onclick="event.stopPropagation(); confirmDeleteMeeting('${meeting.id}')" title="Delete">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>`;
+
+    const safeName = escapeHtml(escapeJsString(name));
 
     return `
-        <div class="${cardClass}" id="meeting-${meeting.id}" data-meeting-id="${meeting.id}" data-is-started="${isStarted}" data-is-recording="${isRecording}">
-            <div class="mcv2-card-border"></div>
-            <div class="mcv2-card-content">
-                <div class="mcv2-info">
-                    <div class="mcv2-title-row">
-                        ${liveIndicator}
-                        <h4 class="mcv2-name">${escapeHtml(meeting.meeting_name || 'Untitled')}</h4>
-                    </div>
-                    <div class="mcv2-meta-row">
-                        ${metaTextParts.join('<span class="mcv2-dot">\u00b7</span>')}
-                    </div>
-                    <div class="mcv2-badges-row">
-                        ${metaBadges.join('')}
-                    </div>
+        <article class="vis-row${isActive ? '' : ' is-ended'}" id="meeting-${meeting.id}" data-meeting-id="${meeting.id}" data-is-started="${isStarted}" data-is-recording="${isRecording}">
+            ${timeCell}
+            <div class="vis-row-main">
+                <div class="vis-row-title">
+                    ${isLive ? '<span class="meeting-live-indicator"><span class="live-dot"></span>LIVE</span>' : ''}
+                    <h4 class="vis-row-name" title="${escapeHtml(name)}">${escapeHtml(name)}</h4>
+                    ${PILL[type] || PILL['regular']}
                 </div>
-                <div class="mcv2-actions">
-                    <div class="mcv2-secondary-actions">
-                        ${!canManageMeeting ? '' : `
-                        <button class="btn-icon-sm btn-delete" onclick="confirmDeleteMeeting('${meeting.id}')" title="Delete">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            </svg>
+                <div class="vis-row-sub">${sub.join('')}</div>
+            </div>
+            <div class="vis-row-actions">
+                <div class="vis-row-icons">
+                    <button class="vis-ico" onclick="event.stopPropagation(); showTranscriptsPanel('${meeting.id}')" title="Transcripts">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </button>
+                    <button class="vis-ico" onclick="event.stopPropagation(); copyMeetingLink('${meeting.id}')" title="Copy link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    </button>
+                    ${manageIcons}
+                    <div class="share-dot-menu">
+                        <button class="vis-ico" onclick="toggleShareMenu(event)" title="More">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                         </button>
-                        <button class="btn-icon-sm" onclick="event.stopPropagation(); showMeetingSettingsModal('${meeting.id}', '${type}')" title="Settings">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                            </svg>
-                        </button>`}
-                        <button class="btn-icon-sm" onclick="event.stopPropagation(); showTranscriptsPanel('${meeting.id}')" title="Transcripts">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-                            </svg>
-                        </button>
-                        <button class="btn-icon-sm" onclick="copyMeetingLink('${meeting.id}')" title="Copy Link">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                            </svg>
-                        </button>
-                        <div class="share-dot-menu">
-                            <button class="btn-icon-sm" onclick="toggleShareMenu(event)" title="More">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        <div class="share-dot-dropdown">
+                            <button onclick="copyEmailCard(event, '${meeting.id}', '${safeName}', 'participant')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                Participant Email Card
                             </button>
-                            <div class="share-dot-dropdown">
-                                <button onclick="copyEmailCard(event, '${meeting.id}', '${escapeHtml(escapeJsString(meeting.meeting_name || 'Untitled'))}', 'participant')">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                                    Participant Email Card
-                                </button>
-                                <button onclick="copyEmailCard(event, '${meeting.id}', '${escapeHtml(escapeJsString(meeting.meeting_name || 'Untitled'))}', 'guest')">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-                                    Guest Email Card
-                                </button>
-                                <button onclick="openSendInviteModal(event, '${meeting.id}', '${escapeHtml(escapeJsString(meeting.meeting_name || 'Untitled'))}', '${meeting.start_time || ''}', '${meeting.end_time || ''}')">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                                    Send Email Invite
-                                </button>
-                            </div>
+                            <button onclick="copyEmailCard(event, '${meeting.id}', '${safeName}', 'guest')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                                Guest Email Card
+                            </button>
+                            <button onclick="openSendInviteModal(event, '${meeting.id}', '${safeName}', '${meeting.start_time || ''}', '${meeting.end_time || ''}')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                Send Email Invite
+                            </button>
                         </div>
                     </div>
-                    <button class="btn-join-primary" onclick="joinMeeting('${meeting.id}')" title="Join Meeting">
-                        Join
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
-                    </button>
                 </div>
+                <button class="vis-join" onclick="joinMeeting('${meeting.id}')" title="Join meeting">
+                    Join
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
             </div>
-        </div>
-    `;
+        </article>`;
 }
 
 function getTypeBadgeHTML(type) {
@@ -554,6 +574,13 @@ function updateFilterCountBadge() {
 }
 
 function clearAllFilters() {
+    // The search term is a filter too — leaving it set meant "Clear filters"
+    // could still land on an empty ledger, which reads as the button not
+    // working. Clear the box and the pending debounce with it.
+    dashboardState.search = '';
+    const searchBox = document.getElementById('dashboardSearch');
+    if (searchBox) searchBox.value = '';
+    if (_searchDebounceTimer) { clearTimeout(_searchDebounceTimer); _searchDebounceTimer = null; }
     dashboardState.source_filter = 'all';
     dashboardState.type_filter = 'all';
     dashboardState.status_filter = 'all';
@@ -643,8 +670,8 @@ function initDashboardDropdowns() {
             { value: 'scheduled', label: 'Scheduled' },
             { value: 'ended', label: 'Ended' }
         ],
-        value: 'scheduled',
-        placeholder: 'Scheduled',
+        value: 'all',
+        placeholder: 'All Status',
         compact: true,
         onChange: (value) => { setFilter('status', value); }
     });
@@ -701,11 +728,11 @@ function updateResultsBar() {
     const filtered = getMonthFilteredMeetings(dashboardState.meetings);
     const showing = filtered.length;
     const total = dashboardState.total_count;
-    if (dashboardState.month_filter !== null && showing !== total) {
-        el.textContent = `Showing ${showing} of ${total} meeting${total !== 1 ? 's' : ''} (filtered by month)`;
-    } else {
-        el.textContent = `Showing ${showing} of ${total} meeting${total !== 1 ? 's' : ''}`;
-    }
+    // terse mono chip in the ledger head — the old sentence carried no more
+    // information and read as body copy next to a heading
+    el.textContent = showing === total
+        ? `${total} meeting${total !== 1 ? 's' : ''}`
+        : `${showing} shown \u00b7 ${total} total`;
 }
 
 function updatePagination() {
@@ -4741,12 +4768,12 @@ function updateMeetingCardStatusElement(meetingItem, meetingId, isStarted, isRec
             liveIndicator.className = 'meeting-live-indicator';
             liveIndicator.innerHTML = '<span class="live-dot"></span>LIVE';
             // Insert into the title row BEFORE the name, matching the server-side
-            // card render (createDashboardMeetingCard). The old code queried
-            // '.meeting-name', which cards don't have (the class is 'mcv2-name'),
+            // row render (createMeetingRow). The old code queried
+            // '.meeting-name', which rows don't have (the class is 'vis-row-name'),
             // so the live indicator was never inserted and the real-time LIVE
             // badge only appeared after a manual page reload.
-            const titleRow = meetingItem.querySelector('.mcv2-title-row');
-            const meetingName = meetingItem.querySelector('.mcv2-name');
+            const titleRow = meetingItem.querySelector('.vis-row-title');
+            const meetingName = meetingItem.querySelector('.vis-row-name');
             if (titleRow && meetingName) {
                 titleRow.insertBefore(liveIndicator, meetingName);
             } else if (titleRow) {
@@ -5541,6 +5568,10 @@ async function renderMeetingPulse() {
         const res = await api.getDashboardMeetings({ page: 1, page_size: 200, sort_by: 'newest' });
         rows = (res && res.meetings) || [];
         const total = (res && res.total_count) || rows.length;
+        // total_count on the list query reflects the ACTIVE filters, so the
+        // empty state can't use it ("0 meetings in total"). This call is the
+        // unfiltered one — keep its total as the workspace figure.
+        dashboardState.workspace_total = total;
         setVisText('visTotal', total);
     } catch (e) {
         console.warn('[vision] pulse unavailable:', e && e.message);
