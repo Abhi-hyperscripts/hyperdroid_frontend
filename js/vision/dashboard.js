@@ -5517,3 +5517,209 @@ async function sendEmailInvites() {
         btn.innerHTML = originalText;
     }
 }
+
+
+// ─── Meeting Pulse ──────────────────────────────────────────────────────────
+// Hero wave + three glass cards, same language as the CRM / HRMS / Accounts /
+// PMS / Admin dashboards. Everything comes from one unfiltered page of
+// /meetings/dashboard, so the pulse always describes the whole workspace even
+// while the list below is filtered.
+let _visPulseLoaded = false;
+
+async function renderMeetingPulse() {
+    if (_visPulseLoaded) return;
+    _visPulseLoaded = true;
+
+    const sub = document.getElementById('pulseSubtitle');
+    if (sub) {
+        sub.textContent = new Date().toLocaleDateString('en-IN',
+            { weekday: 'long', day: 'numeric', month: 'long' }) + ' · Video conferencing';
+    }
+
+    let rows = [];
+    try {
+        const res = await api.getDashboardMeetings({ page: 1, page_size: 200, sort_by: 'newest' });
+        rows = (res && res.meetings) || [];
+        const total = (res && res.total_count) || rows.length;
+        setVisText('visTotal', total);
+    } catch (e) {
+        console.warn('[vision] pulse unavailable:', e && e.message);
+        return;
+    }
+    if (!rows.length) return;
+
+    const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g,
+        c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // ── chips ──
+    // /meetings/dashboard caps page_size at 50, so everything below describes
+    // the most recent page, not the whole workspace. The chip labels say so.
+    setVisText('visRecent', rows.length);
+    setVisText('visRecorded', rows.filter(m => (m.recording_count || 0) > 0).length);
+    setVisText('visProjects', new Set(rows.map(m => m.project_id).filter(Boolean)).size);
+
+    // ── meeting mix by type ──
+    const TYPE = {
+        regular: { label: 'Open link', color: '#3b82f6' },
+        hosted: { label: 'Host-started', color: '#f59e0b' },
+        'participant-controlled': { label: 'Invite-only', color: '#a78bfa' }
+    };
+    const byType = {};
+    rows.forEach(m => { const k = m.meeting_type || 'regular'; byType[k] = (byType[k] || 0) + 1; });
+    visBars('visMixChart', Object.keys(TYPE).filter(k => byType[k]).map(k => ({
+        label: TYPE[k].label, value: byType[k], color: TYPE[k].color,
+        pct: Math.round((byType[k] / rows.length) * 100)
+    })));
+    setVisText('visMixNote', `${rows.length} recent`);
+    const guests = rows.filter(m => m.allow_guests).length;
+    const autoRec = rows.filter(m => m.auto_recording).length;
+    const foot = document.getElementById('visMixFooter');
+    if (foot) foot.innerHTML = `<span><b>${guests}</b> allow guests</span><span><b>${autoRec}</b> auto-record</span>`;
+
+    // ── coming up: future starts, else most recently created ──
+    const now = Date.now();
+    const upcoming = rows
+        .filter(m => m.start_time && Date.parse(m.start_time) >= now)
+        .sort((a, b) => Date.parse(a.start_time) - Date.parse(b.start_time));
+    const inbox = document.getElementById('visUpcomingList');
+    if (inbox) {
+        const list = upcoming.length ? upcoming : rows.slice(0, 5);
+        const isUpcoming = upcoming.length > 0;
+        inbox.innerHTML = list.slice(0, 5).map(m => {
+            const when = m.start_time
+                ? new Date(m.start_time).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                : 'No start time';
+            const tag = m.is_started ? '<span class="pulse-tag info">LIVE</span>'
+                : (isUpcoming ? '<span class="pulse-tag due">SCHEDULED</span>' : '');
+            return `
+                <div class="pulse-task">
+                    <div class="trow">
+                        <div class="meta">
+                            <div class="t1">${esc(m.meeting_name || 'Untitled meeting')}</div>
+                            <div class="t2">${esc(m.project_name || 'No project')} · ${esc(when)}</div>
+                        </div>
+                        ${tag}
+                    </div>
+                </div>`;
+        }).join('');
+        setVisText('visUpcomingNote', isUpcoming ? `${upcoming.length} scheduled` : 'latest');
+    }
+
+    // ── busiest projects ──
+    const byProject = {};
+    rows.forEach(m => { const k = m.project_name || 'No project'; byProject[k] = (byProject[k] || 0) + 1; });
+    const ranked = Object.entries(byProject).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    visBars('visProjChart', ranked.map(([label, value]) => ({ label, value })));
+    setVisText('visProjNote', `${Object.keys(byProject).length} projects`);
+
+    renderVisionWave(rows);
+}
+
+function setVisText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+function visBars(hostId, items) {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    if (!items.length) { host.innerHTML = '<div class="pulse-empty">Nothing yet</div>'; return; }
+    const max = Math.max(...items.map(i => i.value)) || 1;
+    const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g,
+        c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    host.innerHTML = items.map(i => `
+        <div class="pbar">
+            <span class="lbl" title="${esc(i.label)}">${esc(i.label)}</span>
+            <span class="track"><i class="fill" style="width:${Math.max((i.value / max) * 100, 2)}%;background:${i.color || 'var(--brand-primary)'}"></i></span>
+            <span class="cnt">${i.value}${i.pct != null ? ` <small>${i.pct}%</small>` : ''}</span>
+        </div>`).join('');
+}
+
+// Meetings created per day. Window adapts (30 → 90 → 180) because a workspace
+// can easily go a month without scheduling anything — a fixed 30-day window
+// would just render an empty band.
+function renderVisionWave(rows) {
+    const band = document.getElementById('visWave');
+    const host = document.getElementById('visWaveChart');
+    if (!band || !host) return;
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const countIn = days => {
+        const from = new Date(today); from.setDate(today.getDate() - (days - 1));
+        return rows.filter(m => m.created_at && new Date(m.created_at) >= from).length;
+    };
+    const DAYS = countIn(30) > 0 ? 30 : (countIn(90) > 0 ? 90 : (countIn(180) > 0 ? 180 : 0));
+    if (!DAYS) { band.hidden = true; return; }
+
+    const cap = band.querySelector('.wave-cap');
+    if (cap) cap.textContent = `Meetings created · last ${DAYS} days`;
+
+    const start = new Date(today); start.setDate(today.getDate() - (DAYS - 1));
+    const buckets = new Array(DAYS).fill(0);
+    rows.forEach(m => {
+        if (!m.created_at) return;
+        const d = new Date(m.created_at); d.setHours(0, 0, 0, 0);
+        const idx = Math.round((d - start) / 86400000);
+        if (idx >= 0 && idx < DAYS) buckets[idx]++;
+    });
+    if (buckets.every(v => v === 0)) { band.hidden = true; return; }
+
+    const W = 1200, H = 150, padT = 30, padB = 20;
+    const ih = H - padT - padB;
+    const yMax = Math.max(...buckets) * 1.15 || 1;
+    const x = i => (i / (DAYS - 1)) * W;
+    const y = v => padT + ih - (v / yMax) * ih;
+    const pts = buckets.map((v, i) => [x(i), y(v)]);
+    const n = pts.length, dx = [], m2 = [];
+    for (let i = 0; i < n - 1; i++) { dx.push(pts[i + 1][0] - pts[i][0]); m2.push((pts[i + 1][1] - pts[i][1]) / dx[i]); }
+    const t = [m2[0]];
+    for (let i = 1; i < n - 1; i++) t.push((m2[i - 1] * m2[i] <= 0) ? 0 : (m2[i - 1] + m2[i]) / 2);
+    t.push(m2[n - 2]);
+    for (let i = 0; i < n - 1; i++) {
+        if (m2[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+        else {
+            const a = t[i] / m2[i], b = t[i + 1] / m2[i], s2 = a * a + b * b;
+            if (s2 > 9) { const tau = 3 / Math.sqrt(s2); t[i] = tau * a * m2[i]; t[i + 1] = tau * b * m2[i]; }
+        }
+    }
+    let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+    for (let i = 0; i < n - 1; i++) {
+        const h = dx[i];
+        d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
+             ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
+             ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+    }
+    const peak = buckets.indexOf(Math.max(...buckets));
+    const lbl = i => { const dt = new Date(start); dt.setDate(start.getDate() + i);
+                       return dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); };
+    const step = DAYS <= 30 ? 7 : Math.round(DAYS / 5);
+    let ticks = '';
+    for (let i = 0; i < DAYS; i += step) {
+        ticks += `<text x="${x(i).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">${lbl(i)}</text>`;
+    }
+    host.innerHTML =
+        `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Meetings created per day">` +
+        `<defs><linearGradient id="visWaveFill" x1="0" y1="0" x2="0" y2="1">` +
+        `<stop offset="0" stop-color="var(--brand-primary)" stop-opacity="0.28"/>` +
+        `<stop offset="1" stop-color="var(--brand-primary)" stop-opacity="0"/></linearGradient></defs>` +
+        `<path d="${d} L${W},${H} L0,${H} Z" fill="url(#visWaveFill)" stroke="none"/>` +
+        `<path class="draw-line" d="${d}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` +
+        `<circle cx="${x(peak).toFixed(1)}" cy="${y(buckets[peak]).toFixed(1)}" r="3.5" fill="var(--brand-primary)"/>` +
+        `<text x="${Math.min(Math.max(x(peak), 60), W - 80).toFixed(1)}" y="${Math.max(y(buckets[peak]) - 10, 14).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text-secondary)" font-family="var(--font-family-mono)">${buckets[peak]} · ${lbl(peak)}</text>` +
+        ticks + `</svg>`;
+    band.hidden = false;
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const path = host.querySelector('.draw-line');
+        const len = path.getTotalLength();
+        path.style.strokeDasharray = len;
+        path.style.strokeDashoffset = len;
+        path.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s';
+        requestAnimationFrame(() => requestAnimationFrame(() => { path.style.strokeDashoffset = '0'; }));
+    }
+}
+
+// Kick off once the page is parsed (this file loads via document.write, so
+// readyState may already be past DOMContentLoaded).
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => renderMeetingPulse());
+} else {
+    renderMeetingPulse();
+}

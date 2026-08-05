@@ -24,6 +24,10 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/vision-pulse.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
     <!-- Inline styles for the redesigned Meeting Settings modal (May 2026):
          tabbed layout, wider dialog, two-column rows, and the "what is
          this" intro under each AI tab. Kept inline to avoid spawning a
@@ -104,7 +108,7 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
-<body class="dashboard">
+<body class="dashboard vision-dashboard">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <nav class="navbar">
         <div class="navbar-brand">
@@ -116,6 +120,94 @@
             <!-- Navigation links rendered by Navigation.init() -->
         </div>
     </nav>
+
+    <nav class="pulse-rail" id="pulseRail" aria-label="Vision sections">
+        <div class="rail-item active" title="Meetings">
+            <div class="ric" style="color:var(--brand-primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
+            <span>Meetings</span>
+        </div>
+        <div class="rail-item" onclick="window.location='../home.html'" title="Home">
+            <div class="ric" style="color:var(--color-warning)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <span>Home</span>
+        </div>
+        <div class="rail-item" onclick="window.location='../crm/dashboard.html'" title="CRM">
+            <div class="ric" style="color:#60A5FA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg></div>
+            <span>CRM</span>
+        </div>
+        <div class="rail-item" onclick="window.location='../hrms/dashboard.html'" title="HRMS">
+            <div class="ric" style="color:#4CC9F0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span>HRMS</span>
+        </div>
+        <div class="rail-item" onclick="window.location='../accounts/dashboard.html'" title="Accounts">
+            <div class="ric" style="color:#22c55e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <span>Accounts</span>
+        </div>
+        <div class="rail-item" onclick="window.location='../pms/dashboard.html'" title="Projects">
+            <div class="ric" style="color:#A78BFA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+            <span>Projects</span>
+        </div>
+    </nav>
+
+    <!-- ══ Meeting Pulse hero ══ -->
+    <div class="crm-container vis-hero-container">
+        <div class="crm-header">
+            <div>
+                <h1 class="pulse-title">Meetings</h1>
+                <p id="pulseSubtitle">Video conferencing</p>
+            </div>
+            <div class="crm-header-actions">
+                <button onclick="showCreateMeetingQuickModal()" class="btn btn-primary">New Meeting</button>
+                <button onclick="showCreateProjectModal()" class="btn btn-secondary">New Project</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full-bleed meetings wave -->
+    <div class="vis-wave" id="visWave" hidden>
+        <span class="wave-cap">Meetings created · last 30 days</span>
+        <div id="visWaveChart"></div>
+    </div>
+
+    <div class="crm-container vis-container--body">
+        <div class="pulse-hero">
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Meeting mix</h2>
+                    <span class="pulse-card-note" id="visMixNote"></span>
+                </div>
+                <div class="pulse-bars" id="visMixChart"><div class="pulse-empty">Loading…</div></div>
+                <div class="pulse-footer" id="visMixFooter"></div>
+            </div>
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Coming up</h2>
+                    <span class="pulse-card-note" id="visUpcomingNote"></span>
+                </div>
+                <div class="pulse-inbox" id="visUpcomingList">
+                    <div class="pulse-empty">Checking the calendar…</div>
+                </div>
+            </div>
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Busiest projects</h2>
+                    <span class="pulse-card-note" id="visProjNote"></span>
+                </div>
+                <div class="pulse-bars" id="visProjChart"><div class="pulse-empty">Loading…</div></div>
+            </div>
+        </div>
+
+        <div class="pulse-chips" id="visChips">
+            <span class="pulse-chip"><b id="visTotal">-</b> meetings all time</span>
+            <span class="pulse-chip"><b id="visRecent">-</b> in the recent page</span>
+            <span class="pulse-chip"><b id="visRecorded">-</b> of those recorded</span>
+            <span class="pulse-chip"><b id="visProjects">-</b> projects involved</span>
+        </div>
+    </div>
+
+    <div class="vis-listhead">
+        <h2>All meetings</h2>
+        <span>search, filter and open any room</span>
+    </div>
 
     <div class="dashboard-content">
         <!-- Dashboard Header -->
