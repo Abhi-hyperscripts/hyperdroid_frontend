@@ -1,0 +1,316 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMAIL — Pulse overhaul.
+   The three-pane shell was sound; what it lacked was the suite's language and
+   the density a mail client needs. Unread carried almost no visual weight,
+   counts and dates were proportional text, and the panes were flat.
+   Loaded last, scoped to body.email-page.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.email-page {
+  --em-accent: #F585C0;                                   /* Mail's rail accent */
+  --em-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  --em-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  --em-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+}
+
+/* ── rail ─────────────────────────────────────────────────────────────────── */
+body.email-page .pulse-rail {
+  position: fixed !important;
+  top: 52px; left: 0; bottom: 0;
+  width: 78px;
+  z-index: 60 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  background: var(--em-glass-dense);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border-right: 1px solid var(--em-line);
+}
+body.email-page .rail-item {
+  width: 62px;
+  padding: 9px 0 7px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: background 0.14s ease;
+}
+body.email-page .rail-item:hover { background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+body.email-page .rail-item.active { background: color-mix(in srgb, var(--em-accent) 15%, transparent); }
+body.email-page .rail-item .ric { width: 20px; height: 20px; }
+body.email-page .rail-item .ric svg { width: 100%; height: 100%; display: block; }
+body.email-page .rail-item span {
+  font-family: var(--font-family-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+body.email-page .rail-item.active span { color: var(--em-accent); }
+
+/* the shell sits beside the rail */
+body.email-page .email-shell { margin-left: 78px; }
+
+/* ── account rail ─────────────────────────────────────────────────────────── */
+body.email-page .email-rail {
+  background: var(--em-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border-right: 1px solid var(--em-line);
+}
+body.email-page .email-compose-btn {
+  background: var(--em-accent);
+  border: 1px solid color-mix(in srgb, var(--em-accent) 60%, transparent);
+  color: #2a0d1d;
+  font-weight: 600;
+  border-radius: 10px;
+}
+body.email-page .email-compose-btn:hover { filter: brightness(1.06); }
+body.email-page .email-compose-menu-btn {
+  background: color-mix(in srgb, var(--em-accent) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--em-accent) 45%, transparent);
+  color: var(--em-accent);
+  border-radius: 10px;
+}
+
+body.email-page .email-account-name {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  text-transform: none;
+}
+body.email-page .email-folder-row { border-radius: 8px; margin: 1px 6px; }
+body.email-page .email-folder-row.active {
+  background: color-mix(in srgb, var(--em-accent) 15%, transparent);
+  color: var(--em-accent);
+}
+body.email-page .folder-count {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+body.email-page .email-folder-row.active .folder-count { color: var(--em-accent); }
+
+/* A mailbox whose credentials fail to decrypt returned 424 and was simply
+   silent — the account looked healthy and merely empty. Flag it. */
+body.email-page .email-account-warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 2px 10px 6px 30px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
+}
+body.email-page .email-account-warn svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+/* ── message list ─────────────────────────────────────────────────────────── */
+body.email-page .email-list {
+  background: color-mix(in srgb, var(--bg-card) 35%, transparent);
+  border-right: 1px solid var(--em-line);
+}
+body.email-page #folderTitle {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+body.email-page .email-list-title-count {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+body.email-page .email-list-search {
+  height: 34px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--em-line);
+  font-size: 13px;
+}
+body.email-page .email-list-search:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--em-accent) 50%, transparent);
+}
+
+/* date-group headers */
+body.email-page .email-rows .group-header,
+body.email-page .email-group-header {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: none;
+  border-bottom: 1px solid var(--em-line);
+}
+
+/* rows: unread has to be obvious at a glance — it was carrying almost no
+   weight, so a full inbox and an empty one looked the same. */
+body.email-page .email-row {
+  position: relative;
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 6%, transparent);
+  transition: background 0.12s ease;
+}
+body.email-page .email-row:hover { background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+body.email-page .email-row.active {
+  background: color-mix(in srgb, var(--em-accent) 13%, transparent);
+  border-left: 2px solid var(--em-accent);
+}
+body.email-page .email-row.selected { background: color-mix(in srgb, var(--em-accent) 9%, transparent); }
+
+body.email-page .email-row .row-sender { font-size: 12.5px; color: var(--text-secondary); font-weight: 500; }
+body.email-page .email-row .row-subject { font-size: 12.5px; color: var(--text-secondary); }
+body.email-page .email-row .row-snippet { font-size: 11.5px; color: var(--text-muted); }
+body.email-page .email-row .row-date {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+body.email-page .email-row.unread .row-sender { color: var(--text-primary); font-weight: 700; }
+body.email-page .email-row.unread .row-subject { color: var(--text-primary); font-weight: 600; }
+body.email-page .email-row.unread .row-date { color: var(--em-accent); }
+/* an unread marker on the leading edge — scannable without reading a word */
+body.email-page .email-row.unread::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--em-accent);
+}
+
+body.email-page .email-row .avatar {
+  border-radius: 9px;
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+body.email-page .row-attach { color: var(--text-muted); }
+
+/* ── bulk bar ─────────────────────────────────────────────────────────────── */
+body.email-page .email-bulk-bar {
+  background: var(--em-glass-dense);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  border-bottom: 1px solid var(--em-line);
+}
+body.email-page .email-bulk-count {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+body.email-page .email-bulk-btn {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+}
+body.email-page .email-bulk-btn:hover {
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  color: var(--text-primary);
+}
+body.email-page .email-bulk-btn.danger:hover {
+  background: color-mix(in srgb, var(--color-error) 16%, transparent);
+  color: var(--color-error);
+}
+
+/* ── reading pane ─────────────────────────────────────────────────────────── */
+body.email-page .email-read { background: color-mix(in srgb, var(--bg-card) 22%, transparent); }
+body.email-page .email-empty h3,
+body.email-page .email-empty h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+body.email-page .email-empty p { font-size: 12.5px; color: var(--text-muted); }
+body.email-page .email-empty kbd {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  border: 1px solid var(--em-line);
+  color: var(--text-secondary);
+}
+
+/* ── compose + modals ─────────────────────────────────────────────────────── */
+body.email-page .email-modal,
+body.email-page .modal-content {
+  background: var(--em-glass-dense);
+  backdrop-filter: blur(24px) saturate(1.15);
+  -webkit-backdrop-filter: blur(24px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 11%, transparent);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+body.email-page .email-modal-header {
+  background: none;
+  border-bottom: 1px solid var(--em-line);
+  padding: 16px 20px 13px;
+}
+body.email-page .email-modal-header h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+body.email-page .email-modal-close {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+body.email-page .email-modal-close:hover {
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  color: var(--text-primary);
+}
+body.email-page .email-compose-row label,
+body.email-page .email-compose-row > span {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+body.email-page .chip-field,
+body.email-page .from-select,
+body.email-page .email-compose-row input[type="text"] {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--em-line);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+body.email-page .chip-field:focus-within,
+body.email-page .from-select:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--em-accent) 50%, transparent);
+}
+
+/* ── mobile: the app rail would eat a phone screen ────────────────────────── */
+@media (max-width: 1024px) {
+  body.email-page .pulse-rail { display: none; }
+  body.email-page .email-shell { margin-left: 0; }
+}

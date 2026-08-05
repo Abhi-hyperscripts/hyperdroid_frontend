@@ -331,7 +331,21 @@ async function loadMailboxes() {
     }
 }
 
+// Per-mailbox sync problems, keyed by mailbox id. Only the cases a user can
+// actually act on are surfaced; a transient network blip is left to the
+// existing retry rather than shown as a broken account.
+const MailboxIssues = {};
+
+function recordMailboxIssue(mailboxId, err) {
+    const msg = (err && err.message) || '';
+    const status = err && err.status;
+    if (status === 424 || /decrypt|password|credential|auth/i.test(msg)) {
+        MailboxIssues[mailboxId] = 'Sign-in failed — update this mailbox password in settings.';
+    }
+}
+
 async function loadFolders(mailboxId) {
+    delete MailboxIssues[mailboxId];
     try {
         // Ask the server to re-run IMAP folder discovery before we list — this
         // picks up any folders the user created (or deleted) on webmail /
@@ -348,6 +362,11 @@ async function loadFolders(mailboxId) {
             // Refresh is best-effort — if the IMAP call fails we still want
             // to show whatever folders we already have in the DB.
             console.warn('Folder refresh failed, falling back to cached list', refreshErr);
+            // A credential failure (424) used to end here silently: the account
+            // rendered as healthy and merely empty, so a mailbox that had
+            // stopped syncing looked identical to one with no new mail. Record
+            // it so the account tree can say so.
+            recordMailboxIssue(mailboxId, refreshErr);
             folders = await api.request(`/email/mailboxes/${mailboxId}/folders`);
         }
         const list = Array.isArray(folders) ? folders : [];
@@ -365,6 +384,7 @@ async function loadFolders(mailboxId) {
         });
         State.foldersByMailbox[mailboxId] = list;
     } catch (err) {
+        recordMailboxIssue(mailboxId, err);
         console.warn(`loadFolders(${mailboxId}) failed`, err);
         State.foldersByMailbox[mailboxId] = [];
     }
@@ -500,6 +520,13 @@ function renderAccountTree() {
             handleSyncFolders(mbx.id, e.currentTarget);
         });
         accountEl.appendChild(header);
+
+        if (MailboxIssues[mbx.id]) {
+            const warn = document.createElement('div');
+            warn.className = 'email-account-warn';
+            warn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>${escapeHtml(MailboxIssues[mbx.id])}</span>`;
+            accountEl.appendChild(warn);
+        }
 
         const foldersEl = document.createElement('div');
         foldersEl.className = 'email-folders';
