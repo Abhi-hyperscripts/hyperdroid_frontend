@@ -1096,3 +1096,40 @@ body.email-page .email-attachment.is-done .att-icon {
   color: var(--color-success);
 }
 body.email-page .email-attachment.is-done .att-size::after { content: ' · saved'; color: var(--color-success); }
+
+/* ── message-card scrollbar ───────────────────────────────────────────────────
+   The card is rounded and scrolls horizontally when sender HTML is wider than
+   the pane (wide tables, long unbroken URLs). A default scrollbar is square and
+   spans the full border box, so its ends render straight through the rounded
+   corners and the two fight. Inset the thumb with a padding-box border in the
+   card's own colour so it floats clear of the radius, and let the track stop
+   short of the corners. */
+body.email-page .email-read-body {
+  scrollbar-width: thin;                                   /* Firefox */
+  scrollbar-color: #c3c9d2 transparent;
+}
+body.email-page .email-read-body::-webkit-scrollbar { height: 12px; width: 12px; }
+body.email-page .email-read-body::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 0 14px 0 14px;                                   /* clear the corners */
+}
+body.email-page .email-read-body::-webkit-scrollbar-thumb {
+  background: #c3c9d2;
+  border-radius: 999px;
+  border: 3px solid #fff;                                  /* matches the card */
+  background-clip: padding-box;                            /* insets the thumb */
+  min-width: 40px;
+}
+body.email-page .email-read-body::-webkit-scrollbar-thumb:hover { background: #a8b0bd; background-clip: padding-box; }
+body.email-page .email-read-body::-webkit-scrollbar-corner { background: transparent; }
+
+/* the same treatment for the message list, which is also a rounded card */
+body.email-page .email-rows { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text-primary) 22%, transparent) transparent; }
+body.email-page .email-rows::-webkit-scrollbar { width: 10px; }
+body.email-page .email-rows::-webkit-scrollbar-track { background: transparent; margin: 12px 0; }
+body.email-page .email-rows::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-primary) 20%, transparent);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
