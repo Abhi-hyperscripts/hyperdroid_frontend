@@ -341,13 +341,26 @@ body.email-page .email-read-body.html-mode [style*="color: #fff"],
 body.email-page .email-read-body.html-mode [style*="color:#FFF"],
 body.email-page .email-read-body.html-mode [style*="color: #FFF"] { color: #1f2430 !important; }
 
+/* Plain-text bodies get the same light surface as HTML ones. The original
+   split was defensible on technical grounds — text/plain carries no sender
+   colours, so it reads fine on dark — but whether a sender transmitted plain
+   or HTML is invisible to the reader, and letting it change the look of the
+   message meant the same inbox rendered two different ways for no reason the
+   user could see. */
 body.email-page .email-read-body.text-mode {
-  color: var(--text-primary);
-  padding: 4px 20px 20px;
+  background: #ffffff;
+  color: #1f2430;
+  border-radius: 12px;
+  border: 1px solid var(--em-line);
+  padding: 22px 24px;
+  margin: 4px 0 24px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   font-size: 13.5px;
   line-height: 1.6;
+  font-family: var(--font-family);
 }
+body.email-page .email-read-body.text-mode a { color: #1a53c0; }
 
 /* header block above the body */
 body.email-page .read-subject,
