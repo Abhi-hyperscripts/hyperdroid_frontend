@@ -85,7 +85,18 @@ function ensureComposeTmce() {
         cleanup: false,
         convert_urls: false,
         entity_encoding: 'raw',
-        content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+        // The editor body lives in an iframe, so page CSS cannot reach it —
+        // quote styling and long-line wrapping have to come through here.
+        content_style: [
+            'body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #1f2430; margin: 14px 16px; }',
+            // Quoted replies arrived as literal "> " prefixed plain text and
+            // ran past the right edge. Wrap them and give the block a rule
+            // instead of leaving the markers to do the work.
+            'blockquote { margin: 12px 0; padding: 2px 0 2px 14px; border-left: 3px solid #d3d8e0; color: #55607a; }',
+            'pre, .email-quote { white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; margin: 12px 0; padding: 2px 0 2px 14px; border-left: 3px solid #d3d8e0; color: #55607a; font-family: inherit; font-size: 13px; }',
+            'body, p, div, td { overflow-wrap: anywhere; }',
+            'a { color: #1a53c0; }'
+        ].join('\n'),
         placeholder: 'Write your message…',
         setup: function (editor) {
             editor.on('init', function () {
@@ -1870,6 +1881,8 @@ function openCompose(mode, replyTo) {
         subject = prefix + base;
 
         const qDate = formatFullDate(replyTo.received_at || replyTo.sent_at || replyTo.created_at);
+        // Marked up as a quote block rather than left as raw "> " lines, so the
+        // editor renders it with a rule and wraps long lines.
         const quoted = (replyTo.body_text || stripHtml(replyTo.body_html || '') || '')
             .split('\n').map(l => '> ' + l).join('\n');
         // Three empty paragraphs at the top so the caret has breathing room

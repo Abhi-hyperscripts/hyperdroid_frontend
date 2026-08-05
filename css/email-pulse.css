@@ -482,3 +482,223 @@ body.email-page::after {
     radial-gradient(720px 400px at 4% -8%, color-mix(in srgb, var(--brand-primary) 9%, transparent), transparent 70%);
   background-repeat: no-repeat;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPOSE — issues found by reading a screenshot of the Reply-all modal.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* The overlay sat at 25% black, so the list, reading pane and the white
+   message card behind stayed fully legible and competed with the dialog —
+   the white card in particular punched straight through. */
+body.email-page #composeOverlay,
+body.email-page .email-modal-overlay {
+  background: rgba(6, 9, 16, 0.62);
+  backdrop-filter: blur(6px) saturate(0.9);
+  -webkit-backdrop-filter: blur(6px) saturate(0.9);
+}
+
+/* A compose window does not need 1175px. Capping it fixes the absurdly wide
+   fields and pulls the orphaned Bcc control back beside its row in one move. */
+body.email-page .email-modal { max-width: 880px; width: calc(100vw - 48px); }
+
+/* Bcc had drifted ~1000px from the field it belongs to. */
+body.email-page .email-compose-row #toChips,
+body.email-page .email-compose-row .chip-field { flex: 1 1 auto; min-width: 0; }
+body.email-page .cc-toggle {
+  margin-left: 8px;
+  flex: 0 0 auto;
+  align-self: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--em-line);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-secondary);
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+body.email-page .cc-toggle:hover { border-color: color-mix(in srgb, var(--em-accent) 45%, transparent); }
+
+/* The From control is a <select> but rendered with no affordance, so it read
+   as a disabled text box. */
+body.email-page .from-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 15px;
+  cursor: pointer;
+}
+
+/* The white editor canvas met the dark toolbar on a raw edge. Give the whole
+   editor a single inset panel so the surface change reads as deliberate. */
+body.email-page .tox-tinymce {
+  border: 1px solid var(--em-line) !important;
+  border-radius: 11px !important;
+  overflow: hidden;
+}
+body.email-page .tox .tox-editor-header {
+  border-bottom: 1px solid var(--em-line) !important;
+  box-shadow: none !important;
+}
+/* The enabled toggle is legitimate, but it shouted louder than the primary
+   action — tone it to a quiet selected state. */
+body.email-page .tox .tox-tbtn--enabled,
+body.email-page .tox .tox-tbtn--enabled:hover {
+  background: color-mix(in srgb, var(--em-accent) 20%, transparent) !important;
+  color: var(--em-accent) !important;
+  border-radius: 6px;
+}
+
+/* Send was brand blue while Mail's accent is indigo. */
+body.email-page .email-modal .btn-primary,
+body.email-page #composeSend,
+body.email-page .email-send-btn {
+  background: var(--em-accent);
+  border: 1px solid color-mix(in srgb, var(--em-accent) 60%, transparent);
+  color: #fff;
+  border-radius: 9px;
+  height: 36px;
+  font-weight: 600;
+}
+body.email-page .email-modal .btn-primary:hover,
+body.email-page #composeSend:hover { filter: brightness(1.07); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPOSE (real target).
+   The rules above were written against .email-modal — the inbox page's own
+   compose markup, which is present but never shown. The dialog you actually
+   get is the shared composer component (.email-cmp-*), so none of it landed.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.email-page .email-cmp-overlay {
+  background: rgba(6, 9, 16, 0.62) !important;
+  backdrop-filter: blur(6px) saturate(0.9);
+  -webkit-backdrop-filter: blur(6px) saturate(0.9);
+}
+
+/* 1180px is far wider than a compose window needs; capping it also pulls the
+   Cc/Bcc control back beside its row instead of stranding it ~1000px away. */
+body.email-page .email-cmp-modal {
+  max-width: 880px !important;
+  width: calc(100vw - 48px);
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 11%, transparent);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+
+body.email-page .email-cmp-header {
+  background: none;
+  border-bottom: 1px solid var(--em-line);
+}
+body.email-page .email-cmp-header-left,
+body.email-page .email-cmp-header h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+body.email-page .email-cmp-close {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+}
+body.email-page .email-cmp-close:hover {
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  color: var(--text-primary);
+}
+
+/* mono micro-labels, matching the rest of the suite */
+body.email-page .email-cmp-row > label,
+body.email-page .email-cmp-row > span:first-child {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+body.email-page .email-cmp-chip-field,
+body.email-page .email-cmp-row input[type="text"],
+body.email-page .email-cmp-row select {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border: 1px solid var(--em-line);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+body.email-page .email-cmp-chip-field:focus-within,
+body.email-page .email-cmp-row input:focus,
+body.email-page .email-cmp-row select:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--em-accent) 55%, transparent);
+}
+
+/* the From <select> had no affordance and read as a disabled text box */
+body.email-page .email-cmp-row select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 15px;
+  cursor: pointer;
+}
+
+body.email-page .email-cmp-cc-toggle {
+  margin-left: 8px;
+  flex: 0 0 auto;
+  align-self: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--em-line);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-secondary);
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+body.email-page .email-cmp-cc-toggle:hover { border-color: color-mix(in srgb, var(--em-accent) 45%, transparent); }
+
+body.email-page .email-cmp-recipient-chip {
+  background: color-mix(in srgb, var(--em-accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--em-accent) 38%, transparent);
+  color: var(--text-primary);
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+/* the white editor canvas met the dark chrome on a raw edge */
+body.email-page .email-cmp-editor-wrap,
+body.email-page .email-cmp-editor-wrap .tox-tinymce {
+  border-radius: 11px !important;
+  border: 1px solid var(--em-line) !important;
+  overflow: hidden;
+}
+body.email-page .email-cmp-body { padding: 18px 20px; }
+
+body.email-page .email-cmp-footer {
+  background: none;
+  border-top: 1px solid var(--em-line);
+}
+/* Send was brand blue while Mail's accent is indigo */
+body.email-page #emailComposerSendBtn,
+body.email-page .email-cmp-footer .btn-send {
+  background: var(--em-accent) !important;
+  border: 1px solid color-mix(in srgb, var(--em-accent) 60%, transparent) !important;
+  color: #fff !important;
+  border-radius: 9px;
+  height: 36px;
+  font-weight: 600;
+}
+body.email-page #emailComposerSendBtn:hover { filter: brightness(1.07); }
