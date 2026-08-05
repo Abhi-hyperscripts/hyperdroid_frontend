@@ -54,8 +54,19 @@
         if (select.closest('.flatpickr-calendar')) return false;
         if (select.closest('.flatpickr-monthDropdown-months')) return false;
         // Hidden selects we leave alone — usually they're driven by some other
-        // widget already, or not meant to be user-facing.
+        // widget already, or not meant to be user-facing. A <select> always
+        // reports type "select-one", so the type check never fires for one;
+        // the real signal is the element hiding itself. Only its OWN computed
+        // display counts — an ancestor being display:none (every select inside
+        // a closed modal) leaves the child's computed display untouched, so
+        // modal selects still convert.
         if (select.type === 'hidden') return false;
+        if (select.hidden) return false;
+        const own = window.getComputedStyle(select);
+        if (own.display === 'none' || own.visibility === 'hidden') {
+            watchForReveal(select);
+            return false;
+        }
         // Already wired by some page-specific code (setup.js, etc.)? The
         // SearchableDropdown lives as an immediate sibling — usually the
         // container is positioned right before or right after the select.
@@ -67,6 +78,23 @@
         if (prev && prev.classList?.contains('searchable-dropdown'))           return false;
         if (next && next.classList?.contains('searchable-dropdown'))           return false;
         return true;
+    }
+
+    // A select the page hides at load may be revealed later by its own JS. The
+    // main observer only fires on inserted nodes, so watch this one element's
+    // style/class/hidden for a reveal and convert it then. One-shot, and only
+    // ever attached to the few selects that were actually skipped.
+    const REVEAL_WATCHED = new WeakSet();
+    function watchForReveal(select) {
+        if (REVEAL_WATCHED.has(select)) return;
+        REVEAL_WATCHED.add(select);
+        const obs = new MutationObserver(() => {
+            const cs = window.getComputedStyle(select);
+            if (select.hidden || cs.display === 'none' || cs.visibility === 'hidden') return;
+            obs.disconnect();
+            convertOne(select);
+        });
+        obs.observe(select, { attributes: true, attributeFilter: ['style', 'class', 'hidden'] });
     }
 
     function buildOptions(select) {

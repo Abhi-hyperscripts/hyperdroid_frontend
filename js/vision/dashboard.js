@@ -5583,9 +5583,9 @@ async function renderMeetingPulse() {
         .sort((a, b) => Date.parse(a.start_time) - Date.parse(b.start_time));
     const inbox = document.getElementById('visUpcomingList');
     if (inbox) {
-        const list = upcoming.length ? upcoming : rows.slice(0, 5);
+        const list = upcoming.length ? upcoming : rows.slice(0, 4);
         const isUpcoming = upcoming.length > 0;
-        inbox.innerHTML = list.slice(0, 5).map(m => {
+        inbox.innerHTML = list.slice(0, 4).map(m => {
             const when = m.start_time
                 ? new Date(m.start_time).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
                 : 'No start time';

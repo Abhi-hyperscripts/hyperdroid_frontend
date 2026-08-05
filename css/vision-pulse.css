@@ -76,6 +76,15 @@ body.vision-dashboard { padding-left: 78px; }
 /* horizontal DOM bars (funnel / sources / dispositions / lost reasons) */
 .pulse-bars { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 
+/* Vision has few meeting types and few projects, so the two bar cards carry
+   2-3 rows while "Coming up" is a 4-row list. Equal-height cards left the bar
+   cards mostly empty at the top — centre their body instead so the whitespace
+   reads as breathing room rather than missing content. */
+body.vision-dashboard .pulse-card { display: flex; flex-direction: column; }
+body.vision-dashboard .pulse-card > .pulse-bars,
+body.vision-dashboard .pulse-card > .pulse-tasks { flex: 1; justify-content: center; }
+body.vision-dashboard .pulse-card > .pulse-tasks { justify-content: flex-start; }
+
 .pbar { display: flex; align-items: center; gap: 10px; }
 .pbar .lbl {
   width: 108px;
