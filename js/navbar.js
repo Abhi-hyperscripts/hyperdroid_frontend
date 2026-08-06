@@ -280,7 +280,6 @@ const NavbarComponent = {
                     <a href="/pitch-deck/ragenaizer-pitch-deck.html" class="nav-dropdown-item" data-nav="kb-pitch-deck">Pitch Deck 2026 <span>The investor narrative &mdash; 11 slides</span></a>
                 </div>
             </div>
-            <a href="/pages/kip.html" class="nav-link" data-nav="kip">KIP</a>
             <a href="/pages/pricing.html" class="nav-link" data-nav="pricing">Pricing</a>
         </div>
         <div class="nav-cta">
@@ -318,7 +317,6 @@ const NavbarComponent = {
             <a href="/pages/use-cases/manufacturing.html" class="nav-mobile-link" data-nav="manufacturing">Manufacturing <span>Operations &amp; GST</span></a>
             <div class="nav-mobile-divider"></div>
             <a href="/pages/compare/" class="nav-mobile-link" data-nav="compare-all">Compare <span>vs every alternative</span></a>
-            <a href="/pages/kip.html" class="nav-mobile-link" data-nav="kip">KIP <span>News Intelligence</span></a>
             <a href="/pages/pricing.html" class="nav-mobile-link" data-nav="pricing">Pricing</a>
             <div class="nav-mobile-divider"></div>
             <div class="nav-mobile-section">Resources</div>
