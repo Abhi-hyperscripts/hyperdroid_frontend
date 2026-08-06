@@ -736,3 +736,14 @@ body.desk-landing .dk-btn2:active { transform: translateY(0); }
   body.desk-landing::after { animation: none; }
   body.desk-landing .dk-pane { animation: none; }
 }
+
+/* The closing note on every module page: this is one module of the OS, not a
+   point tool. Set quieter than the closing line above it — it is a
+   qualification, not a second pitch. */
+body.desk-landing .dk-osnote {
+  max-width: 62ch;
+  margin: 14px auto 0;
+  font-size: 14px;
+  line-height: 1.62;
+  color: var(--dk-dim);
+}
