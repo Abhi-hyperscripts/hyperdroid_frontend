@@ -747,3 +747,82 @@ body.desk-landing .dk-osnote {
   line-height: 1.62;
   color: var(--dk-dim);
 }
+
+/* ── the category, defined ────────────────────────────────────────────────────
+   Three panels: what an ERP covers, what a productivity suite covers, and the
+   claim that we are both. Each panel states what it HAS and, in muted red,
+   what it does not — because the whole argument is the missing half, and a
+   panel that only lists strengths would not make it. */
+body.desk-landing .dk-osdef {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 30px;
+  background: var(--dk-line);
+  border: 1px solid var(--dk-line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+body.desk-landing .dk-osdef > div {
+  background: var(--dk-bg);
+  padding: 26px 26px 24px;
+  display: flex;
+  flex-direction: column;
+}
+/* the third panel is the claim, so it is lit rather than left neutral */
+body.desk-landing .dk-osdef > div.ours {
+  background: linear-gradient(165deg, rgba(99, 102, 241, 0.12), rgba(255, 255, 255, 0.02));
+}
+body.desk-landing .dk-osdef .k {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  margin-bottom: 14px;
+}
+body.desk-landing .dk-osdef > div.ours .k { color: #A5B4FC; }
+body.desk-landing .dk-osdef h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.26;
+  letter-spacing: -0.024em;
+  color: var(--dk-ink);
+  margin: 0 0 10px;
+}
+body.desk-landing .dk-osdef p {
+  margin: 0 0 18px;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+  flex: 1;
+}
+body.desk-landing .dk-osdef .has,
+body.desk-landing .dk-osdef .hasnt {
+  font-family: var(--font-family-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  padding-top: 10px;
+  border-top: 1px solid var(--dk-line);
+}
+body.desk-landing .dk-osdef .has { color: #7DD3A8; }
+body.desk-landing .dk-osdef .hasnt { color: #F79B9B; border-top: 0; padding-top: 4px; }
+body.desk-landing .dk-osdef > div.ours .hasnt { color: #5f6b80; }
+
+/* the module pages centre their .dk-osnote inside a centred close panel; this
+   one sits under a left-aligned section, so it keeps the section's margin */
+body.desk-landing .dk-section > .dk-osnote {
+  max-width: 68ch;
+  margin: 22px 0 0;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: var(--dk-dim);
+}
+body.desk-landing .dk-osnote a { color: #A5B4FC; text-decoration: none; }
+body.desk-landing .dk-osnote a:hover { text-decoration: underline; }
+
+@media (max-width: 900px) {
+  body.desk-landing .dk-osdef { grid-template-columns: 1fr; }
+}
