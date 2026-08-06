@@ -497,3 +497,20 @@ body.cmphub-desk .ch-method h3 {
 body.cmphub-desk .ch-method ul { margin: 0; padding-left: 20px; }
 body.cmphub-desk .ch-method li { font-size: 14px; line-height: 1.7; color: var(--dk-mute); margin-bottom: 8px; }
 body.cmphub-desk .ch-method b { color: var(--dk-ink); font-weight: 600; }
+
+/* ── the recommendation table ─────────────────────────────────────────────────
+   Same table furniture as the feature comparison, but it answers a different
+   question: given your situation, which product should you buy. Its first
+   column is a sentence rather than a capability, so it gets the room, and the
+   verdict column is set in mono because it is a name, not a value. Rows that
+   answer with a competitor are deliberately not tinted as ours. */
+body.cmp-desk .cm-pick th:first-child,
+body.cmp-desk .cm-pick td:first-child { width: 34%; }
+body.cmp-desk .cm-pick td:nth-child(2) { color: var(--dk-mute); }
+body.cmp-desk .cm-pick td:last-child {
+  font-family: var(--font-family-mono);
+  font-size: 12.5px;
+  white-space: nowrap;
+  color: var(--dk-ink);
+}
+body.cmp-desk .cm-pick td.ours:last-child { color: #7DD3A8; }
