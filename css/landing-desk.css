@@ -733,6 +733,7 @@ body.desk-landing .dk-card::after {
    its contents assemble, which reads as considered rather than abrupt */
 body.desk-landing .dk-card,
 body.desk-landing .dk-strip > div,
+body.desk-landing .dk-lrow,
 body.desk-landing .dk-trow {
   opacity: 0;
   transform: translateY(12px);
@@ -741,6 +742,7 @@ body.desk-landing .dk-trow {
 }
 body.desk-landing .dk-card.is-in,
 body.desk-landing .dk-strip > div.is-in,
+body.desk-landing .dk-lrow.is-in,
 body.desk-landing .dk-trow.is-in { opacity: 1; transform: none; }
 
 /* the thread's nodes breathe in sequence — the eye follows the hand-off from
@@ -936,7 +938,7 @@ body.desk-landing .dk-lrow {
   transition: background 0.14s ease;
 }
 body.desk-landing .dk-lrow:last-child { border-bottom: 0; }
-body.desk-landing .dk-lrow:hover { background: rgba(255, 255, 255, 0.045); }
+body.desk-landing a.dk-lrow:hover { background: rgba(255, 255, 255, 0.045); }
 
 /* the icon carries the module's colour, exactly as it does in the product */
 body.desk-landing .dk-lic {
@@ -996,7 +998,7 @@ body.desk-landing .dk-larrow {
   opacity: 0;
   transition: opacity 0.14s ease;
 }
-body.desk-landing .dk-lrow:hover .dk-larrow { opacity: 1; }
+body.desk-landing a.dk-lrow:hover .dk-larrow { opacity: 1; }
 
 @media (max-width: 980px) {
   body.desk-landing .dk-lgroup { grid-template-columns: 1fr; gap: 16px; }
@@ -1005,4 +1007,42 @@ body.desk-landing .dk-lrow:hover .dk-larrow { opacity: 1; }
   /* the fact is the first thing to go when the row runs out of room */
   body.desk-landing .dk-lfact { display: none; }
   body.desk-landing .dk-lrow { padding: 14px 16px; gap: 13px; }
+}
+
+/* ── the same rows, used as a feature list ────────────────────────────────────
+   The module pages carried the same argument as a grid of cards: nine or
+   fifteen equal boxes that left a ragged last row and gave the eye nowhere to
+   start. They now use the launcher's rows. A feature list is not navigation,
+   so these rows are plain elements — no arrow, no hover, no pointer — but the
+   icon, the name and the description sit exactly where they do in the product.
+
+   Descriptions here run longer than the launcher's, so the row aligns its icon
+   to the top rather than centring it against three lines of text. */
+body.desk-landing .dk-list {
+  border: 1px solid var(--dk-line);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.028);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  margin-top: 34px;
+}
+body.desk-landing .dk-list .dk-lrow { align-items: flex-start; padding: 17px 20px; }
+body.desk-landing .dk-list .dk-lic { margin-top: 1px; }
+body.desk-landing .dk-list .dk-ldesc { white-space: normal; max-width: 88ch; }
+
+/* two abreast once there is room, so a fifteen-row list does not become a
+   column of its own */
+@media (min-width: 1100px) {
+  body.desk-landing .dk-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  body.desk-landing .dk-list .dk-lrow:nth-child(odd) { border-right: 1px solid var(--dk-line); }
+  /* the final row of an odd-numbered list spans both columns rather than
+     leaving a hole */
+  body.desk-landing .dk-list .dk-lrow:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    border-right: 0;
+  }
 }

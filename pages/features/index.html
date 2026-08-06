@@ -38,27 +38,32 @@
     </header>
 
     <section class="dk-section dk-reveal">
-      <div class="dk-grid">
-        <a class="dk-card" style="--accent:#6366F1" href="hrms-payroll.html">
-          <div class="ic" style="background:#6366F122"><svg viewBox="0 0 24 24" stroke="#6366F1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
-          <h3>HR &amp; payroll</h3><p>Payroll that shows its working</p>
-        </a>
-        <a class="dk-card" style="--accent:#3b82f6" href="video-conferencing.html">
-          <div class="ic" style="background:#3b82f622"><svg viewBox="0 0 24 24" stroke="#3b82f6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
-          <h3>Video meetings</h3><p>On servers we run ourselves</p>
-        </a>
-        <a class="dk-card" style="--accent:#2DD4BF" href="team-chat.html">
-          <div class="ic" style="background:#2DD4BF22"><svg viewBox="0 0 24 24" stroke="#2DD4BF" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
-          <h3>Team chat</h3><p>Conversations that stay in context</p>
-        </a>
-        <a class="dk-card" style="--accent:#FB923C" href="cloud-storage.html">
-          <div class="ic" style="background:#FB923C22"><svg viewBox="0 0 24 24" stroke="#FB923C" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
-          <h3>Cloud storage</h3><p>A link you can take back</p>
-        </a>
-        <a class="dk-card" style="--accent:#60A5FA" href="procurement.html">
-          <div class="ic" style="background:#60A5FA22"><svg viewBox="0 0 24 24" stroke="#60A5FA" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
-          <h3>Procurement</h3><p>Stop overpaying, start outsmarting</p>
-        </a>
+      <div class="dk-list">
+                  <a class="dk-lrow" style="--mod:#6366F1" href="hrms-payroll.html">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">HR &amp; payroll</span><span class="dk-ldesc">Payroll that shows its working</span></span>
+            <span class="dk-larrow" aria-hidden="true">&rarr;</span>
+          </a>
+                  <a class="dk-lrow" style="--mod:#3b82f6" href="video-conferencing.html">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Video meetings</span><span class="dk-ldesc">On servers we run ourselves</span></span>
+            <span class="dk-larrow" aria-hidden="true">&rarr;</span>
+          </a>
+                  <a class="dk-lrow" style="--mod:#2DD4BF" href="team-chat.html">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Team chat</span><span class="dk-ldesc">Conversations that stay in context</span></span>
+            <span class="dk-larrow" aria-hidden="true">&rarr;</span>
+          </a>
+                  <a class="dk-lrow" style="--mod:#FB923C" href="cloud-storage.html">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Cloud storage</span><span class="dk-ldesc">A link you can take back</span></span>
+            <span class="dk-larrow" aria-hidden="true">&rarr;</span>
+          </a>
+                  <a class="dk-lrow" style="--mod:#60A5FA" href="procurement.html">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Procurement</span><span class="dk-ldesc">Stop overpaying, start outsmarting</span></span>
+            <span class="dk-larrow" aria-hidden="true">&rarr;</span>
+          </a>
       </div>
     </section>
 
@@ -104,11 +109,11 @@
       var els = document.querySelectorAll('.dk-reveal');
       if (!els.length) return;
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
-        els.forEach(function (el) { el.classList.add('is-in'); el.querySelectorAll('.dk-card').forEach(function (c) { c.classList.add('is-in'); }); }); return;
+        els.forEach(function (el) { el.classList.add('is-in'); el.querySelectorAll('.dk-card, .dk-lrow').forEach(function (c) { c.classList.add('is-in'); }); }); return;
       }
       var io = new IntersectionObserver(function (es) {
         es.forEach(function (e) { if (!e.isIntersecting) return; e.target.classList.add('is-in');
-          e.target.querySelectorAll('.dk-card').forEach(function (c, i) { c.style.transitionDelay = Math.min(i*45,360)+'ms'; c.classList.add('is-in'); });
+          e.target.querySelectorAll('.dk-card, .dk-lrow').forEach(function (c, i) { c.style.transitionDelay = Math.min(i*45,360)+'ms'; c.classList.add('is-in'); });
           io.unobserve(e.target); });
       }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
       els.forEach(function (el) { io.observe(el); });
