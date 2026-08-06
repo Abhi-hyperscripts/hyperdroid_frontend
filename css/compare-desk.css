@@ -347,3 +347,153 @@ body.cmp-desk .cm-beyond .fact {
   color: var(--dk-ink);
 }
 body.cmp-desk .cm-beyond .fact em { color: var(--dk-dim); font-style: normal; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE HUB — scoped to body.cmphub-desk.
+   Thirty-four alternatives in one list is not a page, it is a directory. The
+   hub's job is to make the shape of the argument visible: these thirty-four
+   products are eight categories, and eight categories is what one login
+   replaces. So the count leads, the three deep dives are given their own
+   weight, and the rest are a directory underneath.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.cmphub-desk .ch-hero { padding: 54px 0 0; text-align: center; }
+
+/* the count: the whole argument in three numbers */
+body.cmphub-desk .ch-count {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1px;
+  margin: 40px 0 0;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--dk-line);
+  background: var(--dk-line);
+  text-align: left;
+}
+body.cmphub-desk .ch-count > div {
+  background: rgba(10, 14, 22, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 24px 24px 26px;
+}
+body.cmphub-desk .ch-count b {
+  display: block;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 40px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--dk-ink);
+}
+body.cmphub-desk .ch-count span { display: block; margin-top: 8px; font-size: 13px; line-height: 1.5; color: var(--dk-dim); }
+body.cmphub-desk .ch-count > div:last-child b { color: #4ade80; }
+
+/* the three that got a full audit */
+body.cmphub-desk .ch-deep {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 16px;
+  margin-top: 36px;
+}
+body.cmphub-desk .ch-deep a {
+  display: block;
+  padding: 26px 28px 28px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--cm) 30%, transparent);
+  background: linear-gradient(158deg, color-mix(in srgb, var(--cm) 13%, transparent), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+body.cmphub-desk .ch-deep a:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--cm) 55%, transparent); }
+body.cmphub-desk .ch-deep .n {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cm);
+}
+body.cmphub-desk .ch-deep h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 10px 0 8px;
+}
+body.cmphub-desk .ch-deep p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--dk-mute); }
+body.cmphub-desk .ch-deep .go {
+  display: block;
+  margin-top: 16px;
+  font-family: var(--font-family-mono);
+  font-size: 11.5px;
+  color: var(--cm);
+}
+
+/* the directory */
+body.cmphub-desk .ch-cat { margin-top: 42px; }
+body.cmphub-desk .ch-cat h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  font-weight: 400;
+  margin: 0 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--dk-line);
+}
+body.cmphub-desk .ch-cat h3 em {
+  font-style: normal;
+  color: var(--cm);
+  margin-left: auto;
+  font-size: 10px;
+}
+body.cmphub-desk .ch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+body.cmphub-desk .ch-grid a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.035);
+  text-decoration: none;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+}
+body.cmphub-desk .ch-grid a:hover { background: rgba(255, 255, 255, 0.075); border-color: rgba(255, 255, 255, 0.24); transform: translateY(-1px); }
+body.cmphub-desk .ch-grid .nm { font-size: 14px; font-weight: 500; color: var(--dk-ink); }
+body.cmphub-desk .ch-grid .tg {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  text-align: right;
+}
+
+/* how these pages are written — the bit that earns the rest */
+body.cmphub-desk .ch-method {
+  margin-top: 48px;
+  padding: 26px 28px;
+  border-radius: 18px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.035);
+}
+body.cmphub-desk .ch-method h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 0 0 14px;
+}
+body.cmphub-desk .ch-method ul { margin: 0; padding-left: 20px; }
+body.cmphub-desk .ch-method li { font-size: 14px; line-height: 1.7; color: var(--dk-mute); margin-bottom: 8px; }
+body.cmphub-desk .ch-method b { color: var(--dk-ink); font-weight: 600; }
