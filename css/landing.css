@@ -11,7 +11,12 @@
     font-family: var(--font-family);
     background: #050810;
     min-height: 100vh;
-    overflow-x: hidden;
+    /* `clip`, not `hidden`: both stop sideways scroll, but `hidden` forces a
+       scroll container onto the body, and that silently stops `position:
+       sticky` working anywhere in the page. It had been quietly killing the
+       sticky input panel on the calculators. `clip` keeps overflow-y visible,
+       so sticky works. */
+    overflow-x: clip;
     color: var(--text-inverse);
 
     /* Override theme variables for dark landing pages */

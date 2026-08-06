@@ -10,7 +10,7 @@
    strips down both edges — the page looked inset rather than full-bleed.
    The html element takes the same background so nothing can peek through. */
 html:has(body.desk-landing) {
-  overflow-x: hidden;
+  overflow-x: clip;
   background: #070a10;
   margin: 0;
   padding: 0;
@@ -29,7 +29,11 @@ body.desk-landing {
   color: var(--dk-ink);
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  /* `clip` not `hidden`. Both stop sideways scroll, but `hidden` makes the
+     body a scroll container, and that silently disables `position: sticky`
+     everywhere inside it — it had been killing the sticky input panel on the
+     calculators for as long as that panel has existed. */
+  overflow-x: clip;
 }
 
 body.desk-landing::after {
@@ -164,11 +168,25 @@ body.desk-landing .dk-desk {
 /* The wave sits UNDER the panes as the desk's substrate — the same
    relationship the app has, where the wave runs beneath the pulse cards
    rather than sitting in a box of its own. */
+/* The wave has to reach both edges of the SCREEN, not both edges of the
+   container. It used to be 112% of .dk-wrap, which is capped at 1260px — fine
+   at a 1400px window, but on a 1920px screen it stopped ~250px short on each
+   side and read as a graphic sitting in a box. Anchored to the viewport
+   instead; .dk-hero clips the overhang so the bleed cannot create a
+   horizontal scrollbar.
+
+   The clip has to sit on the body, not on .dk-hero: the hero lives inside
+   .dk-wrap and is therefore only ~1348px wide itself, so clipping there cut
+   off the very bleed it was meant to contain.
+
+   The bleed is contained by `.landing-page { overflow-x: clip }` in
+   landing.css, which every page here carries. */
 body.desk-landing .dk-desk-wave {
   position: absolute;
-  left: -6%;
+  left: 50%;
+  transform: translateX(-50%);
   bottom: -14px;
-  width: 112%;              /* bleeds past the desk without leaving the page */
+  width: 100vw;
   height: 260px;
   z-index: 0;
   pointer-events: none;
