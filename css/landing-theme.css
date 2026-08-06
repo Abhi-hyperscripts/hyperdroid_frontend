@@ -1,0 +1,209 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LANDING THEME — carries the "One desk" language across every public page.
+   PAINT ONLY. All eleven marketing pages share body.landing-page and the same
+   class vocabulary (hero-title, feature-icon, cta-section …), so one file
+   themes the lot with no per-page markup changes — the same approach that
+   skinned 21 Accounts pages.
+   Excludes .desk-landing, which is the homepage and governs itself.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.landing-page:not(.desk-landing) {
+  --lt-bg: #070a10;
+  --lt-ink: #e6ebf5;
+  --lt-mute: #9aa5ba;
+  --lt-dim: #6f7b91;
+  --lt-line: rgba(255, 255, 255, 0.11);
+  --lt-accent: #6366f1;
+  background: var(--lt-bg);
+  color: var(--lt-ink);
+  margin: 0;
+}
+html:has(body.landing-page:not(.desk-landing)) { background: #070a10; }
+
+/* the ambient wash every surface in the suite floats on */
+body.landing-page:not(.desk-landing)::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 620px at 84% 4%, rgba(99, 102, 241, 0.22), transparent 62%),
+    radial-gradient(900px 560px at 4% 92%, rgba(45, 212, 191, 0.11), transparent 66%);
+}
+body.landing-page:not(.desk-landing) > * { position: relative; z-index: 1; }
+
+/* ── type ─────────────────────────────────────────────────────────────────── */
+body.landing-page:not(.desk-landing) .hero-title,
+body.landing-page:not(.desk-landing) .cta-title,
+body.landing-page:not(.desk-landing) .section-title,
+body.landing-page:not(.desk-landing) h1,
+body.landing-page:not(.desk-landing) h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  color: var(--lt-ink);
+}
+body.landing-page:not(.desk-landing) .hero-title { line-height: 1.05; }
+body.landing-page:not(.desk-landing) .hero-description,
+body.landing-page:not(.desk-landing) .cta-description,
+body.landing-page:not(.desk-landing) .section-subtitle {
+  color: var(--lt-mute);
+  line-height: 1.62;
+}
+body.landing-page:not(.desk-landing) .hero-badge {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a5b0c4;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 7px 14px;
+  backdrop-filter: blur(12px);
+}
+/* figures read as figures */
+body.landing-page:not(.desk-landing) .hero-stats,
+body.landing-page:not(.desk-landing) .stat-value,
+body.landing-page:not(.desk-landing) .plan-price {
+  font-variant-numeric: tabular-nums;
+}
+body.landing-page:not(.desk-landing) .stat-value,
+body.landing-page:not(.desk-landing) .plan-price {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  letter-spacing: -0.03em;
+  color: var(--lt-ink);
+}
+body.landing-page:not(.desk-landing) .stat-label {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--lt-dim);
+}
+
+/* ── glass surfaces ───────────────────────────────────────────────────────── */
+body.landing-page:not(.desk-landing) .feature-card,
+body.landing-page:not(.desk-landing) .plan-card,
+body.landing-page:not(.desk-landing) .hero-mockup,
+body.landing-page:not(.desk-landing) .cta-container,
+body.landing-page:not(.desk-landing) .testimonial-card,
+body.landing-page:not(.desk-landing) .faq-item {
+  position: relative;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  border: 1px solid var(--lt-line);
+  border-radius: 15px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+body.landing-page:not(.desk-landing) .feature-card:hover,
+body.landing-page:not(.desk-landing) .plan-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+/* the gloss that separates glass from a flat tint */
+body.landing-page:not(.desk-landing) .feature-card::before,
+body.landing-page:not(.desk-landing) .plan-card::before,
+body.landing-page:not(.desk-landing) .cta-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 26%);
+  pointer-events: none;
+}
+body.landing-page:not(.desk-landing) .feature-card > *,
+body.landing-page:not(.desk-landing) .plan-card > *,
+body.landing-page:not(.desk-landing) .cta-container > * { position: relative; z-index: 1; }
+
+body.landing-page:not(.desk-landing) .feature-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--lt-accent) 16%, transparent);
+  color: var(--lt-accent);
+}
+body.landing-page:not(.desk-landing) .feature-icon svg { width: 17px; height: 17px; }
+body.landing-page:not(.desk-landing) .feature-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--lt-ink);
+}
+body.landing-page:not(.desk-landing) .feature-description {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--lt-dim);
+}
+
+/* ── buttons ──────────────────────────────────────────────────────────────── */
+body.landing-page:not(.desk-landing) .btn-primary {
+  background: #fff;
+  color: #0b0e15;
+  border: none;
+  border-radius: 11px;
+  font-weight: 600;
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+body.landing-page:not(.desk-landing) .btn-primary:hover { background: #e9ecf3; transform: translateY(-1px); }
+body.landing-page:not(.desk-landing) .btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--lt-ink);
+  border-radius: 11px;
+  backdrop-filter: blur(12px);
+  transition: transform 0.16s ease, border-color 0.16s ease;
+}
+body.landing-page:not(.desk-landing) .btn-secondary:hover { border-color: rgba(255, 255, 255, 0.3); transform: translateY(-1px); }
+
+/* ── the close block ──────────────────────────────────────────────────────── */
+body.landing-page:not(.desk-landing) .cta-section { background: none; }
+body.landing-page:not(.desk-landing) .cta-container {
+  background: linear-gradient(160deg, rgba(99, 102, 241, 0.16), rgba(255, 255, 255, 0.03));
+  border-radius: 20px;
+}
+
+/* ── hero backdrop: let the page wash do the work ─────────────────────────── */
+body.landing-page:not(.desk-landing) .hero-section { background: none; }
+body.landing-page:not(.desk-landing) .hero-gradient,
+body.landing-page:not(.desk-landing) .hero-bg { opacity: 0.5; }
+
+/* ── footer ───────────────────────────────────────────────────────────────── */
+body.landing-page:not(.desk-landing) footer,
+body.landing-page:not(.desk-landing) .footer {
+  background: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+body.landing-page:not(.desk-landing) .footer a { color: var(--lt-dim); }
+body.landing-page:not(.desk-landing) .footer a:hover { color: var(--lt-ink); }
+/* the wordmark, not the typed word — brand_logo.png is the dark variant and
+   is invisible on this background */
+body.landing-page:not(.desk-landing) .navbar-brand img,
+body.landing-page:not(.desk-landing) .footer-logo img { filter: brightness(0) invert(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  body.landing-page:not(.desk-landing) .feature-card,
+  body.landing-page:not(.desk-landing) .plan-card,
+  body.landing-page:not(.desk-landing) .btn-primary,
+  body.landing-page:not(.desk-landing) .btn-secondary { transition: none; }
+}
+
+/* The wordmark had no size constraint. It was previously the dark asset and
+   effectively invisible, so nobody saw it colliding with the first nav link;
+   turning it white made the overlap obvious. Cap it and stop it shrinking. */
+body.landing-page:not(.desk-landing) .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-right: 26px;
+}
+body.landing-page:not(.desk-landing) .navbar-brand img {
+  height: 26px;
+  width: auto;
+  max-width: 190px;
+  display: block;
+}
+body.landing-page:not(.desk-landing) .footer-logo img { height: 22px; width: auto; }
