@@ -426,3 +426,122 @@ body.form-desk .forgot-password-link {
   text-decoration: none;
 }
 body.form-desk .forgot-password-link:hover { text-decoration: underline; }
+
+/* ── button spinner ───────────────────────────────────────────────────────────
+   button-spinner.js injects a .btn-spinner and expects the stylesheet to keep
+   it hidden until the button carries .loading. That rule used to live in
+   login-redesign.css; dropping that file left the spinner running on every
+   submit button forever. It lives here now, with the auth pages. */
+body.form-desk .btn-spinner {
+  display: none;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: fmSpin 0.7s linear infinite;
+}
+body.form-desk button.loading .btn-spinner,
+body.form-desk .loading .btn-spinner { display: inline-block; }
+body.form-desk button.loading { pointer-events: none; opacity: 0.9; }
+body.form-desk button.loading .btn-arrow { display: none; }
+@keyframes fmSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  body.form-desk .btn-spinner { animation-duration: 1.6s; }
+}
+
+/* ── sign-in: a split, not a card floating in space ───────────────────────────
+   A centred box on an empty page tells somebody nothing about what they are
+   signing in to. The left column carries the claim and the product's own wave;
+   the right carries the form. */
+body.form-desk .fm-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 64px;
+  align-items: center;
+  padding: 54px 0 80px;
+}
+body.form-desk .fm-pitch h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(30px, 3.8vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--dk-ink);
+  margin: 18px 0 0;
+}
+body.form-desk .fm-pitch > p {
+  margin: 18px 0 0;
+  font-size: 16px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+  max-width: 480px;
+}
+body.form-desk .fm-wave {
+  margin-top: 32px;
+  height: 116px;
+  border-radius: 14px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow: hidden;
+  position: relative;
+}
+body.form-desk .fm-wave svg { width: 100%; height: 100%; display: block; }
+body.form-desk .fm-wave span {
+  position: absolute;
+  left: 16px;
+  top: 12px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.form-desk .fm-points { margin: 26px 0 0; display: grid; gap: 12px; }
+body.form-desk .fm-points div {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 11px;
+  align-items: start;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--dk-mute);
+}
+body.form-desk .fm-points svg {
+  width: 14px; height: 14px;
+  margin-top: 3px;
+  fill: none;
+  stroke: var(--fm);
+  stroke-width: 2.6;
+}
+body.form-desk .fm-points b { color: var(--dk-ink); font-weight: 600; }
+
+@media (max-width: 920px) {
+  body.form-desk .fm-split { grid-template-columns: 1fr; gap: 34px; padding-top: 30px; }
+  body.form-desk .fm-pitch { order: 2; }
+}
+
+/* the auth markup's container was built to fill the viewport on a page that
+   had no header above it. Inside the desk shell that leaves a screen-height
+   hole between the heading and the card. */
+body.form-desk .auth-container {
+  min-height: 0;
+  padding: 0;
+  display: block;
+  margin-top: 28px;
+}
+
+/* styles.css carries `body:has(.auth-container) { display: flex }` to centre a
+   bare auth page. Inside the desk shell that turns the whole wrap into a
+   shrink-to-fit flex item, so the page renders at about half width. */
+body.form-desk {
+  display: block;
+  align-items: initial;
+  justify-content: initial;
+}
+
+/* styles.css is loaded here for the spinner, and brings its own page gradient
+   with it — which reads noticeably bluer than every other desk page. */
+body.form-desk { background: var(--dk-bg); }
