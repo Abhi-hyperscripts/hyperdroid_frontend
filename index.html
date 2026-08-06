@@ -1975,14 +1975,20 @@
           <path d="M0,214 C70,210 110,192 180,190 C250,188 286,208 356,206 C426,204 462,178 532,176 C602,174 640,200 710,196 C780,192 812,164 882,160 C952,156 992,182 1062,178 C1132,174 1166,154 1200,152" fill="none" stroke="#2DD4BF" stroke-width="1.5" stroke-linecap="round" opacity="0.45"/>
         </svg>
 
-        <figure class="dk-pane dk-p2">
-          <img src="assets/screens/app-hrms.png" alt="Ragenaizer HRMS — attendance over the last 30 days with today's headcount" loading="lazy" width="1600" height="1000">
+        <figure class="dk-pane dk-slot0">
+          <img src="assets/screens/app-accounts.png" alt="Ragenaizer Accounts — cash position, receivables and ageing" width="1600" height="1000" fetchpriority="high">
         </figure>
-        <figure class="dk-pane dk-p3">
-          <img src="assets/screens/app-crm.png" alt="Ragenaizer CRM — lead pipeline, overdue follow-ups and where leads come from" loading="lazy" width="1600" height="1000">
+        <figure class="dk-pane dk-slotR1">
+          <img src="assets/screens/app-crm.png" alt="Ragenaizer CRM — lead pipeline and follow-ups due" width="1600" height="1000" loading="lazy">
         </figure>
-        <figure class="dk-pane dk-p1">
-          <img src="assets/screens/app-accounts.png" alt="Ragenaizer Accounts — cash position, receivables and the month's collections" width="1600" height="1000" fetchpriority="high">
+        <figure class="dk-pane dk-slotR2">
+          <img src="assets/screens/app-vision.png" alt="Ragenaizer Meetings — a call with live captions and a summary" width="1600" height="1000" loading="lazy">
+        </figure>
+        <figure class="dk-pane dk-slotL2">
+          <img src="assets/screens/app-pms.png" alt="Ragenaizer Projects — tasks, time logged and what is billable" width="1600" height="1000" loading="lazy">
+        </figure>
+        <figure class="dk-pane dk-slotL1">
+          <img src="assets/screens/app-hrms.png" alt="Ragenaizer HRMS — attendance, headcount and payroll" width="1600" height="1000" loading="lazy">
         </figure>
       </div>
 
@@ -2269,6 +2275,122 @@
                 window.location.href = 'pages/tenant-manager/login.html';
             });
         }
+    </script>
+
+    <!-- ══ The desk rotates through the modules as you scroll ══════════════════
+         The hero claims eight products and shows three. Tying the panes to
+         scroll position lets it show all eight without a carousel, an autoplay
+         timer, or anything to click.
+
+         Position-derived rather than delta-accumulated: the step is a pure
+         function of scrollY, so scrolling back up returns the exact images you
+         just saw instead of drifting out of sync. -->
+    <script>
+    (function () {
+        'use strict';
+        var desk = document.querySelector('.dk-desk');
+        if (!desk) return;
+
+        // Ordered so step 0 puts Accounts in the centre with HRMS and CRM on
+        // its shoulders — the arrangement the page has always opened with, and
+        // the one the markup renders without this script.
+        var MODULES = [
+            ['app-accounts', 'Ragenaizer Accounts — cash position, receivables and ageing',   'Accounts'],
+            ['app-crm',      'Ragenaizer CRM — lead pipeline and follow-ups due',             'CRM'],
+            ['app-vision',   'Ragenaizer Meetings — a call with live captions and a summary', 'Meetings'],
+            ['app-chat',     'Ragenaizer Chat — direct and group conversations',              'Chat'],
+            ['app-drive',    'Ragenaizer Drive — files, folders and revocable share links',   'Drive'],
+            ['app-email',    'Ragenaizer Mail — the shared inbox beside the customer record', 'Mail'],
+            ['app-pms',      'Ragenaizer Projects — tasks, time logged and what is billable', 'Projects'],
+            ['app-hrms',     'Ragenaizer HRMS — attendance, headcount and payroll',           'HRMS']
+        ];
+        var SLOT_CLASS = { '-2': 'dk-slotL2', '-1': 'dk-slotL1', '0': 'dk-slot0',
+                           '1': 'dk-slotR1', '2': 'dk-slotR2' };
+        var STEP_PX = 190;          // scroll distance that turns the dial one notch
+        var SRC = 'assets/screens/';
+
+        var panes = [].slice.call(desk.querySelectorAll('.dk-pane'));
+        if (panes.length !== 5) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        var caption = document.querySelector('.dk-deskcap');
+        var CAP = 'Real screens from a running workspace';
+        var step = 0, ticking = false, visible = true;
+
+        // Five panes ride a loop of eight screens. A pane's slot is a pure
+        // function of its index and the current step, so the dial is
+        // reversible: scrolling back up returns the exact arrangement you just
+        // saw rather than drifting.
+        function slotOf(paneIndex, k) {
+            var m = ((paneIndex - k) % 5 + 5) % 5;   // 0,1,2,3,4
+            return m <= 2 ? m : m - 5;               // 0,+1,+2,-2,-1
+        }
+
+        function apply(k) {
+            if (k === step) return;
+            step = k;
+            panes.forEach(function (pane, i) {
+                var slot = slotOf(i, k);
+                var cls = SLOT_CLASS[String(slot)];
+                if (!pane.classList.contains(cls)) {
+                    pane.className = 'dk-pane ' + cls;
+                }
+                // Every pane is reconciled to the screen its slot should be
+                // showing, not just the hidden wings. Turning the dial one
+                // notch at a time only ever changes a wing, so in normal use
+                // nothing swaps in front of you — but a fast scroll can jump
+                // several notches at once and land a pane in a visible slot,
+                // and that pane must not keep the screen it had two notches
+                // ago.
+                var m = MODULES[((k + slot) % MODULES.length + MODULES.length) % MODULES.length];
+                var img = pane.querySelector('img');
+                var want = SRC + m[0] + '.png';
+                if (img && img.getAttribute('src') !== want) {
+                    img.src = want;
+                    img.alt = m[1];
+                }
+            });
+            if (caption) {
+                caption.textContent = CAP + ' · ' + MODULES[k % MODULES.length][2];
+            }
+        }
+
+        function onScroll() {
+            if (ticking || !visible) return;
+            ticking = true;
+            requestAnimationFrame(function () {
+                ticking = false;
+                var y = window.pageYOffset || document.documentElement.scrollTop;
+                apply(Math.max(0, Math.floor(y / STEP_PX)) % MODULES.length);
+            });
+        }
+
+        // Updates pause once the desk is off screen. Re-syncing the moment it
+        // comes back matters: a single long scroll back to the top fires its
+        // scroll events while we are still paused, so without this the dial
+        // would stay frozen on whatever it last showed.
+        if ('IntersectionObserver' in window) {
+            new IntersectionObserver(function (es) {
+                var now = es[0].isIntersecting;
+                if (now && !visible) { visible = true; onScroll(); }
+                visible = now;
+            }, { rootMargin: '250px' }).observe(desk);
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        if (caption) caption.textContent = CAP + ' · ' + MODULES[0][2];
+
+        // The three screens not in the markup are ~1MB between them, so they
+        // are fetched only once the page has finished loading.
+        window.addEventListener('load', function () {
+            var idle = window.requestIdleCallback || function (fn) { setTimeout(fn, 900); };
+            idle(function () {
+                ['app-chat', 'app-drive', 'app-email'].forEach(function (n) {
+                    var pre = new Image(); pre.src = SRC + n + '.png';
+                });
+            });
+        });
+    })();
     </script>
 </body>
 </html>
