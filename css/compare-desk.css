@@ -281,3 +281,19 @@ body.cmp-desk .cm-p { color: #fbbf24; }
   body.cmp-desk .cm-col + .cm-col { border-left: 0; border-top: 1px solid var(--dk-line); }
   body.cmp-desk .cm-drop { grid-template-columns: 1fr; }
 }
+
+/* domain separator inside the evidence table */
+body.cmp-desk .cm-table tr.dom td {
+  background: rgba(6, 9, 15, 0.55);
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cm);
+  padding-top: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+body.cmp-desk .cm-verdict strong,
+body.cmp-desk .dk-lede strong { color: var(--dk-ink); font-weight: 600; }
+body.cmp-desk .cm-note strong { color: var(--dk-mute); font-weight: 600; }
