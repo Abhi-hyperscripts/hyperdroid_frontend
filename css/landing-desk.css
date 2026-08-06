@@ -871,3 +871,138 @@ body.desk-landing .dk-osnote a:hover { text-decoration: underline; }
 }
 
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE LAUNCHER — the platform section, shaped like the workspace you land in.
+
+   Ten modules in a four-column card grid left a ragged 4+4+2 and, worse, told
+   you nothing about how they relate. This is the same object the product opens
+   with once you sign in: a label and a sentence on the left, a panel of rows on
+   the right, one row per module. Someone evaluating the page is looking at the
+   screen they will actually use.
+
+   Two deliberate departures from the app. The app's status column reads
+   "Online", which is telemetry a customer has no use for before they buy — it
+   carries a single checkable fact about each module instead. And the app groups
+   by Money / People / Work / Communication, which would leave one lonely row
+   under Money here because only Accounts is sold separately; these group by the
+   question a buyer is actually asking.
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.desk-landing .dk-launch { margin-top: 44px; }
+
+body.desk-landing .dk-lgroup {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 42px;
+  align-items: start;
+  padding: 30px 0;
+  border-top: 1px solid var(--dk-line);
+}
+body.desk-landing .dk-lgroup:first-child { border-top: 0; padding-top: 0; }
+
+body.desk-landing .dk-lhead h3 {
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dk-ink);
+}
+body.desk-landing .dk-lhead p {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--dk-dim);
+}
+
+/* the panel — the same glass the app's launcher uses */
+body.desk-landing .dk-lrows {
+  border: 1px solid var(--dk-line);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.028);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+body.desk-landing .dk-lrow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--dk-line);
+  text-decoration: none;
+  transition: background 0.14s ease;
+}
+body.desk-landing .dk-lrow:last-child { border-bottom: 0; }
+body.desk-landing .dk-lrow:hover { background: rgba(255, 255, 255, 0.045); }
+
+/* the icon carries the module's colour, exactly as it does in the product */
+body.desk-landing .dk-lic {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  position: relative;
+  background: color-mix(in srgb, var(--mod) 14%, transparent);
+  color: var(--mod);
+}
+body.desk-landing .dk-lic svg { width: 18px; height: 18px; position: relative; z-index: 1; }
+/* the same soft bloom the live tiles carry */
+body.desk-landing .dk-lic::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--mod) 18%, transparent), transparent 70%);
+  pointer-events: none;
+}
+
+body.desk-landing .dk-lmid { flex: 1; min-width: 0; }
+body.desk-landing .dk-lname {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--dk-ink);
+}
+body.desk-landing .dk-ldesc {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--dk-mute);
+}
+
+/* where the app shows a status dot, this shows something you can check */
+body.desk-landing .dk-lfact {
+  flex: none;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--mod);
+  opacity: 0.85;
+  text-align: right;
+  white-space: nowrap;
+}
+body.desk-landing .dk-larrow {
+  flex: none;
+  width: 16px;
+  text-align: right;
+  font-size: 15px;
+  color: var(--mod);
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+body.desk-landing .dk-lrow:hover .dk-larrow { opacity: 1; }
+
+@media (max-width: 980px) {
+  body.desk-landing .dk-lgroup { grid-template-columns: 1fr; gap: 16px; }
+}
+@media (max-width: 640px) {
+  /* the fact is the first thing to go when the row runs out of room */
+  body.desk-landing .dk-lfact { display: none; }
+  body.desk-landing .dk-lrow { padding: 14px 16px; gap: 13px; }
+}
