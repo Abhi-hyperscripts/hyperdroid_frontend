@@ -1,0 +1,699 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LANDING — "One desk".
+   The public page now uses the same material as the product: an ambient wash
+   with layered glass panes floating on it. Someone who sees this page and
+   signs up finds the same surfaces waiting, which is the point.
+   Scoped to body.desk-landing and loaded after landing.css so it governs.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* The default 8px body margin was letting the html background show as thin
+   strips down both edges — the page looked inset rather than full-bleed.
+   The html element takes the same background so nothing can peek through. */
+html:has(body.desk-landing) {
+  overflow-x: hidden;
+  background: #070a10;
+  margin: 0;
+  padding: 0;
+}
+
+body.desk-landing {
+  margin: 0;
+  padding: 0;
+  --dk-bg: #070a10;
+  --dk-ink: #e6ebf5;
+  --dk-mute: #9aa5ba;
+  --dk-dim: #6f7b91;
+  --dk-line: rgba(255, 255, 255, 0.11);
+  --dk-accent: #6366f1;
+  background: var(--dk-bg);
+  color: var(--dk-ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body.desk-landing::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 620px at 82% 6%, rgba(99, 102, 241, 0.26), transparent 62%),
+    radial-gradient(900px 560px at 6% 88%, rgba(45, 212, 191, 0.13), transparent 66%);
+}
+body.desk-landing > * { position: relative; z-index: 1; }
+
+body.desk-landing .dk-wrap { max-width: 1260px; margin: 0 auto; padding: 0 44px; }
+
+/* ── nav ──────────────────────────────────────────────────────────────────── */
+body.desk-landing .dk-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 0;
+}
+/* The wordmark carries the brand — a typed-out name does not. Same asset the
+   app navbar uses, so the page and the product sign themselves identically. */
+body.desk-landing .dk-logo { display: inline-flex; align-items: center; text-decoration: none; }
+body.desk-landing .dk-logo img {
+  height: 26px;
+  width: auto;
+  display: block;
+}
+body.desk-landing .dk-flogo {
+  height: 22px;
+  width: auto;
+  display: block;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+body.desk-landing .dk-navlinks { display: flex; gap: 28px; }
+body.desk-landing .dk-navlinks a {
+  font-size: 13.5px;
+  color: #96a0b5;
+  text-decoration: none;
+  transition: color 0.14s ease;
+}
+body.desk-landing .dk-navlinks a:hover { color: var(--dk-ink); }
+body.desk-landing .dk-navcta {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--dk-line);
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: var(--dk-ink);
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+}
+body.desk-landing .dk-navcta:hover { background: rgba(255, 255, 255, 0.13); }
+
+/* ── hero ─────────────────────────────────────────────────────────────────── */
+body.desk-landing .dk-hero { text-align: center; padding: 64px 0 0; }
+body.desk-landing .dk-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a5b0c4;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 7px 14px;
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+}
+body.desk-landing .dk-eyebrow i {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  display: inline-block;
+}
+body.desk-landing h1.dk-h1 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(38px, 5.2vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 26px 0 0;
+  color: var(--dk-ink);
+}
+body.desk-landing .dk-sub {
+  margin: 20px auto 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--dk-mute);
+  max-width: 620px;
+}
+body.desk-landing .dk-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+body.desk-landing .dk-btn1 {
+  background: #fff;
+  color: #0b0e15;
+  padding: 13px 26px;
+  border-radius: 11px;
+  font-weight: 600;
+  font-size: 14.5px;
+  text-decoration: none;
+}
+body.desk-landing .dk-btn1:hover { background: #e9ecf3; }
+body.desk-landing .dk-btn2 {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 13px 24px;
+  border-radius: 11px;
+  font-size: 14.5px;
+  color: var(--dk-ink);
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+}
+body.desk-landing .dk-btn2:hover { border-color: rgba(255, 255, 255, 0.3); }
+
+/* ── the desk: layered glass panes ────────────────────────────────────────── */
+body.desk-landing .dk-desk {
+  position: relative;
+  height: 470px;
+  margin-top: 56px;
+}
+/* The wave sits UNDER the panes as the desk's substrate — the same
+   relationship the app has, where the wave runs beneath the pulse cards
+   rather than sitting in a box of its own. */
+body.desk-landing .dk-desk-wave {
+  position: absolute;
+  left: -6%;
+  bottom: -14px;
+  width: 112%;              /* bleeds past the desk without leaving the page */
+  height: 260px;
+  z-index: 0;
+  pointer-events: none;
+}
+body.desk-landing .dk-deskcap {
+  margin: 22px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+body.desk-landing .dk-pane {
+  position: absolute;
+  border-radius: 16px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  animation: dkRise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+body.desk-landing .dk-pane img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: left top;
+}
+body.desk-landing .dk-pane::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), transparent 30%);
+  pointer-events: none;
+}
+@keyframes dkRise { from { opacity: 0; transform: translateY(26px) var(--tilt, ); } }
+body.desk-landing .dk-p1 {
+  left: 50%; top: 0;
+  transform: translateX(-50%);
+  width: min(820px, 84vw);
+  height: 430px;
+  z-index: 3;
+  animation-delay: 0.05s;
+}
+body.desk-landing .dk-p2 {
+  left: calc(50% - 545px); top: 62px;
+  width: 330px; height: 280px;
+  transform: rotate(-7deg);
+  z-index: 2;
+  animation-delay: 0.16s;
+}
+body.desk-landing .dk-p3 {
+  left: calc(50% + 232px); top: 54px;
+  width: 340px; height: 292px;
+  transform: rotate(6deg);
+  z-index: 2;
+  animation-delay: 0.26s;
+}
+body.desk-landing .dk-ph {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #a5b0c4;
+  margin-bottom: 12px;
+}
+body.desk-landing .dk-dot { width: 7px; height: 7px; border-radius: 50%; }
+body.desk-landing .dk-ln { height: 9px; border-radius: 5px; background: rgba(255, 255, 255, 0.10); margin-bottom: 9px; }
+body.desk-landing .dk-ln.hi { background: rgba(255, 255, 255, 0.21); }
+body.desk-landing .dk-bars { display: flex; align-items: flex-end; gap: 7px; height: 92px; margin-top: 14px; }
+body.desk-landing .dk-bars i { flex: 1; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #6366f1, rgba(99, 102, 241, 0.25)); }
+body.desk-landing .dk-kpi { font-family: var(--font-family-mono); font-size: 26px; margin-bottom: 4px; }
+body.desk-landing .dk-kpil {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8b96ab;
+}
+
+/* ── shared section furniture ─────────────────────────────────────────────── */
+body.desk-landing .dk-section { padding: 96px 0; }
+body.desk-landing .dk-kicker {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--dk-accent);
+  margin-bottom: 16px;
+}
+body.desk-landing h2.dk-h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(28px, 3.4vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 0;
+  color: var(--dk-ink);
+}
+body.desk-landing .dk-lede { margin-top: 16px; font-size: 16px; line-height: 1.62; color: var(--dk-mute); max-width: 620px; }
+
+/* ── product grid ─────────────────────────────────────────────────────────── */
+body.desk-landing .dk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 12px;
+  margin-top: 40px;
+}
+body.desk-landing .dk-card {
+  display: block;
+  padding: 20px;
+  border-radius: 15px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+body.desk-landing .dk-card:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.24); }
+body.desk-landing .dk-card .ic {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+}
+body.desk-landing .dk-card .ic svg { width: 17px; height: 17px; fill: none; stroke-width: 2; }
+body.desk-landing .dk-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--dk-ink);
+}
+body.desk-landing .dk-card p { font-size: 13px; line-height: 1.55; color: var(--dk-dim); margin: 0; }
+
+/* ── the thread (proof) ───────────────────────────────────────────────────── */
+body.desk-landing .dk-thread {
+  margin-top: 40px;
+  border-radius: 16px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  overflow: hidden;
+}
+body.desk-landing .dk-trow {
+  display: grid;
+  grid-template-columns: 66px 1fr auto;
+  gap: 16px;
+  align-items: baseline;
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+body.desk-landing .dk-trow:last-child { border-bottom: none; }
+body.desk-landing .dk-tt { font-family: var(--font-family-mono); font-size: 11.5px; color: var(--dk-dim); }
+body.desk-landing .dk-tw { font-size: 14px; color: var(--dk-ink); }
+body.desk-landing .dk-tw b { font-weight: 600; }
+body.desk-landing .dk-tsrc {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--dk-accent);
+}
+body.desk-landing .dk-ta { font-family: var(--font-family-mono); font-size: 13.5px; color: var(--dk-ink); white-space: nowrap; }
+body.desk-landing .dk-tfoot {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  font-family: var(--font-family-mono);
+  font-size: 11.5px;
+  color: var(--dk-mute);
+}
+
+/* ── differentiators ──────────────────────────────────────────────────────── */
+body.desk-landing .dk-three {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 32px;
+  margin-top: 44px;
+}
+body.desk-landing .dk-three h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--dk-ink);
+}
+body.desk-landing .dk-three p { font-size: 14px; line-height: 1.62; color: var(--dk-mute); margin: 0; }
+body.desk-landing .dk-three .num {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--dk-accent);
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* ── close ────────────────────────────────────────────────────────────────── */
+body.desk-landing .dk-close {
+  text-align: center;
+  padding: 90px 44px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(99, 102, 241, 0.16), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  margin-bottom: 90px;
+}
+body.desk-landing .dk-close p { margin: 16px auto 0; color: var(--dk-mute); font-size: 16px; max-width: 520px; }
+body.desk-landing .dk-close .dk-actions { margin-top: 30px; }
+
+/* ── footer ───────────────────────────────────────────────────────────────── */
+body.desk-landing .dk-foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 42px 0 60px;
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+body.desk-landing .dk-foot a { color: var(--dk-dim); text-decoration: none; font-size: 13px; }
+body.desk-landing .dk-foot a:hover { color: var(--dk-ink); }
+body.desk-landing .dk-fcol { display: flex; flex-direction: column; gap: 9px; }
+body.desk-landing .dk-fcol strong {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  font-weight: 400;
+  margin-bottom: 3px;
+}
+body.desk-landing .dk-fnote { font-size: 12px; color: #5f6b80; max-width: 280px; line-height: 1.6; }
+
+@media (max-width: 900px) {
+  body.desk-landing .dk-navlinks { display: none; }
+  body.desk-landing .dk-desk { height: 300px; }
+  body.desk-landing .dk-p2, body.desk-landing .dk-p3 { display: none; }
+  body.desk-landing .dk-p1 { width: 92vw; height: 290px; }
+  body.desk-landing .dk-section { padding: 64px 0; }
+  body.desk-landing .dk-wrap { padding: 0 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.desk-landing .dk-pane { animation: none; }
+}
+
+/* ── pulse band ───────────────────────────────────────────────────────────────
+   The wave is the product's signature: every dashboard opens on one. Putting it
+   on the landing page means the page and the app speak the same visual language
+   rather than the marketing site inventing its own. */
+body.desk-landing .dk-pulse {
+  padding: 30px 0 96px;
+}
+body.desk-landing .dk-pulse-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 36px;
+  flex-wrap: wrap;
+}
+body.desk-landing .dk-pulse-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+body.desk-landing .dk-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  white-space: nowrap;
+}
+body.desk-landing .dk-chip b {
+  font-family: var(--font-family-mono);
+  font-size: 16px;
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+}
+body.desk-landing .dk-chip span { font-size: 12px; color: var(--dk-dim); }
+
+body.desk-landing .dk-wave {
+  position: relative;
+  margin-top: 30px;
+  border-radius: 16px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px) saturate(1.12);
+  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  overflow: hidden;
+  height: 168px;
+}
+body.desk-landing .dk-wave svg { width: 100%; height: 100%; display: block; }
+body.desk-landing .dk-wavecap {
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+
+/* ── product shots ────────────────────────────────────────────────────────── */
+body.desk-landing .dk-shots {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 40px;
+}
+body.desk-landing .dk-shot {
+  margin: 0;
+  border-radius: 16px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+body.desk-landing .dk-shot-wide { grid-column: 1 / -1; }
+body.desk-landing .dk-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-bottom: 1px solid var(--dk-line);
+}
+body.desk-landing .dk-shot figcaption {
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--dk-dim);
+}
+body.desk-landing .dk-shot figcaption b { color: var(--dk-ink); font-weight: 600; }
+
+@media (max-width: 900px) {
+  body.desk-landing .dk-shots { grid-template-columns: 1fr; }
+  body.desk-landing .dk-wave { height: 130px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIFT — three things, not decoration.
+   1. The thread was the best idea on the page and read as a plain table.
+   2. Every section had the same shape, so the page scanned as a list.
+   3. Nothing moved, so it felt like a document rather than a product.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. the thread, made literal ──────────────────────────────────────────────
+   A spine runs through the rows with a node per step, lit in the accent of
+   whichever product handled it — so the hand-off between products is the
+   thing you see, which is the whole claim. */
+body.desk-landing .dk-trow {
+  position: relative;
+  grid-template-columns: 66px 26px 1fr auto;
+  transition: background 0.18s ease;
+}
+body.desk-landing .dk-trow:hover { background: rgba(255, 255, 255, 0.03); }
+body.desk-landing .dk-node {
+  position: relative;
+  align-self: stretch;
+  display: block;
+  width: 26px;
+}
+/* the spine */
+body.desk-landing .dk-node::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -16px;
+  bottom: -16px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, transparent, var(--c) 18%, var(--c) 82%, transparent);
+  opacity: 0.45;
+}
+body.desk-landing .dk-trow:first-child .dk-node::before { top: 12px; }
+body.desk-landing .dk-trow:last-of-type .dk-node::before { bottom: 12px; }
+/* the node */
+body.desk-landing .dk-node::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 7px;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 22%, transparent),
+              0 0 18px color-mix(in srgb, var(--c) 55%, transparent);
+}
+body.desk-landing .dk-tsrc { color: var(--c); }
+
+/* ── 2. a numbers strip — the page gave the reader nothing to hold on to ─── */
+body.desk-landing .dk-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  margin: 8px 0 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--dk-line);
+  background: var(--dk-line);
+}
+body.desk-landing .dk-strip > div {
+  background: rgba(10, 14, 22, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+body.desk-landing .dk-strip b {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 40px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--dk-ink);
+}
+body.desk-landing .dk-strip span { font-size: 13px; color: var(--dk-dim); }
+
+/* ── 3. arrival ───────────────────────────────────────────────────────────── */
+body.desk-landing .dk-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+body.desk-landing .dk-reveal.is-in { opacity: 1; transform: none; }
+
+/* product cards pick up their own accent on hover, so the grid stops reading
+   as eight identical tiles */
+body.desk-landing .dk-card { position: relative; overflow: hidden; }
+body.desk-landing .dk-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  background: radial-gradient(320px 130px at 22% -10%, var(--accent, #6366f1), transparent 70%);
+  pointer-events: none;
+}
+body.desk-landing .dk-card:hover::after { opacity: 0.13; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.desk-landing .dk-reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOTION — every effect here answers something. Nothing moves decoratively.
+   All of it is disabled under prefers-reduced-motion, both in CSS and in JS.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* the desk panes are driven by JS on pointermove, so they must not fight it
+   with their own transition on transform */
+body.desk-landing .dk-pane { will-change: transform; }
+body.desk-landing .dk-p1,
+body.desk-landing .dk-p2,
+body.desk-landing .dk-p3 { transition: box-shadow 0.3s ease; }
+body.desk-landing .dk-desk:hover .dk-pane { box-shadow: 0 36px 90px rgba(0, 0, 0, 0.58); }
+
+/* spotlight follows the cursor across a card rather than sitting in a corner */
+body.desk-landing .dk-card::after {
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 0%), var(--accent, #6366f1), transparent 68%);
+}
+
+/* staggered arrival for grid children — the parent section still fades, but
+   its contents assemble, which reads as considered rather than abrupt */
+body.desk-landing .dk-card,
+body.desk-landing .dk-strip > div,
+body.desk-landing .dk-trow {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+              background 0.18s ease, border-color 0.15s ease;
+}
+body.desk-landing .dk-card.is-in,
+body.desk-landing .dk-strip > div.is-in,
+body.desk-landing .dk-trow.is-in { opacity: 1; transform: none; }
+
+/* the thread's nodes breathe in sequence — the eye follows the hand-off from
+   one product to the next, which is the section's whole argument */
+body.desk-landing .dk-trow.is-in .dk-node::after { animation: dkNode 3.4s ease-in-out infinite; }
+body.desk-landing .dk-trow:nth-of-type(2) .dk-node::after { animation-delay: 0.34s; }
+body.desk-landing .dk-trow:nth-of-type(3) .dk-node::after { animation-delay: 0.68s; }
+body.desk-landing .dk-trow:nth-of-type(4) .dk-node::after { animation-delay: 1.02s; }
+body.desk-landing .dk-trow:nth-of-type(5) .dk-node::after { animation-delay: 1.36s; }
+@keyframes dkNode {
+  0%, 68%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 20%, transparent), 0 0 14px color-mix(in srgb, var(--c) 45%, transparent); }
+  16%           { box-shadow: 0 0 0 7px color-mix(in srgb, var(--c) 26%, transparent), 0 0 28px color-mix(in srgb, var(--c) 85%, transparent); }
+}
+
+/* the ambient wash drifts very slowly — 40s, so it is felt rather than seen */
+body.desk-landing::after { animation: dkDrift 40s ease-in-out infinite alternate; }
+@keyframes dkDrift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(-2.5%, 1.5%, 0) scale(1.06); }
+}
+
+/* buttons acknowledge the pointer */
+body.desk-landing .dk-btn1,
+body.desk-landing .dk-btn2,
+body.desk-landing .dk-navcta { transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease; }
+body.desk-landing .dk-btn1:hover,
+body.desk-landing .dk-btn2:hover { transform: translateY(-1px); }
+body.desk-landing .dk-btn1:active,
+body.desk-landing .dk-btn2:active { transform: translateY(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  body.desk-landing .dk-card,
+  body.desk-landing .dk-strip > div,
+  body.desk-landing .dk-trow { opacity: 1; transform: none; transition: none; }
+  body.desk-landing .dk-trow .dk-node::after,
+  body.desk-landing::after { animation: none; }
+  body.desk-landing .dk-pane { animation: none; }
+}
