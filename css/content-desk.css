@@ -1,0 +1,391 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTENT PAGES — comparisons, use cases, features, insights, calculators,
+   blog. Loaded after landing-desk.css, scoped to body.content-desk.
+
+   These 67 pages share one template vocabulary: a hero, pain cards, a
+   comparison table, a cost table, a CTA. The structure is sound — hero,
+   problem, evidence, ask, is the right shape for this kind of page — so what
+   changes here is the material, not the skeleton. Product landing pages
+   needed rebuilding because their structure was the problem; these did not.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.content-desk { --ct: #6366f1; }
+
+/* ── heroes ───────────────────────────────────────────────────────────────── */
+body.content-desk .compare-hero,
+body.content-desk .usecase-hero,
+body.content-desk .feature-hero,
+body.content-desk .calc-hero,
+body.content-desk .blog-hero,
+body.content-desk .hub-hero,
+body.content-desk .insights-hero {
+  padding: 54px 0 40px;
+  background: none;
+  text-align: center;
+}
+body.content-desk .compare-badge,
+body.content-desk .hero-badge,
+body.content-desk .calc-badge,
+body.content-desk .feature-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a5b0c4;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 7px 14px;
+  border-radius: 999px;
+  margin-bottom: 22px;
+}
+body.content-desk h1,
+body.content-desk .compare-title,
+body.content-desk .hero-title,
+body.content-desk .calc-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(30px, 4.4vw, 50px);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  color: var(--dk-ink);
+  margin: 0;
+}
+body.content-desk .compare-subtitle,
+body.content-desk .hero-subtitle,
+body.content-desk .calc-subtitle,
+body.content-desk .hero-desc {
+  margin: 18px auto 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--dk-mute);
+  max-width: 660px;
+}
+
+/* the "X vs Y" plates at the top of a comparison */
+body.content-desk .vs-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin: 30px 0 0;
+  flex-wrap: wrap;
+}
+body.content-desk .vs-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 18px 26px;
+  border-radius: 16px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  min-width: 150px;
+}
+body.content-desk .vs-name { font-size: 15px; font-weight: 600; color: var(--dk-ink); }
+body.content-desk .vs-tag {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.content-desk .vs-text {
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.content-desk .hero-stat { text-align: center; }
+body.content-desk .hero-stat-value {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 34px;
+  letter-spacing: -0.03em;
+  color: var(--dk-ink);
+}
+body.content-desk .hero-stat-label {
+  font-size: 12.5px;
+  color: var(--dk-dim);
+  margin-top: 3px;
+}
+
+/* ── section furniture ────────────────────────────────────────────────────── */
+body.content-desk section { padding: 62px 0; }
+body.content-desk .section-header { text-align: center; margin-bottom: 40px; }
+body.content-desk .section-title,
+body.content-desk h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(26px, 3.2vw, 36px);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: var(--dk-ink);
+  margin: 0;
+}
+body.content-desk .section-desc {
+  margin: 15px auto 0;
+  font-size: 16px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+  max-width: 620px;
+}
+body.content-desk h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.015em;
+  color: var(--dk-ink);
+}
+body.content-desk p { color: var(--dk-mute); line-height: 1.68; }
+
+/* ── cards ────────────────────────────────────────────────────────────────── */
+body.content-desk .pain-card,
+body.content-desk .hub-card,
+body.content-desk .feature-deep-card,
+body.content-desk .cost-column,
+body.content-desk .winner-banner,
+body.content-desk .calc-card,
+body.content-desk .content-card {
+  border-radius: 16px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  padding: 24px 26px;
+}
+body.content-desk .hub-card { transition: transform 0.15s ease, border-color 0.15s ease; }
+body.content-desk .hub-card:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.24); }
+body.content-desk .pain-card-icon,
+body.content-desk .feature-deep-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(99, 102, 241, 0.16);
+  margin-bottom: 14px;
+}
+body.content-desk .pain-card-icon svg,
+body.content-desk .feature-deep-icon svg { width: 18px; height: 18px; }
+body.content-desk .winner-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  border-color: color-mix(in srgb, #4ade80 34%, transparent);
+  background: linear-gradient(155deg, rgba(74, 222, 128, 0.1), rgba(255, 255, 255, 0.02));
+}
+body.content-desk .winner-icon { flex: none; font-size: 26px; }
+
+/* ── comparison tables ────────────────────────────────────────────────────── */
+body.content-desk .comparison-table-wrap,
+body.content-desk .table-wrap {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.03);
+}
+body.content-desk .comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+body.content-desk .comparison-table th,
+body.content-desk .comparison-table td {
+  padding: 13px 18px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 14px;
+  color: var(--dk-mute);
+  vertical-align: top;
+}
+body.content-desk .comparison-table th {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  font-weight: 400;
+  background: rgba(255, 255, 255, 0.03);
+}
+body.content-desk .comparison-table tbody tr:last-child td { border-bottom: 0; }
+body.content-desk .comparison-table tbody tr:hover td { background: rgba(255, 255, 255, 0.028); }
+/* our column, marked so the eye lands on it */
+body.content-desk .highlight-cell {
+  background: color-mix(in srgb, var(--ct) 12%, transparent) !important;
+  color: var(--dk-ink) !important;
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--ct) 40%, transparent),
+              inset -1px 0 0 color-mix(in srgb, var(--ct) 40%, transparent);
+}
+body.content-desk .feature-name { color: var(--dk-ink); font-weight: 500; }
+body.content-desk .feature-desc { display: block; font-size: 12.5px; color: var(--dk-dim); margin-top: 3px; }
+body.content-desk .check,
+body.content-desk .good { color: #4ade80; }
+body.content-desk .cross,
+body.content-desk .bad { color: #f87171; }
+body.content-desk .limited { color: #fbbf24; }
+
+/* ── cost comparison ──────────────────────────────────────────────────────── */
+body.content-desk .cost-item,
+body.content-desk .cost-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13.5px;
+  color: var(--dk-mute);
+}
+body.content-desk .cost-item .price,
+body.content-desk .cost-total .price {
+  font-family: var(--font-family-mono);
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+body.content-desk .cost-total {
+  border-bottom: 0;
+  padding-top: 14px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+body.content-desk .cost-total .label { color: var(--dk-ink); font-weight: 600; }
+body.content-desk .cost-total .price { font-size: 18px; }
+body.content-desk .price.savings { color: #4ade80; }
+/* the conversion-rate caveat under a cost table */
+body.content-desk .cost-note {
+  grid-column: 1 / -1;
+  margin: 18px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--dk-dim);
+  border-left: 2px solid var(--dk-line);
+  padding-left: 14px;
+}
+
+/* ── buttons ──────────────────────────────────────────────────────────────── */
+body.content-desk .cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+body.content-desk .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fff;
+  color: #0b0e15;
+  padding: 13px 26px;
+  border-radius: 11px;
+  font-weight: 600;
+  font-size: 14.5px;
+  text-decoration: none;
+  border: 0;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+body.content-desk .btn-primary:hover { background: #e9ecf3; transform: translateY(-1px); }
+body.content-desk .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 13px 24px;
+  border-radius: 11px;
+  font-size: 14.5px;
+  color: var(--dk-ink);
+  text-decoration: none;
+  background: transparent;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+body.content-desk .btn-secondary:hover { border-color: rgba(255, 255, 255, 0.3); transform: translateY(-1px); }
+
+/* ── closing CTA ──────────────────────────────────────────────────────────── */
+body.content-desk .compare-cta,
+body.content-desk .usecase-cta,
+body.content-desk .feature-cta,
+body.content-desk .calc-cta,
+body.content-desk .newsletter-section {
+  text-align: center;
+  padding: 66px 40px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(99, 102, 241, 0.16), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  margin: 40px 0 70px;
+}
+body.content-desk .cta-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(24px, 3vw, 34px);
+  letter-spacing: -0.025em;
+  color: var(--dk-ink);
+  margin: 0;
+}
+body.content-desk .cta-desc { margin: 14px auto 0; color: var(--dk-mute); font-size: 16px; max-width: 540px; }
+
+/* ── grids ────────────────────────────────────────────────────────────────── */
+body.content-desk .pain-grid,
+body.content-desk .solutions-grid,
+body.content-desk .hub-grid,
+body.content-desk .features-deep-grid,
+body.content-desk .cost-comparison,
+body.content-desk .stats-banner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  gap: 16px;
+}
+body.content-desk .cost-comparison { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+/* ── prose ────────────────────────────────────────────────────────────────── */
+body.content-desk .content-section { max-width: 760px; margin: 0 auto; }
+body.content-desk .content-section li { color: var(--dk-mute); line-height: 1.7; margin-bottom: 7px; }
+body.content-desk a { color: var(--ct); }
+body.content-desk .section-header a,
+body.content-desk .btn-primary,
+body.content-desk .btn-secondary { color: inherit; }
+
+@media (max-width: 760px) {
+  body.content-desk section { padding: 42px 0; }
+  body.content-desk .compare-cta,
+  body.content-desk .usecase-cta,
+  body.content-desk .feature-cta { padding: 44px 22px; }
+}
+
+/* ── icons ────────────────────────────────────────────────────────────────────
+   Several of these pages drop a bare <svg> with only a viewBox into the
+   markup and relied on a page stylesheet to size it. Without one an icon
+   expands to fill its container — a 405px tick, in one case. This is the
+   backstop: nothing decorative gets to be bigger than an icon unless it is
+   explicitly told otherwise. */
+body.content-desk .solution svg,
+body.content-desk .cost-item svg,
+body.content-desk .check svg,
+body.content-desk .cross svg,
+body.content-desk td svg,
+body.content-desk li svg,
+body.content-desk p svg,
+body.content-desk h3 svg,
+body.content-desk h4 svg { width: 16px; height: 16px; flex: none; }
+body.content-desk .pain-card-icon svg,
+body.content-desk .feature-deep-icon svg { width: 18px; height: 18px; }
+
+/* the "Ragenaizer does this" line at the foot of a pain card */
+body.content-desk .solution {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 16px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #4ade80 26%, transparent);
+  background: rgba(74, 222, 128, 0.08);
+  color: #86efac;
+  font-size: 13px;
+  line-height: 1.5;
+}
+body.content-desk .solution svg { stroke: #4ade80; }
+body.content-desk .solution span { color: #86efac; }

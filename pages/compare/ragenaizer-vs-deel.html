@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -94,7 +95,7 @@
     </script>
 
     <!-- Fonts matching index page -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -711,414 +712,114 @@
             .compare-table th, .compare-table td { padding: 12px 8px; }
         }
     </style>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/compare-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page compare-page">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing cmp-desk">
 
-    <!-- Hero Section -->
-    <section class="compare-hero">
-        <div class="compare-hero-bg">
-            <div class="compare-hero-grid"></div>
-        </div>
-        <div class="compare-hero-content">
-            <div class="vs-badge">
-                <img src="/assets/brand_logo.png" alt="Ragenaizer" class="vs-logo">
-                <span class="vs-text">vs</span>
-                <span style="font-family: 'Electrolize', sans-serif; font-size: 20px; color: #ffffff; letter-spacing: 0.05em;">Deel</span>
-            </div>
-            <h1>Global Payroll: <span class="highlight">Transparent</span> vs Black Box</h1>
-            <p>Both handle multi-country payroll. But Ragenaizer shows you exactly how every number is calculated, while Deel charges per employee per country without the calculation transparency.</p>
-        </div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
+        <img src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../../index.html#platform">Platform</a>
+        <a href="../../index.html#how">How it fits</a>
+        <a href="../pricing.html">Pricing</a>
+        <a href="../research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="../login.html">Sign in</a>
+    </nav>
+
+    <header class="cm-hero">
+      <div class="dk-eyebrow"><i></i>Ragenaizer vs Deel</div>
+      <h1 class="cm-h1">Global Payroll: Transparent vs Black Box</h1>
+      
+      
+    </header>
+
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">Being straight</div>
+      <h2 class="dk-h2">When you should stay where you are.</h2>
+      <p class="dk-lede">A comparison page that finds no reason to keep the other tool is not a comparison, it is an advert. Three honest ones.</p>
+      <div class="cm-stay">
+        <div><h3>You only need this one thing</h3><p>If Deel is the only software your business runs and you have no intention of adding a CRM, projects or HR, a specialist tool will go deeper in its own lane than we will. Our argument is the stack, not the single app.</p></div>
+        <div><h3>Your team is fluent in it</h3><p>Retraining has a real cost, and it lands on the people who are busiest. If everyone is fast in Deel and nothing is actually breaking, the licence saving may not cover the disruption this year.</p></div>
+        <div><h3>You depend on something we lack</h3><p>Check the table below against the handful of things you genuinely could not work without. If one of them is missing here, that is a reason to wait — ask us and we will tell you honestly whether it is on the way.</p></div>
+      </div>
     </section>
 
-    <!-- TL;DR Section -->
-    <section class="tldr-section">
-        <div class="tldr-card">
-            <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                Quick Verdict
-            </h2>
-            <div class="tldr-grid">
-                <div class="tldr-item">
-                    <div class="label">Best For Transparency</div>
-                    <div class="value green">Ragenaizer</div>
-                </div>
-                <div class="tldr-item">
-                    <div class="label">Best For 150+ Countries Ready</div>
-                    <div class="value">Deel</div>
-                </div>
-                <div class="tldr-item">
-                    <div class="label">Best Value (100 employees)</div>
-                    <div class="value green">Ragenaizer 70% cheaper</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Core Feature Comparison -->
-    <section class="compare-section">
-        <h2><span class="section-icon">⚡</span> Core Architecture Comparison</h2>
-        <table class="compare-table">
-            <thead>
-                <tr>
-                    <th>Feature</th>
-                    <th>Ragenaizer</th>
-                    <th>Deel</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>
-                        <div class="feature-name">Country-Agnostic Architecture</div>
-                        <div class="feature-desc">System works for any country without code changes</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ JSON Schema Packs</span></td>
-                    <td><span class="partial">⚠ Pre-built per country</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">Calculation Proofs</div>
-                        <div class="feature-desc">See exactly how each payslip number was derived</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ Full audit trail</span></td>
-                    <td><span class="cross">✗ Black box</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">Add New Country</div>
-                        <div class="feature-desc">How to support a new country's statutory rules</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ Upload JSON config</span></td>
-                    <td><span class="cross">✗ Wait for Deel to add</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">Statutory Artifact Generation</div>
-                        <div class="feature-desc">Auto-generate ECR, Form 16, government filings</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ Schema-driven</span></td>
-                    <td><span class="check">✓ Available</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">Self-Hosted Option</div>
-                        <div class="feature-desc">Run on your own infrastructure</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ Full control</span></td>
-                    <td><span class="cross">✗ Cloud only</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">Data Ownership</div>
-                        <div class="feature-desc">You own and control all employee data</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ 100% yours</span></td>
-                    <td><span class="partial">⚠ Deel retains</span></td>
-                </tr>
-            </tbody>
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The evidence</div>
+      <h2 class="dk-h2">Feature by feature.</h2>
+      <p class="dk-lede">At the bottom, where it belongs — a table is evidence for an argument, not the argument itself.</p>
+      <div class="cm-tablewrap">
+        <table class="cm-table">
+          <thead><tr><th></th><th>Deel</th><th>Ragenaizer</th></tr></thead>
+          <tbody>
+          <tr><td>Country-Agnostic Architecture System works for any country without code changes</td><td>⚠ Pre-built per country</td><td class="ours"><span class="cm-y">✓ JSON Schema Packs</span></td></tr>
+          <tr><td>Calculation Proofs See exactly how each payslip number was derived</td><td><span class="cm-n">✗ Black box</span></td><td class="ours"><span class="cm-y">✓ Full audit trail</span></td></tr>
+          <tr><td>Add New Country How to support a new country&#x27;s statutory rules</td><td><span class="cm-n">✗ Wait for Deel to add</span></td><td class="ours"><span class="cm-y">✓ Upload JSON config</span></td></tr>
+          <tr><td>Statutory Artifact Generation Auto-generate ECR, Form 16, government filings</td><td><span class="cm-y">✓ Available</span></td><td class="ours"><span class="cm-y">✓ Schema-driven</span></td></tr>
+          <tr><td>Self-Hosted Option Run on your own infrastructure</td><td><span class="cm-n">✗ Cloud only</span></td><td class="ours"><span class="cm-y">✓ Full control</span></td></tr>
+          <tr><td>Data Ownership You own and control all employee data</td><td>⚠ Deel retains</td><td class="ours"><span class="cm-y">✓ 100% yours</span></td></tr>
+          <tr><td>Employee Management</td><td><span class="cm-y">✓ Full lifecycle</span></td><td class="ours"><span class="cm-y">✓ Full lifecycle</span></td></tr>
+          <tr><td>Attendance with Geofencing</td><td><span class="cm-n">✗ Not included</span></td><td class="ours"><span class="cm-y">✓ Built-in</span></td></tr>
+          <tr><td>Leave Management</td><td><span class="cm-y">✓ Basic</span></td><td class="ours"><span class="cm-y">✓ Configurable policies</span></td></tr>
+          <tr><td>Multi-Location Payroll</td><td><span class="cm-y">✓ Available</span></td><td class="ours"><span class="cm-y">✓ With proration</span></td></tr>
+          <tr><td>Salary Revision History</td><td><span class="cm-p">⚠ Limited</span></td><td class="ours"><span class="cm-y">✓ Versioned structures</span></td></tr>
+          <tr><td>Loan Management</td><td><span class="cm-n">✗ Not included</span></td><td class="ours"><span class="cm-y">✓ EMI auto-deduction</span></td></tr>
+          <tr><td>Video Conferencing</td><td><span class="cm-n">✗ Not included</span></td><td class="ours"><span class="cm-y">✓ Built-in (Vision)</span></td></tr>
+          <tr><td>Team Chat</td><td><span class="cm-n">✗ Not included</span></td><td class="ours"><span class="cm-y">✓ Built-in</span></td></tr>
+          <tr><td>Cloud Storage</td><td><span class="cm-n">✗ Not included</span></td><td class="ours"><span class="cm-y">✓ Built-in (Drive)</span></td></tr>
+          <tr><td>Countries Supported</td><td>150+ pre-built</td><td class="ours">Any (with config)</td></tr>
+          <tr><td>Employer of Record (EOR)</td><td><span class="cm-y">✓ Available</span></td><td class="ours"><span class="cm-n">✗ Not available</span></td></tr>
+          <tr><td>Contractor Payments</td><td><span class="cm-y">✓ 150+ countries</span></td><td class="ours"><span class="cm-y">✓ Supported</span></td></tr>
+          <tr><td>Local Entity Required</td><td><span class="cm-y">✓ No (Deel&#x27;s entity)</span></td><td class="ours"><span class="cm-y">✓ Yes (you own entity)</span></td></tr>
+          <tr><td>Statutory Compliance Auto-Calc PF, ESI, PT, TDS, Social Security, etc.</td><td><span class="cm-y">✓ Pre-built</span></td><td class="ours"><span class="cm-y">✓ Schema-driven</span></td></tr>
+          <tr><td>Government Filing Generation</td><td><span class="cm-y">✓ Managed by Deel</span></td><td class="ours"><span class="cm-y">✓ Auto-generated</span></td></tr>
+          </tbody>
         </table>
+      </div>
     </section>
 
-    <!-- Unique Features Section -->
-    <section class="unique-section">
-        <h2>What Makes Ragenaizer Different</h2>
-        <p class="subtitle">Features you won't find in Deel or any other global payroll platform</p>
-
-        <div class="unique-grid">
-            <div class="unique-card">
-                <div class="icon green">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                </div>
-                <h3>JSON Schema Country Packs</h3>
-                <p>Add any country by uploading a JSON configuration file. Define tax slabs, contribution rates, and filing formats - no code changes, no waiting for vendor updates.</p>
-            </div>
-
-            <div class="unique-card">
-                <div class="icon blue">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                </div>
-                <h3>Calculation Proof Chain</h3>
-                <p>Every payslip shows exactly how each number was calculated: "PF = min(Basic, 15000) × 12% = min(30000, 15000) × 0.12 = 1800". Full transparency for audits and employee trust.</p>
-            </div>
-
-            <div class="unique-card">
-                <div class="icon purple">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                </div>
-                <h3>Unified Workspace</h3>
-                <p>HRMS + Video Conferencing + Team Chat + Cloud Storage in ONE product. Not a bundle of separate tools - true integration with shared data and single sign-on.</p>
-            </div>
-        </div>
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Put the whole company on one desk.</h2>
+      <p>One login, one bill, and the work in one place.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="../pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20vs%20Deel">Ask us the hard question →</a>
+      </div>
     </section>
+    <footer class="dk-foot">
+      <div class="dk-fcol"><strong>Platform</strong>
+        <a href="../email.html">Mail</a><a href="../vision.html">Meetings</a><a href="../chat.html">Chat</a><a href="../drive.html">Drive</a></div>
+      <div class="dk-fcol"><strong>Business</strong>
+        <a href="../crm.html">CRM</a><a href="../hrms.html">HRMS</a><a href="../accounts.html">Accounts</a><a href="../pms.html">Projects</a></div>
+      <div class="dk-fcol"><strong>Company</strong>
+        <a href="../pricing.html">Pricing</a><a href="../research.html">Research</a><a href="../lms.html">Learning</a><a href="../activate.html">Activate a licence</a></div>
+      <div class="dk-fcol"><strong>Legal</strong>
+        <a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a><a href="../refund.html">Refunds</a><a href="../data-deletion.html">Delete my data</a></div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Feature Deep Dive Comparison -->
-    <section class="compare-section">
-        <h2><span class="section-icon">🔍</span> Feature-by-Feature Comparison</h2>
-        <table class="compare-table">
-            <thead>
-                <tr>
-                    <th>HRMS Features</th>
-                    <th>Ragenaizer</th>
-                    <th>Deel</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><div class="feature-name">Employee Management</div></td>
-                    <td><span class="check">✓ Full lifecycle</span></td>
-                    <td><span class="check">✓ Full lifecycle</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Attendance with Geofencing</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Built-in</span></td>
-                    <td><span class="cross">✗ Not included</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Leave Management</div></td>
-                    <td><span class="check">✓ Configurable policies</span></td>
-                    <td><span class="check">✓ Basic</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Multi-Location Payroll</div></td>
-                    <td class="highlight-cell"><span class="check">✓ With proration</span></td>
-                    <td><span class="check">✓ Available</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Salary Revision History</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Versioned structures</span></td>
-                    <td><span class="partial">⚠ Limited</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Loan Management</div></td>
-                    <td class="highlight-cell"><span class="check">✓ EMI auto-deduction</span></td>
-                    <td><span class="cross">✗ Not included</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Video Conferencing</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Built-in (Vision)</span></td>
-                    <td><span class="cross">✗ Not included</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Team Chat</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Built-in</span></td>
-                    <td><span class="cross">✗ Not included</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Cloud Storage</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Built-in (Drive)</span></td>
-                    <td><span class="cross">✗ Not included</span></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <table class="compare-table">
-            <thead>
-                <tr>
-                    <th>Global Payroll Capabilities</th>
-                    <th>Ragenaizer</th>
-                    <th>Deel</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><div class="feature-name">Countries Supported</div></td>
-                    <td><span class="partial">Any (with config)</span></td>
-                    <td><span class="check">150+ pre-built</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Employer of Record (EOR)</div></td>
-                    <td><span class="cross">✗ Not available</span></td>
-                    <td><span class="check">✓ Available</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Contractor Payments</div></td>
-                    <td><span class="check">✓ Supported</span></td>
-                    <td><span class="check">✓ 150+ countries</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Local Entity Required</div></td>
-                    <td><span class="check">✓ Yes (you own entity)</span></td>
-                    <td><span class="check">✓ No (Deel's entity)</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">Statutory Compliance Auto-Calc</div>
-                        <div class="feature-desc">PF, ESI, PT, TDS, Social Security, etc.</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ Schema-driven</span></td>
-                    <td><span class="check">✓ Pre-built</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Government Filing Generation</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Auto-generated</span></td>
-                    <td><span class="check">✓ Managed by Deel</span></td>
-                </tr>
-            </tbody>
-        </table>
-    </section>
-
-    <!-- Pricing Comparison -->
-    <section class="pricing-section">
-        <h2>Pricing Comparison</h2>
-        <div class="pricing-cards">
-            <div class="pricing-card recommended">
-                <div class="logo">Ragenaizer</div>
-                <div class="tagline">Country-agnostic unified platform</div>
-                <div class="price">Custom<span> pricing</span></div>
-                <div class="price-note">Flat rate per tenant, not per employee</div>
-                <ul>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Unlimited employees
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        All modules included (HRMS + Video + Chat + Drive)
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Upload any country config
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Calculation proofs included
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Self-hosted option available
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        No per-employee fees
-                    </li>
-                </ul>
-                <a href="/pages/pricing.html" class="cta-btn primary">See pricing</a>
-            </div>
-
-            <div class="pricing-card">
-                <div class="logo">Deel</div>
-                <div class="tagline">Global payroll & EOR</div>
-                <div class="price">$29<span>/employee/month</span></div>
-                <div class="price-note">+ $1,000 setup fee per entity</div>
-                <ul>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        150+ countries pre-built
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        EOR available ($599/employee)
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Contractor payments
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        No video conferencing
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        No team chat
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        No calculation proofs
-                    </li>
-                </ul>
-                <a href="https://www.deel.com/" target="_blank" rel="nofollow" class="cta-btn secondary">Visit Deel</a>
-            </div>
-        </div>
-
-        <div class="pricing-example">
-            <p>
-                <strong>Example:</strong> 100 employees across 3 countries with Deel = <strong>$2,900/month + $3,000 setup</strong><br>
-                With Ragenaizer, you pay a flat rate regardless of employee count.
-            </p>
-        </div>
-    </section>
-
-    <!-- When to Choose Each -->
-    <section class="use-case-section">
-        <h2>Which One Should You Choose?</h2>
-        <div class="use-case-grid">
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    You want transparency
-                </h3>
-                <p>If you need to explain every payslip calculation to employees or auditors, Ragenaizer's calculation proofs are unmatched.</p>
-                <span class="winner ragenaizer">→ Choose Ragenaizer</span>
-            </div>
-
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    You need EOR in 100+ countries
-                </h3>
-                <p>If you don't have local entities and need to hire through an Employer of Record, Deel's global infrastructure is the best choice.</p>
-                <span class="winner deel">→ Choose Deel</span>
-            </div>
-
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    You want data ownership
-                </h3>
-                <p>If you need to own your data completely, run on your infrastructure, and have full control, Ragenaizer's self-hosted option is the answer.</p>
-                <span class="winner ragenaizer">→ Choose Ragenaizer</span>
-            </div>
-
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                    You want unified platform
-                </h3>
-                <p>If you're tired of paying for Zoom + Slack + Dropbox + HRMS separately, Ragenaizer gives you everything in one integrated product.</p>
-                <span class="winner ragenaizer">→ Choose Ragenaizer</span>
-            </div>
-
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    You have 500+ employees globally
-                </h3>
-                <p>At scale with many countries, both work well. Ragenaizer is more cost-effective; Deel has more pre-built integrations.</p>
-                <span class="winner both">→ Evaluate both</span>
-            </div>
-
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                    You need custom statutory rules
-                </h3>
-                <p>If your country isn't in Deel's list, or you have unique compliance needs, Ragenaizer's JSON schema system lets you define anything.</p>
-                <span class="winner ragenaizer">→ Choose Ragenaizer</span>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="cta-content">
-            <h2>Ready to See the Difference?</h2>
-            <p>Try Ragenaizer free and experience transparent, country-agnostic payroll with calculation proofs.</p>
-            <div class="cta-buttons">
-                <a href="/pages/pricing.html" class="cta-btn primary">
-                    See pricing
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </a>
-                <a href="/pages/features/hrms-payroll.html" class="cta-btn secondary">View All Features</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <div id="footer"></div>
-
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+  <script>
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('is-in'); }); return;
+      }
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>

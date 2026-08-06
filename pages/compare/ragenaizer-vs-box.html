@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -125,121 +126,153 @@
     ]
 }
     </script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/compare-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page compare-page-v2">
-    <div id="navbar"></div>
+<body class="landing-page desk-landing cmp-desk">
 
-    <section class="compare-hero">
-        <div class="compare-badge">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-            Comparison Guide 2026
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
+        <img src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../../index.html#platform">Platform</a>
+        <a href="../../index.html#how">How it fits</a>
+        <a href="../pricing.html">Pricing</a>
+        <a href="../research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="../login.html">Sign in</a>
+    </nav>
+
+    <header class="cm-hero">
+      <div class="dk-eyebrow"><i></i>Ragenaizer vs Box</div>
+      <h1 class="cm-h1">Ragenaizer vs Box:<br>Enterprise File Sharing Without the Enterprise Tax</h1>
+      <p class="cm-sub">Box is great for Fortune 500s with a six-month onboarding budget. Ragenaizer Drive gives you the same audit logs, governance, signed share links and revocation controls — without the enterprise pricing and without the consultant rollout.</p>
+      <div class="cm-verdict"><b>The short answer</b><p>Drive: enterprise governance, mid-market price Audit log, share-link controls, retention — included on every plan, not gated behind a Business Plus upsell.</p></div>
+    </header>
+
+    <section class="cm-ledger">
+      <div class="cm-lhead">First year, side by side</div>
+      <div class="cm-cols">
+        <div class="cm-col">
+          <h3>The Box Stack</h3><span class="who">What you pay today</span>
+            <div class="cm-line"><span>Box Business</span><b>₹1,900</b></div>
+            <div class="cm-line"><span>Box Governance add-on</span><b>+$$$ quote</b></div>
+            <div class="cm-line"><span>Separate video / chat tool</span><b>₹1,400</b></div>
+            <div class="cm-line"><span>Separate HRMS</span><b>₹800</b></div>
+          <div class="cm-tot"><span>Year one</span><b>₹4,100</b></div>
         </div>
-        <div class="vs-logos">
-            <div class="vs-logo ragenaizer"><img src="/assets/logo-icon-white.png" alt="Ragenaizer" style="width: 50px; height: auto;"></div>
-            <span class="vs-text">VS</span>
-            <div class="vs-logo competitor">B</div>
+        <div class="cm-col ours">
+          <h3>Ragenaizer</h3><span class="who">What you would pay instead</span>
+            <div class="cm-line zero"><span>Drive (included)</span><b>₹0</b></div>
+            <div class="cm-line zero"><span>Audit + governance</span><b>₹0</b></div>
+            <div class="cm-line zero"><span>Vision + Chat (included)</span><b>₹0</b></div>
+            <div class="cm-line zero"><span>HRMS (included)</span><b>₹0</b></div>
+          <div class="cm-tot"><span>Year one</span><b>₹1,100</b></div>
         </div>
-        <h1 class="compare-title">Ragenaizer vs Box:<br><span class="highlight">Enterprise File Sharing Without the Enterprise Tax</span></h1>
-        <p class="compare-subtitle">Box is great for Fortune 500s with a six-month onboarding budget. Ragenaizer Drive gives you the same audit logs, governance, signed share links and revocation controls — without the enterprise pricing and without the consultant rollout.</p>
-        <div class="winner-banner">
-            <div class="winner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-            <div class="winner-content">
-                <h3>Drive: enterprise governance, mid-market price</h3>
-                <p>Audit log, share-link controls, retention — included on every plan, not gated behind a Business Plus upsell.</p>
-            </div>
-        </div>
+      </div>
+        <div class="cm-diff"><span class="k">Difference in year one</span><span class="v">₹3,000</span></div>
+      <p class="cm-note">Their figures are published list prices, converted where needed at ₹95.12 to the dollar (5 August 2026). We do not verify them and list prices change — check theirs before you decide. Ours is a fixed annual seat block, exclusive of GST.</p>
     </section>
 
-    <section class="comparison-section">
-        <div class="section-header">
-            <h2 class="section-title">Feature-by-Feature Comparison</h2>
-            <p class="section-desc">Box bills enterprise governance as a premium. Ragenaizer ships it standard.</p>
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">Being straight</div>
+      <h2 class="dk-h2">When you should stay where you are.</h2>
+      <p class="dk-lede">A comparison page that finds no reason to keep the other tool is not a comparison, it is an advert. Three honest ones.</p>
+      <div class="cm-stay">
+        <div><h3>You only need this one thing</h3><p>If Box is the only software your business runs and you have no intention of adding a CRM, projects or HR, a specialist tool will go deeper in its own lane than we will. Our argument is the stack, not the single app.</p></div>
+        <div><h3>Your team is fluent in it</h3><p>Retraining has a real cost, and it lands on the people who are busiest. If everyone is fast in Box and nothing is actually breaking, the licence saving may not cover the disruption this year.</p></div>
+        <div><h3>You depend on something we lack</h3><p>Check the table below against the handful of things you genuinely could not work without. If one of them is missing here, that is a reason to wait — ask us and we will tell you honestly whether it is on the way.</p></div>
+      </div>
+    </section>
+
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">What leaves your stack</div>
+      <h2 class="dk-h2">The things you stop running.</h2>
+      <p class="dk-lede">Not features you gain — work you stop doing. That is usually where the real saving is, and it never appears on a licence invoice.</p>
+      <div class="cm-drops">
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>Pricing Built for Fortune 500s</h3><p>Box&#x27;s real product is the Enterprise plan. The Business plans are entry-level — and the features you actually want (governance, retention, admin controls) live behind quote-based upsells.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Drive: governance and audit on every plan, no quote sales call</span></div>
         </div>
-        <table class="comparison-table">
-            <thead><tr><th>Feature</th><th>Ragenaizer Drive</th><th>Box Business</th></tr></thead>
-            <tbody>
-                <tr><td><div class="feature-name">Max single-file size</div><div class="feature-desc">Largest file you can upload</div></td><td><span class="value good">5 GB</span></td><td><span class="value">5 GB (Starter)</span></td></tr>
-                <tr><td><div class="feature-name">Resumable chunked uploads</div><div class="feature-desc">Recover from a dropped connection mid-upload</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Revoke a share link after sending</div><div class="feature-desc">Kill access without deleting the file</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Per-share download cap</div><div class="feature-desc">Auto-disable after N downloads</div></td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td></tr>
-                <tr><td><div class="feature-name">Password-protect a public share</div><div class="feature-desc">Recipient enters a password</div></td><td><span class="check">✓ All plans</span></td><td><span class="limited">Business plan+</span></td></tr>
-                <tr><td><div class="feature-name">Expiring share links</div><div class="feature-desc">Auto-disable on a specific date</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Full per-file audit log</div><div class="feature-desc">Who viewed, downloaded, shared</div></td><td><span class="check">✓ All plans</span></td><td><span class="limited">Business plan+</span></td></tr>
-                <tr><td><div class="feature-name">Storage backend choice</div><div class="feature-desc">Where the bytes actually live</div></td><td><span class="value good">S3 / Wasabi / your own</span></td><td><span class="value">Box managed only</span></td></tr>
-                <tr><td><div class="feature-name">Self-host option</div><div class="feature-desc">Run it on your own servers</div></td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td></tr>
-                <tr><td><div class="feature-name">Time to first useful day</div><div class="feature-desc">From signup to your team using it</div></td><td><span class="value good">Same day</span></td><td><span class="value bad">Weeks of admin setup</span></td></tr>
-                <tr><td><div class="feature-name">Comes with chat / video / HRMS</div><div class="feature-desc">A real business platform</div></td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td></tr>
-                <tr><td><div class="feature-name">Min seat count</div><div class="feature-desc">Smallest plan you can buy</div></td><td><span class="value good">1 seat</span></td><td><span class="value">3 seats (Business)</span></td></tr>
-            </tbody>
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>Slow Time to Value</h3><p>Box rollouts are a project — admin setup, folder structures, policies, training. Weeks before your team uploads its first useful file.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Drive: signup to first upload in under 5 minutes</span></div>
+        </div>
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>You Can&#x27;t Bring Your Own Storage</h3><p>Box stores your files on Box&#x27;s infrastructure. No S3, no Wasabi, no on-prem. Data residency requirements? Talk to sales.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Drive: pick S3, Wasabi, or self-hosted — your choice</span></div>
+        </div>
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>Storage Without a Business OS</h3><p>Box stores files. Period. You still need separate tools for video, chat, HR, CRM and accounting. Five tools, five bills, five access policies.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Drive: storage that ships next to the rest of your business</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The evidence</div>
+      <h2 class="dk-h2">Feature by feature.</h2>
+      <p class="dk-lede">At the bottom, where it belongs — a table is evidence for an argument, not the argument itself.</p>
+      <div class="cm-tablewrap">
+        <table class="cm-table">
+          <thead><tr><th></th><th>Box</th><th>Ragenaizer</th></tr></thead>
+          <tbody>
+          <tr><td>Max single-file size Largest file you can upload</td><td>5 GB (Starter)</td><td class="ours">5 GB</td></tr>
+          <tr><td>Resumable chunked uploads Recover from a dropped connection mid-upload</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Revoke a share link after sending Kill access without deleting the file</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Per-share download cap Auto-disable after N downloads</td><td><span class="cm-n">✗</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Password-protect a public share Recipient enters a password</td><td>Business plan+</td><td class="ours"><span class="cm-y">✓ All plans</span></td></tr>
+          <tr><td>Expiring share links Auto-disable on a specific date</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Full per-file audit log Who viewed, downloaded, shared</td><td>Business plan+</td><td class="ours"><span class="cm-y">✓ All plans</span></td></tr>
+          <tr><td>Storage backend choice Where the bytes actually live</td><td>Box managed only</td><td class="ours">S3 / Wasabi / your own</td></tr>
+          <tr><td>Self-host option Run it on your own servers</td><td><span class="cm-n">✗</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Time to first useful day From signup to your team using it</td><td>Weeks of admin setup</td><td class="ours">Same day</td></tr>
+          <tr><td>Comes with chat / video / HRMS A real business platform</td><td><span class="cm-n">✗</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Min seat count Smallest plan you can buy</td><td>3 seats (Business)</td><td class="ours">1 seat</td></tr>
+          </tbody>
         </table>
-
-        <div class="cost-breakdown">
-            <h3 class="cost-title">True Cost Comparison (Per User/Month)</h3>
-            <div class="cost-grid">
-                <div class="cost-column">
-                    <h4><span class="logo competitor">B</span> The Box Stack</h4>
-                    <div class="cost-item"><span class="label">Box Business</span><span class="price">$20.00</span></div>
-                    <div class="cost-item"><span class="label">Box Governance add-on</span><span class="price">+$$$ quote</span></div>
-                    <div class="cost-item"><span class="label">Separate video / chat tool</span><span class="price">$15.00</span></div>
-                    <div class="cost-item"><span class="label">Separate HRMS</span><span class="price">$8.00</span></div>
-                    <div class="cost-total"><span class="label">Total</span><span class="price">$43.00+</span></div>
-                </div>
-                <div class="cost-column">
-                    <h4><span class="logo ragenaizer"><img src="/assets/logo-icon-white.png" alt="Ragenaizer" style="width: 24px; height: auto;"></span> Ragenaizer All-in-One</h4>
-                    <div class="cost-item"><span class="label">Drive (included)</span><span class="price">$0</span></div>
-                    <div class="cost-item"><span class="label">Audit + governance</span><span class="price">$0</span></div>
-                    <div class="cost-item"><span class="label">Vision + Chat (included)</span><span class="price">$0</span></div>
-                    <div class="cost-item"><span class="label">HRMS (included)</span><span class="price">$0</span></div>
-                    <div class="cost-total"><span class="label">Total</span><span class="price savings">$12.00</span></div>
-                </div>
-            </div>
-        </div>
+      </div>
     </section>
 
-    <section class="pain-points">
-        <div class="section-header">
-            <h2 class="section-title">Common Box Frustrations</h2>
-            <p class="section-desc">Problems Ragenaizer Drive solves out of the box</p>
-        </div>
-        <div class="pain-grid">
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-                <h4>Pricing Built for Fortune 500s</h4>
-                <p>Box's real product is the Enterprise plan. The Business plans are entry-level — and the features you actually want (governance, retention, admin controls) live behind quote-based upsells.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Drive: governance and audit on every plan, no quote sales call</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-                <h4>Slow Time to Value</h4>
-                <p>Box rollouts are a project — admin setup, folder structures, policies, training. Weeks before your team uploads its first useful file.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Drive: signup to first upload in under 5 minutes</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg></div>
-                <h4>You Can't Bring Your Own Storage</h4>
-                <p>Box stores your files on Box's infrastructure. No S3, no Wasabi, no on-prem. Data residency requirements? Talk to sales.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Drive: pick S3, Wasabi, or self-hosted — your choice</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div>
-                <h4>Storage Without a Business OS</h4>
-                <p>Box stores files. Period. You still need separate tools for video, chat, HR, CRM and accounting. Five tools, five bills, five access policies.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Drive: storage that ships next to the rest of your business</span></div>
-            </div>
-        </div>
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Enterprise file sharing for the rest of us</h2>
+      <p>Move off Box and get the same controls without the enterprise rollout.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="../pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20vs%20Box">Ask us the hard question →</a>
+      </div>
     </section>
+    <footer class="dk-foot">
+      <div class="dk-fcol"><strong>Platform</strong>
+        <a href="../email.html">Mail</a><a href="../vision.html">Meetings</a><a href="../chat.html">Chat</a><a href="../drive.html">Drive</a></div>
+      <div class="dk-fcol"><strong>Business</strong>
+        <a href="../crm.html">CRM</a><a href="../hrms.html">HRMS</a><a href="../accounts.html">Accounts</a><a href="../pms.html">Projects</a></div>
+      <div class="dk-fcol"><strong>Company</strong>
+        <a href="../pricing.html">Pricing</a><a href="../research.html">Research</a><a href="../lms.html">Learning</a><a href="../activate.html">Activate a licence</a></div>
+      <div class="dk-fcol"><strong>Legal</strong>
+        <a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a><a href="../refund.html">Refunds</a><a href="../data-deletion.html">Delete my data</a></div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <section class="compare-cta">
-        <h2 class="cta-title">Enterprise file sharing for the rest of us</h2>
-        <p class="cta-desc">Move off Box and get the same controls without the enterprise rollout.</p>
-        <div class="cta-buttons">
-            <a href="../activate.html" class="btn-primary">See pricing</a>
-            <a href="../drive.html" class="btn-secondary">Learn More About Drive</a>
-        </div>
-    </section>
-
-    <div id="footer"></div>
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+  <script>
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('is-in'); }); return;
+      }
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>

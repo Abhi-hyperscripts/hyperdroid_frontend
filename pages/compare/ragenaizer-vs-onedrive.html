@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -125,121 +126,153 @@
     ]
 }
     </script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/compare-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page compare-page-v2">
-    <div id="navbar"></div>
+<body class="landing-page desk-landing cmp-desk">
 
-    <section class="compare-hero">
-        <div class="compare-badge">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-            Comparison Guide 2026
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
+        <img src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../../index.html#platform">Platform</a>
+        <a href="../../index.html#how">How it fits</a>
+        <a href="../pricing.html">Pricing</a>
+        <a href="../research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="../login.html">Sign in</a>
+    </nav>
+
+    <header class="cm-hero">
+      <div class="dk-eyebrow"><i></i>Ragenaizer vs Onedrive</div>
+      <h1 class="cm-h1">Ragenaizer vs OneDrive:<br>Cloud Storage Without the Microsoft Tax</h1>
+      <p class="cm-sub">OneDrive is glued to Microsoft 365. To use it properly you commit your whole team to the Microsoft universe — Outlook, Teams, SharePoint, the works. Ragenaizer Drive is just a clean cloud storage layer. No Outlook required.</p>
+      <div class="cm-verdict"><b>The short answer</b><p>Drive: independent storage that works with what you already use No mandatory Microsoft 365 subscription. No SharePoint complexity. Just files, folders, sharing and a real audit trail.</p></div>
+    </header>
+
+    <section class="cm-ledger">
+      <div class="cm-lhead">First year, side by side</div>
+      <div class="cm-cols">
+        <div class="cm-col">
+          <h3>☁ Microsoft 365 Stack</h3><span class="who">What you pay today</span>
+            <div class="cm-line"><span>M365 Business Standard</span><b>₹1,200</b></div>
+            <div class="cm-line"><span>Separate HRMS tool</span><b>₹800</b></div>
+            <div class="cm-line"><span>Separate CRM tool</span><b>₹1,400</b></div>
+            <div class="cm-line"><span>Separate accounting tool</span><b>₹1,400</b></div>
+          <div class="cm-tot"><span>Year one</span><b>₹4,800</b></div>
         </div>
-        <div class="vs-logos">
-            <div class="vs-logo ragenaizer"><img src="/assets/logo-icon-white.png" alt="Ragenaizer" style="width: 50px; height: auto;"></div>
-            <span class="vs-text">VS</span>
-            <div class="vs-logo competitor">☁</div>
+        <div class="cm-col ours">
+          <h3>Ragenaizer</h3><span class="who">What you would pay instead</span>
+            <div class="cm-line zero"><span>Drive (included)</span><b>₹0</b></div>
+            <div class="cm-line zero"><span>HRMS (included)</span><b>₹0</b></div>
+            <div class="cm-line zero"><span>CRM (included)</span><b>₹0</b></div>
+            <div class="cm-line zero"><span>Accounts (included)</span><b>₹0</b></div>
+          <div class="cm-tot"><span>Year one</span><b>₹1,100</b></div>
         </div>
-        <h1 class="compare-title">Ragenaizer vs OneDrive:<br><span class="highlight">Cloud Storage Without the Microsoft Tax</span></h1>
-        <p class="compare-subtitle">OneDrive is glued to Microsoft 365. To use it properly you commit your whole team to the Microsoft universe — Outlook, Teams, SharePoint, the works. Ragenaizer Drive is just a clean cloud storage layer. No Outlook required.</p>
-        <div class="winner-banner">
-            <div class="winner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-            <div class="winner-content">
-                <h3>Drive: independent storage that works with what you already use</h3>
-                <p>No mandatory Microsoft 365 subscription. No SharePoint complexity. Just files, folders, sharing and a real audit trail.</p>
-            </div>
-        </div>
+      </div>
+        <div class="cm-diff"><span class="k">Difference in year one</span><span class="v">₹3,700</span></div>
+      <p class="cm-note">Their figures are published list prices, converted where needed at ₹95.12 to the dollar (5 August 2026). We do not verify them and list prices change — check theirs before you decide. Ours is a fixed annual seat block, exclusive of GST.</p>
     </section>
 
-    <section class="comparison-section">
-        <div class="section-header">
-            <h2 class="section-title">Feature-by-Feature Comparison</h2>
-            <p class="section-desc">OneDrive is part of a bigger Microsoft commitment. Ragenaizer Drive stands on its own.</p>
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">Being straight</div>
+      <h2 class="dk-h2">When you should stay where you are.</h2>
+      <p class="dk-lede">A comparison page that finds no reason to keep the other tool is not a comparison, it is an advert. Three honest ones.</p>
+      <div class="cm-stay">
+        <div><h3>You only need this one thing</h3><p>If Onedrive is the only software your business runs and you have no intention of adding a CRM, projects or HR, a specialist tool will go deeper in its own lane than we will. Our argument is the stack, not the single app.</p></div>
+        <div><h3>Your team is fluent in it</h3><p>Retraining has a real cost, and it lands on the people who are busiest. If everyone is fast in Onedrive and nothing is actually breaking, the licence saving may not cover the disruption this year.</p></div>
+        <div><h3>You depend on something we lack</h3><p>Check the table below against the handful of things you genuinely could not work without. If one of them is missing here, that is a reason to wait — ask us and we will tell you honestly whether it is on the way.</p></div>
+      </div>
+    </section>
+
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">What leaves your stack</div>
+      <h2 class="dk-h2">The things you stop running.</h2>
+      <p class="dk-lede">Not features you gain — work you stop doing. That is usually where the real saving is, and it never appears on a licence invoice.</p>
+      <div class="cm-drops">
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>You&#x27;re Buying the Whole Universe</h3><p>OneDrive isn&#x27;t really sold standalone — it&#x27;s the storage layer of Microsoft 365. You pay for Outlook, Teams, Word and SharePoint whether you want them or not.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Drive: standalone, no required bundle</span></div>
         </div>
-        <table class="comparison-table">
-            <thead><tr><th>Feature</th><th>Ragenaizer Drive</th><th>OneDrive for Business</th></tr></thead>
-            <tbody>
-                <tr><td><div class="feature-name">Standalone product</div><div class="feature-desc">Buy storage without buying Microsoft 365</div></td><td><span class="check">✓</span></td><td><span class="cross">Bundled with M365</span></td></tr>
-                <tr><td><div class="feature-name">Resumable chunked uploads</div><div class="feature-desc">Recover from a dropped connection mid-upload</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Revoke a share link after sending</div><div class="feature-desc">Kill access without deleting the file</div></td><td><span class="value good">Yes — instant</span></td><td><span class="limited">Stop-sharing flow</span></td></tr>
-                <tr><td><div class="feature-name">Per-share download cap</div><div class="feature-desc">Auto-disable after N downloads</div></td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td></tr>
-                <tr><td><div class="feature-name">Password-protect a public share</div><div class="feature-desc">Recipient enters a password</div></td><td><span class="check">✓</span></td><td><span class="check">✓ (paid)</span></td></tr>
-                <tr><td><div class="feature-name">Recipient needs an MS account?</div><div class="feature-desc">Friction for external sharing</div></td><td><span class="value good">Never</span></td><td><span class="limited">Often</span></td></tr>
-                <tr><td><div class="feature-name">Storage backend choice</div><div class="feature-desc">Where the bytes actually live</div></td><td><span class="value good">S3 / Wasabi / your own</span></td><td><span class="value">Azure managed only</span></td></tr>
-                <tr><td><div class="feature-name">Self-host option</div><div class="feature-desc">Run it on your own servers</div></td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td></tr>
-                <tr><td><div class="feature-name">Auto-stores meeting recordings</div><div class="feature-desc">From your platform's video tool</div></td><td><span class="check">✓ Vision</span></td><td><span class="check">✓ Teams only</span></td></tr>
-                <tr><td><div class="feature-name">Mac and Linux desktop sync</div><div class="feature-desc">First-class non-Windows support</div></td><td><span class="check">✓</span></td><td><span class="limited">Mac only</span></td></tr>
-                <tr><td><div class="feature-name">Comes with HRMS / CRM / Accounts</div><div class="feature-desc">A full business platform</div></td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td></tr>
-                <tr><td><div class="feature-name">Vendor lock-in</div><div class="feature-desc">Switching cost in years from now</div></td><td><span class="value good">Low — open APIs</span></td><td><span class="value bad">High — Microsoft stack</span></td></tr>
-            </tbody>
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>SharePoint Is Lurking</h3><p>The moment your team needs document libraries, retention policies or &quot;real&quot; sharing, you&#x27;re in SharePoint — which is a different product with a different UX and a different admin console.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Drive: one product, one UI, no SharePoint detour</span></div>
+        </div>
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>Linux Users Are Second-Class</h3><p>OneDrive has no official Linux client. If part of your team runs on Linux, file sync is a hack. Mac is supported but always lags behind Windows.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Drive: web-first, works the same on every OS</span></div>
+        </div>
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>No Download Cap on Shares</h3><p>You can password-protect a OneDrive share, but you can&#x27;t say &quot;this can only be downloaded 3 times.&quot; Sensitive PDFs get forwarded forever.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Drive: per-share download cap built in</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The evidence</div>
+      <h2 class="dk-h2">Feature by feature.</h2>
+      <p class="dk-lede">At the bottom, where it belongs — a table is evidence for an argument, not the argument itself.</p>
+      <div class="cm-tablewrap">
+        <table class="cm-table">
+          <thead><tr><th></th><th>Onedrive</th><th>Ragenaizer</th></tr></thead>
+          <tbody>
+          <tr><td>Standalone product Buy storage without buying Microsoft 365</td><td>Bundled with M365</td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Resumable chunked uploads Recover from a dropped connection mid-upload</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Revoke a share link after sending Kill access without deleting the file</td><td>Stop-sharing flow</td><td class="ours">Yes — instant</td></tr>
+          <tr><td>Per-share download cap Auto-disable after N downloads</td><td><span class="cm-n">✗</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Password-protect a public share Recipient enters a password</td><td><span class="cm-y">✓ (paid)</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Recipient needs an MS account? Friction for external sharing</td><td>Often</td><td class="ours">Never</td></tr>
+          <tr><td>Storage backend choice Where the bytes actually live</td><td>Azure managed only</td><td class="ours">S3 / Wasabi / your own</td></tr>
+          <tr><td>Self-host option Run it on your own servers</td><td><span class="cm-n">✗</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Auto-stores meeting recordings From your platform&#x27;s video tool</td><td><span class="cm-y">✓ Teams only</span></td><td class="ours"><span class="cm-y">✓ Vision</span></td></tr>
+          <tr><td>Mac and Linux desktop sync First-class non-Windows support</td><td>Mac only</td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Comes with HRMS / CRM / Accounts A full business platform</td><td><span class="cm-n">✗</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Vendor lock-in Switching cost in years from now</td><td>High — Microsoft stack</td><td class="ours">Low — open APIs</td></tr>
+          </tbody>
         </table>
-
-        <div class="cost-breakdown">
-            <h3 class="cost-title">True Cost Comparison (Per User/Month)</h3>
-            <div class="cost-grid">
-                <div class="cost-column">
-                    <h4><span class="logo competitor">☁</span> Microsoft 365 Stack</h4>
-                    <div class="cost-item"><span class="label">M365 Business Standard</span><span class="price">$12.50</span></div>
-                    <div class="cost-item"><span class="label">Separate HRMS tool</span><span class="price">$8.00</span></div>
-                    <div class="cost-item"><span class="label">Separate CRM tool</span><span class="price">$15.00</span></div>
-                    <div class="cost-item"><span class="label">Separate accounting tool</span><span class="price">$15.00</span></div>
-                    <div class="cost-total"><span class="label">Total</span><span class="price">$50.50</span></div>
-                </div>
-                <div class="cost-column">
-                    <h4><span class="logo ragenaizer"><img src="/assets/logo-icon-white.png" alt="Ragenaizer" style="width: 24px; height: auto;"></span> Ragenaizer All-in-One</h4>
-                    <div class="cost-item"><span class="label">Drive (included)</span><span class="price">$0</span></div>
-                    <div class="cost-item"><span class="label">HRMS (included)</span><span class="price">$0</span></div>
-                    <div class="cost-item"><span class="label">CRM (included)</span><span class="price">$0</span></div>
-                    <div class="cost-item"><span class="label">Accounts (included)</span><span class="price">$0</span></div>
-                    <div class="cost-total"><span class="label">Total</span><span class="price savings">$12.00</span></div>
-                </div>
-            </div>
-        </div>
+      </div>
     </section>
 
-    <section class="pain-points">
-        <div class="section-header">
-            <h2 class="section-title">Common OneDrive Frustrations</h2>
-            <p class="section-desc">Problems Ragenaizer Drive solves out of the box</p>
-        </div>
-        <div class="pain-grid">
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
-                <h4>You're Buying the Whole Universe</h4>
-                <p>OneDrive isn't really sold standalone — it's the storage layer of Microsoft 365. You pay for Outlook, Teams, Word and SharePoint whether you want them or not.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Drive: standalone, no required bundle</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 12l-4-4-4 4M12 16V8"/></svg></div>
-                <h4>SharePoint Is Lurking</h4>
-                <p>The moment your team needs document libraries, retention policies or "real" sharing, you're in SharePoint — which is a different product with a different UX and a different admin console.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Drive: one product, one UI, no SharePoint detour</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-                <h4>Linux Users Are Second-Class</h4>
-                <p>OneDrive has no official Linux client. If part of your team runs on Linux, file sync is a hack. Mac is supported but always lags behind Windows.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Drive: web-first, works the same on every OS</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div>
-                <h4>No Download Cap on Shares</h4>
-                <p>You can password-protect a OneDrive share, but you can't say "this can only be downloaded 3 times." Sensitive PDFs get forwarded forever.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Drive: per-share download cap built in</span></div>
-            </div>
-        </div>
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Storage without the Microsoft tax</h2>
+      <p>Move off OneDrive and stop paying for the Microsoft universe just to share a file.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="../pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20vs%20Onedrive">Ask us the hard question →</a>
+      </div>
     </section>
+    <footer class="dk-foot">
+      <div class="dk-fcol"><strong>Platform</strong>
+        <a href="../email.html">Mail</a><a href="../vision.html">Meetings</a><a href="../chat.html">Chat</a><a href="../drive.html">Drive</a></div>
+      <div class="dk-fcol"><strong>Business</strong>
+        <a href="../crm.html">CRM</a><a href="../hrms.html">HRMS</a><a href="../accounts.html">Accounts</a><a href="../pms.html">Projects</a></div>
+      <div class="dk-fcol"><strong>Company</strong>
+        <a href="../pricing.html">Pricing</a><a href="../research.html">Research</a><a href="../lms.html">Learning</a><a href="../activate.html">Activate a licence</a></div>
+      <div class="dk-fcol"><strong>Legal</strong>
+        <a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a><a href="../refund.html">Refunds</a><a href="../data-deletion.html">Delete my data</a></div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <section class="compare-cta">
-        <h2 class="cta-title">Storage without the Microsoft tax</h2>
-        <p class="cta-desc">Move off OneDrive and stop paying for the Microsoft universe just to share a file.</p>
-        <div class="cta-buttons">
-            <a href="../activate.html" class="btn-primary">See pricing</a>
-            <a href="../drive.html" class="btn-secondary">Learn More About Drive</a>
-        </div>
-    </section>
-
-    <div id="footer"></div>
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+  <script>
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('is-in'); }); return;
+      }
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>

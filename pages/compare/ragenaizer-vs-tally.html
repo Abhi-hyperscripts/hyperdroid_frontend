@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -125,124 +126,152 @@
     ]
 }
     </script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/compare-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page compare-page-v2">
-    <div id="navbar"></div>
+<body class="landing-page desk-landing cmp-desk">
 
-    <section class="compare-hero">
-        <div class="compare-badge">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-            Comparison Guide 2026
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
+        <img src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../../index.html#platform">Platform</a>
+        <a href="../../index.html#how">How it fits</a>
+        <a href="../pricing.html">Pricing</a>
+        <a href="../research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="../login.html">Sign in</a>
+    </nav>
+
+    <header class="cm-hero">
+      <div class="dk-eyebrow"><i></i>Ragenaizer vs Tally</div>
+      <h1 class="cm-h1">Ragenaizer vs Tally:<br>Cloud Accounting, Same Compliance</h1>
+      <p class="cm-sub">Tally is the workhorse of India SMB accounting — and a Windows desktop product from another era. Ragenaizer Accounts gives you everything Tally is loved for (GST, TDS, vendor bills, fixed assets, audit-grade ledger) in your browser, on any device, with the rest of your business attached.</p>
+      <div class="cm-verdict"><b>The short answer</b><p>Ragenaizer Accounts: Tally compliance, modern delivery The same GSTR-1, GSTR-3B and TDS reports your CA expects — without the per-machine dongle, the Windows-only install or the annual TSS subscription.</p></div>
+    </header>
+
+    <section class="cm-ledger">
+      <div class="cm-lhead">First year, side by side</div>
+      <div class="cm-cols">
+        <div class="cm-col">
+          <h3>The Tally Stack</h3><span class="who">What you pay today</span>
+            <div class="cm-line"><span>Tally Prime Multi-User license</span><b>₹54,000</b></div>
+            <div class="cm-line"><span>Annual TSS renewal</span><b>₹13,500</b></div>
+            <div class="cm-line"><span>Tally on Cloud (reseller)</span><b>₹36,000</b></div>
+            <div class="cm-line"><span>Separate CRM tool</span><b>₹120,000</b></div>
+          <div class="cm-tot"><span>Year one</span><b>₹223,500</b></div>
         </div>
-        <div class="vs-logos">
-            <div class="vs-logo ragenaizer"><img src="/assets/logo-icon-white.png" alt="Ragenaizer" style="width: 50px; height: auto;"></div>
-            <span class="vs-text">VS</span>
-            <div class="vs-logo competitor">T</div>
+        <div class="cm-col ours">
+          <h3>Ragenaizer</h3><span class="who">What you would pay instead</span>
+            <div class="cm-line"><span>Mini block — 10 seats × ₹1,200 × 12</span><b>₹1,44,000</b></div>
+            <div class="cm-line zero"><span>No separate TSS</span><b>₹0</b></div>
+            <div class="cm-line zero"><span>Browser-based (no cloud reseller)</span><b>₹0</b></div>
+            <div class="cm-line zero"><span>CRM (included)</span><b>₹0</b></div>
+          <div class="cm-tot"><span>Year one</span><b>₹1,44,000</b></div>
         </div>
-        <h1 class="compare-title">Ragenaizer vs Tally:<br><span class="highlight">Cloud Accounting, Same Compliance</span></h1>
-        <p class="compare-subtitle">Tally is the workhorse of India SMB accounting — and a Windows desktop product from another era. Ragenaizer Accounts gives you everything Tally is loved for (GST, TDS, vendor bills, fixed assets, audit-grade ledger) in your browser, on any device, with the rest of your business attached.</p>
-        <div class="winner-banner">
-            <div class="winner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-            <div class="winner-content">
-                <h3>Ragenaizer Accounts: Tally compliance, modern delivery</h3>
-                <p>The same GSTR-1, GSTR-3B and TDS reports your CA expects — without the per-machine dongle, the Windows-only install or the annual TSS subscription.</p>
-            </div>
-        </div>
+      </div>
+        <div class="cm-diff"><span class="k">Difference in year one</span><span class="v">₹79,500</span></div>
+      <p class="cm-note">Their figures are published list prices, converted where needed at ₹95.12 to the dollar (5 August 2026). We do not verify them and list prices change — check theirs before you decide. Ours is a fixed annual seat block, exclusive of GST.</p>
     </section>
 
-    <section class="comparison-section">
-        <div class="section-header">
-            <h2 class="section-title">Feature-by-Feature Comparison</h2>
-            <p class="section-desc">Tally's compliance, delivered the way modern teams work.</p>
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">Being straight</div>
+      <h2 class="dk-h2">When you should stay where you are.</h2>
+      <p class="dk-lede">A comparison page that finds no reason to keep the other tool is not a comparison, it is an advert. Three honest ones.</p>
+      <div class="cm-stay">
+        <div><h3>You only need this one thing</h3><p>If Tally is the only software your business runs and you have no intention of adding a CRM, projects or HR, a specialist tool will go deeper in its own lane than we will. Our argument is the stack, not the single app.</p></div>
+        <div><h3>Your team is fluent in it</h3><p>Retraining has a real cost, and it lands on the people who are busiest. If everyone is fast in Tally and nothing is actually breaking, the licence saving may not cover the disruption this year.</p></div>
+        <div><h3>You depend on something we lack</h3><p>Check the table below against the handful of things you genuinely could not work without. If one of them is missing here, that is a reason to wait — ask us and we will tell you honestly whether it is on the way.</p></div>
+      </div>
+    </section>
+
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">What leaves your stack</div>
+      <h2 class="dk-h2">The things you stop running.</h2>
+      <p class="dk-lede">Not features you gain — work you stop doing. That is usually where the real saving is, and it never appears on a licence invoice.</p>
+      <div class="cm-drops">
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>Annual TSS Just to Stay Updated</h3><p>Tally&#x27;s TSS (Total Solutions Service) is an annual subscription you pay just to keep getting product and tax updates. Skip it and your software stops being compliant.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Ragenaizer: continuous updates included</span></div>
         </div>
-        <table class="comparison-table">
-            <thead><tr><th>Feature</th><th>Ragenaizer Accounts</th><th>Tally Prime</th></tr></thead>
-            <tbody>
-                <tr><td><div class="feature-name">India GSTR-1 / GSTR-3B / TDS</div><div class="feature-desc">Native compliance reports</div></td><td><span class="check">✓</span></td><td><span class="check">✓ (signature feature)</span></td></tr>
-                <tr><td><div class="feature-name">HSN / SAC code library</div><div class="feature-desc">For India tax classification</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Customer invoicing with approval flow</div><div class="feature-desc">Draft → approve → send → paid</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Vendor bills &amp; AP aging</div><div class="feature-desc">Capture, approve, pay, age</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Fixed assets with depreciation</div><div class="feature-desc">Run depreciation in batch</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Bank reconciliation workflow</div><div class="feature-desc">Start → match → complete</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Browser-based</div><div class="feature-desc">No desktop install</div></td><td><span class="check">✓</span></td><td><span class="cross">Windows desktop only</span></td></tr>
-                <tr><td><div class="feature-name">Mac &amp; Linux support</div><div class="feature-desc">Use any OS</div></td><td><span class="check">✓</span></td><td><span class="cross">Windows only</span></td></tr>
-                <tr><td><div class="feature-name">Multi-user access from anywhere</div><div class="feature-desc">Without VPN or Tally on Cloud reseller</div></td><td><span class="check">✓ Native</span></td><td><span class="limited">Tally on Cloud reseller required</span></td></tr>
-                <tr><td><div class="feature-name">Razorpay / Stripe webhook auto-posting</div><div class="feature-desc">Payment gateway → ledger automatically</div></td><td><span class="check">✓</span></td><td><span class="cross">Manual entry</span></td></tr>
-                <tr><td><div class="feature-name">Real-time dashboards</div><div class="feature-desc">Live cash position from any device</div></td><td><span class="check">✓</span></td><td><span class="limited">Local-only</span></td></tr>
-                <tr><td><div class="feature-name">Customer record shared with CRM</div><div class="feature-desc">Won deal auto-creates customer</div></td><td><span class="check">✓ Native</span></td><td><span class="cross">No CRM integration</span></td></tr>
-                <tr><td><div class="feature-name">Payroll-to-finance bridge</div><div class="feature-desc">Payroll run → journal entry automatically</div></td><td><span class="check">✓ Native</span></td><td><span class="limited">Tally Payroll module</span></td></tr>
-                <tr><td><div class="feature-name">Comes with HRMS, CRM, PMS, Drive, LMS</div><div class="feature-desc">Full business platform</div></td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td></tr>
-                <tr><td><div class="feature-name">Annual TSS / renewal</div><div class="feature-desc">Required for product updates</div></td><td><span class="value good">Not needed</span></td><td><span class="value bad">Annual TSS subscription</span></td></tr>
-            </tbody>
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>Multi-User Means the License Tier Up</h3><p>Tally Prime Single User to Multi User is a separate, more expensive license. Add a second accountant and the bill jumps. There&#x27;s no flexible per-seat scaling.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Ragenaizer: pay per user, scale one at a time</span></div>
+        </div>
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>No Real Integrations</h3><p>Tally is a closed system. Sales, projects, payroll all live in separate tools and the data eventually gets typed back into Tally by hand at month-end. Two systems of truth, one cleanup job.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Ragenaizer: CRM, projects, payroll all flow into the books</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The evidence</div>
+      <h2 class="dk-h2">Feature by feature.</h2>
+      <p class="dk-lede">At the bottom, where it belongs — a table is evidence for an argument, not the argument itself.</p>
+      <div class="cm-tablewrap">
+        <table class="cm-table">
+          <thead><tr><th></th><th>Tally</th><th>Ragenaizer</th></tr></thead>
+          <tbody>
+          <tr><td>India GSTR-1 / GSTR-3B / TDS Native compliance reports</td><td><span class="cm-y">✓ (signature feature)</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>HSN / SAC code library For India tax classification</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Customer invoicing with approval flow Draft → approve → send → paid</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Vendor bills &amp; AP aging Capture, approve, pay, age</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Fixed assets with depreciation Run depreciation in batch</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Bank reconciliation workflow Start → match → complete</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Browser-based No desktop install</td><td>Windows desktop only</td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Mac &amp; Linux support Use any OS</td><td>Windows only</td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Multi-user access from anywhere Without VPN or Tally on Cloud reseller</td><td>Tally on Cloud reseller required</td><td class="ours"><span class="cm-y">✓ Native</span></td></tr>
+          <tr><td>Razorpay / Stripe webhook auto-posting Payment gateway → ledger automatically</td><td>Manual entry</td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Real-time dashboards Live cash position from any device</td><td>Local-only</td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Customer record shared with CRM Won deal auto-creates customer</td><td>No CRM integration</td><td class="ours"><span class="cm-y">✓ Native</span></td></tr>
+          <tr><td>Payroll-to-finance bridge Payroll run → journal entry automatically</td><td>Tally Payroll module</td><td class="ours"><span class="cm-y">✓ Native</span></td></tr>
+          <tr><td>Comes with HRMS, CRM, PMS, Drive, LMS Full business platform</td><td><span class="cm-n">✗</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Annual TSS / renewal Required for product updates</td><td>Annual TSS subscription</td><td class="ours">Not needed</td></tr>
+          </tbody>
         </table>
-
-        <div class="cost-breakdown">
-            <h3 class="cost-title">True Cost Comparison (10 users, annual)</h3>
-            <div class="cost-grid">
-                <div class="cost-column">
-                    <h4><span class="logo competitor">T</span> The Tally Stack</h4>
-                    <div class="cost-item"><span class="label">Tally Prime Multi-User license</span><span class="price">₹54,000</span></div>
-                    <div class="cost-item"><span class="label">Annual TSS renewal</span><span class="price">₹13,500</span></div>
-                    <div class="cost-item"><span class="label">Tally on Cloud (reseller)</span><span class="price">₹36,000</span></div>
-                    <div class="cost-item"><span class="label">Separate CRM tool</span><span class="price">₹120,000</span></div>
-                    <div class="cost-total"><span class="label">Year 1</span><span class="price">₹223,500+</span></div>
-                </div>
-                <div class="cost-column">
-                    <h4><span class="logo ragenaizer"><img src="/assets/logo-icon-white.png" alt="Ragenaizer" style="width: 24px; height: auto;"></span> Ragenaizer All-in-One</h4>
-                    <div class="cost-item"><span class="label">10 users × ₹999 × 12</span><span class="price">₹119,880</span></div>
-                    <div class="cost-item"><span class="label">No separate TSS</span><span class="price">₹0</span></div>
-                    <div class="cost-item"><span class="label">Browser-based (no cloud reseller)</span><span class="price">₹0</span></div>
-                    <div class="cost-item"><span class="label">CRM (included)</span><span class="price">₹0</span></div>
-                    <div class="cost-total"><span class="label">Year 1</span><span class="price savings">₹119,880</span></div>
-                </div>
-            </div>
-        </div>
+      </div>
     </section>
 
-    <section class="pain-points">
-        <div class="section-header">
-            <h2 class="section-title">Common Tally Frustrations</h2>
-            <p class="section-desc">Problems Ragenaizer Accounts solves out of the box</p>
-        </div>
-        <div class="pain-grid">
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg></div>
-                <h4>It's a Windows Desktop App</h4>
-                <p>Tally Prime runs on Windows. Period. Mac users boot a VM. Linux users are out of luck. Your accountant works from home? Either VPN into the office machine or buy "Tally on Cloud" from a reseller.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Ragenaizer: works in any browser, any OS</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-                <h4>Annual TSS Just to Stay Updated</h4>
-                <p>Tally's TSS (Total Solutions Service) is an annual subscription you pay just to keep getting product and tax updates. Skip it and your software stops being compliant.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Ragenaizer: continuous updates included</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
-                <h4>Multi-User Means the License Tier Up</h4>
-                <p>Tally Prime Single User to Multi User is a separate, more expensive license. Add a second accountant and the bill jumps. There's no flexible per-seat scaling.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Ragenaizer: pay per user, scale one at a time</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-                <h4>No Real Integrations</h4>
-                <p>Tally is a closed system. Sales, projects, payroll all live in separate tools and the data eventually gets typed back into Tally by hand at month-end. Two systems of truth, one cleanup job.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Ragenaizer: CRM, projects, payroll all flow into the books</span></div>
-            </div>
-        </div>
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Tally compliance, cloud delivery</h2>
+      <p>Move off the Windows desktop and into modern cloud accounting.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="../pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20vs%20Tally">Ask us the hard question →</a>
+      </div>
     </section>
+    <footer class="dk-foot">
+      <div class="dk-fcol"><strong>Platform</strong>
+        <a href="../email.html">Mail</a><a href="../vision.html">Meetings</a><a href="../chat.html">Chat</a><a href="../drive.html">Drive</a></div>
+      <div class="dk-fcol"><strong>Business</strong>
+        <a href="../crm.html">CRM</a><a href="../hrms.html">HRMS</a><a href="../accounts.html">Accounts</a><a href="../pms.html">Projects</a></div>
+      <div class="dk-fcol"><strong>Company</strong>
+        <a href="../pricing.html">Pricing</a><a href="../research.html">Research</a><a href="../lms.html">Learning</a><a href="../activate.html">Activate a licence</a></div>
+      <div class="dk-fcol"><strong>Legal</strong>
+        <a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a><a href="../refund.html">Refunds</a><a href="../data-deletion.html">Delete my data</a></div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <section class="compare-cta">
-        <h2 class="cta-title">Tally compliance, cloud delivery</h2>
-        <p class="cta-desc">Move off the Windows desktop and into modern cloud accounting.</p>
-        <div class="cta-buttons">
-            <a href="../activate.html" class="btn-primary">See pricing</a>
-            <a href="../accounts.html" class="btn-secondary">Learn More About Accounts</a>
-        </div>
-    </section>
-
-    <div id="footer"></div>
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+  <script>
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('is-in'); }); return;
+      }
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>

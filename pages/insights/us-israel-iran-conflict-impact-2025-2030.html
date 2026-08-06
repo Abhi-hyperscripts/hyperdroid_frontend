@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <meta charset="UTF-8">
     <script src="/js/cookie-consent.js" defer></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -61,7 +63,7 @@
     }
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/theme.css">
     <link rel="stylesheet" href="/css/landing.css">
     <link rel="stylesheet" href="/css/insights-seo.css">
@@ -69,9 +71,24 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/content-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page insights-page">
-    <div id="navbar"></div>
+<body class="landing-page insights-page desk-landing content-desk">
+      <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
+        <img src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../../index.html#platform">Platform</a>
+        <a href="../../index.html#how">How it fits</a>
+        <a href="../pricing.html">Pricing</a>
+        <a href="../research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="../login.html">Sign in</a>
+    </nav>
 
     <div id="insights-report"
          data-token="059d75b5e7498c88085169bcb47186ae"
@@ -170,10 +187,21 @@
         </article>
     </div>
 
-    <div id="footer"></div>
-
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+        <footer class="dk-foot">
+      <div class="dk-fcol"><strong>Platform</strong>
+        <a href="../email.html">Mail</a><a href="../vision.html">Meetings</a><a href="../chat.html">Chat</a><a href="../drive.html">Drive</a></div>
+      <div class="dk-fcol"><strong>Business</strong>
+        <a href="../crm.html">CRM</a><a href="../hrms.html">HRMS</a><a href="../accounts.html">Accounts</a><a href="../pms.html">Projects</a></div>
+      <div class="dk-fcol"><strong>Company</strong>
+        <a href="../pricing.html">Pricing</a><a href="../research.html">Research</a><a href="../lms.html">Learning</a><a href="../activate.html">Activate a licence</a></div>
+      <div class="dk-fcol"><strong>Legal</strong>
+        <a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a><a href="../refund.html">Refunds</a><a href="../data-deletion.html">Delete my data</a></div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
     <script src="/js/insights/insights-seo-page.js"></script>
 </body>
 </html>

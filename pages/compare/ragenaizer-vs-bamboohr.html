@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -66,7 +67,7 @@
     </script>
 
     <!-- Fonts matching index page -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -684,418 +685,113 @@
             .compare-table th, .compare-table td { padding: 12px 8px; }
         }
     </style>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/compare-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page compare-page">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing cmp-desk">
 
-    <!-- Hero Section -->
-    <section class="compare-hero">
-        <div class="compare-hero-bg">
-            <div class="compare-hero-grid"></div>
-        </div>
-        <div class="compare-hero-content">
-            <div class="vs-badge">
-                <img src="/assets/brand_logo.png" alt="Ragenaizer" class="vs-logo">
-                <span class="vs-text">vs</span>
-                <span style="font-family: 'Electrolize', sans-serif; font-size: 20px; color: #7cb342; letter-spacing: 0.05em;">BambooHR</span>
-            </div>
-            <h1>HR Software: <span class="highlight">Full Payroll</span> vs Core HR</h1>
-            <p>BambooHR is excellent for core HR (onboarding, records, time-off). Ragenaizer adds full payroll processing, calculation proofs, and unified workspace with video, chat, and storage.</p>
-        </div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
+        <img src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../../index.html#platform">Platform</a>
+        <a href="../../index.html#how">How it fits</a>
+        <a href="../pricing.html">Pricing</a>
+        <a href="../research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="../login.html">Sign in</a>
+    </nav>
+
+    <header class="cm-hero">
+      <div class="dk-eyebrow"><i></i>Ragenaizer vs Bamboohr</div>
+      <h1 class="cm-h1">HR Software: Full Payroll vs Core HR</h1>
+      
+      
+    </header>
+
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">Being straight</div>
+      <h2 class="dk-h2">When you should stay where you are.</h2>
+      <p class="dk-lede">A comparison page that finds no reason to keep the other tool is not a comparison, it is an advert. Three honest ones.</p>
+      <div class="cm-stay">
+        <div><h3>You only need this one thing</h3><p>If Bamboohr is the only software your business runs and you have no intention of adding a CRM, projects or HR, a specialist tool will go deeper in its own lane than we will. Our argument is the stack, not the single app.</p></div>
+        <div><h3>Your team is fluent in it</h3><p>Retraining has a real cost, and it lands on the people who are busiest. If everyone is fast in Bamboohr and nothing is actually breaking, the licence saving may not cover the disruption this year.</p></div>
+        <div><h3>You depend on something we lack</h3><p>Check the table below against the handful of things you genuinely could not work without. If one of them is missing here, that is a reason to wait — ask us and we will tell you honestly whether it is on the way.</p></div>
+      </div>
     </section>
 
-    <!-- TL;DR Section -->
-    <section class="tldr-section">
-        <div class="tldr-card">
-            <h2>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                Quick Verdict
-            </h2>
-            <div class="tldr-grid">
-                <div class="tldr-item">
-                    <div class="label">Best For Full Payroll</div>
-                    <div class="value green">Ragenaizer</div>
-                </div>
-                <div class="tldr-item">
-                    <div class="label">Best For Core HR (US)</div>
-                    <div class="value bamboo">BambooHR</div>
-                </div>
-                <div class="tldr-item">
-                    <div class="label">Best Unified Platform</div>
-                    <div class="value green">Ragenaizer</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Core Feature Comparison -->
-    <section class="compare-section">
-        <h2>Core Platform Comparison</h2>
-        <table class="compare-table">
-            <thead>
-                <tr>
-                    <th>Feature</th>
-                    <th>Ragenaizer</th>
-                    <th>BambooHR</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>
-                        <div class="feature-name">Full Payroll Processing</div>
-                        <div class="feature-desc">Run payroll with statutory calculations</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ Built-in</span></td>
-                    <td><span class="partial">⚠ Add-on ($75/month)</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">Calculation Proofs</div>
-                        <div class="feature-desc">See exactly how each payslip number was derived</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ Full transparency</span></td>
-                    <td><span class="cross">✗ Not available</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">Unified Workspace</div>
-                        <div class="feature-desc">HRMS + Video + Chat + Storage in one app</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ Single product</span></td>
-                    <td><span class="cross">✗ HR only</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">Country Support</div>
-                        <div class="feature-desc">Multi-country statutory compliance</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ Any country (JSON)</span></td>
-                    <td><span class="partial">⚠ US, UK, partial</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">Self-Hosted Option</div>
-                        <div class="feature-desc">Run on your own infrastructure</div>
-                    </td>
-                    <td class="highlight-cell"><span class="check">✓ Available</span></td>
-                    <td><span class="cross">✗ Cloud only</span></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="feature-name">User Experience</div>
-                        <div class="feature-desc">Ease of use rating</div>
-                    </td>
-                    <td><span class="check">✓ Modern UI</span></td>
-                    <td><span class="check">✓ Award-winning UX</span></td>
-                </tr>
-            </tbody>
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The evidence</div>
+      <h2 class="dk-h2">Feature by feature.</h2>
+      <p class="dk-lede">At the bottom, where it belongs — a table is evidence for an argument, not the argument itself.</p>
+      <div class="cm-tablewrap">
+        <table class="cm-table">
+          <thead><tr><th></th><th>Bamboohr</th><th>Ragenaizer</th></tr></thead>
+          <tbody>
+          <tr><td>Full Payroll Processing Run payroll with statutory calculations</td><td><span class="cm-p">⚠ Add-on ($75/month)</span></td><td class="ours"><span class="cm-y">✓ Built-in</span></td></tr>
+          <tr><td>Calculation Proofs See exactly how each payslip number was derived</td><td><span class="cm-n">✗ Not available</span></td><td class="ours"><span class="cm-y">✓ Full transparency</span></td></tr>
+          <tr><td>Unified Workspace HRMS + Video + Chat + Storage in one app</td><td><span class="cm-n">✗ HR only</span></td><td class="ours"><span class="cm-y">✓ Single product</span></td></tr>
+          <tr><td>Country Support Multi-country statutory compliance</td><td>⚠ US, UK, partial</td><td class="ours"><span class="cm-y">✓ Any country (JSON)</span></td></tr>
+          <tr><td>Self-Hosted Option Run on your own infrastructure</td><td><span class="cm-n">✗ Cloud only</span></td><td class="ours"><span class="cm-y">✓ Available</span></td></tr>
+          <tr><td>User Experience Ease of use rating</td><td><span class="cm-y">✓ Award-winning UX</span></td><td class="ours"><span class="cm-y">✓ Modern UI</span></td></tr>
+          <tr><td>Employee Database</td><td><span class="cm-y">✓ Excellent</span></td><td class="ours"><span class="cm-y">✓ Full featured</span></td></tr>
+          <tr><td>Onboarding</td><td><span class="cm-y">✓ Award-winning</span></td><td class="ours"><span class="cm-y">✓ Available</span></td></tr>
+          <tr><td>Time-Off Management</td><td><span class="cm-y">✓ Excellent</span></td><td class="ours"><span class="cm-y">✓ Configurable</span></td></tr>
+          <tr><td>Performance Management</td><td><span class="cm-y">✓ Available</span></td><td class="ours">⚠ Coming soon</td></tr>
+          <tr><td>Applicant Tracking (ATS)</td><td><span class="cm-y">✓ Built-in</span></td><td class="ours"><span class="cm-n">✗ Not included</span></td></tr>
+          <tr><td>Full Payroll Processing</td><td><span class="cm-p">⚠ $75+/month add-on</span></td><td class="ours"><span class="cm-y">✓ Included</span></td></tr>
+          <tr><td>Multi-Country Payroll</td><td>⚠ US only (payroll)</td><td class="ours"><span class="cm-y">✓ Any country</span></td></tr>
+          <tr><td>Statutory Calculations</td><td>⚠ US only</td><td class="ours"><span class="cm-y">✓ Auto-calculated</span></td></tr>
+          <tr><td>Loan Management</td><td><span class="cm-n">✗ Not available</span></td><td class="ours"><span class="cm-y">✓ EMI auto-deduct</span></td></tr>
+          <tr><td>Benefits Administration</td><td><span class="cm-y">✓ Add-on available</span></td><td class="ours">⚠ Basic</td></tr>
+          <tr><td>Video Conferencing</td><td><span class="cm-n">✗ Not included</span></td><td class="ours"><span class="cm-y">✓ Vision (included)</span></td></tr>
+          <tr><td>Team Chat</td><td><span class="cm-n">✗ Not included</span></td><td class="ours"><span class="cm-y">✓ Built-in</span></td></tr>
+          <tr><td>Cloud Storage</td><td><span class="cm-n">✗ Not included</span></td><td class="ours"><span class="cm-y">✓ Drive (included)</span></td></tr>
+          <tr><td>Employee Directory</td><td><span class="cm-y">✓ With org chart</span></td><td class="ours"><span class="cm-y">✓ With org chart</span></td></tr>
+          </tbody>
         </table>
+      </div>
     </section>
 
-    <!-- Unique Features Section -->
-    <section class="unique-section">
-        <h2>What Makes Ragenaizer Different</h2>
-        <p class="subtitle">Features you won't find in BambooHR or any other core HR platform</p>
-
-        <div class="unique-grid">
-            <div class="unique-card">
-                <div class="icon green">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </div>
-                <h3>Full Payroll Built-In</h3>
-                <p>Complete payroll processing with statutory calculations (PF, tax, social security) included at no extra cost. BambooHR payroll is a $75+/month add-on limited to US.</p>
-            </div>
-
-            <div class="unique-card">
-                <div class="icon blue">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                </div>
-                <h3>Calculation Proof Chain</h3>
-                <p>Every payslip shows exactly how each number was calculated. Full transparency for audits, employee trust, and compliance requirements.</p>
-            </div>
-
-            <div class="unique-card">
-                <div class="icon purple">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                </div>
-                <h3>True Unified Platform</h3>
-                <p>HRMS + Video Conferencing + Team Chat + Cloud Storage in ONE product. Replace 4 separate subscriptions with one integrated solution.</p>
-            </div>
-        </div>
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Put the whole company on one desk.</h2>
+      <p>One login, one bill, and the work in one place.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="../pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20vs%20Bamboohr">Ask us the hard question →</a>
+      </div>
     </section>
+    <footer class="dk-foot">
+      <div class="dk-fcol"><strong>Platform</strong>
+        <a href="../email.html">Mail</a><a href="../vision.html">Meetings</a><a href="../chat.html">Chat</a><a href="../drive.html">Drive</a></div>
+      <div class="dk-fcol"><strong>Business</strong>
+        <a href="../crm.html">CRM</a><a href="../hrms.html">HRMS</a><a href="../accounts.html">Accounts</a><a href="../pms.html">Projects</a></div>
+      <div class="dk-fcol"><strong>Company</strong>
+        <a href="../pricing.html">Pricing</a><a href="../research.html">Research</a><a href="../lms.html">Learning</a><a href="../activate.html">Activate a licence</a></div>
+      <div class="dk-fcol"><strong>Legal</strong>
+        <a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a><a href="../refund.html">Refunds</a><a href="../data-deletion.html">Delete my data</a></div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Feature Deep Dive Comparison -->
-    <section class="compare-section">
-        <h2>Feature-by-Feature Comparison</h2>
-        <table class="compare-table">
-            <thead>
-                <tr>
-                    <th>Core HR Features</th>
-                    <th>Ragenaizer</th>
-                    <th>BambooHR</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><div class="feature-name">Employee Database</div></td>
-                    <td><span class="check">✓ Full featured</span></td>
-                    <td><span class="check">✓ Excellent</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Onboarding</div></td>
-                    <td><span class="check">✓ Available</span></td>
-                    <td><span class="check">✓ Award-winning</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Time-Off Management</div></td>
-                    <td><span class="check">✓ Configurable</span></td>
-                    <td><span class="check">✓ Excellent</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Performance Management</div></td>
-                    <td><span class="partial">⚠ Coming soon</span></td>
-                    <td><span class="check">✓ Available</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Applicant Tracking (ATS)</div></td>
-                    <td><span class="cross">✗ Not included</span></td>
-                    <td><span class="check">✓ Built-in</span></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <table class="compare-table">
-            <thead>
-                <tr>
-                    <th>Payroll & Finance</th>
-                    <th>Ragenaizer</th>
-                    <th>BambooHR</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><div class="feature-name">Full Payroll Processing</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Included</span></td>
-                    <td><span class="partial">⚠ $75+/month add-on</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Multi-Country Payroll</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Any country</span></td>
-                    <td><span class="partial">⚠ US only (payroll)</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Statutory Calculations</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Auto-calculated</span></td>
-                    <td><span class="partial">⚠ US only</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Loan Management</div></td>
-                    <td class="highlight-cell"><span class="check">✓ EMI auto-deduct</span></td>
-                    <td><span class="cross">✗ Not available</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Benefits Administration</div></td>
-                    <td><span class="partial">⚠ Basic</span></td>
-                    <td><span class="check">✓ Add-on available</span></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <table class="compare-table">
-            <thead>
-                <tr>
-                    <th>Collaboration Tools</th>
-                    <th>Ragenaizer</th>
-                    <th>BambooHR</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><div class="feature-name">Video Conferencing</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Vision (included)</span></td>
-                    <td><span class="cross">✗ Not included</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Team Chat</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Built-in</span></td>
-                    <td><span class="cross">✗ Not included</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Cloud Storage</div></td>
-                    <td class="highlight-cell"><span class="check">✓ Drive (included)</span></td>
-                    <td><span class="cross">✗ Not included</span></td>
-                </tr>
-                <tr>
-                    <td><div class="feature-name">Employee Directory</div></td>
-                    <td><span class="check">✓ With org chart</span></td>
-                    <td><span class="check">✓ With org chart</span></td>
-                </tr>
-            </tbody>
-        </table>
-    </section>
-
-    <!-- Pricing Comparison -->
-    <section class="pricing-section">
-        <h2>Pricing Comparison</h2>
-        <div class="pricing-cards">
-            <div class="pricing-card recommended">
-                <div class="logo">Ragenaizer</div>
-                <div class="tagline">Full HRMS with unified workspace</div>
-                <div class="price">Custom<span> pricing</span></div>
-                <div class="price-note">Flat rate per tenant, not per employee</div>
-                <ul>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Unlimited employees
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Full payroll INCLUDED
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        All modules: HRMS + Video + Chat + Drive
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Multi-country compliance
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Calculation proofs included
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Self-hosted option available
-                    </li>
-                </ul>
-                <a href="/pages/pricing.html" class="cta-btn primary">See pricing</a>
-            </div>
-
-            <div class="pricing-card">
-                <div class="logo">BambooHR</div>
-                <div class="tagline">Core HR platform</div>
-                <div class="price">$6<span>/employee/month</span></div>
-                <div class="price-note">Essentials plan (+ add-ons)</div>
-                <ul>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Excellent core HR features
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Award-winning onboarding
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Built-in ATS
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Payroll: +$75/month (US only)
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        No video/chat/storage
-                    </li>
-                    <li>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        No calculation proofs
-                    </li>
-                </ul>
-                <a href="https://www.bamboohr.com/" target="_blank" rel="nofollow" class="cta-btn secondary">Visit BambooHR</a>
-            </div>
-        </div>
-
-        <div class="pricing-example">
-            <p>
-                <strong>Example:</strong> 50 employees with BambooHR + Payroll = <strong>$375+/month</strong> + you need Zoom + Slack + Google Drive<br>
-                With Ragenaizer, payroll and all collaboration tools are included.
-            </p>
-        </div>
-    </section>
-
-    <!-- When to Choose Each -->
-    <section class="use-case-section">
-        <h2>Which One Should You Choose?</h2>
-        <div class="use-case-grid">
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    You need full payroll
-                </h3>
-                <p>If you want payroll processing with statutory calculations built-in (not as an expensive US-only add-on), Ragenaizer is the clear choice.</p>
-                <span class="winner ragenaizer">→ Choose Ragenaizer</span>
-            </div>
-
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7cb342" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    You're US-only and need ATS
-                </h3>
-                <p>BambooHR excels at core HR with built-in applicant tracking. If you're a US company focused on recruiting and HR records, it's a great fit.</p>
-                <span class="winner bamboohr">→ Choose BambooHR</span>
-            </div>
-
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                    You want one platform
-                </h3>
-                <p>If you're paying separately for Zoom, Slack, Dropbox, and HR software, Ragenaizer consolidates everything into one integrated product.</p>
-                <span class="winner ragenaizer">→ Choose Ragenaizer</span>
-            </div>
-
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7cb342" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                    You prioritize UX above all
-                </h3>
-                <p>BambooHR has won awards for user experience. If ease-of-use is your top priority and you're willing to pay extra for payroll, it's worth considering.</p>
-                <span class="winner bamboohr">→ Choose BambooHR</span>
-            </div>
-
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    You have international employees
-                </h3>
-                <p>BambooHR payroll only works in the US. If you have employees in India, UK, Europe, or elsewhere, Ragenaizer's country-agnostic system handles all of them.</p>
-                <span class="winner ragenaizer">→ Choose Ragenaizer</span>
-            </div>
-
-            <div class="use-case-card">
-                <h3>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    You're a small US startup
-                </h3>
-                <p>Small US startups (10-50 people) who just need core HR and time-off tracking might find BambooHR simpler. Growing companies benefit from Ragenaizer's unified approach.</p>
-                <span class="winner both">→ Evaluate both</span>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="cta-content">
-            <h2>Ready for Full HRMS with Payroll?</h2>
-            <p>Try Ragenaizer free and experience complete HR with payroll, calculation proofs, video, chat, and storage included.</p>
-            <div class="cta-buttons">
-                <a href="/pages/pricing.html" class="cta-btn primary">
-                    See pricing
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </a>
-                <a href="/pages/features/hrms-payroll.html" class="cta-btn secondary">View All Features</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <div id="footer"></div>
-
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+  <script>
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('is-in'); }); return;
+      }
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>

@@ -1,0 +1,283 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPARISONS — "what it costs to leave, and when not to".
+   Loaded after landing-desk.css, scoped to body.cmp-desk.
+
+   Every comparison page on the internet has the same shape: a tick table
+   where the competitor mysteriously fails at everything. Nobody believes it,
+   including the person who lands on it having already decided.
+
+   So these are built the other way round. The first thing is the money,
+   because that is what the reader came for. The second is the case for NOT
+   switching, stated plainly — a page that admits when the other tool is the
+   right answer is the only kind worth reading. The tick table survives, but
+   as evidence at the bottom rather than as the argument.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.cmp-desk { --cm: #6366f1; }
+
+/* ── hero ─────────────────────────────────────────────────────────────────── */
+body.cmp-desk .cm-hero { padding: 52px 0 0; text-align: center; }
+body.cmp-desk h1.cm-h1 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(32px, 4.6vw, 54px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--dk-ink);
+  margin: 24px 0 0;
+}
+body.cmp-desk .cm-sub {
+  margin: 18px auto 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--dk-mute);
+  max-width: 640px;
+}
+
+/* the honest one-line answer, before anything else */
+body.cmp-desk .cm-verdict {
+  margin: 34px auto 0;
+  max-width: 760px;
+  text-align: left;
+  padding: 20px 24px;
+  border-radius: 14px;
+  border: 1px solid var(--dk-line);
+  border-left: 3px solid var(--cm);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+body.cmp-desk .cm-verdict b {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cm);
+  margin-bottom: 9px;
+  font-weight: 400;
+}
+body.cmp-desk .cm-verdict p { margin: 0; font-size: 15px; line-height: 1.65; color: var(--dk-mute); }
+
+/* ── the ledger: the signature ────────────────────────────────────────────── */
+body.cmp-desk .cm-ledger {
+  margin-top: 44px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  text-align: left;
+}
+body.cmp-desk .cm-lhead {
+  padding: 18px 26px;
+  border-bottom: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.4);
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.cmp-desk .cm-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+body.cmp-desk .cm-col { padding: 26px 28px 28px; }
+body.cmp-desk .cm-col + .cm-col { border-left: 1px solid var(--dk-line); }
+body.cmp-desk .cm-col h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 0 0 4px;
+}
+body.cmp-desk .cm-col .who {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  display: block;
+  margin-bottom: 16px;
+}
+body.cmp-desk .cm-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13.5px;
+  color: var(--dk-mute);
+}
+body.cmp-desk .cm-line b {
+  font-family: var(--font-family-mono);
+  font-weight: 400;
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+body.cmp-desk .cm-line.zero b { color: #4ade80; }
+body.cmp-desk .cm-tot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+body.cmp-desk .cm-tot span { font-size: 13.5px; color: var(--dk-ink); font-weight: 600; }
+body.cmp-desk .cm-tot b {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+}
+body.cmp-desk .cm-col.ours .cm-tot b { color: #4ade80; }
+
+/* the difference, stated once, in words */
+body.cmp-desk .cm-diff {
+  padding: 20px 26px;
+  border-top: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.38);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+body.cmp-desk .cm-diff .k {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-mute);
+}
+body.cmp-desk .cm-diff .v {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: -0.03em;
+  color: #4ade80;
+  font-variant-numeric: tabular-nums;
+}
+body.cmp-desk .cm-note {
+  padding: 15px 26px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--dk-dim);
+}
+
+/* ── when to stay put ─────────────────────────────────────────────────────── */
+body.cmp-desk .cm-stay {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 38px;
+}
+body.cmp-desk .cm-stay > div {
+  padding: 22px 24px;
+  border-radius: 15px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.035);
+}
+body.cmp-desk .cm-stay h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dk-ink);
+  margin: 0 0 8px;
+}
+body.cmp-desk .cm-stay p { margin: 0; font-size: 14px; line-height: 1.62; color: var(--dk-mute); }
+
+/* ── what leaves the stack ────────────────────────────────────────────────── */
+body.cmp-desk .cm-drops { margin-top: 38px; display: grid; gap: 14px; }
+body.cmp-desk .cm-drop {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px 22px;
+  border-radius: 15px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+}
+body.cmp-desk .cm-drop .ic {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(248, 113, 113, 0.14);
+}
+body.cmp-desk .cm-drop .ic svg { width: 16px; height: 16px; stroke: #f87171; fill: none; stroke-width: 2; }
+body.cmp-desk .cm-drop h3 { font-size: 16px; font-weight: 600; color: var(--dk-ink); margin: 2px 0 7px; }
+body.cmp-desk .cm-drop p { margin: 0; font-size: 14px; line-height: 1.62; color: var(--dk-mute); }
+body.cmp-desk .cm-drop .fix {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 13px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #4ade80 26%, transparent);
+  background: rgba(74, 222, 128, 0.08);
+  color: #86efac;
+  font-size: 13px;
+}
+body.cmp-desk .cm-drop .fix svg { width: 14px; height: 14px; stroke: #4ade80; fill: none; stroke-width: 2.6; flex: none; }
+
+/* ── the evidence table ───────────────────────────────────────────────────── */
+body.cmp-desk .cm-tablewrap {
+  margin-top: 36px;
+  border-radius: 16px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow-x: auto;
+}
+body.cmp-desk table.cm-table { width: 100%; border-collapse: collapse; min-width: 620px; }
+body.cmp-desk .cm-table th,
+body.cmp-desk .cm-table td {
+  padding: 13px 18px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 14px;
+  color: var(--dk-mute);
+  vertical-align: top;
+}
+body.cmp-desk .cm-table thead th {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  font-weight: 400;
+  background: rgba(255, 255, 255, 0.03);
+}
+body.cmp-desk .cm-table td:first-child { color: var(--dk-ink); }
+body.cmp-desk .cm-table .sub { display: block; font-size: 12.5px; color: var(--dk-dim); margin-top: 3px; }
+body.cmp-desk .cm-table tbody tr:last-child td { border-bottom: 0; }
+body.cmp-desk .cm-table tbody tr:hover td { background: rgba(255, 255, 255, 0.028); }
+body.cmp-desk .cm-table td.ours {
+  background: color-mix(in srgb, var(--cm) 11%, transparent);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--cm) 36%, transparent),
+              inset -1px 0 0 color-mix(in srgb, var(--cm) 36%, transparent);
+}
+body.cmp-desk .cm-y { color: #4ade80; }
+body.cmp-desk .cm-n { color: #f87171; }
+body.cmp-desk .cm-p { color: #fbbf24; }
+
+@media (max-width: 780px) {
+  body.cmp-desk .cm-cols { grid-template-columns: 1fr; }
+  body.cmp-desk .cm-col + .cm-col { border-left: 0; border-top: 1px solid var(--dk-line); }
+  body.cmp-desk .cm-drop { grid-template-columns: 1fr; }
+}

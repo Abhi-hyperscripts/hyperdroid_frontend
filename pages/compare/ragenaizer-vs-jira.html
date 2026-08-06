@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -125,125 +126,153 @@
     ]
 }
     </script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/compare-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page compare-page-v2">
-    <div id="navbar"></div>
+<body class="landing-page desk-landing cmp-desk">
 
-    <section class="compare-hero">
-        <div class="compare-badge">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-            Comparison Guide 2026
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
+        <img src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../../index.html#platform">Platform</a>
+        <a href="../../index.html#how">How it fits</a>
+        <a href="../pricing.html">Pricing</a>
+        <a href="../research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="../login.html">Sign in</a>
+    </nav>
+
+    <header class="cm-hero">
+      <div class="dk-eyebrow"><i></i>Ragenaizer vs Jira</div>
+      <h1 class="cm-h1">Ragenaizer vs Jira:<br>Issue Tracking Without the Complexity Tax</h1>
+      <p class="cm-sub">Jira used to be the default. It&#x27;s also legendary for being slow, over-configured, plugin-dependent and impossible to onboard new hires onto. Ragenaizer PMS is the issue tracker engineering teams have actually been waiting for — project codes like RAG-47 , kanban, watchers, threaded comments, full history, instant page loads, and the rest of your business already attached.</p>
+      <div class="cm-verdict"><b>The short answer</b><p>Ragenaizer PMS: the issue tracker that doesn&#x27;t need an admin Every feature you actually use. No plugins. No Confluence. No Tempo Timesheets. No Atlassian admin certification. Plus timesheets and client billing baked in.</p></div>
+    </header>
+
+    <section class="cm-ledger">
+      <div class="cm-lhead">First year, side by side</div>
+      <div class="cm-cols">
+        <div class="cm-col">
+          <h3>The Jira Stack</h3><span class="who">What you pay today</span>
+            <div class="cm-line"><span>Jira Software Standard × 25</span><b>₹2,28,300</b></div>
+            <div class="cm-line"><span>Confluence × 25</span><b>₹1,71,200</b></div>
+            <div class="cm-line"><span>Tempo Timesheets × 25</span><b>₹2,85,400</b></div>
+            <div class="cm-line"><span>Atlassian admin (part time)</span><b>₹23,78,000</b></div>
+          <div class="cm-tot"><span>Year one</span><b>₹30,62,900</b></div>
         </div>
-        <div class="vs-logos">
-            <div class="vs-logo ragenaizer"><img src="/assets/logo-icon-white.png" alt="Ragenaizer" style="width: 50px; height: auto;"></div>
-            <span class="vs-text">VS</span>
-            <div class="vs-logo competitor">J</div>
+        <div class="cm-col ours">
+          <h3>Ragenaizer</h3><span class="who">What you would pay instead</span>
+            <div class="cm-line"><span>Pro block — 50 seats × ₹1,200 × 12</span><b>₹7,20,000</b></div>
+            <div class="cm-line zero"><span>Issue tracker (included)</span><b>₹0</b></div>
+            <div class="cm-line zero"><span>Timesheets (included)</span><b>₹0</b></div>
+            <div class="cm-line zero"><span>Admin overhead</span><b>₹0</b></div>
+          <div class="cm-tot"><span>Year one</span><b>₹7,20,000</b></div>
         </div>
-        <h1 class="compare-title">Ragenaizer vs Jira:<br><span class="highlight">Issue Tracking Without the Complexity Tax</span></h1>
-        <p class="compare-subtitle">Jira used to be the default. It's also legendary for being slow, over-configured, plugin-dependent and impossible to onboard new hires onto. Ragenaizer PMS is the issue tracker engineering teams have actually been waiting for — project codes like <code>RAG-47</code>, kanban, watchers, threaded comments, full history, instant page loads, and the rest of your business already attached.</p>
-        <div class="winner-banner">
-            <div class="winner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-            <div class="winner-content">
-                <h3>Ragenaizer PMS: the issue tracker that doesn't need an admin</h3>
-                <p>Every feature you actually use. No plugins. No Confluence. No Tempo Timesheets. No Atlassian admin certification. Plus timesheets and client billing baked in.</p>
-            </div>
-        </div>
+      </div>
+        <div class="cm-diff"><span class="k">Difference in year one</span><span class="v">₹23,42,900</span></div>
+      <p class="cm-note">Their figures are published list prices, converted where needed at ₹95.12 to the dollar (5 August 2026). We do not verify them and list prices change — check theirs before you decide. Ours is a fixed annual seat block, exclusive of GST.</p>
     </section>
 
-    <section class="comparison-section">
-        <div class="section-header">
-            <h2 class="section-title">Feature-by-Feature Comparison</h2>
-            <p class="section-desc">Same workflow capabilities. None of the Jira tax.</p>
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">Being straight</div>
+      <h2 class="dk-h2">When you should stay where you are.</h2>
+      <p class="dk-lede">A comparison page that finds no reason to keep the other tool is not a comparison, it is an advert. Three honest ones.</p>
+      <div class="cm-stay">
+        <div><h3>You only need this one thing</h3><p>If Jira is the only software your business runs and you have no intention of adding a CRM, projects or HR, a specialist tool will go deeper in its own lane than we will. Our argument is the stack, not the single app.</p></div>
+        <div><h3>Your team is fluent in it</h3><p>Retraining has a real cost, and it lands on the people who are busiest. If everyone is fast in Jira and nothing is actually breaking, the licence saving may not cover the disruption this year.</p></div>
+        <div><h3>You depend on something we lack</h3><p>Check the table below against the handful of things you genuinely could not work without. If one of them is missing here, that is a reason to wait — ask us and we will tell you honestly whether it is on the way.</p></div>
+      </div>
+    </section>
+
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">What leaves your stack</div>
+      <h2 class="dk-h2">The things you stop running.</h2>
+      <p class="dk-lede">Not features you gain — work you stop doing. That is usually where the real saving is, and it never appears on a licence invoice.</p>
+      <div class="cm-drops">
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>The Plugin Tax</h3><p>Vanilla Jira can&#x27;t track time, can&#x27;t generate proper roadmaps and can&#x27;t surface SLA metrics. Want those? Tempo, Portfolio, ScriptRunner — each priced per user, each a separate vendor.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Ragenaizer: time tracking, billing and SLA stats included</span></div>
         </div>
-        <table class="comparison-table">
-            <thead><tr><th>Feature</th><th>Ragenaizer PMS</th><th>Jira Software</th></tr></thead>
-            <tbody>
-                <tr><td><div class="feature-name">Project codes &amp; auto-numbered keys</div><div class="feature-desc">RAG-47 style identifiers</div></td><td><span class="check">✓</span></td><td><span class="check">✓ (signature feature)</span></td></tr>
-                <tr><td><div class="feature-name">Severity, priority, reproducibility</div><div class="feature-desc">Real bug-report fields</div></td><td><span class="check">✓ Built in</span></td><td><span class="limited">Custom fields needed</span></td></tr>
-                <tr><td><div class="feature-name">Steps to reproduce, expected, actual</div><div class="feature-desc">Built into the issue form</div></td><td><span class="check">✓ Native fields</span></td><td><span class="limited">Description text only</span></td></tr>
-                <tr><td><div class="feature-name">Status workflow with resolution codes</div><div class="feature-desc">Reported → resolved → closed → reopened</div></td><td><span class="check">✓</span></td><td><span class="check">✓ (configurable)</span></td></tr>
-                <tr><td><div class="feature-name">Mark-as-duplicate linking</div><div class="feature-desc">Auto-close + reference original</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Threaded comments &amp; replies</div><div class="feature-desc">Conversation tree on each issue</div></td><td><span class="check">✓</span></td><td><span class="limited">Flat by default</span></td></tr>
-                <tr><td><div class="feature-name">File attachments on comments</div><div class="feature-desc">Drop screenshots into a reply</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Watchers &amp; subscriptions</div><div class="feature-desc">Subscribe to issue updates</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Full issue history audit</div><div class="feature-desc">Every field change with old/new values</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Kanban board</div><div class="feature-desc">By status, drag &amp; drop</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Bulk update</div><div class="feature-desc">Status / assignee / priority on many issues</div></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-                <tr><td><div class="feature-name">Avg resolution time stats</div><div class="feature-desc">Real SLA metric</div></td><td><span class="check">✓ Built in</span></td><td><span class="limited">Needs Jira Service Mgmt</span></td></tr>
-                <tr><td><div class="feature-name">Built-in time tracking &amp; timesheets</div><div class="feature-desc">Without buying Tempo</div></td><td><span class="check">✓</span></td><td><span class="cross">Needs Tempo plugin</span></td></tr>
-                <tr><td><div class="feature-name">Built-in client billing rates</div><div class="feature-desc">Per-member rates, billable amounts</div></td><td><span class="check">✓</span></td><td><span class="cross">Needs 3rd-party plugin</span></td></tr>
-                <tr><td><div class="feature-name">Built-in video meeting room per project</div><div class="feature-desc">One click → live session</div></td><td><span class="check">✓ Vision</span></td><td><span class="cross">✗</span></td></tr>
-                <tr><td><div class="feature-name">Plugins required to be useful</div><div class="feature-desc">Tempo, ScriptRunner, Structure, etc.</div></td><td><span class="value good">None</span></td><td><span class="value bad">5+ standard</span></td></tr>
-            </tbody>
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>You Need a Jira Admin</h3><p>Schemes. Workflow editors. Permission grids. Custom fields. After three months your Jira instance is a maze and you&#x27;ve hired a part-time Atlassian admin to keep it running.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Ragenaizer: sensible defaults, no admin certification required</span></div>
+        </div>
+        <div class="cm-drop">
+          <span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div><h3>Comments Are Flat by Default</h3><p>Jira&#x27;s standard comment view is one long list. Threaded conversations require @-mentions and a lot of squinting. Real engineering discussions get hard to follow.</p><span class="fix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Ragenaizer: native threaded replies on every issue</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The evidence</div>
+      <h2 class="dk-h2">Feature by feature.</h2>
+      <p class="dk-lede">At the bottom, where it belongs — a table is evidence for an argument, not the argument itself.</p>
+      <div class="cm-tablewrap">
+        <table class="cm-table">
+          <thead><tr><th></th><th>Jira</th><th>Ragenaizer</th></tr></thead>
+          <tbody>
+          <tr><td>Project codes &amp; auto-numbered keys RAG-47 style identifiers</td><td><span class="cm-y">✓ (signature feature)</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Severity, priority, reproducibility Real bug-report fields</td><td>Custom fields needed</td><td class="ours"><span class="cm-y">✓ Built in</span></td></tr>
+          <tr><td>Steps to reproduce, expected, actual Built into the issue form</td><td>Description text only</td><td class="ours"><span class="cm-y">✓ Native fields</span></td></tr>
+          <tr><td>Status workflow with resolution codes Reported → resolved → closed → reopened</td><td><span class="cm-y">✓ (configurable)</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Mark-as-duplicate linking Auto-close + reference original</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Threaded comments &amp; replies Conversation tree on each issue</td><td>Flat by default</td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>File attachments on comments Drop screenshots into a reply</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Watchers &amp; subscriptions Subscribe to issue updates</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Full issue history audit Every field change with old/new values</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Kanban board By status, drag &amp; drop</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Bulk update Status / assignee / priority on many issues</td><td><span class="cm-y">✓</span></td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Avg resolution time stats Real SLA metric</td><td>Needs Jira Service Mgmt</td><td class="ours"><span class="cm-y">✓ Built in</span></td></tr>
+          <tr><td>Built-in time tracking &amp; timesheets Without buying Tempo</td><td>Needs Tempo plugin</td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Built-in client billing rates Per-member rates, billable amounts</td><td>Needs 3rd-party plugin</td><td class="ours"><span class="cm-y">✓</span></td></tr>
+          <tr><td>Built-in video meeting room per project One click → live session</td><td><span class="cm-n">✗</span></td><td class="ours"><span class="cm-y">✓ Vision</span></td></tr>
+          <tr><td>Plugins required to be useful Tempo, ScriptRunner, Structure, etc.</td><td>5+ standard</td><td class="ours">None</td></tr>
+          </tbody>
         </table>
-
-        <div class="cost-breakdown">
-            <h3 class="cost-title">True Cost Comparison (25 users, annual)</h3>
-            <div class="cost-grid">
-                <div class="cost-column">
-                    <h4><span class="logo competitor">J</span> The Jira Stack</h4>
-                    <div class="cost-item"><span class="label">Jira Software Standard × 25</span><span class="price">$2,400</span></div>
-                    <div class="cost-item"><span class="label">Confluence × 25</span><span class="price">$1,800</span></div>
-                    <div class="cost-item"><span class="label">Tempo Timesheets × 25</span><span class="price">$3,000</span></div>
-                    <div class="cost-item"><span class="label">Atlassian admin (part time)</span><span class="price">$25,000</span></div>
-                    <div class="cost-total"><span class="label">Year 1</span><span class="price">$32,200</span></div>
-                </div>
-                <div class="cost-column">
-                    <h4><span class="logo ragenaizer"><img src="/assets/logo-icon-white.png" alt="Ragenaizer" style="width: 24px; height: auto;"></span> Ragenaizer All-in-One</h4>
-                    <div class="cost-item"><span class="label">25 users × $12 × 12</span><span class="price">$3,600</span></div>
-                    <div class="cost-item"><span class="label">Issue tracker (included)</span><span class="price">$0</span></div>
-                    <div class="cost-item"><span class="label">Timesheets (included)</span><span class="price">$0</span></div>
-                    <div class="cost-item"><span class="label">Admin overhead</span><span class="price">$0</span></div>
-                    <div class="cost-total"><span class="label">Year 1</span><span class="price savings">$3,600</span></div>
-                </div>
-            </div>
-        </div>
+      </div>
     </section>
 
-    <section class="pain-points">
-        <div class="section-header">
-            <h2 class="section-title">Common Jira Frustrations</h2>
-            <p class="section-desc">Problems Ragenaizer PMS solves out of the box</p>
-        </div>
-        <div class="pain-grid">
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-                <h4>Painful Page Loads</h4>
-                <p>Open a Jira issue and watch the spinner. Click another issue and watch the spinner. Search? Spinner. The latency is legendary — you can lose minutes a day just to page loads.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Ragenaizer PMS: instant page loads, no spinner roulette</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-                <h4>The Plugin Tax</h4>
-                <p>Vanilla Jira can't track time, can't generate proper roadmaps and can't surface SLA metrics. Want those? Tempo, Portfolio, ScriptRunner — each priced per user, each a separate vendor.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Ragenaizer: time tracking, billing and SLA stats included</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3z"/><path d="M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7"/><line x1="10" y1="11" x2="14" y2="11"/></svg></div>
-                <h4>You Need a Jira Admin</h4>
-                <p>Schemes. Workflow editors. Permission grids. Custom fields. After three months your Jira instance is a maze and you've hired a part-time Atlassian admin to keep it running.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Ragenaizer: sensible defaults, no admin certification required</span></div>
-            </div>
-            <div class="pain-card">
-                <div class="pain-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-                <h4>Comments Are Flat by Default</h4>
-                <p>Jira's standard comment view is one long list. Threaded conversations require @-mentions and a lot of squinting. Real engineering discussions get hard to follow.</p>
-                <div class="solution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Ragenaizer: native threaded replies on every issue</span></div>
-            </div>
-        </div>
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">An issue tracker that actually loads</h2>
+      <p>Move off Jira and get the same workflow with none of the spinner.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="../pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20vs%20Jira">Ask us the hard question →</a>
+      </div>
     </section>
+    <footer class="dk-foot">
+      <div class="dk-fcol"><strong>Platform</strong>
+        <a href="../email.html">Mail</a><a href="../vision.html">Meetings</a><a href="../chat.html">Chat</a><a href="../drive.html">Drive</a></div>
+      <div class="dk-fcol"><strong>Business</strong>
+        <a href="../crm.html">CRM</a><a href="../hrms.html">HRMS</a><a href="../accounts.html">Accounts</a><a href="../pms.html">Projects</a></div>
+      <div class="dk-fcol"><strong>Company</strong>
+        <a href="../pricing.html">Pricing</a><a href="../research.html">Research</a><a href="../lms.html">Learning</a><a href="../activate.html">Activate a licence</a></div>
+      <div class="dk-fcol"><strong>Legal</strong>
+        <a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a><a href="../refund.html">Refunds</a><a href="../data-deletion.html">Delete my data</a></div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <section class="compare-cta">
-        <h2 class="cta-title">An issue tracker that actually loads</h2>
-        <p class="cta-desc">Move off Jira and get the same workflow with none of the spinner.</p>
-        <div class="cta-buttons">
-            <a href="../activate.html" class="btn-primary">See pricing</a>
-            <a href="../pms.html" class="btn-secondary">Learn More About PMS</a>
-        </div>
-    </section>
-
-    <div id="footer"></div>
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+  <script>
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('is-in'); }); return;
+      }
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>
