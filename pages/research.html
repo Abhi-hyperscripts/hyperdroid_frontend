@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
@@ -117,7 +119,7 @@
     }
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -127,1700 +129,354 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script>document.write('<link rel="stylesheet" href="../css/landing-theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/research-desk.css?v=' + CACHE_VERSION + '">');</script>
 
-    <!-- Page-specific styles -->
-    <style>
-        /* ═══════════════════════════════════════════════════════════════
-           RESEARCH PAGE — Dashboard-as-Landing-Page Styles
-           HIGH CONTRAST — all text readable on dark background
-           ═══════════════════════════════════════════════════════════════ */
-
-        /* Hero Dashboard Mockup */
-        .research-dashboard-mockup {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .dashboard-tabs {
-            display: flex;
-            gap: 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .dashboard-tab {
-            padding: 10px 18px;
-            font-size: 11px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.6);
-            border-bottom: 2px solid transparent;
-        }
-        .dashboard-tab.active {
-            color: #22d3ee;
-            border-bottom-color: #22d3ee;
-        }
-        .dashboard-body {
-            padding: 16px;
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 12px;
-        }
-        .mock-chart-area {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 12px;
-        }
-        .mock-chart-title {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.75);
-            margin-bottom: 8px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .mock-table-area {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .mock-table {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 10px;
-        }
-        .mock-table-row {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr 0.6fr;
-            gap: 8px;
-            padding: 4px 0;
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.75);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .mock-table-row:last-child { border-bottom: none; }
-        .mock-table-row.header {
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-size: 9px;
-        }
-        .mock-table-row .sig { color: #22d3ee; font-weight: 600; }
-        .mock-chat-bubble {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 10px;
-        }
-        .mock-chat-q {
-            font-size: 10px;
-            color: #a78bfa;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .mock-chat-q::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #a78bfa;
-            flex-shrink: 0;
-        }
-        .mock-chat-a {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.65);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .streaming-dots {
-            display: flex;
-            gap: 3px;
-        }
-        .streaming-dots span {
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: #22d3ee;
-            animation: dotPulse 1.4s infinite ease-in-out;
-        }
-        .streaming-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .streaming-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes dotPulse {
-            0%, 80%, 100% { opacity: 0.4; transform: scale(0.8); }
-            40% { opacity: 1; transform: scale(1.2); }
-        }
-
-        /* Comparison Panel — BI vs AI */
-        .comparison-section {
-            padding: 100px 60px;
-            position: relative;
-        }
-        .comparison-panel {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        .comparison-side {
-            border-radius: 16px;
-            padding: 36px;
-            position: relative;
-        }
-        .comparison-side.bi-side {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-        .comparison-side.ai-side {
-            background: rgba(6, 182, 212, 0.06);
-            border: 1px solid rgba(6, 182, 212, 0.25);
-            box-shadow: 0 0 40px rgba(6, 182, 212, 0.08);
-        }
-        .comparison-label {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-        }
-        .bi-side .comparison-label {
-            color: rgba(255, 255, 255, 0.8);
-            background: rgba(255, 255, 255, 0.1);
-        }
-        .ai-side .comparison-label {
-            color: #22d3ee;
-            background: rgba(6, 182, 212, 0.15);
-        }
-        .comparison-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-        .comparison-list li {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            color: #cbd5e1;
-        }
-        .ai-side .comparison-list li {
-            color: #f1f5f9;
-        }
-        .comparison-list li svg {
-            width: 18px;
-            height: 18px;
-            flex-shrink: 0;
-        }
-        .bi-side .comparison-list li svg { color: rgba(255, 255, 255, 0.5); }
-        .ai-side .comparison-list li svg { color: #22d3ee; }
-
-        /* Agentic AI Evolution Grid */
-        .evolution-section {
-            padding: 100px 60px;
-        }
-        .ai-evolution-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        .evolution-card {
-            border-radius: 16px;
-            padding: 32px;
-            text-align: center;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-        .evolution-card.dimmed {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-        .evolution-card.partial {
-            background: rgba(139, 92, 246, 0.07);
-            border: 1px solid rgba(139, 92, 246, 0.25);
-        }
-        .evolution-card.highlighted {
-            background: rgba(6, 182, 212, 0.08);
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            box-shadow: 0 0 50px rgba(6, 182, 212, 0.1), inset 0 0 30px rgba(6, 182, 212, 0.04);
-        }
-        .evolution-icon {
-            width: 56px;
-            height: 56px;
-            margin: 0 auto 16px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .evolution-icon svg {
-            width: 28px;
-            height: 28px;
-        }
-        .dimmed .evolution-icon {
-            background: rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.7);
-        }
-        .partial .evolution-icon {
-            background: rgba(139, 92, 246, 0.15);
-            color: #a78bfa;
-        }
-        .highlighted .evolution-icon {
-            background: rgba(6, 182, 212, 0.15);
-            color: #22d3ee;
-        }
-        .evolution-card h3 {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #f1f5f9;
-        }
-        .dimmed h3 { color: #cbd5e1; }
-        .evolution-card p {
-            font-size: 13px;
-            line-height: 1.6;
-            color: #94a3b8;
-        }
-        .dimmed p { color: #94a3b8; }
-        .highlighted p { color: #e2e8f0; }
-        .evolution-callout {
-            max-width: 800px;
-            margin: 40px auto 0;
-            padding: 24px 32px;
-            background: rgba(6, 182, 212, 0.06);
-            border: 1px solid rgba(6, 182, 212, 0.2);
-            border-radius: 12px;
-            font-size: 14px;
-            line-height: 1.7;
-            color: #cbd5e1;
-            text-align: center;
-        }
-        .evolution-callout strong {
-            color: #22d3ee;
-        }
-
-        /* Live Demo Section */
-        .demo-section {
-            padding: 100px 60px;
-            background: rgba(0, 0, 0, 0.3);
-        }
-        .demo-panel {
-            max-width: 1000px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1.4fr;
-            gap: 0;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            overflow: hidden;
-        }
-        .demo-query {
-            padding: 32px;
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .demo-query-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #a78bfa;
-            margin-bottom: 12px;
-        }
-        .demo-query-text {
-            font-size: 15px;
-            line-height: 1.6;
-            color: #e2e8f0;
-            padding: 16px;
-            background: rgba(139, 92, 246, 0.08);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 10px;
-            font-style: italic;
-        }
-        .demo-query-input {
-            margin-top: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-        }
-        .demo-query-input svg {
-            width: 16px;
-            height: 16px;
-            color: #a78bfa;
-        }
-        .demo-query-input span {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.45);
-        }
-        .demo-response {
-            padding: 32px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .demo-response-time {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #34d399;
-            background: rgba(16, 185, 129, 0.12);
-            padding: 4px 10px;
-            border-radius: 20px;
-            align-self: flex-end;
-        }
-        .demo-response-time::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #34d399;
-        }
-        .demo-mini-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .demo-mini-table th {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: rgba(255, 255, 255, 0.55);
-            text-align: left;
-            padding: 6px 8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .demo-mini-table td {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.8);
-            padding: 6px 8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .demo-mini-table td.highlight-val {
-            color: #22d3ee;
-            font-weight: 600;
-        }
-        .demo-insight {
-            font-size: 13px;
-            line-height: 1.6;
-            color: #cbd5e1;
-            padding: 12px 16px;
-            background: rgba(16, 185, 129, 0.06);
-            border-left: 3px solid #34d399;
-            border-radius: 0 8px 8px 0;
-        }
-        .demo-insight strong {
-            color: #34d399;
-        }
-
-        /* Embeddable Widget Section */
-        .widget-section {
-            padding: 100px 60px;
-        }
-        .widget-showcase {
-            max-width: 1100px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 48px;
-            align-items: center;
-        }
-        .widget-info h3 {
-            font-size: 28px;
-            font-weight: 800;
-            color: #f1f5f9;
-            margin-bottom: 16px;
-            line-height: 1.3;
-        }
-        .widget-info p {
-            font-size: 16px;
-            line-height: 1.7;
-            color: #cbd5e1;
-            margin-bottom: 24px;
-        }
-        .widget-features-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .widget-features-list li {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            font-size: 15px;
-            color: #e2e8f0;
-            line-height: 1.5;
-        }
-        .widget-features-list li svg {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-            color: #22d3ee;
-            margin-top: 2px;
-        }
-        .widget-visual {
-            position: relative;
-        }
-        .widget-mockup {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 16px;
-            overflow: hidden;
-        }
-        .widget-mockup-header {
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.02);
-        }
-        .widget-mockup-brand {
-            font-size: 13px;
-            font-weight: 700;
-            color: #22d3ee;
-        }
-        .widget-mockup-badge {
-            font-size: 9px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: rgba(255, 255, 255, 0.5);
-            background: rgba(255, 255, 255, 0.06);
-            padding: 3px 8px;
-            border-radius: 4px;
-        }
-        .widget-mockup-body {
-            padding: 20px;
-        }
-        .widget-chat-msg {
-            margin-bottom: 14px;
-            max-width: 85%;
-        }
-        .widget-chat-msg.user {
-            margin-left: auto;
-            text-align: right;
-        }
-        .widget-chat-msg .msg-bubble {
-            display: inline-block;
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-        .widget-chat-msg.user .msg-bubble {
-            background: rgba(139, 92, 246, 0.15);
-            border: 1px solid rgba(139, 92, 246, 0.25);
-            color: #e2e8f0;
-        }
-        .widget-chat-msg.ai .msg-bubble {
-            background: rgba(6, 182, 212, 0.08);
-            border: 1px solid rgba(6, 182, 212, 0.18);
-            color: #cbd5e1;
-            text-align: left;
-        }
-        .widget-chat-msg .msg-meta {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 4px;
-        }
-        .widget-mockup-input {
-            margin-top: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-        .widget-mockup-input span {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.35);
-            flex: 1;
-        }
-        .widget-mockup-input .send-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            background: rgba(6, 182, 212, 0.2);
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #22d3ee;
-        }
-        .widget-mockup-input .send-btn svg {
-            width: 14px;
-            height: 14px;
-        }
-        .widget-code-snippet {
-            margin-top: 20px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .widget-code-header {
-            padding: 8px 14px;
-            font-size: 10px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            background: rgba(255, 255, 255, 0.02);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .widget-code-body {
-            padding: 14px;
-            font-family: 'Electrolize', monospace;
-            font-size: 12px;
-            line-height: 1.6;
-            color: #94a3b8;
-        }
-        .widget-code-body .code-tag { color: #22d3ee; }
-        .widget-code-body .code-attr { color: #a78bfa; }
-        .widget-code-body .code-val { color: #34d399; }
-
-        /* Additional feature card colors */
-        .feature-card.teal .feature-icon {
-            background: rgba(20, 184, 166, 0.12);
-            border: 1px solid rgba(20, 184, 166, 0.25);
-        }
-        .feature-card.teal .feature-icon svg { color: #14b8a6; }
-
-        .feature-card.amber .feature-icon {
-            background: rgba(245, 158, 11, 0.12);
-            border: 1px solid rgba(245, 158, 11, 0.25);
-        }
-        .feature-card.amber .feature-icon svg { color: #f59e0b; }
-
-        .feature-card.rose .feature-icon {
-            background: rgba(244, 63, 94, 0.12);
-            border: 1px solid rgba(244, 63, 94, 0.25);
-        }
-        .feature-card.rose .feature-icon svg { color: #f43f5e; }
-
-        /* Cross-product integration callout */
-        .integration-callout {
-            max-width: 900px;
-            margin: 40px auto 0;
-            padding: 20px 28px;
-            background: rgba(139, 92, 246, 0.06);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 12px;
-            font-size: 14px;
-            line-height: 1.7;
-            color: #cbd5e1;
-            text-align: center;
-        }
-        .integration-callout strong {
-            color: #a78bfa;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .widget-section {
-                padding: 60px 20px;
+    <!-- Schema.org: FAQ -->
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Can the automated coding be defended to a client?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. A coding job runs against an explicit codeframe, keeps a per-job audit log, and exports its results, so the question of how something was coded is answered with a document."
             }
-            .widget-showcase {
-                grid-template-columns: 1fr;
+        },
+        {
+            "@type": "Question",
+            "name": "Must we use a generated codeframe?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Codeframes can be authored directly, or generated from the data and then edited. Generation is a starting point rather than a fixed output."
             }
-            .comparison-section,
-            .evolution-section,
-            .demo-section {
-                padding: 60px 20px;
+        },
+        {
+            "@type": "Question",
+            "name": "What happens when a later wave of data arrives?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Only the new rows are coded, against the codeframe already agreed, which is what keeps results comparable across waves."
             }
-            .comparison-panel {
-                grid-template-columns: 1fr;
+        },
+        {
+            "@type": "Question",
+            "name": "Is the cost of a coding run visible?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, cost is reported per job rather than aggregated into a monthly total."
             }
-            .ai-evolution-grid {
-                grid-template-columns: 1fr;
+        },
+        {
+            "@type": "Question",
+            "name": "Can a coding job be cancelled?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Jobs are listed with their status and can be cancelled while running."
             }
-            .demo-panel {
-                grid-template-columns: 1fr;
+        },
+        {
+            "@type": "Question",
+            "name": "Does it handle qualitative research?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Focus group recordings can be uploaded and worked from, with reports produced against the project."
             }
-            .demo-query {
-                border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            }
-            .dashboard-body {
-                grid-template-columns: 1fr;
+        },
+        {
+            "@type": "Question",
+            "name": "Whose AI keys are used?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Your tenant's own keys, held in the platform key store and used at the time of the call — which is also why per-job cost is visible to you."
             }
         }
-        /* ── Live product screenshots gallery ── */
-        .screens-section {
-            padding: 120px 60px;
-            position: relative;
-        }
-        .screens-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 28px;
-            max-width: 1280px;
-            margin: 0 auto;
-        }
-        .screen-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            overflow: hidden;
-            margin: 0;
-        }
-        .screen-card.wide { grid-column: 1 / -1; }
-        .screen-label {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.02);
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.45);
-        }
-        .screen-label .screen-dots { display: flex; gap: 6px; }
-        .screen-label .screen-dots span {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: rgba(255, 255, 255, 0.14);
-        }
-        .screen-label .screen-dots span:last-child { background: rgba(6, 182, 212, 0.75); }
-        .screen-card img { width: 100%; display: block; }
-        .screen-caption {
-            padding: 14px 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 13px;
-            line-height: 1.6;
-            color: rgba(255, 255, 255, 0.55);
-        }
-        @media (max-width: 900px) {
-            .screens-section { padding: 80px 20px; }
-            .screens-grid { grid-template-columns: 1fr; }
-        }
-
-        /* ── Deep-dive capability sections ── */
-        .deep-section { padding: 110px 60px; position: relative; }
-        .deep-section.alt { background: rgba(255,255,255,0.015); border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .deep-grid { display: grid; gap: 22px; max-width: 1280px; margin: 0 auto; }
-        .deep-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
-        .deep-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
-        .deep-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 26px 28px; }
-        .deep-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 10px; }
-        .deep-card h3 { font-size: 19px; font-weight: 700; color: #fff; margin: 0 0 10px; }
-        .deep-card > p { font-size: 14px; line-height: 1.65; color: rgba(255,255,255,0.6); margin: 0; }
-        .deep-list { list-style: none; display: flex; flex-direction: column; gap: 12px; margin: 14px 0 0; padding: 0; }
-        .deep-list li { display: flex; gap: 12px; font-size: 13.5px; line-height: 1.6; color: rgba(255,255,255,0.62); }
-        .deep-list li code { font-family: 'SF Mono', Consolas, monospace; font-size: 11.5px; color: #06b6d4; white-space: nowrap; margin-top: 3px; }
-        .deep-list li .arrow { color: #06b6d4; flex-shrink: 0; }
-        .deep-list strong, .deep-card strong { color: #fff; font-weight: 600; }
-        .deep-steps { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 20px; margin: 0; padding: 0; }
-        .deep-steps li { display: flex; gap: 16px; font-size: 14px; line-height: 1.65; color: rgba(255,255,255,0.62); }
-        .deep-steps li::before { counter-increment: step; content: "0" counter(step); font-weight: 800; font-size: 22px; color: #06b6d4; line-height: 1.1; flex-shrink: 0; }
-        .deep-figure { max-width: 1280px; margin: 30px auto 0; }
-        .catalogue-card { max-width: 1280px; margin: 0 auto; padding: 8px; }
-        .catalogue-wrap { overflow-x: auto; }
-        table.catalogue { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 13px; }
-        table.catalogue th { text-align: left; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.4); padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; }
-        table.catalogue td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.65); line-height: 1.5; }
-        table.catalogue tr:last-child td { border-bottom: none; }
-        table.catalogue td code { font-family: 'SF Mono', Consolas, monospace; font-size: 12px; color: #a78bfa; }
-        .cat-tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; white-space: nowrap; }
-        .cat-tag.prep { background: rgba(167,139,250,0.12); color: #a78bfa; border: 1px solid rgba(167,139,250,0.25); }
-        .cat-tag.check { background: rgba(6,182,212,0.1); color: #06b6d4; border: 1px solid rgba(6,182,212,0.25); }
-        .deep-split { display: grid; grid-template-columns: 5fr 7fr; gap: 32px; max-width: 1280px; margin: 0 auto; align-items: start; }
-        .deep-pre { background: rgba(0,0,0,0.35); padding: 18px 20px; overflow-x: auto; font-size: 12.5px; line-height: 1.65; color: rgba(255,255,255,0.75); font-family: 'SF Mono', Consolas, monospace; margin: 0; }
-        .deep-pre-label { padding: 10px 20px; border-top: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
-        .deep-note { max-width: 1280px; margin: 18px auto 0; font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.45); }
-        .verbatim-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-        .verbatim-table th { text-align: left; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .verbatim-table td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.65); }
-        .verbatim-table td code { font-family: 'SF Mono', Consolas, monospace; font-size: 11px; color: #10b981; }
-        .sent-pos { color: #10b981; } .sent-neg { color: #f43f5e; }
-        @media (max-width: 980px) {
-            .deep-section { padding: 72px 20px; }
-            .deep-grid.cols-2, .deep-grid.cols-3 { grid-template-columns: 1fr; }
-            .deep-split { grid-template-columns: 1fr; }
-        }
-    </style>
+    ]
+}
+    </script>
 </head>
-<body class="landing-page landing-research">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing research-desk">
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-bg">
-            <div class="hero-gradient"></div>
-            <div class="hero-grid"></div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <!-- ══ Hero ══════════════════════════════════════════════════════════════
+         Anyone can point a model at survey data. The question a research
+         buyer asks is whether they can defend the output — which codeframe,
+         which rows, what it cost, and what changed. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>Research &amp; analysis</div>
+      <h1 class="dk-h1">AI coding you can<br>hand to a client.</h1>
+      <p class="dk-sub">Automated open-end coding with the things that make it defensible: an explicit codeframe, a job you can cancel, an audit log of what it did, a cost figure per run, and an export. Not a black box that returns a chart.</p>
+      <p class="rs-note">What comes back with the results</p>
+    </header>
+
+    <div class="rs-bench" id="bench">
+      <div class="rs-chips" role="group" aria-label="Choose part of Research" id="rsChips"></div>
+      <div class="rs-panel">
+        <h2 class="rs-head" id="rsHead"></h2>
+        <p class="rs-sub" id="rsSub"></p>
+        <div class="rs-rows" id="rsRows"></div>
+        <p class="rs-foot" id="rsFoot"></p>
+      </div>
+    </div>
+
+    <!-- ══ Coverage ══ -->
+    <section class="dk-section dk-reveal" id="covers">
+      <div class="dk-kicker">What it covers</div>
+      <h2 class="dk-h2">From the data file to the deck.</h2>
+      <p class="dk-lede">The unglamorous middle of a research project — the part between receiving the data and having something to present.</p>
+      <div class="dk-grid">
+        <div class="dk-card" style="--accent:#38BDF8">
+          <div class="ic" style="background:#38BDF822"><svg viewBox="0 0 24 24" stroke="#38BDF8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <h3>Your data file</h3><p>Upload the file you were sent and work from it, rather than re-typing a questionnaire into somebody's proprietary format first.</p>
         </div>
-
-        <div class="hero-content">
-            <div class="hero-text">
-                <div class="hero-badge">Market Research, Reinvented</div>
-                <h1 class="hero-title">
-                    Final survey data in.<br>
-                    <span class="highlight">Insights out in 10 minutes.</span>
-                </h1>
-                <p class="hero-description">
-                    The most powerful market research platform you've ever used. Upload your survey data and the AI delivers a publication-ready insights dashboard in minutes. Run cross-tabs, key driver analysis, segmentation and TURF in plain English. Transcribe focus groups with speaker ID and translation. Auto-code open-end responses. Run AI desk research on any topic. Embed everything in client portals.
-                </p>
-                <div class="hero-actions">
-                    <a href="activate.html" class="btn-primary">Try Research Free</a>
-                    <a href="#features" class="btn-secondary">See What's Inside</a>
-                </div>
-                <div class="hero-stats">
-                    <div class="stat-item">
-                        <div class="stat-value">10 min</div>
-                        <div class="stat-label">From Data to Dashboard</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">12+</div>
-                        <div class="stat-label">Statistical Methods</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">Multi-</div>
-                        <div class="stat-label">Language Focus Groups</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">Embed</div>
-                        <div class="stat-label">Anywhere</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="hero-visual">
-                <div class="hero-mockup research-dashboard-mockup">
-                    <div class="dashboard-tabs">
-                        <div class="dashboard-tab">Overview</div>
-                        <div class="dashboard-tab active">Analysis</div>
-                        <div class="dashboard-tab">AI Chat</div>
-                    </div>
-                    <div class="dashboard-body">
-                        <div class="mock-chart-area">
-                            <div class="mock-chart-title">Brand Awareness by Category</div>
-                            <svg width="100%" height="120" viewBox="0 0 240 120" fill="none">
-                                <rect x="10" y="60" width="32" height="50" rx="4" fill="rgba(6, 182, 212, 0.5)"/>
-                                <rect x="52" y="30" width="32" height="80" rx="4" fill="rgba(6, 182, 212, 0.7)"/>
-                                <rect x="94" y="45" width="32" height="65" rx="4" fill="rgba(6, 182, 212, 0.6)"/>
-                                <rect x="136" y="15" width="32" height="95" rx="4" fill="rgba(6, 182, 212, 0.85)"/>
-                                <rect x="178" y="50" width="32" height="60" rx="4" fill="rgba(6, 182, 212, 0.55)"/>
-                                <text x="26" y="55" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="8">45%</text>
-                                <text x="68" y="25" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="8">72%</text>
-                                <text x="110" y="40" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="8">58%</text>
-                                <text x="152" y="10" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="8">86%</text>
-                                <text x="194" y="45" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="8">53%</text>
-                                <!-- Baseline -->
-                                <line x1="5" y1="110" x2="215" y2="110" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                            </svg>
-                        </div>
-                        <div class="mock-table-area">
-                            <div class="mock-table">
-                                <div class="mock-table-row header">
-                                    <span>Brand</span>
-                                    <span>Awareness %</span>
-                                    <span>Sig.</span>
-                                </div>
-                                <div class="mock-table-row">
-                                    <span>Brand A</span>
-                                    <span>86%</span>
-                                    <span class="sig">AB</span>
-                                </div>
-                                <div class="mock-table-row">
-                                    <span>Brand B</span>
-                                    <span>72%</span>
-                                    <span class="sig">A</span>
-                                </div>
-                                <div class="mock-table-row">
-                                    <span>Brand C</span>
-                                    <span>58%</span>
-                                    <span>-</span>
-                                </div>
-                            </div>
-                            <div class="mock-chat-bubble">
-                                <div class="mock-chat-q">What are the top brands by awareness?</div>
-                                <div class="mock-chat-a">
-                                    Analyzing 3 variables...
-                                    <span class="streaming-dots">
-                                        <span></span><span></span><span></span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="dk-card" style="--accent:#A78BFA">
+          <div class="ic" style="background:#A78BFA22"><svg viewBox="0 0 24 24" stroke="#A78BFA" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4z"/><path d="M4 14h16v6H4z"/><path d="M9 10v4"/></svg></div>
+          <h3>Open-end coding</h3><p>Codeframes you author or have generated, applied to free-text answers as a job you can watch, cancel and export.</p>
         </div>
+        <div class="dk-card" style="--accent:#22c55e">
+          <div class="ic" style="background:#22c55e22"><svg viewBox="0 0 24 24" stroke="#22c55e" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <h3>Coding new rows</h3><p>When the next wave lands, code only what arrived against the codeframe you already agreed — instead of starting the whole thing again.</p>
+        </div>
+        <div class="dk-card" style="--accent:#FB923C">
+          <div class="ic" style="background:#FB923C22"><svg viewBox="0 0 24 24" stroke="#FB923C" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+          <h3>Focus groups</h3><p>Upload the recording and work from what was said, so the qualitative half is not a separate exercise in a different tool.</p>
+        </div>
+        <div class="dk-card" style="--accent:#E879F9">
+          <div class="ic" style="background:#E879F922"><svg viewBox="0 0 24 24" stroke="#E879F9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div>
+          <h3>Insights &amp; tables</h3><p>Cross-tabulations and custom tables with insight generated against them, so a table arrives with a reading rather than only numbers.</p>
+        </div>
+        <div class="dk-card" style="--accent:#60A5FA">
+          <div class="ic" style="background:#60A5FA22"><svg viewBox="0 0 24 24" stroke="#60A5FA" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+          <h3>Ask the data</h3><p>Put a question to the dataset in ordinary language and get an answer you can trace back to the rows behind it.</p>
+        </div>
+        <div class="dk-card" style="--accent:#2DD4BF">
+          <div class="ic" style="background:#2DD4BF22"><svg viewBox="0 0 24 24" stroke="#2DD4BF" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <h3>Desk research</h3><p>Secondary research alongside the primary, so the context around a finding is in the same project as the finding.</p>
+        </div>
+        <div class="dk-card" style="--accent:#f87171">
+          <div class="ic" style="background:#f8717122"><svg viewBox="0 0 24 24" stroke="#f87171" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Validation</h3><p>Checks on the data before you build on it, because the expensive mistakes in research are made early and found late.</p>
+        </div>
+        <div class="dk-card" style="--accent:#94A3B8">
+          <div class="ic" style="background:#94A3B822"><svg viewBox="0 0 24 24" stroke="#94A3B8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+          <h3>Embeddable</h3><p>Put a view of a finding into something else — a client portal or a page — without exporting a picture of it every time it changes.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Section 2: BI vs AI Comparison -->
-    <section class="comparison-section">
-        <div class="section-header">
-            <div class="section-badge">The Evolution</div>
-            <h2 class="section-title">
-                BI Dashboards are dead.<br>
-                <span class="highlight">AI Dashboards have arrived.</span>
-            </h2>
+    <!-- ══ FAQ ══ -->
+    <section class="dk-section dk-reveal" id="faq">
+      <div class="dk-kicker">Straight answers</div>
+      <h2 class="dk-h2">The things people ask on the first call.</h2>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Can we defend the coding to a client?</h3>
+          <p>That is what it is built for. A coding job runs against an explicit codeframe, keeps an audit log of what it did, and exports — so "how was this coded" is answered with a document rather than a shrug.</p>
         </div>
-
-        <div class="comparison-panel">
-            <div class="comparison-side bi-side">
-                <span class="comparison-label">Traditional BI</span>
-                <ul class="comparison-list">
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
-                        Write SQL or use query builders
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
-                        Build dashboards manually
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
-                        Wait for an analyst
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
-                        Pre-defined views only
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
-                        No statistical testing
-                    </li>
-                </ul>
-            </div>
-            <div class="comparison-side ai-side">
-                <span class="comparison-label">AI-Powered</span>
-                <ul class="comparison-list">
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Ask in plain English
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Instant results with charts
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Significance tested automatically
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Any question, any angle
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Multi-step agentic reasoning
-                    </li>
-                </ul>
-            </div>
+        <div>
+          <span class="q">02</span>
+          <h3>Do we have to accept a generated codeframe?</h3>
+          <p>No. You can author the codeframe yourself, or have one generated and then edit it. The generated one is a starting point, not a verdict.</p>
         </div>
+        <div>
+          <span class="q">03</span>
+          <h3>What happens when the next wave arrives?</h3>
+          <p>Code only the new rows, against the codeframe already agreed. The point of a codeframe is comparability across waves, and re-running everything defeats it.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>Can we see what a run cost?</h3>
+          <p>Yes — cost is reported per job. Automated coding is charged in tokens whether or not a tool shows you, and a research business needs it on the project rather than discovered at the end of the month.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>Can a job be stopped?</h3>
+          <p>Yes. Jobs are listed with their status and can be cancelled — useful the moment you realise the codeframe was wrong, which is usually about ninety seconds in.</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>Does it handle qualitative work?</h3>
+          <p>Focus group recordings can be uploaded and worked from, and reports produced against the project — so the qualitative half is not a separate tool and a separate deck.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>Whose AI keys does it use?</h3>
+          <p>Your tenant's. Keys are held in the platform's key store and used at the moment of the call, which is also why the cost per job is yours to see.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Section 3: Agentic AI Evolution -->
-    <section class="evolution-section">
-        <div class="section-header">
-            <div class="section-badge">Understanding AI</div>
-            <h2 class="section-title">
-                Not just an AI Agent.<br>
-                <span class="highlight">Agentic AI for Research.</span>
-            </h2>
-        </div>
-
-        <div class="ai-evolution-grid">
-            <div class="evolution-card dimmed">
-                <div class="evolution-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                </div>
-                <h3>Simple Chatbot</h3>
-                <p>Answers questions from a script. No data access. No reasoning. Cannot analyze or compute.</p>
-            </div>
-
-            <div class="evolution-card partial">
-                <div class="evolution-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                </div>
-                <h3>AI Agent</h3>
-                <p>Executes a single task. Runs one query. Returns one result. No multi-step reasoning or tool chaining.</p>
-            </div>
-
-            <div class="evolution-card highlighted">
-                <div class="evolution-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 2 6h4c0-3 2-4 2-6a4 4 0 0 0-4-4z"/>
-                        <line x1="10" y1="16" x2="14" y2="16"/>
-                        <line x1="10" y1="19" x2="14" y2="19"/>
-                        <line x1="11" y1="22" x2="13" y2="22"/>
-                        <circle cx="5" cy="9" r="1.5" opacity="0.5"/>
-                        <circle cx="19" cy="9" r="1.5" opacity="0.5"/>
-                        <circle cx="3" cy="14" r="1" opacity="0.3"/>
-                        <circle cx="21" cy="14" r="1" opacity="0.3"/>
-                    </svg>
-                </div>
-                <h3>Agentic AI</h3>
-                <p>Reasons across your data. Selects statistical functions. Runs multi-step analysis. Interprets results with domain context. Learns from your project structure.</p>
-            </div>
-        </div>
-
-        <div class="evolution-callout">
-            <strong>Ragenaizer Research uses Agentic AI</strong> — it doesn't just answer, it investigates. It identifies variables, selects the right statistical test, executes queries, and explains findings in context.
-        </div>
+    <!-- ══ Close ══ -->
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Automate the coding. Keep the audit trail.</h2>
+      <p>Faster is only useful if you can still show your working when the client asks.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20Research%20—%20a%20walkthrough">Book a walkthrough →</a>
+      </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features-section" id="features">
-        <div class="section-header">
-            <div class="section-badge">Capabilities</div>
-            <h2 class="section-title">Everything you need to analyze SPSS data</h2>
-            <p class="section-description">
-                From uploading raw SPSS files to getting publication-ready tables — an end-to-end research analytics platform powered by Agentic AI.
-            </p>
-        </div>
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-        <div class="features-grid">
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Natural Language Queries</h3>
-                <p class="feature-description">Ask questions in plain English. The AI agent identifies variables, selects statistical functions, and returns results with significance testing — no code required.</p>
-            </div>
+  <script>
+    'use strict';
 
-            <div class="feature-card purple">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="3" y1="9" x2="21" y2="9"/>
-                        <line x1="3" y1="15" x2="21" y2="15"/>
-                        <line x1="9" y1="3" x2="9" y2="21"/>
-                        <line x1="15" y1="3" x2="15" y2="21"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Cross-Tabulation & Significance</h3>
-                <p class="feature-description">Z-test for proportions, letter notation, effective base (Kish), weighted samples. Publication-ready tables with confidence intervals.</p>
-            </div>
+    var RS_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">SPSS File Processing</h3>
-                <p class="feature-description">Upload ZIP-compressed SPSS files. Automatic variable detection, value labels, measurement types. Fair round-robin queue across tenants.</p>
-            </div>
+    /* Codeframes, auto-generation, jobs with status and cancel, coding only
+       new rows, per-job cost, per-job audit log and export are all real
+       endpoints on the research service. The page claims those and nothing
+       beyond them. */
+    var PARTS = [
+      {
+        tab: 'The codeframe',
+        accent: '#38BDF8',
+        head: 'Nothing is coded against a secret.',
+        sub: 'The codeframe is the thing a client argues with. It exists as an object you can read and edit, rather than living inside a prompt somebody wrote once.',
+        rows: [
+          ['Author it', 'Write the codeframe yourself when you already know the frame the client expects.'],
+          ['Or generate it', 'Have one proposed from the data, then edit it. The generated version is a starting point rather than a verdict.'],
+          ['Detect', 'Open-ended questions can be detected in an uploaded file, so you are not hunting for which columns are free text.']
+        ],
+        foot: 'Every coding job names the codeframe it ran against. <b>"How was this coded" has a document as its answer</b>.'
+      },
+      {
+        tab: 'The job',
+        accent: '#A78BFA',
+        head: 'A run you can watch and stop.',
+        sub: 'Automated coding that you cannot interrupt is a gamble with your own budget. This one is a job with a status.',
+        rows: [
+          ['Start', 'Run the codeframe across the responses as a job rather than a request you wait on.'],
+          ['Watch', 'Jobs are listed with their state, and an individual job can be inspected while it runs.'],
+          ['Cancel', 'Stop it — usually about ninety seconds after realising the codeframe was wrong.'],
+          ['Only what is new', 'A later wave codes just the new rows against the same codeframe, which is what keeps waves comparable.']
+        ],
+        foot: 'Re-running everything on each wave is how comparability quietly disappears. <b>Coding new rows only is the honest default</b>.'
+      },
+      {
+        tab: 'What it cost',
+        accent: '#F59E0B',
+        head: 'The number nobody else shows you.',
+        sub: 'Automated coding is charged in tokens whether or not the tool tells you. On a research project that is a cost of sale, and it belongs on the job.',
+        rows: [
+          ['Per job', 'Cost is reported for the run, not aggregated into a monthly surprise.'],
+          ['Your keys', 'The AI keys are your tenant’s, held in the platform key store and used at the moment of the call.'],
+          ['Which is why', 'The cost is legible at all — it is your spend, on your account, against a job you can name.']
+        ],
+        foot: 'A research business that cannot price a job <b>cannot quote for the next one</b>. This is the number that makes that possible.'
+      },
+      {
+        tab: 'The trail',
+        accent: '#22c55e',
+        head: 'What it did, in writing.',
+        sub: 'The difference between a tool you can use on client work and one you can only use on your own.',
+        rows: [
+          ['Audit log', 'Kept per job — what the run did, available after the fact rather than only in the moment.'],
+          ['Results', 'Retrievable per job, so a specific run can be re-examined rather than only the latest state.'],
+          ['Export', 'The coded output leaves in a form you can put in a deliverable or push into your own tables.'],
+          ['Validation', 'Checks on the data before you build on it, because expensive research mistakes are made early and found late.']
+        ],
+        foot: 'Speed is only worth something if you can <b>still show your working when the client asks</b>. That is the whole design.'
+      }
+    ];
 
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                        <line x1="8" y1="21" x2="16" y2="21"/>
-                        <line x1="12" y1="17" x2="12" y2="21"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Embeddable Chat Widget</h3>
-                <p class="feature-description">White-label analytics widget for your website. Custom branding, domain whitelisting, dark/light themes. Embed research insights anywhere.</p>
-            </div>
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
 
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
-                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">ClickHouse Analytics Engine</h3>
-                <p class="feature-description">Columnar OLAP database for sub-second queries on millions of rows. Resource-protected with query validation and tenant isolation.</p>
-            </div>
+    var part = 0;
 
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Variable Auto-Grouping</h3>
-                <p class="feature-description">7-signal deterministic algorithm detects multi-response sets, grids, and question structures with 99.9% accuracy. Zero manual mapping.</p>
-            </div>
+    function mountParts() {
+      document.getElementById('rsChips').innerHTML = PARTS.map(function (p, i) {
+        return '<button type="button" data-i="' + i + '" aria-pressed="' + (i === 0) + '" style="--bc:' +
+               p.accent + '"><i></i>' + p.tab + '</button>';
+      }).join('');
+      document.querySelectorAll('#rsChips button').forEach(function (b) {
+        b.addEventListener('click', function () { part = Number(b.dataset.i); renderPart(); });
+      });
+    }
 
-            <div class="feature-card teal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7" rx="1"/>
-                        <rect x="14" y="3" width="7" height="7" rx="1"/>
-                        <rect x="3" y="14" width="7" height="7" rx="1"/>
-                        <rect x="14" y="14" width="7" height="7" rx="1"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Insights Dashboard</h3>
-                <p class="feature-description">Generate a complete insights dashboard in under 5 minutes. Upload your SPSS data, and the AI builds interactive charts, summary tables, and key findings — ready to present or share.</p>
-            </div>
+    function renderPart() {
+      var p = PARTS[part];
+      document.body.style.setProperty('--rs', p.accent);
+      document.querySelectorAll('#rsChips button').forEach(function (b, i) {
+        b.setAttribute('aria-pressed', String(i === part));
+      });
+      document.getElementById('rsHead').textContent = p.head;
+      document.getElementById('rsSub').textContent = p.sub;
+      document.getElementById('rsFoot').innerHTML = p.foot;
+      document.getElementById('rsRows').innerHTML = p.rows.map(function (r) {
+        return '<div class="rs-row"><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+      }).join('');
+    }
 
-            <div class="feature-card amber">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        <path d="M8 10h8"/>
-                        <path d="M8 14h4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Embeddable Chatbot Widget</h3>
-                <p class="feature-description">Drop a chatbot on any website that answers questions from your research data. Domain whitelisting, dark/light themes, and full branding control. Your clients ask questions in plain English — the AI answers with data.</p>
-            </div>
+    mountParts();
+    renderPart();
 
-            <div class="feature-card rose">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <path d="M9 15l2 2 4-4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Questionnaire Parsing</h3>
-                <p class="feature-description">Upload survey questionnaires as DOCX files. The parser extracts every section, question, response option and scale, then a 5-signal mapping engine auto-matches each questionnaire question to the right SPSS variable group — confirmed, suggested, or unmatched, with per-signal scores you can review.</p>
-            </div>
-
-            <div class="feature-card amber">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">10-Minute Insights Dashboard</h3>
-                <p class="feature-description">Upload your final survey data, click one button, and the AI builds a complete insights dashboard — interactive charts, key findings, summary tables — while you watch progress live. Share the result with a public link your stakeholders can open in a browser. Generation time is typically under ten minutes for a full study.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 3v18h18"/>
-                        <path d="M7 14l4-4 4 4 5-5"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Driver Analysis & Segmentation</h3>
-                <p class="feature-description">"What drives NPS?" → run a multiple linear regression and get ranked drivers with coefficients. "Show me 3 customer segments" → run k-means clustering and auto-profile each segment by demographics. No SPSS syntax, no R script — just ask.</p>
-            </div>
-
-            <div class="feature-card purple">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="9" cy="9" r="2"/>
-                        <circle cx="15" cy="9" r="2"/>
-                        <circle cx="9" cy="15" r="2"/>
-                        <circle cx="15" cy="15" r="2"/>
-                        <path d="M9 11v2M15 11v2M11 9h2M11 15h2"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">TURF & Portfolio Optimization</h3>
-                <p class="feature-description">"Which 5 SKUs maximize reach?" or "What's the optimal 3-channel media plan?" — TURF (Total Unduplicated Reach & Frequency) finds the smallest combination of items that reaches the most respondents. Perfect for product portfolio decisions and channel selection.</p>
-            </div>
-
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="20" x2="18" y2="10"/>
-                        <line x1="12" y1="20" x2="12" y2="4"/>
-                        <line x1="6" y1="20" x2="6" y2="14"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Custom Tables, Frequencies & Descriptives</h3>
-                <p class="feature-description">Frequency tables with weighting and top-N filters. Custom tables with boolean nets and sub-nets — everything SPSS Custom Tables does, in seconds. Descriptive statistics (mean, median, std dev, min, max) with grouping and filters. Pearson correlation matrices with multicollinearity checks.</p>
-            </div>
-
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
-                        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/>
-                        <path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Focus Group Transcription with Speaker ID</h3>
-                <p class="feature-description">Upload audio recordings up to 500 MB and get a fully diarized transcript — the system identifies who said what across the entire session. Built-in source-language to target-language translation means you can capture insights from groups in any market. Live progress while it processes.</p>
-            </div>
-
-            <div class="feature-card teal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="9" y1="13" x2="15" y2="13"/>
-                        <line x1="9" y1="17" x2="15" y2="17"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">AI Open-End Coding</h3>
-                <p class="feature-description">Auto-detect open-end variables in your dataset. Generate a codeframe from a sample of responses with one click — specify how many codes you want and the AI builds the categorization schema for you. A background coding job classifies every response with progress tracking, full audit log and a cost meter. Review or override per row, then export the coded results to Excel.</p>
-            </div>
-
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        <line x1="11" y1="8" x2="11" y2="14"/>
-                        <line x1="8" y1="11" x2="14" y2="11"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">AI Desk Research on Any Topic</h3>
-                <p class="feature-description">Tell the system "research this topic" in plain English and it builds a full secondary research dashboard in the background — sources, summaries, charts, key findings. Share publicly with a single link, view regeneration history, replace dashboard JSON manually if you need editorial control. Perfect for quick market scans and competitive intelligence.</p>
-            </div>
-
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-                        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/>
-                        <line x1="6" y1="1" x2="6" y2="4"/>
-                        <line x1="10" y1="1" x2="10" y2="4"/>
-                        <line x1="14" y1="1" x2="14" y2="4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Public Shareable Dashboards</h3>
-                <p class="feature-description">Every insights dashboard has a public share token — send your client a link and they can view the report without an account. Built-in view tracking and visitor analytics so you know who looked at what, when. The same dashboard can be embedded as a chatbot widget on your website with one line of code.</p>
-            </div>
-        </div>
-
-        <div class="integration-callout">
-            <strong>Cross-product integration:</strong> Research works alongside Vision for meeting analytics, Drive for data storage, and HRMS for workforce insights.
-        </div>
-    </section>
-
-    <!-- Section 4.5: Live Product Screenshots -->
-    <section class="deep-section" id="ingest">
-        <div class="section-header">
-            <div class="section-badge">Deep Dive · 01 · Ingestion &amp; Waves</div>
-            <h2 class="section-title">SPSS-native in.<br><span class="highlight">Wave-aware forever.</span></h2>
-            <p class="section-description">Upload the .sav your field agency already delivers — variable labels, value labels and measurement types all survive the trip. Behind it sits an engine built for tracker scale, so a 50-question study with a few hundred thousand respondents still tabs in seconds.</p>
-        </div>
-        <div class="deep-grid cols-2">
-            <div class="deep-card"><div class="deep-kicker">SPSS .sav</div><p>Native .sav ingestion up to <strong>2&nbsp;GB per file</strong>, with the full data map — labels, value labels, variable types — preserved end to end.</p></div>
-            <div class="deep-card"><div class="deep-kicker">CSV &rarr; SAV</div><p>A built-in converter turns raw CSV into a proper labelled SPSS file for teams whose panel exports don't come as .sav.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Wave append</div><p>Stack tracker waves onto one dataset. A <strong>dry-run compatibility check</strong> classifies schema differences <em>before</em> commit — no corrupted trackers.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Question groups</div><p>Variables are auto-grouped into logical survey questions — grids, multi-punch sets, singles, numerics — so every downstream tool thinks in questions, not columns.</p></div>
-        </div>
-        <figure class="screen-card deep-figure">
-            <div class="screen-label"><span>Live product · Primary research workspace</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-            <img src="../assets/research/workspace.jpg" alt="Research workspace — projects list with 1.85 million respondent rows across live studies" loading="lazy">
-            <figcaption class="screen-caption">The primary-research workspace on the live platform — ten studies, 1.85 million respondent rows, from a 550-complete ad-hoc to a multi-country tracker.</figcaption>
-        </figure>
-    </section>
-
-    <section class="deep-section alt" id="validation">
-        <div class="section-header">
-            <div class="section-badge">Deep Dive · 02 · Data Quality Validation</div>
-            <h2 class="section-title">Built for how research firms<br><span class="highlight">actually write validation mandates.</span></h2>
-            <p class="section-description">If your validation spec talks about routing compliance, exclusive-choice breaches, allocation totals and fraud triage — every line of it maps onto a named, catalogued check below. Nothing lives in an analyst's head.</p>
-        </div>
-        <div class="deep-grid cols-2">
-            <div class="deep-card">
-                <div class="deep-kicker">A · Questionnaire logic &amp; structure</div>
-                <p>Routing and masking compliance, checked against the master questionnaire — the pass you run the moment the soft-launch dataset lands.</p>
-                <ul class="deep-list">
-                    <li><code>vc_skip</code><span>Answered when not asked, blank when asked — full skip-logic compliance per routed variable.</span></li>
-                    <li><code>vc_gate</code><span>Item-by-item gating across matched batteries (each statement asked only when its base item qualifies).</span></li>
-                    <li><code>vc_funnel</code><span>Brand-funnel integrity: no usage without awareness, no consideration without salience.</span></li>
-                    <li><code>vc_multi</code><span>Multi-punch hygiene including <em>exclusive-option breaches</em> — "None of the above" ticked alongside a real answer.</span></li>
-                    <li><code>vc_single · vc_grid</code><span>Single-punch and grid punches validated against the code frame; out-of-range and missing flagged per cell.</span></li>
-                    <li><code>vc_codes</code><span>Undefined codes — any punch with no matching value label anywhere in the file.</span></li>
-                    <li><code>vc_rank · vc_rotation</code><span>Tied or incomplete rankings, corrupted rotation orders, multi-punch slots that skip positions.</span></li>
-                </ul>
-            </div>
-            <div class="deep-card">
-                <div class="deep-kicker">B · Ranges, allocations &amp; boundaries</div>
-                <p>Every numeric entry held inside the bounds the questionnaire promised — including the allocation grids where respondents type a zero across the whole row.</p>
-                <ul class="deep-list">
-                    <li><code>vc_range</code><span>Floor / ceiling on any numeric write-in — age, spend, percentages, 0–100 ratings — single variables or whole blocks.</span></li>
-                    <li><code>vc_sum</code><span>Constant-sum / auto-sum compliance: allocations must hit the target total, with a configurable tolerance. Blanks count as zero, so incomplete allocations surface too.</span></li>
-                    <li><code>vc_flatline</code><span>The all-zero allocation grid — a respondent entering 0 in every numeric field of a matrix — caught as its own named flag.</span></li>
-                    <li><code>vc_outlier</code><span>Statistical outliers by z-score or IQR — the ₹8,00,000 monthly grocery spend in a sample that tops out at ₹50,000.</span></li>
-                    <li><code>vc_dates</code><span>Interview timestamps that end before they start; any start / end pair sanity-checked.</span></li>
-                    <li><code>vc_empty</code><span>Questions that are blank for the entire base — the pipe that never fired, the punch that never landed.</span></li>
-                </ul>
-            </div>
-            <div class="deep-card">
-                <div class="deep-kicker">C · Fraud, identity &amp; attention</div>
-                <p>The quality-triage layer: who is real, who is rushing, who is on autopilot. Each flag carries the evidence, so triage decisions are defensible.</p>
-                <ul class="deep-list">
-                    <li><code>vc_dupe</code><span>Duplicate respondent IDs within the file — plus <em>identity collision against prior waves</em> via a known-ID baseline you carry forward run to run.</span></li>
-                    <li><code>vc_speed</code><span>Speeders by median-fraction (adapts to actual survey length) or an absolute cut-off — with the option to freeze the baseline on soft-launch completes so the cut-off never drifts mid-field.</span></li>
-                    <li><code>vc_flatline</code><span>Straightliners: the same punch down an entire grid, with a minimum-items threshold for partly-filled batteries.</span></li>
-                    <li><code>vc_pattern</code><span>Alternating responders (1-2-1-2 down the grid) — the inattentive pattern plain straightlining checks miss.</span></li>
-                    <li><code>vc_textdup</code><span>Copy-paste verbatims — one respondent reusing an answer across questions, and identical answers appearing across different respondents.</span></li>
-                </ul>
-            </div>
-            <div class="deep-card">
-                <div class="deep-kicker">D · Open-end quality &amp; PII</div>
-                <p>Verbatim hygiene before a single response reaches coding — and a compliance pass your DPO will actually like.</p>
-                <ul class="deep-list">
-                    <li><code>vc_texteffort</code><span>Low-effort filler ("na", "dk", "nothing", "-") counted across a respondent's open-ends, with configurable phrase lists and thresholds.</span></li>
-                    <li><code>vc_textformat</code><span>Type confusion: "many" typed into an income box, "1234" typed into a name field.</span></li>
-                    <li><code>vc_pii</code><span>Emails and phone numbers left inside verbatims — the report shows only the PII <em>type</em> found, never the contact detail itself.</span></li>
-                    <li><code>vc_rule</code><span>Free-form cross-question logic: write any condition that should never be true for a clean interview ("under 18 yet marked complete") and label it for the QA report.</span></li>
-                    <li><code>csharp</code><span>And when the mandate doesn't fit any template — a sandboxed scripting block. See the escape hatch below.</span></li>
-                </ul>
-            </div>
-        </div>
-        <div class="deep-grid cols-3" style="margin-top: 22px;">
-            <div class="deep-card"><div class="deep-kicker">Base-aware</div><p>Every check accepts a filter expression, so bases are honoured: respondents never asked a question aren't flagged for skipping it.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Evidence-first</div><p>Flags land per respondent, per variable, with the offending value and rule attached — a QA report you can hand straight to the panel provider.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Re-runnable</div><p>The validation script is an artifact. Soft launch, main field, top-up sample, next wave — same rules, zero drift, one click.</p></div>
-        </div>
-        <figure class="screen-card deep-figure">
-            <div class="screen-label"><span>Live product · Data QA run</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-            <img src="../assets/research/validation-run.jpg" alt="Data validation run — QA script on the left, live pass/fail results with flagged respondents on the right" loading="lazy">
-            <figcaption class="screen-caption">A real QA run on a 1,133-complete study: the script on the left, results on the right — six checks in under half a second, 41 speeders flagged with the evidence attached to each respondent.</figcaption>
-        </figure>
-    </section>
-
-    <section class="deep-section" id="catalogue">
-        <div class="section-header">
-            <div class="section-badge">Deep Dive · 03 · The Catalogue</div>
-            <h2 class="section-title">The validation &amp; DP catalogue.<br><span class="highlight">All 34 functions.</span></h2>
-            <p class="section-description">This is the live spec — the same catalogue the platform exposes to analysts and to the AI copilot. If a mandate names a check, you can point at the exact function that runs it.</p>
-        </div>
-        <div class="deep-card catalogue-card">
-            <div class="catalogue-wrap">
-                <table class="catalogue">
-                    <thead><tr><th>Function</th><th>Kind</th><th>What it does</th></tr></thead>
-                    <tbody>
-                        <tr><td><code>compute_variable</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>New coded variable from ordered IF / ELSE-IF / ELSE conditions — segments, nets, age and value bands</td></tr>
-                        <tr><td><code>rim_weighting</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>RIM / rake weights to hit interlocking quota targets; reports per-cell fit and weighting efficiency</td></tr>
-                        <tr><td><code>vc_any</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>0/1 any-punch net across a battery (e.g. used any premium brand)</td></tr>
-                        <tr><td><code>vc_calc</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>New numeric variable from an arithmetic formula across existing variables</td></tr>
-                        <tr><td><code>vc_count</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>Per-respondent count of punched cells across a set (brands aware, items owned)</td></tr>
-                        <tr><td><code>vc_numvert</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>Text-to-numeric conversion so a text-typed field can be tabbed and range-checked</td></tr>
-                        <tr><td><code>vc_recode</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>In-place old&rarr;new code mapping with keep / blank / catch-all handling for unlisted codes</td></tr>
-                        <tr><td><code>vc_reverse</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>Reverse-code scale items around their endpoints before averaging reverse-worded batteries</td></tr>
-                        <tr><td><code>vc_rowstat</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>Per-respondent sum / mean / min / max across numeric variables</td></tr>
-                        <tr><td><code>csharp</code></td><td><span class="cat-tag check">Check + script</span></td><td>Bespoke scripted check for any rule or derivation the built-ins don't cover</td></tr>
-                        <tr><td><code>vc_codes</code></td><td><span class="cat-tag check">Check</span></td><td>Undefined codes — data values with no matching value label in the code frame</td></tr>
-                        <tr><td><code>vc_dates</code></td><td><span class="cat-tag check">Check</span></td><td>End-before-start on any date / timestamp pair (interview timing sanity)</td></tr>
-                        <tr><td><code>vc_dupe</code></td><td><span class="cat-tag check">Check</span></td><td>Duplicate respondent IDs in-file, plus cross-wave repeats against a known-ID baseline</td></tr>
-                        <tr><td><code>vc_empty</code></td><td><span class="cat-tag check">Check</span></td><td>Variables completely blank for the base — pipes that never fired</td></tr>
-                        <tr><td><code>vc_fillorder</code></td><td><span class="cat-tag check">Check</span></td><td>Multi-punch slots that skip positions; punches outside the allowed codes</td></tr>
-                        <tr><td><code>vc_flatline</code></td><td><span class="cat-tag check">Check</span></td><td>Straightliners on grids — including the all-zero allocation matrix as a targeted flag</td></tr>
-                        <tr><td><code>vc_funnel</code></td><td><span class="cat-tag check">Check</span></td><td>Funnel integrity across matched batteries — no downstream pick without its upstream pick</td></tr>
-                        <tr><td><code>vc_gate</code></td><td><span class="cat-tag check">Check</span></td><td>Item-level ask / skip gating across matched batteries, with optional range enforcement</td></tr>
-                        <tr><td><code>vc_grid</code></td><td><span class="cat-tag check">Check</span></td><td>Grid / battery punches out of range or missing, per statement, per respondent</td></tr>
-                        <tr><td><code>vc_multi</code></td><td><span class="cat-tag check">Check</span></td><td>Multi-punch hygiene: bad punches, missing, nothing ticked, exclusive-option breaches</td></tr>
-                        <tr><td><code>vc_outlier</code></td><td><span class="cat-tag check">Check</span></td><td>Unrealistic numeric answers by z-score or IQR, with segment-scoped baselines</td></tr>
-                        <tr><td><code>vc_pattern</code></td><td><span class="cat-tag check">Check</span></td><td>Alternating response patterns (1-2-1-2) down a grid — inattention that flatline checks miss</td></tr>
-                        <tr><td><code>vc_pii</code></td><td><span class="cat-tag check">Check</span></td><td>Emails / phone numbers inside open-ends; reports the PII type only, never the detail</td></tr>
-                        <tr><td><code>vc_range</code></td><td><span class="cat-tag check">Check</span></td><td>Numeric floor / ceiling violations on write-ins, single variables or whole blocks</td></tr>
-                        <tr><td><code>vc_rank</code></td><td><span class="cat-tag check">Check</span></td><td>Ranking questions: out-of-range ranks, ties, incomplete forced rankings</td></tr>
-                        <tr><td><code>vc_rotation</code></td><td><span class="cat-tag check">Check</span></td><td>Rotation-order records: duplicate items in the sequence, invalid item IDs</td></tr>
-                        <tr><td><code>vc_rule</code></td><td><span class="cat-tag check">Check</span></td><td>Any cross-question logic rule, written as a condition that must never be true, with a report label</td></tr>
-                        <tr><td><code>vc_single</code></td><td><span class="cat-tag check">Check</span></td><td>Single-punch questions validated against the allowed code list; missing flagged</td></tr>
-                        <tr><td><code>vc_skip</code></td><td><span class="cat-tag check">Check</span></td><td>Skip-logic compliance per routed variable: leaked past the skip, or missing in universe</td></tr>
-                        <tr><td><code>vc_speed</code></td><td><span class="cat-tag check">Check</span></td><td>Speeders by median-fraction or absolute threshold, with freezable soft-launch baselines</td></tr>
-                        <tr><td><code>vc_sum</code></td><td><span class="cat-tag check">Check</span></td><td>Constant-sum / allocation totals with tolerance; incomplete allocations surface as misses</td></tr>
-                        <tr><td><code>vc_textdup</code></td><td><span class="cat-tag check">Check</span></td><td>Duplicate verbatims — within one respondent's answers and across different respondents</td></tr>
-                        <tr><td><code>vc_texteffort</code></td><td><span class="cat-tag check">Check</span></td><td>Low-effort open-ends: filler-answer counting with custom phrase lists and thresholds</td></tr>
-                        <tr><td><code>vc_textformat</code></td><td><span class="cat-tag check">Check</span></td><td>Type confusion in typed fields — text in number boxes, digits in name boxes</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <p class="deep-note">Every function is documented with parameters, defaults and worked examples — and the same catalogue drives the AI copilot, so an analyst can ask for a check in plain English and get the exact validated call.</p>
-
-        <div class="deep-split" style="margin-top: 60px;">
-            <div>
-                <div class="deep-kicker">The escape hatch</div>
-                <h3 style="font-size: 26px; font-weight: 800; color: #fff; line-height: 1.25; margin: 0 0 16px;">When the spec has a rule no template covers, script it.</h3>
-                <p style="font-size: 14.5px; line-height: 1.7; color: rgba(255,255,255,0.6); margin: 0 0 18px;">Every real validation spec has that one clause the standard checks don't cover. Research has a scripting layer for exactly that: the rule from your mandate document becomes a bespoke check that flags respondents, or a dataset script that builds helper variables — and then behaves like any other check in the run.</p>
-                <ul class="deep-list">
-                    <li><span class="arrow">&rarr;</span><span><strong>Any rule from your spec.</strong> If the mandate can describe it, it can be scripted — cross-question logic, bespoke quality scores, helper variables for later checks.</span></li>
-                    <li><span class="arrow">&rarr;</span><span><strong>It can only touch the survey data.</strong> Scripts run in a locked-down sandbox with hard limits — they read the dataset and write flags or variables, nothing else, and a runaway script stops itself instead of your run.</span></li>
-                    <li><span class="arrow">&rarr;</span><span><strong>Versioned with the run.</strong> Bespoke rules are saved as part of the validation setup, so the same check re-runs identically on every batch, top-up and wave.</span></li>
-                </ul>
-            </div>
-            <div class="deep-card" style="padding: 0; overflow: hidden;">
-                <div class="deep-pre-label" style="border-top: none;">Bespoke check · written from your spec</div>
-                <pre class="deep-pre"><code>// Flag: aware of 2+ brands but gave a throwaway "why"
-int aware = 0;
-if (data.QAWARE_1 == 1) { aware++; }
-if (data.QAWARE_2 == 1) { aware++; }
-if (data.QAWARE_3 == 1) { aware++; }
-
-string why = (data.QWHY ?? "").Trim();
-return aware >= 2 &amp;&amp; why.Length &lt; 4;</code></pre>
-                <div class="deep-pre-label">Dataset script · builds helper variables</div>
-                <pre class="deep-pre"><code>double n = Compute("AGE_BAND",
-    "multiIf(AGE &lt; 30, 1, AGE &lt; 50, 2, 3)");
-Print("AGE_BAND set for " + n + " respondents");
-
-Compute("HIGH_SPEND", "QSPEND &gt; 5000 ? 1 : 0");
-if (n == 0) { Delete("AGE_BAND"); }</code></pre>
-            </div>
-        </div>
-        <p class="deep-note">The first kind flags respondents; the second builds variables that later checks and tables can use. Either way it reads close enough to plain English that a QC lead can review the rule line by line before sign-off.</p>
-    </section>
-
-    <section class="deep-section alt" id="dp">
-        <div class="section-header">
-            <div class="section-badge">Deep Dive · 04 · Data Processing</div>
-            <h2 class="section-title">From raw export<br><span class="highlight">to tab-ready data.</span></h2>
-            <p class="section-description">The unglamorous middle of every project — done with named, repeatable operations instead of one-off syntax nobody can re-run.</p>
-        </div>
-        <div class="deep-grid cols-3">
-            <div class="deep-card"><div class="deep-kicker">Segments &amp; derived variables</div><h3>Coded variables, nets, bands</h3><p>Ordered IF / ELSE-IF logic builds segments and bands with value labels attached, ready to tab immediately. Any-punch nets, counts, row statistics and formula variables cover the rest.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Cleaning ops</div><h3>Recode · reverse · convert</h3><p>Scale collapses with explicit handling for unlisted codes, reverse-coded battery items fixed before averaging, text fields converted to clean numerics. All in place, all filter-aware, all logged.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Weighting</div><h3>RIM / rake weighting</h3><p>Multi-factor rim weighting to gender, age, region or any quota set — per wave or whole sample. Output includes achieved-vs-target per cell and the weighting-efficiency figure your QA sign-off needs.</p></div>
-        </div>
-    </section>
-
-    <section class="deep-section" id="oe-coding">
-        <div class="section-header">
-            <div class="section-badge">Deep Dive · 05 · Open-End Coding</div>
-            <h2 class="section-title">One verbatim, every claim inside it —<br><span class="highlight">coded and scored.</span></h2>
-            <p class="section-description">Aspect-based coding, not bucket-sorting: a single answer decomposes into atomic claims, each assigned its own code, sentiment and confidence. The hardest text task in market research, treated like one.</p>
-        </div>
-        <div class="deep-split">
-            <div class="deep-card" style="padding: 0; overflow: hidden;">
-                <div class="deep-pre-label" style="border-top: none;">Input · raw verbatim</div>
-                <p style="padding: 16px 20px; font-size: 14px; font-style: italic; color: rgba(255,255,255,0.7); line-height: 1.65; margin: 0;">"The product quality is amazing, but customer service was terrible and I had to wait 3 hours. The price is reasonable though."</p>
-                <div class="deep-pre-label">Output · coded claims</div>
-                <div class="catalogue-wrap">
-                    <table class="verbatim-table">
-                        <thead><tr><th>Atomic claim</th><th>Code</th><th>Sent.</th><th>Conf.</th></tr></thead>
-                        <tbody>
-                            <tr><td>Product quality is amazing</td><td><code>PROD_QUALITY</code></td><td class="sent-pos">+0.9</td><td>0.96</td></tr>
-                            <tr><td>Customer service was terrible</td><td><code>CUST_SERVICE</code></td><td class="sent-neg">&minus;0.9</td><td>0.94</td></tr>
-                            <tr><td>Had to wait 3 hours</td><td><code>WAIT_TIME</code></td><td class="sent-neg">&minus;0.7</td><td>0.91</td></tr>
-                            <tr><td>Price is reasonable</td><td><code>PRICE</code></td><td class="sent-pos">+0.5</td><td>0.93</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <ol class="deep-steps">
-                <li><span><strong>Codeframe discovery.</strong> The AI proposes a codeframe from a sample of real responses — target code count and context configurable — and a human curates it before anything is coded. Frames follow the industry-standard <strong>Net &rarr; Theme &rarr; Sub-theme</strong> hierarchy.</span></li>
-                <li><span><strong>Dedupe &amp; cluster first.</strong> Survey verbatims are massively repetitive — trivial answers are filtered and near-identical ones grouped before any AI coding happens, so effort goes into genuinely different responses. That is what makes large volumes affordable.</span></li>
-                <li><span><strong>Two-pass AI coding, QA-audited.</strong> Pass one decomposes each response into atomic claims; pass two classifies against the codeframe and scores sentiment. A random slice is independently re-verified and high-disagreement clusters go to human review — accuracy is measured, not asserted.</span></li>
-                <li><span><strong>Wave-aware.</strong> When the next wave lands, "code new rows" inherits the existing codeframe — trend lines stay comparable instead of every wave inventing new themes.</span></li>
-                <li><span><strong>Auditable end to end.</strong> Progress tracking on every coding job, per-row edits by analysts, a full audit log, and a cost report per job. Mixed-language verbatims are first-class, and results export to Excel keyed to your respondent ID.</span></li>
-            </ol>
-        </div>
-        <figure class="screen-card deep-figure">
-            <div class="screen-label"><span>Live product · Open-end coding results</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-            <img src="../assets/research/oe-coding.jpg" alt="Open-end coding results — verbatims coded with sentiment, confidence and multiple codes per response" loading="lazy">
-            <figcaption class="screen-caption">Live coding results: 1,960 verbatims coded into a 78-code frame in under ten minutes — sentiment and confidence on every response, gibberish auto-quarantined, and every row editable by the analyst.</figcaption>
-        </figure>
-    </section>
-
-    <section class="deep-section alt" id="tables">
-        <div class="section-header">
-            <div class="section-badge">Deep Dive · 06 · Tables &amp; Significance</div>
-            <h2 class="section-title">Tables an SPSS veteran<br><span class="highlight">will sign off.</span></h2>
-            <p class="section-description">Significance letters, weighted bases, effective bases, nets and sub-nets — the conventions research directors actually check for, computed the way they expect.</p>
-        </div>
-        <div class="deep-grid cols-2">
-            <div class="deep-card">
-                <div class="deep-kicker">Cross-tabs</div>
-                <h3>Banner-ready cross-tabulation</h3>
-                <ul class="deep-list">
-                    <li><span class="arrow">&rarr;</span><span>Z-test for column proportions with <strong>letter notation</strong> (A, B, C…), at 90% / 95% / 99% confidence.</span></li>
-                    <li><span class="arrow">&rarr;</span><span>Column %, row %, total % or raw counts — with SPSS value labels enriched automatically.</span></li>
-                    <li><span class="arrow">&rarr;</span><span>Three base rows on every weighted table: <strong>unweighted, weighted, and effective base</strong> (Kish design-effect), so significance is honest about what weighting costs.</span></li>
-                    <li><span class="arrow">&rarr;</span><span>Descriptive rows (mean, median, std-dev, min, max) alongside the distribution.</span></li>
-                </ul>
-            </div>
-            <div class="deep-card">
-                <div class="deep-kicker">Custom tables</div>
-                <h3>The DP-grade table engine</h3>
-                <ul class="deep-list">
-                    <li><span class="arrow">&rarr;</span><span>Rows and columns can be anything you'd write in a tab spec — any base, any cut, no pre-coding needed.</span></li>
-                    <li><span class="arrow">&rarr;</span><span><strong>Nets and sub-nets</strong> with row basing: percentage a child row against its parent net instead of the column total.</span></li>
-                    <li><span class="arrow">&rarr;</span><span>Measures beyond counts: <strong>means (Welch's t-test), medians, percentiles</strong> — with significance letters on all of them.</span></li>
-                    <li><span class="arrow">&rarr;</span><span>Table-level weights with <strong>per-column overrides</strong>, low-base suppression, and whole banks of tables — up to 32 variants — run in one go.</span></li>
-                    <li><span class="arrow">&rarr;</span><span>Any finished table can be handed to the AI for a written insight summary plus suggested charts — grounded in that exact table, nothing else.</span></li>
-                </ul>
-            </div>
-        </div>
-        <figure class="screen-card deep-figure">
-            <div class="screen-label"><span>Live product · Custom tables builder</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-            <img src="../assets/research/custom-tables.jpg" alt="Custom Tables builder — drag-and-drop rows and columns with live preview, significance letters and low-base suppression" loading="lazy">
-            <figcaption class="screen-caption">The builder on a live 1,133-respondent study: drag any of the 233 variables into rows, columns or filter, toggle counts, percentages and significance, and the table computes as you build. Age columns lettered A&ndash;G, significance letters under each percentage naming the columns it beats, and low-base columns automatically suppressed with asterisks — everything SPSS Custom Tables does, in the browser.</figcaption>
-        </figure>
-    </section>
-
-    <section class="deep-section" id="analytics">
-        <div class="section-header">
-            <div class="section-badge">Deep Dive · 07 · Advanced Analytics</div>
-            <h2 class="section-title">The models behind<br><span class="highlight">the "so what" slide.</span></h2>
-            <p class="section-description">Driver models, segmentation, portfolio reach — computed in-platform on the full respondent file, with the diagnostics that tell you whether to trust them.</p>
-        </div>
-        <div class="deep-grid cols-3">
-            <div class="deep-card"><div class="deep-kicker">01 · Key drivers</div><h3>Driver regression</h3><p>Key-driver analysis with up to 30 attributes: which drivers genuinely move satisfaction or NPS, how much confidence each one deserves, <strong>warnings when drivers overlap</strong> too much to separate, and an importance-vs-performance quadrant that turns the model into priorities. Run it per wave or per segment and compare.</p></div>
-            <div class="deep-card"><div class="deep-kicker">02 · Segmentation</div><h3>K-means++ clustering</h3><p>2–10 segments from up to 30 inputs, profiled across the <em>entire</em> respondent file. Per-segment index scores with high/low flags, diagnostics that show how cleanly the segments separate, warnings when a segment is too small to trust — and re-runs reproduce the same segments exactly, wave after wave.</p></div>
-            <div class="deep-card"><div class="deep-kicker">03 · Portfolio</div><h3>TURF</h3><p>Total unduplicated reach &amp; frequency across up to 30 SKUs, flavours or messages — a fast stepwise build, or an every-combination search for the guaranteed best line-up — with binary / top-box / top-2-box reach definitions and step-by-step incremental reach.</p></div>
-            <div class="deep-card"><div class="deep-kicker">04 · Structure</div><h3>Correlation matrix</h3><p>Pairwise correlations across up to 50 variables, with automatic warnings when variables overlap too heavily — the sanity pass before any driver model or segmentation goes to the client.</p></div>
-            <div class="deep-card"><div class="deep-kicker">05 · Wave movement</div><h3>Trend decomposition</h3><p>"Why did NPS drop this wave?" — decomposes the change in an outcome between two periods into per-driver contributions, so the trend slide comes with an explanation instead of a shrug.</p></div>
-            <div class="deep-card"><div class="deep-kicker">06 · Foundations</div><h3>Frequencies &amp; descriptives</h3><p>Weighted holecounts and one-way frequencies with top answers and value labels in place; means, medians, spreads and percentiles by any break variable. The basics, instant and correct.</p></div>
-        </div>
-    </section>
-
-    <section class="deep-section alt" id="dashboards">
-        <div class="section-header">
-            <div class="section-badge">Deep Dive · 08 · AI Insight Dashboards</div>
-            <h2 class="section-title">A first-draft debrief,<br><span class="highlight">generated overnight.</span></h2>
-            <p class="section-description">Point the AI at a cleaned dataset and it runs the actual research functions — tabs, drivers, frequencies — then assembles an interactive dashboard: executive summary, KPI cards, charts with written insights. Your brief travels with the project, injected as mandatory requirements the AI must honour.</p>
-        </div>
-        <div class="deep-grid cols-3">
-            <div class="deep-card"><div class="deep-kicker">16 chart types</div><p><strong>Gauge, pie, donut, bar, column, stacked bar, line, area, radar, heatmap, scatter, bubble, treemap, radial bar, polar area, box plot</strong> — each one checked and tidied automatically, so a broken chart never reaches a client.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Recipes, not one-offs</div><p>Every analysis step behind the dashboard is captured as a recipe. When the next wave lands, <strong>replay reproduces the same dashboard</strong> on the new data — pure computation, no AI variance, no regeneration lottery. Need something new this wave? Regenerate-replay keeps every existing chart and adds new ones.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Shareable and measured</div><p>Read-only share links for clients, with owner-side view analytics — visits, unique visitors, referrers — so you know the deck actually got opened.</p></div>
-        </div>
-        <figure class="screen-card deep-figure">
-            <div class="screen-label"><span>Live product · AI insight dashboard</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-            <img src="../assets/research/insights-dashboard.jpg" alt="AI-generated insight dashboard — consumer segments sized and profiled with written key findings" loading="lazy">
-            <figcaption class="screen-caption">A generated dashboard on a live 1,630-respondent study: value-based segments sized and profiled on the platform's own segmentation engine, with the key findings written above the charts.</figcaption>
-        </figure>
-    </section>
-
-    <section class="deep-section" id="focus-groups">
-        <div class="section-header">
-            <div class="section-badge">Deep Dive · 09 · Focus Groups &amp; IDIs</div>
-            <h2 class="section-title">Qual that arrives as<br><span class="highlight">evidence, not vibes.</span></h2>
-            <p class="section-description">Upload the recording; get back a structured, quote-backed discussion report — the kind a research director can defend in front of a client, because every claim traces to a real utterance.</p>
-        </div>
-        <div class="deep-grid cols-3">
-            <div class="deep-card"><div class="deep-kicker">Transcription</div><h3>Diarised, time-coded, translated</h3><p>Audio up to 500&nbsp;MB per session. Speaker-separated transcripts with timestamps, source-to-target translation for multilingual fieldwork, and progress tracking through the whole pipeline.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Thematic analysis</div><h3>Themes ranked by people, not mentions</h3><p>A Net &rarr; Theme &rarr; Sub-theme codeframe built from the sessions, with prevalence counted by <em>distinct speakers</em>, sentiment breakdowns, consensus levels (universal / majority / split), and the tensions where the room disagreed.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Quote integrity</div><h3>Hallucination-proof by design</h3><p>The AI can only reference quotes by ID — quote text is re-rendered from the actual transcript, so a fabricated quote is structurally impossible. Every report also carries its own cost audit.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Speaker dynamics</div><h3>Who actually spoke</h3><p>Talk-time share, turn counts, a dominance index, and "silent voices" flagged under 5% talk time — moderator excluded — plus moderator-gap analysis: themes that surfaced but never got a follow-up question.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Cross-session</div><h3>Multi-group synthesis</h3><p>Run one report across multiple sessions: universal findings, per-session divergences, and session-by-session narratives — the structure of a proper qual debrief, generated in minutes.</p></div>
-            <div class="deep-card"><div class="deep-kicker">Delivery</div><h3>Share links &amp; SPSS export</h3><p>Finished reports ship on unguessable read-only links, and the coded utterances export to SPSS .sav — one row per statement, themes as binary flags — so qual findings can sit next to the quant in the same tables.</p></div>
-        </div>
-        <figure class="screen-card deep-figure">
-            <div class="screen-label"><span>Live product · Focus-group report</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-            <img src="../assets/research/fgd-report.jpg" alt="Focus-group report — speaker dynamics with talk-time share, turn counts and sentiment flow" loading="lazy">
-            <figcaption class="screen-caption">Speaker dynamics from a live session report: talk-time share and dominance, turn counts, and sentiment flow across the conversation — the evidence layer beneath every theme and quote.</figcaption>
-        </figure>
-    </section>
-
-    <section class="deep-section alt" id="secondary">
-        <div class="section-header">
-            <div class="section-badge">Deep Dive · 10 · Secondary Research &amp; Questionnaires</div>
-            <h2 class="section-title">Desk research, dashboarded.<br><span class="highlight">The .docx becomes structure.</span></h2>
-        </div>
-        <div class="deep-grid cols-2">
-            <div class="deep-card">
-                <div class="deep-kicker">Secondary research</div>
-                <h3>Brief in, sourced dashboard out</h3>
-                <ul class="deep-list">
-                    <li><span class="arrow">&rarr;</span><span>Write the brief — market context, competitor scan, category deep-dive — and the AI researches it into a structured dashboard: sources, summaries, key findings, charts.</span></li>
-                    <li><span class="arrow">&rarr;</span><span>Live progress while it works, regeneration history when the brief evolves, and manual override when an analyst wants to reshape the output.</span></li>
-                    <li><span class="arrow">&rarr;</span><span>Delivered on the same share-link infrastructure as survey dashboards — one link to the client, view analytics for you.</span></li>
-                </ul>
-            </div>
-            <div class="deep-card">
-                <div class="deep-kicker">Questionnaire intelligence</div>
-                <h3>The master document and the data finally agree</h3>
-                <ul class="deep-list">
-                    <li><span class="arrow">&rarr;</span><span>Upload the questionnaire Word file and it becomes a structured, editable question list — sections, options, routing and programming notes all captured, with quality scores so you know exactly what to double-check.</span></li>
-                    <li><span class="arrow">&rarr;</span><span>An automatic matcher then links each questionnaire question to the SPSS file's variables — confirmed, suggested and unmatched, each with the evidence behind the match.</span></li>
-                    <li><span class="arrow">&rarr;</span><span>That mapping is what lets validation rules reference the questionnaire's own routing — the master document and the data finally agree on what "Q12" means.</span></li>
-                </ul>
-            </div>
-        </div>
-    </section>
-
-    <!-- Section 5: Embeddable Widget Showcase -->
-    <section class="widget-section" id="widget">
-        <div class="section-header">
-            <div class="section-badge">Embeddable Widget</div>
-            <h2 class="section-title">
-                Embed analytics anywhere.<br>
-                <span class="highlight">Your brand. Your data. Their website.</span>
-            </h2>
-            <p class="section-description">
-                Drop a single script tag and give any website a fully branded AI research chat interface. No authentication required for end users.
-            </p>
-        </div>
-
-        <div class="widget-showcase">
-            <div class="widget-info">
-                <h3>White-label AI analytics for any website</h3>
-                <p>
-                    Embed a research chat widget into client dashboards, reports, or public websites. Your users ask questions in plain English and get instant statistical insights from your SPSS data.
-                </p>
-                <ul class="widget-features-list">
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Custom branding — your logo, colors, and fonts
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Domain whitelisting — control exactly where it loads
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Dark and light themes with full CSS override support
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Multi-dataset support — select which project to query
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        Streaming responses with real-time progress indicators
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        No end-user auth required — controlled via API key
-                    </li>
-                </ul>
-            </div>
-
-            <div class="widget-visual">
-                <div class="widget-mockup">
-                    <div class="widget-mockup-header">
-                        <span class="widget-mockup-brand">YourBrand Research</span>
-                        <span class="widget-mockup-badge">Powered by Ragenaizer</span>
-                    </div>
-                    <div class="widget-mockup-body">
-                        <div class="widget-chat-msg user">
-                            <div class="msg-bubble">Which age group has the highest brand recall?</div>
-                            <div class="msg-meta">You</div>
-                        </div>
-                        <div class="widget-chat-msg ai">
-                            <div class="msg-bubble">The 25-34 age group has the highest unaided brand recall at 68%, significantly higher than all other groups (p&lt;0.01). The 18-24 group follows at 52%.</div>
-                            <div class="msg-meta">AI Research Assistant &middot; 1.8s</div>
-                        </div>
-                        <div class="widget-chat-msg user">
-                            <div class="msg-bubble">Break that down by region</div>
-                            <div class="msg-meta">You</div>
-                        </div>
-                        <div class="widget-chat-msg ai">
-                            <div class="msg-bubble">Running cross-tabulation: Age Group x Region x Brand Recall... North leads at 74% for 25-34, while South shows no significant age difference.</div>
-                            <div class="msg-meta">AI Research Assistant &middot; 2.3s</div>
-                        </div>
-                        <div class="widget-mockup-input">
-                            <span>Ask a question about your data...</span>
-                            <div class="send-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="22" y1="2" x2="11" y2="13"/>
-                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="widget-code-snippet">
-                    <div class="widget-code-header">Embed in 2 lines</div>
-                    <div class="widget-code-body">
-                        <span class="code-tag">&lt;script</span> <span class="code-attr">src</span>=<span class="code-val">"https://cdn.ragenaizer.com/widget.js"</span><span class="code-tag">&gt;&lt;/script&gt;</span><br>
-                        <span class="code-tag">&lt;ragenaizer-research</span> <span class="code-attr">key</span>=<span class="code-val">"your-api-key"</span> <span class="code-attr">theme</span>=<span class="code-val">"dark"</span><span class="code-tag"> /&gt;</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Section 6: Live Dashboard Demo -->
-    <section class="demo-section" id="demo">
-        <div class="section-header">
-            <div class="section-badge">See It In Action</div>
-            <h2 class="section-title">Ask anything. Get answers instantly.</h2>
-        </div>
-
-        <div class="demo-panel">
-            <div class="demo-query">
-                <div class="demo-query-label">Your Question</div>
-                <div class="demo-query-text">
-                    "What is the average satisfaction score by age group?"
-                </div>
-                <div class="demo-query-input">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    <span>Ask a follow-up question...</span>
-                </div>
-            </div>
-            <div class="demo-response">
-                <span class="demo-response-time">2.1s</span>
-                <svg width="100%" height="100" viewBox="0 0 320 100" fill="none">
-                    <rect x="20" y="40" width="50" height="55" rx="4" fill="rgba(6, 182, 212, 0.4)"/>
-                    <rect x="90" y="15" width="50" height="80" rx="4" fill="rgba(6, 182, 212, 0.7)"/>
-                    <rect x="160" y="30" width="50" height="65" rx="4" fill="rgba(6, 182, 212, 0.55)"/>
-                    <rect x="230" y="50" width="50" height="45" rx="4" fill="rgba(6, 182, 212, 0.35)"/>
-                    <text x="45" y="36" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9">3.6</text>
-                    <text x="115" y="11" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9">4.2</text>
-                    <text x="185" y="26" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9">3.8</text>
-                    <text x="255" y="46" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9">3.1</text>
-                    <line x1="15" y1="95" x2="290" y2="95" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-                    <text x="45" y="99" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="7">18-24</text>
-                    <text x="115" y="99" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="7">25-34</text>
-                    <text x="185" y="99" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="7">35-54</text>
-                    <text x="255" y="99" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="7">55+</text>
-                </svg>
-                <table class="demo-mini-table">
-                    <tr><th>Age Group</th><th>Mean</th><th>Std Dev</th><th>N</th></tr>
-                    <tr><td>18-24</td><td>3.6</td><td>0.82</td><td>234</td></tr>
-                    <tr><td>25-34</td><td class="highlight-val">4.2</td><td>0.71</td><td>412</td></tr>
-                    <tr><td>35-54</td><td>3.8</td><td>0.89</td><td>356</td></tr>
-                    <tr><td>55+</td><td>3.1</td><td>0.95</td><td>198</td></tr>
-                </table>
-                <div class="demo-insight">
-                    The <strong>25-34 age group</strong> shows significantly higher satisfaction (M=4.2) compared to 55+ (M=3.1), <strong>p&lt;0.05</strong>. One-way ANOVA confirms significant group differences, F(3, 1196) = 14.7.
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="cta-container">
-            <h2 class="cta-title">Turn your SPSS data into instant insights</h2>
-            <p class="cta-description">Upload your SPSS data. Ask questions. Get answers.</p>
-            <div class="cta-actions">
-                <a href="activate.html" class="btn-primary">Start Analyzing Free</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <div id="footer"></div>
-
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (RS_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>
