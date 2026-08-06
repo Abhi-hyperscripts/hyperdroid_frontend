@@ -1,0 +1,216 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEGAL — privacy, terms, refunds, data deletion.
+   Loaded after landing-desk.css, scoped to body.legal-desk.
+
+   These are documents, not sales pages, so they get the desk language's
+   surfaces and typography but none of its persuasion: no benches, no
+   accent-coloured cards, no reveal animation on the thing somebody is trying
+   to read. A contents rail on the left, a single readable column, and type
+   set for prose rather than for scanning.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.legal-desk { --lg: #60A5FA; }
+
+/* ── header ───────────────────────────────────────────────────────────────── */
+body.legal-desk .lg-head { padding: 46px 0 30px; border-bottom: 1px solid var(--dk-line); }
+body.legal-desk .lg-kicker {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--lg);
+  margin-bottom: 14px;
+}
+body.legal-desk h1.lg-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: var(--dk-ink);
+}
+body.legal-desk .lg-lede {
+  margin: 14px 0 0;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--dk-mute);
+  max-width: 640px;
+}
+body.legal-desk .lg-meta {
+  margin: 18px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+
+/* ── layout: contents rail + document ─────────────────────────────────────── */
+body.legal-desk .lg-layout {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+  padding: 44px 0 90px;
+}
+body.legal-desk .lg-toc {
+  position: sticky;
+  top: 28px;
+  border-left: 1px solid var(--dk-line);
+  padding-left: 20px;
+}
+body.legal-desk .lg-toc h2 {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  margin: 0 0 14px;
+  font-weight: 400;
+}
+body.legal-desk .lg-toc ol { list-style: none; margin: 0; padding: 0; counter-reset: lgc; }
+body.legal-desk .lg-toc li { counter-increment: lgc; margin-bottom: 3px; }
+body.legal-desk .lg-toc a {
+  display: block;
+  padding: 5px 0 5px 26px;
+  position: relative;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--dk-dim);
+  text-decoration: none;
+  transition: color 0.14s ease;
+}
+body.legal-desk .lg-toc a::before {
+  content: counter(lgc, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  color: #4a5468;
+}
+body.legal-desk .lg-toc a:hover { color: var(--dk-ink); }
+/* the section you are actually reading, tracked in JS */
+body.legal-desk .lg-toc a.on { color: var(--lg); }
+body.legal-desk .lg-toc a.on::before { color: var(--lg); }
+
+body.legal-desk .lg-doc { max-width: 760px; }
+
+/* ── sections ─────────────────────────────────────────────────────────────── */
+body.legal-desk .legal-section {
+  padding: 0 0 40px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  scroll-margin-top: 24px;
+}
+body.legal-desk .legal-section:last-child { border-bottom: 0; }
+body.legal-desk .legal-section h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 0 0 16px;
+}
+body.legal-desk .legal-section h3 {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--dk-ink);
+  margin: 26px 0 10px;
+}
+/* prose measure and leading — this is the part people have to read */
+body.legal-desk .legal-section p,
+body.legal-desk .legal-section li {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--dk-mute);
+}
+body.legal-desk .legal-section p { margin: 0 0 14px; }
+body.legal-desk .legal-section ul,
+body.legal-desk .legal-section ol { margin: 0 0 16px; padding-left: 22px; }
+body.legal-desk .legal-section li { margin-bottom: 7px; }
+body.legal-desk .legal-section strong { color: var(--dk-ink); font-weight: 600; }
+body.legal-desk .legal-section a { color: var(--lg); text-decoration: none; }
+body.legal-desk .legal-section a:hover { text-decoration: underline; }
+body.legal-desk .legal-section code {
+  font-family: var(--font-family-mono);
+  font-size: 13px;
+  color: var(--dk-ink);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--dk-line);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+/* ── callouts ─────────────────────────────────────────────────────────────── */
+body.legal-desk .highlight-box {
+  margin: 18px 0;
+  padding: 15px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--lg);
+}
+body.legal-desk .highlight-box p { margin: 0; font-size: 14.5px; }
+body.legal-desk .highlight-box p + p { margin-top: 10px; }
+body.legal-desk .highlight-box.success { border-left-color: #4ade80; background: rgba(74, 222, 128, 0.06); }
+body.legal-desk .highlight-box.warning { border-left-color: #fbbf24; background: rgba(251, 191, 36, 0.06); }
+body.legal-desk .highlight-box.danger  { border-left-color: #f87171; background: rgba(248, 113, 113, 0.06); }
+body.legal-desk .highlight { color: var(--dk-ink); font-weight: 600; }
+
+/* ── tables ───────────────────────────────────────────────────────────────── */
+body.legal-desk .legal-section table,
+body.legal-desk .lg-tablewrap table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 18px;
+  min-width: 480px;
+}
+body.legal-desk .lg-tablewrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.03);
+  margin: 8px 0 18px;
+}
+body.legal-desk .legal-section th,
+body.legal-desk .legal-section td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 14px;
+  color: var(--dk-mute);
+  vertical-align: top;
+}
+body.legal-desk .legal-section th {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  font-weight: 400;
+  background: rgba(255, 255, 255, 0.03);
+}
+body.legal-desk .legal-section tbody tr:last-child td { border-bottom: 0; }
+
+/* ── contact block at the end ─────────────────────────────────────────────── */
+body.legal-desk .lg-contact {
+  margin-top: 8px;
+  padding: 22px 24px;
+  border-radius: 16px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+@media (max-width: 900px) {
+  body.legal-desk .lg-layout { grid-template-columns: 1fr; gap: 30px; padding-top: 30px; }
+  body.legal-desk .lg-toc {
+    position: static;
+    border-left: 0;
+    border-top: 1px solid var(--dk-line);
+    padding: 18px 0 0;
+  }
+  body.legal-desk .lg-toc ol { columns: 2; column-gap: 24px; }
+}

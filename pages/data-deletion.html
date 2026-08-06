@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
@@ -37,7 +39,7 @@
     <!-- Additional SEO -->
     <meta name="theme-color" content="#050810">
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -47,349 +49,48 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script>document.write('<link rel="stylesheet" href="../css/landing-theme.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        /* Legal page specific styles - Compact Hero */
-        .legal-header {
-            padding: 100px 60px 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .legal-header-bg {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, transparent 50%);
-            pointer-events: none;
-        }
-
-        .legal-header-content {
-            position: relative;
-            z-index: 10;
-            max-width: 900px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            padding-bottom: 32px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .legal-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .legal-icon svg {
-            width: 28px;
-            height: 28px;
-            color: #f87171;
-        }
-
-        .legal-header-text {
-            flex: 1;
-        }
-
-        .legal-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            background: rgba(239, 68, 68, 0.1);
-            border-radius: 100px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            color: #f87171;
-        }
-
-        .legal-title {
-            font-family: 'Russo One', sans-serif;
-            font-size: clamp(24px, 4vw, 36px);
-            font-weight: 400;
-            line-height: 1.2;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            margin: 0 0 6px 0;
-            color: #ffffff;
-        }
-
-        .legal-subtitle {
-            font-size: 15px;
-            color: rgba(255, 255, 255, 0.5);
-            margin: 0;
-        }
-
-        .legal-meta {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-left: auto;
-            flex-shrink: 0;
-        }
-
-        .legal-date {
-            text-align: right;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .legal-date strong {
-            color: rgba(255, 255, 255, 0.6);
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        /* Content Section */
-        .legal-content {
-            padding: 40px 60px 120px;
-            background: linear-gradient(180deg, #050810 0%, #0a0f1a 50%, #050810 100%);
-        }
-
-        .legal-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .legal-section {
-            margin-bottom: 48px;
-            padding: 32px 40px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            transition: border-color 0.3s ease;
-        }
-
-        .legal-section:hover {
-            border-color: rgba(239, 68, 68, 0.2);
-        }
-
-        .legal-section h2 {
-            font-family: 'Electrolize', sans-serif;
-            font-size: 22px;
-            font-weight: 400;
-            color: #ffffff;
-            margin: 0 0 20px 0;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .legal-section h2::before {
-            content: '';
-            width: 4px;
-            height: 24px;
-            background: linear-gradient(180deg, #f87171, #ef4444);
-            border-radius: 2px;
-        }
-
-        .legal-section h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
-            margin: 24px 0 12px 0;
-        }
-
-        .legal-section p {
-            font-size: 15px;
-            line-height: 1.8;
-            color: rgba(255, 255, 255, 0.7);
-            margin: 0 0 16px 0;
-        }
-
-        .legal-section ul, .legal-section ol {
-            margin: 0 0 16px 0;
-            padding-left: 24px;
-        }
-
-        .legal-section li {
-            font-size: 15px;
-            line-height: 1.8;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 8px;
-        }
-
-        .legal-section a {
-            color: #f87171;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .legal-section a:hover {
-            color: #fca5a5;
-            text-decoration: underline;
-        }
-
-        /* Table of Contents */
-        .legal-toc {
-            margin-bottom: 48px;
-            padding: 28px 32px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-        }
-
-        .legal-toc h3 {
-            font-family: 'Electrolize', sans-serif;
-            font-size: 14px;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.5);
-            margin: 0 0 16px 0;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .legal-toc ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px 24px;
-        }
-
-        .legal-toc li {
-            margin: 0;
-        }
-
-        .legal-toc a {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            transition: color 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legal-toc a::before {
-            content: '→';
-            color: rgba(239, 68, 68, 0.5);
-            transition: color 0.2s ease;
-        }
-
-        .legal-toc a:hover {
-            color: #f87171;
-        }
-
-        .legal-toc a:hover::before {
-            color: #f87171;
-        }
-
-        /* Deletion action callout */
-        .deletion-callout {
-            padding: 24px 28px;
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.25);
-            border-radius: 12px;
-            margin: 20px 0;
-        }
-
-        .deletion-callout strong {
-            color: #fca5a5;
-        }
-
-        .deletion-callout code {
-            background: rgba(0, 0, 0, 0.35);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 13px;
-            color: #fca5a5;
-            font-family: 'SF Mono', Monaco, monospace;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .legal-header {
-                padding: 90px 24px 0;
-            }
-
-            .legal-header-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 16px;
-            }
-
-            .legal-meta {
-                margin-left: 0;
-                margin-top: 8px;
-            }
-
-            .legal-date {
-                text-align: center;
-            }
-
-            .legal-content {
-                padding: 32px 24px 80px;
-            }
-
-            .legal-section {
-                padding: 24px;
-            }
-
-            .legal-toc ul {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/legal-desk.css?v=' + CACHE_VERSION + '">');</script>
 </head>
-<body class="landing-page">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing legal-desk">
 
-    <!-- Compact Header -->
-    <header class="legal-header">
-        <div class="legal-header-bg"></div>
-        <div class="legal-header-content">
-            <div class="legal-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                    <path d="M10 11v6M14 11v6"/>
-                </svg>
-            </div>
-            <div class="legal-header-text">
-                <div class="legal-badge">User Rights</div>
-                <h1 class="legal-title">Data Deletion Instructions</h1>
-                <p class="legal-subtitle">How to request deletion of your personal data from Ragenaizer</p>
-            </div>
-            <div class="legal-meta">
-                <div class="legal-date">
-                    <strong>Effective</strong>
-                    Apr 24, 2026
-                </div>
-            </div>
-        </div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <header class="lg-head">
+      <div class="lg-kicker">Your data</div>
+      <h1 class="lg-title">Data Deletion Instructions</h1>
+      <p class="lg-lede">How to request deletion of your personal data from Ragenaizer</p>
+      <p class="lg-meta">Effective Apr 24, 2026</p>
     </header>
 
-    <!-- Content Section -->
-    <section class="legal-content">
-        <div class="legal-container">
-            <nav class="legal-toc">
-                <h3>Table of Contents</h3>
-                <ul>
-                    <li><a href="#overview">Overview</a></li>
-                    <li><a href="#facebook">Facebook Lead Ads Data</a></li>
-                    <li><a href="#linkedin">LinkedIn Data</a></li>
-                    <li><a href="#account">Account &amp; CRM Data</a></li>
-                    <li><a href="#self-service">Self-Service Deletion</a></li>
-                    <li><a href="#timeline">Timeline &amp; Confirmation</a></li>
-                    <li><a href="#retention">Legally Retained Data</a></li>
-                    <li><a href="#contact">Contact &amp; Escalation</a></li>
-                </ul>
-            </nav>
-
-            <div class="legal-section" id="overview">
+    <div class="lg-layout">
+      <nav class="lg-toc" aria-label="Contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#facebook">Facebook Lead Ads Data</a></li>
+          <li><a href="#linkedin">LinkedIn Data</a></li>
+          <li><a href="#account">Account &amp; CRM Data</a></li>
+          <li><a href="#self-service">Self-Service Deletion Inside Ragenaizer</a></li>
+          <li><a href="#timeline">Timeline &amp; Confirmation</a></li>
+          <li><a href="#retention">Data We May Be Required to Retain</a></li>
+          <li><a href="#contact">Contact &amp; Escalation</a></li>
+        </ol>
+      </nav>
+      <article class="lg-doc">
+<div class="legal-section" id="overview">
                 <h2>1. Overview</h2>
                 <p>Ragenaizer is operated by <strong>WISETRACK TECHNOLOGIES LLP</strong> (India). This page explains how you can request deletion of personal data that Ragenaizer holds about you — including data collected through our Facebook Lead Ads integration, our LinkedIn Lead Gen Forms integration, and our core CRM / HRMS / Drive / PMS modules.</p>
                 <p>We honour deletion requests from three groups of people:</p>
@@ -401,7 +102,8 @@
                 <p>For the full description of what data we collect and why, see our <a href="/pages/privacy.html">Privacy Policy</a>.</p>
             </div>
 
-            <div class="legal-section" id="facebook">
+            
+<div class="legal-section" id="facebook">
                 <h2>2. Facebook Lead Ads Data</h2>
                 <p>When a Ragenaizer tenant connects a Facebook Page to their CRM, we receive and store the following on their behalf:</p>
                 <ul>
@@ -426,7 +128,8 @@
                 <p><strong>When a tenant disconnects their Facebook Page</strong> from the CRM, we immediately revoke the stored page access token. Existing lead records created before disconnection remain in the tenant's CRM until the tenant deletes them or you request deletion using the process above.</p>
             </div>
 
-            <div class="legal-section" id="linkedin">
+            
+<div class="legal-section" id="linkedin">
                 <h2>3. LinkedIn Data</h2>
                 <p>When a Ragenaizer tenant connects a LinkedIn account or Company Page, we receive:</p>
                 <ul>
@@ -442,7 +145,8 @@
                 </div>
             </div>
 
-            <div class="legal-section" id="account">
+            
+<div class="legal-section" id="account">
                 <h2>4. Account &amp; CRM Data</h2>
                 <p>If you have a Ragenaizer tenant account (you log in to manage leads, employees, files, projects, etc.), you have two ways to remove your data:</p>
 
@@ -462,7 +166,8 @@
                 </div>
             </div>
 
-            <div class="legal-section" id="self-service">
+            
+<div class="legal-section" id="self-service">
                 <h2>5. Self-Service Deletion Inside Ragenaizer</h2>
                 <p>Wherever possible we want you to control your own data without emailing us. Inside Ragenaizer:</p>
                 <ul>
@@ -474,7 +179,8 @@
                 <p>For bulk deletion, export, or full erasure, please use the email workflows in section 2, 3, and 4 above.</p>
             </div>
 
-            <div class="legal-section" id="timeline">
+            
+<div class="legal-section" id="timeline">
                 <h2>6. Timeline &amp; Confirmation</h2>
                 <ul>
                     <li><strong>Acknowledgement</strong> — we acknowledge every deletion request by email within 2 business days.</li>
@@ -484,7 +190,8 @@
                 </ul>
             </div>
 
-            <div class="legal-section" id="retention">
+            
+<div class="legal-section" id="retention">
                 <h2>7. Data We May Be Required to Retain</h2>
                 <p>In a small number of cases Indian and international law requires us to retain some records even after your deletion request. When this applies we retain only the minimum necessary and never use the data for any other purpose. Examples:</p>
                 <ul>
@@ -495,7 +202,8 @@
                 <p>We will tell you in the deletion confirmation email if any of these apply to your request, what is being retained, and when that retention period ends.</p>
             </div>
 
-            <div class="legal-section" id="contact">
+            
+<div class="legal-section" id="contact">
                 <h2>8. Contact &amp; Escalation</h2>
                 <p>For any deletion request, question, or complaint:</p>
                 <ul>
@@ -509,27 +217,55 @@
                 Noida, Gautam Buddha Nagar, Uttar Pradesh 201301, India</p>
                 <p>If you are not satisfied with our response, you may also contact your local data protection authority (for example, the Data Protection Board of India, or your country's equivalent supervisory authority).</p>
             </div>
-        </div>
-    </section>
+        
+      </article>
+    </div>
 
-    <!-- Footer -->
-    <div id="footer"></div>
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="data-deletion.html">Delete my data</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
-
-    <script>
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
-    </script>
+  <script>
+    'use strict';
+    /* Highlight the section being read in the contents rail. A legal document
+       is long enough that "where am I" is a real question, and the answer
+       should not depend on the reader keeping count. */
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll('.lg-toc a'));
+      var secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+      if (!secs.length || !('IntersectionObserver' in window)) return;
+      var seen = {};
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+        for (var i = 0; i < secs.length; i++) {
+          if (seen[secs[i].id]) {
+            links.forEach(function (a, j) { a.classList.toggle('on', j === i); });
+            break;
+          }
+        }
+      }, { rootMargin: '-10% 0px -70% 0px' });
+      secs.forEach(function (s) { io.observe(s); });
+    })();
+  </script>
 </body>
 </html>

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
@@ -37,7 +39,7 @@
     <!-- Additional SEO -->
     <meta name="theme-color" content="#050810">
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -47,427 +49,52 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script>document.write('<link rel="stylesheet" href="../css/landing-theme.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        /* Legal page specific styles - Compact Hero */
-        .legal-header {
-            padding: 100px 60px 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .legal-header-bg {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
-            pointer-events: none;
-        }
-
-        .legal-header-content {
-            position: relative;
-            z-index: 10;
-            max-width: 900px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            padding-bottom: 32px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .legal-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .legal-icon svg {
-            width: 28px;
-            height: 28px;
-            color: #60a5fa;
-        }
-
-        .legal-header-text {
-            flex: 1;
-        }
-
-        .legal-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            background: rgba(59, 130, 246, 0.1);
-            border-radius: 100px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            color: #60a5fa;
-        }
-
-        .legal-title {
-            font-family: 'Russo One', sans-serif;
-            font-size: clamp(24px, 4vw, 36px);
-            font-weight: 400;
-            line-height: 1.2;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            margin: 0 0 6px 0;
-            color: #ffffff;
-        }
-
-        .legal-subtitle {
-            font-size: 15px;
-            color: rgba(255, 255, 255, 0.5);
-            margin: 0;
-        }
-
-        .legal-meta {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-left: auto;
-            flex-shrink: 0;
-        }
-
-        .legal-date {
-            text-align: right;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .legal-date strong {
-            color: rgba(255, 255, 255, 0.6);
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        /* Content Section */
-        .legal-content {
-            padding: 40px 60px 120px;
-            background: linear-gradient(180deg, #050810 0%, #0a0f1a 50%, #050810 100%);
-        }
-
-        .legal-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .legal-section {
-            margin-bottom: 48px;
-            padding: 32px 40px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            transition: border-color 0.3s ease;
-        }
-
-        .legal-section:hover {
-            border-color: rgba(59, 130, 246, 0.2);
-        }
-
-        .legal-section h2 {
-            font-family: 'Electrolize', sans-serif;
-            font-size: 22px;
-            font-weight: 400;
-            color: #ffffff;
-            margin: 0 0 20px 0;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .legal-section h2::before {
-            content: '';
-            width: 4px;
-            height: 24px;
-            background: linear-gradient(180deg, #60a5fa, #3b82f6);
-            border-radius: 2px;
-        }
-
-        .legal-section h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
-            margin: 24px 0 12px 0;
-        }
-
-        .legal-section p {
-            font-size: 15px;
-            line-height: 1.8;
-            color: rgba(255, 255, 255, 0.7);
-            margin: 0 0 16px 0;
-        }
-
-        .legal-section ul, .legal-section ol {
-            margin: 0 0 16px 0;
-            padding-left: 24px;
-        }
-
-        .legal-section li {
-            font-size: 15px;
-            line-height: 1.8;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 8px;
-        }
-
-        .legal-section a {
-            color: #60a5fa;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .legal-section a:hover {
-            color: #93c5fd;
-            text-decoration: underline;
-        }
-
-        .legal-effective-date {
-            text-align: center;
-            padding: 20px;
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 12px;
-            margin-bottom: 48px;
-        }
-
-        .legal-effective-date p {
-            margin: 0;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .legal-effective-date strong {
-            color: #60a5fa;
-        }
-
-        /* Table of Contents */
-        .legal-toc {
-            margin-bottom: 48px;
-            padding: 28px 32px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-        }
-
-        .legal-toc h3 {
-            font-family: 'Electrolize', sans-serif;
-            font-size: 14px;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.5);
-            margin: 0 0 16px 0;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .legal-toc ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px 24px;
-        }
-
-        .legal-toc li {
-            margin: 0;
-        }
-
-        .legal-toc a {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            transition: color 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legal-toc a::before {
-            content: '→';
-            color: rgba(59, 130, 246, 0.5);
-            transition: color 0.2s ease;
-        }
-
-        .legal-toc a:hover {
-            color: #60a5fa;
-        }
-
-        .legal-toc a:hover::before {
-            color: #60a5fa;
-        }
-
-        /* Pricing Table */
-        .pricing-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 16px 0;
-        }
-
-        .pricing-table th, .pricing-table td {
-            padding: 16px 20px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .pricing-table th {
-            font-size: 13px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .pricing-table td {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .pricing-table .highlight {
-            color: #60a5fa;
-            font-weight: 600;
-        }
-
-        /* Highlight Box */
-        .highlight-box {
-            padding: 20px 24px;
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 12px;
-            margin: 24px 0;
-        }
-
-        .highlight-box.warning {
-            background: rgba(245, 158, 11, 0.1);
-            border-color: rgba(245, 158, 11, 0.2);
-        }
-
-        .highlight-box.success {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: rgba(16, 185, 129, 0.2);
-        }
-
-        .highlight-box p {
-            margin: 0;
-            font-size: 14px;
-        }
-
-        .highlight-box strong {
-            color: #60a5fa;
-        }
-
-        .highlight-box.warning strong {
-            color: #fbbf24;
-        }
-
-        .highlight-box.success strong {
-            color: #34d399;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .legal-header {
-                padding: 90px 24px 0;
-            }
-
-            .legal-header-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 16px;
-            }
-
-            .legal-meta {
-                margin-left: 0;
-                margin-top: 8px;
-            }
-
-            .legal-date {
-                text-align: center;
-            }
-
-            .legal-content {
-                padding: 32px 24px 80px;
-            }
-
-            .legal-section {
-                padding: 24px;
-            }
-
-            .legal-toc ul {
-                grid-template-columns: 1fr;
-            }
-
-            .pricing-table {
-                font-size: 13px;
-            }
-
-            .pricing-table th, .pricing-table td {
-                padding: 12px 14px;
-            }
-        }
-    </style>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/legal-desk.css?v=' + CACHE_VERSION + '">');</script>
 </head>
-<body class="landing-page">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing legal-desk">
 
-    <!-- Header Section -->
-    <header class="legal-header">
-        <div class="legal-header-bg"></div>
-        <div class="legal-header-content">
-            <div class="legal-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                    <line x1="1" y1="10" x2="23" y2="10"/>
-                </svg>
-            </div>
-            <div class="legal-header-text">
-                <div class="legal-badge">Billing Information</div>
-                <h1 class="legal-title">Payment & Refund Policy</h1>
-                <p class="legal-subtitle">Our billing practices, cancellation terms, and refund procedures</p>
-            </div>
-            <div class="legal-meta">
-                <div class="legal-date">
-                    <strong>Effective</strong>
-                    Feb 1, 2026
-                </div>
-            </div>
-        </div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <header class="lg-head">
+      <div class="lg-kicker">Payments</div>
+      <h1 class="lg-title">Payment & Refund Policy</h1>
+      <p class="lg-lede">Our billing practices, cancellation terms, and refund procedures</p>
+      <p class="lg-meta">Effective Feb 1, 2026</p>
     </header>
 
-    <!-- Content Section -->
-    <section class="legal-content">
-        <div class="legal-container">
-
-            <nav class="legal-toc">
-                <h3>Table of Contents</h3>
-                <ul>
-                    <li><a href="#overview">Overview</a></li>
-                    <li><a href="#pricing">Pricing & Plans</a></li>
-                    <li><a href="#billing-cycle">Billing Cycle</a></li>
-                    <li><a href="#payment-methods">Payment Methods</a></li>
-                    <li><a href="#evaluation">Evaluating Before You Buy</a></li>
-                    <li><a href="#upgrades">Upgrades & Downgrades</a></li>
-                    <li><a href="#cancellation">Cancellation Policy</a></li>
-                    <li><a href="#refunds">Refund Policy</a></li>
-                    <li><a href="#failed-payments">Failed Payments</a></li>
-                    <li><a href="#taxes">Taxes</a></li>
-                    <li><a href="#enterprise">Enterprise & Self-Hosted</a></li>
-                    <li><a href="#contact">Contact Billing Support</a></li>
-                </ul>
-            </nav>
-
-            <div class="legal-section" id="overview">
+    <div class="lg-layout">
+      <nav class="lg-toc" aria-label="Contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#pricing">Pricing & Plans</a></li>
+          <li><a href="#billing-cycle">Billing Cycle</a></li>
+          <li><a href="#payment-methods">Payment Methods</a></li>
+          <li><a href="#evaluation">Evaluating Before You Buy</a></li>
+          <li><a href="#upgrades">Upgrades & Downgrades</a></li>
+          <li><a href="#cancellation">Cancellation Policy</a></li>
+          <li><a href="#refunds">Refund Policy</a></li>
+          <li><a href="#failed-payments">Failed Payments</a></li>
+          <li><a href="#taxes">Taxes</a></li>
+          <li><a href="#enterprise">Enterprise & Self-Hosted</a></li>
+          <li><a href="#contact">Contact Billing Support</a></li>
+        </ol>
+      </nav>
+      <article class="lg-doc">
+<div class="legal-section" id="overview">
                 <h2>1. Overview</h2>
                 <p>This Payment and Refund Policy governs all financial transactions related to Ragenaizer services, including Vision, Chat, Drive, and HRMS. By subscribing to our services, you agree to these terms.</p>
                 <div class="highlight-box success">
@@ -475,11 +102,12 @@
                 </div>
             </div>
 
-            <div class="legal-section" id="pricing">
+            
+<div class="legal-section" id="pricing">
                 <h2>2. Pricing & Plans</h2>
                 <p>Ragenaizer offers flexible pricing to meet various organizational needs:</p>
 
-                <table class="pricing-table">
+                <div class="lg-tablewrap"><table class="pricing-table">
                     <thead>
                         <tr>
                             <th>Plan</th>
@@ -509,12 +137,13 @@
                             <td>Annual</td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
 
                 <p>Current pricing is available on <a href="pricing.html">the pricing page</a>. Prices are subject to change with 30 days notice.</p>
             </div>
 
-            <div class="legal-section" id="billing-cycle">
+            
+<div class="legal-section" id="billing-cycle">
                 <h2>3. Billing Cycle</h2>
                 <h3>3.1 Annual Billing</h3>
                 <p>All plans are billed annually. There is no monthly option.</p>
@@ -529,7 +158,8 @@
                 </div>
             </div>
 
-            <div class="legal-section" id="payment-methods">
+            
+<div class="legal-section" id="payment-methods">
                 <h2>4. Payment Methods</h2>
                 <p>We accept the following payment methods:</p>
                 <ul>
@@ -541,7 +171,8 @@
                 <p>All payments are processed securely through PCI-compliant payment processors. We do not store your full credit card details.</p>
             </div>
 
-            <div class="legal-section" id="evaluation">
+            
+<div class="legal-section" id="evaluation">
                 <h2>5. Evaluating Before You Buy</h2>
                 <p>We do not currently operate a self-service free trial. Every plan is a paid annual seat block, and an account becomes active once payment is received. To evaluate the platform before committing:</p>
                 <ul>
@@ -555,7 +186,8 @@
                 </div>
             </div>
 
-            <div class="legal-section" id="upgrades">
+            
+<div class="legal-section" id="upgrades">
                 <h2>6. Upgrades & Downgrades</h2>
                 <h3>6.1 Upgrading Your Plan</h3>
                 <ul>
@@ -579,7 +211,8 @@
                 </ul>
             </div>
 
-            <div class="legal-section" id="cancellation">
+            
+<div class="legal-section" id="cancellation">
                 <h2>7. Cancellation Policy</h2>
                 <h3>7.1 How to Cancel</h3>
                 <p>You can cancel your subscription at any time through:</p>
@@ -606,10 +239,11 @@
                 </ul>
             </div>
 
-            <div class="legal-section" id="refunds">
+            
+<div class="legal-section" id="refunds">
                 <h2>8. Refund Policy</h2>
                 <h3>8.1 Refund Eligibility</h3>
-                <table class="pricing-table">
+                <div class="lg-tablewrap"><table class="pricing-table">
                     <thead>
                         <tr>
                             <th>Scenario</th>
@@ -639,7 +273,7 @@
                             <td>Report immediately, investigation required</td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
 
                 <h3>8.2 How to Request a Refund</h3>
                 <ol>
@@ -663,7 +297,8 @@
                 </div>
             </div>
 
-            <div class="legal-section" id="failed-payments">
+            
+<div class="legal-section" id="failed-payments">
                 <h2>9. Failed Payments</h2>
                 <p>If a payment fails, we will:</p>
                 <ol>
@@ -678,7 +313,8 @@
                 </div>
             </div>
 
-            <div class="legal-section" id="taxes">
+            
+<div class="legal-section" id="taxes">
                 <h2>10. Taxes</h2>
                 <ul>
                     <li>Prices displayed may not include applicable taxes</li>
@@ -689,7 +325,8 @@
                 <p>For tax-related questions, contact <a href="mailto:billing@ragenaizer.com">billing@ragenaizer.com</a>.</p>
             </div>
 
-            <div class="legal-section" id="enterprise">
+            
+<div class="legal-section" id="enterprise">
                 <h2>11. Enterprise & Self-Hosted</h2>
                 <h3>11.1 Enterprise Plans</h3>
                 <ul>
@@ -710,7 +347,8 @@
                 <p>For Enterprise or Self-Hosted inquiries, contact <a href="mailto:sales@ragenaizer.com">sales@ragenaizer.com</a>.</p>
             </div>
 
-            <div class="legal-section" id="contact">
+            
+<div class="legal-section" id="contact">
                 <h2>12. Contact Billing Support</h2>
                 <p>For billing questions, refund requests, or payment issues:</p>
                 <ul>
@@ -720,27 +358,55 @@
                 </ul>
                 <p>Please include your account email and relevant transaction details in all correspondence.</p>
             </div>
-        </div>
-    </section>
+        
+      </article>
+    </div>
 
-    <!-- Footer -->
-    <div id="footer"></div>
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="data-deletion.html">Delete my data</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
-
-    <script>
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
-    </script>
+  <script>
+    'use strict';
+    /* Highlight the section being read in the contents rail. A legal document
+       is long enough that "where am I" is a real question, and the answer
+       should not depend on the reader keeping count. */
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll('.lg-toc a'));
+      var secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+      if (!secs.length || !('IntersectionObserver' in window)) return;
+      var seen = {};
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+        for (var i = 0; i < secs.length; i++) {
+          if (seen[secs[i].id]) {
+            links.forEach(function (a, j) { a.classList.toggle('on', j === i); });
+            break;
+          }
+        }
+      }, { rootMargin: '-10% 0px -70% 0px' });
+      secs.forEach(function (s) { io.observe(s); });
+    })();
+  </script>
 </body>
 </html>

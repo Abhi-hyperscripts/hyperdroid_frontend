@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
@@ -18,7 +20,6 @@
     <!-- SEO Meta Tags -->
     <meta name="keywords" content="enterprise software pricing, all-in-one business software pricing, unified workspace subscription, Ragenaizer enterprise plan, video conferencing pricing, team collaboration software cost, HRMS software pricing, cloud storage for business pricing, white label workspace solution, custom enterprise software, SaaS pricing for teams, per-user pricing enterprise software, enterprise collaboration platform cost">
     <meta name="author" content="Ragenaizer">
-    <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://ragenaizer.com/pages/activate.html">
 
     <!-- Open Graph -->
@@ -41,119 +42,44 @@
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../css/login-redesign.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../css/activate.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<script src="../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/form-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="login-page activate-page">
+<body class="landing-page desk-landing form-desk">
+
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <div class="fm-wrap">
+      <header class="fm-head">
+        <div class="fm-kicker">Licence activation</div>
+        <h1 class="fm-title">Activate your licence</h1>
+        <p class="fm-lede">Enter the licence key issued for your organisation to bring your workspace online.</p>
+      </header>
+
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <!-- Navigation -->
-    <div id="navbar"></div>
+    
 
-    <div class="login-split-container">
-        <!-- Left Panel - Sales Information -->
-        <div class="login-showcase-panel">
-            <!-- Subtle Background -->
-            <div class="showcase-bg">
-                <div class="gradient-mesh"></div>
-                <div class="noise-overlay"></div>
-            </div>
-
-            <!-- Content -->
-            <div class="showcase-content">
-                <!-- Logo & Tagline -->
-                <div class="showcase-header">
-                    <img src="../assets/brand_logo.png" alt="Ragenaizer Logo" class="showcase-logo theme-aware-logo">
-                    <div class="tagline-wrapper">
-                        <span class="tagline-badge">License Activation</span>
-                        <h1 class="showcase-headline">Get your enterprise<br>license today.</h1>
-                        <p class="showcase-subtext">Contact our sales team to receive your license key and unlock the full power of Ragenaizer for your organization.</p>
-                    </div>
-                </div>
-
-                <!-- Contact Info Cards -->
-                <div class="contact-grid">
-                    <div class="contact-card">
-                        <div class="contact-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                <polyline points="22,6 12,13 2,6"/>
-                            </svg>
-                        </div>
-                        <div class="contact-content">
-                            <h3>Email Sales</h3>
-                            <p>sales@ragenaizer.com</p>
-                        </div>
-                    </div>
-
-                    <div class="contact-card">
-                        <div class="contact-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="12" cy="12" r="10"/>
-                                <polyline points="12 6 12 12 16 14"/>
-                            </svg>
-                        </div>
-                        <div class="contact-content">
-                            <h3>Response Time</h3>
-                            <p>Within 24 hours</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- What You'll Get -->
-                <div class="license-benefits">
-                    <h4>What's included in your license:</h4>
-                    <div class="benefits-list">
-                        <div class="benefit-item">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Full platform access</span>
-                        </div>
-                        <div class="benefit-item">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Custom user limits</span>
-                        </div>
-                        <div class="benefit-item">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Priority support</span>
-                        </div>
-                        <div class="benefit-item">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>White-label options</span>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Right Panel - Activation Form -->
-        <div class="login-form-panel">
+    <div class="login-form-panel fm-card">
             <div class="form-panel-inner">
-                <!-- Mobile Logo -->
-                <div class="mobile-logo">
-                    <img src="../assets/brand_logo.png" alt="Ragenaizer Logo" class="auth-logo-img theme-aware-logo">
-                </div>
-
-                <!-- Welcome Section -->
-                <div class="login-welcome">
-                    <h1 class="welcome-title">Activate License</h1>
-                    <p class="welcome-subtitle">Enter your license key to activate your tenant.</p>
-                </div>
-
-                <!-- Activation Form -->
+<!-- Activation Form -->
                 <div class="login-form-container" id="activationForm">
                     <form id="licenseForm" class="login-form activate-form">
                         <div class="form-group">
@@ -276,11 +202,9 @@
             </div>
 
         </div>
-    </div>
 
     <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-
+    
     <!-- Load scripts -->
     <script>
         document.write('<script src="../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
@@ -298,5 +222,36 @@
             localStorage.setItem('theme', newTheme);
         });
     </script>
+
+      <div class="fm-assure">
+        <div><b>Already purchased</b><span>This page is for activating a licence you already hold. To buy one, see pricing.</span></div>
+        <div><b>Need a key?</b><span>Write to sales@ragenaizer.com and we will reissue it against your organisation.</span></div>
+        <div><b>Trouble activating</b><span>Keys are tied to an organisation and an expiry — support can check both for you.</span></div>
+      </div>
+    </div>
+
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="data-deletion.html">Delete my data</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 </body>
 </html>

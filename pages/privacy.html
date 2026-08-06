@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
@@ -37,7 +39,7 @@
     <!-- Additional SEO -->
     <meta name="theme-color" content="#050810">
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -47,391 +49,60 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script>document.write('<link rel="stylesheet" href="../css/landing-theme.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        /* Legal page specific styles - Compact Hero */
-        .legal-header {
-            padding: 100px 60px 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .legal-header-bg {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
-            pointer-events: none;
-        }
-
-        .legal-header-content {
-            position: relative;
-            z-index: 10;
-            max-width: 900px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            padding-bottom: 32px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .legal-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .legal-icon svg {
-            width: 28px;
-            height: 28px;
-            color: #34d399;
-        }
-
-        .legal-header-text {
-            flex: 1;
-        }
-
-        .legal-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 100px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            color: #34d399;
-        }
-
-        .legal-title {
-            font-family: 'Russo One', sans-serif;
-            font-size: clamp(24px, 4vw, 36px);
-            font-weight: 400;
-            line-height: 1.2;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            margin: 0 0 6px 0;
-            color: #ffffff;
-        }
-
-        .legal-subtitle {
-            font-size: 15px;
-            color: rgba(255, 255, 255, 0.5);
-            margin: 0;
-        }
-
-        .legal-meta {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-left: auto;
-            flex-shrink: 0;
-        }
-
-        .legal-date {
-            text-align: right;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .legal-date strong {
-            color: rgba(255, 255, 255, 0.6);
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        /* Content Section */
-        .legal-content {
-            padding: 40px 60px 120px;
-            background: linear-gradient(180deg, #050810 0%, #0a0f1a 50%, #050810 100%);
-        }
-
-        .legal-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .legal-section {
-            margin-bottom: 48px;
-            padding: 32px 40px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            transition: border-color 0.3s ease;
-        }
-
-        .legal-section:hover {
-            border-color: rgba(16, 185, 129, 0.2);
-        }
-
-        .legal-section h2 {
-            font-family: 'Electrolize', sans-serif;
-            font-size: 22px;
-            font-weight: 400;
-            color: #ffffff;
-            margin: 0 0 20px 0;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .legal-section h2::before {
-            content: '';
-            width: 4px;
-            height: 24px;
-            background: linear-gradient(180deg, #34d399, #10b981);
-            border-radius: 2px;
-        }
-
-        .legal-section h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
-            margin: 24px 0 12px 0;
-        }
-
-        .legal-section p {
-            font-size: 15px;
-            line-height: 1.8;
-            color: rgba(255, 255, 255, 0.7);
-            margin: 0 0 16px 0;
-        }
-
-        .legal-section ul, .legal-section ol {
-            margin: 0 0 16px 0;
-            padding-left: 24px;
-        }
-
-        .legal-section li {
-            font-size: 15px;
-            line-height: 1.8;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 8px;
-        }
-
-        .legal-section a {
-            color: #34d399;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .legal-section a:hover {
-            color: #6ee7b7;
-            text-decoration: underline;
-        }
-
-        .legal-effective-date {
-            text-align: center;
-            padding: 20px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 12px;
-            margin-bottom: 48px;
-        }
-
-        .legal-effective-date p {
-            margin: 0;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .legal-effective-date strong {
-            color: #34d399;
-        }
-
-        /* Table of Contents */
-        .legal-toc {
-            margin-bottom: 48px;
-            padding: 28px 32px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-        }
-
-        .legal-toc h3 {
-            font-family: 'Electrolize', sans-serif;
-            font-size: 14px;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.5);
-            margin: 0 0 16px 0;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .legal-toc ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px 24px;
-        }
-
-        .legal-toc li {
-            margin: 0;
-        }
-
-        .legal-toc a {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            transition: color 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legal-toc a::before {
-            content: '→';
-            color: rgba(16, 185, 129, 0.5);
-            transition: color 0.2s ease;
-        }
-
-        .legal-toc a:hover {
-            color: #34d399;
-        }
-
-        .legal-toc a:hover::before {
-            color: #34d399;
-        }
-
-        /* Data Table */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 16px 0;
-        }
-
-        .data-table th, .data-table td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .data-table th {
-            font-size: 13px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .data-table td {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .legal-header {
-                padding: 90px 24px 0;
-            }
-
-            .legal-header-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 16px;
-            }
-
-            .legal-meta {
-                margin-left: 0;
-                margin-top: 8px;
-            }
-
-            .legal-date {
-                text-align: center;
-            }
-
-            .legal-content {
-                padding: 32px 24px 80px;
-            }
-
-            .legal-section {
-                padding: 24px;
-            }
-
-            .legal-toc ul {
-                grid-template-columns: 1fr;
-            }
-
-            .data-table {
-                font-size: 13px;
-            }
-
-            .data-table th, .data-table td {
-                padding: 10px 12px;
-            }
-        }
-    </style>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/legal-desk.css?v=' + CACHE_VERSION + '">');</script>
 </head>
-<body class="landing-page">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing legal-desk">
 
-    <!-- Compact Header -->
-    <header class="legal-header">
-        <div class="legal-header-bg"></div>
-        <div class="legal-header-content">
-            <div class="legal-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-            </div>
-            <div class="legal-header-text">
-                <div class="legal-badge">Data Protection</div>
-                <h1 class="legal-title">Privacy Policy</h1>
-                <p class="legal-subtitle">How we collect, use, and protect your personal information</p>
-            </div>
-            <div class="legal-meta">
-                <div class="legal-date">
-                    <strong>Effective</strong>
-                    Feb 1, 2026
-                </div>
-            </div>
-        </div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <header class="lg-head">
+      <div class="lg-kicker">Data protection</div>
+      <h1 class="lg-title">Privacy Policy</h1>
+      <p class="lg-lede">How we collect, use, and protect your personal information</p>
+      <p class="lg-meta">Effective Feb 1, 2026</p>
     </header>
 
-    <!-- Content Section -->
-    <section class="legal-content">
-        <div class="legal-container">
-            <nav class="legal-toc">
-                <h3>Table of Contents</h3>
-                <ul>
-                    <li><a href="#introduction">Introduction</a></li>
-                    <li><a href="#data-collection">Data We Collect</a></li>
-                    <li><a href="#data-use">How We Use Your Data</a></li>
-                    <li><a href="#data-sharing">Data Sharing</a></li>
-                    <li><a href="#data-storage">Data Storage & Security</a></li>
-                    <li><a href="#data-retention">Data Retention</a></li>
-                    <li><a href="#your-rights">Your Rights</a></li>
-                    <li><a href="#cookies">Cookies & Tracking</a></li>
-                    <li><a href="#facebook-data">Facebook & LinkedIn Data Use & Deletion</a></li>
-                    <li><a href="#children">Children's Privacy</a></li>
-                    <li><a href="#international">International Transfers</a></li>
-                    <li><a href="#changes">Policy Changes</a></li>
-                    <li><a href="#contact">Contact Us</a></li>
-                </ul>
-            </nav>
-
-            <div class="legal-section" id="introduction">
+    <div class="lg-layout">
+      <nav class="lg-toc" aria-label="Contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#introduction">Introduction</a></li>
+          <li><a href="#data-collection">Data We Collect</a></li>
+          <li><a href="#data-use">How We Use Your Data</a></li>
+          <li><a href="#data-sharing">Data Sharing</a></li>
+          <li><a href="#data-storage">Data Storage & Security</a></li>
+          <li><a href="#data-retention">Data Retention</a></li>
+          <li><a href="#your-rights">Your Rights</a></li>
+          <li><a href="#cookies">Cookies & Tracking</a></li>
+          <li><a href="#facebook-data">Facebook & LinkedIn Data Use & Deletion</a></li>
+          <li><a href="#children">Children's Privacy</a></li>
+          <li><a href="#international">International Data Transfers</a></li>
+          <li><a href="#changes">Policy Changes</a></li>
+          <li><a href="#contact">Contact Us</a></li>
+        </ol>
+      </nav>
+      <article class="lg-doc">
+<div class="legal-section" id="introduction">
                 <h2>1. Introduction</h2>
                 <p>Ragenaizer ("we", "us", or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our enterprise workspace platform, including Vision, Chat, Drive, and HRMS services.</p>
                 <p>By using our services, you consent to the data practices described in this policy. If you do not agree with these practices, please do not use our services.</p>
             </div>
 
-            <div class="legal-section" id="data-collection">
+            
+<div class="legal-section" id="data-collection">
                 <h2>2. Data We Collect</h2>
 
                 <h3>2.1 Information You Provide</h3>
@@ -477,10 +148,11 @@
                 <p>This data is collected only when an authorized administrator explicitly connects a LinkedIn account or Company Page and is used solely for managing your sales pipeline within our CRM. We do not sell, rent, or share LinkedIn user data with any third parties beyond what is described in this policy. You may disconnect LinkedIn integrations at any time through CRM Settings, and all associated access tokens will be revoked.</p>
             </div>
 
-            <div class="legal-section" id="data-use">
+            
+<div class="legal-section" id="data-use">
                 <h2>3. How We Use Your Data</h2>
                 <p>We use your information to:</p>
-                <table class="data-table">
+                <div class="lg-tablewrap"><table class="data-table">
                     <thead>
                         <tr>
                             <th>Purpose</th>
@@ -521,10 +193,11 @@
                             <td>Consent (opt-in)</td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
             </div>
 
-            <div class="legal-section" id="data-sharing">
+            
+<div class="legal-section" id="data-sharing">
                 <h2>4. Data Sharing</h2>
                 <p>We do not sell your personal information. We may share data with:</p>
 
@@ -541,7 +214,8 @@
                 <p>In the event of a merger, acquisition, or sale of assets, your data may be transferred. We will notify you of any such change.</p>
             </div>
 
-            <div class="legal-section" id="data-storage">
+            
+<div class="legal-section" id="data-storage">
                 <h2>5. Data Storage & Security</h2>
                 <p>We implement industry-standard security measures to protect your data:</p>
                 <ul>
@@ -554,7 +228,8 @@
                 <p>For self-hosted deployments, data security is managed according to your organization's infrastructure and policies.</p>
             </div>
 
-            <div class="legal-section" id="data-retention">
+            
+<div class="legal-section" id="data-retention">
                 <h2>6. Data Retention</h2>
                 <p>We retain your data as follows:</p>
                 <ul>
@@ -566,7 +241,8 @@
                 </ul>
             </div>
 
-            <div class="legal-section" id="your-rights">
+            
+<div class="legal-section" id="your-rights">
                 <h2>7. Your Rights</h2>
                 <p>Depending on your jurisdiction, you may have the following rights:</p>
                 <ul>
@@ -581,7 +257,8 @@
                 <p>To exercise these rights, contact us at <a href="mailto:privacy@ragenaizer.com">privacy@ragenaizer.com</a>. We will respond within 30 days.</p>
             </div>
 
-            <div class="legal-section" id="cookies">
+            
+<div class="legal-section" id="cookies">
                 <h2>8. Cookies & Tracking</h2>
                 <p>We use cookies and similar technologies to:</p>
                 <ul>
@@ -591,7 +268,7 @@
                 </ul>
 
                 <h3>Types of Cookies</h3>
-                <table class="data-table">
+                <div class="lg-tablewrap"><table class="data-table">
                     <thead>
                         <tr>
                             <th>Type</th>
@@ -616,11 +293,12 @@
                             <td>2 years</td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
                 <p>You can manage cookies through your browser settings. Disabling cookies may affect functionality.</p>
             </div>
 
-            <div class="legal-section" id="facebook-data">
+            
+<div class="legal-section" id="facebook-data">
                 <h2>9. Facebook & LinkedIn Data Use & Deletion</h2>
                 <p>When you use our Facebook Lead Ads or LinkedIn Lead Gen Forms integrations, the following applies:</p>
 
@@ -642,13 +320,15 @@
                 </ul>
             </div>
 
-            <div class="legal-section" id="children">
+            
+<div class="legal-section" id="children">
                 <h2>10. Children's Privacy</h2>
                 <p>Our services are not intended for children under 18 years of age. We do not knowingly collect personal information from children. If we discover that we have collected data from a child, we will delete it promptly.</p>
                 <p>If you believe a child has provided us with personal information, please contact us immediately.</p>
             </div>
 
-            <div class="legal-section" id="international">
+            
+<div class="legal-section" id="international">
                 <h2>11. International Data Transfers</h2>
                 <p>Your data may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place:</p>
                 <ul>
@@ -659,7 +339,8 @@
                 <p>For self-hosted deployments, data remains within your chosen infrastructure.</p>
             </div>
 
-            <div class="legal-section" id="changes">
+            
+<div class="legal-section" id="changes">
                 <h2>12. Policy Changes</h2>
                 <p>We may update this Privacy Policy periodically. Changes will be communicated through:</p>
                 <ul>
@@ -670,7 +351,8 @@
                 <p>We encourage you to review this policy regularly.</p>
             </div>
 
-            <div class="legal-section" id="contact">
+            
+<div class="legal-section" id="contact">
                 <h2>13. Contact Us</h2>
                 <p>For privacy-related inquiries or to exercise your rights:</p>
                 <ul>
@@ -680,27 +362,55 @@
                     <li><strong>Website:</strong> <a href="https://ragenaizer.com">https://ragenaizer.com</a></li>
                 </ul>
             </div>
-        </div>
-    </section>
+        
+      </article>
+    </div>
 
-    <!-- Footer -->
-    <div id="footer"></div>
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="data-deletion.html">Delete my data</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
-
-    <script>
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
-    </script>
+  <script>
+    'use strict';
+    /* Highlight the section being read in the contents rail. A legal document
+       is long enough that "where am I" is a real question, and the answer
+       should not depend on the reader keeping count. */
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll('.lg-toc a'));
+      var secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+      if (!secs.length || !('IntersectionObserver' in window)) return;
+      var seen = {};
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+        for (var i = 0; i < secs.length; i++) {
+          if (seen[secs[i].id]) {
+            links.forEach(function (a, j) { a.classList.toggle('on', j === i); });
+            break;
+          }
+        }
+      }, { rootMargin: '-10% 0px -70% 0px' });
+      secs.forEach(function (s) { io.observe(s); });
+    })();
+  </script>
 </body>
 </html>
