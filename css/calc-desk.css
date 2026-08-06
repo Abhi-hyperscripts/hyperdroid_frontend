@@ -1,0 +1,772 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CALCULATORS — scoped to body.calc-desk.
+
+   These pages had eight separate inline skins, each with its own accent
+   colour (violet here, emerald there) and its own idea of what a result
+   looks like. This file replaces all eight with one design.
+
+   The idea is a worksheet: you fill in the left side, and the right side is
+   a statement — mono figures on a right-hand rail, ruled lines between rows,
+   a heavier rule above a total, and the one number you actually came for set
+   large at the top. It is the same object an accountant would hand you, which
+   is the only reason anyone opens a salary calculator.
+
+   Colour carries meaning and nothing else: money out is red, money in is
+   green, everything else is ink. No gradient headlines.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.calc-desk {
+  --cl: #7DD3A8;          /* the calculators' accent — payroll green */
+  --cl-in: #6EE7A8;       /* money in */
+  --cl-out: #F79B9B;      /* money out */
+}
+
+body.calc-desk .calc-page { background: transparent; min-height: 0; }
+
+/* ── masthead ─────────────────────────────────────────────────────────────── */
+body.calc-desk .calc-hero {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 32px 34px;
+  text-align: left;
+  border-bottom: 1px solid var(--dk-line);
+}
+body.calc-desk .calc-hero::before { display: none; }  /* kill the violet wash */
+
+body.calc-desk .calc-hero .update-badge {
+  display: inline-block;
+  margin: 0 0 16px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cl);
+}
+body.calc-desk .calc-hero .update-badge svg { display: none; }
+
+body.calc-desk .calc-hero h1 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(30px, 4.1vw, 46px);
+  line-height: 1.06;
+  letter-spacing: -0.034em;
+  color: var(--dk-ink);
+  margin: 0;
+  max-width: 18ch;
+}
+/* the old skin painted a gradient across a fragment of the headline */
+body.calc-desk .calc-hero h1 .highlight {
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: currentColor;
+  color: var(--dk-ink);
+}
+body.calc-desk .calc-hero p {
+  margin: 16px 0 0;
+  max-width: 58ch;
+  font-size: 16px;
+  line-height: 1.64;
+  color: var(--dk-mute);
+}
+
+/* ── the worksheet ────────────────────────────────────────────────────────── */
+body.calc-desk .calc-container,
+body.calc-desk .calc-grid {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 38px 32px 80px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1fr);
+  gap: 34px;
+  align-items: start;
+}
+
+/* left: the fields you fill in */
+body.calc-desk .calculator-card {
+  background: rgba(255, 255, 255, 0.028);
+  border: 1px solid var(--dk-line);
+  border-radius: 18px;
+  padding: 26px 26px 28px;
+  position: sticky;
+  top: 24px;
+}
+body.calc-desk .calculator-card h2 {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  margin: 0 0 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--dk-line);
+  display: block;
+}
+body.calc-desk .calculator-card h2 svg { display: none; }
+
+body.calc-desk .calc-input-group { margin-bottom: 18px; }
+body.calc-desk .calc-input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dk-mute);
+  margin-bottom: 7px;
+}
+body.calc-desk .calc-input-group input,
+body.calc-desk .calc-input-group select,
+body.calc-desk .deduction-input input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--dk-line);
+  border-radius: 10px;
+  font-family: var(--font-family-mono);
+  font-size: 15px;
+  color: var(--dk-ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+/* native selects get a drawn arrow so they match the inputs rather than
+   inheriting the OS control */
+body.calc-desk .calc-input-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  background-image: linear-gradient(45deg, transparent 50%, #6f7b91 50%),
+                    linear-gradient(135deg, #6f7b91 50%, transparent 50%);
+  background-position: calc(100% - 19px) 20px, calc(100% - 14px) 20px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  font-family: var(--font-family);
+}
+body.calc-desk .calc-input-group input:focus,
+body.calc-desk .calc-input-group select:focus,
+body.calc-desk .deduction-input input:focus {
+  outline: none;
+  border-color: var(--cl);
+  box-shadow: 0 0 0 3px rgba(125, 211, 168, 0.13);
+}
+body.calc-desk .calc-input-group .input-hint,
+body.calc-desk .input-hint {
+  font-size: 12px;
+  color: #5f6b80;
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+body.calc-desk .checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 11px;
+}
+body.calc-desk .checkbox-group input { width: 17px; height: 17px; accent-color: var(--cl); flex: none; }
+body.calc-desk .checkbox-group label { font-size: 13.5px; color: var(--dk-mute); cursor: pointer; margin: 0; }
+
+body.calc-desk .calc-btn {
+  width: 100%;
+  height: 46px;
+  margin-top: 20px;
+  background: var(--dk-ink);
+  border: 0;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #0a0d13;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+body.calc-desk .calc-btn:hover { background: #fff; transform: translateY(-1px); box-shadow: none; }
+
+/* segmented controls (tax regime, state) reuse the site's chip idiom */
+body.calc-desk .regime-tabs,
+body.calc-desk .state-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+body.calc-desk .regime-tab,
+body.calc-desk .state-tab {
+  padding: 8px 14px;
+  border: 1px solid var(--dk-line);
+  border-radius: 100px;
+  background: none;
+  font-size: 12.5px;
+  color: var(--dk-mute);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+body.calc-desk .regime-tab:hover,
+body.calc-desk .state-tab:hover { border-color: rgba(255, 255, 255, 0.24); color: var(--dk-ink); }
+body.calc-desk .regime-tab.active,
+body.calc-desk .state-tab.active {
+  background: var(--dk-ink);
+  border-color: var(--dk-ink);
+  color: #0a0d13;
+  font-weight: 600;
+}
+
+/* right: the statement ───────────────────────────────────────────────────── */
+body.calc-desk .results-card {
+  background: rgba(255, 255, 255, 0.028);
+  border: 1px solid var(--dk-line);
+  border-radius: 18px;
+  padding: 26px 28px 28px;
+}
+body.calc-desk .results-card h2 {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  margin: 0 0 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--dk-line);
+}
+
+/* the headline figure — the reason the page exists */
+body.calc-desk .salary-visual,
+body.calc-desk .result-total {
+  margin: 0 0 26px;
+  padding: 22px 0 24px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--dk-line);
+  border-radius: 0;
+  text-align: left;
+}
+body.calc-desk .salary-visual .ctc,
+body.calc-desk .salary-visual .inhand,
+body.calc-desk .result-total-label {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  margin-bottom: 8px;
+}
+body.calc-desk .salary-visual .ctc-amount {
+  font-family: var(--font-family-mono);
+  font-size: 21px;
+  color: var(--dk-mute);
+  font-weight: 400;
+}
+body.calc-desk .salary-visual .arrow { display: none; }
+body.calc-desk .salary-visual .inhand { margin-top: 18px; }
+body.calc-desk .salary-visual .inhand-amount,
+body.calc-desk .result-total-value {
+  font-family: var(--font-family-mono);
+  font-size: 40px;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  font-weight: 400;
+  color: var(--cl-in);
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: currentColor;
+}
+body.calc-desk .salary-visual .monthly {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--dk-mute);
+}
+body.calc-desk .salary-visual .monthly strong { font-family: var(--font-family-mono); color: var(--dk-ink); font-weight: 400; }
+
+body.calc-desk .breakdown-section { margin-top: 24px; }
+body.calc-desk .breakdown-section h3,
+body.calc-desk .yearly-projection h3 {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  margin: 0 0 4px;
+}
+
+/* one ruled line per figure — the statement's core row */
+body.calc-desk .result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+body.calc-desk .result-row:last-child { border-bottom: 0; }
+body.calc-desk .result-row .label,
+body.calc-desk .result-label { font-size: 13.5px; color: var(--dk-mute); }
+body.calc-desk .result-row .value,
+body.calc-desk .result-value {
+  font-family: var(--font-family-mono);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--dk-ink);
+  text-align: right;
+  white-space: nowrap;
+}
+body.calc-desk .result-row.deduction .value,
+body.calc-desk .result-value.red { color: var(--cl-out); }
+body.calc-desk .result-row.earning .value,
+body.calc-desk .result-value.green { color: var(--cl-in); }
+body.calc-desk .result-value.blue { color: #8FB8F5; }
+
+/* totals get a rule above and no tinted pill */
+body.calc-desk .result-row.total {
+  margin: 4px 0 0;
+  padding: 13px 0 2px;
+  background: none;
+  border-radius: 0;
+  border-top: 1px solid var(--dk-line);
+  border-bottom: 0;
+}
+body.calc-desk .result-row.total .label { color: var(--dk-ink); font-weight: 600; }
+body.calc-desk .result-row.total .value { font-size: 15.5px; color: var(--dk-ink); }
+body.calc-desk .result-row.total.deduction .value { color: var(--cl-out); }
+body.calc-desk .result-row.total.earning .value { color: var(--cl-in); }
+
+body.calc-desk .yearly-projection { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--dk-line); }
+body.calc-desk .projection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--dk-line); border: 1px solid var(--dk-line); border-radius: 12px; overflow: hidden; margin-top: 14px; }
+body.calc-desk .projection-item { background: var(--dk-bg); padding: 15px 16px; text-align: left; border-radius: 0; }
+body.calc-desk .projection-item .label {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  margin-bottom: 7px;
+}
+body.calc-desk .projection-item .value { font-family: var(--font-family-mono); font-size: 17px; font-weight: 400; color: var(--dk-ink); }
+
+/* eligibility verdicts read as a status line, not a coloured slab */
+body.calc-desk .eligibility-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--dk-line);
+  border-left: 2px solid var(--dk-dim);
+  border-radius: 0 10px 10px 0;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 13.5px;
+  color: var(--dk-mute);
+}
+body.calc-desk .eligibility-status.eligible { border-left-color: var(--cl-in); }
+body.calc-desk .eligibility-status.not-eligible { border-left-color: var(--cl-out); }
+body.calc-desk .eligibility-status .status-text { color: var(--dk-ink); }
+
+/* ── the explainer below the worksheet ────────────────────────────────────── */
+body.calc-desk .info-section,
+body.calc-desk .content-section {
+  grid-column: 1 / -1;
+  max-width: 760px;
+  margin: 46px 0 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  border-top: 1px solid var(--dk-line);
+  padding-top: 40px;
+}
+body.calc-desk .content-section { max-width: 1180px; margin: 0 auto; padding: 40px 32px 0; }
+body.calc-desk .info-section h2,
+body.calc-desk .content-section h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 25px;
+  letter-spacing: -0.028em;
+  color: var(--dk-ink);
+  margin: 40px 0 14px;
+}
+body.calc-desk .info-section h2:first-child,
+body.calc-desk .content-section h2:first-child { margin-top: 0; }
+body.calc-desk .info-section h3,
+body.calc-desk .content-section h3 {
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--dk-ink);
+  margin: 28px 0 10px;
+}
+body.calc-desk .info-section p,
+body.calc-desk .content-section p,
+body.calc-desk .info-section li,
+body.calc-desk .content-section li {
+  font-size: 15.5px;
+  line-height: 1.72;
+  color: var(--dk-mute);
+  margin-bottom: 12px;
+  max-width: 74ch;
+}
+body.calc-desk .info-section ul,
+body.calc-desk .content-section ul,
+body.calc-desk .content-section ol { margin: 0 0 16px; padding-left: 22px; }
+body.calc-desk .info-section strong,
+body.calc-desk .content-section strong { color: var(--dk-ink); font-weight: 600; }
+
+body.calc-desk .formula-box {
+  margin: 22px 0;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.028);
+  border: 1px solid var(--dk-line);
+  border-radius: 12px;
+}
+body.calc-desk .formula-box code {
+  font-family: var(--font-family-mono);
+  font-size: 14px;
+  color: var(--cl);
+}
+body.calc-desk .formula-item { font-family: var(--font-family-mono); font-size: 14px; color: var(--dk-mute); }
+body.calc-desk .formula-item.minimum { color: var(--cl-in); }
+
+body.calc-desk .example-box {
+  margin: 22px 0;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.022);
+  border: 1px solid var(--dk-line);
+  border-left: 2px solid var(--cl);
+  border-radius: 0 12px 12px 0;
+}
+body.calc-desk .example-box h4 {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cl);
+  margin: 0 0 12px;
+}
+
+body.calc-desk .info-table,
+body.calc-desk .slab-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 22px 0;
+  font-size: 14px;
+}
+body.calc-desk .info-table th,
+body.calc-desk .slab-table th {
+  padding: 11px 14px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--dk-line);
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.calc-desk .info-table td,
+body.calc-desk .slab-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  color: var(--dk-mute);
+}
+body.calc-desk .info-table tbody tr:last-child td,
+body.calc-desk .slab-table tbody tr:last-child td { border-bottom: 0; }
+
+/* ── FAQ ──────────────────────────────────────────────────────────────────── */
+body.calc-desk .faq-section { margin-top: 44px; }
+body.calc-desk .faq-item {
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--dk-line);
+  border-radius: 0;
+  margin: 0;
+}
+body.calc-desk .faq-item:last-child { border-bottom: 1px solid var(--dk-line); }
+body.calc-desk .faq-question {
+  padding: 18px 0;
+  font-size: 15.5px;
+  font-weight: 500;
+  color: var(--dk-ink);
+  gap: 20px;
+}
+body.calc-desk .faq-question:hover { background: none; color: #fff; }
+body.calc-desk .faq-icon { color: var(--dk-dim); flex: none; }
+body.calc-desk .faq-answer {
+  padding: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--dk-mute);
+  max-width: 74ch;
+}
+
+/* ── related + close ──────────────────────────────────────────────────────── */
+body.calc-desk .other-calcs {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin-top: 46px;
+  background: var(--dk-line);
+  border: 1px solid var(--dk-line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+body.calc-desk .other-calc-card {
+  background: var(--dk-bg);
+  border: 0;
+  border-radius: 0;
+  padding: 20px 22px;
+  transition: background 0.15s ease;
+}
+body.calc-desk .other-calc-card:hover { background: rgba(255, 255, 255, 0.032); transform: none; }
+/* the card IS the anchor, so its children inherit link underline + colour */
+body.calc-desk .other-calc-card,
+body.calc-desk .other-calc-card * { text-decoration: none; }
+body.calc-desk .other-calc-card h3 { font-size: 15px; font-weight: 600; color: var(--dk-ink); margin: 0 0 5px; }
+body.calc-desk .other-calc-card p { font-size: 13px; color: var(--dk-dim); margin: 0; }
+
+/* the "Related calculators" heading is inline-styled in the markup of every
+   page, so it needs to be out-specified rather than edited eight times */
+body.calc-desk .calc-container > h2[style],
+body.calc-desk .calc-grid > h2[style] {
+  grid-column: 1 / -1;
+  font-family: 'Bricolage Grotesque', var(--font-family) !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.024em;
+  color: var(--dk-ink) !important;
+  margin: 46px 0 0 !important;
+}
+
+body.calc-desk .calc-acts { display: flex; gap: 12px; flex-wrap: wrap; }
+
+body.calc-desk .cta-box,
+body.calc-desk .cta-section {
+  grid-column: 1 / -1;
+  margin: 46px 0 0;
+  padding: 32px 34px;
+  text-align: left;
+  background: linear-gradient(155deg, rgba(125, 211, 168, 0.1), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--dk-line);
+  border-radius: 20px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+body.calc-desk .cta-section { max-width: 1180px; margin: 46px auto 0; }
+body.calc-desk .cta-box h2,
+body.calc-desk .cta-section h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.028em;
+  color: var(--dk-ink);
+  margin: 0 0 10px;
+}
+body.calc-desk .cta-box p,
+body.calc-desk .cta-section p {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.66;
+  color: var(--dk-mute);
+  max-width: 68ch;
+}
+/* the old skin gave this a violet fill and a colour that vanished against it */
+body.calc-desk .cta-box > a,
+body.calc-desk .cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 20px;
+  background: var(--dk-ink);
+  border: 0;
+  border-radius: 10px;
+  color: #0a0d13;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+body.calc-desk .cta-box > a:hover,
+body.calc-desk .cta-btn:hover { background: #fff; transform: translateY(-1px); box-shadow: none; }
+body.calc-desk .cta-box > a svg,
+body.calc-desk .cta-btn svg { width: 15px; height: 15px; flex: none; }
+
+@media (max-width: 940px) {
+  body.calc-desk .calc-hero { padding: 30px 20px 26px; }
+  body.calc-desk .calc-container,
+  body.calc-desk .calc-grid { grid-template-columns: 1fr; gap: 22px; padding: 26px 20px 64px; }
+  body.calc-desk .calculator-card { position: static; }
+  body.calc-desk .other-calcs { grid-template-columns: 1fr; }
+  body.calc-desk .content-section { padding: 34px 20px 0; }
+  body.calc-desk .cta-box,
+  body.calc-desk .cta-section { padding: 26px 22px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CALCULATOR HUB — pages/calculators/index.html (body.calchub-desk).
+
+   Grouped by the question each calculator answers rather than listed flat,
+   because "which one do I need" is the actual problem on arrival. Each row
+   leads with the rate or formula that identifies it — you can pick the right
+   calculator off the figure without reading the description.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.calchub-desk { --cl: #7DD3A8; }
+body.calchub-desk .chb { max-width: 1180px; margin: 0 auto; padding: 0 32px 92px; }
+
+body.calchub-desk .chb-crumb {
+  display: flex;
+  gap: 9px;
+  padding: 26px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+body.calchub-desk .chb-crumb a { color: #5f6b80; text-decoration: none; }
+body.calchub-desk .chb-crumb a:hover { color: var(--dk-mute); }
+
+body.calchub-desk .chb-head { padding: 40px 0 40px; border-bottom: 1px solid var(--dk-line); }
+body.calchub-desk .chb-kicker {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cl);
+  margin: 0 0 16px;
+}
+body.calchub-desk .chb-h1 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(31px, 4.3vw, 49px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: var(--dk-ink);
+  margin: 0;
+  max-width: 17ch;
+}
+body.calchub-desk .chb-lede {
+  margin: 20px 0 0;
+  max-width: 62ch;
+  font-size: 16px;
+  line-height: 1.66;
+  color: var(--dk-mute);
+}
+body.calchub-desk .chb-note {
+  margin: 16px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: #5f6b80;
+}
+body.calchub-desk .chb-note strong { color: var(--dk-mute); font-weight: 400; }
+
+body.calchub-desk .chb-shelf { padding-top: 34px; }
+body.calchub-desk .chb-shelfhead {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0 0 4px;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dk-mute);
+}
+body.calchub-desk .chb-idx { color: var(--cl); }
+
+body.calchub-desk .chb-row {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr) 92px;
+  gap: 34px;
+  align-items: start;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--dk-line);
+  text-decoration: none;
+  position: relative;
+  transition: background 0.16s ease;
+}
+body.calchub-desk .chb-row:first-of-type { border-top: 1px solid var(--dk-line); margin-top: 16px; }
+body.calchub-desk .chb-row::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 22px;
+  bottom: 22px;
+  width: 2px;
+  background: var(--cl);
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+body.calchub-desk .chb-row:hover { background: rgba(255, 255, 255, 0.022); }
+body.calchub-desk .chb-row:hover::before { opacity: 1; }
+
+body.calchub-desk .chb-fig {
+  font-family: var(--font-family-mono);
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  color: var(--cl);
+  padding-top: 2px;
+}
+body.calchub-desk .chb-body { display: block; }
+body.calchub-desk .chb-title {
+  display: block;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -0.024em;
+  color: var(--dk-ink);
+  margin-bottom: 8px;
+}
+body.calchub-desk .chb-row:hover .chb-title { color: #fff; }
+body.calchub-desk .chb-desc {
+  display: block;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+  max-width: 66ch;
+}
+body.calchub-desk .chb-go {
+  font-size: 13px;
+  color: var(--cl);
+  text-align: right;
+  white-space: nowrap;
+  padding-top: 4px;
+}
+
+body.calchub-desk .chb-close {
+  margin-top: 56px;
+  padding: 34px 36px;
+  border: 1px solid var(--dk-line);
+  border-radius: 20px;
+  background: linear-gradient(155deg, rgba(125, 211, 168, 0.1), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 34px;
+  align-items: center;
+}
+body.calchub-desk .chb-close h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.028em;
+  color: var(--dk-ink);
+  margin: 0 0 10px;
+}
+body.calchub-desk .chb-close p { margin: 0; font-size: 15px; line-height: 1.66; color: var(--dk-mute); max-width: 64ch; }
+body.calchub-desk .chb-acts { display: flex; gap: 12px; flex-wrap: wrap; }
+
+@media (max-width: 900px) {
+  body.calchub-desk .chb { padding: 0 20px 70px; }
+  body.calchub-desk .chb-row { grid-template-columns: 1fr; gap: 10px; padding: 22px 0; }
+  body.calchub-desk .chb-row::before { display: none; }
+  body.calchub-desk .chb-go { text-align: left; }
+  body.calchub-desk .chb-close { grid-template-columns: 1fr; gap: 22px; padding: 28px 22px; }
+}

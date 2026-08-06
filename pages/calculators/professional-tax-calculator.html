@@ -69,93 +69,12 @@
     <script src="/js/pwa-install-prompt.js"></script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        .calc-page { min-height: 100vh; background: var(--bg-primary); }
-        .calc-hero { padding: 100px 60px 60px; text-align: center; position: relative; }
-        .calc-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.12), transparent); pointer-events: none; }
-        .calc-hero h1 { font-size: clamp(32px, 4vw, 48px); font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
-        .calc-hero h1 .highlight { background: linear-gradient(135deg, #8b5cf6, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .calc-hero p { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 12px; position: relative; }
-        .calc-hero .update-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 100px; font-size: 13px; color: #a78bfa; margin-bottom: 20px; }
-
-        .calc-container { max-width: 1100px; margin: 0 auto; padding: 0 60px 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-
-        .calculator-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
-        .calculator-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
-        .calculator-card h2 svg { color: #8b5cf6; }
-
-        .calc-input-group { margin-bottom: 20px; }
-        .calc-input-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
-        .calc-input-group input, .calc-input-group select { width: 100%; padding: 14px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: 10px; font-size: 16px; color: var(--text-primary); transition: all 0.2s; }
-        .calc-input-group input:focus, .calc-input-group select:focus { outline: none; border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); }
-        .calc-input-group .input-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
-
-        .calc-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); border: none; border-radius: 10px; font-size: 16px; font-weight: 700; color: #fff; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
-        .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3); }
-
-        .results-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
-        .results-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; }
-
-        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border-primary); }
-        .result-row:last-child { border-bottom: none; }
-        .result-label { font-size: 14px; color: var(--text-secondary); }
-        .result-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-        .result-value.purple { color: #8b5cf6; }
-
-        .result-total { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.1)); border-radius: 12px; padding: 20px; margin-top: 20px; text-align: center; }
-        .result-total-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
-        .result-total-value { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #8b5cf6, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        .yearly-projection { margin-top: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: 12px; display: flex; justify-content: space-between; }
-        .yearly-projection .item { text-align: center; }
-        .yearly-projection .label { font-size: 12px; color: var(--text-tertiary); }
-        .yearly-projection .value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
-
-        /* Content Section */
-        .content-section { max-width: 900px; margin: 0 auto; padding: 60px; }
-        .content-section h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin: 40px 0 20px; }
-        .content-section h2:first-child { margin-top: 0; }
-        .content-section h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 32px 0 16px; }
-        .content-section p { font-size: 16px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 16px; }
-        .content-section ul, .content-section ol { margin: 16px 0; padding-left: 24px; }
-        .content-section li { font-size: 16px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 8px; }
-        .content-section strong { color: var(--text-primary); }
-
-        .info-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
-        .info-table th, .info-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border-primary); }
-        .info-table th { background: var(--bg-secondary); font-weight: 700; color: var(--text-primary); font-size: 14px; }
-        .info-table td { font-size: 14px; color: var(--text-secondary); }
-
-        .state-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-        .state-tab { padding: 10px 16px; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
-        .state-tab:hover, .state-tab.active { background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-color: transparent; color: #fff; }
-
-        .faq-section { margin-top: 40px; }
-        .faq-item { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
-        .faq-question { padding: 20px 24px; font-size: 16px; font-weight: 700; color: var(--text-primary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .faq-question:hover { background: var(--bg-tertiary); }
-        .faq-answer { padding: 0 24px 20px; font-size: 15px; color: var(--text-secondary); line-height: 1.7; display: none; }
-        .faq-item.active .faq-answer { display: block; }
-        .faq-item.active .faq-icon { transform: rotate(180deg); }
-        .faq-icon { transition: transform 0.2s; }
-
-        .cta-section { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.1)); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 20px; padding: 48px; text-align: center; margin-top: 60px; }
-        .cta-section h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
-        .cta-section p { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
-        .cta-btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 32px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 10px; font-size: 16px; font-weight: 700; color: #fff; text-decoration: none; transition: all 0.2s; }
-        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3); }
-
-        @media (max-width: 900px) {
-            .calc-container { grid-template-columns: 1fr; padding: 0 24px 60px; }
-            .calc-hero { padding: 80px 24px 40px; }
-            .content-section { padding: 40px 24px; }
-        }
-    </style>
     <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/content-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/calc-desk.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page calc-page desk-landing content-desk">
+<body class="landing-page calc-page desk-landing content-desk calc-desk">
   <div class="dk-wrap">
     <nav class="dk-nav">
       <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
@@ -397,15 +316,11 @@
         <div class="cta-section">
             <h2>Automate Professional Tax Compliance</h2>
             <p>Ragenaizer HRMS automatically calculates PT based on employee location and handles multi-state compliance. No manual tracking needed.</p>
-            <a href="/pages/pricing.html" class="cta-btn">
-                See pricing
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
-            <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:14px;">
-                <a href="/pages/hrms.html" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-primary);text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border:1px solid var(--border-primary);border-radius:8px;">Learn about HRMS</a>
-                <a href="/pages/pricing.html" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-primary);text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border:1px solid var(--border-primary);border-radius:8px;">See Pricing — ₹999</a>
+            <div class="calc-acts">
+                <a class="dk-btn1" href="/pages/hrms.html">Explore HRMS</a>
+                <a class="dk-btn2" href="/pages/pricing.html">Pricing — ₹1,200 / seat</a>
             </div>
-            <p style="margin-top:14px;font-size:13px;color:var(--text-tertiary);">State-wise PT auto-deducted. Part of Ragenaizer — India's all-in-one stack at ₹999/user/month.</p>
+            <p style="margin-top:14px;font-size:13px;color:var(--text-tertiary);">State-wise PT auto-deducted. Part of Ragenaizer — India's all-in-one stack at ₹1,200/user/month.</p>
         </div>
     </section>
 

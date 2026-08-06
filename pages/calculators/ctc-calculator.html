@@ -49,86 +49,12 @@
     <script src="/js/pwa-install-prompt.js"></script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        .calc-page { min-height: 100vh; background: var(--bg-primary); }
-        .calc-hero { padding: 100px 60px 60px; text-align: center; position: relative; }
-        .calc-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(168, 85, 247, 0.12), transparent); pointer-events: none; }
-        .calc-hero h1 { font-size: clamp(32px, 4vw, 48px); font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
-        .calc-hero h1 .highlight { background: linear-gradient(135deg, #a855f7, #9333ea); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .calc-hero p { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 12px; position: relative; }
-        .calc-hero .update-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 100px; font-size: 13px; color: #c084fc; margin-bottom: 20px; }
-
-        .calc-container { max-width: 1100px; margin: 0 auto; padding: 0 60px 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-
-        .calculator-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
-        .calculator-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
-        .calculator-card h2 svg { color: #a855f7; }
-
-        .calc-input-group { margin-bottom: 20px; }
-        .calc-input-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
-        .calc-input-group input, .calc-input-group select { width: 100%; padding: 14px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: 10px; font-size: 16px; color: var(--text-primary); transition: all 0.2s; }
-        .calc-input-group input:focus, .calc-input-group select:focus { outline: none; border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1); }
-        .calc-input-group .input-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
-
-        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-        .checkbox-group input { width: 18px; height: 18px; accent-color: #a855f7; }
-        .checkbox-group label { font-size: 14px; color: var(--text-secondary); cursor: pointer; }
-
-        .calc-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #a855f7, #9333ea); border: none; border-radius: 10px; font-size: 16px; font-weight: 700; color: #fff; cursor: pointer; transition: all 0.2s; margin-top: 16px; }
-        .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(168, 85, 247, 0.3); }
-
-        .results-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
-        .results-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; }
-
-        .salary-visual { text-align: center; margin-bottom: 24px; padding: 24px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(147, 51, 234, 0.1)); border-radius: 16px; }
-        .salary-visual .ctc { font-size: 14px; color: var(--text-tertiary); margin-bottom: 4px; }
-        .salary-visual .ctc-amount { font-size: 28px; font-weight: 800; color: var(--text-primary); }
-        .salary-visual .arrow { font-size: 24px; color: #a855f7; margin: 12px 0; }
-        .salary-visual .inhand { font-size: 14px; color: var(--text-tertiary); margin-bottom: 4px; }
-        .salary-visual .inhand-amount { font-size: 36px; font-weight: 800; color: #22c55e; }
-        .salary-visual .monthly { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
-
-        .breakdown-section { margin-top: 24px; }
-        .breakdown-section h3 { font-size: 14px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
-
-        .result-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-primary); }
-        .result-row:last-child { border-bottom: none; }
-        .result-row .label { color: var(--text-secondary); font-size: 14px; }
-        .result-row .value { color: var(--text-primary); font-weight: 600; font-size: 14px; }
-        .result-row.deduction .value { color: #ef4444; }
-        .result-row.earning .value { color: #22c55e; }
-        .result-row.total { background: var(--bg-tertiary); margin: 8px -16px 0; padding: 12px 16px; border-radius: 8px; }
-        .result-row.total .label { font-weight: 600; color: var(--text-primary); }
-        .result-row.total .value { font-size: 16px; }
-
-        .info-section { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 40px; margin-top: 40px; grid-column: 1 / -1; }
-        .info-section h2 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
-        .info-section p { color: var(--text-secondary); line-height: 1.7; margin-bottom: 16px; }
-        .info-section h3 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 24px 0 12px; }
-        .info-section ul { color: var(--text-secondary); margin-left: 20px; line-height: 1.8; }
-
-        .cta-box { background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(147, 51, 234, 0.1)); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; padding: 32px; text-align: center; margin-top: 40px; grid-column: 1 / -1; }
-        .cta-box h2 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; }
-        .cta-box p { color: var(--text-secondary); margin-bottom: 20px; }
-        .cta-box a { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: linear-gradient(135deg, #a855f7, #9333ea); border-radius: 10px; color: #fff; text-decoration: none; font-weight: 700; transition: all 0.2s; }
-
-        .other-calcs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; grid-column: 1 / -1; }
-        .other-calc-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; text-decoration: none; transition: all 0.2s; }
-        .other-calc-card:hover { border-color: #a855f7; transform: translateY(-2px); }
-        .other-calc-card h3 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-        .other-calc-card p { font-size: 13px; color: var(--text-tertiary); }
-
-        @media (max-width: 900px) {
-            .calc-hero { padding: 100px 24px 60px; }
-            .calc-container { padding: 0 24px 80px; grid-template-columns: 1fr; }
-            .other-calcs { grid-template-columns: 1fr; }
-        }
-    </style>
     <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/content-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/calc-desk.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page calc-page desk-landing content-desk">
+<body class="landing-page calc-page desk-landing content-desk calc-desk">
   <div class="dk-wrap">
     <nav class="dk-nav">
       <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
@@ -324,12 +250,11 @@
         <div class="cta-box">
             <h2>Automate Salary Processing with Ragenaizer HRMS</h2>
             <p>Generate accurate payslips with all statutory deductions. PF, ESI, PT, TDS - automatically calculated and compliant.</p>
-            <a href="/pages/pricing.html">See pricing <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-            <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:14px;">
-                <a href="/pages/hrms.html" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-primary);text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border:1px solid var(--border-primary);border-radius:8px;">Learn about HRMS</a>
-                <a href="/pages/pricing.html" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-primary);text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border:1px solid var(--border-primary);border-radius:8px;">See Pricing — ₹999</a>
+            <div class="calc-acts">
+                <a class="dk-btn1" href="/pages/hrms.html">Explore HRMS</a>
+                <a class="dk-btn2" href="/pages/pricing.html">Pricing — ₹1,200 / seat</a>
             </div>
-            <p style="margin-top:14px;font-size:13px;color:var(--text-tertiary);">CTC, PF, ESI, TDS, PT — auto-calculated. Part of Ragenaizer — India's all-in-one stack at ₹999/user/month.</p>
+            <p style="margin-top:14px;font-size:13px;color:var(--text-tertiary);">CTC, PF, ESI, TDS, PT — auto-calculated. Part of Ragenaizer — India's all-in-one stack at ₹1,200/user/month.</p>
         </div>
     </div>
 
