@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
@@ -116,7 +118,7 @@
     }
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -126,1169 +128,460 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script>document.write('<link rel="stylesheet" href="../css/landing-theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/pms-desk.css?v=' + CACHE_VERSION + '">');</script>
 
-    <!-- Page-specific styles -->
-    <style>
-        /* ═══════════════════════════════════════════════════════════════
-           PMS PAGE — Project Management & Time Tracking Styles
-           Teal/Emerald: rgba(20, 184, 166) / #2dd4bf
-           ═══════════════════════════════════════════════════════════════ */
-
-        /* Task Board Mockup */
-        .pms-board-mockup {
-            display: flex;
-            gap: 12px;
-            padding: 16px;
-        }
-        .board-column {
-            flex: 1;
-            min-width: 0;
-        }
-        .board-column-header {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            padding: 6px 10px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-        .board-column-header .col-count {
-            font-size: 9px;
-            font-weight: 600;
-            opacity: 0.7;
-        }
-        .board-column-header.todo {
-            color: rgba(148, 163, 184, 0.9);
-            background: rgba(148, 163, 184, 0.1);
-        }
-        .board-column-header.in-progress {
-            color: rgba(59, 130, 246, 0.9);
-            background: rgba(59, 130, 246, 0.1);
-        }
-        .board-column-header.review {
-            color: rgba(245, 158, 11, 0.9);
-            background: rgba(245, 158, 11, 0.1);
-        }
-        .board-column-header.done {
-            color: rgba(20, 184, 166, 0.9);
-            background: rgba(20, 184, 166, 0.1);
-        }
-        .task-card-mock {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 6px;
-        }
-        .task-card-mock .task-title {
-            font-size: 10px;
-            font-weight: 600;
-            color: #e2e8f0;
-            margin-bottom: 6px;
-        }
-        .task-card-mock .task-meta {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 6px;
-        }
-        .task-card-mock .task-priority {
-            font-size: 8px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 2px 6px;
-            border-radius: 3px;
-        }
-        .task-priority.high {
-            color: rgba(239, 68, 68, 0.9);
-            background: rgba(239, 68, 68, 0.1);
-        }
-        .task-priority.medium {
-            color: rgba(245, 158, 11, 0.9);
-            background: rgba(245, 158, 11, 0.1);
-        }
-        .task-priority.low {
-            color: rgba(20, 184, 166, 0.9);
-            background: rgba(20, 184, 166, 0.1);
-        }
-        .task-card-mock .task-assignee {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: rgba(20, 184, 166, 0.15);
-            border: 1px solid rgba(20, 184, 166, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            font-weight: 700;
-            color: rgba(20, 184, 166, 0.8);
-        }
-        .task-card-mock .task-hours {
-            font-size: 9px;
-            color: rgba(255, 255, 255, 0.5);
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-        .task-card-mock .task-hours svg {
-            width: 10px;
-            height: 10px;
-        }
-
-        /* How It Works Flowchart */
-        .pms-flowchart {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-            max-width: 1000px;
-            margin: 0 auto;
-            flex-wrap: wrap;
-        }
-        .pms-flow-step {
-            flex: 1;
-            min-width: 180px;
-            text-align: center;
-            padding: 24px 16px;
-            position: relative;
-        }
-        .pms-flow-icon {
-            width: 52px;
-            height: 52px;
-            margin: 0 auto 14px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .pms-flow-icon svg {
-            width: 24px;
-            height: 24px;
-        }
-        .pms-flow-icon.onboard-icon {
-            background: rgba(59, 130, 246, 0.1);
-            color: rgba(59, 130, 246, 0.8);
-        }
-        .pms-flow-icon.plan-icon {
-            background: rgba(20, 184, 166, 0.1);
-            color: rgba(20, 184, 166, 0.8);
-        }
-        .pms-flow-icon.track-icon {
-            background: rgba(245, 158, 11, 0.1);
-            color: rgba(245, 158, 11, 0.8);
-        }
-        .pms-flow-icon.bill-icon {
-            background: rgba(139, 92, 246, 0.1);
-            color: rgba(139, 92, 246, 0.8);
-        }
-        .pms-flow-step h4 {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 6px;
-        }
-        .pms-flow-step p {
-            font-size: 12px;
-            color: #94a3b8;
-            line-height: 1.5;
-        }
-        .pms-flow-arrow {
-            width: 40px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(255, 255, 255, 0.3);
-        }
-        .pms-flow-arrow svg {
-            width: 24px;
-            height: 24px;
-        }
-
-        /* Meeting Integration Demo */
-        .integration-section {
-            padding: 100px 60px;
-        }
-        .integration-grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 48px;
-            max-width: 1000px;
-            margin: 0 auto;
-            align-items: center;
-        }
-        .integration-text h3 {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 14px;
-        }
-        .integration-text p {
-            font-size: 15px;
-            line-height: 1.7;
-            color: #cbd5e1;
-        }
-        .meeting-demo {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .meeting-demo-header {
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.03);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .meeting-demo-project {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .meeting-demo-project .project-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background: rgba(20, 184, 166, 0.1);
-            border: 1px solid rgba(20, 184, 166, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(20, 184, 166, 0.8);
-        }
-        .meeting-demo-project .project-icon svg {
-            width: 16px;
-            height: 16px;
-        }
-        .meeting-demo-project .project-name {
-            font-size: 13px;
-            font-weight: 600;
-            color: #e2e8f0;
-        }
-        .meeting-demo-project .project-client {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.5);
-        }
-        .meeting-demo-status {
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: rgba(20, 184, 166, 0.9);
-            background: rgba(20, 184, 166, 0.1);
-            padding: 4px 10px;
-            border-radius: 4px;
-        }
-        .meeting-demo-body {
-            padding: 20px;
-        }
-        .meeting-demo-members {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .meeting-member-avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: 700;
-            border: 2px solid rgba(255, 255, 255, 0.06);
-        }
-        .meeting-member-avatar:nth-child(1) { background: rgba(59, 130, 246, 0.15); color: rgba(59, 130, 246, 0.8); }
-        .meeting-member-avatar:nth-child(2) { background: rgba(20, 184, 166, 0.15); color: rgba(20, 184, 166, 0.8); }
-        .meeting-member-avatar:nth-child(3) { background: rgba(245, 158, 11, 0.15); color: rgba(245, 158, 11, 0.8); }
-        .meeting-member-avatar:nth-child(4) { background: rgba(139, 92, 246, 0.15); color: rgba(139, 92, 246, 0.8); }
-        .meeting-demo-actions {
-            display: flex;
-            gap: 10px;
-        }
-        .meeting-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-        }
-        .meeting-btn.join {
-            background: rgba(20, 184, 166, 0.15);
-            color: rgba(20, 184, 166, 0.9);
-            border: 1px solid rgba(20, 184, 166, 0.25);
-        }
-        .meeting-btn.share {
-            background: rgba(255, 255, 255, 0.04);
-            color: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .meeting-btn svg {
-            width: 14px;
-            height: 14px;
-        }
-        .meeting-demo-link {
-            margin-top: 14px;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .meeting-demo-link .link-label {
-            font-size: 9px;
-            color: rgba(255, 255, 255, 0.4);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 2px;
-        }
-        .meeting-demo-link .link-url {
-            font-size: 11px;
-            font-family: 'Electrolize', monospace;
-            color: #94a3b8;
-        }
-        .meeting-demo-link .link-copy {
-            font-size: 10px;
-            font-weight: 600;
-            color: rgba(20, 184, 166, 0.8);
-            cursor: pointer;
-        }
-
-        /* Dashboard Preview */
-        .pms-dashboard-section {
-            padding: 100px 60px;
-            background: rgba(0, 0, 0, 0.3);
-        }
-        .pms-dashboard-preview {
-            max-width: 1000px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        .dash-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 24px;
-        }
-        .dash-card-title {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: rgba(255, 255, 255, 0.65);
-            margin-bottom: 16px;
-        }
-        /* Project Overview Stats */
-        .project-overview-stats {
-            display: flex;
-            gap: 8px;
-        }
-        .overview-stat {
-            flex: 1;
-            border-radius: 8px;
-            padding: 12px 10px;
-            text-align: center;
-        }
-        .overview-stat.projects-stat {
-            background: rgba(20, 184, 166, 0.08);
-            border: 1px solid rgba(20, 184, 166, 0.15);
-        }
-        .overview-stat.hours-stat {
-            background: rgba(59, 130, 246, 0.08);
-            border: 1px solid rgba(59, 130, 246, 0.15);
-        }
-        .overview-stat.billing-stat {
-            background: rgba(139, 92, 246, 0.08);
-            border: 1px solid rgba(139, 92, 246, 0.15);
-        }
-        .overview-stat .stat-number {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--text-primary);
-        }
-        .overview-stat .stat-desc {
-            font-size: 9px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-top: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        /* Time Distribution Bars */
-        .time-distribution {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .time-bar-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .time-bar-label {
-            font-size: 11px;
-            color: #cbd5e1;
-            width: 100px;
-            flex-shrink: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .time-bar-track {
-            flex: 1;
-            height: 24px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 6px;
-            overflow: hidden;
-            position: relative;
-        }
-        .time-bar-fill {
-            height: 100%;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            padding-left: 8px;
-        }
-        .time-bar-fill .bar-hours {
-            font-size: 10px;
-            font-weight: 600;
-            color: #e2e8f0;
-        }
-        .time-bar-fill.bar-teal { background: rgba(20, 184, 166, 0.2); border: 1px solid rgba(20, 184, 166, 0.25); }
-        .time-bar-fill.bar-blue { background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.25); }
-        .time-bar-fill.bar-purple { background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.25); }
-        .time-bar-fill.bar-amber { background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.25); }
-        /* Activity Feed */
-        .activity-feed {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .activity-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        }
-        .activity-item:last-child { border-bottom: none; padding-bottom: 0; }
-        .activity-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-top: 4px;
-            flex-shrink: 0;
-        }
-        .activity-dot.task-created { background: rgba(20, 184, 166, 0.6); }
-        .activity-dot.time-logged { background: rgba(59, 130, 246, 0.6); }
-        .activity-dot.timesheet-approved { background: rgba(139, 92, 246, 0.6); }
-        .activity-info {
-            flex: 1;
-        }
-        .activity-info .activity-text {
-            font-size: 12px;
-            color: #cbd5e1;
-            line-height: 1.4;
-        }
-        .activity-info .activity-text strong {
-            color: #f1f5f9;
-        }
-        .activity-info .activity-time {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 2px;
-        }
-        /* Pending Timesheets */
-        .pending-timesheets {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .timesheet-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-        }
-        .timesheet-avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-        .timesheet-avatar:nth-child(1) { background: rgba(20, 184, 166, 0.15); color: rgba(20, 184, 166, 0.8); }
-        .timesheet-item:nth-child(2) .timesheet-avatar { background: rgba(59, 130, 246, 0.15); color: rgba(59, 130, 246, 0.8); }
-        .timesheet-item:nth-child(3) .timesheet-avatar { background: rgba(245, 158, 11, 0.15); color: rgba(245, 158, 11, 0.8); }
-        .timesheet-details {
-            flex: 1;
-        }
-        .timesheet-details .ts-name {
-            font-size: 12px;
-            font-weight: 600;
-            color: #e2e8f0;
-        }
-        .timesheet-details .ts-week {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 1px;
-        }
-        .timesheet-hours {
-            font-size: 12px;
-            font-weight: 700;
-            color: rgba(20, 184, 166, 0.8);
-        }
-        .timesheet-status {
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 3px 8px;
-            border-radius: 4px;
-            color: rgba(245, 158, 11, 0.9);
-            background: rgba(245, 158, 11, 0.1);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .integration-section,
-            .pms-dashboard-section {
-                padding: 60px 20px;
+    <!-- Schema.org: FAQ -->
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Does Ragenaizer Projects include a real issue tracker?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Issues carry a numbered key within their project, an issue type of bug, feature, task or regression, severity, priority, component, environment, reproducibility and a resolution, plus duplicate linking, threaded comments, attachments, watchers and full history. Steps to reproduce, expected result and actual result are required fields on the model, not optional boxes."
             }
-            .integration-grid {
-                grid-template-columns: 1fr;
+        },
+        {
+            "@type": "Question",
+            "name": "Do we still need a separate bug tracker alongside it?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. An issue and the task it came from sit in the same hierarchy under the same client and project, so there is nothing to reconcile between a project tool and a tracker."
             }
-            .pms-dashboard-preview {
-                grid-template-columns: 1fr;
+        },
+        {
+            "@type": "Question",
+            "name": "How is average resolution time calculated?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "From timestamps the system records as the issue moves — first response, resolved and closed — rather than from a manually started timer. The same data produces breakdowns by severity, priority, component and resolution."
             }
-            .pms-flowchart {
-                flex-direction: column;
+        },
+        {
+            "@type": "Question",
+            "name": "What happens to past billing if a member's rate changes?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Nothing. The billing rate is snapshotted onto each time entry when it is logged, so a retroactive rate change does not rewrite work that has already been billed."
             }
-            .pms-flow-arrow {
-                transform: rotate(90deg);
+        },
+        {
+            "@type": "Question",
+            "name": "How do weekly timesheets work?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "A week is submitted as a single timesheet and appears in a pending queue for review, where it is approved or returned. Time can be entered daily or in one bulk pass."
             }
-            .pms-board-mockup {
-                flex-direction: column;
+        },
+        {
+            "@type": "Question",
+            "name": "Can we invoice from tracked time?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Approved hours carry their snapshotted rate into a billable amount, and the invoice is raised in Ragenaizer Accounts against the same client record."
             }
-            .project-overview-stats {
-                flex-direction: column;
+        },
+        {
+            "@type": "Question",
+            "name": "How deep can the project structure go?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Client, then project, then sub-project. Nesting stops there by design."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Who can see and create issues?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Project membership governs access. Members work within their projects and administrators see across them; creating an issue requires membership of the project it belongs to."
             }
         }
-    </style>
+    ]
+}
+    </script>
 </head>
-<body class="landing-page landing-pms">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing pms-desk">
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-bg">
-            <div class="hero-gradient"></div>
-            <div class="hero-grid"></div>
-        </div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
 
-        <div class="hero-content">
-            <div class="hero-text">
-                <div class="hero-badge">Projects · Issues · Time</div>
-                <h1 class="hero-title">
-                    Ship the work.<br>
-                    <span class="highlight">Track every bug. Bill every hour.</span>
-                </h1>
-                <p class="hero-description">
-                    Project management, an engineering-grade bug tracker, weekly timesheets and client billing — all in one place. Triage issues with severity and priority, watch every change in the audit history, and roll the same hours straight into a client invoice.
-                </p>
-                <div class="hero-actions">
-                    <a href="pricing.html" class="btn-primary">See Projects pricing</a>
-                    <a href="#features" class="btn-secondary">See Features</a>
-                </div>
-                <div class="hero-stats">
-                    <div class="stat-item">
-                        <div class="stat-value">Unlimited</div>
-                        <div class="stat-label">Projects</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">Per-Member</div>
-                        <div class="stat-label">Billing Rates</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">Weekly</div>
-                        <div class="stat-label">Timesheet Approval</div>
-                    </div>
-                </div>
-            </div>
+    <!-- ══ Hero ══════════════════════════════════════════════════════════════
+         The differentiator is not the board. It is that this tracker will not
+         accept a report without steps, expected and actual — they are not
+         nullable on the model — and that the hours logged against the work
+         carry their rate through to the invoice. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>Delivery &amp; billing</div>
+      <h1 class="dk-h1">Ship the work.<br>Chase the bugs. Bill the hours.</h1>
+      <p class="dk-sub">A delivery system with a real issue tracker inside it — one that will not take a bug report without steps, expected and actual — and timesheets that carry the rate they were logged at all the way to the invoice.</p>
+      <p class="pm-note">Walk one issue through the five parts the tracker records</p>
+    </header>
 
-            <div class="hero-visual">
-                <div class="hero-mockup">
-                    <div class="mockup-header">
-                        <span class="mockup-dot"></span>
-                        <span class="mockup-dot"></span>
-                        <span class="mockup-dot"></span>
-                    </div>
-                    <div class="mockup-content pms-board-mockup">
-                        <div class="board-column">
-                            <div class="board-column-header todo">Todo <span class="col-count">3</span></div>
-                            <div class="task-card-mock">
-                                <div class="task-title">Design homepage wireframes</div>
-                                <div class="task-meta">
-                                    <span class="task-priority high">High</span>
-                                    <span class="task-hours">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                        4h est
-                                    </span>
-                                    <span class="task-assignee">AK</span>
-                                </div>
-                            </div>
-                            <div class="task-card-mock">
-                                <div class="task-title">Write API documentation</div>
-                                <div class="task-meta">
-                                    <span class="task-priority medium">Med</span>
-                                    <span class="task-hours">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                        2h est
-                                    </span>
-                                    <span class="task-assignee">RM</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="board-column">
-                            <div class="board-column-header in-progress">In Progress <span class="col-count">2</span></div>
-                            <div class="task-card-mock">
-                                <div class="task-title">Build auth module</div>
-                                <div class="task-meta">
-                                    <span class="task-priority high">High</span>
-                                    <span class="task-hours">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                        6h / 8h
-                                    </span>
-                                    <span class="task-assignee">JD</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="board-column">
-                            <div class="board-column-header review">Review <span class="col-count">1</span></div>
-                            <div class="task-card-mock">
-                                <div class="task-title">Database schema design</div>
-                                <div class="task-meta">
-                                    <span class="task-priority low">Low</span>
-                                    <span class="task-hours">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                        3h
-                                    </span>
-                                    <span class="task-assignee">AK</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="board-column">
-                            <div class="board-column-header done">Done <span class="col-count">4</span></div>
-                            <div class="task-card-mock">
-                                <div class="task-title">Project setup & scaffolding</div>
-                                <div class="task-meta">
-                                    <span class="task-priority low">Low</span>
-                                    <span class="task-hours">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                        2h
-                                    </span>
-                                    <span class="task-assignee">JD</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- The issue bench. -->
+    <div class="pm-bench" id="bench">
+      <div class="pm-who">
+        <span><span class="pm-key">WMS-142</span><b>Stock transfer saves against the wrong location</b></span>
+        <span class="meta">WAREHOUSE MANAGEMENT SYSTEM · REPORTED 2 AUG</span>
+      </div>
+      <div class="pm-steps" role="group" aria-label="Parts of the issue record" id="pmSteps"></div>
+      <div class="pm-panel">
+        <h2 class="pm-head" id="pmHead"></h2>
+        <p class="pm-sub" id="pmSub"></p>
+        <div id="pmBody"></div>
+        <div class="pm-out" id="pmOut"></div>
+        <p class="pm-foot" id="pmFoot"></p>
+      </div>
+    </div>
+
+    <!-- ══ The real screen ══ -->
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The actual product</div>
+      <h2 class="dk-h2">What the delivery desk opens on.</h2>
+      <p class="dk-lede">Which projects are moving, what has already slipped past its date, and where the team's hours actually went last month — before anybody assembles a status report.</p>
+      <figure class="pm-shot" style="margin-top:36px">
+        <img src="../assets/screens/app-pms.png" alt="Ragenaizer Projects — project pipeline by status, overdue tasks needing attention, and hours logged per project" width="1600" height="1000" loading="lazy">
+        <figcaption><b>Delivery</b> — the project pipeline, what is overdue, and where the hours went.</figcaption>
+      </figure>
     </section>
 
-    <!-- Features Section -->
-    <section class="features-section" id="features">
-        <div class="section-header">
-            <div class="section-badge">Features</div>
-            <h2 class="section-title">Everything you need to manage projects and bill clients</h2>
-            <p class="section-description">
-                From client onboarding to timesheet approval — a complete project management system built for teams that track time and bill accurately.
-            </p>
-        </div>
-
-        <div class="features-grid">
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                        <polyline points="9 22 9 12 15 12 15 22"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Client & Project Hub</h3>
-                <p class="feature-description">Client management with contacts, industry, addresses. Nest projects under clients. Sub-project support for complex deliverables.</p>
-            </div>
-
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="9" rx="2"/>
-                        <rect x="14" y="3" width="7" height="5" rx="2"/>
-                        <rect x="14" y="12" width="7" height="9" rx="2"/>
-                        <rect x="3" y="16" width="7" height="5" rx="2"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Task Boards</h3>
-                <p class="feature-description">Todo/In Progress/In Review/Done workflow. Priority levels, assignees, due dates, and time estimates for every task.</p>
-            </div>
-
-            <div class="feature-card purple">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Time Tracking</h3>
-                <p class="feature-description">Daily time entries with hours + minutes. Optional task linkage. Billable/non-billable flagging for accurate invoicing.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                        <path d="M8 14h.01"/>
-                        <path d="M12 14h.01"/>
-                        <path d="M16 14h.01"/>
-                        <path d="M8 18h.01"/>
-                        <path d="M12 18h.01"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Weekly Timesheets</h3>
-                <p class="feature-description">Submit and approve workflow. Bulk time entry for the week. Manager approval with comments. Weekly summaries per project.</p>
-            </div>
-
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="1" x2="12" y2="23"/>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Billing & Rates</h3>
-                <p class="feature-description">Per-member billing rates on projects. Auto-calculated billable amounts. Time summaries with cost breakdowns per client and project.</p>
-            </div>
-
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                        <polyline points="10 9 9 9 8 9"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Activity Feed</h3>
-                <p class="feature-description">Full audit trail. Track who changed what, when. Filter by project, member, or action type. Never lose context on any change.</p>
-            </div>
-
-            <div class="feature-card amber">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="12"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Engineering-Grade Issue Tracker</h3>
-                <p class="feature-description">A complete bug & issue tracker built right in. Project codes auto-generate human-readable issue keys like RAG-47 you can paste into Slack or git commits. Filter by status, severity, priority, component, assignee, reporter, type, resolution or keyword search.</p>
-            </div>
-
-            <div class="feature-card red">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Severity, Priority & Reproducibility</h3>
-                <p class="feature-description">Real bug-report fields, not toy ones. Severity (critical / high / medium / low / trivial), priority (P1–P4), reproducibility (always / sometimes / rarely / unable), plus environment, component, steps to reproduce, expected and actual results. Triage like a real engineering team.</p>
-            </div>
-
-            <div class="feature-card slate">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Status Workflow with Resolution Codes</h3>
-                <p class="feature-description">Reported → Confirmed → In Progress → QA Testing → Resolved → Closed → Reopened. Close issues with a real resolution: fixed, won't fix, duplicate, cannot reproduce, by design. First-response and resolved-at timestamps are captured automatically so you can measure your real SLA.</p>
-            </div>
-
-            <div class="feature-card teal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Threaded Comments & Attachments</h3>
-                <p class="feature-description">Drop screenshots, log files or repro videos right onto an issue or onto an individual comment. Full threaded replies, edit and delete with audit. The system also creates a system comment every time the status changes — your timeline tells the full story.</p>
-            </div>
-
-            <div class="feature-card indigo">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Watchers, History & Bulk Update</h3>
-                <p class="feature-description">Subscribe to issues you care about and get notified on every change. Every field change is captured with the actor, timestamp and old/new values — no more "who closed this?" Mark duplicates to auto-close and link to the original. Bulk-update status, priority or assignee across many issues at once.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="6" height="18" rx="1"/>
-                        <rect x="11" y="3" width="6" height="13" rx="1"/>
-                        <rect x="19" y="3" width="2" height="8" rx="1"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Kanban Board & My Issues View</h3>
-                <p class="feature-description">Drag issues across status columns on the kanban board for any project. Switch to "my issues" to see everything assigned to you or reported by you. Get statistics for any project — counts by status, severity, priority, component, plus average time to resolve.</p>
-            </div>
-
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="23 7 16 12 23 17 23 7"/>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Auto-Created Project Meeting Rooms</h3>
-                <p class="feature-description">Every project gets its own video meeting room with one click — no scheduling, no link sharing, no fishing for the right room name. Run stand-ups, client calls and retros without leaving PMS.</p>
-            </div>
-
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="12" y1="18" x2="12" y2="12"/>
-                        <line x1="9" y1="15" x2="15" y2="15"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Invoice Straight from a Project</h3>
-                <p class="feature-description">When a milestone is hit, raise an invoice in Accounts in two clicks. The customer record is shared with finance, the project is the source of truth for hours and rates, and the invoice posts to the ledger automatically.</p>
-            </div>
-        </div>
+    <!-- ══ The thread: hours to invoice ══ -->
+    <section class="dk-section dk-reveal" id="thread">
+      <div class="dk-kicker">Hours to invoice</div>
+      <h2 class="dk-h2">The part most tools stop just short of.</h2>
+      <p class="dk-lede">Plenty of tools will track time. Fewer will carry it to a bill without a spreadsheet in the middle — and fewer still get the rate right when somebody's rate changed in March.</p>
+      <div class="dk-thread">
+        <div class="dk-trow" style="--c:#A78BFA"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Mon</div><div class="dk-tw"><b>Time logged against the task</b>, in hours and minutes<span class="dk-tsrc">Time entry</span></div><div class="dk-ta">rate snapshotted</div></div>
+        <div class="dk-trow" style="--c:#60A5FA"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Fri</div><div class="dk-tw"><b>Week submitted</b> as one timesheet rather than forty entries<span class="dk-tsrc">Timesheet</span></div><div class="dk-ta">1 submission</div></div>
+        <div class="dk-trow" style="--c:#FB923C"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Mon</div><div class="dk-tw"><b>Reviewed and approved</b> from a pending queue, not an inbox<span class="dk-tsrc">Approval</span></div><div class="dk-ta">named approver</div></div>
+        <div class="dk-trow" style="--c:#22c55e"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Mon</div><div class="dk-tw"><b>Billable amount computed</b> at the rate in force when the work was done<span class="dk-tsrc">Billing</span></div><div class="dk-ta">not today's rate</div></div>
+        <div class="dk-trow" style="--c:#22c55e"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Tue</div><div class="dk-tw"><b>Invoiced</b> against the same client record finance already holds<span class="dk-tsrc">Projects → Accounts</span></div><div class="dk-ta">0 re-keying</div></div>
+        <div class="dk-tfoot"><span>logged once, billed once</span><span>0 spreadsheets in between</span></div>
+      </div>
     </section>
 
-    <!-- How It Works -->
-    <section class="flowchart-section">
-        <div class="section-header">
-            <div class="section-badge">How It Works</div>
-            <h2 class="section-title">From onboarding to billing</h2>
-            <p class="section-description">
-                A clear workflow from setting up clients and projects to tracking time and approving timesheets for billing.
-            </p>
+    <!-- ══ Coverage ══ -->
+    <section class="dk-section dk-reveal" id="covers">
+      <div class="dk-kicker">What it covers</div>
+      <h2 class="dk-h2">Client, project, task, issue, hour.</h2>
+      <p class="dk-lede">One hierarchy the whole delivery side hangs off, so a question about a client and a question about a bug are answered from the same place.</p>
+      <div class="dk-grid">
+        <div class="dk-card" style="--accent:#A78BFA">
+          <div class="ic" style="background:#A78BFA22"><svg viewBox="0 0 24 24" stroke="#A78BFA" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></div>
+          <h3>Clients &amp; projects</h3><p>Clients with several contacts, projects beneath them and sub-projects beneath those — one level of nesting, deliberately, because two is where structure becomes admin.</p>
         </div>
-
-        <div class="pms-flowchart">
-            <div class="pms-flow-step">
-                <div class="pms-flow-icon onboard-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <line x1="19" y1="8" x2="19" y2="14"/>
-                        <line x1="22" y1="11" x2="16" y2="11"/>
-                    </svg>
-                </div>
-                <h4>Onboard</h4>
-                <p>Add clients, set up projects, invite team members with billing rates</p>
-            </div>
-            <div class="pms-flow-arrow">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                    <polyline points="12 5 19 12 12 19"/>
-                </svg>
-            </div>
-            <div class="pms-flow-step">
-                <div class="pms-flow-icon plan-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="9" rx="2"/>
-                        <rect x="14" y="3" width="7" height="5" rx="2"/>
-                        <rect x="14" y="12" width="7" height="9" rx="2"/>
-                        <rect x="3" y="16" width="7" height="5" rx="2"/>
-                    </svg>
-                </div>
-                <h4>Plan</h4>
-                <p>Create tasks, assign work, set priorities and time estimates</p>
-            </div>
-            <div class="pms-flow-arrow">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                    <polyline points="12 5 19 12 12 19"/>
-                </svg>
-            </div>
-            <div class="pms-flow-step">
-                <div class="pms-flow-icon track-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <h4>Track</h4>
-                <p>Log time daily, link to tasks, mark billable hours</p>
-            </div>
-            <div class="pms-flow-arrow">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                    <polyline points="12 5 19 12 12 19"/>
-                </svg>
-            </div>
-            <div class="pms-flow-step">
-                <div class="pms-flow-icon bill-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="1" x2="12" y2="23"/>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                </div>
-                <h4>Bill</h4>
-                <p>Submit timesheets, approve hours, export billing summaries</p>
-            </div>
+        <div class="dk-card" style="--accent:#f87171">
+          <div class="ic" style="background:#f8717122"><svg viewBox="0 0 24 24" stroke="#f87171" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <h3>Issue tracker</h3><p>Bugs, features, tasks and regressions with their own numbered key per project, severity, priority, component, environment and reproducibility.</p>
         </div>
+        <div class="dk-card" style="--accent:#60A5FA">
+          <div class="ic" style="background:#60A5FA22"><svg viewBox="0 0 24 24" stroke="#60A5FA" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="11" rx="1"/></svg></div>
+          <h3>Issue board</h3><p>A board grouped by state, a personal "my issues" view, and bulk update for the afternoon somebody triages forty of them at once.</p>
+        </div>
+        <div class="dk-card" style="--accent:#2DD4BF">
+          <div class="ic" style="background:#2DD4BF22"><svg viewBox="0 0 24 24" stroke="#2DD4BF" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <h3>Threaded comments</h3><p>Replies nest, so a long argument about one line of a bug does not flatten into a wall nobody can follow six weeks later.</p>
+        </div>
+        <div class="dk-card" style="--accent:#FB923C">
+          <div class="ic" style="background:#FB923C22"><svg viewBox="0 0 24 24" stroke="#FB923C" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></div>
+          <h3>Attachments</h3><p>Screenshots and logs on the issue and on individual comments — because "it looks like this" is usually faster than describing it.</p>
+        </div>
+        <div class="dk-card" style="--accent:#4CC9F0">
+          <div class="ic" style="background:#4CC9F022"><svg viewBox="0 0 24 24" stroke="#4CC9F0" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <h3>Watchers</h3><p>Follow an issue without owning it, so the person who reported it and the person who cares about it both hear when it moves.</p>
+        </div>
+        <div class="dk-card" style="--accent:#94A3B8">
+          <div class="ic" style="background:#94A3B822"><svg viewBox="0 0 24 24" stroke="#94A3B8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div>
+          <h3>Issue history</h3><p>Every status change, reassignment and edit kept, so "when did this become critical, and who said so" has an answer.</p>
+        </div>
+        <div class="dk-card" style="--accent:#F59E0B">
+          <div class="ic" style="background:#F59E0B22"><svg viewBox="0 0 24 24" stroke="#F59E0B" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <h3>Time tracking</h3><p>Hours and minutes against a task or a project, entered daily or in one bulk pass at the end of the week when nobody did it daily.</p>
+        </div>
+        <div class="dk-card" style="--accent:#22c55e">
+          <div class="ic" style="background:#22c55e22"><svg viewBox="0 0 24 24" stroke="#22c55e" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><path d="M9 16l2 2 4-4"/></svg></div>
+          <h3>Weekly timesheets</h3><p>A week submitted as one thing, reviewed from a pending queue, approved or sent back. Chasing timesheets stops being somebody's Monday.</p>
+        </div>
+        <div class="dk-card" style="--accent:#E879F9">
+          <div class="ic" style="background:#E879F922"><svg viewBox="0 0 24 24" stroke="#E879F9" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <h3>Billing rates</h3><p>A rate per member per project, snapshotted onto each entry as it is logged — so changing somebody's rate never rewrites what you already billed.</p>
+        </div>
+        <div class="dk-card" style="--accent:#3b82f6">
+          <div class="ic" style="background:#3b82f622"><svg viewBox="0 0 24 24" stroke="#3b82f6" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+          <h3>Project rooms</h3><p>Each project gets a meeting room in the same platform, so the stand-up is not a link somebody pastes into chat every morning.</p>
+        </div>
+        <div class="dk-card" style="--accent:#FBBF24">
+          <div class="ic" style="background:#FBBF2422"><svg viewBox="0 0 24 24" stroke="#FBBF24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v4H4z"/><path d="M4 12h16v8H4z"/><path d="M9 8v4"/></svg></div>
+          <h3>Tags &amp; activity</h3><p>Labels across projects, tasks and issues, and an activity feed of what actually changed rather than what somebody remembered to announce.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Integration Highlight — Meeting Integration -->
-    <section class="integration-section">
-        <div class="section-header">
-            <div class="section-badge">Integrations</div>
-            <h2 class="section-title">Built-in video meetings for every project</h2>
+    <!-- ══ FAQ ══ -->
+    <section class="dk-section dk-reveal" id="faq">
+      <div class="dk-kicker">Straight answers</div>
+      <h2 class="dk-h2">The things people ask on the first call.</h2>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Is the issue tracker a real one?</h3>
+          <p>Yes. Numbered keys per project, issue types, severity, priority, component, environment, reproducibility, resolutions, duplicate linking, threaded comments, attachments, watchers and full history.</p>
+          <p>And the three fields that make a report useful — <b>steps, expected and actual — are required</b>, not optional boxes somebody skips at five to six.</p>
         </div>
-
-        <div class="integration-grid">
-            <div class="integration-text">
-                <h3>One-click meetings from any project</h3>
-                <p>PMS auto-creates Vision meeting rooms for each project. Start video calls directly from your project dashboard, share guest links with clients, and keep all project communication in one place. No separate tool switching needed.</p>
-            </div>
-            <div class="meeting-demo">
-                <div class="meeting-demo-header">
-                    <div class="meeting-demo-project">
-                        <div class="project-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="project-name">Website Redesign</div>
-                            <div class="project-client">Acme Corp</div>
-                        </div>
-                    </div>
-                    <span class="meeting-demo-status">Active</span>
-                </div>
-                <div class="meeting-demo-body">
-                    <div class="meeting-demo-members">
-                        <div class="meeting-member-avatar">AK</div>
-                        <div class="meeting-member-avatar">JD</div>
-                        <div class="meeting-member-avatar">RM</div>
-                        <div class="meeting-member-avatar">SP</div>
-                    </div>
-                    <div class="meeting-demo-actions">
-                        <button class="meeting-btn join">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polygon points="23 7 16 12 23 17 23 7"/>
-                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                            </svg>
-                            Join Meeting
-                        </button>
-                        <button class="meeting-btn share">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="18" cy="5" r="3"/>
-                                <circle cx="6" cy="12" r="3"/>
-                                <circle cx="18" cy="19" r="3"/>
-                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                            </svg>
-                            Share Guest Link
-                        </button>
-                    </div>
-                    <div class="meeting-demo-link">
-                        <div>
-                            <div class="link-label">Guest Meeting Link</div>
-                            <div class="link-url">ragenaizer.com/join/proj-acme-redesign</div>
-                        </div>
-                        <span class="link-copy">Copy</span>
-                    </div>
-                </div>
-            </div>
+        <div>
+          <span class="q">02</span>
+          <h3>Do we need a separate bug tracker?</h3>
+          <p>That is the point of it being here. Delivery teams usually run a project tool and a bug tracker and reconcile them by hand; an issue and the task it came from sit in the same hierarchy under the same client.</p>
         </div>
+        <div>
+          <span class="q">03</span>
+          <h3>How is average resolution time worked out?</h3>
+          <p>From timestamps the system records itself — first response, resolved, closed — not from anyone remembering to start and stop a clock. The same stamps give you the breakdowns by severity, priority, component and resolution.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>What if somebody's rate changes mid-project?</h3>
+          <p>The rate is captured onto each time entry as it is logged. Change a rate today and everything already billed stays as it was billed — a retroactive change cannot quietly rewrite last quarter's revenue.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>How do timesheets get approved?</h3>
+          <p>A week is submitted as a single timesheet and lands in a pending queue for review, where it is approved or sent back. It is not an email thread, and it is not forty separate entries somebody ticks off.</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>Can we bill from it?</h3>
+          <p>Approved hours carry their snapshotted rate into a billable amount, and the invoice is raised in Accounts against the same client record — not a lookalike somebody created with a slightly different spelling.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>How deep does the structure go?</h3>
+          <p>Client, project, sub-project — and no further, on purpose. One level of nesting covers how delivery work is actually organised; two is where a structure starts costing more to maintain than it explains.</p>
+        </div>
+        <div>
+          <span class="q">08</span>
+          <h3>Who can see what?</h3>
+          <p>Project membership decides it. Members see and log against their projects; administrators see across them. Creating an issue requires being on the project, so the tracker does not fill up with reports from people with no context.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Dashboard Preview -->
-    <section class="pms-dashboard-section" id="dashboard">
-        <div class="section-header">
-            <div class="section-badge">Dashboard</div>
-            <h2 class="section-title">Your projects at a glance</h2>
-        </div>
-
-        <div class="pms-dashboard-preview">
-            <div class="dash-card">
-                <div class="dash-card-title">Project Overview</div>
-                <div class="project-overview-stats">
-                    <div class="overview-stat projects-stat">
-                        <div class="stat-number">12</div>
-                        <div class="stat-desc">Active Projects</div>
-                    </div>
-                    <div class="overview-stat hours-stat">
-                        <div class="stat-number">142h</div>
-                        <div class="stat-desc">Hours This Week</div>
-                    </div>
-                    <div class="overview-stat billing-stat">
-                        <div class="stat-number">$18.4k</div>
-                        <div class="stat-desc">Billable Amount</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dash-card">
-                <div class="dash-card-title">Time Distribution</div>
-                <div class="time-distribution">
-                    <div class="time-bar-row">
-                        <span class="time-bar-label">Website Redesign</span>
-                        <div class="time-bar-track">
-                            <div class="time-bar-fill bar-teal" style="width: 85%;">
-                                <span class="bar-hours">34h</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="time-bar-row">
-                        <span class="time-bar-label">Mobile App</span>
-                        <div class="time-bar-track">
-                            <div class="time-bar-fill bar-blue" style="width: 65%;">
-                                <span class="bar-hours">26h</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="time-bar-row">
-                        <span class="time-bar-label">API Integration</span>
-                        <div class="time-bar-track">
-                            <div class="time-bar-fill bar-purple" style="width: 45%;">
-                                <span class="bar-hours">18h</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="time-bar-row">
-                        <span class="time-bar-label">Brand Identity</span>
-                        <div class="time-bar-track">
-                            <div class="time-bar-fill bar-amber" style="width: 30%;">
-                                <span class="bar-hours">12h</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dash-card">
-                <div class="dash-card-title">Recent Activity</div>
-                <div class="activity-feed">
-                    <div class="activity-item">
-                        <div class="activity-dot task-created"></div>
-                        <div class="activity-info">
-                            <div class="activity-text"><strong>Task created</strong> — "Design homepage wireframes" in Website Redesign</div>
-                            <div class="activity-time">5 minutes ago</div>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-dot time-logged"></div>
-                        <div class="activity-info">
-                            <div class="activity-text"><strong>Time logged</strong> — 3h 30m by Alex on Mobile App</div>
-                            <div class="activity-time">22 minutes ago</div>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-dot timesheet-approved"></div>
-                        <div class="activity-info">
-                            <div class="activity-text"><strong>Timesheet approved</strong> — Week of Mar 3-7, Jordan ($4,200 billable)</div>
-                            <div class="activity-time">1 hour ago</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dash-card">
-                <div class="dash-card-title">Pending Timesheets</div>
-                <div class="pending-timesheets">
-                    <div class="timesheet-item">
-                        <div class="timesheet-avatar">AK</div>
-                        <div class="timesheet-details">
-                            <div class="ts-name">Alex Kim</div>
-                            <div class="ts-week">Mar 3 - Mar 7</div>
-                        </div>
-                        <span class="timesheet-hours">38h</span>
-                        <span class="timesheet-status">Pending</span>
-                    </div>
-                    <div class="timesheet-item">
-                        <div class="timesheet-avatar">RM</div>
-                        <div class="timesheet-details">
-                            <div class="ts-name">Riya Mehta</div>
-                            <div class="ts-week">Mar 3 - Mar 7</div>
-                        </div>
-                        <span class="timesheet-hours">42h</span>
-                        <span class="timesheet-status">Pending</span>
-                    </div>
-                    <div class="timesheet-item">
-                        <div class="timesheet-avatar">SP</div>
-                        <div class="timesheet-details">
-                            <div class="ts-name">Sam Park</div>
-                            <div class="ts-week">Mar 3 - Mar 7</div>
-                        </div>
-                        <span class="timesheet-hours">35h</span>
-                        <span class="timesheet-status">Pending</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- ══ Close ══ -->
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">One hierarchy, from the client to the hour.</h2>
+      <p>Stop reconciling a project tool, a bug tracker and a timesheet spreadsheet that all disagree.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20Projects%20—%20a%20walkthrough">Book a walkthrough →</a>
+      </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="cta-container">
-            <h2 class="cta-title">Start managing projects smarter</h2>
-            <p class="cta-description">One login, one bill, one platform.</p>
-            <div class="cta-actions">
-                <a href="activate.html" class="btn-primary">Get Started Free</a>
-            </div>
-        </div>
-    </section>
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Footer -->
-    <div id="footer"></div>
+  <script>
+    'use strict';
 
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+    var PM_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ── one issue, five parts ────────────────────────────────────────────────
+       The fields, vocabularies and states below are the ones on the Issue
+       model in the PMS service — steps_to_reproduce, expected_result and
+       actual_result are non-nullable there, which is what the first tab is
+       about. The example project and people are fictional. */
+    var PARTS = [
+      {
+        n: 'Part 1',
+        tab: 'The report',
+        head: 'You cannot file “it is broken”.',
+        sub: 'Three of these fields are not optional. A report without them does not get created, which is why nobody has to go back and ask what the person meant.',
+        fields: [
+          ['Issue key', '<span style="font-family:var(--font-family-mono)">WMS-142</span> — numbered within its own project, so it is quotable in a message', 0],
+          ['Title', 'Stock transfer saves against the wrong location', 0],
+          ['Steps to reproduce', '<ol><li>Open Inventory → Transfer</li><li>Pick Baddi as the source and Noida store as the destination</li><li>Enter 40 boxes and save</li></ol>', 1],
+          ['Expected result', 'Stock leaves Baddi and arrives at the Noida store.', 1],
+          ['Actual result', 'Stock leaves Baddi. The receiving location is unchanged.', 1],
+          ['Environment', 'Production · Chrome 128 · Windows 11', 0],
+          ['Component', 'Inventory / transfers', 0],
+          ['Reproducibility', 'Always', 0]
+        ],
+        out: ['Fields required', '3 of 8'],
+        foot: 'Steps, expected and actual are required by the model itself. <b>It is a small piece of rudeness that saves a developer an afternoon</b> — and it is the difference between a tracker and a complaints box.'
+      },
+      {
+        n: 'Part 2',
+        tab: 'Triage',
+        head: 'Severity and priority are different questions.',
+        sub: 'How bad it is, and how soon we deal with it, are not the same judgement — so they are not the same field. Conflating them is how a cosmetic bug ends up in front of an engineer on a Friday night.',
+        fields: [
+          ['Type', '<span class="pm-pill" style="--c:#f87171">bug</span> &nbsp;also feature, task, regression', 0],
+          ['Severity', '<span class="pm-pill" style="--c:#FB923C">major</span> &nbsp;critical · major · minor · trivial', 0],
+          ['Priority', '<span class="pm-pill" style="--c:#E879F9">P1</span> &nbsp;set by whoever owns the queue, not by the reporter', 0],
+          ['Assigned to', 'Rakesh Nair — reassignment is recorded, not silent', 0],
+          ['Duplicate of', 'Not a duplicate. Marking one links it to the original by its key, so the trail leads somewhere.', 0]
+        ],
+        out: ['Triaged in', 'one pass'],
+        foot: 'Forty issues can be triaged at once with a bulk update, which is what actually happens after a release rather than one at a time.'
+      },
+      {
+        n: 'Part 3',
+        tab: 'The clock',
+        head: 'The timings are recorded, not remembered.',
+        sub: 'Three timestamps are written by the system as the issue moves. Every resolution-time number on the dashboard is derived from them.',
+        fields: [
+          ['Reported', '2 August, 09:14', 0],
+          ['First response', '2 August, 09:41 — 27 minutes later', 0],
+          ['Resolved', '3 August, 16:02', 0],
+          ['Closed after verification', '4 August, 10:20', 0]
+        ],
+        out: ['Average resolution', 'computed, not estimated'],
+        foot: 'Because the stamps are the system’s and not a person’s, <b>average resolution time is a fact rather than a claim</b> — and it breaks down by severity, priority, component and resolution.'
+      },
+      {
+        n: 'Part 4',
+        tab: 'The trail',
+        head: 'Everything said and attached, kept together.',
+        sub: 'Six weeks later the question is never "what was the status". It is "why did we decide that" — which is why the discussion lives on the issue.',
+        fields: [
+          ['Comments', 'Threaded, so a reply belongs to the thing it replies to instead of flattening into a wall', 0],
+          ['Attachments', 'On the issue and on individual comments — a screenshot beats three paragraphs', 0],
+          ['Watchers', 'Follow without owning. The reporter and the person who cares both hear about a change', 0],
+          ['History', 'Every status change, reassignment and edit, with who and when', 0]
+        ],
+        out: ['Kept', 'for as long as the project'],
+        foot: 'None of this needs anyone to write a summary afterwards. <b>The record is a by-product of doing the work</b>, which is the only kind that stays accurate.'
+      },
+      {
+        n: 'Part 5',
+        tab: 'The board',
+        head: 'Including the two states people leave out.',
+        sub: 'Most boards run happy-path only. Reopened and won’t-fix are the honest ones, and leaving them out is how a tracker starts lying about how much is really done.',
+        flow: [
+          ['reported', 0], ['in progress', 0], ['QA testing', 0], ['verified', 0], ['closed', 0],
+          ['reopened', 1], ['won’t fix', 1]
+        ],
+        fields: [
+          ['Board', 'Grouped by state, with a personal “my issues” view for the morning', 0],
+          ['Statistics', 'Counts by status, and breakdowns by severity, priority, component and resolution', 0],
+          ['Resolutions', 'How it ended, recorded separately from whether it is closed', 0]
+        ],
+        out: ['States tracked', '7'],
+        foot: 'An issue that comes back is <b>the same issue, reopened</b> — not a fresh one filed by somebody who could not find the original.'
+      }
+    ];
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    var part = 0;
+
+    function mountParts() {
+      document.getElementById('pmSteps').innerHTML = PARTS.map(function (p, i) {
+        return '<button type="button" data-p="' + i + '" aria-pressed="' + (i === 0) + '">' +
+               '<span class="n">' + esc(p.n) + '</span><span class="l">' + p.tab + '</span></button>';
+      }).join('');
+      document.querySelectorAll('#pmSteps button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          part = Number(b.dataset.p);
+          renderPart();
+        });
+      });
+    }
+
+    function renderPart() {
+      var p = PARTS[part];
+      document.querySelectorAll('#pmSteps button').forEach(function (b, i) {
+        b.setAttribute('aria-pressed', String(i === part));
+      });
+      document.getElementById('pmHead').textContent = p.head;
+      document.getElementById('pmSub').textContent = p.sub;
+      document.getElementById('pmFoot').innerHTML = p.foot;
+      document.getElementById('pmOut').innerHTML =
+        '<span class="lbl">' + esc(p.out[0]) + '</span><span class="big">' + esc(p.out[1]) + '</span>';
+
+      var html = '';
+      if (p.flow) {
+        html += '<div class="pm-flow">' + p.flow.map(function (s, i) {
+          var arrow = (i > 0 && i < 5) ? '<span class="pm-arrow">→</span>' : '';
+          return arrow + '<span class="pm-state' + (s[1] ? ' alt' : '') + '">' + s[0] + '</span>';
+        }).join('') + '</div>';
+      }
+      /* field values carry markup on purpose (lists, pills), so they are
+         authored as trusted strings here rather than escaped */
+      html += '<div class="pm-fields">' + p.fields.map(function (f) {
+        return '<div class="pm-field">' +
+                 '<span class="k">' + esc(f[0]) + (f[2] ? '<span class="pm-req">required</span>' : '') + '</span>' +
+                 '<span class="v">' + f[1] + '</span>' +
+               '</div>';
+      }).join('') + '</div>';
+      document.getElementById('pmBody').innerHTML = html;
+    }
+
+    mountParts();
+    renderPart();
+
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (PM_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>
