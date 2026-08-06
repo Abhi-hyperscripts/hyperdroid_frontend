@@ -253,6 +253,93 @@ body.accounts-desk .ac-foot {
   color: var(--dk-dim);
 }
 
+/* ── the trades ───────────────────────────────────────────────────────────────
+   The same engine sells to a pharma distributor, a factory, a wholesaler, a
+   shop counter and a website, and the words each of them needs to hear are
+   completely different. One panel, switched by the page's own chip control
+   rather than a second kind of widget. */
+body.accounts-desk .ac-trade {
+  margin-top: 36px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.022));
+  backdrop-filter: blur(20px) saturate(1.18);
+  -webkit-backdrop-filter: blur(20px) saturate(1.18);
+  overflow: hidden;
+  position: relative;
+}
+body.accounts-desk .ac-trade::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(620px 280px at 88% -25%, var(--ac), transparent 70%);
+  opacity: 0.14;
+}
+body.accounts-desk .ac-trade > * { position: relative; }
+body.accounts-desk .ac-tradebody { padding: 30px 32px 34px; }
+body.accounts-desk .ac-tradehead {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 0;
+}
+body.accounts-desk .ac-tradesub {
+  margin: 9px 0 0;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+  max-width: 760px;
+}
+body.accounts-desk .ac-caps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 2px 34px;
+  margin-top: 24px;
+}
+body.accounts-desk .ac-cap {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 12px;
+  padding: 13px 0;
+  align-items: start;
+}
+/* no rules between these: the columns end at different heights, so a bottom
+   border leaves a line hanging under whichever column ran short */
+body.accounts-desk .ac-cap svg {
+  width: 14px; height: 14px;
+  margin-top: 4px;
+  fill: none;
+  stroke: var(--ac);
+  stroke-width: 2.6;
+}
+body.accounts-desk .ac-cap strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dk-ink);
+}
+body.accounts-desk .ac-cap span {
+  display: block;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--dk-dim);
+  margin-top: 2px;
+}
+body.accounts-desk .ac-tradefoot {
+  margin: 22px 0 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--dk-line);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--dk-mute);
+}
+body.accounts-desk .ac-tradefoot b { color: var(--dk-ink); font-weight: 600; }
+
 /* ── the real screen ──────────────────────────────────────────────────────── */
 body.accounts-desk .ac-shot {
   margin: 0;

@@ -14,10 +14,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
     <title>Accounts - Online Accounting &amp; Bookkeeping Software | Multi-Currency, GST Ready | Ragenaizer</title>
-    <meta name="description" content="Run your books, raise invoices, capture bills, manage purchase orders, reconcile bank statements, file GST returns and close the period — all in one accounting platform. Multi-currency, audit-ready, with one customer record across every product.">
+    <meta name="description" content="Accounting with the trade built in: batch and expiry tracking, Schedule-H register and salt substitutes for pharma, bills of material and work orders for manufacturing, a barcode POS counter, and a headless storefront API — all posting to the same ledger. Invoices, bills, purchase orders, bank reconciliation, GST returns and period close included. Multi-currency and audit-ready.">
 
     <!-- SEO Meta Tags -->
-    <meta name="keywords" content="online accounting software, bookkeeping software, invoicing software, accounts receivable, accounts payable, purchase order software, proforma invoice, vendor bills, bank reconciliation, GST software, GSTR-1, GSTR-3B, TDS return, fixed asset depreciation, expense claims software, subscription billing, recurring invoices, multi-currency accounting, chart of accounts, journal entries, trial balance, profit and loss, balance sheet, cash flow report, year end closing, fiscal year close, audit trail, finance approvals, Razorpay integration, Stripe integration, Quickbooks alternative, Zoho Books alternative, Tally alternative">
+    <meta name="keywords" content="online accounting software, bookkeeping software, invoicing software, accounts receivable, accounts payable, purchase order software, proforma invoice, vendor bills, bank reconciliation, GST software, GSTR-1, GSTR-3B, TDS return, fixed asset depreciation, expense claims software, subscription billing, recurring invoices, multi-currency accounting, chart of accounts, journal entries, trial balance, profit and loss, balance sheet, cash flow report, year end closing, fiscal year close, audit trail, finance approvals, Razorpay integration, Stripe integration, Quickbooks alternative, Zoho Books alternative, Tally alternative, Marg alternative, pharma distribution software, batch and expiry tracking, FEFO dispensing, Schedule H register, salt substitute search, drug licence number, rack and shelf location, trade schemes free goods, manufacturing accounting, bill of materials, BOM explosion, work order costing, work in progress, inventory management software, multi location stock, stock transfer, serial number tracking, stock valuation FIFO, reorder report, POS billing software, barcode billing, MRP inclusive pricing, retail counter billing, wholesale distribution software, sales order to invoice, price lists, delivery challan, post dated cheque, interest on overdue, headless storefront API, ecommerce stock sync, B2B and B2C billing">
     <meta name="author" content="Ragenaizer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://ragenaizer.com/pages/accounts.html">
@@ -108,7 +108,31 @@
             "Approval Workflows for Critical Actions",
             "Full Audit Trail and Export",
             "Single Customer Record Across CRM, PMS and Procurement",
-            "Payroll-to-Finance Integration with HRMS"
+            "Payroll-to-Finance Integration with HRMS",
+            "Batch and Lot Tracking with Expiry and Per-Batch MRP",
+            "Expiry Report with Value at Risk",
+            "Schedule-H Prescription Register",
+            "Salt Master with Substitute Lookup",
+            "Rack, Shelf and Bin Locations",
+            "Trade Schemes and Free Goods",
+            "Bills of Material with BOM Explosion",
+            "Work Orders: Issue, Complete and Cancel",
+            "Quick Builds from a BOM",
+            "Multi-Location Stock with Transfers",
+            "Stock Register, Valuation and Reorder Report",
+            "Serial Number Tracking with Sale and Status",
+            "Barcode and SKU Lookup for POS",
+            "FEFO Lot Suggestion at the Counter",
+            "MRP-Inclusive Retail Pricing",
+            "Line-Level Trade Discounts",
+            "Sales Orders with Convert-to-Invoice",
+            "Customer Price Lists",
+            "Delivery Challans",
+            "Post-Dated Cheque Register",
+            "Interest on Overdue Balances",
+            "Stock Counts and Adjustments",
+            "Headless Storefront API for Catalogue, Stock, Price and Orders",
+            "Tenant-Scoped Storefront API Keys"
         ]
     }
     </script>
@@ -151,7 +175,7 @@
     <header class="dk-hero">
       <div class="dk-eyebrow"><i></i>Finance &amp; accounting</div>
       <h1 class="dk-h1">Your books post<br>as you work.</h1>
-      <p class="dk-sub">Invoices, bills, purchase orders, stock, payroll and depreciation all write their own entries. Nothing waits for a month-end data dump, and nothing has to be re-keyed from another system to get there.</p>
+      <p class="dk-sub">Invoices, bills, purchase orders, stock, work orders, counter sales and payroll all write their own entries. Batches and expiry, bills of material, a till and a storefront API are in the same engine as the ledger — not four systems you reconcile on a Friday.</p>
       <p class="ac-note">Pick a document below and watch what it does to the ledger</p>
     </header>
 
@@ -189,6 +213,26 @@
         <img src="../assets/screens/app-accounts.png" alt="Ragenaizer Accounts — cash position, overdue receivables and payables, stock expiring soon and pending approvals" width="1600" height="1000" loading="lazy">
         <figcaption><b>Money</b> — cash position, receivables and payables ageing, and the month's revenue against expenses.</figcaption>
       </figure>
+    </section>
+
+    <!-- ══ The trades ══════════════════════════════════════════════════════
+         The engine underneath is one set of books, but a pharma distributor,
+         a factory, a wholesaler, a shop counter and a website each need to
+         hear an entirely different sentence. Same control idiom as the bench
+         above, so the page has one way of being operated rather than two. -->
+    <section class="dk-section dk-reveal" id="trades">
+      <div class="dk-kicker">Built for the trade, not just the books</div>
+      <h2 class="dk-h2">Batches, work orders, a counter and a website.</h2>
+      <p class="dk-lede">Most accounting software stops at the invoice and hands you off to a second system for stock, a third for the shop floor and a fourth for the website — then asks you to reconcile all four. This is one engine. Pick how you sell.</p>
+      <div class="ac-trade" id="trade">
+        <div class="ac-chips" role="group" aria-label="Choose a kind of business" id="tradeChips"></div>
+        <div class="ac-tradebody">
+          <h3 class="ac-tradehead" id="tradeHead"></h3>
+          <p class="ac-tradesub" id="tradeSub"></p>
+          <div class="ac-caps" id="tradeCaps"></div>
+          <p class="ac-tradefoot" id="tradeFoot"></p>
+        </div>
+      </div>
     </section>
 
     <!-- ══ Coverage ══ -->
@@ -420,6 +464,122 @@
       }
     ];
 
+    /* ── the trades ───────────────────────────────────────────────────────────
+       Every capability named here was checked against the AccountsService
+       controllers before it went on the page. Things the backend does NOT have
+       yet — multiple units of measure, e-way bills, GSTR-2A/2B reconciliation,
+       GSTR-9 — are deliberately absent, and e-invoicing is not claimed because
+       it is still gated behind a GSP connection. */
+    var TRADES = [
+      {
+        tab: 'Pharma distribution',
+        accent: '#22c55e',
+        head: 'Every strip has a batch, an expiry and a rack.',
+        sub: 'Built against the way a pharma distributor actually works — not a generic stock module with an expiry column bolted on the side.',
+        caps: [
+          ['Batch and expiry tracking', 'Every lot carries its own expiry, MRP and quantity. The expiry report shows what is about to turn and what it is worth.'],
+          ['Schedule-H register', 'The prescription register runs off the same movements as the ledger, so it cannot disagree with what actually left the shelf.'],
+          ['Salts and substitutes', 'Map items to their salts, then find every substitute for a molecule when the brand the customer asked for is out.'],
+          ['FEFO at the counter', 'A scan returns the lot to dispense next — first to expire, first out — with its expiry and MRP already on screen.'],
+          ['Rack and shelf labels', 'Each item carries where to find it. New counter staff stop asking where things are kept.'],
+          ['Trade schemes', 'Free-goods and promotional schemes defined once and activated, rather than remembered by whoever is billing.']
+        ],
+        foot: 'And the stock movement and the ledger entry are <b>the same posting</b> — so closing stock on the balance sheet is the stock in the racks, not a number you reconcile to it.'
+      },
+      {
+        tab: 'Manufacturing',
+        accent: '#A78BFA',
+        head: 'From bill of materials to finished batch.',
+        sub: 'Raw material comes in at the factory, components are issued to a work order, and finished goods come out with their own batch and cost.',
+        caps: [
+          ['Bills of material', 'A recipe per finished item, with an explosion view that shows what a given output quantity will actually consume.'],
+          ['Work orders', 'Create, issue the components, complete with a batch and expiry, or cancel. Each step is a real state, not a status field.'],
+          ['Work in progress', 'Issued components leave stock and sit in WIP until the order completes, so the balance sheet is right mid-run.'],
+          ['Costed output', 'The finished batch carries the cost of what went into it, so margin is calculated from what you spent rather than a guess.'],
+          ['Multi-location stock', 'Raw material at the plant, finished goods at the depot, with transfers between them that post as they move.'],
+          ['Quick builds', 'For assembly that does not warrant a full work order, build straight from the BOM in one step.']
+        ],
+        foot: 'Issue and completion both post to the ledger as they happen, so <b>work in progress is a live figure</b> rather than something worked out at month end.'
+      },
+      {
+        tab: 'Wholesale / B2B',
+        accent: '#FB923C',
+        head: 'Order today, deliver Thursday, collect in sixty days.',
+        sub: 'The distance between the order and the money is where wholesale businesses lose track. Each step here is its own document, and each one posts.',
+        caps: [
+          ['Sales orders', 'Take the order, confirm it, convert it to an invoice when it ships. Nothing hits the books before it should.'],
+          ['Price lists', 'Different rates for different customers, applied when the line is entered rather than remembered by the person billing.'],
+          ['Delivery challans', 'Goods can move on a challan and be invoiced after, which is how most wholesale actually runs.'],
+          ['Post-dated cheques', 'PDCs recorded, tracked to their date and cleared — instead of living in a drawer and a spreadsheet.'],
+          ['Interest on overdue', 'Overdue interest computed on ageing balances, so late payment has a number attached to it.'],
+          ['Receivables ageing', 'Who owes what, and for how long, on the same screen you chase from.']
+        ],
+        foot: 'Customers and vendors are <b>the same records CRM and Procurement use</b>. A new buyer is created once, with one GSTIN, and finance approves it from a queue with an SLA on it.'
+      },
+      {
+        tab: 'Retail counter / B2C',
+        accent: '#4CC9F0',
+        head: 'A till that knows the batch it is selling.',
+        sub: 'A counter screen for over-the-counter selling that writes a real, GST-compliant invoice — not a parallel sales log to be imported into the books later.',
+        caps: [
+          ['Barcode scanning', 'Scan or type an SKU and get price, HSN, live stock and the lot to dispense, in one lookup.'],
+          ['MRP-inclusive pricing', 'Charge the printed price and let the system work the tax backwards out of it, which is how retail is actually priced.'],
+          ['Batch picked for you', 'For a batch-tracked item the counter is handed the first-to-expire lot rather than asked to choose.'],
+          ['Line discounts', 'Discount a line and GST is computed on the net, with the rounding split correctly across the tax heads.'],
+          ['Several stores', 'Each branch is its own stock location, with transfers between them and a stock position per branch.'],
+          ['Every sale is an invoice', 'A counter sale is a customer invoice with a cash payment against it, so the day book is complete without an end-of-day import.']
+        ],
+        foot: 'The takings, the stock that left and the tax collected are <b>one posting made at the till</b> — which is why the cash book ties without anybody keying the day up again.'
+      },
+      {
+        tab: 'Online storefront',
+        accent: '#6366F1',
+        head: 'Your website reads the same stock the counter does.',
+        sub: 'A headless storefront API, authenticated with a storefront key rather than a staff login, so your own site or app can read the catalogue and place orders directly.',
+        caps: [
+          ['Catalogue endpoint', 'Products, with their HSN and tax, served straight from the same item master the counter sells from.'],
+          ['Live stock', 'The quantity your website shows is the quantity in the warehouse, not a nightly export that goes stale by lunchtime.'],
+          ['Live price', 'Prices come from the same price lists the sales team quotes on, so the site cannot drift from the rate card.'],
+          ['Order placement', 'An order posted to the API becomes a real document in the books, not a row in a separate e-commerce database.'],
+          ['Keys you control', 'Storefront keys are issued and revoked from admin, scoped to your tenant, and separate from any staff account.'],
+          ['Nothing private exposed', 'The public endpoints serve catalogue, stock and price only — never cost, margin, stock layers or the ledger.']
+        ],
+        foot: 'Because the shop and the site share one item master, <b>overselling stops being an integration problem</b>. There is nothing between them to fall out of sync.'
+      }
+    ];
+
+    var trade = 0;
+
+    function mountTrades() {
+      document.getElementById('tradeChips').innerHTML = TRADES.map(function (t, i) {
+        return '<button type="button" data-t="' + i + '" aria-pressed="' + (i === 0) + '" style="--bc:' +
+               t.accent + '"><i></i>' + esc(t.tab) + '</button>';
+      }).join('');
+      document.querySelectorAll('#tradeChips button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          trade = Number(b.dataset.t);
+          renderTrade();
+        });
+      });
+    }
+
+    function renderTrade() {
+      var t = TRADES[trade];
+      document.getElementById('trade').style.setProperty('--ac', t.accent);
+      document.querySelectorAll('#tradeChips button').forEach(function (b, i) {
+        b.setAttribute('aria-pressed', String(i === trade));
+      });
+      document.getElementById('tradeHead').textContent = t.head;
+      document.getElementById('tradeSub').textContent = t.sub;
+      document.getElementById('tradeFoot').innerHTML = t.foot;
+      document.getElementById('tradeCaps').innerHTML = t.caps.map(function (c) {
+        return '<div class="ac-cap">' +
+                 '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>' +
+                 '<span><strong>' + esc(c[0]) + '</strong><span>' + esc(c[1]) + '</span></span>' +
+               '</div>';
+      }).join('');
+    }
+
     function esc(s) {
       return String(s).replace(/[&<>"']/g, function (c) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -483,6 +643,8 @@
 
     mountChips();
     render();
+    mountTrades();
+    renderTrade();
 
     /* Sections settle in as they arrive; grids and thread rows assemble rather
        than snapping in. Skipped entirely under reduced motion. */
