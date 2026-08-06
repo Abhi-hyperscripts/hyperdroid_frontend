@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
@@ -81,7 +83,7 @@
     }
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -91,287 +93,364 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script>document.write('<link rel="stylesheet" href="../css/landing-theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/drive-desk.css?v=' + CACHE_VERSION + '">');</script>
+
+    <!-- Schema.org: FAQ -->
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Can a shared link be revoked?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Revoking removes the share entirely and the next person to open the link receives nothing. A live link can also be changed without reissuing it — tightened to view-only, given an expiry, or its download limit lowered."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can share links be password protected?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, and the password is stored hashed rather than in readable form, so forwarding the link alone does not open the file."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "How are large files uploaded on an unreliable connection?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Large uploads are chunked. A session is initiated, chunks are sent, its status can be checked, and it can be resumed or abandoned — so a dropped connection costs the last chunk rather than the whole file. Pre-signed uploads direct to storage are also supported."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Is there an audit trail?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Creates, updates, deletes, uploads, views, downloads and shares are recorded against the file and the user, and each download increments the counter on its share."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What controls does a share link have?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Access type of view, download or edit; an optional password; an optional expiry date; and an optional maximum number of downloads with a running count. The link closes itself when the limit or expiry is reached."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Do meeting recordings go into Drive?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Recordings from Ragenaizer Meetings are uploaded into Drive when the meeting finishes, which is what keeps them inside your own workspace."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Is Drive billed separately?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. It is one of the apps in the seat block, and it is where the other apps store things such as chat attachments and meeting recordings."
+            }
+        }
+    ]
+}
+    </script>
 </head>
-<body class="landing-page landing-drive">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing drive-desk">
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-bg">
-            <div class="hero-gradient"></div>
-            <div class="hero-grid"></div>
-        </div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
 
-        <div class="hero-content">
-            <div class="hero-text">
-                <div class="hero-badge">Cloud Storage</div>
-                <h1 class="hero-title">
-                    Your files, anywhere,<br>
-                    <span class="highlight">always secure.</span>
-                </h1>
-                <p class="hero-description">
-                    Store, organize, and share files with your team. Upload large files without worrying about size limits, and share securely with anyone—inside or outside your organization.
-                </p>
-                <div class="hero-actions">
-                    <a href="activate.html" class="btn-primary">Start Uploading</a>
-                    <a href="#features" class="btn-secondary">See How It Works</a>
-                </div>
-                <div class="hero-stats">
-                    <div class="stat-item">
-                        <div class="stat-value">5GB</div>
-                        <div class="stat-label">Per File</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">Encrypted</div>
-                        <div class="stat-label">At Rest & Transit</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">Share</div>
-                        <div class="stat-label">With Anyone</div>
-                    </div>
-                </div>
-            </div>
+    <!-- ══ Hero ══════════════════════════════════════════════════════════════
+         Storage is sold on capacity, which is the least interesting thing
+         about it. What decides whether a business can use it is what happens
+         after a file leaves. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>Files &amp; sharing</div>
+      <h1 class="dk-h1">Send the file.<br>Keep the leash.</h1>
+      <p class="dk-sub">A share link here carries a password, an expiry, a download ceiling that counts down, and a revoke button that actually works. Everything a file did — uploaded, viewed, downloaded, shared, deleted — is written down.</p>
+      <p class="dv-note">What a link out of here can be told to do</p>
+    </header>
 
-            <div class="hero-visual">
-                <div class="hero-mockup">
-                    <div class="mockup-header">
-                        <span class="mockup-dot"></span>
-                        <span class="mockup-dot"></span>
-                        <span class="mockup-dot"></span>
-                    </div>
-                    <div class="mockup-content">
-                        <svg width="100%" height="180" viewBox="0 0 400 180" fill="none">
-                            <!-- Folder grid -->
-                            <rect x="10" y="10" width="85" height="70" rx="8" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.25)" stroke-width="1"/>
-                            <rect x="20" y="45" width="65" height="8" rx="4" fill="rgba(255, 255, 255, 0.2)"/>
-                            <rect x="20" y="58" width="40" height="6" rx="3" fill="rgba(255, 255, 255, 0.1)"/>
+    <div class="dv-bench" id="bench">
+      <div class="dv-chips" role="group" aria-label="Choose part of Drive" id="dvChips"></div>
+      <div class="dv-panel">
+        <h2 class="dv-head" id="dvHead"></h2>
+        <p class="dv-sub" id="dvSub"></p>
+        <div class="dv-rows" id="dvRows"></div>
+        <p class="dv-foot" id="dvFoot"></p>
+      </div>
+    </div>
 
-                            <rect x="105" y="10" width="85" height="70" rx="8" fill="rgba(59, 130, 246, 0.15)" stroke="rgba(59, 130, 246, 0.25)" stroke-width="1"/>
-                            <rect x="115" y="45" width="65" height="8" rx="4" fill="rgba(255, 255, 255, 0.2)"/>
-                            <rect x="115" y="58" width="40" height="6" rx="3" fill="rgba(255, 255, 255, 0.1)"/>
-
-                            <rect x="200" y="10" width="85" height="70" rx="8" fill="rgba(139, 92, 246, 0.15)" stroke="rgba(139, 92, 246, 0.25)" stroke-width="1"/>
-                            <rect x="210" y="45" width="65" height="8" rx="4" fill="rgba(255, 255, 255, 0.2)"/>
-                            <rect x="210" y="58" width="40" height="6" rx="3" fill="rgba(255, 255, 255, 0.1)"/>
-
-                            <rect x="295" y="10" width="85" height="70" rx="8" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.25)" stroke-width="1"/>
-                            <rect x="305" y="45" width="65" height="8" rx="4" fill="rgba(255, 255, 255, 0.2)"/>
-                            <rect x="305" y="58" width="40" height="6" rx="3" fill="rgba(255, 255, 255, 0.1)"/>
-
-                            <!-- File list -->
-                            <rect x="10" y="95" width="380" height="25" rx="6" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
-                            <rect x="10" y="125" width="380" height="25" rx="6" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
-                            <rect x="10" y="155" width="380" height="25" rx="6" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- ══ The real screen ══ -->
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The actual product</div>
+      <h2 class="dk-h2">What is in here, and what has left.</h2>
+      <p class="dk-lede">Storage broken down by what is actually taking it up, folders with their own counts, and a badge on every file that is currently shared with somebody outside.</p>
+      <figure class="dv-shot" style="margin-top:36px">
+        <img src="../assets/screens/app-drive.png" alt="Ragenaizer Drive — storage broken down by type, folders with file counts, and files marked with their active share links" width="1600" height="1000" loading="lazy">
+        <figcaption><b>Drive</b> — storage by type, folders, and which files are shared right now.</figcaption>
+      </figure>
     </section>
 
-    <!-- Features Section -->
-    <section class="features-section" id="features">
-        <div class="section-header">
-            <div class="section-badge">Features</div>
-            <h2 class="section-title">File storage that keeps up with you</h2>
-            <p class="section-description">
-                Upload anything, find it instantly, and share it securely. Drive handles the heavy lifting so you can focus on your work.
-            </p>
+    <!-- ══ Coverage ══ -->
+    <section class="dk-section dk-reveal" id="covers">
+      <div class="dk-kicker">What it covers</div>
+      <h2 class="dk-h2">Storage that behaves like a business asset.</h2>
+      <p class="dk-lede">The parts that matter when the files are contracts and board packs rather than holiday photos.</p>
+      <div class="dk-grid">
+        <div class="dk-card" style="--accent:#FB923C">
+          <div class="ic" style="background:#FB923C22"><svg viewBox="0 0 24 24" stroke="#FB923C" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h3>Password on a link</h3><p>A share can require a password before it opens, hashed rather than stored, so forwarding the link is not the same as forwarding the file.</p>
         </div>
-
-        <div class="features-grid">
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="17 8 12 3 7 8"/>
-                        <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Upload Large Files</h3>
-                <p class="feature-description">Upload files up to 5GB without breaking a sweat. Slow connection? No problem—uploads resume where they left off.</p>
-            </div>
-
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Organize Your Way</h3>
-                <p class="feature-description">Create folders, nest them however you like, and always know where things are. Breadcrumb navigation makes it easy to jump around.</p>
-            </div>
-
-            <div class="feature-card purple">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="18" cy="5" r="3"/>
-                        <circle cx="6" cy="12" r="3"/>
-                        <circle cx="18" cy="19" r="3"/>
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Share Securely</h3>
-                <p class="feature-description">Send files to anyone with a link. Add password protection, set expiration dates, or limit downloads for sensitive documents.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Know Who Accessed What</h3>
-                <p class="feature-description">Complete activity tracking for every file. See who viewed, downloaded, or shared something—perfect for compliance and peace of mind.</p>
-            </div>
-
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
-                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Your Storage, Your Choice</h3>
-                <p class="feature-description">Works with AWS, Wasabi, or your own storage. Keep your files wherever makes sense for your organization.</p>
-            </div>
-
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Always Up to Date</h3>
-                <p class="feature-description">Changes sync instantly across your team. When someone uploads a file or creates a folder, everyone sees it right away.</p>
-            </div>
-
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="12" y1="18" x2="12" y2="12"/>
-                        <polyline points="9 15 12 12 15 15"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Three Upload Modes</h3>
-                <p class="feature-description">Direct upload for files under 100MB. S3 multipart for files up to 5GB. Chunked upload with resume support for unreliable networks. The system picks the optimal mode automatically — you just drag and drop.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Presigned URLs</h3>
-                <p class="feature-description">Generate time-limited download URLs for secure file access. No authentication required for the recipient — just a link that expires. Perfect for sharing with external partners and clients.</p>
-            </div>
-
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="23 7 16 12 23 17 23 7"/>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Meeting Recordings</h3>
-                <p class="feature-description">Vision meeting recordings automatically save to Drive. Access, share and audit recorded meetings from one place. Password-protect recordings with expiry dates and download limits.</p>
-            </div>
-
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="17 8 12 3 7 8"/>
-                        <line x1="12" y1="3" x2="12" y2="15"/>
-                        <path d="M4 19l4-4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Resumable Uploads, Even on Bad Wi-Fi</h3>
-                <p class="feature-description">Big file, flaky connection? Chunked uploads pick up exactly where they stopped — initiate, stream chunks, check status, complete. Pause, resume, even abort. The file gets there.</p>
-            </div>
-
-            <div class="feature-card amber">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Star Files for Quick Access</h3>
-                <p class="feature-description">Star the documents you actually use every day so they're one click away. The contracts you reference, the spreadsheets you open daily, the templates you re-use — all in your starred view.</p>
-            </div>
-
-            <div class="feature-card teal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 0 0 6.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 0 0 6.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Revoke or Re-Issue Any Share Link</h3>
-                <p class="feature-description">Sent a link to the wrong person? Revoke it. Need to add a password after the fact? Update the existing share. Change the expiry, change the download cap, rotate the password — all without breaking the recipient's URL.</p>
-            </div>
-
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="20" x2="18" y2="10"/>
-                        <line x1="12" y1="20" x2="12" y2="4"/>
-                        <line x1="6" y1="20" x2="6" y2="14"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Per-Share Download Caps</h3>
-                <p class="feature-description">Set a maximum number of downloads per share. Once it's hit, the link stops working. Combine with a password and an expiry for the safest way to send sensitive documents.</p>
-            </div>
-
-            <div class="feature-card slate">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                        <line x1="9" y1="13" x2="15" y2="13"/>
-                        <line x1="12" y1="10" x2="12" y2="16"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">One Source for Every File</h3>
-                <p class="feature-description">Drive isn't just for the files you upload. It's the single source of truth for meeting recordings from Vision, file attachments from Chat, audio recordings from Research focus groups, and documents from HR. One place to find anything.</p>
-            </div>
+        <div class="dk-card" style="--accent:#f87171">
+          <div class="ic" style="background:#f8717122"><svg viewBox="0 0 24 24" stroke="#f87171" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <h3>Expiry</h3><p>Set a date and the link stops working on it. The tender document you sent in March is not still open in November.</p>
         </div>
+        <div class="dk-card" style="--accent:#E879F9">
+          <div class="ic" style="background:#E879F922"><svg viewBox="0 0 24 24" stroke="#E879F9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 11 12 15 16 11"/><path d="M3 21h18"/></svg></div>
+          <h3>Download limits</h3><p>Cap how many times a file can be pulled, and watch the count go up. When it hits the ceiling the link closes itself.</p>
+        </div>
+        <div class="dk-card" style="--accent:#22c55e">
+          <div class="ic" style="background:#22c55e22"><svg viewBox="0 0 24 24" stroke="#22c55e" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64"/><line x1="12" y1="2" x2="12" y2="12"/></svg></div>
+          <h3>Revoke</h3><p>Kill a link and it is dead — not "rotated", not "expired soon". The share is removed and the next click gets nothing.</p>
+        </div>
+        <div class="dk-card" style="--accent:#60A5FA">
+          <div class="ic" style="background:#60A5FA22"><svg viewBox="0 0 24 24" stroke="#60A5FA" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="16 7 12 3 8 7"/><path d="M3 21h18"/></svg></div>
+          <h3>Resumable uploads</h3><p>Large files go up in chunks that can be paused, resumed and checked on. A dropped connection at 80% is not a reason to start again.</p>
+        </div>
+        <div class="dk-card" style="--accent:#A78BFA">
+          <div class="ic" style="background:#A78BFA22"><svg viewBox="0 0 24 24" stroke="#A78BFA" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <h3>Audit log</h3><p>Uploads, views, downloads, shares and deletions are all recorded against the file and the person, so a question about who saw what has an answer.</p>
+        </div>
+        <div class="dk-card" style="--accent:#4CC9F0">
+          <div class="ic" style="background:#4CC9F022"><svg viewBox="0 0 24 24" stroke="#4CC9F0" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+          <h3>Folders &amp; stars</h3><p>Folders with their own file counts and sizes, starred files for the handful you open constantly, and search and filters across the folder you are in.</p>
+        </div>
+        <div class="dk-card" style="--accent:#3b82f6">
+          <div class="ic" style="background:#3b82f622"><svg viewBox="0 0 24 24" stroke="#3b82f6" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+          <h3>Where recordings land</h3><p>Meeting recordings from this platform are uploaded here automatically, so the record of a call is a file you own rather than a link on somebody else's service.</p>
+        </div>
+        <div class="dk-card" style="--accent:#94A3B8">
+          <div class="ic" style="background:#94A3B822"><svg viewBox="0 0 24 24" stroke="#94A3B8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+          <h3>Storage you can see</h3><p>Not one number. Images, documents, data and what is sitting inside folders, broken out — so "we are nearly full" comes with somewhere to look.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Integration Section -->
-    <section class="features-section">
-        <div class="section-header">
-            <div class="section-badge">Integrations</div>
-            <h2 class="section-title">Your single source of truth for all business files</h2>
-            <p class="section-description">
-                Drive stores recordings from Vision, files from Chat, and documents from HRMS — your single source of truth for all business files.
-            </p>
+    <!-- ══ FAQ ══ -->
+    <section class="dk-section dk-reveal" id="faq">
+      <div class="dk-kicker">Straight answers</div>
+      <h2 class="dk-h2">The things people ask on the first call.</h2>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Can we take a shared link back?</h3>
+          <p>Yes. Revoking removes the share, and the next person to click it gets nothing. You can also change a live link — tighten it to view-only, add an expiry, lower the download cap — without sending a new one.</p>
         </div>
+        <div>
+          <span class="q">02</span>
+          <h3>Can a link be password protected?</h3>
+          <p>Yes, and the password is stored hashed rather than kept in a readable form. Forwarding the link on its own does not open the file.</p>
+        </div>
+        <div>
+          <span class="q">03</span>
+          <h3>What happens with a big file on a bad connection?</h3>
+          <p>Uploads over a certain size go up in chunks. A session can be checked on, resumed, or abandoned — so losing your connection at 80% costs you the last chunk rather than the whole file.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>Can we tell who downloaded something?</h3>
+          <p>Yes. Uploads, views, downloads, shares and deletions are recorded against the file and the person, and download counts sit on the share itself against the limit you set.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>What can a share link do?</h3>
+          <p>View, download, or edit — chosen when you create it. Combined with a password, an expiry and a download ceiling, that is four independent dials on one link rather than "public" and "private".</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>Do meeting recordings come here?</h3>
+          <p>Yes, automatically. A recorded meeting is uploaded into Drive when it finishes, which is why the platform can promise the recording stays in your workspace.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>Is it a separate subscription?</h3>
+          <p>No. Drive is one of the apps in the seat block, and it is where the other apps put things — chat attachments, meeting recordings, documents from the rest of the platform.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="cta-container">
-            <h2 class="cta-title">Stop emailing files to yourself</h2>
-            <p class="cta-description">Get organized cloud storage your whole team can use.</p>
-            <div class="cta-actions">
-                <a href="activate.html" class="btn-primary">Start Uploading</a>
-            </div>
-        </div>
+    <!-- ══ Close ══ -->
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Stop emailing files you cannot get back.</h2>
+      <p>Share with a password, an expiry and a limit — and revoke it the day the deal falls through.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20Drive%20—%20a%20walkthrough">Book a walkthrough →</a>
+      </div>
     </section>
 
-    <!-- Footer -->
-    <div id="footer"></div>
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+  <script>
+    'use strict';
+
+    var DV_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* Every dial named below is a real column on the share record — access
+       type, password hash, max downloads with its running count, expiry — and
+       the chunked upload lifecycle is a real set of endpoints. */
+    var PARTS = [
+      {
+        tab: 'The link',
+        accent: '#FB923C',
+        head: 'Four dials, not two settings.',
+        sub: 'Most storage offers "anyone with the link" or "invite only". A share here has four independent controls, and they combine.',
+        rows: [
+          ['Access', 'View, download, or edit — decided when the link is made rather than implied by where you put the file.'],
+          ['Password', 'Optional, and stored hashed. Forwarding the link on its own is not enough to open it.'],
+          ['Expiry', 'A date the link stops working, so an old tender document does not stay open for a year.'],
+          ['Download ceiling', 'A maximum number of downloads with a running count against it. When it is reached, the link closes.']
+        ],
+        foot: 'You can also change a live link rather than issuing a new one — <b>tighten it to view-only, add an expiry, lower the cap</b> — and the recipient keeps the same URL.'
+      },
+      {
+        tab: 'Taking it back',
+        accent: '#22c55e',
+        head: 'Revoked means revoked.',
+        sub: 'The moment that matters is the one where a deal falls through, somebody leaves, or a file went to the wrong address.',
+        rows: [
+          ['Revoke', 'The share is removed. The next person to open the link gets nothing — not a cached copy, not a grace period.'],
+          ['See what is open', 'A list of everything you are currently sharing, so "what is out there" is a screen rather than an exercise in memory.'],
+          ['On the file itself', 'Files carry a badge showing they are shared, with the access, expiry and download count behind it.']
+        ],
+        foot: 'This is the difference between sending a file and <b>lending</b> one. Most tools only do the first.'
+      },
+      {
+        tab: 'Getting files in',
+        accent: '#60A5FA',
+        head: 'Built for connections that drop.',
+        sub: 'Large files and Indian office internet are not always on speaking terms, so upload is a session you can resume rather than a single request that either works or does not.',
+        rows: [
+          ['Small files', 'Straight up, in one request.'],
+          ['Large files', 'Chunked. The session is initiated, chunks are sent, and completion assembles them.'],
+          ['If it drops', 'Check the status of a session and carry on from where it stopped, or abandon it deliberately.'],
+          ['Direct to storage', 'A pre-signed upload can send the bytes straight to storage rather than through the application.']
+        ],
+        foot: 'A dropped connection at eighty percent costs you <b>the last chunk</b>, not the last twenty minutes.'
+      },
+      {
+        tab: 'The record',
+        accent: '#A78BFA',
+        head: 'Who did what, to which file, when.',
+        sub: 'For contracts and board papers, the log is not a nice extra. It is the reason the file can live here at all.',
+        rows: [
+          ['Actions recorded', 'Create, update, delete, upload, view, download and share — each against the file and the person.'],
+          ['Downloads counted', 'Every pull against a share increments its counter, which is what makes the ceiling enforceable.'],
+          ['Deletions kept', 'Removing a file is itself an entry, so a gap in the folder has an explanation.']
+        ],
+        foot: 'The trail is <b>a property of the storage</b>, not an add-on tier — which is the point of keeping business files somewhere built for a business.'
+      }
+    ];
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    var part = 0;
+
+    function mountParts() {
+      document.getElementById('dvChips').innerHTML = PARTS.map(function (p, i) {
+        return '<button type="button" data-i="' + i + '" aria-pressed="' + (i === 0) + '" style="--bc:' +
+               p.accent + '"><i></i>' + p.tab + '</button>';
+      }).join('');
+      document.querySelectorAll('#dvChips button').forEach(function (b) {
+        b.addEventListener('click', function () { part = Number(b.dataset.i); renderPart(); });
+      });
+    }
+
+    function renderPart() {
+      var p = PARTS[part];
+      document.body.style.setProperty('--dv', p.accent);
+      document.querySelectorAll('#dvChips button').forEach(function (b, i) {
+        b.setAttribute('aria-pressed', String(i === part));
+      });
+      document.getElementById('dvHead').textContent = p.head;
+      document.getElementById('dvSub').textContent = p.sub;
+      document.getElementById('dvFoot').innerHTML = p.foot;
+      document.getElementById('dvRows').innerHTML = p.rows.map(function (r) {
+        return '<div class="dv-row"><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+      }).join('');
+    }
+
+    mountParts();
+    renderPart();
+
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (DV_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>

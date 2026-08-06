@@ -1,0 +1,148 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DRIVE — "a link you can take back".
+   Loaded after landing-desk.css, scoped to body.drive-desk.
+
+   Storage is sold on capacity, which is the least interesting thing about it.
+   What decides whether a business can actually use it is what happens after
+   a file leaves: whether the link has a password, an expiry, a download
+   ceiling that counts down, and whether you can revoke it. So that is the
+   page.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.drive-desk { --dv: #FB923C; }
+
+body.drive-desk .dk-hero { padding: 56px 0 0; }
+body.drive-desk .dv-note {
+  margin: 18px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+
+body.drive-desk .dv-bench {
+  margin-top: 44px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  text-align: left;
+  position: relative;
+}
+body.drive-desk .dv-bench::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(700px 320px at 12% -22%, var(--dv), transparent 70%);
+  opacity: 0.15;
+}
+body.drive-desk .dv-bench > * { position: relative; }
+
+body.drive-desk .dv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.4);
+}
+body.drive-desk .dv-chips button {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--dk-mute);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+body.drive-desk .dv-chips button i {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--bc);
+  display: block;
+  opacity: 0.55;
+}
+body.drive-desk .dv-chips button:hover { color: var(--dk-ink); background: rgba(255, 255, 255, 0.08); }
+body.drive-desk .dv-chips button[aria-pressed="true"] {
+  color: var(--dk-ink);
+  border-color: color-mix(in srgb, var(--bc) 55%, transparent);
+  background: color-mix(in srgb, var(--bc) 16%, transparent);
+}
+body.drive-desk .dv-chips button[aria-pressed="true"] i { opacity: 1; box-shadow: 0 0 10px var(--bc); }
+body.drive-desk .dv-chips button:focus-visible { outline: 2px solid var(--dv); outline-offset: 2px; }
+
+body.drive-desk .dv-panel { padding: 30px 32px 34px; }
+body.drive-desk .dv-head {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 0;
+}
+body.drive-desk .dv-sub {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+  max-width: 740px;
+}
+body.drive-desk .dv-rows { margin-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.09); }
+body.drive-desk .dv-row {
+  display: grid;
+  grid-template-columns: minmax(146px, 0.22fr) minmax(0, 1fr);
+  gap: 26px;
+  align-items: baseline;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+body.drive-desk .dv-row .k {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.drive-desk .dv-row .v { font-size: 14px; line-height: 1.6; color: var(--dk-ink); }
+body.drive-desk .dv-foot {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--dv) 30%, transparent);
+  background: color-mix(in srgb, var(--dv) 9%, transparent);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--dk-mute);
+}
+body.drive-desk .dv-foot b { color: var(--dk-ink); font-weight: 600; }
+
+body.drive-desk .dv-shot {
+  margin: 0;
+  border-radius: 18px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+body.drive-desk .dv-shot img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--dk-line); }
+body.drive-desk .dv-shot figcaption { padding: 15px 20px; font-size: 13px; color: var(--dk-dim); }
+body.drive-desk .dv-shot figcaption b { color: var(--dk-ink); font-weight: 600; }
+
+@media (max-width: 700px) {
+  body.drive-desk .dv-panel { padding: 24px 20px 28px; }
+  body.drive-desk .dv-chips { padding: 14px; }
+  body.drive-desk .dv-row { grid-template-columns: 1fr; gap: 6px; }
+}
