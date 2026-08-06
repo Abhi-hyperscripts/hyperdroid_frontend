@@ -66,18 +66,42 @@
       <a class="dk-navcta" href="login.html">Sign in</a>
     </nav>
 
-    <div class="fm-wrap">
-      <header class="fm-head">
-        <div class="fm-kicker">Licence activation</div>
-        <h1 class="fm-title">Activate your licence</h1>
-        <p class="fm-lede">Enter the licence key issued for your organisation to bring your workspace online.</p>
-      </header>
+        <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <div class="fm-split">
+      <div class="fm-pitch">
+        <div class="dk-eyebrow"><i></i>Licence activation</div>
+        <h2>One key, and the<br>whole desk opens.</h2>
+        <p>Activation is the last step. Paste the key issued for your organisation and the workspace comes up with every app your block carries, and an administrator account ready to invite the rest of your team.</p>
 
-    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
-    <!-- Navigation -->
-    
+        <div class="fm-wave">
+          <span>What comes online</span>
+          <svg viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="acWave" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#6366F1" stop-opacity="0.30"/>
+                <stop offset="1" stop-color="#6366F1" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,150 C60,144 100,104 160,102 C220,100 250,136 310,132 C370,128 400,80 460,76 C520,72 552,118 612,116 C672,114 700,66 760,60 C820,54 856,102 916,98 C976,94 1004,54 1064,50 C1124,46 1160,74 1200,68 L1200,200 L0,200 Z" fill="url(#acWave)"/>
+            <path d="M0,150 C60,144 100,104 160,102 C220,100 250,136 310,132 C370,128 400,80 460,76 C520,72 552,118 612,116 C672,114 700,66 760,60 C820,54 856,102 916,98 C976,94 1004,54 1064,50 C1124,46 1160,74 1200,68" fill="none" stroke="#818CF8" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+            <path d="M0,168 C70,164 110,146 180,144 C250,142 286,162 356,160 C426,158 462,132 532,130 C602,128 640,154 710,150 C780,146 812,118 882,114 C952,110 992,136 1062,132 C1132,128 1166,108 1200,106" fill="none" stroke="#2DD4BF" stroke-width="1.5" stroke-linecap="round" opacity="0.45"/>
+          </svg>
+        </div>
 
-    <div class="login-form-panel fm-card">
+        <div class="fm-points">
+          <div><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><b>Already bought?</b> This page is only for activating a key you already hold — nothing is charged here.</span></div>
+          <div><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><b>Need a key?</b> Write to <a href="mailto:sales@ragenaizer.com" style="color:var(--fm);text-decoration:none">sales@ragenaizer.com</a> and we will reissue it against your organisation.</span></div>
+          <div><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><b>Not bought yet?</b> Licences come from a seat block — <a href="pricing.html" style="color:var(--fm);text-decoration:none">see pricing</a>.</span></div>
+          <div><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><b>Key not working?</b> Keys are tied to an organisation and carry an expiry — support can check both.</span></div>
+        </div>
+      </div>
+
+      <div class="fm-formcol">
+        <header class="fm-head" style="text-align:left;padding-top:0">
+          <h1 class="fm-title">Activate your licence</h1>
+          <p class="fm-lede" style="margin-left:0">Paste the key exactly as it was issued, including any line breaks.</p>
+        </header>
+<div class="login-form-panel">
             <div class="form-panel-inner">
 <!-- Activation Form -->
                 <div class="login-form-container" id="activationForm">
@@ -202,31 +226,6 @@
             </div>
 
         </div>
-
-    <!-- Global Components -->
-    
-    <!-- Load scripts -->
-    <script>
-        document.write('<script src="../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../js/activate.js?v=' + CACHE_VERSION + '"><\/script>');
-    </script>
-    <script>
-        // Theme toggle
-        const themeToggle = document.getElementById('themeToggle');
-        themeToggle?.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        });
-    </script>
-
-      <div class="fm-assure">
-        <div><b>Already purchased</b><span>This page is for activating a licence you already hold. To buy one, see pricing.</span></div>
-        <div><b>Need a key?</b><span>Write to sales@ragenaizer.com and we will reissue it against your organisation.</span></div>
-        <div><b>Trouble activating</b><span>Keys are tied to an organisation and an expiry — support can check both for you.</span></div>
       </div>
     </div>
 

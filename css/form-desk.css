@@ -545,3 +545,51 @@ body.form-desk {
 /* styles.css is loaded here for the spinner, and brings its own page gradient
    with it — which reads noticeably bluer than every other desk page. */
 body.form-desk { background: var(--dk-bg); }
+
+/* the form column of a split page: its panel IS the card */
+body.form-desk .fm-formcol .login-form-panel,
+body.form-desk .fm-formcol .login-form-container {
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  padding: 30px 32px 32px;
+  max-width: none;
+  margin: 0;
+}
+/* ...but only once — the activation panel wraps its own form container */
+body.form-desk .fm-formcol .login-form-panel .login-form-container {
+  border: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 0;
+}
+body.form-desk .fm-formcol .fm-head { margin-bottom: 22px; }
+
+/* buttons carry an icon and a label; without an explicit flex box the SVG sits
+   on the text baseline and rides a couple of pixels high */
+body.form-desk button[type="submit"],
+body.form-desk .btn-primary,
+body.form-desk .submit-btn,
+body.form-desk .login-submit-btn,
+body.form-desk .auth-submit-btn,
+body.form-desk .signup-submit-btn,
+body.form-desk #activateBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  line-height: 1;
+}
+body.form-desk button svg,
+body.form-desk .btn-primary svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  display: block;
+}
+/* the label is the thing that should sit on the optical centre */
+body.form-desk button .btn-text { display: inline-block; line-height: 1; }
