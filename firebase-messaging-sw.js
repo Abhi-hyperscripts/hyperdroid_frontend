@@ -42,6 +42,12 @@ const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 // in the activate event below.
 const STATIC_CACHE = `ragenaizer-static-v${SW_VERSION}`;
 
+// The one page we deliberately keep a copy of. Page HTML is never cached —
+// see NEVER_CACHE_PATTERNS below — because a stale ledger or payslip is worse
+// than no page at all. This shell is the exception: it holds no data, so it
+// can never be stale, and it turns a dead browser error page into ours.
+const OFFLINE_URL = '/offline.html';
+
 // Same-origin path prefixes we're willing to serve from cache.
 // Anything OUTSIDE this list (including HTML, API, SignalR) goes to network
 // untouched, regardless of any allow logic above.
@@ -114,6 +120,27 @@ self.addEventListener('fetch', (event) => {
     try {
         if (event.request.method !== 'GET') return;
         const url = new URL(event.request.url);
+
+        // Navigations stay network-FIRST — always the live page, never a cached
+        // one — and fall back to the offline shell only when the fetch itself
+        // fails. A 404 or a 500 is a real answer from the server and is passed
+        // through untouched.
+        if (event.request.mode === 'navigate') {
+            event.respondWith((async () => {
+                try {
+                    return await fetch(event.request);
+                } catch (_) {
+                    const cache = await caches.open(STATIC_CACHE);
+                    const shell = await cache.match(OFFLINE_URL);
+                    return shell || new Response('Offline', {
+                        status: 503,
+                        headers: { 'Content-Type': 'text/plain' }
+                    });
+                }
+            })());
+            return;
+        }
+
         if (!isCacheable(url)) return;
         event.respondWith(staleWhileRevalidate(event.request));
     } catch (err) {
@@ -130,7 +157,17 @@ let versionCheckTimer = null;
 // ============================================================
 self.addEventListener('install', (event) => {
     console.log(`[SW] Installing push-only v${APP_VERSION}`);
-    event.waitUntil(self.skipWaiting());
+    event.waitUntil((async () => {
+        // The offline shell is the only thing precached, and a failure to fetch
+        // it must never block the install — the site works fine without it.
+        try {
+            const cache = await caches.open(STATIC_CACHE);
+            await cache.add(new Request(OFFLINE_URL, { cache: 'reload' }));
+        } catch (err) {
+            console.warn('[SW] offline shell not precached:', err);
+        }
+        await self.skipWaiting();
+    })());
 });
 
 // ============================================================

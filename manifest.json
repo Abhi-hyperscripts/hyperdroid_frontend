@@ -1,12 +1,12 @@
 {
   "name": "Ragenaizer",
   "short_name": "Ragenaizer",
-  "description": "Enterprise Workspace Platform - Video, Chat, Drive, HRMS",
+  "description": "The business OS — every app a company runs on, sharing one login, one permission model and one ledger. Mail, meetings, chat, drive, CRM, HRMS, accounts, projects, learning and research.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#050810",
   "theme_color": "#0a1628",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "icons": [
     {
       "src": "/assets/favicon-16x16.png",
@@ -44,7 +44,11 @@
     }
   ],
   "gcm_sender_id": "103953800507",
-  "categories": ["business", "productivity"],
+  "categories": [
+    "business",
+    "productivity",
+    "finance"
+  ],
   "screenshots": [
     {
       "src": "/assets/og-image.png",
