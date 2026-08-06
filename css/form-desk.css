@@ -303,3 +303,126 @@ body.form-desk .no-plan-message a { color: var(--fm); }
   body.form-desk .order-summary-card { position: static; }
   body.form-desk .form-row { grid-template-columns: 1fr; }
 }
+
+/* ── sign in, register, password reset ────────────────────────────────────────
+   These four keep their own DOM because the auth scripts bind to it. What
+   changes is the shell around them and the surfaces underneath. A signed-out
+   person arriving here has usually just come from a page in the desk
+   language, and landing somewhere that looks like a different product is a
+   small but real reason to hesitate. */
+body.form-desk .auth-container,
+body.form-desk .login-form-container { max-width: 460px; margin: 0 auto; }
+body.form-desk .auth-card,
+body.form-desk .login-form-container.fm-card,
+body.form-desk #forgotPasswordCard,
+body.form-desk #resetCard,
+body.form-desk #errorCard,
+body.form-desk #successCard {
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  padding: 30px 32px 32px;
+}
+body.form-desk .auth-header { text-align: center; margin-bottom: 22px; }
+body.form-desk .auth-header h1,
+body.form-desk .auth-header h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 0 0 6px;
+}
+body.form-desk .auth-subtitle { font-size: 14px; color: var(--dk-mute); margin: 0; }
+body.form-desk .auth-logo-img { height: 26px; width: auto; margin-bottom: 16px; }
+body.form-desk .auth-form .form-group,
+body.form-desk .login-form .form-group { margin-bottom: 17px; }
+body.form-desk .auth-footer,
+body.form-desk .login-footer {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--dk-dim);
+}
+body.form-desk .auth-link,
+body.form-desk .auth-footer a,
+body.form-desk .login-footer a { color: var(--fm); text-decoration: none; }
+body.form-desk .auth-link:hover,
+body.form-desk .auth-footer a:hover { text-decoration: underline; }
+body.form-desk .login-submit-btn,
+body.form-desk .auth-submit-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 4px;
+}
+/* the password reveal sits inside the field */
+body.form-desk .input-wrapper { position: relative; }
+body.form-desk .input-wrapper button,
+body.form-desk .password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  color: var(--dk-dim);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+}
+body.form-desk .input-wrapper button:hover,
+body.form-desk .password-toggle:hover { color: var(--dk-ink); background: rgba(255, 255, 255, 0.06); }
+body.form-desk .input-wrapper input { padding-right: 42px; }
+/* the old pages carried their own backdrop and a theme toggle; the desk has
+   its own wash and is dark-only, so both are noise here */
+body.form-desk .auth-grid-overlay,
+body.form-desk .auth-theme-toggle,
+body.form-desk .showcase-bg { display: none; }
+
+/* leading icon inside a field — the auth markup puts an SVG before the input */
+body.form-desk .input-wrapper .input-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  color: #5f6b80;
+  pointer-events: none;
+}
+body.form-desk .input-wrapper:has(.input-icon) input { padding-left: 40px; }
+body.form-desk .form-input { width: 100%; box-sizing: border-box; }
+
+/* sign-in: the form container IS the card here */
+body.form-desk .login-form-container {
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  padding: 30px 32px 32px;
+  margin-top: 28px;
+}
+/* label and "forgot password" share a line — stacked, the link reads as if it
+   belongs to the field above it */
+body.form-desk .label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 7px;
+}
+body.form-desk .label-row .form-label { margin-bottom: 0; }
+body.form-desk .forgot-password-link {
+  font-size: 12.5px;
+  color: var(--fm);
+  text-decoration: none;
+}
+body.form-desk .forgot-password-link:hover { text-decoration: underline; }
