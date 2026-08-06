@@ -1,0 +1,158 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   MEETINGS — "the call ends, the record does not".
+   Loaded after landing-desk.css, scoped to body.vision-desk.
+
+   Video is a commodity; nobody switches conferencing tools for better video.
+   What is not a commodity is where the recording, the transcript and the
+   summary end up afterwards — and who is holding them. So the page is built
+   on what a meeting leaves behind.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.vision-desk {
+  --vs: #3b82f6;
+}
+
+body.vision-desk .dk-hero { padding: 56px 0 0; }
+body.vision-desk .vs-note {
+  margin: 18px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+
+/* ── the bench ────────────────────────────────────────────────────────────── */
+body.vision-desk .vs-bench {
+  margin-top: 44px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  text-align: left;
+  position: relative;
+}
+body.vision-desk .vs-bench::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(700px 320px at 12% -22%, var(--vs), transparent 70%);
+  opacity: 0.15;
+}
+body.vision-desk .vs-bench > * { position: relative; }
+
+body.vision-desk .vs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.4);
+}
+body.vision-desk .vs-chips button {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--dk-mute);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+body.vision-desk .vs-chips button i {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--bc);
+  display: block;
+  opacity: 0.55;
+}
+body.vision-desk .vs-chips button:hover { color: var(--dk-ink); background: rgba(255, 255, 255, 0.08); }
+body.vision-desk .vs-chips button[aria-pressed="true"] {
+  color: var(--dk-ink);
+  border-color: color-mix(in srgb, var(--bc) 55%, transparent);
+  background: color-mix(in srgb, var(--bc) 16%, transparent);
+}
+body.vision-desk .vs-chips button[aria-pressed="true"] i { opacity: 1; box-shadow: 0 0 10px var(--bc); }
+body.vision-desk .vs-chips button:focus-visible { outline: 2px solid var(--vs); outline-offset: 2px; }
+
+body.vision-desk .vs-panel { padding: 30px 32px 34px; }
+body.vision-desk .vs-head {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 0;
+}
+body.vision-desk .vs-sub {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+  max-width: 740px;
+}
+body.vision-desk .vs-rows { margin-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.09); }
+body.vision-desk .vs-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.24fr) minmax(0, 1fr);
+  gap: 26px;
+  align-items: baseline;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+body.vision-desk .vs-row .k {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.vision-desk .vs-row .v { font-size: 14px; line-height: 1.6; color: var(--dk-ink); }
+
+/* the honest note — what a capability actually depends on */
+body.vision-desk .vs-needs {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, var(--vs) 38%, transparent);
+  background: color-mix(in srgb, var(--vs) 8%, transparent);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dk-mute);
+}
+body.vision-desk .vs-needs b { color: var(--dk-ink); font-weight: 600; }
+
+/* ── the real screen ──────────────────────────────────────────────────────── */
+body.vision-desk .vs-shot {
+  margin: 0;
+  border-radius: 18px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+body.vision-desk .vs-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-bottom: 1px solid var(--dk-line);
+}
+body.vision-desk .vs-shot figcaption { padding: 15px 20px; font-size: 13px; color: var(--dk-dim); }
+body.vision-desk .vs-shot figcaption b { color: var(--dk-ink); font-weight: 600; }
+
+@media (max-width: 700px) {
+  body.vision-desk .vs-panel { padding: 24px 20px 28px; }
+  body.vision-desk .vs-chips { padding: 14px; }
+  body.vision-desk .vs-row { grid-template-columns: 1fr; gap: 6px; }
+}

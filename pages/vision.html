@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
@@ -111,7 +113,7 @@
     }
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -121,7 +123,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script>document.write('<link rel="stylesheet" href="../css/landing-theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/vision-desk.css?v=' + CACHE_VERSION + '">');</script>
     <style>
         /* Integrations Section */
         .integrations-section {
@@ -206,330 +209,396 @@
             }
         }
     </style>
+
+    <!-- Schema.org: FAQ -->
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Where are meeting recordings stored?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "In your own Drive within the platform, as a file in your workspace — not in a conferencing vendor's cloud behind a retention policy or an expiring link."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Do you operate your own media servers?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. The selective forwarding servers and the relay behind them are operated by us rather than resold from a conferencing API, which is what allows recordings and transcripts to stay inside your workspace."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "How do live captions work?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "A server-side transcription bot joins the meeting and subscribes to each participant's microphone, producing one consistent transcript rather than each device transcribing separately. It requires a speech-to-text key configured for your tenant and at least two participants; without a key the feature is hidden rather than shown in a broken state."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can external guests join a meeting?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, from a link and without an account, when the meeting is set to allow guests. It is a per-meeting setting rather than a plan restriction."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What meeting types are available?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Regular, where anyone with the link can join; hosted, where the host must start the meeting before others join; and participant-controlled, where only people on the allowed list can enter."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Are transcripts and summaries available?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Transcripts are kept per session and export as plain text or JSON, and a summary can be generated from the transcript. Both depend on the AI keys held for your tenant."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Are virtual backgrounds supported?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. The feature was removed because it cost more in dropped frames on ordinary hardware than it delivered."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Is Meetings billed separately?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. It is one of the apps included in the seat block, on the same login as CRM, Projects and Accounts."
+            }
+        }
+    ]
+}
+    </script>
 </head>
-<body class="landing-page landing-vision">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing vision-desk">
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-bg">
-            <div class="hero-gradient"></div>
-            <div class="hero-grid"></div>
-        </div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
 
-        <div class="hero-content">
-            <div class="hero-text">
-                <div class="hero-badge">Video Conferencing</div>
-                <h1 class="hero-title">
-                    Meetings that just work,<br>
-                    <span class="highlight">every single time.</span>
-                </h1>
-                <p class="hero-description">
-                    Host professional video meetings without the technical headaches. One click to join, crystal clear audio and video, live captions for accessibility, and all the tools your team needs to collaborate effectively.
-                </p>
-                <div class="hero-actions">
-                    <a href="pricing.html" class="btn-primary">See Meetings pricing</a>
-                    <a href="#features" class="btn-secondary">See How It Works</a>
-                </div>
-                <div class="hero-stats">
-                    <div class="stat-item">
-                        <div class="stat-value">1-Click</div>
-                        <div class="stat-label">To Join</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">HD</div>
-                        <div class="stat-label">Video & Audio</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">Free</div>
-                        <div class="stat-label">To Start</div>
-                    </div>
-                </div>
-            </div>
+    <!-- ══ Hero ══════════════════════════════════════════════════════════════
+         Nobody changes conferencing tools for better video. What is worth
+         switching for is where the recording and the transcript end up, and
+         who is holding them — so that is what the page is about. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>Meetings</div>
+      <h1 class="dk-h1">The call ends.<br>The record stays yours.</h1>
+      <p class="dk-sub">HD video on media servers we run ourselves — not rented from a conferencing vendor. The recording lands in your Drive, the transcript in your workspace, and the summary next to the project it belongs to.</p>
+      <p class="vs-note">What a meeting here actually leaves behind</p>
+    </header>
 
-            <div class="hero-visual">
-                <div class="hero-mockup">
-                    <div class="mockup-header">
-                        <span class="mockup-dot"></span>
-                        <span class="mockup-dot"></span>
-                        <span class="mockup-dot"></span>
-                    </div>
-                    <div class="mockup-content">
-                        <svg width="100%" height="180" viewBox="0 0 400 180" fill="none">
-                            <!-- Video grid mockup -->
-                            <rect x="10" y="10" width="185" height="110" rx="8" fill="rgba(59, 130, 246, 0.2)" stroke="rgba(59, 130, 246, 0.3)" stroke-width="1"/>
-                            <rect x="205" y="10" width="185" height="52" rx="8" fill="rgba(139, 92, 246, 0.15)" stroke="rgba(139, 92, 246, 0.25)" stroke-width="1"/>
-                            <rect x="205" y="68" width="185" height="52" rx="8" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.25)" stroke-width="1"/>
-                            <!-- Controls bar -->
-                            <rect x="10" y="135" width="380" height="35" rx="8" fill="rgba(255, 255, 255, 0.05)"/>
-                            <circle cx="80" cy="152" r="12" fill="rgba(239, 68, 68, 0.3)" stroke="rgba(239, 68, 68, 0.5)" stroke-width="1"/>
-                            <circle cx="120" cy="152" r="12" fill="rgba(255, 255, 255, 0.1)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1"/>
-                            <circle cx="160" cy="152" r="12" fill="rgba(255, 255, 255, 0.1)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1"/>
-                            <circle cx="200" cy="152" r="12" fill="rgba(255, 255, 255, 0.1)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1"/>
-                            <circle cx="320" cy="152" r="12" fill="rgba(59, 130, 246, 0.3)" stroke="rgba(59, 130, 246, 0.5)" stroke-width="1"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- The bench. -->
+    <div class="vs-bench" id="bench">
+      <div class="vs-chips" role="group" aria-label="Choose part of a meeting" id="vsChips"></div>
+      <div class="vs-panel">
+        <h2 class="vs-head" id="vsHead"></h2>
+        <p class="vs-sub" id="vsSub"></p>
+        <div class="vs-rows" id="vsRows"></div>
+        <p class="vs-needs" id="vsNeeds"></p>
+      </div>
+    </div>
+
+    <!-- ══ The real screen ══ -->
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The actual product</div>
+      <h2 class="dk-h2">Every room in the workspace.</h2>
+      <p class="dk-lede">Meetings created over the last month, what is coming up, and which projects are actually meeting — rather than a list of links with no idea which ones matter.</p>
+      <figure class="vs-shot" style="margin-top:36px">
+        <img src="../assets/screens/app-vision.png" alt="Ragenaizer Meetings — meetings created over the last 30 days, upcoming project rooms and the busiest projects" width="1600" height="1000" loading="lazy">
+        <figcaption><b>Meetings</b> — the rooms in this workspace, what is coming up, and which projects they belong to.</figcaption>
+      </figure>
     </section>
 
-    <!-- Features Section -->
-    <section class="features-section" id="features">
-        <div class="section-header">
-            <div class="section-badge">Features</div>
-            <h2 class="section-title">Everything your team needs to connect</h2>
-            <p class="section-description">
-                From quick check-ins to company-wide presentations, Vision gives you professional meetings without the learning curve.
-            </p>
+    <!-- ══ Coverage ══ -->
+    <section class="dk-section dk-reveal" id="covers">
+      <div class="dk-kicker">What it covers</div>
+      <h2 class="dk-h2">In the room, and after it.</h2>
+      <p class="dk-lede">The things a working meeting needs, and none of the things that exist to be listed on a comparison table.</p>
+      <div class="dk-grid">
+        <div class="dk-card" style="--accent:#3b82f6">
+          <div class="ic" style="background:#3b82f622"><svg viewBox="0 0 24 24" stroke="#3b82f6" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+          <h3>HD video</h3><p>Active speaker detection, a grid that behaves when people come and go, and picture-in-picture for when you need the other window.</p>
         </div>
-
-        <div class="features-grid">
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="23 7 16 12 23 17 23 7"/>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Crystal Clear Video</h3>
-                <p class="feature-description">HD video that automatically adjusts to your connection. No more frozen screens or choppy audio—just smooth, professional meetings.</p>
-            </div>
-
-            <div class="feature-card purple">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                        <line x1="8" y1="21" x2="16" y2="21"/>
-                        <line x1="12" y1="17" x2="12" y2="21"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Share Your Screen</h3>
-                <p class="feature-description">Present slides, demo products, or walk through documents. Viewers can zoom in on details and even capture screenshots.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
-                        <line x1="16" y1="8" x2="2" y2="22"/>
-                        <line x1="17.5" y1="15" x2="9" y2="15"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Look Professional Anywhere</h3>
-                <p class="feature-description">Working from a messy room? Use background blur or choose from preset backgrounds. AI keeps you in focus while hiding distractions.</p>
-            </div>
-
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polygon points="10 8 16 12 10 16 10 8"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Record & Review</h3>
-                <p class="feature-description">Never miss important details. Record meetings automatically and access them anytime from your cloud storage.</p>
-            </div>
-
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Control Who Joins</h3>
-                <p class="feature-description">Open meetings for quick collaboration, or use waiting rooms and invite lists for sensitive discussions. You decide who gets in.</p>
-            </div>
-
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                        <line x1="9" y1="9" x2="9.01" y2="9"/>
-                        <line x1="15" y1="9" x2="15.01" y2="9"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Keep Everyone Engaged</h3>
-                <p class="feature-description">Emoji reactions, hand raising, and live chat keep meetings interactive. See who's speaking and never talk over each other.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        <line x1="9" y1="9" x2="15" y2="9"/>
-                        <line x1="9" y1="13" x2="13" y2="13"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Live Captions (CC)</h3>
-                <p class="feature-description">Real-time speech-to-text captions during meetings. Click the CC button and see live transcription with speaker names. Powered by Deepgram cloud STT with local Vosk/Whisper fallback. Accessible by default.</p>
-            </div>
-
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Guest Join Links</h3>
-                <p class="feature-description">Share a link — anyone joins without an account. Perfect for client calls, interviews, and external meetings. No signup, no download, just click and join.</p>
-            </div>
-
-            <div class="feature-card purple">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        <circle cx="12" cy="16" r="1"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Meeting Types</h3>
-                <p class="feature-description">Three meeting modes: Regular (anyone with link joins), Hosted (host must start first, lobby with admit/reject), and Participant-Controlled (allowlist-only). Choose the right security level for each meeting.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        <line x1="7" y1="9" x2="17" y2="9"/>
-                        <line x1="7" y1="13" x2="13" y2="13"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Live Captions in Real Time</h3>
-                <p class="feature-description">Turn on captions and the AI transcribes the meeting live. Accessibility, comprehension and language support — all built in. The caption stream is captured the moment someone speaks, so nobody misses a word.</p>
-            </div>
-
-            <div class="feature-card teal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M2 12h20"/>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Code-Switching Transcription</h3>
-                <p class="feature-description">Run a meeting where speakers swap between English and Hindi (or any two languages) mid-sentence? Most transcription tools choke. Vision handles it natively. Pick the meeting language, enable code-switching, and the transcript follows the conversation.</p>
-            </div>
-
-            <div class="feature-card indigo">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 2 6h4c0-3 2-4 2-6a4 4 0 0 0-4-4z"/>
-                        <line x1="10" y1="16" x2="14" y2="16"/>
-                        <line x1="10" y1="19" x2="14" y2="19"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">AI Meeting Assistant & Summaries</h3>
-                <p class="feature-description">Toggle AI support per meeting. When the call ends, the AI delivers a clean summary of decisions, action items and key points — auto-generated, fully editable, or replace with your own. Stop taking notes; start being present.</p>
-            </div>
-
-            <div class="feature-card amber">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <circle cx="12" cy="10" r="3"/>
-                        <path d="M7 20.66c.71-1.85 2.62-3.16 5-3.16s4.29 1.31 5 3.16"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Speaker Diarization & Roles</h3>
-                <p class="feature-description">Transcripts identify who said what across the entire meeting — and you can assign roles (interviewer, candidate, client, host) to each speaker. Perfect for interviews, sales calls, focus groups and any meeting where attribution matters.</p>
-            </div>
-
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="9" y1="13" x2="15" y2="13"/>
-                        <line x1="9" y1="17" x2="15" y2="17"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Transcript Export & Search</h3>
-                <p class="feature-description">Every meeting transcript can be exported as text or JSON. Search across past meetings, paste sections into reports, or feed them into your own tooling. The full session history is yours.</p>
-            </div>
-
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                        <polyline points="22 6 12 13 2 6"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Email Meeting Invites</h3>
-                <p class="feature-description">Add participants and send invitation emails directly from the meeting page. The email includes the join link, meeting details and a calendar reminder. No copy-pasting links into a separate mail client.</p>
-            </div>
-
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                        <line x1="3" y1="9" x2="21" y2="9"/>
-                        <line x1="9" y1="21" x2="9" y2="9"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Project Workspaces</h3>
-                <p class="feature-description">Group meetings under a project for context — recurring stand-ups, client engagements, sprint reviews. Pull every meeting, recording and transcript for a project from one screen instead of digging through a flat list.</p>
-            </div>
+        <div class="dk-card" style="--accent:#60A5FA">
+          <div class="ic" style="background:#60A5FA22"><svg viewBox="0 0 24 24" stroke="#60A5FA" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <h3>Screen sharing</h3><p>With zoom and pan on the shared screen, which is the difference between reading somebody's terminal and asking them to make it bigger.</p>
         </div>
+        <div class="dk-card" style="--accent:#2DD4BF">
+          <div class="ic" style="background:#2DD4BF22"><svg viewBox="0 0 24 24" stroke="#2DD4BF" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <h3>Chat, reactions, hands</h3><p>In-meeting chat that persists, reactions for the people who do not want to interrupt, and a raised hand for the ones who should.</p>
+        </div>
+        <div class="dk-card" style="--accent:#E879F9">
+          <div class="ic" style="background:#E879F922"><svg viewBox="0 0 24 24" stroke="#E879F9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+          <h3>Live captions</h3><p>Spoken words on screen as they are said, produced by a bot that joins the room rather than by each laptop doing its own guessing.</p>
+        </div>
+        <div class="dk-card" style="--accent:#FB923C">
+          <div class="ic" style="background:#FB923C22"><svg viewBox="0 0 24 24" stroke="#FB923C" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <h3>Recording</h3><p>Turn it on per meeting or have it start itself. The finished file is uploaded to Drive, where it is a file you own rather than a link that expires.</p>
+        </div>
+        <div class="dk-card" style="--accent:#A78BFA">
+          <div class="ic" style="background:#A78BFA22"><svg viewBox="0 0 24 24" stroke="#A78BFA" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg></div>
+          <h3>Transcripts</h3><p>Kept per session, exportable as text or JSON, with a summary — so the person who missed it reads five lines instead of watching an hour.</p>
+        </div>
+        <div class="dk-card" style="--accent:#22c55e">
+          <div class="ic" style="background:#22c55e22"><svg viewBox="0 0 24 24" stroke="#22c55e" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
+          <h3>Guests</h3><p>People outside your company join from a link without an account, when the meeting allows it — which is most of the time, and is a setting rather than a plan.</p>
+        </div>
+        <div class="dk-card" style="--accent:#4CC9F0">
+          <div class="ic" style="background:#4CC9F022"><svg viewBox="0 0 24 24" stroke="#4CC9F0" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <h3>Project rooms</h3><p>Each project has its own room, so the stand-up is a place rather than a link somebody re-pastes into chat every morning.</p>
+        </div>
+        <div class="dk-card" style="--accent:#F59E0B">
+          <div class="ic" style="background:#F59E0B22"><svg viewBox="0 0 24 24" stroke="#F59E0B" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h3>Our own servers</h3><p>The media servers and the relay behind them are ours to run. Your calls are not passing through a conferencing vendor's estate on the way.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Integrations Section -->
-    <section class="integrations-section" id="integrations">
-        <div class="section-header">
-            <div class="section-badge">Integrations</div>
-            <h2 class="section-title">Connected across your workspace</h2>
-            <p class="section-description">
-                Vision works with your other tools so meetings fit naturally into your workflow.
-            </p>
+    <!-- ══ FAQ ══ -->
+    <section class="dk-section dk-reveal" id="faq">
+      <div class="dk-kicker">Straight answers</div>
+      <h2 class="dk-h2">The things people ask on the first call.</h2>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Where do recordings actually go?</h3>
+          <p>Into your Drive in this platform, as a file in your workspace. Not a vendor's cloud with a retention policy and a link that stops working when somebody downgrades a plan.</p>
         </div>
-
-        <div class="integrations-grid">
-            <div class="integration-card">
-                <div class="integration-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                    </svg>
-                </div>
-                <h3 class="integration-title">Drive</h3>
-                <p class="integration-description">Meeting recordings automatically save to Drive. Access, share, and audit recordings from one place.</p>
-            </div>
-            <div class="integration-card">
-                <div class="integration-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7"/>
-                        <rect x="14" y="3" width="7" height="7"/>
-                        <rect x="3" y="14" width="7" height="7"/>
-                        <rect x="14" y="14" width="7" height="7"/>
-                    </svg>
-                </div>
-                <h3 class="integration-title">PMS</h3>
-                <p class="integration-description">PMS auto-creates a dedicated meeting room for every project. One-click video calls from your project dashboard.</p>
-            </div>
+        <div>
+          <span class="q">02</span>
+          <h3>Do you run your own media servers?</h3>
+          <p>Yes — the selective forwarding servers and the relay behind them are ours to operate, rather than a conferencing API we resell. That is what makes the answer to the previous question possible.</p>
         </div>
+        <div>
+          <span class="q">03</span>
+          <h3>How do live captions work?</h3>
+          <p>A transcription bot joins the room and subscribes to each participant's microphone, so captions come from one place rather than every laptop guessing separately.</p>
+          <p><b>It needs a speech-to-text key configured for your tenant</b>, and at least two people in the room. Without a key the feature is not shown at all rather than shown and broken.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>Can people outside the company join?</h3>
+          <p>Yes, from a link, without an account — when the meeting is set to allow guests. It is a per-meeting setting, not something gated behind a higher tier.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>What are the meeting types?</h3>
+          <p>Regular, where anyone with the link joins. Hosted, where the host has to start it first and then anyone with the link joins. And participant-controlled, where only the people on the list can get in.</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>Do we get a summary, or just a wall of text?</h3>
+          <p>Both. The transcript is kept per session and exports as text or JSON, and a summary can be generated from it — which is what the person who missed the call actually reads.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>What about virtual backgrounds?</h3>
+          <p>Removed. It cost more in dropped frames on ordinary laptops than it was worth, and we would rather say so than keep it on a feature list.</p>
+        </div>
+        <div>
+          <span class="q">08</span>
+          <h3>Is it a separate subscription?</h3>
+          <p>No. Meetings is one of the apps in the block — the same login as your CRM, your projects and your books, with the recording landing in the same Drive.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="cta-container">
-            <h2 class="cta-title">Ready to have better meetings?</h2>
-            <p class="cta-description">Meetings on servers we run ourselves, in the same platform as the rest of your work.</p>
-            <div class="cta-actions">
-                <a href="pricing.html" class="btn-primary">See Meetings pricing</a>
-            </div>
-        </div>
+    <!-- ══ Close ══ -->
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Meet where the rest of the work already is.</h2>
+      <p>One login, one bill, and a recording that stays in your own workspace afterwards.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20Meetings%20—%20a%20walkthrough">Book a walkthrough →</a>
+      </div>
     </section>
 
-    <!-- Footer -->
-    <div id="footer"></div>
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+  <script>
+    'use strict';
+
+    var VS_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ── what a meeting leaves behind ─────────────────────────────────────────
+       Each panel maps to something real in the Vision service: the meeting
+       model's types and flags, the server-side transcription bot, LiveKit
+       egress uploading to Drive, and the transcripts controller's sessions,
+       exports and summary. Virtual backgrounds are deliberately absent —
+       they were removed from the product and saying otherwise on a landing
+       page is how a demo goes wrong. */
+    var PARTS = [
+      {
+        tab: 'In the room',
+        accent: '#3b82f6',
+        head: 'The parts you actually use.',
+        sub: 'Video, a screen you can read, and the small affordances that stop a call becoming a queue of people waiting to interrupt each other.',
+        rows: [
+          ['Video', 'A grid that rearranges as people join and leave, with the active speaker surfaced rather than hunted for.'],
+          ['Screen share', 'Zoom and pan into the shared screen, so nobody has to be asked to increase their font size.'],
+          ['Alongside', 'Chat that persists, reactions, a raised hand, and picture-in-picture when you need another window.'],
+          ['Not included', 'Virtual backgrounds. They were removed — they cost more in dropped frames on ordinary laptops than they were worth.']
+        ],
+        needs: 'Nothing to install. It runs in the browser, on <b>media servers we operate ourselves</b> rather than a conferencing API we resell.'
+      },
+      {
+        tab: 'Live captions',
+        accent: '#E879F9',
+        head: 'One transcriber, not thirty.',
+        sub: 'A bot joins the room and subscribes to each participant’s microphone, so the words on screen come from a single place instead of every laptop guessing on its own.',
+        rows: [
+          ['How it runs', 'Server-side. The bot joins the meeting and streams each participant separately to the speech engine.'],
+          ['On screen', 'Captions appear in the room as people speak, in an overlay you can move and resize.'],
+          ['Why server-side', 'One consistent transcript rather than thirty partial ones, and no laptop paying the cost of transcribing everybody.']
+        ],
+        needs: 'Needs a <b>speech-to-text key configured for your tenant</b> and at least two people in the room. Without a key the feature is hidden rather than shown and broken.'
+      },
+      {
+        tab: 'The recording',
+        accent: '#FB923C',
+        head: 'A file in your Drive, not a link on ours.',
+        sub: 'Recording is per meeting, and can start itself. What matters is where it ends up when the call is over.',
+        rows: [
+          ['Starting it', 'Switch it on for a meeting, or set the meeting to record itself so nobody has to remember.'],
+          ['When it finishes', 'The finished recording is uploaded into your Drive in this platform, in your own workspace.'],
+          ['What that means', 'No retention policy of ours, no link that stops working, and no export request when you want it back.']
+        ],
+        needs: 'Recordings count against your Drive storage — <b>because they are your files</b>, sitting where the rest of your files sit.'
+      },
+      {
+        tab: 'The transcript',
+        accent: '#A78BFA',
+        head: 'What the person who missed it reads.',
+        sub: 'An hour of video is not a record anyone will use. A transcript with a summary is.',
+        rows: [
+          ['Per session', 'Each transcription session is kept in its own right, so a meeting that ran twice does not merge into one blur.'],
+          ['Exports', 'Plain text for reading and pasting, JSON for anything you want to do with it programmatically.'],
+          ['Summary', 'Generated from the transcript, so catching up is five lines rather than a scrub bar.']
+        ],
+        needs: 'Also key-dependent: transcription and summarising use <b>the AI keys held for your tenant</b>, and the capability is hidden when there are none.'
+      },
+      {
+        tab: 'Who can join',
+        accent: '#22c55e',
+        head: 'Three kinds of room, chosen per meeting.',
+        sub: 'Access is a property of the meeting rather than a plan you have to be on.',
+        rows: [
+          ['Regular', 'Anyone with the link joins. For the calls where the link is the invitation.'],
+          ['Hosted', 'The host has to start it first; once started, anyone with the link joins.'],
+          ['Participant-controlled', 'Only the people on the allowed list get in. For the conversations that need it.'],
+          ['Guests', 'People without an account join from a link when the meeting allows guests — a per-meeting setting.']
+        ],
+        needs: 'All three are available on every plan. <b>Access control is not a tier</b>.'
+      }
+    ];
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    var part = 0;
+
+    function mountParts() {
+      document.getElementById('vsChips').innerHTML = PARTS.map(function (p, i) {
+        return '<button type="button" data-i="' + i + '" aria-pressed="' + (i === 0) + '" style="--bc:' +
+               p.accent + '"><i></i>' + p.tab + '</button>';
+      }).join('');
+      document.querySelectorAll('#vsChips button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          part = Number(b.dataset.i);
+          renderPart();
+        });
+      });
+    }
+
+    function renderPart() {
+      var p = PARTS[part];
+      document.body.style.setProperty('--vs', p.accent);
+      document.querySelectorAll('#vsChips button').forEach(function (b, i) {
+        b.setAttribute('aria-pressed', String(i === part));
+      });
+      document.getElementById('vsHead').textContent = p.head;
+      document.getElementById('vsSub').textContent = p.sub;
+      document.getElementById('vsNeeds').innerHTML = p.needs;
+      document.getElementById('vsRows').innerHTML = p.rows.map(function (r) {
+        return '<div class="vs-row"><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+      }).join('');
+    }
+
+    mountParts();
+    renderPart();
+
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (VS_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>
