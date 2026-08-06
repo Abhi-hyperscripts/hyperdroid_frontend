@@ -54,156 +54,12 @@
     <script src="/js/pwa-install-prompt.js"></script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        .feature-hero { padding: 120px 60px 80px; position: relative; overflow: hidden; }
-        .feature-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 30% -10%, rgba(245, 158, 11, 0.15), transparent), radial-gradient(ellipse 80% 50% at 80% 10%, rgba(239, 68, 68, 0.1), transparent); }
-        .feature-hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
-        .feature-hero-text h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 20px; }
-        .feature-hero-text h1 .highlight { background: linear-gradient(135deg, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .feature-hero-text p { font-size: 18px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; }
-        .feature-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 100px; font-size: 13px; font-weight: 600; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
-        .hero-stats { display: flex; gap: 32px; margin-top: 32px; }
-        .hero-stat { text-align: center; }
-        .hero-stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); }
-        .hero-stat-label { font-size: 13px; color: var(--text-tertiary); }
-        .feature-hero-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 24px; }
-        .hero-visual-mockup { background: var(--bg-tertiary); border-radius: 12px; padding: 20px; }
-
-        .rfq-summary { margin-bottom: 16px; }
-        .rfq-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .rfq-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-        .rfq-badge { padding: 4px 10px; background: rgba(245, 158, 11, 0.2); border-radius: 100px; font-size: 11px; font-weight: 600; color: #fbbf24; }
-        .rfq-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
-        .rfq-stat-item { background: var(--bg-secondary); border-radius: 8px; padding: 12px; text-align: center; }
-        .rfq-stat-label { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
-        .rfq-stat-value { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-        .rfq-stat-value.best { color: #10b981; }
-        .rfq-stat-value.vendors { color: #f59e0b; }
-        .rfq-stat-value.savings { color: #8b5cf6; }
-        .vendor-row { display: flex; align-items: center; gap: 12px; background: var(--bg-secondary); border-radius: 8px; padding: 12px; margin-bottom: 8px; }
-        .vendor-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; }
-        .vendor-avatar.v1 { background: linear-gradient(135deg, #10b981, #06b6d4); }
-        .vendor-avatar.v2 { background: linear-gradient(135deg, #f59e0b, #ef4444); }
-        .vendor-avatar.v3 { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
-        .vendor-info { flex: 1; }
-        .vendor-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-        .vendor-detail { font-size: 11px; color: var(--text-tertiary); }
-        .vendor-score { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
-        .vendor-score.top { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-        .vendor-score.mid { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-        .ai-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; background: rgba(139, 92, 246, 0.15); border-radius: 4px; font-size: 10px; font-weight: 600; color: #a78bfa; margin-top: 8px; }
-
-        /* The Problem Section */
-        .problem-section { padding: 80px 60px; background: var(--bg-secondary); }
-        .problem-content { max-width: 1200px; margin: 0 auto; }
-        .problem-grid { display: grid; grid-template-columns: 1fr 40px 1fr; gap: 24px; align-items: start; margin-top: 48px; }
-        .problem-column { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
-        .problem-column.before { border-color: rgba(239, 68, 68, 0.3); }
-        .problem-column.after { border-color: rgba(16, 185, 129, 0.3); }
-        .problem-column-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-        .problem-column-badge { padding: 6px 14px; border-radius: 100px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-        .problem-column-badge.before { background: rgba(239, 68, 68, 0.1); color: #f87171; }
-        .problem-column-badge.after { background: rgba(16, 185, 129, 0.1); color: #34d399; }
-        .problem-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-secondary); }
-        .problem-item:first-child { border-top: none; }
-        .problem-item svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; }
-        .problem-item.bad svg { color: #ef4444; }
-        .problem-item.good svg { color: #10b981; }
-        .problem-item-text { font-size: 15px; color: var(--text-secondary); line-height: 1.5; }
-        .problem-item-text strong { color: var(--text-primary); font-weight: 600; }
-        .problem-arrow { display: flex; align-items: center; justify-content: center; align-self: center; }
-        .problem-arrow svg { width: 32px; height: 32px; color: var(--text-tertiary); }
-
-        .features-deep { padding: 80px 60px; max-width: 1200px; margin: 0 auto; }
-        .section-header { text-align: center; margin-bottom: 60px; }
-        .section-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
-        .section-desc { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
-
-        .feature-deep-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-        .feature-deep-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; transition: all 0.3s ease; }
-        .feature-deep-card:hover { border-color: var(--border-focus); transform: translateY(-4px); }
-        .feature-deep-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-        .feature-deep-icon svg { width: 28px; height: 28px; color: #fff; }
-        .icon-amber { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
-        .icon-red { background: linear-gradient(135deg, #ef4444, #f87171); }
-        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
-        .icon-purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
-        .icon-green { background: linear-gradient(135deg, #10b981, #34d399); }
-        .icon-blue { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
-        .icon-pink { background: linear-gradient(135deg, #ec4899, #f472b6); }
-        .icon-orange { background: linear-gradient(135deg, #f97316, #fb923c); }
-        .feature-deep-card h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
-        .feature-deep-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
-        .feature-deep-card ul { list-style: none; padding: 0; margin: 0; }
-        .feature-deep-card ul li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-tertiary); border-top: 1px solid var(--border-secondary); }
-        .feature-deep-card ul li:first-child { border-top: none; }
-        .feature-deep-card ul li svg { width: 16px; height: 16px; color: #f59e0b; flex-shrink: 0; }
-
-        /* ROI Section */
-        .roi-section { background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(16, 185, 129, 0.05)); padding: 80px 60px; }
-        .roi-content { max-width: 1200px; margin: 0 auto; }
-        .roi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 48px; }
-        .roi-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; text-align: center; }
-        .roi-card:hover { border-color: rgba(245, 158, 11, 0.4); }
-        .roi-value { font-size: 42px; font-weight: 800; margin-bottom: 8px; }
-        .roi-value.amber { color: #f59e0b; }
-        .roi-value.green { color: #10b981; }
-        .roi-value.purple { color: #8b5cf6; }
-        .roi-value.cyan { color: #06b6d4; }
-        .roi-label { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
-        .roi-desc { font-size: 13px; color: var(--text-tertiary); line-height: 1.5; }
-
-        .workflow-section { background: var(--bg-secondary); padding: 60px; margin-top: 40px; border-radius: 20px; border: 1px solid var(--border-primary); }
-        .workflow-title { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; text-align: center; }
-        .workflow-desc { font-size: 16px; color: var(--text-secondary); text-align: center; margin-bottom: 32px; }
-        .workflow-steps { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
-        .workflow-step { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px 24px; text-align: center; flex: 1; min-width: 140px; max-width: 180px; position: relative; }
-        .workflow-step-num { width: 32px; height: 32px; background: linear-gradient(135deg, #f59e0b, #ef4444); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; margin: 0 auto 12px; }
-        .workflow-step-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-        .workflow-step-detail { font-size: 11px; color: var(--text-tertiary); }
-
-        .ai-highlight { background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 20px; padding: 40px; margin-top: 40px; }
-        .ai-highlight h3 { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
-        .ai-highlight h3 svg { width: 28px; height: 28px; color: #f59e0b; }
-        .ai-highlight p { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
-        .ai-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-        .ai-feature { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg-secondary); border-radius: 10px; }
-        .ai-feature svg { width: 18px; height: 18px; color: #f59e0b; flex-shrink: 0; }
-        .ai-feature span { font-size: 14px; color: var(--text-primary); }
-
-        .feature-cta { text-align: center; padding: 80px 60px; position: relative; }
-        .feature-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(245, 158, 11, 0.1), transparent); }
-        .cta-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
-        .cta-desc { font-size: 18px; color: var(--text-secondary); margin-bottom: 32px; position: relative; max-width: 600px; margin-left: auto; margin-right: auto; }
-        .cta-buttons { display: flex; gap: 16px; justify-content: center; position: relative; }
-
-        @media (max-width: 968px) {
-            .feature-hero-content { grid-template-columns: 1fr; }
-            .feature-deep-grid { grid-template-columns: 1fr; }
-            .problem-grid { grid-template-columns: 1fr; }
-            .problem-arrow { transform: rotate(90deg); }
-            .roi-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 768px) {
-            .feature-hero { padding: 100px 24px 60px; }
-            .problem-section { padding: 60px 24px; }
-            .features-deep { padding: 60px 24px; }
-            .roi-section { padding: 60px 24px; }
-            .feature-cta { padding: 60px 24px; }
-            .hero-stats { flex-wrap: wrap; gap: 20px; }
-            .workflow-section { padding: 40px 24px; }
-            .ai-highlight { padding: 24px; }
-            .rfq-stats-row { grid-template-columns: 1fr; }
-            .workflow-steps { flex-direction: column; align-items: center; }
-            .workflow-step { max-width: 100%; }
-            .roi-grid { grid-template-columns: 1fr; }
-        }
-    </style>
     <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/content-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/story-desk.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page desk-landing content-desk">
+<body class="landing-page desk-landing content-desk story-desk">
   <div class="dk-wrap">
     <nav class="dk-nav">
       <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
@@ -256,7 +112,7 @@
                         <div class="rfq-stats-row">
                             <div class="rfq-stat-item">
                                 <div class="rfq-stat-label">Best Price</div>
-                                <div class="rfq-stat-value best">$12,450</div>
+                                <div class="rfq-stat-value best">₹10,45,000</div>
                             </div>
                             <div class="rfq-stat-item">
                                 <div class="rfq-stat-label">Vendors Quoted</div>
@@ -264,7 +120,7 @@
                             </div>
                             <div class="rfq-stat-item">
                                 <div class="rfq-stat-label">You Save</div>
-                                <div class="rfq-stat-value savings">$3,750</div>
+                                <div class="rfq-stat-value savings">₹3,15,000</div>
                             </div>
                         </div>
                     </div>
@@ -272,7 +128,7 @@
                         <div class="vendor-avatar v1">AF</div>
                         <div class="vendor-info">
                             <div class="vendor-name">Apex Furnishings</div>
-                            <div class="vendor-detail">$12,450 &middot; 14 days &middot; 4.8 stars</div>
+                            <div class="vendor-detail">₹10,45,000 &middot; 14 days &middot; 4.8 stars</div>
                         </div>
                         <span class="vendor-score top">Best Value</span>
                     </div>
@@ -280,7 +136,7 @@
                         <div class="vendor-avatar v2">NF</div>
                         <div class="vendor-info">
                             <div class="vendor-name">Nova Furniture Co.</div>
-                            <div class="vendor-detail">$13,200 &middot; 10 days &middot; 4.5 stars</div>
+                            <div class="vendor-detail">₹11,08,000 &middot; 10 days &middot; 4.5 stars</div>
                         </div>
                         <span class="vendor-score mid">Fastest</span>
                     </div>
@@ -288,7 +144,7 @@
                         <div class="vendor-avatar v3">PW</div>
                         <div class="vendor-info">
                             <div class="vendor-name">Prime Workspace</div>
-                            <div class="vendor-detail">$14,800 &middot; 7 days &middot; 4.9 stars</div>
+                            <div class="vendor-detail">₹12,42,000 &middot; 7 days &middot; 4.9 stars</div>
                         </div>
                         <span class="vendor-score mid">Top Quality</span>
                     </div>

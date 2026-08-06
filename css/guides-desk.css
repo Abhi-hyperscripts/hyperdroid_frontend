@@ -1,0 +1,155 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   GUIDES INDEX — pages/blog/index.html (body.guides-desk).
+
+   The old page advertised more than it had: a featured post linking to "#",
+   a professional-tax article that was never written, six category filters
+   with no JavaScript behind them, a newsletter form whose submit handler was
+   `return false`, and the calculators promoted twice on one screen. What is
+   left is four things worth reading, so the index is honest about that and
+   leads each row with how long the read is — the only thing a reader actually
+   wants to know before committing.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.guides-desk { --gd: #60A5FA; }
+body.guides-desk .gd { max-width: 1180px; margin: 0 auto; padding: 0 32px 92px; }
+
+body.guides-desk .gd-crumb {
+  display: flex;
+  gap: 9px;
+  padding: 26px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+body.guides-desk .gd-crumb a { color: #5f6b80; text-decoration: none; }
+body.guides-desk .gd-crumb a:hover { color: var(--dk-mute); }
+
+body.guides-desk .gd-head { padding: 40px 0; border-bottom: 1px solid var(--dk-line); }
+body.guides-desk .gd-kicker {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gd);
+  margin: 0 0 16px;
+}
+body.guides-desk .gd-h1 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(30px, 4.1vw, 46px);
+  line-height: 1.06;
+  letter-spacing: -0.034em;
+  color: var(--dk-ink);
+  margin: 0;
+  max-width: 19ch;
+}
+body.guides-desk .gd-lede {
+  margin: 20px 0 0;
+  max-width: 62ch;
+  font-size: 16px;
+  line-height: 1.66;
+  color: var(--dk-mute);
+}
+
+body.guides-desk .gd-shelf { padding-top: 34px; }
+body.guides-desk .gd-shelfhead {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dk-mute);
+}
+body.guides-desk .gd-idx { color: var(--gd); }
+
+body.guides-desk .gd-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 92px;
+  gap: 34px;
+  align-items: start;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--dk-line);
+  text-decoration: none;
+  position: relative;
+  transition: background 0.16s ease;
+}
+body.guides-desk .gd-row:first-of-type { border-top: 1px solid var(--dk-line); margin-top: 16px; }
+body.guides-desk .gd-row::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 24px;
+  bottom: 24px;
+  width: 2px;
+  background: var(--gd);
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+body.guides-desk .gd-row:hover { background: rgba(255, 255, 255, 0.022); }
+body.guides-desk .gd-row:hover::before { opacity: 1; }
+
+body.guides-desk .gd-len {
+  font-family: var(--font-family-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  color: var(--gd);
+  padding-top: 3px;
+}
+body.guides-desk .gd-body { display: block; }
+body.guides-desk .gd-title {
+  display: block;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -0.024em;
+  color: var(--dk-ink);
+  margin-bottom: 9px;
+}
+body.guides-desk .gd-row:hover .gd-title { color: #fff; }
+body.guides-desk .gd-desc {
+  display: block;
+  font-size: 14.5px;
+  line-height: 1.64;
+  color: var(--dk-mute);
+  max-width: 72ch;
+}
+body.guides-desk .gd-go { font-size: 13px; color: var(--gd); text-align: right; white-space: nowrap; padding-top: 4px; }
+
+body.guides-desk .gd-close {
+  margin-top: 56px;
+  padding: 34px 36px;
+  border: 1px solid var(--dk-line);
+  border-radius: 20px;
+  background: linear-gradient(155deg, rgba(96, 165, 250, 0.11), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 34px;
+  align-items: center;
+}
+body.guides-desk .gd-close h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.028em;
+  color: var(--dk-ink);
+  margin: 0 0 10px;
+}
+body.guides-desk .gd-close p { margin: 0; font-size: 15px; line-height: 1.66; color: var(--dk-mute); max-width: 62ch; }
+body.guides-desk .gd-acts { display: flex; gap: 12px; flex-wrap: wrap; }
+
+@media (max-width: 900px) {
+  body.guides-desk .gd { padding: 0 20px 70px; }
+  body.guides-desk .gd-row { grid-template-columns: 1fr; gap: 10px; padding: 22px 0; }
+  body.guides-desk .gd-row::before { display: none; }
+  body.guides-desk .gd-go { text-align: left; }
+  body.guides-desk .gd-close { grid-template-columns: 1fr; gap: 22px; padding: 28px 22px; }
+}

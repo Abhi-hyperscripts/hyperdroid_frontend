@@ -1,0 +1,1075 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   USE CASES — scoped to body.story-desk.
+
+   Replaces twelve inline skins, all of which were centred marketing pages:
+   gradient headline, ALL-CAPS section titles, tinted icon tiles, a wall of
+   equal cards.
+
+   These pages make an argument in three moves — here is what breaks today,
+   here is what replaces it, here is the sequence end to end — so the design
+   follows that shape rather than flattening it into a grid. The complaint
+   section reads as a ledger of costs, led by the figure that hurts. The
+   answer section reads as a bench of modules, each with what it actually
+   does listed underneath. The sequence is a numbered thread. Nothing is
+   centred; everything sits on the same left margin, which is what makes a
+   long page feel like one document instead of a stack of slides.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.story-desk { --uc: #7DD3A8; --uc-warn: #F79B9B; }
+
+/* ── hero ─────────────────────────────────────────────────────────────────── */
+body.story-desk .usecase-hero,
+body.story-desk .feature-hero {
+  padding: 0;
+  overflow: visible;
+  border-bottom: 1px solid var(--dk-line);
+}
+body.story-desk .usecase-hero::before,
+body.story-desk .feature-hero::before { display: none; }
+body.story-desk .usecase-hero-content,
+body.story-desk .feature-hero-content {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 44px 32px 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
+  gap: 56px;
+  align-items: center;
+}
+body.story-desk .usecase-badge,
+body.story-desk .feature-badge {
+  display: inline-block;
+  margin-bottom: 18px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--uc);
+}
+body.story-desk .usecase-badge svg,
+body.story-desk .feature-badge svg { display: none; }
+
+body.story-desk .usecase-hero-text h1,
+body.story-desk .feature-hero-text h1 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(31px, 4.2vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: var(--dk-ink);
+  margin: 0;
+}
+body.story-desk .usecase-hero-text h1 .highlight,
+body.story-desk .feature-hero-text h1 .highlight {
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: currentColor;
+  color: var(--dk-mute);       /* the second clause recedes rather than glows */
+}
+body.story-desk .usecase-hero-text p,
+body.story-desk .feature-hero-text p {
+  margin: 20px 0 0;
+  max-width: 60ch;
+  font-size: 16px;
+  line-height: 1.66;
+  color: var(--dk-mute);
+}
+
+body.story-desk .cta-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-top: 26px;
+}
+/* the old skin's .btn-primary was white-on-white and effectively invisible */
+body.story-desk .btn-primary,
+body.story-desk .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+body.story-desk .btn-primary { background: var(--dk-ink); border: 0; color: #0a0d13; }
+body.story-desk .btn-primary:hover { background: #fff; transform: translateY(-1px); }
+body.story-desk .btn-secondary { background: none; border: 1px solid var(--dk-line); color: var(--dk-ink); }
+body.story-desk .btn-secondary:hover { border-color: rgba(255, 255, 255, 0.3); transform: translateY(-1px); }
+
+/* the three claims under the hero — a ruled strip, not centred blocks */
+body.story-desk .hero-stats {
+  display: flex;
+  gap: 0;
+  margin-top: 34px;
+  padding-top: 24px;
+  border-top: 1px solid var(--dk-line);
+  flex-wrap: wrap;
+}
+body.story-desk .hero-stat {
+  text-align: left;
+  padding-right: 34px;
+  margin-right: 34px;
+  border-right: 1px solid var(--dk-line);
+}
+body.story-desk .hero-stat:last-child { border-right: 0; margin-right: 0; padding-right: 0; }
+body.story-desk .hero-stat-value {
+  font-family: var(--font-family-mono);
+  font-size: 23px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+}
+body.story-desk .hero-stat-label {
+  margin-top: 6px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+
+body.story-desk .usecase-hero-visual,
+body.story-desk .feature-hero-visual {
+  background: rgba(255, 255, 255, 0.028);
+  border: 1px solid var(--dk-line);
+  border-radius: 18px;
+  padding: 18px;
+}
+body.story-desk .hero-visual-mockup { background: var(--dk-bg); border: 1px solid var(--dk-line); border-radius: 12px; padding: 18px; }
+
+/* ── section furniture ────────────────────────────────────────────────────── */
+body.story-desk .pain-points,
+body.story-desk .solutions,
+body.story-desk .features-deep,
+body.story-desk .timeline-section {
+  padding: 0;
+  background: none;
+}
+body.story-desk .pain-points-content,
+body.story-desk .solutions-content,
+body.story-desk .features-deep-content,
+body.story-desk .timeline-content {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 32px;
+}
+/* landing.css centres this block with `max-width: 640px; margin: 0 auto`,
+   which pushes it off the page's left margin even after text-align is reset */
+body.story-desk .section-header {
+  text-align: left;
+  max-width: none;
+  margin: 0 0 34px;
+}
+body.story-desk .section-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(24px, 2.9vw, 33px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  text-transform: none;      /* the old skin shouted these in caps */
+  color: var(--dk-ink);
+  margin: 0;
+  max-width: 20ch;
+}
+body.story-desk .section-desc {
+  margin: 14px 0 0;
+  max-width: 62ch;
+  font-size: 15.5px;
+  line-height: 1.64;
+  color: var(--dk-mute);
+}
+
+/* ── what breaks today: a ledger of costs ─────────────────────────────────── */
+body.story-desk .pain-grid { display: block; }
+body.story-desk .pain-card {
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  gap: 34px;
+  align-items: start;
+  padding: 24px 0;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--dk-line);
+  border-radius: 0;
+}
+body.story-desk .pain-card:last-child { border-bottom: 1px solid var(--dk-line); }
+/* the tinted tile is replaced by the cost itself, set large in the margin */
+body.story-desk .pain-icon { display: none; }
+body.story-desk .pain-stat {
+  grid-row: 1;
+  grid-column: 1;
+  font-family: var(--font-family-mono);
+  font-size: 27px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  color: var(--uc-warn);
+}
+body.story-desk .pain-stat-label {
+  grid-column: 1;
+  margin-top: 7px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  line-height: 1.45;
+}
+body.story-desk .pain-card h4 {
+  grid-column: 2;
+  grid-row: 1;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.024em;
+  color: var(--dk-ink);
+  margin: 0 0 9px;
+}
+body.story-desk .pain-card p {
+  grid-column: 2;
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.64;
+  color: var(--dk-mute);
+  max-width: 68ch;
+}
+
+/* ── what replaces it: a bench of modules ─────────────────────────────────── */
+body.story-desk .solutions-grid,
+body.story-desk .feature-deep-grid,
+body.story-desk .features-deep-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--dk-line);
+  border: 1px solid var(--dk-line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+body.story-desk .solution-card,
+body.story-desk .feature-deep-card {
+  background: var(--dk-bg);
+  border: 0;
+  border-radius: 0;
+  padding: 26px 26px 24px;
+  transition: background 0.16s ease;
+}
+body.story-desk .solution-card:hover,
+body.story-desk .feature-deep-card:hover { background: rgba(255, 255, 255, 0.028); transform: none; border-color: transparent; }
+body.story-desk .solution-icon,
+body.story-desk .feature-deep-icon {
+  width: auto;
+  height: auto;
+  margin: 0 0 14px;
+  background: none !important;
+  border-radius: 0;
+  display: block;
+  color: var(--uc);
+}
+body.story-desk .solution-icon svg,
+body.story-desk .feature-deep-icon svg { width: 18px; height: 18px; }
+body.story-desk .solution-card h3,
+body.story-desk .feature-deep-card h3,
+body.story-desk .solution-card h4,
+body.story-desk .feature-deep-card h4 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 17.5px;
+  line-height: 1.26;
+  letter-spacing: -0.022em;
+  color: var(--dk-ink);
+  margin: 0 0 10px;
+}
+body.story-desk .solution-card p,
+body.story-desk .feature-deep-card p {
+  margin: 0 0 16px;
+  font-size: 14.5px;
+  line-height: 1.64;
+  color: var(--dk-mute);
+}
+body.story-desk .solution-card ul,
+body.story-desk .feature-deep-card ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--dk-line); }
+body.story-desk .solution-card li,
+body.story-desk .feature-deep-card li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--dk-mute);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+body.story-desk .solution-card li:last-child,
+body.story-desk .feature-deep-card li:last-child { border-bottom: 0; }
+body.story-desk .solution-card li svg,
+body.story-desk .feature-deep-card li svg { width: 13px; height: 13px; flex: none; margin-top: 3px; color: var(--uc); }
+
+/* ── the sequence: a numbered thread ──────────────────────────────────────── */
+body.story-desk .timeline-grid,
+body.story-desk .timeline-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--dk-line);
+  border: 1px solid var(--dk-line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+body.story-desk .timeline-card,
+body.story-desk .stage-card {
+  background: var(--dk-bg);
+  border: 0;
+  border-radius: 0;
+  padding: 22px 20px;
+  text-align: left;
+}
+body.story-desk .timeline-card .stage-num,
+body.story-desk .stage-card .stage-num,
+body.story-desk .timeline-card > div:first-child,
+body.story-desk .stage-card > div:first-child {
+  width: auto;
+  height: auto;
+  margin: 0 0 12px;
+  background: none !important;
+  border-radius: 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--uc);
+  display: block;
+  text-align: left;
+}
+body.story-desk .timeline-card h4,
+body.story-desk .stage-card h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dk-ink);
+  margin: 0 0 7px;
+}
+body.story-desk .timeline-card p,
+body.story-desk .stage-card p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--dk-mute); }
+
+/* ── the summary strip ────────────────────────────────────────────────────── */
+body.story-desk .stats-banner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 32px;
+  background: none;
+  border: 0;
+}
+body.story-desk .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--dk-line);
+  border: 1px solid var(--dk-line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+body.story-desk .stats-grid > div { background: var(--dk-bg); padding: 22px 22px; text-align: left; }
+body.story-desk .stat-value {
+  font-family: var(--font-family-mono);
+  font-size: 25px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  color: var(--uc);
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: currentColor;
+}
+body.story-desk .stat-label {
+  margin-top: 8px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  line-height: 1.45;
+}
+
+/* ── close ────────────────────────────────────────────────────────────────── */
+body.story-desk .usecase-cta,
+body.story-desk .feature-cta {
+  max-width: 1116px;
+  margin: 56px auto 80px;
+  padding: 36px 38px;
+  text-align: left;
+  background: linear-gradient(155deg, rgba(125, 211, 168, 0.1), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--dk-line);
+  border-radius: 20px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+body.story-desk .usecase-cta::before,
+body.story-desk .feature-cta::before { display: none; }
+body.story-desk .cta-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 27px;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  color: var(--dk-ink);
+  margin: 0 0 12px;
+  max-width: 22ch;
+}
+body.story-desk .cta-desc {
+  margin: 0 0 24px;
+  max-width: 64ch;
+  font-size: 15.5px;
+  line-height: 1.64;
+  color: var(--dk-mute);
+}
+body.story-desk .usecase-cta .cta-buttons,
+body.story-desk .feature-cta .cta-buttons { margin-top: 0; }
+
+@media (max-width: 968px) {
+  body.story-desk .usecase-hero-content,
+  body.story-desk .feature-hero-content { grid-template-columns: 1fr; gap: 30px; padding: 30px 20px 34px; }
+  body.story-desk .pain-points-content,
+  body.story-desk .solutions-content,
+  body.story-desk .features-deep-content,
+  body.story-desk .timeline-content { padding: 40px 20px; }
+  body.story-desk .pain-card { grid-template-columns: 1fr; gap: 12px; }
+  body.story-desk .pain-card h4,
+  body.story-desk .pain-card p,
+  body.story-desk .pain-stat,
+  body.story-desk .pain-stat-label { grid-column: 1; grid-row: auto; }
+  body.story-desk .solutions-grid,
+  body.story-desk .feature-deep-grid,
+  body.story-desk .features-deep-grid { grid-template-columns: 1fr; }
+  body.story-desk .stats-banner { padding: 0 20px; }
+  body.story-desk .usecase-cta,
+  body.story-desk .feature-cta { margin: 40px 20px 60px; padding: 28px 22px; }
+  body.story-desk .hero-stat { padding-right: 22px; margin-right: 22px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Per-page furniture. Each of the seven pages built its own hero mockup and
+   its own extra sections, so rather than style eleven bespoke widgets we give
+   them one shared treatment: a panel is a bordered surface, a row inside a
+   panel is a ruled line, and anything that reads as a value is set in mono.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* nothing on these pages is centred */
+body.story-desk .usecase-hero,
+body.story-desk .feature-hero,
+body.story-desk .usecase-hero-content,
+body.story-desk .feature-hero-content,
+body.story-desk .usecase-hero-text,
+body.story-desk .feature-hero-text,
+body.story-desk .usecase-cta,
+body.story-desk .feature-cta,
+body.story-desk .section-header,
+body.story-desk .async-content,
+body.story-desk .client-content,
+body.story-desk .growth-content,
+body.story-desk .workflow-content,
+body.story-desk .enterprise-vs-content { text-align: left; }
+
+body.story-desk .cta-title,
+body.story-desk .section-title { text-transform: none; }
+
+/* the pain ledger places four children into two columns explicitly, so the
+   label stays under its own figure rather than being auto-flowed to the end */
+body.story-desk .pain-card { grid-template-rows: auto auto; }
+body.story-desk .pain-card h4          { grid-column: 2; grid-row: 1; }
+body.story-desk .pain-card p           { grid-column: 2; grid-row: 2; }
+body.story-desk .pain-card .pain-stat  { grid-column: 1; grid-row: 1; }
+body.story-desk .pain-card .pain-stat-label { grid-column: 1; grid-row: 2; margin-top: 0; }
+
+/* the remaining sections share the hero's measure */
+body.story-desk .async-content,
+body.story-desk .client-content,
+body.story-desk .growth-content,
+body.story-desk .workflow-content,
+body.story-desk .enterprise-vs-content,
+body.story-desk .timeline-content {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 32px;
+}
+body.story-desk .async-section,
+body.story-desk .client-section,
+body.story-desk .growth-section,
+body.story-desk .workflow-section,
+body.story-desk .enterprise-vs { padding: 0; background: none; }
+
+/* ── the numbered thread ──────────────────────────────────────────────────── */
+body.story-desk .timeline-strip,
+body.story-desk .stages-timeline,
+body.story-desk .workflow-steps,
+body.story-desk .timezone-grid,
+body.story-desk .async-benefits,
+body.story-desk .client-benefits,
+body.story-desk .client-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 1px;
+  background: var(--dk-line);
+  border: 1px solid var(--dk-line);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+body.story-desk .timeline-card,
+body.story-desk .stage-item,
+body.story-desk .workflow-step,
+body.story-desk .timezone-card,
+body.story-desk .async-benefit,
+body.story-desk .client-benefit {
+  background: var(--dk-bg);
+  border: 0;
+  border-radius: 0;
+  padding: 22px 20px;
+  text-align: left;
+}
+body.story-desk .timeline-num,
+body.story-desk .workflow-num,
+body.story-desk .stage-number,
+body.story-desk .step-number {
+  display: block;
+  width: auto;
+  height: auto;
+  margin: 0 0 12px;
+  background: none !important;
+  border: 0;
+  border-radius: 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  color: var(--uc);
+  text-align: left;
+}
+body.story-desk .timeline-card h4,
+body.story-desk .stage-item h4,
+body.story-desk .workflow-step h4,
+body.story-desk .timezone-card h4,
+body.story-desk .async-benefit h4,
+body.story-desk .client-benefit h4,
+body.story-desk .stage-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dk-ink);
+  margin: 0 0 7px;
+}
+body.story-desk .timeline-card p,
+body.story-desk .stage-item p,
+body.story-desk .workflow-step p,
+body.story-desk .timezone-card p,
+body.story-desk .async-benefit p,
+body.story-desk .client-benefit p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--dk-mute); }
+
+body.story-desk .timezone-time,
+body.story-desk .timeline-time,
+body.story-desk .stage-range,
+body.story-desk .team-size {
+  font-family: var(--font-family-mono);
+  font-size: 12.5px;
+  color: var(--uc);
+}
+body.story-desk .timezone-city { font-size: 13px; color: var(--dk-mute); }
+body.story-desk .timezone-avatar { display: none; }
+
+/* ── hero mockups ─────────────────────────────────────────────────────────── */
+body.story-desk .po-mock,
+body.story-desk .cert-mock,
+body.story-desk .insights-mock,
+body.story-desk .workflow-mock,
+body.story-desk .share-link-mockup,
+body.story-desk .tool-sprawl-visual,
+body.story-desk .startup-stage-visual,
+body.story-desk .recording-timeline { text-align: left; }
+
+body.story-desk .po-mock-row,
+body.story-desk .share-link-item,
+body.story-desk .tool-row,
+body.story-desk .insights-mock-row,
+body.story-desk .workflow-mock-step,
+body.story-desk .comparison-row,
+body.story-desk .timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0;
+  background: none;
+  font-size: 13px;
+  color: var(--dk-mute);
+}
+body.story-desk .po-mock-row:last-child,
+body.story-desk .share-link-item:last-child,
+body.story-desk .tool-row:last-child,
+body.story-desk .insights-mock-row:last-child,
+body.story-desk .workflow-mock-step:last-child,
+body.story-desk .comparison-row:last-child,
+body.story-desk .timeline-item:last-child { border-bottom: 0; }
+
+/* the highlighted row is the one the page is making a point about */
+body.story-desk .po-mock-row.active,
+body.story-desk .tool-row.active,
+body.story-desk .workflow-mock-step.active {
+  background: rgba(125, 211, 168, 0.07);
+  border-left: 2px solid var(--uc);
+  padding-left: 10px;
+  border-radius: 6px;
+}
+body.story-desk .po-mock-num,
+body.story-desk .insights-mock-cell,
+body.story-desk .share-link-meta {
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  color: var(--dk-ink);
+}
+body.story-desk .po-mock-status,
+body.story-desk .share-link-badge,
+body.story-desk .stage-check {
+  margin-left: auto;
+  padding: 3px 9px;
+  border: 1px solid var(--dk-line);
+  border-radius: 100px;
+  background: none;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  white-space: nowrap;
+}
+/* the status words carry the only colour in the panel */
+body.story-desk .po-mock-status.approved,
+body.story-desk .po-mock-status.billed,
+body.story-desk .share-link-badge.protected { border-color: rgba(125, 211, 168, 0.4); color: var(--uc); }
+body.story-desk .po-mock-status.draft,
+body.story-desk .share-link-badge.expiring { color: #5f6b80; }
+
+body.story-desk .insights-mock-title,
+body.story-desk .cert-mock-label,
+body.story-desk .share-link-name,
+body.story-desk .cert-mock-sub {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+body.story-desk .cert-mock-name,
+body.story-desk .cert-mock-course {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  color: var(--dk-ink);
+}
+body.story-desk .cert-mock-verify { font-family: var(--font-family-mono); font-size: 11px; color: var(--uc); }
+body.story-desk .insights-mock-bar { background: var(--uc); border-radius: 2px; }
+body.story-desk .insights-mock-bars { display: flex; align-items: flex-end; gap: 5px; }
+
+/* comparison rows are a two-column verdict, not a card */
+body.story-desk .comparison-table {
+  border: 1px solid var(--dk-line);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.022);
+}
+body.story-desk .comparison-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.03);
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.story-desk .good { color: var(--uc); }
+body.story-desk .bad { color: var(--uc-warn); }
+body.story-desk .crossed { text-decoration: line-through; color: #5f6b80; }
+
+/* every tinted icon tile becomes a plain mark in the accent */
+body.story-desk .icon-amber,
+body.story-desk .icon-blue,
+body.story-desk .icon-cyan,
+body.story-desk .icon-emerald,
+body.story-desk .icon-green,
+body.story-desk .icon-orange,
+body.story-desk .icon-pink,
+body.story-desk .icon-purple,
+body.story-desk .icon-teal,
+body.story-desk .tool-icon,
+body.story-desk .stage-icon,
+body.story-desk .share-link-icon,
+body.story-desk .workflow-mock-icon,
+body.story-desk .ragenaizer-icon {
+  background: none !important;
+  border: 0;
+  border-radius: 0;
+  width: auto;
+  height: auto;
+  color: var(--uc);
+  flex: none;
+}
+body.story-desk .tool-icon svg,
+body.story-desk .stage-icon svg,
+body.story-desk .share-link-icon svg,
+body.story-desk .workflow-mock-icon svg,
+body.story-desk .ragenaizer-icon svg { width: 16px; height: 16px; }
+
+body.story-desk .stat-item { background: var(--dk-bg); padding: 22px; text-align: left; }
+body.story-desk .tool-divider { border-color: var(--dk-line); }
+body.story-desk .async-highlight { color: var(--uc); }
+
+@media (max-width: 968px) {
+  body.story-desk .async-content,
+  body.story-desk .client-content,
+  body.story-desk .growth-content,
+  body.story-desk .workflow-content,
+  body.story-desk .enterprise-vs-content,
+  body.story-desk .timeline-content { padding: 40px 20px; }
+}
+
+/* ── feature-page extras ──────────────────────────────────────────────────── */
+/* Callouts on the feature pages — a statutory note, a security note, an AI
+   note — were three differently tinted slabs. They are the same object: an
+   aside that qualifies the claim above it. */
+body.story-desk .statutory-highlight,
+body.story-desk .security-highlight,
+body.story-desk .ai-highlight,
+body.story-desk .problem-item {
+  margin: 18px 0;
+  padding: 15px 18px;
+  background: rgba(255, 255, 255, 0.022);
+  border: 1px solid var(--dk-line);
+  border-left: 2px solid var(--uc);
+  border-radius: 0 12px 12px 0;
+  font-size: 14px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+}
+body.story-desk .problem-item { border-left-color: var(--uc-warn); }
+body.story-desk .statutory-highlight strong,
+body.story-desk .security-highlight strong,
+body.story-desk .ai-highlight strong,
+body.story-desk .problem-item strong { color: var(--dk-ink); font-weight: 600; }
+
+body.story-desk .roi-value {
+  font-family: var(--font-family-mono);
+  font-size: 25px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  color: var(--uc);
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: currentColor;
+}
+body.story-desk .folder-icon { background: none !important; border: 0; color: var(--uc); width: auto; height: auto; }
+body.story-desk .folder-icon svg { width: 16px; height: 16px; }
+
+/* ── icon guard ───────────────────────────────────────────────────────────── */
+/* The inline icons on these pages carry no width/height attributes — the old
+   inline skins sized them in CSS, so removing those skins let every one of
+   them expand to fill its container (one page grew to 22,000px tall). Any
+   unsized icon now gets a sane default; anything that genuinely needs to be
+   larger opts in by carrying a width attribute. */
+body.story-desk svg:not([width]) { width: 17px; height: 17px; flex: none; }
+
+body.story-desk .problem-item,
+body.story-desk .ai-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+body.story-desk .problem-item svg,
+body.story-desk .ai-feature svg { margin-top: 2px; }
+body.story-desk .problem-item.bad svg { color: var(--uc-warn); }
+body.story-desk .problem-item.good svg { color: var(--uc); }
+
+body.story-desk .problem-arrow {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+  color: var(--dk-dim);
+}
+
+body.story-desk .ai-feature {
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--dk-mute);
+}
+body.story-desk .ai-feature:last-child { border-bottom: 0; }
+body.story-desk .ai-feature svg { color: var(--uc); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The long tail.
+
+   Between them the twelve pages ship about a hundred bespoke widget classes —
+   a payroll summary here, a file browser there, a chat panel, a vendor list.
+   Styling each one individually would just rebuild twelve skins. They are all
+   the same handful of objects, so they are treated as such:
+
+     a GRID is a hairline-separated set of panels
+     a ROW inside a panel is a ruled line
+     a VALUE is mono and ink; a LABEL is mono, small, uppercase and muted
+     a BADGE is an outlined pill
+     an AVATAR or decorative tile is dropped to a plain mark in the accent
+
+   Anything genuinely one-off can still override below this block.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── grids of panels ──────────────────────────────────────────────────────── */
+body.story-desk .roi-grid,
+body.story-desk .countries-grid,
+body.story-desk .use-cases-grid,
+body.story-desk .problem-grid,
+body.story-desk .folder-grid,
+body.story-desk .growth-stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1px;
+  background: var(--dk-line);
+  border: 1px solid var(--dk-line);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+body.story-desk .roi-card,
+body.story-desk .country-card,
+body.story-desk .use-case-card,
+body.story-desk .problem-column,
+body.story-desk .folder-item,
+body.story-desk .stage-content {
+  background: var(--dk-bg);
+  border: 0;
+  border-radius: 0;
+  padding: 22px 22px;
+  text-align: left;
+}
+
+/* ── lists of ruled rows inside a panel ───────────────────────────────────── */
+body.story-desk .vendor-row,
+body.story-desk .employee-row,
+body.story-desk .file-item,
+body.story-desk .chat-msg,
+body.story-desk .security-feature,
+body.story-desk .statutory-feature,
+body.story-desk .breakdown-item,
+body.story-desk .rfq-stat-item,
+body.story-desk .workflow-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 0;
+  font-size: 13px;
+  color: var(--dk-mute);
+}
+body.story-desk .vendor-row:last-child,
+body.story-desk .employee-row:last-child,
+body.story-desk .file-item:last-child,
+body.story-desk .chat-msg:last-child,
+body.story-desk .security-feature:last-child,
+body.story-desk .statutory-feature:last-child,
+body.story-desk .breakdown-item:last-child,
+body.story-desk .rfq-stat-item:last-child,
+body.story-desk .workflow-item:last-child { border-bottom: 0; }
+
+body.story-desk .rfq-stats-row,
+body.story-desk .payroll-breakdown { display: flex; gap: 28px; flex-wrap: wrap; }
+body.story-desk .rfq-stats-row .rfq-stat-item,
+body.story-desk .payroll-breakdown .breakdown-item { display: block; border-bottom: 0; }
+
+body.story-desk .rfq-summary,
+body.story-desk .payroll-summary,
+body.story-desk .chat-main,
+body.story-desk .file-list,
+body.story-desk .vendors,
+body.story-desk .ai-features,
+body.story-desk .security-features,
+body.story-desk .statutory-features,
+body.story-desk .country-features,
+body.story-desk .workflow-timeline,
+body.story-desk .integration-icons { background: none; border: 0; border-radius: 0; }
+
+body.story-desk .rfq-header,
+body.story-desk .payroll-header,
+body.story-desk .problem-column-header,
+body.story-desk .chat-channel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--dk-line);
+  background: none;
+}
+
+/* ── values and labels ────────────────────────────────────────────────────── */
+body.story-desk .rfq-stat-value,
+body.story-desk .breakdown-value,
+body.story-desk .payroll-amount,
+body.story-desk .vendor-score {
+  font-family: var(--font-family-mono);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: currentColor;
+}
+body.story-desk .payroll-amount { font-size: 26px; }
+body.story-desk .rfq-stat-value,
+body.story-desk .breakdown-value { font-size: 17px; }
+body.story-desk .breakdown-value.earnings, body.story-desk .rfq-stat-value.best { color: var(--uc); }
+body.story-desk .breakdown-value.deductions { color: var(--uc-warn); }
+body.story-desk .rfq-stat-value.savings { color: var(--uc); }
+
+body.story-desk .rfq-stat-label,
+body.story-desk .roi-label,
+body.story-desk .breakdown-label,
+body.story-desk .rfq-title,
+body.story-desk .payroll-title,
+body.story-desk .countries-title,
+body.story-desk .workflow-title {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  margin: 6px 0 0;
+}
+body.story-desk .rfq-title,
+body.story-desk .payroll-title,
+body.story-desk .countries-title,
+body.story-desk .workflow-title { margin: 0; }
+
+body.story-desk .vendor-name,
+body.story-desk .employee-name,
+body.story-desk .file-name,
+body.story-desk .country-name,
+body.story-desk .folder-name,
+body.story-desk .workflow-step-name,
+body.story-desk .use-case-card h4,
+body.story-desk .roi-card h4 { font-size: 14px; font-weight: 600; color: var(--dk-ink); }
+
+body.story-desk .vendor-detail,
+body.story-desk .employee-role,
+body.story-desk .file-meta,
+body.story-desk .workflow-step-detail,
+body.story-desk .roi-desc,
+body.story-desk .countries-desc,
+body.story-desk .workflow-desc { font-size: 12.5px; color: var(--dk-mute); line-height: 1.55; }
+body.story-desk .vendor-detail,
+body.story-desk .file-meta { font-family: var(--font-family-mono); }
+
+body.story-desk .vendor-info,
+body.story-desk .employee-info,
+body.story-desk .file-info { flex: 1; min-width: 0; }
+
+/* ── badges ───────────────────────────────────────────────────────────────── */
+body.story-desk .rfq-badge,
+body.story-desk .payroll-badge,
+body.story-desk .employee-status,
+body.story-desk .ai-tag,
+body.story-desk .problem-column-badge {
+  padding: 3px 9px;
+  background: none;
+  border: 1px solid var(--dk-line);
+  border-radius: 100px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  white-space: nowrap;
+}
+body.story-desk .employee-status.processed,
+body.story-desk .rfq-badge { border-color: rgba(125, 211, 168, 0.4); color: var(--uc); }
+body.story-desk .vendor-score.top { color: var(--uc); }
+
+/* ── decorative tiles drop to plain marks ─────────────────────────────────── */
+body.story-desk .vendor-avatar,
+body.story-desk .employee-avatar,
+body.story-desk .chat-avatar,
+body.story-desk .file-icon,
+body.story-desk .country-flag,
+body.story-desk .integration-icon,
+body.story-desk .use-case-icon,
+body.story-desk .timeline-dot,
+body.story-desk .icon-red {
+  background: none !important;
+  border: 0;
+  border-radius: 0;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  color: var(--uc);
+  font-size: 11px;
+  flex: none;
+}
+body.story-desk .timeline-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--uc) !important; }
+
+/* ── chat panel ───────────────────────────────────────────────────────────── */
+body.story-desk .chat-sidebar { display: none; }   /* decorative on a marketing page */
+body.story-desk .chat-bubble {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--dk-line);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--dk-mute);
+}
+body.story-desk .chat-input {
+  border: 1px solid var(--dk-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 13px;
+  color: #5f6b80;
+}
+
+/* ── section wrappers share the page measure ──────────────────────────────── */
+body.story-desk .problem-section,
+body.story-desk .roi-section,
+body.story-desk .countries-section,
+body.story-desk .use-cases { padding: 0; background: none; }
+body.story-desk .problem-content,
+body.story-desk .roi-content {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 32px;
+  text-align: left;
+}
+
+/* ── the leftover colour-word modifiers ───────────────────────────────────── */
+body.story-desk .red,
+body.story-desk .orange,
+body.story-desk .amber,
+body.story-desk .yellow { color: var(--uc-warn); }
+body.story-desk .green,
+body.story-desk .cyan,
+body.story-desk .purple { color: var(--uc); }
+
+@media (max-width: 968px) {
+  body.story-desk .problem-content,
+  body.story-desk .roi-content { padding: 40px 20px; }
+}

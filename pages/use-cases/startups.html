@@ -62,127 +62,12 @@
     <script src="/js/pwa-install-prompt.js"></script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        .usecase-hero { padding: 120px 60px 80px; position: relative; overflow: hidden; }
-        .usecase-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 30% -10%, rgba(16, 185, 129, 0.15), transparent), radial-gradient(ellipse 80% 50% at 80% 10%, rgba(139, 92, 246, 0.1), transparent); }
-        .usecase-hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
-        .usecase-hero-text h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 20px; }
-        .usecase-hero-text h1 .highlight { background: linear-gradient(135deg, #10b981, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .usecase-hero-text p { font-size: 18px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; }
-        .usecase-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 100px; font-size: 13px; font-weight: 600; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
-        .hero-stats { display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap; }
-        .hero-stat { text-align: center; }
-        .hero-stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); }
-        .hero-stat-label { font-size: 13px; color: var(--text-tertiary); }
-        .usecase-hero-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 24px; position: relative; }
-        .hero-visual-mockup { background: var(--bg-tertiary); border-radius: 12px; padding: 20px; }
-        .startup-stage-visual { display: flex; flex-direction: column; gap: 16px; }
-        .stage-item { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; transition: all 0.3s ease; }
-        .stage-item.active { border-color: #34d399; background: rgba(16, 185, 129, 0.05); }
-        .stage-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-        .stage-icon.seed { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-        .stage-icon.series-a { background: linear-gradient(135deg, #10b981, #34d399); }
-        .stage-icon.scale { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
-        .stage-content { flex: 1; }
-        .stage-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-        .stage-range { font-size: 12px; color: var(--text-tertiary); }
-        .stage-check { width: 24px; height: 24px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; }
-        .stage-check svg { width: 14px; height: 14px; color: #fff; }
-
-        .pain-points { padding: 80px 60px; background: var(--bg-secondary); }
-        .pain-points-content { max-width: 1200px; margin: 0 auto; }
-        .section-header { text-align: center; margin-bottom: 60px; }
-        .section-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
-        .section-desc { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
-        .pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-        .pain-card { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 28px; }
-        .pain-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
-        .pain-icon svg { width: 24px; height: 24px; }
-        .pain-icon.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-        .pain-icon.orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
-        .pain-icon.yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
-        .pain-card h4 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-        .pain-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
-        .pain-stat { font-size: 24px; font-weight: 800; color: #ef4444; }
-        .pain-stat-label { font-size: 12px; color: var(--text-tertiary); }
-
-        .enterprise-vs { padding: 80px 60px; }
-        .enterprise-vs-content { max-width: 1000px; margin: 0 auto; }
-        .comparison-table { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; overflow: hidden; }
-        .comparison-header { display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--bg-tertiary); padding: 20px 24px; font-weight: 700; font-size: 14px; }
-        .comparison-header span:first-child { color: var(--text-tertiary); }
-        .comparison-header span:nth-child(2) { color: #ef4444; text-align: center; }
-        .comparison-header span:nth-child(3) { color: #10b981; text-align: center; }
-        .comparison-row { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 16px 24px; border-top: 1px solid var(--border-secondary); }
-        .comparison-row span { font-size: 14px; color: var(--text-secondary); }
-        .comparison-row span:first-child { color: var(--text-primary); font-weight: 500; }
-        .comparison-row span:nth-child(2), .comparison-row span:nth-child(3) { text-align: center; }
-        .comparison-row .bad { color: #ef4444; }
-        .comparison-row .good { color: #10b981; }
-
-        .solutions { padding: 80px 60px; background: var(--bg-secondary); }
-        .solutions-content { max-width: 1200px; margin: 0 auto; }
-        .solutions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-        .solution-card { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; transition: all 0.3s ease; }
-        .solution-card:hover { border-color: var(--border-focus); transform: translateY(-4px); }
-        .solution-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-        .solution-icon svg { width: 28px; height: 28px; color: #fff; }
-        .icon-green { background: linear-gradient(135deg, #10b981, #34d399); }
-        .icon-purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
-        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
-        .icon-orange { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
-        .solution-card h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
-        .solution-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
-        .solution-card ul { list-style: none; padding: 0; margin: 0; }
-        .solution-card ul li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-tertiary); border-top: 1px solid var(--border-secondary); }
-        .solution-card ul li:first-child { border-top: none; }
-        .solution-card ul li svg { width: 16px; height: 16px; color: #10b981; flex-shrink: 0; }
-
-        .growth-stages { padding: 80px 60px; }
-        .growth-content { max-width: 1200px; margin: 0 auto; }
-        .stages-timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 40px; }
-        .stage-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; position: relative; }
-        .stage-card::before { content: ''; position: absolute; top: 50%; right: -24px; width: 24px; height: 2px; background: var(--border-primary); }
-        .stage-card:last-child::before { display: none; }
-        .stage-number { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px; }
-        .stage-card h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-        .stage-card .team-size { font-size: 13px; color: #10b981; font-weight: 600; margin-bottom: 12px; }
-        .stage-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
-
-        .stats-banner { background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(139, 92, 246, 0.05)); padding: 60px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; max-width: 1000px; margin: 0 auto; text-align: center; }
-        .stat-item { }
-        .stat-value { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #10b981, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stat-label { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
-
-        .usecase-cta { text-align: center; padding: 80px 60px; position: relative; }
-        .usecase-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(16, 185, 129, 0.1), transparent); }
-        .cta-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
-        .cta-desc { font-size: 18px; color: var(--text-secondary); margin-bottom: 32px; position: relative; }
-        .cta-buttons { display: flex; gap: 16px; justify-content: center; position: relative; }
-
-        @media (max-width: 968px) {
-            .usecase-hero-content { grid-template-columns: 1fr; }
-            .pain-grid { grid-template-columns: 1fr; }
-            .solutions-grid { grid-template-columns: 1fr; }
-            .stages-timeline { grid-template-columns: repeat(2, 1fr); }
-            .stage-card::before { display: none; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .comparison-header, .comparison-row { grid-template-columns: 2fr 1fr 1fr; }
-        }
-        @media (max-width: 640px) {
-            .usecase-hero { padding: 100px 20px 60px; }
-            .pain-points, .solutions, .enterprise-vs, .growth-stages, .usecase-cta { padding: 60px 20px; }
-            .stages-timeline { grid-template-columns: 1fr; }
-            .hero-stats { gap: 20px; }
-            .cta-buttons { flex-direction: column; }
-        }
-    </style>
     <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/content-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/story-desk.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page desk-landing content-desk">
+<body class="landing-page desk-landing content-desk story-desk">
   <div class="dk-wrap">
     <nav class="dk-nav">
       <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
@@ -208,7 +93,7 @@
                 <p>Most startups bleed runway on tool sprawl: HRMS, payroll, CRM, project management, accounting, video, chat and storage — eight separate contracts before you've shipped anything. Ragenaizer collapses all of it into one platform at one per-user price.</p>
                 <div class="cta-buttons">
                     <a href="../pricing.html" class="btn-primary">See pricing</a>
-                    <a href="../pricing.html" class="btn-secondary">See Pricing</a>
+                    <a href="../../index.html#platform" class="btn-secondary">See the whole platform</a>
                 </div>
                 <div class="hero-stats">
                     <div class="hero-stat">
@@ -216,7 +101,7 @@
                         <div class="hero-stat-label">Products in One</div>
                     </div>
                     <div class="hero-stat">
-                        <div class="hero-stat-value">$0</div>
+                        <div class="hero-stat-value">₹0</div>
                         <div class="hero-stat-label">Implementation Fee</div>
                     </div>
                     <div class="hero-stat">
@@ -277,7 +162,7 @@
                     </div>
                     <h4>Eight SaaS Bills, Eight Renewals</h4>
                     <p>Slack + Zoom + Notion + HubSpot + BambooHR + QuickBooks + Asana + Dropbox. Each one with its own per-seat pricing, contract end date and "starter tier wall."</p>
-                    <div class="pain-stat">$2K+</div>
+                    <div class="pain-stat">₹1.7L+</div>
                     <div class="pain-stat-label">per employee per year</div>
                 </div>
                 <div class="pain-card">
@@ -321,8 +206,8 @@
                 </div>
                 <div class="comparison-row">
                     <span>Hidden Implementation Costs</span>
-                    <span class="bad">$500K+</span>
-                    <span class="good">$0</span>
+                    <span class="bad">₹42L+</span>
+                    <span class="good">₹0</span>
                 </div>
                 <div class="comparison-row">
                     <span>Minimum Company Size</span>
@@ -453,7 +338,7 @@
                 <div class="stat-label">Fewer SaaS contracts</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">$0</div>
+                <div class="stat-value">₹0</div>
                 <div class="stat-label">Implementation fee</div>
             </div>
             <div class="stat-item">
@@ -468,7 +353,7 @@
         <p class="cta-desc">Replace 8 separate contracts with one platform that scales from your first hire to your 500th — no migration.</p>
         <div class="cta-buttons">
             <a href="../pricing.html" class="btn-primary">See pricing</a>
-            <a href="../pricing.html" class="btn-secondary">See Pricing</a>
+            <a href="../../index.html#platform" class="btn-secondary">See the whole platform</a>
         </div>
     </section>
 

@@ -29,7 +29,7 @@
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="PF Calculation Guide 2026 - How to Calculate EPF">
-    <meta name="twitter:description" content="Complete EPF calculation formula with examples. Employee 12%, Employer 12% (3.67% EPF + 8.33% EPS).">
+    <meta name="twitter:description" content="Complete EPF calculation formula with examples. Employee 12%, employer 12% split between EPS (capped) and EPF.">
 
     <meta name="theme-color" content="#050810">
 
@@ -70,7 +70,7 @@
             {
                 "@type": "Question",
                 "name": "What is the PF contribution rate in 2026?",
-                "acceptedAnswer": {"@type": "Answer", "text": "The PF contribution rate is 12% each from employee and employer. Employee's 12% goes entirely to EPF, while employer's 12% is split into 3.67% EPF and 8.33% EPS."}
+                "acceptedAnswer": {"@type": "Answer", "text": "The PF contribution rate is 12% each from employee and employer. Employee's 12% goes entirely to EPF. The employer's 12% is split too: EPS takes 8.33% of the wage capped at ₹15,000, and the balance goes to EPF — which works out to 3.67% only while the wage is at or below that ceiling."}
             },
             {
                 "@type": "Question",
@@ -93,58 +93,12 @@
     <script src="/js/pwa-install-prompt.js"></script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        .article-page { min-height: 100vh; background: var(--bg-primary); }
-        .article-header { padding: 120px 60px 60px; max-width: 800px; margin: 0 auto; }
-        .article-meta { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-        .article-category { padding: 6px 14px; background: rgba(16, 185, 129, 0.1); border-radius: 100px; font-size: 13px; font-weight: 600; color: #10b981; }
-        .article-date { font-size: 14px; color: var(--text-tertiary); }
-        .article-header h1 { font-size: clamp(32px, 4vw, 44px); font-weight: 800; color: var(--text-primary); line-height: 1.2; margin-bottom: 20px; }
-        .article-header .lead { font-size: 20px; color: var(--text-secondary); line-height: 1.6; }
-
-        .article-content { max-width: 800px; margin: 0 auto; padding: 0 60px 80px; }
-        .article-content h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin: 48px 0 20px; }
-        .article-content h3 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 36px 0 16px; }
-        .article-content p { font-size: 17px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px; }
-        .article-content ul, .article-content ol { color: var(--text-secondary); margin: 0 0 24px 24px; line-height: 1.8; font-size: 17px; }
-        .article-content li { margin-bottom: 8px; }
-        .article-content strong { color: var(--text-primary); }
-
-        .formula-box { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; margin: 24px 0; }
-        .formula-box h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; }
-        .formula { background: var(--bg-tertiary); padding: 16px 20px; border-radius: 8px; font-family: monospace; font-size: 15px; color: #10b981; margin-bottom: 12px; }
-
-        .example-box { background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(6, 182, 212, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; padding: 24px; margin: 24px 0; }
-        .example-box h4 { font-size: 16px; font-weight: 700; color: #10b981; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        .example-table { width: 100%; border-collapse: collapse; }
-        .example-table td { padding: 10px 0; border-bottom: 1px solid var(--border-primary); font-size: 15px; }
-        .example-table td:first-child { color: var(--text-secondary); }
-        .example-table td:last-child { color: var(--text-primary); font-weight: 600; text-align: right; }
-        .example-table tr:last-child td { border-bottom: none; font-weight: 700; }
-
-        .info-callout { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 20px 24px; margin: 24px 0; border-radius: 0 12px 12px 0; }
-        .info-callout p { margin: 0; color: var(--text-secondary); }
-
-        .cta-box { background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; padding: 32px; text-align: center; margin: 48px 0; }
-        .cta-box h3 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; }
-        .cta-box p { color: var(--text-secondary); margin-bottom: 20px; }
-        .cta-box a { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 10px; color: #fff; text-decoration: none; font-weight: 700; }
-
-        .related-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 48px; }
-        .related-link { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; text-decoration: none; transition: all 0.2s; }
-        .related-link:hover { border-color: #10b981; }
-        .related-link h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-        .related-link p { font-size: 14px; color: var(--text-tertiary); margin: 0; }
-
-        @media (max-width: 768px) {
-            .article-header, .article-content { padding-left: 24px; padding-right: 24px; }
-        }
-    </style>
     <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/content-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/article-desk.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page article-page desk-landing content-desk">
+<body class="landing-page article-page desk-landing content-desk article-desk">
   <div class="dk-wrap">
     <nav class="dk-nav">
       <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
@@ -186,7 +140,7 @@
             <li><strong>Employee Contribution:</strong> 12% of Basic + DA (goes entirely to EPF account)</li>
             <li><strong>Employer Contribution:</strong> 12% of Basic + DA, split as:
                 <ul>
-                    <li>3.67% to EPF account</li>
+                    <li>The balance to the EPF account &mdash; 3.67% of the wage only while that wage is at or below &#8377;15,000</li>
                     <li>8.33% to EPS (Pension Scheme)</li>
                 </ul>
             </li>
@@ -195,7 +149,7 @@
         <div class="formula-box">
             <h4>PF Calculation Formula</h4>
             <div class="formula">Employee PF = 12% × (Basic Salary + DA)</div>
-            <div class="formula">Employer EPF = 3.67% × (Basic Salary + DA)</div>
+            <div class="formula">Employer EPF = 12% × (Basic + DA) − Employer EPS</div>
             <div class="formula">Employer EPS = 8.33% × min(Basic + DA, ₹15,000)</div>
             <p style="margin: 12px 0 0; font-size: 14px; color: var(--text-tertiary);">Note: EPS contribution is capped at ₹15,000 basic salary (₹1,250/month maximum)</p>
         </div>
@@ -212,11 +166,11 @@
                 <tr><td colspan="2" style="padding-top: 16px; border-bottom: none;"><strong>Employee Contribution</strong></td></tr>
                 <tr><td>Employee PF (12%)</td><td>₹3,600</td></tr>
                 <tr><td colspan="2" style="padding-top: 16px; border-bottom: none;"><strong>Employer Contribution</strong></td></tr>
-                <tr><td>Employer EPF (3.67%)</td><td>₹1,101</td></tr>
+                <tr><td>Employer EPF (the balance of the 12%)</td><td>₹2,350</td></tr>
                 <tr><td>Employer EPS (8.33% of ₹15,000 cap)</td><td>₹1,250</td></tr>
-                <tr><td>Total Employer Contribution</td><td>₹2,351</td></tr>
+                <tr><td>Total Employer Contribution</td><td>₹3,600</td></tr>
                 <tr><td colspan="2" style="padding-top: 16px;"><strong>Monthly Summary</strong></td></tr>
-                <tr><td>Total to EPF Account</td><td>₹4,701 (₹3,600 + ₹1,101)</td></tr>
+                <tr><td>Total to EPF Account</td><td>₹5,950 (₹3,600 + ₹2,350)</td></tr>
                 <tr><td>Total to EPS Account</td><td>₹1,250</td></tr>
             </table>
         </div>
@@ -237,7 +191,7 @@
                 <tr><td>Basic Salary</td><td>₹50,000</td></tr>
                 <tr><td>PF Calculated On (Ceiling)</td><td>₹15,000</td></tr>
                 <tr><td>Employee PF (12%)</td><td>₹1,800</td></tr>
-                <tr><td>Employer EPF (3.67%)</td><td>₹550</td></tr>
+                <tr><td>Employer EPF (3.67% &mdash; correct at the ceiling)</td><td>₹550</td></tr>
                 <tr><td>Employer EPS (8.33%)</td><td>₹1,250</td></tr>
             </table>
         </div>

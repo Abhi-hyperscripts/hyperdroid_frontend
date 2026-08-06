@@ -49,106 +49,12 @@
     <script src="/js/pwa-install-prompt.js"></script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        .usecase-hero { padding: 120px 60px 80px; position: relative; overflow: hidden; }
-        .usecase-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 30% -10%, rgba(16, 185, 129, 0.18), transparent), radial-gradient(ellipse 80% 50% at 80% 10%, rgba(245, 158, 11, 0.12), transparent); }
-        .usecase-hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
-        .usecase-hero-text h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 20px; }
-        .usecase-hero-text h1 .highlight { background: linear-gradient(135deg, #10b981, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .usecase-hero-text p { font-size: 18px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; }
-        .usecase-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(16, 185, 129, 0.10); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 100px; font-size: 13px; font-weight: 600; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
-        .hero-stats { display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap; }
-        .hero-stat { text-align: center; }
-        .hero-stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); }
-        .hero-stat-label { font-size: 13px; color: var(--text-tertiary); }
-        .usecase-hero-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 24px; }
-        .hero-visual-mockup { background: var(--bg-tertiary); border-radius: 12px; padding: 24px; }
-        .po-mock { display: flex; flex-direction: column; gap: 12px; }
-        .po-mock-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 10px; font-size: 13px; }
-        .po-mock-row.active { border-color: #34d399; background: rgba(16, 185, 129, 0.08); }
-        .po-mock-num { font-weight: 700; color: var(--text-primary); }
-        .po-mock-status { font-size: 11px; padding: 3px 10px; border-radius: 100px; font-weight: 600; }
-        .po-mock-status.draft { background: rgba(255, 255, 255, 0.06); color: var(--text-tertiary); }
-        .po-mock-status.approved { background: rgba(59, 130, 246, 0.12); color: #60a5fa; }
-        .po-mock-status.received { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
-        .po-mock-status.billed { background: rgba(16, 185, 129, 0.12); color: #34d399; }
-
-        .pain-points { padding: 80px 60px; background: var(--bg-secondary); }
-        .pain-points-content { max-width: 1200px; margin: 0 auto; }
-        .section-header { text-align: center; margin-bottom: 60px; }
-        .section-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
-        .section-desc { font-size: 18px; color: var(--text-secondary); max-width: 700px; margin: 0 auto; }
-        .pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-        .pain-card { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 28px; }
-        .pain-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
-        .pain-icon svg { width: 24px; height: 24px; }
-        .pain-icon.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-        .pain-icon.orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
-        .pain-icon.yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
-        .pain-card h4 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-        .pain-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
-        .pain-stat { font-size: 24px; font-weight: 800; color: #ef4444; }
-        .pain-stat-label { font-size: 12px; color: var(--text-tertiary); }
-
-        .solutions { padding: 80px 60px; }
-        .solutions-content { max-width: 1200px; margin: 0 auto; }
-        .solutions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-        .solution-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; transition: all 0.3s ease; }
-        .solution-card:hover { border-color: var(--border-focus); transform: translateY(-4px); }
-        .solution-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-        .solution-icon svg { width: 28px; height: 28px; color: #fff; }
-        .icon-emerald { background: linear-gradient(135deg, #10b981, #34d399); }
-        .icon-amber { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
-        .icon-blue { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
-        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
-        .solution-card h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
-        .solution-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
-        .solution-card ul { list-style: none; padding: 0; margin: 0; }
-        .solution-card ul li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-tertiary); border-top: 1px solid var(--border-secondary); }
-        .solution-card ul li:first-child { border-top: none; }
-        .solution-card ul li svg { width: 16px; height: 16px; color: #10b981; flex-shrink: 0; }
-
-        .timeline-section { background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(245, 158, 11, 0.05)); padding: 80px 60px; }
-        .timeline-content { max-width: 1100px; margin: 0 auto; }
-        .timeline-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; margin-top: 40px; }
-        .timeline-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; text-align: center; position: relative; }
-        .timeline-card::after { content: '→'; position: absolute; right: -20px; top: 50%; transform: translateY(-50%); color: #34d399; font-size: 24px; font-weight: 800; }
-        .timeline-card:last-child::after { display: none; }
-        .timeline-num { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #f59e0b); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-        .timeline-card h4 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
-        .timeline-card p { font-size: 11px; color: var(--text-tertiary); line-height: 1.4; }
-
-        .stats-banner { background: var(--bg-secondary); padding: 60px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; max-width: 1000px; margin: 0 auto; text-align: center; }
-        .stat-value { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #10b981, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stat-label { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
-
-        .usecase-cta { text-align: center; padding: 80px 60px; position: relative; }
-        .usecase-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(16, 185, 129, 0.10), transparent); }
-        .cta-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
-        .cta-desc { font-size: 18px; color: var(--text-secondary); margin-bottom: 32px; position: relative; }
-        .cta-buttons { display: flex; gap: 16px; justify-content: center; position: relative; }
-
-        @media (max-width: 968px) {
-            .usecase-hero-content { grid-template-columns: 1fr; }
-            .pain-grid { grid-template-columns: 1fr; }
-            .solutions-grid { grid-template-columns: 1fr; }
-            .timeline-strip { grid-template-columns: 1fr; }
-            .timeline-card::after { display: none; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 640px) {
-            .usecase-hero { padding: 100px 20px 60px; }
-            .pain-points, .solutions, .timeline-section, .usecase-cta { padding: 60px 20px; }
-            .hero-stats { gap: 20px; }
-            .cta-buttons { flex-direction: column; }
-        }
-    </style>
     <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/content-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/story-desk.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page desk-landing content-desk">
+<body class="landing-page desk-landing content-desk story-desk">
       <div class="dk-wrap">
     <nav class="dk-nav">
       <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
@@ -174,7 +80,7 @@
                 <p>Manufacturing and trading SMBs — especially in India — still run on Tally on a Windows desktop, paper-based PO lifecycles, manual GST returns and standalone HRMS. Ragenaizer collapses all of it into one cloud platform with native GSTR-1, GSTR-3B, TDS, multi-location payroll, vendor management and fixed asset depreciation.</p>
                 <div class="cta-buttons">
                     <a href="../pricing.html" class="btn-primary">See pricing</a>
-                    <a href="../pricing.html" class="btn-secondary">See Pricing</a>
+                    <a href="../accounts.html" class="btn-secondary">How Accounts works</a>
                 </div>
                 <div class="hero-stats">
                     <div class="hero-stat">
@@ -379,7 +285,7 @@
         <p class="cta-desc">Move off the Windows desktop and onto a cloud platform that already speaks GST, TDS and multi-location payroll.</p>
         <div class="cta-buttons">
             <a href="../pricing.html" class="btn-primary">See pricing</a>
-            <a href="../pricing.html" class="btn-secondary">See Pricing</a>
+            <a href="../accounts.html" class="btn-secondary">How Accounts works</a>
         </div>
     </section>
 

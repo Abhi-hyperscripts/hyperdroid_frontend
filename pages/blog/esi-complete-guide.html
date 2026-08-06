@@ -93,63 +93,12 @@
     <script src="/js/pwa-install-prompt.js"></script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        .article-page { min-height: 100vh; background: var(--bg-primary); }
-        .article-header { padding: 120px 60px 60px; max-width: 800px; margin: 0 auto; }
-        .article-meta { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-        .article-category { padding: 6px 14px; background: rgba(236, 72, 153, 0.1); border-radius: 100px; font-size: 13px; font-weight: 600; color: #ec4899; }
-        .article-date { font-size: 14px; color: var(--text-tertiary); }
-        .article-header h1 { font-size: clamp(32px, 4vw, 44px); font-weight: 800; color: var(--text-primary); line-height: 1.2; margin-bottom: 20px; }
-        .article-header .lead { font-size: 20px; color: var(--text-secondary); line-height: 1.6; }
-
-        .article-content { max-width: 800px; margin: 0 auto; padding: 0 60px 80px; }
-        .article-content h2 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin: 48px 0 20px; }
-        .article-content h3 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 36px 0 16px; }
-        .article-content p { font-size: 17px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px; }
-        .article-content ul, .article-content ol { color: var(--text-secondary); margin: 0 0 24px 24px; line-height: 1.8; font-size: 17px; }
-        .article-content li { margin-bottom: 8px; }
-        .article-content strong { color: var(--text-primary); }
-
-        .formula-box { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; margin: 24px 0; }
-        .formula-box h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; }
-        .formula { background: var(--bg-tertiary); padding: 16px 20px; border-radius: 8px; font-family: monospace; font-size: 15px; color: #ec4899; margin-bottom: 12px; }
-
-        .example-box { background: linear-gradient(135deg, rgba(236, 72, 153, 0.05), rgba(168, 85, 247, 0.05)); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 16px; padding: 24px; margin: 24px 0; }
-        .example-box h4 { font-size: 16px; font-weight: 700; color: #ec4899; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        .example-table { width: 100%; border-collapse: collapse; }
-        .example-table td { padding: 10px 0; border-bottom: 1px solid var(--border-primary); font-size: 15px; }
-        .example-table td:first-child { color: var(--text-secondary); }
-        .example-table td:last-child { color: var(--text-primary); font-weight: 600; text-align: right; }
-        .example-table tr:last-child td { border-bottom: none; font-weight: 700; }
-
-        .info-callout { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 20px 24px; margin: 24px 0; border-radius: 0 12px 12px 0; }
-        .info-callout p { margin: 0; color: var(--text-secondary); }
-
-        .benefit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 24px 0; }
-        .benefit-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; }
-        .benefit-card h4 { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-        .benefit-card p { font-size: 14px; color: var(--text-tertiary); margin: 0; }
-
-        .cta-box { background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 16px; padding: 32px; text-align: center; margin: 48px 0; }
-        .cta-box h3 { font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; }
-        .cta-box p { color: var(--text-secondary); margin-bottom: 20px; }
-        .cta-box a { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: linear-gradient(135deg, #ec4899, #a855f7); border-radius: 10px; color: #fff; text-decoration: none; font-weight: 700; }
-
-        .related-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 48px; }
-        .related-link { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px; text-decoration: none; transition: all 0.2s; }
-        .related-link:hover { border-color: #ec4899; }
-        .related-link h4 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-        .related-link p { font-size: 14px; color: var(--text-tertiary); margin: 0; }
-
-        @media (max-width: 768px) {
-            .article-header, .article-content { padding-left: 24px; padding-right: 24px; }
-        }
-    </style>
     <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/content-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/article-desk.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page article-page desk-landing content-desk">
+<body class="landing-page article-page desk-landing content-desk article-desk">
   <div class="dk-wrap">
     <nav class="dk-nav">
       <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">

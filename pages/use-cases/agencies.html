@@ -62,131 +62,12 @@
     <script src="/js/pwa-install-prompt.js"></script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
-    <style>
-        .usecase-hero { padding: 120px 60px 80px; position: relative; overflow: hidden; }
-        .usecase-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 30% -10%, rgba(236, 72, 153, 0.15), transparent), radial-gradient(ellipse 80% 50% at 80% 10%, rgba(249, 115, 22, 0.1), transparent); }
-        .usecase-hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
-        .usecase-hero-text h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 20px; }
-        .usecase-hero-text h1 .highlight { background: linear-gradient(135deg, #ec4899, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .usecase-hero-text p { font-size: 18px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; }
-        .usecase-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 100px; font-size: 13px; font-weight: 600; color: #f472b6; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
-        .hero-stats { display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap; }
-        .hero-stat { text-align: center; }
-        .hero-stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); }
-        .hero-stat-label { font-size: 13px; color: var(--text-tertiary); }
-        .usecase-hero-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 24px; position: relative; }
-        .hero-visual-mockup { background: var(--bg-tertiary); border-radius: 12px; padding: 20px; }
-        .tool-sprawl-visual { display: flex; flex-direction: column; gap: 16px; }
-        .tool-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-        .tool-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: var(--bg-secondary); border: 1px solid var(--border-primary); position: relative; }
-        .tool-icon.crossed::after { content: ''; position: absolute; width: 100%; height: 2px; background: #ef4444; transform: rotate(-45deg); }
-        .tool-divider { text-align: center; padding: 12px 0; color: var(--text-tertiary); font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 12px; }
-        .tool-divider::before, .tool-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-primary); }
-        .ragenaizer-icon { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, #ec4899, #f97316); display: flex; align-items: center; justify-content: center; margin: 0 auto; }
-        .ragenaizer-icon svg { width: 32px; height: 32px; color: #fff; }
-
-        .pain-points { padding: 80px 60px; background: var(--bg-secondary); }
-        .pain-points-content { max-width: 1200px; margin: 0 auto; }
-        .section-header { text-align: center; margin-bottom: 60px; }
-        .section-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
-        .section-desc { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
-        .pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-        .pain-card { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 28px; }
-        .pain-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
-        .pain-icon svg { width: 24px; height: 24px; }
-        .pain-icon.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-        .pain-icon.orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
-        .pain-icon.yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
-        .pain-card h4 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-        .pain-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
-        .pain-stat { font-size: 24px; font-weight: 800; color: #ef4444; }
-        .pain-stat-label { font-size: 12px; color: var(--text-tertiary); }
-
-        .solutions { padding: 80px 60px; }
-        .solutions-content { max-width: 1200px; margin: 0 auto; }
-        .solutions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-        .solution-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; transition: all 0.3s ease; }
-        .solution-card:hover { border-color: var(--border-focus); transform: translateY(-4px); }
-        .solution-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-        .solution-icon svg { width: 28px; height: 28px; color: #fff; }
-        .icon-pink { background: linear-gradient(135deg, #ec4899, #f472b6); }
-        .icon-orange { background: linear-gradient(135deg, #f97316, #fb923c); }
-        .icon-purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
-        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
-        .solution-card h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
-        .solution-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
-        .solution-card ul { list-style: none; padding: 0; margin: 0; }
-        .solution-card ul li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-tertiary); border-top: 1px solid var(--border-secondary); }
-        .solution-card ul li:first-child { border-top: none; }
-        .solution-card ul li svg { width: 16px; height: 16px; color: #10b981; flex-shrink: 0; }
-
-        .workflow-section { background: linear-gradient(135deg, rgba(236, 72, 153, 0.05), rgba(249, 115, 22, 0.05)); padding: 80px 60px; }
-        .workflow-content { max-width: 1000px; margin: 0 auto; }
-        .workflow-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 40px; }
-        .workflow-step { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; text-align: center; position: relative; }
-        .workflow-step::after { content: ''; position: absolute; top: 50%; right: -24px; width: 24px; height: 2px; background: var(--border-primary); display: none; }
-        .workflow-step:not(:last-child)::after { display: block; }
-        .step-number { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #f97316); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; margin: 0 auto 16px; }
-        .workflow-step h4 { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-        .workflow-step p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
-
-        .client-features { padding: 80px 60px; background: var(--bg-secondary); }
-        .client-content { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
-        .client-text h2 { font-size: 32px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
-        .client-text p { font-size: 16px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px; }
-        .client-benefits { display: flex; flex-direction: column; gap: 12px; }
-        .client-benefit { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 10px; }
-        .client-benefit svg { width: 20px; height: 20px; color: #f472b6; flex-shrink: 0; }
-        .client-benefit span { font-size: 14px; color: var(--text-primary); }
-        .client-visual { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; }
-        .share-link-mockup { display: flex; flex-direction: column; gap: 16px; }
-        .share-link-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-tertiary); border-radius: 8px; }
-        .share-link-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-        .share-link-icon.video { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
-        .share-link-icon.file { background: rgba(249, 115, 22, 0.1); color: #f97316; }
-        .share-link-icon.folder { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
-        .share-link-icon svg { width: 20px; height: 20px; }
-        .share-link-details { flex: 1; }
-        .share-link-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-        .share-link-meta { font-size: 11px; color: var(--text-tertiary); }
-        .share-link-badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
-        .share-link-badge.protected { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-        .share-link-badge.expiring { background: rgba(234, 179, 8, 0.1); color: #eab308; }
-
-        .stats-banner { padding: 60px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; max-width: 1000px; margin: 0 auto; text-align: center; }
-        .stat-item { }
-        .stat-value { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #ec4899, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stat-label { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
-
-        .usecase-cta { text-align: center; padding: 80px 60px; position: relative; }
-        .usecase-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(236, 72, 153, 0.1), transparent); }
-        .cta-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
-        .cta-desc { font-size: 18px; color: var(--text-secondary); margin-bottom: 32px; position: relative; }
-        .cta-buttons { display: flex; gap: 16px; justify-content: center; position: relative; }
-
-        @media (max-width: 968px) {
-            .usecase-hero-content { grid-template-columns: 1fr; }
-            .pain-grid { grid-template-columns: 1fr; }
-            .solutions-grid { grid-template-columns: 1fr; }
-            .workflow-steps { grid-template-columns: repeat(2, 1fr); }
-            .workflow-step::after { display: none !important; }
-            .client-content { grid-template-columns: 1fr; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 640px) {
-            .usecase-hero { padding: 100px 20px 60px; }
-            .pain-points, .solutions, .workflow-section, .client-features, .usecase-cta { padding: 60px 20px; }
-            .workflow-steps { grid-template-columns: 1fr; }
-            .hero-stats { gap: 20px; }
-            .cta-buttons { flex-direction: column; }
-        }
-    </style>
     <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/content-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/story-desk.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page desk-landing content-desk">
+<body class="landing-page desk-landing content-desk story-desk">
   <div class="dk-wrap">
     <nav class="dk-nav">
       <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
@@ -212,7 +93,7 @@
                 <p>Agencies and consulting firms juggle 7+ tools per project: PM, time tracking, accounting, CRM, video, chat, files. Ragenaizer collapses all of it into one platform — projects with billable rates, time logged against tasks, invoices generated from approved hours, all sharing one customer record.</p>
                 <div class="cta-buttons">
                     <a href="../pricing.html" class="btn-primary">See pricing</a>
-                    <a href="../pricing.html" class="btn-secondary">See Pricing</a>
+                    <a href="../pms.html" class="btn-secondary">How Projects works</a>
                 </div>
                 <div class="hero-stats">
                     <div class="hero-stat">
@@ -468,7 +349,7 @@
         <p class="cta-desc">Stop losing billable hours to tool gaps. Replace 7+ contracts with one workspace built end-to-end for client work.</p>
         <div class="cta-buttons">
             <a href="../pricing.html" class="btn-primary">See pricing</a>
-            <a href="../pricing.html" class="btn-secondary">See Pricing</a>
+            <a href="../pms.html" class="btn-secondary">How Projects works</a>
         </div>
     </section>
 
