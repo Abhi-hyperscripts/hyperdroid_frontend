@@ -1,0 +1,186 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CRM — "every inlet, one record".
+   Loaded after landing-desk.css, scoped to body.crm-desk.
+
+   A CRM's honest differentiator is not its pipeline board — everyone has one.
+   It is what happens in the seconds after a lead arrives, and whether the
+   channel it arrived on stops mattering immediately afterwards. So the page
+   is built on the inlets, and on the five things that happen to every lead
+   regardless of which one it came through.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.crm-desk {
+  --cr: #60A5FA;
+}
+
+body.crm-desk .dk-hero { padding: 56px 0 0; }
+body.crm-desk .cr-note {
+  margin: 18px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+
+/* ── the inlet bench ──────────────────────────────────────────────────────── */
+body.crm-desk .cr-bench {
+  margin-top: 44px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  text-align: left;
+  position: relative;
+}
+body.crm-desk .cr-bench::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(700px 320px at 10% -22%, var(--cr), transparent 70%);
+  opacity: 0.15;
+}
+body.crm-desk .cr-bench > * { position: relative; }
+
+body.crm-desk .cr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.4);
+}
+body.crm-desk .cr-chips button {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--dk-mute);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+body.crm-desk .cr-chips button i {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--bc);
+  display: block;
+  opacity: 0.55;
+}
+body.crm-desk .cr-chips button:hover { color: var(--dk-ink); background: rgba(255, 255, 255, 0.08); }
+body.crm-desk .cr-chips button[aria-pressed="true"] {
+  color: var(--dk-ink);
+  border-color: color-mix(in srgb, var(--bc) 55%, transparent);
+  background: color-mix(in srgb, var(--bc) 16%, transparent);
+}
+body.crm-desk .cr-chips button[aria-pressed="true"] i { opacity: 1; box-shadow: 0 0 10px var(--bc); }
+body.crm-desk .cr-chips button:focus-visible { outline: 2px solid var(--cr); outline-offset: 2px; }
+
+body.crm-desk .cr-panel { padding: 30px 32px 32px; }
+body.crm-desk .cr-head {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 0;
+}
+body.crm-desk .cr-sub {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+  max-width: 740px;
+}
+body.crm-desk .cr-rows { margin-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.09); }
+body.crm-desk .cr-row {
+  display: grid;
+  grid-template-columns: minmax(132px, 0.2fr) minmax(0, 1fr);
+  gap: 26px;
+  align-items: baseline;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+body.crm-desk .cr-row .k {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.crm-desk .cr-row .v { font-size: 14px; line-height: 1.6; color: var(--dk-ink); }
+body.crm-desk .cr-row .v code {
+  font-family: var(--font-family-mono);
+  font-size: 12.5px;
+  color: var(--cr);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--dk-line);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+
+/* ── the constant: what happens whatever the channel ──────────────────────────
+   Deliberately fixed while the panel above changes. That the strip does not
+   move when you switch channel is the argument the section is making. */
+body.crm-desk .cr-always {
+  border-top: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.42);
+  padding: 22px 32px 26px;
+}
+body.crm-desk .cr-always > p {
+  margin: 0 0 16px;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.crm-desk .cr-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 14px;
+}
+body.crm-desk .cr-step {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  position: relative;
+}
+body.crm-desk .cr-step b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--dk-ink);
+  margin-bottom: 4px;
+}
+body.crm-desk .cr-step span { display: block; font-size: 12.5px; line-height: 1.5; color: var(--dk-dim); }
+body.crm-desk .cr-step em {
+  position: absolute;
+  top: 12px; right: 14px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  font-style: normal;
+  color: var(--cr);
+  opacity: 0.7;
+}
+
+/* ── coverage cards get a slightly denser grid than the default ───────────── */
+body.crm-desk .dk-grid { grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); }
+
+/* ── responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  body.crm-desk .cr-panel { padding: 24px 20px 26px; }
+  body.crm-desk .cr-always { padding: 20px 20px 24px; }
+  body.crm-desk .cr-chips { padding: 14px; }
+  body.crm-desk .cr-row { grid-template-columns: 1fr; gap: 6px; }
+}
