@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-IN" data-theme="dark">
 <head>
-    <!-- Force dark theme to match landing page -->
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
     <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
@@ -14,10 +14,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
     <title>Pricing - Ragenaizer | Simple, Transparent Pricing</title>
-    <meta name="description" content="Simple, transparent pricing for Ragenaizer. Per user per month, billed annually. Start with a free trial or choose the plan that fits your team.">
+    <meta name="description" content="Simple, transparent pricing for Ragenaizer. One price per user per month on every plan, billed annually — what changes is the size of the seat block you take.">
 
     <!-- SEO Meta Tags -->
-    <meta name="keywords" content="ragenaizer pricing, enterprise software pricing, per user pricing, SaaS pricing, business software plans, free trial enterprise software">
+    <meta name="keywords" content="ragenaizer pricing, enterprise software pricing, per user pricing, SaaS pricing, business software plans, annual seat block pricing">
     <meta name="author" content="Ragenaizer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://ragenaizer.com/pages/pricing.html">
@@ -27,7 +27,7 @@
     <meta property="og:site_name" content="Ragenaizer">
     <meta property="og:url" content="https://ragenaizer.com/pages/pricing.html">
     <meta property="og:title" content="Pricing - Ragenaizer | Simple, Transparent Pricing">
-    <meta property="og:description" content="Per user per month, billed annually. Video, Chat, Drive, HRMS and more in one platform. Start your free trial today.">
+    <meta property="og:description" content="One price per user per month, billed annually. Video, Chat, Drive, HRMS, CRM, Accounts and more in one platform. Pick the size of your seat block.">
     <meta property="og:image" content="https://ragenaizer.com/assets/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -35,7 +35,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Ragenaizer Pricing - Plans for Every Team">
-    <meta name="twitter:description" content="Simple per-user pricing. All-in-one business platform. Free trial available.">
+    <meta name="twitter:description" content="Simple per-user pricing, the same on every plan. All-in-one business platform.">
     <meta name="twitter:image" content="https://ragenaizer.com/assets/og-image.png">
 
     <meta name="theme-color" content="#050810">
@@ -53,14 +53,14 @@
         "offers": {
             "@type": "AggregateOffer",
             "priceCurrency": "INR",
-            "lowPrice": "999",
-            "highPrice": "999",
+            "lowPrice": "1200",
+            "highPrice": "1200",
             "offerCount": "4",
             "offers": [
-                { "@type": "Offer", "name": "Mini", "price": "999", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "For growing teams of up to 25 users. CRM, HRMS, Vision, Chat, Drive, Accounts, AI Engine and more." },
-                { "@type": "Offer", "name": "Starter", "price": "999", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "For growing teams of 25+. Includes every Ragenaizer app — CRM, HRMS, Vision, Chat, Drive, Email, Accounts, LMS, AI Engine and more." },
-                { "@type": "Offer", "name": "Pro", "price": "999", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "Most popular. For mid-sized businesses at 50+ seat block. All apps included." },
-                { "@type": "Offer", "name": "Enterprise", "price": "999", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "For large organizations on a 150-seat block. All apps. Annual contract." }
+                { "@type": "Offer", "name": "Mini", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "A ten-seat block. CRM, HRMS, Vision, Chat, Drive, Mail, Reminders and AI Engine." },
+                { "@type": "Offer", "name": "Starter", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "A twenty-seat block. Every Ragenaizer app — CRM, HRMS, Vision, Chat, Drive, Mail, Accounts, Projects, Learning, AI Engine and more." },
+                { "@type": "Offer", "name": "Pro", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "Most popular. A fifty-seat block, every app included." },
+                { "@type": "Offer", "name": "Enterprise", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "A hundred-and-fifty-seat block, every app included. Annual contract." }
             ]
         }
     }
@@ -82,825 +82,561 @@
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+
     <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../css/login-redesign.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<script src="../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
-
-    <style>
-        /* ==========================================
-           PRICING PAGE - Premium Design (matches Login)
-           ========================================== */
-
-        .pricing-page {
-            min-height: 100vh;
-            background: #050810;
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* ── Animated gradient mesh background ── */
-        .pricing-bg {
-            position: fixed;
-            inset: 0;
-            overflow: hidden;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        .pricing-bg .gradient-mesh {
-            position: absolute;
-            inset: 0;
-        }
-
-        .pricing-bg .gradient-mesh::before {
-            content: '';
-            position: absolute;
-            width: 140%;
-            height: 140%;
-            top: -20%;
-            left: -20%;
-            background:
-                radial-gradient(ellipse 80% 50% at 20% 30%, rgba(var(--brand-primary-rgb), 0.35) 0%, transparent 50%),
-                radial-gradient(ellipse 60% 80% at 80% 15%, rgba(139, 92, 246, 0.3) 0%, transparent 45%),
-                radial-gradient(ellipse 50% 60% at 60% 75%, rgba(6, 182, 212, 0.2) 0%, transparent 45%),
-                radial-gradient(ellipse 80% 40% at 30% 85%, rgba(var(--brand-primary-rgb), 0.25) 0%, transparent 50%);
-            animation: pricingGradientShift 25s ease-in-out infinite;
-        }
-
-        .pricing-bg .gradient-mesh::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background:
-                radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.06) 0%, transparent 25%),
-                radial-gradient(circle at 30% 60%, rgba(var(--brand-primary-rgb), 0.12) 0%, transparent 30%);
-            animation: pricingGradientPulse 15s ease-in-out infinite;
-        }
-
-        @keyframes pricingGradientShift {
-            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-            25% { transform: translate(5%, -3%) rotate(1deg) scale(1.02); }
-            50% { transform: translate(-3%, 5%) rotate(-1deg) scale(0.98); }
-            75% { transform: translate(3%, 2%) rotate(0.5deg) scale(1.01); }
-        }
-
-        @keyframes pricingGradientPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        /* ── Grid overlay ── */
-        .pricing-bg .grid-overlay {
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            mask-image: radial-gradient(ellipse at 50% 40%, black 20%, transparent 75%);
-            -webkit-mask-image: radial-gradient(ellipse at 50% 40%, black 20%, transparent 75%);
-        }
-
-        /* ── Floating geometric shapes ── */
-        .pricing-bg .float-shape-1 {
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 50%;
-            top: 5%;
-            right: -120px;
-            animation: pricingFloatRotate 30s linear infinite;
-        }
-
-        .pricing-bg .float-shape-2 {
-            position: absolute;
-            width: 250px;
-            height: 250px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-            bottom: 10%;
-            left: -80px;
-            animation: pricingFloatRotate 25s linear infinite reverse;
-        }
-
-        .pricing-bg .float-shape-3 {
-            position: absolute;
-            width: 180px;
-            height: 180px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 50%;
-            top: 55%;
-            right: 8%;
-            animation: pricingFloatRotate 35s linear infinite;
-        }
-
-        @keyframes pricingFloatRotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* ── Hero Section ── */
-        .pricing-hero {
-            text-align: center;
-            padding: 9rem 2rem 3rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .pricing-hero h1 {
-            font-size: clamp(2.4rem, 5vw, 3.8rem);
-            font-weight: 800;
-            margin-bottom: 0.75rem;
-            letter-spacing: -0.03em;
-            background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: pricingFadeSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
-        }
-
-        .pricing-hero .subtitle {
-            font-size: 1.15rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 0;
-            animation: pricingFadeSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
-        }
-
-        @keyframes pricingFadeSlideIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ── Plans Grid ── */
-        .pricing-grid-wrapper {
-            max-width: 1300px;
-            margin: 0 auto;
-            padding: 0 2rem 6rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            align-items: stretch;
-            padding-top: 16px;
-        }
-
-        /* ── Plan Card - Glassmorphism ── */
-        .plan-card {
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
-            animation: pricingCardReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-        }
-
-        /* Subtle inner gradient on cards */
-        .plan-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-            border-radius: 20px;
-        }
-
-        .plan-card:nth-child(1) { animation-delay: 0.1s; }
-        .plan-card:nth-child(2) { animation-delay: 0.2s; }
-        .plan-card:nth-child(3) { animation-delay: 0.3s; }
-        .plan-card:nth-child(4) { animation-delay: 0.4s; }
-        .plan-card:nth-child(5) { animation-delay: 0.5s; }
-
-        @keyframes pricingCardReveal {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .plan-card:hover {
-            transform: translateY(-6px);
-            border-color: rgba(255, 255, 255, 0.18);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-        }
-
-        .plan-card.highlighted {
-            border-color: rgba(var(--brand-primary-rgb), 0.5);
-            background: rgba(var(--brand-primary-rgb), 0.08);
-            box-shadow: 0 0 40px rgba(var(--brand-primary-rgb), 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        }
-
-        .plan-card.highlighted::before {
-            background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.1) 0%, transparent 60%);
-        }
-
-        .plan-card.highlighted:hover {
-            border-color: rgba(var(--brand-primary-rgb), 0.7);
-            box-shadow: 0 20px 60px rgba(var(--brand-primary-rgb), 0.2), 0 0 40px rgba(var(--brand-primary-rgb), 0.15);
-        }
-
-        /* ── Badge ── */
-        .plan-badge {
-            position: absolute;
-            top: -13px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2;
-            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
-            color: #fff;
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 0.3rem 1.2rem;
-            border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            white-space: nowrap;
-            box-shadow: 0 4px 12px rgba(var(--brand-primary-rgb), 0.3);
-        }
-
-        .plan-card-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            min-height: 130px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .plan-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.95);
-            margin-bottom: 0.75rem;
-        }
-
-        .plan-price {
-            font-size: 2.5rem;
-            font-weight: 800;
-            line-height: 1;
-            margin-bottom: 0.25rem;
-            background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.85) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .plan-price .currency {
-            font-size: 1.2rem;
-            font-weight: 600;
-            vertical-align: super;
-            margin-right: 2px;
-        }
-
-        .plan-price .per-unit {
-            font-size: 0.9rem;
-            font-weight: 500;
-            -webkit-text-fill-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .plan-billing {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 0.25rem;
-        }
-
-        .plan-min-seats {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.45);
-        }
-
-        .plan-description {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.55);
-            text-align: center;
-            line-height: 1.5;
-            margin-bottom: 1.5rem;
-            min-height: 2.7rem;
-        }
-
-        /* ── Features List ── */
-        .plan-features {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 1.5rem;
-            flex: 1;
-        }
-
-        .plan-features li {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.6rem;
-            padding: 0.4rem 0;
-            font-size: 0.88rem;
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.4;
-        }
-
-        .plan-features li {
-            justify-content: flex-start;
-        }
-
-        /* Service icon (left) */
-        .plan-features li > svg:first-child {
-            width: 16px;
-            height: 16px;
-            min-width: 16px;
-            margin-top: 2px;
-            color: rgba(var(--brand-primary-rgb), 0.7);
-        }
-
-        /* Service name (middle, takes remaining space) */
-        .plan-features li > span {
-            flex: 1;
-        }
-
-        /* Check/cross icon (right) */
-        .plan-features li > svg:last-child {
-            width: 14px;
-            height: 14px;
-            min-width: 14px;
-            margin-left: auto;
-        }
-
-        .plan-features li.feature-included > svg.icon-check {
-            color: var(--color-success);
-        }
-
-        .plan-features li.feature-excluded {
-            opacity: 0.35;
-        }
-
-        .plan-features li.feature-excluded > svg.icon-cross {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        /* ── Annual Cost Breakdown ── */
-        .plan-cost-breakdown {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 0.85rem 1rem;
-            margin-bottom: 1.5rem;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.5);
-            line-height: 1.6;
-            text-align: center;
-            backdrop-filter: blur(8px);
-        }
-
-        .plan-cost-breakdown .cost-total {
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.95);
-            font-size: 0.9rem;
-        }
-
-        /* ── CTA Button ── */
-        .plan-cta {
-            display: block;
-            width: 100%;
-            padding: 0.85rem 1.5rem;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            text-align: center;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            border: none;
-        }
-
-        .plan-cta.primary {
-            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
-            color: #fff;
-            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.2);
-        }
-
-        .plan-cta.primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(var(--brand-primary-rgb), 0.35);
-        }
-
-        .plan-cta.secondary {
-            background: rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .plan-cta.secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .plan-cta.enterprise {
-            background: transparent;
-            color: rgba(var(--brand-primary-rgb), 0.9);
-            border: 1px solid rgba(var(--brand-primary-rgb), 0.4);
-        }
-
-        .plan-cta.enterprise:hover {
-            background: rgba(var(--brand-primary-rgb), 0.08);
-            border-color: rgba(var(--brand-primary-rgb), 0.6);
-            transform: translateY(-2px);
-        }
-
-        /* ── Loading State ── */
-        .pricing-loading {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .pricing-loading .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.08);
-            border-top-color: var(--brand-primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* ── Error State ── */
-        .pricing-error {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: var(--color-danger);
-        }
-
-        .pricing-error button {
-            margin-top: 1rem;
-            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.8rem;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .pricing-error button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.3);
-        }
-
-        /* ── Divider ── */
-        .features-divider {
-            height: 1px;
-            background: rgba(255, 255, 255, 0.06);
-            margin: 0.5rem 0;
-        }
-
-        .features-section-label {
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.4);
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            margin-top: 0.6rem;
-            margin-bottom: 0.2rem;
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .pricing-hero {
-                padding: 7rem 1.5rem 2rem;
-            }
-
-            .pricing-grid-wrapper {
-                padding: 0 1rem 3rem;
-            }
-
-            .pricing-grid {
-                grid-template-columns: 1fr;
-                max-width: 400px;
-                margin: 0 auto;
-            }
-
-            .plan-card {
-                padding: 1.5rem;
-            }
-        }
-
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .pricing-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-    </style>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/pricing-desk.css?v=' + CACHE_VERSION + '">');</script>
 </head>
-<body class="landing-page login-page pricing-page">
-    <!-- Animated Background (matches Login page) -->
-    <div class="pricing-bg">
-        <div class="gradient-mesh"></div>
-        <div class="grid-overlay"></div>
-        <div class="float-shape-1"></div>
-        <div class="float-shape-2"></div>
-        <div class="float-shape-3"></div>
+<body class="landing-page desk-landing pricing-desk">
+
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html" aria-current="page" style="color:#e6ebf5">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <!-- ══ Hero ══════════════════════════════════════════════════════════════
+         The plan data says every plan costs the same per user and that min
+         seats equal max seats. So the honest headline is not "pick a tier" —
+         it is "pick a size", and the page is built to say exactly that. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>Same price on every plan</div>
+      <h1 class="dk-h1">One price.<br>Pick the size of your desk.</h1>
+      <p class="dk-sub">There is no feature ladder here. Every plan is the same per-user price — what changes is how many seats come in the block. From twenty seats up, every app is switched on.</p>
+      <p class="pr-note">Prices below are live from our billing system · ex-GST · billed annually</p>
+    </header>
+
+    <!-- The bench: the one thing on this page you operate. -->
+    <div id="benchMount">
+      <div class="pr-state" role="status" aria-live="polite">
+        <div class="pr-skel" style="width:180px"></div>
+        <div class="pr-skel" style="width:300px"></div>
+        <div class="pr-skel" style="width:230px"></div>
+        <p class="sub" style="margin-top:20px">Fetching current plans…</p>
+      </div>
     </div>
 
-    <!-- Navigation -->
-    <div id="navbar"></div>
+    <!-- ══ What the block carries ══ -->
+    <section class="dk-section dk-reveal" id="included" hidden>
+      <div class="dk-kicker">In the block</div>
+      <h2 class="dk-h2">What comes switched on.</h2>
+      <p class="dk-lede" id="includedLede"></p>
+      <div class="pr-apps" id="appsGrid"></div>
+    </section>
 
-    <!-- Hero Section -->
-    <div class="pricing-hero">
-        <h1>Simple, transparent pricing</h1>
-        <p class="subtitle">Per user per month, billed annually. No hidden fees.</p>
-    </div>
+    <!-- ══ The matrix, for the comparison shopper ══ -->
+    <section class="dk-section dk-reveal" id="compare" hidden>
+      <div class="dk-kicker">Side by side</div>
+      <h2 class="dk-h2">All four blocks, in one table.</h2>
+      <p class="dk-lede">The per-user price does not move down the row. Read this the way you would read a stock list: the same item, in four pack sizes.</p>
+      <div class="pr-tablewrap" id="compareWrap"></div>
+    </section>
 
-    <!-- Plans Grid -->
-    <div class="pricing-grid-wrapper">
-        <div id="pricingContent">
-            <div class="pricing-loading">
-                <div class="spinner"></div>
-                <p>Loading plans...</p>
-            </div>
+    <!-- ══ The fine print ══ -->
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The fine print</div>
+      <h2 class="dk-h2">In plain words, before you ask.</h2>
+      <div class="pr-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Why does every plan cost the same?</h3>
+          <p>Because we do not hold features back to sell you the tier above. The rate per user is the same whichever block you take. What you are choosing is how many seats you need, not how much of the product you are allowed to have.</p>
         </div>
-    </div>
+        <div>
+          <span class="q">02</span>
+          <h3>What is a seat block?</h3>
+          <p>A fixed number of seats, not a range — ten, twenty, fifty or a hundred and fifty. You take the block and everyone in it gets their own login across every app the block carries.</p>
+        </div>
+        <div>
+          <span class="q">03</span>
+          <h3>Is GST included in the price?</h3>
+          <p>No. Everything shown is before tax. GST is added at the statutory rate and itemised in full on the checkout screen and on the invoice, so the number you approve is the number you pay.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>How is it billed?</h3>
+          <p>Annually — one invoice a year for the block, not a per-seat meter that creeps every time someone joins or a monthly line that quietly renews.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>What if we outgrow the block?</h3>
+          <p>Move up to the next one. Write to us and we will size it with you rather than have you discover the ceiling on a Monday morning.</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>Can we take our data out?</h3>
+          <p>Yes. Your books, contacts, recordings and files sit in one place and export whole, whenever you want. No part of your business is held in a format only we can read.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>Do we have to use everything?</h3>
+          <p>No, and you do not pay less for ignoring an app. Everything the block carries is switched on from day one; the ones you do not open simply sit quiet until you want them.</p>
+        </div>
+        <div>
+          <span class="q">08</span>
+          <h3>Still not sure which block?</h3>
+          <p>Count the people who will log in this year, then take the block above it. Talking to us costs nothing and we would rather size it right than sell you a block you grow out of in March.</p>
+        </div>
+      </div>
+    </section>
 
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
+    <!-- ══ Close ══ -->
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">One block. One invoice. Everything on it.</h2>
+      <p>Set the company up on a single desk and stop reconciling eight vendors at renewal time.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="#top" id="closeCta">Choose a block</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20pricing">Talk to us →</a>
+      </div>
+    </section>
 
-    <script>
-        const TM_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'https://localhost:5108' : 'https://tenant.ragenaizer.com';
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-        function formatINR(amount) {
-            return '\u20B9' + Number(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  <script>
+    'use strict';
+
+    var PR_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var TM_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? 'https://localhost:5108' : 'https://tenant.ragenaizer.com';
+
+    /* ── app vocabulary ───────────────────────────────────────────────────────
+       The billing system names services after the microservice that owns them
+       (EmailService, Vision, PMS). Customers read the names the rest of the
+       site uses, so the mapping lives here and nowhere else. */
+    var APPS = {
+      email:      { label: 'Mail',       tag: 'one inbox',           accent: '#6366F1', icon: '<rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/>' },
+      vision:     { label: 'Meetings',   tag: 'hd video',            accent: '#3b82f6', icon: '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>' },
+      chat:       { label: 'Chat',       tag: 'direct & group',      accent: '#2DD4BF', icon: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>' },
+      drive:      { label: 'Drive',      tag: 'shared storage',      accent: '#FB923C', icon: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>' },
+      crm:        { label: 'CRM',        tag: 'leads & deals',       accent: '#60A5FA', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>' },
+      hrms:       { label: 'HRMS',       tag: 'payroll & leave',     accent: '#4CC9F0', icon: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>' },
+      accounts:   { label: 'Accounts',   tag: 'gst & books',         accent: '#22c55e', icon: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
+      pms:        { label: 'Projects',   tag: 'tasks & time',        accent: '#A78BFA', icon: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>' },
+      lms:        { label: 'Learning',   tag: 'courses',             accent: '#F59E0B', icon: '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>' },
+      aiengine:   { label: 'AI Engine',  tag: 'transcripts',         accent: '#E879F9', icon: '<path d="M12 2a4 4 0 0 1 4 4v1a1 1 0 0 0 1 1h1a4 4 0 0 1 0 8h-1a1 1 0 0 0-1 1v1a4 4 0 0 1-8 0v-1a1 1 0 0 0-1-1H6a4 4 0 0 1 0-8h1a1 1 0 0 0 1-1V6a4 4 0 0 1 4-4z"/>' },
+      reminders:  { label: 'Reminders',  tag: 'follow-ups',          accent: '#FBBF24', icon: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' },
+      research:   { label: 'Research',   tag: 'analysis',            accent: '#38BDF8', icon: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>' },
+      procurement:{ label: 'Procurement',tag: 'vendors & pos',       accent: '#94A3B8', icon: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>' },
+      news:       { label: 'News',       tag: 'briefings',           accent: '#94A3B8', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>' }
+    };
+    var APP_ORDER = ['email', 'vision', 'chat', 'drive', 'crm', 'hrms', 'accounts', 'pms', 'lms', 'aiengine', 'reminders', 'research', 'procurement', 'news'];
+    /* Plumbing every tenant gets regardless — listing it would pad the page
+       with things nobody is choosing between. */
+    var HIDDEN = ['payment', 'notification', 'authentication', 'auth', 'gateway', 'billing'];
+    /* Each block gets its own colour so switching between them changes the
+       character of the slab, not just a number inside it. */
+    var BLOCK_ACCENTS = ['#4CC9F0', '#2DD4BF', '#6366F1', '#A78BFA'];
+
+    function normService(name) {
+      return String(name).toLowerCase().replace(/service$/, '');
+    }
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function inr(n) {
+      return '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    }
+    function gb(bytes) {
+      var n = Number(bytes);
+      if (!isFinite(n) || n <= 0) return null;
+      return Math.round(n / (1024 * 1024 * 1024));
+    }
+
+    /* Read one plan's serviceConfigs into { keys:Set, driveGB } */
+    function readServices(raw) {
+      var out = { keys: {}, driveGB: null };
+      if (!raw) return out;
+      var cfg;
+      try { cfg = (typeof raw === 'string') ? JSON.parse(raw) : raw; } catch (e) { return out; }
+      Object.keys(cfg || {}).forEach(function (svc) {
+        var key = normService(svc);
+        if (HIDDEN.indexOf(key) !== -1) return;
+        out.keys[key] = true;
+        if (key === 'drive' && cfg[svc] && cfg[svc].limits) {
+          var limits = cfg[svc].limits;
+          Object.keys(limits).forEach(function (k) {
+            var lk = k.toLowerCase();
+            if (lk.indexOf('storage') === -1) return;
+            out.driveGB = (lk.indexOf('bytes') !== -1) ? gb(limits[k]) : Number(limits[k]) || null;
+          });
         }
+      });
+      return out;
+    }
 
-        // Human-readable labels for service names
-        const SERVICE_LABELS = {
-            'vision': 'Vision', 'Vision': 'Vision',
-            'chat': 'Chat', 'Chat': 'Chat',
-            'drive': 'Drive', 'Drive': 'Drive',
-            'hrms': 'HRMS', 'HRMS': 'HRMS',
-            'pms': 'PMS', 'PMS': 'PMS',
-            'crm': 'CRM', 'CRM': 'CRM',
-            'research': 'Research', 'Research': 'Research',
-            'aiengine': 'AI Engine', 'AIEngine': 'AI Engine',
-            'lms': 'LMS', 'LMS': 'LMS',
-            'accounts': 'Accounts', 'Accounts': 'Accounts',
-            'email': 'Email', 'Email': 'Email', 'emailservice': 'Email', 'EmailService': 'Email',
-            'procurement': 'Procurement', 'Procurement': 'Procurement',
-            'news': 'News', 'News': 'News'
-        };
+    /* ── state ────────────────────────────────────────────────────────────── */
+    var PLANS = [];      // sorted, each augmented with .svc and .accent
+    var MASTER = [];     // app keys present in at least one plan, in display order
+    var CELLS = [];      // seat-field cells
+    var CELL_SEATS = 1;  // how many seats one cell stands for
+    var selected = 0;
 
-        // Human-readable labels for feature keys
-        const FEATURE_LABELS = {
-            'chunked_upload': 'Chunked Upload',
-            'sharing': 'File Sharing',
-            'captions': 'Live Captions',
-            'screen_sharing': 'Screen Sharing',
-            'recording': 'Meeting Recording',
-            'virtual_backgrounds': 'Virtual Backgrounds',
-            'messaging': 'Team Messaging',
-            'file_sharing': 'File Sharing',
-            'threads': 'Threads',
-            'attendance': 'Attendance',
-            'leave': 'Leave Management',
-            'payroll': 'Payroll',
-            'employees': 'Employee Management',
-            'time_tracking': 'Time Tracking',
-            'timesheets': 'Timesheets',
-            'tasks': 'Task Management',
-            'clients': 'Client Management',
-            'projects': 'Project Management',
-            'leads': 'Lead Management',
-            'deals': 'Deal Pipeline',
-            'contacts': 'Contact Management'
-        };
+    /* ── the bench ────────────────────────────────────────────────────────── */
+    function benchHTML() {
+      var seg = PLANS.map(function (p, i) {
+        return '<button type="button" data-i="' + i + '" aria-pressed="' + (i === selected) + '"' +
+               ' style="--bc:' + p.accent + '">' +
+               '<span class="n">' + esc(p.seatLabel) + '</span>' +
+               '<span class="l">' + esc(p.displayName) + (p.highlight ? ' · popular' : '') + '</span>' +
+               '</button>';
+      }).join('');
 
-        function humanize(str) {
-            return FEATURE_LABELS[str] || str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        }
+      return '' +
+        '<div class="pr-bench" id="bench">' +
+          '<div class="pr-seg" role="group" aria-label="Choose a seat block">' + seg + '</div>' +
+          '<div class="pr-body">' +
+            '<div>' +
+              '<h2 class="pr-planname" id="pName"></h2>' +
+              '<p class="pr-planblurb" id="pBlurb"></p>' +
+              '<div class="pr-price" id="pPrice"></div>' +
+              '<p class="pr-samenote" id="pSame"></p>' +
+              '<div class="pr-ledger" id="pLedger"></div>' +
+              '<p class="pr-eff" id="pEff"></p>' +
+              '<div class="pr-cta">' +
+                '<a class="dk-btn1" id="pCta" href="#">Get started</a>' +
+                '<a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20pricing">Talk to us &rarr;</a>' +
+              '</div>' +
+            '</div>' +
+            '<div class="pr-fieldwrap">' +
+              '<div class="pr-field" id="pField" aria-hidden="true"></div>' +
+              '<p class="pr-fieldcap" id="pFieldCap"></p>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
 
-        // Internal services that shouldn't be shown on pricing cards
-        const HIDDEN_SERVICES = ['payment', 'notification', 'authentication', 'auth', 'gateway', 'billing'];
+    /* The field is drawn once at the largest block and then filled — so the
+       empty cells stay visible and a small block reads as small. */
+    function buildField() {
+      var max = PLANS.reduce(function (m, p) { return Math.max(m, p.seats); }, 0) || 1;
+      var cells = Math.min(max, 150);
+      CELL_SEATS = Math.ceil(max / cells);
+      cells = Math.ceil(max / CELL_SEATS);
+      var field = document.getElementById('pField');
+      field.innerHTML = new Array(cells + 1).join('<i></i>');
+      CELLS = Array.prototype.slice.call(field.children);
+    }
 
-        // Parse a plan's serviceConfigs into a Set of included service labels + Drive storage
-        function getPlanServices(serviceConfigsStr) {
-            const result = { included: new Set(), driveGB: null };
-            if (!serviceConfigsStr) return result;
-            try {
-                const configs = typeof serviceConfigsStr === 'string'
-                    ? JSON.parse(serviceConfigsStr) : serviceConfigsStr;
-                for (const [service, config] of Object.entries(configs)) {
-                    if (HIDDEN_SERVICES.includes(service.toLowerCase())) continue;
-                    const label = SERVICE_LABELS[service] || service;
-                    result.included.add(label);
-                    if (label.toLowerCase() === 'drive' && config.limits) {
-                        for (const [key, value] of Object.entries(config.limits)) {
-                            const lk = key.toLowerCase();
-                            const num = Number(value);
-                            if (!isNaN(num) && (lk.includes('storage') || lk === 'storage_bytes')) {
-                                result.driveGB = (lk === 'storage_bytes' || lk === 'storagebytes')
-                                    ? (num / (1024 * 1024 * 1024)).toFixed(0) : num;
-                            }
-                        }
-                    }
-                }
-            } catch {}
-            return result;
-        }
+    function paintField(seats) {
+      var lit = Math.round(seats / CELL_SEATS);
+      CELLS.forEach(function (c, i) {
+        var on = i < lit;
+        c.style.transitionDelay = PR_STILL ? '' : Math.min(i * 5, 380) + 'ms';
+        c.classList.toggle('on', on);
+      });
+      var cap = '<b>' + seats + '</b> seats in this block';
+      if (CELL_SEATS > 1) cap += ' &middot; 1 square = ' + CELL_SEATS + ' seats';
+      document.getElementById('pFieldCap').innerHTML = cap;
+    }
 
-        // Build master service list from all plans (preserves order of first appearance)
-        function buildMasterServiceList(plans) {
-            const seen = new Set();
-            const master = [];
-            plans.forEach(plan => {
-                const { included } = getPlanServices(plan.serviceConfigs);
-                included.forEach(label => {
-                    if (!seen.has(label)) {
-                        seen.add(label);
-                        master.push(label);
-                    }
-                });
-            });
-            return master;
-        }
+    function render() {
+      var p = PLANS[selected];
+      document.body.style.setProperty('--pc', p.accent);
 
-        function getCheckSVG() {
-            return '<svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-        }
+      document.querySelectorAll('.pr-seg button').forEach(function (b, i) {
+        b.setAttribute('aria-pressed', String(i === selected));
+      });
 
-        function getCrossSVG() {
-            return '<svg class="icon-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-        }
+      document.getElementById('pName').textContent = p.displayName;
+      document.getElementById('pBlurb').textContent = p.description || '';
 
-        const SERVICE_ICONS = {
-            'Vision': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
-            'Chat': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
-            'Drive': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
-            'HRMS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
-            'CRM': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
-            'PMS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
-            'Research': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
-            'AI Engine': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/></svg>',
-            'LMS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
-            'Accounts': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
-            'Email': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
-            'Procurement': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>',
-            'News': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
-            'Reminders': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
-        };
+      var priceEl = document.getElementById('pPrice');
+      var sameEl = document.getElementById('pSame');
+      var ledgerEl = document.getElementById('pLedger');
+      var effEl = document.getElementById('pEff');
+      var cta = document.getElementById('pCta');
 
-        function getPriceDisplay(plan) {
-            if (plan.isTrial) {
-                return '<span class="plan-price">Free</span>';
-            }
-            if (plan.pricePerUserMonthly === 0) {
-                return '<span class="plan-price">Custom</span>';
-            }
-            return `<span class="plan-price"><span class="currency">\u20B9</span>${Number(plan.pricePerUserMonthly).toLocaleString('en-IN')}<span class="per-unit">/user/mo</span></span>`;
-        }
+      if (p.isTrial) {
+        priceEl.innerHTML = 'Free';
+        sameEl.textContent = p.trialDays + ' days, no card.';
+        ledgerEl.innerHTML = row('Seats', p.seats) + row('Runs for', p.trialDays + ' days', true);
+        effEl.textContent = '';
+        cta.textContent = 'Start free trial';
+      } else if (!p.rate) {
+        priceEl.innerHTML = 'Custom';
+        sameEl.textContent = 'Priced against your headcount and hosting.';
+        ledgerEl.innerHTML = row('Seats', p.seats);
+        effEl.textContent = '';
+        cta.textContent = 'Talk to sales';
+      } else {
+        priceEl.innerHTML = '<span class="cur">₹</span>' +
+          Number(p.rate).toLocaleString('en-IN') +
+          '<span class="per">/user/month</span>';
+        /* "bigger, not richer" is only true of a block that already carries
+           everything. The small block genuinely leaves apps out, and saying
+           otherwise would be the one lie a pricing page cannot afford. */
+        var missing = MASTER.length - p.appCount;
+        sameEl.innerHTML = missing
+          ? 'The same rate as every other block. <b>' + esc(p.displayName) + '</b> is the small one — the ' +
+            missing + ' app' + (missing === 1 ? '' : 's') + ' it leaves out arrive with any larger block, at this same rate.'
+          : 'The same rate as every other block, with every app switched on. <b>' + esc(p.displayName) +
+            '</b> is bigger, not richer.';
+        ledgerEl.innerHTML =
+          row('Seats in the block', p.seats) +
+          row('Twelve months, ' + p.seats + ' seats', inr(p.base)) +
+          row('GST at ' + p.gstPct + '%', inr(p.gst)) +
+          row('Total for the year', inr(p.total), true);
+        effEl.textContent = inr(Math.round(p.total / 12)) + ' a month, everything in';
+        cta.textContent = 'Get started';
+      }
 
-        function getCTAButton(plan) {
-            if (plan.isTrial) {
-                return `<a href="/pages/signup.html?plan=${plan.id}" class="plan-cta primary">Start Free Trial</a>`;
-            }
-            if (plan.pricePerUserMonthly === 0) {
-                return `<a href="mailto:sales@ragenaizer.com?subject=Enterprise%20Plan%20Inquiry" class="plan-cta enterprise">Contact Sales</a>`;
-            }
-            return `<a href="/pages/signup.html?plan=${plan.id}" class="plan-cta ${plan.highlight ? 'primary' : 'secondary'}">Get Started</a>`;
-        }
+      cta.href = (!p.rate && !p.isTrial)
+        ? 'mailto:sales@ragenaizer.com?subject=Ragenaizer%20' + encodeURIComponent(p.displayName)
+        : '/pages/signup.html?plan=' + encodeURIComponent(p.id);
 
-        function getBillingSubtitle(plan) {
-            if (plan.isTrial) {
-                return `${plan.trialDays}-day free trial`;
-            }
-            if (plan.pricePerUserMonthly === 0) {
-                return 'Custom pricing for your team';
-            }
-            return 'Billed annually';
-        }
+      paintField(p.seats);
+      renderApps(p);
+      markColumn();
+      pixel(p);
+    }
 
-        function getMinSeatsLabel(plan) {
-            if (plan.isTrial) return '';
-            if (plan.pricePerUserMonthly === 0) return '';
-            return `Min ${plan.minSeats} seats`;
-        }
-
-        function renderPlans(plans) {
-            if (!plans || plans.length === 0) {
-                return '<div class="pricing-error"><p>No plans available at the moment.</p></div>';
-            }
-
-            // Build master list of all services across all plans
-            const masterList = buildMasterServiceList(plans);
-
-            let html = '<div class="pricing-grid">';
-
-            plans.forEach(plan => {
-                const planServices = getPlanServices(plan.serviceConfigs);
-                const isHighlighted = plan.highlight;
-                const isEnterprise = !plan.isTrial && plan.pricePerUserMonthly === 0;
-
-                html += `
-                    <div class="plan-card ${isHighlighted ? 'highlighted' : ''}">
-                        ${isHighlighted ? '<div class="plan-badge">Most Popular</div>' : ''}
-                        <div class="plan-card-header">
-                            <div class="plan-name">${plan.displayName}</div>
-                            ${getPriceDisplay(plan)}
-                            <div class="plan-billing">${getBillingSubtitle(plan)}</div>
-                            ${getMinSeatsLabel(plan) ? `<div class="plan-min-seats">${getMinSeatsLabel(plan)}</div>` : ''}
-                        </div>
-
-                        ${plan.description ? `<div class="plan-description">${plan.description}</div>` : '<div class="plan-description"></div>'}
-
-                        <ul class="plan-features">
-                `;
-
-                if (isEnterprise) {
-                    // Enterprise: show all as included
-                    masterList.forEach(service => {
-                        const icon = SERVICE_ICONS[service] || getCheckSVG();
-                        const label = service === 'Drive' ? 'Drive (Unlimited)' : service;
-                        html += `<li class="feature-included">${icon}<span>${label}</span>${getCheckSVG()}</li>`;
-                    });
-                } else {
-                    // Show master list with check/cross
-                    masterList.forEach(service => {
-                        const included = planServices.included.has(service);
-                        const icon = SERVICE_ICONS[service] || getCheckSVG();
-                        let label = service;
-                        if (service === 'Drive' && included && planServices.driveGB) {
-                            label = `Drive (${planServices.driveGB} GB)`;
-                        }
-                        const status = included ? getCheckSVG() : getCrossSVG();
-                        html += `<li class="${included ? 'feature-included' : 'feature-excluded'}">${icon}<span>${label}</span>${status}</li>`;
-                    });
-                }
-
-                html += `
-                        </ul>
-
-                        ${getCTAButton(plan)}
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-            return html;
-        }
-
-        async function loadPlans() {
-            const container = document.getElementById('pricingContent');
-            try {
-                const response = await fetch(`${TM_URL}/api/plans/public`);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                if (data.success && data.plans) {
-                    container.innerHTML = renderPlans(data.plans);
-                } else {
-                    throw new Error(data.message || 'Failed to load plans');
-                }
-            } catch (err) {
-                console.error('Failed to load plans:', err);
-                container.innerHTML = `
-                    <div class="pricing-error">
-                        <p>Unable to load pricing plans.</p>
-                        <p style="font-size: 0.85rem; opacity: 0.7; color: var(--text-secondary);">${err.message}</p>
-                        <button onclick="loadPlans()">Try Again</button>
-                    </div>
-                `;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', loadPlans);
-
-        // Meta Pixel: page-level conversion intent signal
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.rzTrack) {
-                window.rzTrack('track', 'ViewContent', {
-                    content_name: 'pricing',
-                    content_category: 'pricing',
-                    content_type: 'product_pricing',
-                    currency: 'INR',
-                    value: 999
-                });
-            }
+    /* keep the comparison table lit on whichever block is selected above */
+    function markColumn() {
+      var t = document.querySelector('.pr-table');
+      if (!t) return;
+      Array.prototype.forEach.call(t.rows, function (tr) {
+        Array.prototype.forEach.call(tr.cells, function (c, i) {
+          c.classList.toggle('sel', i === selected + 1);
         });
-    </script>
+      });
+    }
+
+    function row(label, value, isTotal) {
+      return '<div class="pr-lrow' + (isTotal ? ' total' : '') + '"><span>' + esc(label) +
+             '</span><b>' + esc(value) + '</b></div>';
+    }
+
+    function renderApps(p) {
+      var sec = document.getElementById('included');
+      var has = p.appCount;
+      var html = MASTER.map(function (key) {
+        var a = APPS[key] || { label: key, tag: '', accent: '#94A3B8', icon: '<circle cx="12" cy="12" r="9"/>' };
+        var on = !!p.svc.keys[key];
+        var tag = a.tag;
+        if (key === 'drive' && on && p.svc.driveGB) tag = p.svc.driveGB + ' gb storage';
+        /* an app this block does not carry says where to find it, which is
+           more use than a strikethrough on the name */
+        if (!on) tag = 'in larger blocks';
+        return '<div class="pr-app' + (on ? '' : ' off') + '" style="--a:' + a.accent + '">' +
+                 '<span class="ic"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">' + a.icon + '</svg></span>' +
+                 '<span class="t"><strong>' + esc(a.label) + '</strong><span>' + esc(tag) + '</span></span>' +
+               '</div>';
+      }).join('');
+      document.getElementById('appsGrid').innerHTML = html;
+      document.getElementById('includedLede').innerHTML = has === MASTER.length
+        ? '<b>' + esc(p.displayName) + '</b> carries all ' + MASTER.length +
+          ' apps. Nothing here is an add-on, and nothing switches off when the year turns.'
+        : '<b>' + esc(p.displayName) + '</b> carries ' + has + ' of the ' + MASTER.length +
+          ' apps. The greyed-out ones arrive with any larger block — same per-user rate.';
+      sec.hidden = false;
+    }
+
+    /* ── comparison table ─────────────────────────────────────────────────── */
+    function renderTable() {
+      var head = '<tr><th></th>' + PLANS.map(function (p) {
+        return '<th><b>' + esc(p.displayName) + '</b>' + esc(p.seatLabel) + ' seats</th>';
+      }).join('') + '</tr>';
+
+      var money = function (label, pick) {
+        return '<tr class="rule"><td>' + label + '</td>' + PLANS.map(function (p) {
+          return '<td class="amt">' + pick(p) + '</td>';
+        }).join('') + '</tr>';
+      };
+
+      var rows =
+        money('Per user, per month', function (p) { return p.isTrial ? 'Free' : (p.rate ? inr(p.rate) : 'Custom'); }) +
+        money('Seats in the block', function (p) { return p.seats; }) +
+        money('Year, before GST', function (p) { return p.rate ? inr(p.base) : '—'; }) +
+        money('Year, with GST', function (p) { return p.rate ? inr(p.total) : '—'; }) +
+        MASTER.map(function (key) {
+          var a = APPS[key] || { label: key };
+          return '<tr><td>' + esc(a.label) + '</td>' + PLANS.map(function (p) {
+            if (!p.svc.keys[key]) return '<td class="pr-no" aria-label="not included">—</td>';
+            if (key === 'drive' && p.svc.driveGB) return '<td class="amt">' + p.svc.driveGB + ' GB</td>';
+            return '<td class="pr-yes"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="included"><polyline points="20 6 9 17 4 12"/></svg></td>';
+          }).join('') + '</tr>';
+        }).join('');
+
+      document.getElementById('compareWrap').innerHTML =
+        '<table class="pr-table"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table>';
+      document.getElementById('compare').hidden = false;
+    }
+
+    /* ── Meta Pixel: conversion-intent signal, valued at what is on screen ─── */
+    function pixel(p) {
+      if (!window.rzTrack) return;
+      window.rzTrack('track', 'ViewContent', {
+        content_name: 'pricing',
+        content_category: 'pricing',
+        content_type: 'product_pricing',
+        currency: 'INR',
+        value: p.rate || 0
+      });
+    }
+
+    /* ── load ─────────────────────────────────────────────────────────────── */
+    function prepare(raw) {
+      PLANS = raw.slice().sort(function (a, b) {
+        return (a.displayOrder || 0) - (b.displayOrder || 0);
+      }).map(function (p, i) {
+        var seats = Number(p.minSeats) || 0;
+        var rate = Number(p.pricePerUserMonthly) || 0;
+        var base = Number(p.baseAnnualAmount) || (rate * seats * 12);
+        var gstPct = Number(p.gstPercentage) || 0;
+        var gstAmt = Number(p.gstAmount);
+        if (!isFinite(gstAmt) || gstAmt <= 0) gstAmt = Math.round(base * gstPct / 100);
+        var total = Number(p.totalAnnualAmount) || (base + gstAmt);
+        return {
+          id: p.id,
+          displayName: p.displayName || p.planName,
+          description: p.description || '',
+          seats: seats,
+          seatLabel: String(seats),
+          rate: rate,
+          base: base,
+          gstPct: gstPct,
+          gst: gstAmt,
+          total: total,
+          isTrial: !!p.isTrial,
+          trialDays: p.trialDays,
+          highlight: !!p.highlight,
+          svc: readServices(p.serviceConfigs),
+          accent: BLOCK_ACCENTS[i % BLOCK_ACCENTS.length]
+        };
+      });
+
+      // master app list: display order first, anything unrecognised appended
+      var present = {};
+      PLANS.forEach(function (p) { Object.keys(p.svc.keys).forEach(function (k) { present[k] = true; }); });
+      MASTER = APP_ORDER.filter(function (k) { return present[k]; })
+        .concat(Object.keys(present).filter(function (k) { return APP_ORDER.indexOf(k) === -1; }));
+
+      PLANS.forEach(function (p) {
+        p.appCount = MASTER.filter(function (k) { return p.svc.keys[k]; }).length;
+      });
+
+      // open on whichever block is merchandised as popular
+      selected = 0;
+      PLANS.forEach(function (p, i) { if (p.highlight) selected = i; });
+    }
+
+    function mount() {
+      document.getElementById('benchMount').innerHTML = benchHTML();
+      document.querySelectorAll('.pr-seg button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          selected = Number(b.dataset.i);
+          render();
+        });
+      });
+      buildField();
+      renderTable();
+      render();
+      var closeCta = document.getElementById('closeCta');
+      if (closeCta) {
+        closeCta.setAttribute('href', '#bench');
+        closeCta.addEventListener('click', function (e) {
+          e.preventDefault();
+          document.getElementById('bench').scrollIntoView({ behavior: PR_STILL ? 'auto' : 'smooth', block: 'center' });
+        });
+      }
+    }
+
+    function failed(msg) {
+      document.getElementById('benchMount').innerHTML =
+        '<div class="pr-state">' +
+          '<p>We could not reach the billing system just now.</p>' +
+          '<p class="sub">' + esc(msg || 'network error') + '</p>' +
+          '<button type="button" id="prRetry">Try again</button>' +
+          '<p class="sub" style="margin-top:18px">Or write to <a href="mailto:sales@ragenaizer.com" style="color:inherit">sales@ragenaizer.com</a> and we will send the numbers over.</p>' +
+        '</div>';
+      document.getElementById('prRetry').addEventListener('click', load);
+    }
+
+    function load() {
+      document.getElementById('benchMount').innerHTML =
+        '<div class="pr-state" role="status" aria-live="polite">' +
+          '<div class="pr-skel" style="width:180px"></div>' +
+          '<div class="pr-skel" style="width:300px"></div>' +
+          '<div class="pr-skel" style="width:230px"></div>' +
+          '<p class="sub" style="margin-top:20px">Fetching current plans…</p>' +
+        '</div>';
+      fetch(TM_URL + '/api/plans/public')
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          if (!data || !data.success || !data.plans || !data.plans.length) {
+            throw new Error(data && data.message ? data.message : 'no plans returned');
+          }
+          prepare(data.plans);
+          mount();
+        })
+        .catch(function (err) {
+          console.error('Failed to load plans:', err);
+          failed(err.message);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', load);
+
+    /* Sections settle in as they arrive, and not at all for a visitor who has
+       asked for reduced motion. */
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (PR_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('is-in'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>

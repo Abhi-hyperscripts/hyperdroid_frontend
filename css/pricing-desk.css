@@ -1,0 +1,453 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRICING — "one price, four sizes".
+   Loaded after landing-desk.css and scoped to body.pricing-desk, so the nav,
+   hero type, buttons, sections and footer all come from the desk language and
+   only the pricing-specific furniture lives here.
+
+   The page is built around what the plan data actually says: every plan is the
+   same ₹/user/month and min seats == max seats. There is no price ladder to
+   draw, so drawing four near-identical columns would be a lie about the
+   product. What varies is the SIZE of the block you take — so the size is the
+   thing the page renders, as a seat field that fills up.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.pricing-desk {
+  --pc: #6366f1;                     /* accent of the selected block */
+}
+
+/* ── hero ─────────────────────────────────────────────────────────────────── */
+body.pricing-desk .dk-hero { padding: 56px 0 0; }
+body.pricing-desk .pr-note {
+  margin: 18px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+
+/* ── the bench: the one interactive object on the page ────────────────────── */
+body.pricing-desk .pr-bench {
+  margin-top: 44px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  text-align: left;
+  position: relative;
+}
+/* the selected block's colour washes into the slab from the top-left, so the
+   whole object changes character with the choice rather than one small chip */
+body.pricing-desk .pr-bench::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(680px 300px at 8% -20%, var(--pc), transparent 70%);
+  opacity: 0.16;
+  transition: background 0.4s ease;
+}
+body.pricing-desk .pr-bench > * { position: relative; }
+
+/* segmented block picker */
+body.pricing-desk .pr-seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border-bottom: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.4);
+}
+body.pricing-desk .pr-seg button {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  background: transparent;
+  color: var(--dk-mute);
+  padding: 17px 14px 15px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  display: block;
+  position: relative;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+body.pricing-desk .pr-seg button:last-child { border-right: 0; }
+body.pricing-desk .pr-seg button:hover { background: rgba(255, 255, 255, 0.045); color: var(--dk-ink); }
+body.pricing-desk .pr-seg button .n {
+  display: block;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: inherit;
+}
+body.pricing-desk .pr-seg button .l {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6f7b91;
+}
+/* the underline is the state, not a background swap — it reads as a selected
+   tab on a physical control rather than a highlighted list row */
+body.pricing-desk .pr-seg button::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: var(--bc, transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+body.pricing-desk .pr-seg button[aria-pressed="true"] { background: rgba(255, 255, 255, 0.06); color: var(--dk-ink); }
+body.pricing-desk .pr-seg button[aria-pressed="true"]::after { transform: scaleX(1); }
+body.pricing-desk .pr-seg button[aria-pressed="true"] .l { color: var(--bc); }
+body.pricing-desk .pr-seg button:focus-visible { outline: 2px solid var(--pc); outline-offset: -3px; }
+
+/* body of the slab */
+body.pricing-desk .pr-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) auto;
+  gap: 46px;
+  padding: 34px 36px 36px;
+  /* the field sits opposite the ledger rather than at the top of a tall
+     column, which otherwise leaves a hole in the bottom-right of the slab */
+  align-items: center;
+}
+
+body.pricing-desk .pr-planname {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--dk-ink);
+}
+body.pricing-desk .pr-planblurb {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--dk-mute);
+  max-width: 520px;
+}
+
+body.pricing-desk .pr-price {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 26px 0 0;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(44px, 6vw, 62px);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+}
+body.pricing-desk .pr-price .cur { font-size: 0.55em; color: var(--dk-mute); }
+body.pricing-desk .pr-price .per {
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--dk-dim);
+}
+body.pricing-desk .pr-samenote {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--dk-dim);
+}
+body.pricing-desk .pr-samenote b { color: var(--dk-mute); font-weight: 500; }
+
+/* the ledger — the same tabular material Accounts renders, which is the point */
+body.pricing-desk .pr-ledger {
+  margin: 24px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  /* runs the full width of its column: a total that stops short of the slab
+     leaves a dead gutter between the money and the seats it buys */
+}
+body.pricing-desk .pr-lrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13.5px;
+  color: var(--dk-mute);
+}
+body.pricing-desk .pr-lrow b {
+  font-family: var(--font-family-mono);
+  font-weight: 400;
+  font-size: 13.5px;
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+body.pricing-desk .pr-lrow.total { border-bottom: 0; padding-top: 14px; }
+body.pricing-desk .pr-lrow.total span { color: var(--dk-ink); font-weight: 500; }
+body.pricing-desk .pr-lrow.total b { font-size: 19px; color: var(--dk-ink); }
+body.pricing-desk .pr-eff {
+  margin: 6px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--dk-dim);
+}
+body.pricing-desk .pr-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+body.pricing-desk .pr-cta .dk-btn1 { background: var(--pc); color: #fff; }
+body.pricing-desk .pr-cta .dk-btn1:hover { filter: brightness(1.1); background: var(--pc); }
+
+/* ── the seat field ───────────────────────────────────────────────────────────
+   150 cells, one per seat in the largest block. Filling them is the clearest
+   statement of what actually differs between plans, and it makes a 10-seat
+   block feel small in a way the number "10" does not. */
+body.pricing-desk .pr-fieldwrap { justify-self: end; }
+body.pricing-desk .pr-field {
+  display: grid;
+  grid-template-columns: repeat(15, 15px);
+  gap: 6px;
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.42);
+}
+body.pricing-desk .pr-field i {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  transition: background 0.32s ease, box-shadow 0.32s ease;
+}
+body.pricing-desk .pr-field i.on {
+  background: var(--pc);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--pc) 55%, transparent),
+              inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+body.pricing-desk .pr-fieldcap {
+  margin: 14px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  text-align: right;
+}
+body.pricing-desk .pr-fieldcap b { color: var(--dk-ink); font-weight: 400; }
+
+/* ── apps in the selected block ───────────────────────────────────────────── */
+body.pricing-desk .pr-apps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: 10px;
+  margin-top: 34px;
+}
+body.pricing-desk .pr-app {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 15px;
+  border-radius: 12px;
+  border: 1px solid var(--dk-line);
+  /* a whisper of the product's own colour, the same way the homepage grid
+     lights each card in its accent — eleven identical grey tiles say nothing */
+  background: linear-gradient(150deg, color-mix(in srgb, var(--a) 9%, rgba(255, 255, 255, 0.05)), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: opacity 0.22s ease, border-color 0.22s ease, transform 0.15s ease;
+}
+body.pricing-desk .pr-app:not(.off):hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--a) 45%, transparent);
+}
+body.pricing-desk .pr-app .ic {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: color-mix(in srgb, var(--a) 16%, transparent);
+}
+body.pricing-desk .pr-app .ic svg { width: 15px; height: 15px; fill: none; stroke: var(--a); stroke-width: 2; }
+body.pricing-desk .pr-app .t { min-width: 0; }
+body.pricing-desk .pr-app .t strong { display: block; font-size: 13.5px; font-weight: 600; color: var(--dk-ink); }
+body.pricing-desk .pr-app .t span {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* an app the block does not carry is shown, not hidden — knowing what you are
+   not getting is half of what a pricing page is for */
+body.pricing-desk .pr-app.off { opacity: 0.42; }
+body.pricing-desk .pr-app.off .t span { color: var(--a); opacity: 0.9; }
+
+/* ── the matrix, for people who came to compare ───────────────────────────── */
+body.pricing-desk .pr-tablewrap {
+  margin-top: 34px;
+  border-radius: 16px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  overflow-x: auto;
+}
+body.pricing-desk table.pr-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 620px;
+}
+body.pricing-desk .pr-table th,
+body.pricing-desk .pr-table td {
+  padding: 13px 18px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13.5px;
+  color: var(--dk-mute);
+}
+body.pricing-desk .pr-table th:first-child,
+body.pricing-desk .pr-table td:first-child { text-align: left; color: var(--dk-ink); }
+body.pricing-desk .pr-table thead th {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+  font-weight: 400;
+  background: rgba(255, 255, 255, 0.03);
+}
+body.pricing-desk .pr-table thead th b {
+  display: block;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--dk-ink);
+  margin-bottom: 2px;
+}
+body.pricing-desk .pr-table tbody tr:last-child td { border-bottom: 0; }
+body.pricing-desk .pr-table tbody tr:hover td { background: rgba(255, 255, 255, 0.028); }
+/* these have to out-specify the blanket `.pr-table td` colour above, or the
+   ticks come out the same grey as the row labels and say nothing */
+body.pricing-desk .pr-table td.pr-yes { color: #4ade80; }
+body.pricing-desk .pr-table td.pr-yes svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.6; vertical-align: -2px; }
+body.pricing-desk .pr-table td.pr-no { color: #4a5468; }
+body.pricing-desk .pr-table td.amt { font-family: var(--font-family-mono); color: var(--dk-ink); font-variant-numeric: tabular-nums; }
+body.pricing-desk .pr-table tr.rule td { background: rgba(255, 255, 255, 0.03); }
+/* the block chosen up at the bench stays lit down here, so the table is read
+   as "and here is mine against the others" rather than a fresh decision */
+body.pricing-desk .pr-table tr th.sel,
+body.pricing-desk .pr-table tr td.sel {
+  background: color-mix(in srgb, var(--pc) 17%, transparent);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--pc) 55%, transparent),
+              inset -1px 0 0 color-mix(in srgb, var(--pc) 55%, transparent);
+}
+/* deliberately no colour override here: it out-specifies td.pr-yes and turns
+   the selected column's green ticks white */
+
+/* ── the fine print ───────────────────────────────────────────────────────── */
+body.pricing-desk .pr-faq {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px 44px;
+  margin-top: 40px;
+}
+body.pricing-desk .pr-faq h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 16.5px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--dk-ink);
+}
+body.pricing-desk .pr-faq p { margin: 0; font-size: 14px; line-height: 1.62; color: var(--dk-mute); }
+body.pricing-desk .pr-faq .q {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--dk-accent);
+  margin-bottom: 10px;
+}
+
+/* ── loading / failure ────────────────────────────────────────────────────────
+   Prices come off a live endpoint, so the two states where it has not answered
+   yet or cannot answer are part of the page, not an afterthought. */
+body.pricing-desk .pr-state {
+  margin-top: 44px;
+  padding: 64px 36px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  text-align: center;
+}
+body.pricing-desk .pr-state p { margin: 0 0 6px; color: var(--dk-mute); font-size: 15px; }
+body.pricing-desk .pr-state .sub { font-size: 12.5px; color: var(--dk-dim); font-family: var(--font-family-mono); }
+body.pricing-desk .pr-state button {
+  margin-top: 22px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--dk-line);
+  color: var(--dk-ink);
+  padding: 11px 22px;
+  border-radius: 11px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+body.pricing-desk .pr-state button:hover { background: rgba(255, 255, 255, 0.13); }
+body.pricing-desk .pr-skel {
+  height: 13px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  background-size: 220% 100%;
+  animation: prSkel 1.3s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes prSkel { to { background-position: -220% 0; } }
+
+/* ── responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 1040px) {
+  body.pricing-desk .pr-body { grid-template-columns: 1fr; gap: 34px; }
+  body.pricing-desk .pr-fieldwrap { justify-self: start; }
+  body.pricing-desk .pr-fieldcap { text-align: left; }
+}
+@media (max-width: 760px) {
+  body.pricing-desk .pr-seg { grid-auto-flow: row; grid-auto-columns: auto; }
+  body.pricing-desk .pr-seg button { border-right: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07); padding-left: 18px; }
+  /* stacked, an underline sits in the seam between two rows and reads as
+     belonging to the wrong one — so the marker moves to the leading edge */
+  body.pricing-desk .pr-seg button::after {
+    top: 0; bottom: 0; left: 0; right: auto;
+    width: 3px; height: auto;
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  body.pricing-desk .pr-seg button[aria-pressed="true"]::after { transform: scaleY(1); }
+  body.pricing-desk .pr-body { padding: 26px 22px 30px; }
+  body.pricing-desk .pr-field { grid-template-columns: repeat(15, 1fr); gap: 4px; padding: 14px; }
+  body.pricing-desk .pr-field i { width: auto; height: auto; aspect-ratio: 1; }
+  body.pricing-desk .pr-fieldwrap { justify-self: stretch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.pricing-desk .pr-field i,
+  body.pricing-desk .pr-seg button::after { transition: none; }
+  body.pricing-desk .pr-skel { animation: none; }
+}
