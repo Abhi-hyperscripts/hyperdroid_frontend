@@ -297,3 +297,53 @@ body.cmp-desk .cm-table tr.dom td {
 body.cmp-desk .cm-verdict strong,
 body.cmp-desk .dk-lede strong { color: var(--dk-ink); font-weight: 600; }
 body.cmp-desk .cm-note strong { color: var(--dk-mute); font-weight: 600; }
+
+/* ── the things a ledger cannot do ────────────────────────────────────────────
+   Not "we have more features" — a different category of thing. Each of these
+   is structurally out of reach for a product whose scope is the books, which
+   is why it gets its own section rather than another row in the table. */
+body.cmp-desk .cm-beyond {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 38px;
+}
+body.cmp-desk .cm-beyond > div {
+  position: relative;
+  padding: 24px 26px 26px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--cm) 30%, transparent);
+  background: linear-gradient(158deg, color-mix(in srgb, var(--cm) 13%, transparent), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  overflow: hidden;
+}
+body.cmp-desk .cm-beyond .n {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--cm);
+  display: block;
+  margin-bottom: 12px;
+}
+body.cmp-desk .cm-beyond h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 0 0 9px;
+}
+body.cmp-desk .cm-beyond p { margin: 0; font-size: 14px; line-height: 1.62; color: var(--dk-mute); }
+/* the measured fact that makes the claim checkable */
+body.cmp-desk .cm-beyond .fact {
+  display: block;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  font-family: var(--font-family-mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--dk-ink);
+}
+body.cmp-desk .cm-beyond .fact em { color: var(--dk-dim); font-style: normal; }
