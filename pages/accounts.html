@@ -137,6 +137,80 @@
     }
     </script>
 
+    <!-- Schema.org: FAQ -->
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Is Ragenaizer Accounts real double-entry accounting?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Every transaction is a balanced journal entry against a full chart of accounts. The engine refuses to post an entry whose total debits and credits do not match, checked both on the lines and on the entry header, so an unbalanced entry cannot exist in the ledger."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Does inventory stay in agreement with the general ledger?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, by construction. A stock movement and its ledger entry are the same posting rather than two systems reconciled afterwards. The inventory account is maintained at weighted-average cost by the inventory module, so its balance always equals the stock valuation report."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Does it support multiple currencies?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, from one chart of accounts. Currency and exchange rate are recorded on the invoice, vendor bill, purchase order, fixed asset and journal entry, and realised foreign exchange gains and losses post to their own account when a foreign receipt clears."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can entries be backdated into a closed period?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No, once the period is locked. Fiscal years and accounting periods lock explicitly, a closing checklist provides line-item sign-off, and year-end close is an executed run. Reopening a period is itself a recorded action."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What audit trail is available?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Every posting, approval, reversal and deletion is captured with the user, the timestamp and the before and after values, and the full trail can be exported. Reversals are recorded as reversals rather than by deleting the original entry."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Which GST returns are supported?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "GSTR-1 including a JSON export, GSTR-3B, TDS and TDS-receivable reports over any date range, plus an HSN and SAC library and a one-click India tax setup. Tax configuration is per country, so the same engine handles VAT in other jurisdictions."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can we export our data if we leave?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. The chart of accounts imports from CSV, every report exports, and the audit trail exports whole. No part of your books is held in a proprietary format."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What kinds of business is it built for?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Businesses that hold stock and would otherwise run a second system alongside their accounts: pharma distribution with batch, expiry and a Schedule-H register; manufacturing with bills of material and work orders; wholesale; a retail counter with barcode and MRP-inclusive billing; and an online storefront through a headless API. Services businesses are covered by projects, expenses and payroll integration."
+            }
+        }
+    ]
+}
+    </script>
+
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -316,6 +390,59 @@
         <div class="dk-trow" style="--c:#4CC9F0"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">04</div><div class="dk-tw"><b>Payroll finalised</b> — salary journal posted, statutory dues raised as bills to pay<span class="dk-tsrc">HRMS → Accounts</span></div><div class="dk-ta">0 spreadsheets</div></div>
         <div class="dk-trow" style="--c:#22c55e"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">05</div><div class="dk-tw"><b>Period locked</b> — the month is closed and stays closed<span class="dk-tsrc">Accounts</span></div><div class="dk-ta">signed off</div></div>
         <div class="dk-tfoot"><span>5 products, one set of books</span><span>0 integrations to maintain</span></div>
+      </div>
+    </section>
+
+    <!-- ══ FAQ ══════════════════════════════════════════════════════════════
+         The foundational answers. A buyer coming from Tally or Marg assumes a
+         cloud product is a glorified invoicing app until somebody says
+         otherwise, so the first question is the one that says otherwise. -->
+    <section class="dk-section dk-reveal" id="faq">
+      <div class="dk-kicker">Straight answers</div>
+      <h2 class="dk-h2">The things people ask on the first call.</h2>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Is this real double-entry accounting?</h3>
+          <p>Yes. Everything is a balanced journal against a proper chart of accounts — not an invoice list with a report bolted on. The engine <b>refuses to post an entry whose debits and credits do not match</b>, at both the line level and the entry header, so an unbalanced entry cannot exist in the ledger.</p>
+          <p>That is why the trial balance ties without being coaxed, and why the section at the top of this page can show you the entry behind any document.</p>
+        </div>
+        <div>
+          <span class="q">02</span>
+          <h3>Does stock agree with the books?</h3>
+          <p>By construction. A stock movement and its ledger entry are the same posting, not two systems reconciled afterwards. The inventory account is maintained at weighted-average cost by the module itself — purchases debit it, sales credit it with the matching cost of goods sold — so <b>its balance always equals the stock valuation report</b>.</p>
+        </div>
+        <div>
+          <span class="q">03</span>
+          <h3>Can we run more than one currency?</h3>
+          <p>Yes, off one chart of accounts. Currency sits on the invoice, bill, purchase order, asset and journal, with the exchange rate recorded on the document. Realised gains and losses post to their own account when a foreign receipt clears.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>Can somebody backdate into a closed month?</h3>
+          <p>Not once the period is locked. Fiscal years and periods lock explicitly, there is a closing checklist with line-item sign-off, and year-end close is a run rather than a convention. Reopening is itself an action with a name against it.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>What can an auditor actually be given?</h3>
+          <p>Every posting, approval, reversal and deletion is captured with the user, the timestamp and the before and after values, and the whole trail exports. Reversals are recorded rather than performed by deleting the original.</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>Is it GST-ready, or does that mean a CSV?</h3>
+          <p>GSTR-1 with a JSON export, GSTR-3B, TDS and TDS-receivable reports over any date range, an HSN and SAC library, and one-click India setup. Tax configuration is per country, so the same engine handles VAT elsewhere.</p>
+          <p>E-invoicing is built but sits behind a GSP connection — we will not pretend it is switched on until yours is.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>Are we locked in?</h3>
+          <p>No. Your chart of accounts imports from CSV on the way in, every report exports on the way out, and the audit trail exports whole. Nothing about your books is held in a format only we can read.</p>
+        </div>
+        <div>
+          <span class="q">08</span>
+          <h3>Who is this actually for?</h3>
+          <p>Businesses that hold stock and would otherwise run two systems — pharma distribution, manufacturing, wholesale, a retail counter, an online storefront — plus any services business that wants its projects, payroll and books in one place. See the panel above for what each of those gets.</p>
+        </div>
       </div>
     </section>
 

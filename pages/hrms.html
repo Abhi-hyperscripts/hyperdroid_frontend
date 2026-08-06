@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
@@ -123,7 +125,7 @@
     }
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -133,1060 +135,502 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script>document.write('<link rel="stylesheet" href="../css/landing-theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/hrms-desk.css?v=' + CACHE_VERSION + '">');</script>
+
+    <!-- Schema.org: FAQ -->
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Is Ragenaizer HRMS only for India?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. The payroll engine holds no country in its code. Contributions, income tax, regional levies and their eligibility conditions come from an uploaded, schema-validated and versioned country pack, and the calculator evaluates that pack's formulas. India ships configured; anywhere else is a pack to author, not a change to the software."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can we see how a payslip was calculated?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Every processed payslip stores a calculation proof: working days, days present, loss of pay, the proration factor, each earning component, each statutory rule that ran including the ones that did not apply, and the invariant assertions with the figures they were checked against."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What stops an incorrect payroll run going out?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Seven named invariants are asserted before a run proceeds. Two are hard stops: a negative net pay and a payslip without a recorded engine version block processing outright. The other five are raised for review with their evidence attached."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can a payslip be corrected after approval?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Not by editing it. An approved or paid payslip is immutable. A correction is made as a new adjustment record against a later run, so a payslip cannot be quietly rewritten after the fact."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Does payroll post to the accounts automatically?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. An approved payroll run is handed to Ragenaizer Accounts as a salary journal, with statutory dues raised as bills to pay. No payroll figure is re-keyed into the books."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What happens when an employee transfers office mid-year?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Transfers are kept as history with effective dates. Arrears are computed against the jurisdiction that applied at the effective date rather than the employee's current office, which is one of the seven invariants the engine asserts."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "How do employees record attendance?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Geofenced clock-in against the office boundary with location pings recorded, or an NFC card tapped at the gate. A missed punch becomes a regularisation request routed to an approver rather than a silent edit."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Is there an employee self-service portal?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Employees see their payslips, leave balance and loan balance, and can raise profile-change requests that route to HR for review."
+            }
+        }
+    ]
+}
+    </script>
 </head>
-<body class="landing-page landing-hrms">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing hrms-desk">
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-bg">
-            <div class="hero-gradient"></div>
-            <div class="hero-grid"></div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <!-- ══ Hero ══════════════════════════════════════════════════════════════
+         Payroll's real problem is not calculation, it is that nobody outside
+         the payroll team can check the calculation. Every payslip here keeps
+         its own working, so the page leads with that rather than with a
+         feature list nobody can verify. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>People &amp; payroll</div>
+      <h1 class="dk-h1">Payroll that shows<br>its working.</h1>
+      <p class="dk-sub">Every payslip keeps the arithmetic that produced it — the days counted, the proration applied, the rule behind each statutory deduction — and the engine asserts a named set of checks before it will let the run through.</p>
+      <p class="hr-note">Walk one payslip through the five steps the engine records</p>
+    </header>
+
+    <!-- The proof bench. -->
+    <div class="hr-bench" id="bench">
+      <div class="hr-who">
+        <span><b>Meera Iyer</b> &nbsp;<span>Payroll Executive · Pune office · India</span></span>
+        <span class="ref">PAYSLIP PS-2026-07-0184 · JULY 2026</span>
+      </div>
+      <div class="hr-steps" role="group" aria-label="Steps of the calculation proof" id="hrSteps"></div>
+      <div class="hr-panel">
+        <h2 class="hr-head" id="hrHead"></h2>
+        <p class="hr-sub" id="hrSub"></p>
+        <div class="hr-rows" id="hrRows"></div>
+        <div class="hr-out" id="hrOut"></div>
+        <p class="hr-foot" id="hrFoot"></p>
+      </div>
+    </div>
+
+    <!-- ══ Country packs ══ -->
+    <section class="dk-section dk-reveal" id="countries">
+      <div class="dk-kicker">Country rules</div>
+      <h2 class="dk-h2">The statutory rules are data, not code.</h2>
+      <p class="dk-lede">A payroll engine that hard-codes provident fund and professional tax can only ever run one country, and every rate change is a release. Here a country's rules are a versioned pack you upload — validated against a published schema before it is allowed anywhere near a payslip.</p>
+      <div class="hr-pack">
+        <div>
+          <span class="st">Uploaded</span>
+          <h3>A pack, not a patch</h3>
+          <p>Contribution rules, tax slabs, regional levies, eligibility conditions and the formulas between them all live in the pack. Nothing about a country is compiled into the engine.</p>
         </div>
-
-        <div class="hero-content">
-            <div class="hero-text">
-                <div class="hero-badge">HR Management</div>
-                <h1 class="hero-title">
-                    Payroll you can<br>
-                    <span class="highlight">actually trust.</span>
-                </h1>
-                <p class="hero-description">
-                    The only payroll system that shows you exactly how every number was calculated. Pass audits with confidence. Run compliant payroll in any country. See the math behind every payslip.
-                </p>
-                <div class="hero-actions">
-                    <a href="activate.html" class="btn-primary">Get Started Free</a>
-                    <a href="#features" class="btn-secondary">See the Difference</a>
-                </div>
-                <div class="hero-stats">
-                    <div class="stat-item">
-                        <div class="stat-value">100%</div>
-                        <div class="stat-label">Transparent</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">Audit</div>
-                        <div class="stat-label">Ready</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">Any</div>
-                        <div class="stat-label">Country</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="hero-visual">
-                <div class="hero-mockup">
-                    <div class="mockup-header">
-                        <span class="mockup-dot"></span>
-                        <span class="mockup-dot"></span>
-                        <span class="mockup-dot"></span>
-                    </div>
-                    <div class="mockup-content">
-                        <svg width="100%" height="180" viewBox="0 0 400 180" fill="none">
-                            <!-- Dashboard cards -->
-                            <rect x="10" y="10" width="120" height="50" rx="8" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.25)" stroke-width="1"/>
-                            <text x="25" y="32" fill="rgba(255, 255, 255, 0.7)" font-size="10">Employees</text>
-                            <text x="25" y="48" fill="rgba(255, 255, 255, 0.9)" font-size="16" font-weight="bold">1,247</text>
-
-                            <rect x="140" y="10" width="120" height="50" rx="8" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.25)" stroke-width="1"/>
-                            <text x="155" y="32" fill="rgba(255, 255, 255, 0.7)" font-size="10">Attendance</text>
-                            <text x="155" y="48" fill="rgba(255, 255, 255, 0.9)" font-size="16" font-weight="bold">94.2%</text>
-
-                            <rect x="270" y="10" width="120" height="50" rx="8" fill="rgba(59, 130, 246, 0.15)" stroke="rgba(59, 130, 246, 0.25)" stroke-width="1"/>
-                            <text x="285" y="32" fill="rgba(255, 255, 255, 0.7)" font-size="10">Payroll</text>
-                            <text x="285" y="48" fill="rgba(255, 255, 255, 0.9)" font-size="16" font-weight="bold">Processed</text>
-
-                            <!-- Table rows -->
-                            <rect x="10" y="75" width="380" height="30" rx="6" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
-                            <rect x="10" y="110" width="380" height="30" rx="6" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
-                            <rect x="10" y="145" width="380" height="30" rx="6" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
+        <div>
+          <span class="st">Validated</span>
+          <h3>Checked before it lands</h3>
+          <p>Packs are validated against a published schema on the way in. A malformed rule is rejected at upload, not discovered on the twenty-eighth of the month.</p>
         </div>
+        <div>
+          <span class="st">Versioned</span>
+          <h3>Every version kept</h3>
+          <p>Each country keeps its version history and you activate the one that applies. When a rate changes mid-year, last quarter's payslips still explain themselves under the rules they were run on.</p>
+        </div>
+        <div>
+          <span class="st">Resolved</span>
+          <h3>Jurisdiction by office</h3>
+          <p>The rules that apply are resolved from the office an employee sits in, and arrears are computed against the jurisdiction in force at the time — not wherever they work today.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- How It Works - Flowchart Section -->
-    <section class="flowchart-section">
-        <div class="section-header">
-            <div class="section-badge">How It Works</div>
-            <h2 class="section-title">One engine. Complete transparency.</h2>
-            <p class="section-description">
-                Country-specific compliance rules flow in, employee data flows in, and perfectly calculated payroll flows out—with proof of every step.
-            </p>
-        </div>
-
-        <div class="flowchart-container">
-            <!-- Input: Statutory Compliance (Left) -->
-            <div class="flowchart-input input-left">
-                <div class="input-box statutory">
-                    <div class="input-header">
-                        <div class="input-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                                <path d="M2 17l10 5 10-5"/>
-                                <path d="M2 12l10 5 10-5"/>
-                            </svg>
-                        </div>
-                        <h4>Statutory Compliance</h4>
-                    </div>
-                    <div class="input-tags">
-                        <span class="tag">Retirement</span>
-                        <span class="tag">Insurance</span>
-                        <span class="tag">Tax Tables</span>
-                        <span class="tag">Local Taxes</span>
-                    </div>
-                    <p class="input-note">Country-specific JSON config</p>
-                </div>
-                <div class="flow-arrow arrow-right">
-                    <svg viewBox="0 0 60 24" fill="none">
-                        <path d="M0 12h50M50 12l-8-8M50 12l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-            </div>
-
-            <!-- Input: Employee Data (Top) -->
-            <div class="flowchart-input input-top">
-                <div class="input-box employee">
-                    <div class="input-header">
-                        <div class="input-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            </svg>
-                        </div>
-                        <h4>Employee Data</h4>
-                    </div>
-                    <div class="input-tags">
-                        <span class="tag">Salary Structure</span>
-                        <span class="tag">Attendance</span>
-                        <span class="tag">Location</span>
-                    </div>
-                </div>
-                <div class="flow-arrow arrow-down">
-                    <svg viewBox="0 0 24 60" fill="none">
-                        <path d="M12 0v50M12 50l-8-8M12 50l8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-            </div>
-
-            <!-- Center: Payroll Engine - The Heart -->
-            <div class="flowchart-engine">
-                <div class="engine-core-v2">
-                    <!-- Animated hex background -->
-                    <div class="engine-hex-bg">
-                        <svg viewBox="0 0 400 400" fill="none">
-                            <!-- Outer hexagon ring -->
-                            <polygon class="hex-outer" points="200,20 350,95 350,245 200,320 50,245 50,95"/>
-                            <!-- Middle hexagon ring -->
-                            <polygon class="hex-middle" points="200,50 320,110 320,230 200,290 80,230 80,110"/>
-                            <!-- Inner hexagon -->
-                            <polygon class="hex-inner" points="200,80 280,125 280,215 200,260 120,215 120,125"/>
-                            <!-- Connection lines -->
-                            <line class="hex-line" x1="200" y1="20" x2="200" y2="0"/>
-                            <line class="hex-line" x1="350" y1="170" x2="380" y2="170"/>
-                            <line class="hex-line" x1="50" y1="170" x2="20" y2="170"/>
-                            <line class="hex-line" x1="200" y1="320" x2="200" y2="340"/>
-                            <!-- Data nodes -->
-                            <circle class="data-node n1" cx="200" cy="20" r="6"/>
-                            <circle class="data-node n2" cx="350" cy="170" r="6"/>
-                            <circle class="data-node n3" cx="50" cy="170" r="6"/>
-                            <circle class="data-node n4" cx="200" cy="320" r="6"/>
-                        </svg>
-                    </div>
-
-                    <!-- Rotating scanner line -->
-                    <div class="engine-scanner"></div>
-
-                    <!-- Main engine content -->
-                    <div class="engine-main-v2">
-                        <div class="engine-glow"></div>
-
-                        <!-- CPU Icon -->
-                        <div class="engine-cpu">
-                            <svg viewBox="0 0 64 64" fill="none">
-                                <rect x="12" y="12" width="40" height="40" rx="6" stroke="currentColor" stroke-width="2.5"/>
-                                <rect x="22" y="22" width="20" height="20" rx="3" fill="currentColor" opacity="0.2"/>
-                                <rect x="24" y="24" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
-                                <!-- Top pins -->
-                                <line x1="20" y1="4" x2="20" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <line x1="32" y1="4" x2="32" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <line x1="44" y1="4" x2="44" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <!-- Bottom pins -->
-                                <line x1="20" y1="52" x2="20" y2="60" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <line x1="32" y1="52" x2="32" y2="60" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <line x1="44" y1="52" x2="44" y2="60" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <!-- Left pins -->
-                                <line x1="4" y1="20" x2="12" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <line x1="4" y1="32" x2="12" y2="32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <line x1="4" y1="44" x2="12" y2="44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <!-- Right pins -->
-                                <line x1="52" y1="20" x2="60" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <line x1="52" y1="32" x2="60" y2="32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                <line x1="52" y1="44" x2="60" y2="44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                            </svg>
-                        </div>
-
-                        <h3 class="engine-title">Payroll Engine</h3>
-
-                        <div class="engine-tagline">
-                            <span>Deterministic</span>
-                            <span class="tagline-sep">•</span>
-                            <span>Order-Independent</span>
-                        </div>
-
-                        <div class="engine-metrics">
-                            <div class="metric">
-                                <span class="metric-value">57</span>
-                                <span class="metric-label">Audit Fields</span>
-                            </div>
-                            <div class="metric-divider"></div>
-                            <div class="metric">
-                                <span class="metric-value">100%</span>
-                                <span class="metric-label">Traceable</span>
-                            </div>
-                        </div>
-
-                        <div class="engine-status-v2">
-                            <span class="status-indicator"></span>
-                            <span class="status-text">Processing Ready</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Output: Results (Right) with Arrow -->
-            <div class="flowchart-outputs">
-                <div class="flowchart-output-arrow">
-                    <svg viewBox="0 0 60 24" fill="none">
-                        <path d="M0 12h50M50 12l-8-8M50 12l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-                <div class="flowchart-outputs-content">
-                    <div class="output-box payslips">
-                        <div class="output-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                            </svg>
-                        </div>
-                        <h5>Payslips</h5>
-                        <p>Net pay with full breakdown</p>
-                    </div>
-                    <div class="output-box proofs">
-                        <div class="output-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                                <rect x="9" y="3" width="6" height="4" rx="2"/>
-                                <path d="M9 12l2 2 4-4"/>
-                            </svg>
-                        </div>
-                        <h5>Calculation Proofs</h5>
-                        <p>57 auditable fields per payslip</p>
-                    </div>
-                    <div class="output-box filings">
-                        <div class="output-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="17 8 12 3 7 8"/>
-                                <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                        </div>
-                        <h5>Statutory Filings</h5>
-                        <p>Country-specific returns ready</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Flow labels -->
-        <div class="flowchart-labels">
-            <div class="flow-label label-input">
-                <span class="label-icon">📥</span>
-                <span>Inputs</span>
-            </div>
-            <div class="flow-label label-process">
-                <span class="label-icon">⚙️</span>
-                <span>Processing</span>
-            </div>
-            <div class="flow-label label-output">
-                <span class="label-icon">📤</span>
-                <span>Outputs</span>
-            </div>
-        </div>
+    <!-- ══ The real screen ══ -->
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The actual product</div>
+      <h2 class="dk-h2">What the HR desk opens on.</h2>
+      <p class="dk-lede">Attendance for the last thirty days, who is in today, what is waiting on you, and the month's payroll — before you have opened a report or asked anyone for a number.</p>
+      <figure class="hr-shot" style="margin-top:36px">
+        <img src="../assets/screens/app-hrms.png" alt="Ragenaizer HRMS — attendance over the last 30 days, today's headcount, pending approvals and the month's net payroll" width="1600" height="1000" loading="lazy">
+        <figcaption><b>People</b> — today's attendance, what needs a decision, and this month's payroll on one screen.</figcaption>
+      </figure>
     </section>
 
-    <!-- Features Section -->
-    <section class="features-section" id="features">
-        <div class="section-header">
-            <div class="section-badge">Features</div>
-            <h2 class="section-title">Payroll that explains itself</h2>
-            <p class="section-description">
-                Most payroll systems give you a number. We give you the proof. Every calculation is documented, auditable, and verifiable. From geofencing-based attendance verification to automated loan repayments, every module is built for transparency.
-            </p>
+    <!-- ══ Coverage ══ -->
+    <section class="dk-section dk-reveal" id="covers">
+      <div class="dk-kicker">What it covers</div>
+      <h2 class="dk-h2">Hire to payslip to ledger.</h2>
+      <p class="dk-lede">The whole employment record in one place, ending where it should — a payroll run handed to finance as a journal rather than a spreadsheet emailed to the accountant.</p>
+      <div class="dk-grid">
+        <div class="dk-card" style="--accent:#4CC9F0">
+          <div class="ic" style="background:#4CC9F022"><svg viewBox="0 0 24 24" stroke="#4CC9F0" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+          <h3>People</h3><p>The full employment record — joining, designation, department, office, banking and registration IDs — with an org chart drawn from the reporting lines you actually set.</p>
         </div>
-
-        <div class="features-grid">
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                        <rect x="9" y="3" width="6" height="4" rx="2"/>
-                        <path d="M9 12l2 2 4-4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">See Every Calculation</h3>
-                <p class="feature-description">Click any payslip line and see exactly how the number was derived. What formula? What inputs? Why this amount? No black boxes, ever.</p>
-            </div>
-
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <path d="M9 12l2 2 4-4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Audit-Ready Always</h3>
-                <p class="feature-description">Statutory auditors ask tough questions. Our calculation proofs answer them instantly. Retirement contributions, tax deductions, arrears—all documented.</p>
-            </div>
-
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="2" y1="12" x2="22" y2="12"/>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Any Country, Same Quality</h3>
-                <p class="feature-description">India, USA, UK, UAE—same transparent engine, local compliance rules. Configure once, run payroll correctly everywhere.</p>
-            </div>
-
-            <div class="feature-card purple">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Handles the Hard Cases</h3>
-                <p class="feature-description">Retroactive salary revisions? Mid-month office transfers? Statutory ceiling changes? Our engine handles complex scenarios that break other systems.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="3" y1="9" x2="21" y2="9"/>
-                        <line x1="9" y1="21" x2="9" y2="9"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Multi-Location Payroll</h3>
-                <p class="feature-description">Employee worked at one office for 15 days, transferred mid-month? Payroll splits correctly by location with proper tax jurisdiction tracking.</p>
-            </div>
-
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                        <polyline points="10 9 9 9 8 9"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Complete HR Suite</h3>
-                <p class="feature-description">Attendance, leave management, employee records, self-service portal—everything your HR team needs, with the same transparent approach.</p>
-            </div>
-
-            <div class="feature-card teal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="10" r="3"/>
-                        <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Geofenced Attendance</h3>
-                <p class="feature-description">Clock in/out with GPS-verified location tracking. Define office geofences per location — the system validates employee check-ins are within the allowed radius. Supports multiple office locations with different geofence boundaries.</p>
-            </div>
-
-            <div class="feature-card amber">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 6v12M8 10h8M8 14h8"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Loan Management</h3>
-                <p class="feature-description">Employee loan and salary advance tracking. EMI calculations, repayment schedules, and automatic payroll deductions. Track outstanding balances, approve loan requests, and manage disbursements.</p>
-            </div>
-
-            <div class="feature-card indigo">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Organizational Hierarchy</h3>
-                <p class="feature-description">Departments, offices, designations, and reporting lines — all configurable. Hierarchical department structure with nested levels. Manager auto-assignment when employees have direct reports.</p>
-            </div>
-
-            <div class="feature-card slate">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                        <line x1="8" y1="21" x2="16" y2="21"/>
-                        <line x1="12" y1="17" x2="12" y2="21"/>
-                        <path d="M6 8h4M14 8h4M6 12h12"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Cross-Product Integration</h3>
-                <p class="feature-description">HRMS integrates with Vision for meeting-based interviews and Drive for document storage. A unified platform where HR workflows connect seamlessly with video conferencing and file management.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="6" width="20" height="12" rx="2"/>
-                        <circle cx="8" cy="12" r="2"/>
-                        <path d="M14 12h4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">NFC Card Attendance</h3>
-                <p class="feature-description">Issue physical NFC cards to employees and let them tap in at the office kiosk. Mark a card as primary, deactivate lost or damaged cards, and reissue replacements without losing attendance history. Combine with geofencing for the most secure clock-in system in the market.</p>
-            </div>
-
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 11l3 3L22 4"/>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Regularization & Overtime Approvals</h3>
-                <p class="feature-description">Forgot to clock in? Employees raise a regularization request with a reason; managers approve from a clean queue. Overtime works the same way — request, approve, complete. Every request is logged so payroll only pays what's been signed off.</p>
-            </div>
-
-            <div class="feature-card purple">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Country Compliance Packs</h3>
-                <p class="feature-description">Upload, validate, version and activate a compliance pack per country — India, USA, UK, UAE or anywhere else. The pack carries all statutory rules, deduction categories, tax regimes and cost classifications. Pull the active config as of any date so old payslips always re-render correctly.</p>
-            </div>
-
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <path d="M9 12l2 2 4-4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Tax Regimes & Declarations</h3>
-                <p class="feature-description">Employees pick their tax regime (e.g. India new vs old), submit investment declarations, and the system validates the proofs. The right deductions flow into the next payroll run without HR chasing anyone for spreadsheets.</p>
-            </div>
-
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Payroll Drafts You Can Preview</h3>
-                <p class="feature-description">Run payroll into a draft first. See every payslip, every deduction, every employee — recalculate, rename, edit, delete drafts as you wish. Only when the numbers look right do you process the run for real. No more "oh no we already paid them" moments.</p>
-            </div>
-
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="9" y1="13" x2="15" y2="13"/>
-                        <line x1="9" y1="17" x2="15" y2="17"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Calculation Proof Per Payslip</h3>
-                <p class="feature-description">Click any line on any payslip and see exactly how the number was derived — formula, inputs, rule applied, statutory clause referenced. Export the proof as JSON or as readable Markdown. Auditors love it. So do employees.</p>
-            </div>
-
-            <div class="feature-card amber">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 14V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v8"/>
-                        <path d="M2 14h20"/>
-                        <path d="M5 18l2 2 2-2"/>
-                        <path d="M15 18l2 2 2-2"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Bank Transfer File Export</h3>
-                <p class="feature-description">When payroll is approved, generate a bank-ready transfer file (NEFT, RTGS, ACH or your country's equivalent) with one click. Or export the whole run to CSV. No more re-typing salary amounts into your bank portal.</p>
-            </div>
-
-            <div class="feature-card teal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 19V6"/>
-                        <path d="M5 12l7-7 7 7"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Send Payroll Straight to Finance</h3>
-                <p class="feature-description">When the payroll run is approved, hit "Send to Finance" and the salary expense lands in Accounts as a journal entry. Statutory payments (PF, ESI, TDS, professional tax) appear as vendor bills in finance's queue, ready to pay. No double-entry, no copy-paste.</p>
-            </div>
-
-            <div class="feature-card indigo">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <polyline points="17 11 19 13 23 9"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Employee Transfers with Full History</h3>
-                <p class="feature-description">Move an employee between offices, departments or managers and the change is recorded as a dated event — not a destructive update. Pull office, department or manager assignments as of any date in the past. Payroll splits correctly across mid-month transfers.</p>
-            </div>
-
-            <div class="feature-card rose">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        <line x1="9" y1="10" x2="15" y2="10"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Self-Service Portal</h3>
-                <p class="feature-description">Employees view their profile, payslips, leave balances, loans, bank accounts, statutory info and documents — and submit profile update requests for HR to review. Plus an org chart, team directory, announcements, notifications and a personal dashboard. Less HR ticket queue, more self-service.</p>
-            </div>
-
-            <div class="feature-card slate">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 3v18h18"/>
-                        <path d="M7 17l4-4 4 4 5-5"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Reimbursement Claims with Receipts</h3>
-                <p class="feature-description">Employees upload receipts and submit reimbursement claims by category. HR or finance approves from one queue. Approved claims flow into the next payroll run as a separate adjustment line — no separate refund cycle, no out-of-band bank transfers.</p>
-            </div>
+        <div class="dk-card" style="--accent:#22c55e">
+          <div class="ic" style="background:#22c55e22"><svg viewBox="0 0 24 24" stroke="#22c55e" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/></svg></div>
+          <h3>Geofenced attendance</h3><p>Clock in inside the office boundary, with location pings recorded and a live view of who is where — for the people whose work is somewhere rather than anywhere.</p>
         </div>
+        <div class="dk-card" style="--accent:#A78BFA">
+          <div class="ic" style="background:#A78BFA22"><svg viewBox="0 0 24 24" stroke="#A78BFA" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M7 12h4"/><path d="M15 9.5a3 3 0 0 1 0 5"/></svg></div>
+          <h3>NFC cards</h3><p>Tap-in on a card for shop floors and sites where phones are impractical. Cards are issued, deactivated and reissued without touching the employee record.</p>
+        </div>
+        <div class="dk-card" style="--accent:#FB923C">
+          <div class="ic" style="background:#FB923C22"><svg viewBox="0 0 24 24" stroke="#FB923C" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><path d="M9 16l2 2 4-4"/></svg></div>
+          <h3>Regularisation &amp; overtime</h3><p>A missed punch or an extra shift becomes a request with an approver, not an edit. What payroll consumes is a decision someone made, with their name on it.</p>
+        </div>
+        <div class="dk-card" style="--accent:#60A5FA">
+          <div class="ic" style="background:#60A5FA22"><svg viewBox="0 0 24 24" stroke="#60A5FA" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg></div>
+          <h3>Leave</h3><p>Leave types with their own balances and accrual, a calendar the team can see, encashment, and an HR override that still records who marked it and why.</p>
+        </div>
+        <div class="dk-card" style="--accent:#E879F9">
+          <div class="ic" style="background:#E879F922"><svg viewBox="0 0 24 24" stroke="#E879F9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg></div>
+          <h3>Payroll drafts</h3><p>Process to a draft, read the numbers, recalculate, and only then approve. Payroll stops being a button nobody wants to be the one to press.</p>
+        </div>
+        <div class="dk-card" style="--accent:#22c55e">
+          <div class="ic" style="background:#22c55e22"><svg viewBox="0 0 24 24" stroke="#22c55e" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div>
+          <h3>Send to finance</h3><p>An approved run hands the salary journal to Accounts and raises the statutory dues as bills to pay. Nobody re-keys a payroll figure into the books.</p>
+        </div>
+        <div class="dk-card" style="--accent:#38BDF8">
+          <div class="ic" style="background:#38BDF822"><svg viewBox="0 0 24 24" stroke="#38BDF8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+          <h3>Bank files</h3><p>Export the run as a bank transfer file, or as CSV when your bank wants its own shape. Payment day is an upload rather than an evening of typing.</p>
+        </div>
+        <div class="dk-card" style="--accent:#6366F1">
+          <div class="ic" style="background:#6366F122"><svg viewBox="0 0 24 24" stroke="#6366F1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Statutory records</h3><p>Establishment registrations, employee registration IDs, tax regime elections and investment declarations that are validated rather than merely collected.</p>
+        </div>
+        <div class="dk-card" style="--accent:#F59E0B">
+          <div class="ic" style="background:#F59E0B22"><svg viewBox="0 0 24 24" stroke="#F59E0B" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <h3>Loans &amp; advances</h3><p>Approve a loan, disburse it, and the EMI recovers itself from payroll each month — with the balance visible to the person repaying it.</p>
+        </div>
+        <div class="dk-card" style="--accent:#FBBF24">
+          <div class="ic" style="background:#FBBF2422"><svg viewBox="0 0 24 24" stroke="#FBBF24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
+          <h3>Self-service</h3><p>Payslips, leave balance, loan balance and profile changes that route to HR for review — so the answer to most questions is a screen rather than an email.</p>
+        </div>
+        <div class="dk-card" style="--accent:#2DD4BF">
+          <div class="ic" style="background:#2DD4BF22"><svg viewBox="0 0 24 24" stroke="#2DD4BF" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
+          <h3>Recruitment</h3><p>Job postings, applications and internal moves, ending in an employee record rather than a fresh form somebody retypes on day one.</p>
+        </div>
+        <div class="dk-card" style="--accent:#f87171">
+          <div class="ic" style="background:#f8717122"><svg viewBox="0 0 24 24" stroke="#f87171" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4z"/><path d="M4 14h16v6H4z"/><path d="M9 10v4"/></svg></div>
+          <h3>Transfers with history</h3><p>Move someone between offices, departments or managers and the change is kept as history — which is what lets arrears be computed on the jurisdiction that applied then.</p>
+        </div>
+        <div class="dk-card" style="--accent:#94A3B8">
+          <div class="ic" style="background:#94A3B822"><svg viewBox="0 0 24 24" stroke="#94A3B8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg></div>
+          <h3>Salary versioning</h3><p>Salary structures are versioned with effective dates, so a mid-year revision produces arrears against the right structure instead of quietly rewriting history.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Complete HRMS Platform Section - Bento Grid -->
-    <section class="platform-section" id="platform">
-        <div class="section-header">
-            <div class="section-badge platform-badge">Complete Platform</div>
-            <h2 class="section-title">Enterprise HR. Without the enterprise complexity.</h2>
-            <p class="section-description">
-                A unified platform that handles everything from onboarding to offboarding. Configure once, scale infinitely.
-            </p>
-        </div>
-
-        <div class="bento-grid">
-            <!-- Hero Card: Advanced Payroll -->
-            <div class="bento-card bento-hero payroll-hero">
-                <div class="bento-card-content">
-                    <div class="bento-badge">Core Engine</div>
-                    <h3>Advanced Payroll Processing</h3>
-                    <p>The most sophisticated payroll engine in its class. Every calculation documented, every number traceable.</p>
-                    <ul class="bento-features">
-                        <li>Multiple salary structures per office</li>
-                        <li>Mid-month transfers with split calculations</li>
-                        <li>Retrospective arrears handling</li>
-                        <li>Draft preview before finalization</li>
-                    </ul>
-                </div>
-                <div class="bento-visual payroll-visual">
-                    <div class="payroll-preview">
-                        <div class="preview-header">
-                            <span class="preview-title">Payslip Preview</span>
-                            <span class="preview-badge">Jan 2025</span>
-                        </div>
-                        <div class="preview-rows">
-                            <div class="preview-row">
-                                <span>Basic Salary</span>
-                                <span class="amount positive">$5,400</span>
-                            </div>
-                            <div class="preview-row">
-                                <span>Housing Allowance</span>
-                                <span class="amount positive">$2,160</span>
-                            </div>
-                            <div class="preview-row">
-                                <span>Transport</span>
-                                <span class="amount positive">$800</span>
-                            </div>
-                            <div class="preview-row deduction">
-                                <span>Retirement Fund</span>
-                                <span class="amount negative">−$648</span>
-                            </div>
-                            <div class="preview-row deduction">
-                                <span>Income Tax</span>
-                                <span class="amount negative">−$1,247</span>
-                            </div>
-                            <div class="preview-row total">
-                                <span>Net Pay</span>
-                                <span class="amount">$6,465</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Statutory Compliance -->
-            <div class="bento-card bento-tall statutory-card">
-                <div class="bento-icon statutory">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <path d="M9 12l2 2 4-4"/>
-                    </svg>
-                </div>
-                <h3>Statutory Compliance</h3>
-                <p>Stay compliant in any jurisdiction, automatically.</p>
-                <div class="compliance-tags">
-                    <span class="compliance-tag">Retirement</span>
-                    <span class="compliance-tag">Insurance</span>
-                    <span class="compliance-tag">Tax Tables</span>
-                    <span class="compliance-tag">Local Levies</span>
-                </div>
-                <div class="bento-stat">
-                    <span class="stat-number">100%</span>
-                    <span class="stat-text">Audit Ready</span>
-                </div>
-            </div>
-
-            <!-- Organization Structure -->
-            <div class="bento-card bento-small org-card">
-                <div class="bento-icon org">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"/>
-                    </svg>
-                </div>
-                <h3>Organization</h3>
-                <div class="feature-chips">
-                    <span class="chip">Offices</span>
-                    <span class="chip">Departments</span>
-                    <span class="chip">Designations</span>
-                    <span class="chip">Shifts</span>
-                    <span class="chip">Holidays</span>
-                </div>
-            </div>
-
-            <!-- Employee Lifecycle -->
-            <div class="bento-card bento-small employee-card">
-                <div class="bento-icon employee">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
-                    </svg>
-                </div>
-                <h3>Employees</h3>
-                <div class="feature-chips">
-                    <span class="chip">Onboarding</span>
-                    <span class="chip">Documents</span>
-                    <span class="chip">Transfers</span>
-                    <span class="chip">Hierarchy</span>
-                </div>
-            </div>
-
-            <!-- Time & Attendance - with mini visualization -->
-            <div class="bento-card bento-wide attendance-card">
-                <div class="bento-card-row">
-                    <div class="bento-card-info">
-                        <div class="bento-icon attendance">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="12" cy="12" r="10"/>
-                                <polyline points="12 6 12 12 16 14"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3>Time & Attendance</h3>
-                            <div class="feature-chips inline">
-                                <span class="chip">Geofenced Clock-in</span>
-                                <span class="chip">NFC Kiosks</span>
-                                <span class="chip">Regularization</span>
-                                <span class="chip">Overtime</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="attendance-mini-chart">
-                        <div class="chart-bar" style="--height: 85%"><span>M</span></div>
-                        <div class="chart-bar" style="--height: 92%"><span>T</span></div>
-                        <div class="chart-bar" style="--height: 88%"><span>W</span></div>
-                        <div class="chart-bar" style="--height: 95%"><span>T</span></div>
-                        <div class="chart-bar" style="--height: 78%"><span>F</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Leave Management -->
-            <div class="bento-card bento-medium leave-card">
-                <div class="bento-icon leave">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                </div>
-                <h3>Leave Management</h3>
-                <div class="feature-chips">
-                    <span class="chip">Unlimited Types</span>
-                    <span class="chip">Carry-forward</span>
-                    <span class="chip">Accruals</span>
-                    <span class="chip">Approvals</span>
-                </div>
-                <div class="leave-balance-preview">
-                    <div class="balance-item"><span class="bal-type">Annual</span><span class="bal-num">18</span></div>
-                    <div class="balance-item"><span class="bal-type">Sick</span><span class="bal-num">12</span></div>
-                    <div class="balance-item"><span class="bal-type">Personal</span><span class="bal-num">5</span></div>
-                </div>
-            </div>
-
-            <!-- Loans & Advances -->
-            <div class="bento-card bento-small loans-card">
-                <div class="bento-icon loans">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 6v12M8 10h8M8 14h8"/>
-                    </svg>
-                </div>
-                <h3>Loans & Advances</h3>
-                <div class="feature-chips">
-                    <span class="chip">Workflows</span>
-                    <span class="chip">Auto EMI</span>
-                    <span class="chip">Tracking</span>
-                </div>
-            </div>
-
-            <!-- Self-Service Portal - wider card -->
-            <div class="bento-card bento-wide selfservice-card">
-                <div class="selfservice-header">
-                    <div class="bento-icon selfservice">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                            <line x1="8" y1="21" x2="16" y2="21"/>
-                            <line x1="12" y1="17" x2="12" y2="21"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h3>Employee Self-Service</h3>
-                        <p class="selfservice-desc">Everything employees need in one place</p>
-                    </div>
-                </div>
-                <div class="selfservice-actions">
-                    <span class="action-chip">View Payslip</span>
-                    <span class="action-chip">Apply Leave</span>
-                    <span class="action-chip">Request Loan</span>
-                    <span class="action-chip">My Team</span>
-                    <span class="action-chip">Approvals</span>
-                </div>
-            </div>
-
-            <!-- Stats Card -->
-            <div class="bento-card bento-stats">
-                <div class="stats-grid">
-                    <div class="stat-block">
-                        <span class="stat-value">8</span>
-                        <span class="stat-label">Integrated<br>Modules</span>
-                    </div>
-                    <div class="stat-block">
-                        <span class="stat-value">100%</span>
-                        <span class="stat-label">Audit<br>Trail</span>
-                    </div>
-                    <div class="stat-block">
-                        <span class="stat-value">Any</span>
-                        <span class="stat-label">Country<br>Ready</span>
-                    </div>
-                    <div class="stat-block">
-                        <span class="stat-value">Zero</span>
-                        <span class="stat-label">Manual<br>Errors</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- ══ The thread ══ -->
+    <section class="dk-section dk-reveal" id="thread">
+      <div class="dk-kicker">One employee record</div>
+      <h2 class="dk-h2">Where the month actually goes.</h2>
+      <p class="dk-lede">Attendance, leave, loans and a salary revision all end up in the same payslip, and the payslip ends up in the books. Each step is a document with an owner, not a message somebody has to remember to forward.</p>
+      <div class="dk-thread">
+        <div class="dk-trow" style="--c:#22c55e"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">01</div><div class="dk-tw"><b>Clock-in inside the boundary</b> — or a card tapped at the gate<span class="dk-tsrc">Attendance</span></div><div class="dk-ta">26 working days</div></div>
+        <div class="dk-trow" style="--c:#FB923C"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">02</div><div class="dk-tw"><b>A missed punch regularised</b>, approved by the reporting manager<span class="dk-tsrc">Approvals</span></div><div class="dk-ta">named approver</div></div>
+        <div class="dk-trow" style="--c:#60A5FA"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">03</div><div class="dk-tw"><b>One day of unpaid leave</b> becomes the month's proration factor<span class="dk-tsrc">Leave</span></div><div class="dk-ta">25 / 26</div></div>
+        <div class="dk-trow" style="--c:#E879F9"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">04</div><div class="dk-tw"><b>Draft payroll reviewed</b>, checks asserted, then approved<span class="dk-tsrc">Payroll</span></div><div class="dk-ta">7 checks</div></div>
+        <div class="dk-trow" style="--c:#22c55e"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">05</div><div class="dk-tw"><b>Sent to finance</b> — salary journal posted, statutory dues raised as bills<span class="dk-tsrc">HRMS → Accounts</span></div><div class="dk-ta">0 re-keying</div></div>
+        <div class="dk-tfoot"><span>one record, start to finish</span><span>0 spreadsheets in between</span></div>
+      </div>
     </section>
 
-    <!-- Nuclear Test Section -->
-    <section class="stress-test-section" id="stress-test">
-        <div class="section-header">
-            <div class="section-badge stress-badge">Battle Tested</div>
-            <h2 class="section-title">We call it "The Perfect Storm"</h2>
-            <p class="section-description">
-                We designed the hardest payroll scenario imaginable—then ran it through our engine. Here's what happened.
-            </p>
+    <!-- ══ FAQ ══════════════════════════════════════════════════════════════
+         The foundational answers a buyer assumes are "no" because nobody
+         says them out loud. -->
+    <section class="dk-section dk-reveal" id="faq">
+      <div class="dk-kicker">Straight answers</div>
+      <h2 class="dk-h2">The things people ask on the first call.</h2>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Is this only for India?</h3>
+          <p>No. The engine holds no country in its code. Provident-fund style contributions, income tax, regional levies and their eligibility conditions all come out of an uploaded country pack, and the calculator evaluates that pack's formulas.</p>
+          <p>India ships configured. Anywhere else is a pack to author and validate, not a change to the software.</p>
         </div>
-
-        <!-- Timeline -->
-        <div class="timeline-container">
-            <!-- Phase 1: The Setup -->
-            <div class="timeline-phase">
-                <div class="phase-marker">
-                    <div class="phase-icon setup">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-                        </svg>
-                    </div>
-                    <span class="phase-label">The Setup</span>
-                </div>
-                <div class="phase-content">
-                    <div class="timeline-card setup-card">
-                        <div class="card-header">
-                            <h4>Employee: Abhishek Anand</h4>
-                            <span class="card-tag">Test Subject</span>
-                        </div>
-                        <div class="card-details">
-                            <div class="detail-row">
-                                <span class="detail-label">Base Salary</span>
-                                <span class="detail-value">$7,500/month</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Location</span>
-                                <span class="detail-value">Office A → Office B (Day 15)</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Period</span>
-                                <span class="detail-value">January 2025</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Phase 2: The Chaos -->
-            <div class="timeline-phase">
-                <div class="phase-marker">
-                    <div class="phase-icon chaos">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                        </svg>
-                    </div>
-                    <span class="phase-label">The Chaos</span>
-                </div>
-                <div class="phase-content chaos-grid">
-                    <div class="timeline-card chaos-card">
-                        <div class="chaos-number">1</div>
-                        <div class="chaos-content">
-                            <h5>Retro Revision #1</h5>
-                            <p>Salary increased to $8,500 effective Oct 2024</p>
-                            <span class="chaos-impact">4 months arrears triggered</span>
-                        </div>
-                    </div>
-                    <div class="timeline-card chaos-card">
-                        <div class="chaos-number">2</div>
-                        <div class="chaos-content">
-                            <h5>Retro Revision #2</h5>
-                            <p>Further increased to $9,000 effective Nov 2024</p>
-                            <span class="chaos-impact">Arrears on arrears</span>
-                        </div>
-                    </div>
-                    <div class="timeline-card chaos-card">
-                        <div class="chaos-number">3</div>
-                        <div class="chaos-content">
-                            <h5>Retro Revision #3</h5>
-                            <p>Adjusted to $8,800 effective Dec 2024</p>
-                            <span class="chaos-impact">Negative arrears correction</span>
-                        </div>
-                    </div>
-                    <div class="timeline-card chaos-card">
-                        <div class="chaos-number">4</div>
-                        <div class="chaos-content">
-                            <h5>Statutory Ceiling Change</h5>
-                            <p>Retirement contribution limit updated mid-period</p>
-                            <span class="chaos-impact">Mid-period statutory change</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Phase 3: The Processing -->
-            <div class="timeline-phase">
-                <div class="phase-marker">
-                    <div class="phase-icon processing">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
-                            <rect x="9" y="9" width="6" height="6"/>
-                            <line x1="9" y1="1" x2="9" y2="4"/>
-                            <line x1="15" y1="1" x2="15" y2="4"/>
-                            <line x1="9" y1="20" x2="9" y2="23"/>
-                            <line x1="15" y1="20" x2="15" y2="23"/>
-                            <line x1="20" y1="9" x2="23" y2="9"/>
-                            <line x1="20" y1="14" x2="23" y2="14"/>
-                            <line x1="1" y1="9" x2="4" y2="9"/>
-                            <line x1="1" y1="14" x2="4" y2="14"/>
-                        </svg>
-                    </div>
-                    <span class="phase-label">Engine Processing</span>
-                </div>
-                <div class="phase-content">
-                    <div class="timeline-card engine-card">
-                        <div class="engine-animation">
-                            <div class="engine-pulse"></div>
-                            <div class="engine-core">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="4" y="4" width="16" height="16" rx="2"/>
-                                    <rect x="9" y="9" width="6" height="6"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="engine-steps">
-                            <div class="engine-step">
-                                <span class="step-icon">→</span>
-                                <span>Collapse arrears chain chronologically</span>
-                            </div>
-                            <div class="engine-step">
-                                <span class="step-icon">→</span>
-                                <span>Split earnings by location (15 days Office A, 16 days Office B)</span>
-                            </div>
-                            <div class="engine-step">
-                                <span class="step-icon">→</span>
-                                <span>Apply statutory ceilings per timeline boundary</span>
-                            </div>
-                            <div class="engine-step">
-                                <span class="step-icon">→</span>
-                                <span>Calculate tax jurisdiction per location</span>
-                            </div>
-                            <div class="engine-step">
-                                <span class="step-icon">→</span>
-                                <span>Generate calculation proof (57 auditable fields)</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Phase 4: The Results -->
-            <div class="timeline-phase">
-                <div class="phase-marker">
-                    <div class="phase-icon results">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
-                    </div>
-                    <span class="phase-label">The Verdict</span>
-                </div>
-                <div class="phase-content">
-                    <div class="timeline-card results-card">
-                        <div class="results-header-row">
-                            <div class="results-status">
-                                <span class="status-badge passed">ALL TESTS PASSED</span>
-                            </div>
-                            <div class="trap-questions">
-                                <span class="trap-count">10</span>
-                                <span class="trap-label">Trap Questions<br>Answered</span>
-                            </div>
-                        </div>
-                        <div class="results-checks">
-                            <div class="check-item">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>Arrears collapsed correctly</span>
-                            </div>
-                            <div class="check-item">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>Location split accurate</span>
-                            </div>
-                            <div class="check-item">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>Statutory ceilings honored</span>
-                            </div>
-                            <div class="check-item">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>Tax jurisdiction correct</span>
-                            </div>
-                            <div class="check-item">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>Order-independent verified</span>
-                            </div>
-                            <div class="check-item">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>Net pay non-negative</span>
-                            </div>
-                        </div>
-                        <div class="invariants-box">
-                            <span class="invariants-label">Hard-Stop Guarantees</span>
-                            <div class="invariants-list">
-                                <span class="invariant-tag">Net Pay Always Positive</span>
-                                <span class="invariant-tag">Every Calculation Tracked</span>
-                                <span class="invariant-tag">Statutory Limits Enforced</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div>
+          <span class="q">02</span>
+          <h3>Can we see how a payslip was calculated?</h3>
+          <p>Yes — that is the point of the page above. Every processed payslip stores a calculation proof: working days, days present, loss of pay, the proration factor, each earning, each statutory rule that ran (including the ones that did not apply), and the invariant assertions with the figures they were checked against.</p>
         </div>
-
-        <div class="stress-test-quote">
-            <blockquote>
-                If it can handle The Perfect Storm, your monthly payroll is a light breeze.
-            </blockquote>
+        <div>
+          <span class="q">03</span>
+          <h3>What stops a bad payroll run going out?</h3>
+          <p>Seven named invariants are asserted before a run proceeds. Two are hard stops — a negative net pay and a payslip without a recorded engine version will block processing outright. The other five are raised for review with their evidence attached.</p>
         </div>
+        <div>
+          <span class="q">04</span>
+          <h3>Can we correct a payslip after approving it?</h3>
+          <p>Not by editing it. An approved or paid payslip is immutable; a correction is a new adjustment record against the next run. That is deliberate — a payslip somebody could quietly rewrite is not evidence of anything.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>Does payroll reach the accounts?</h3>
+          <p>Directly. An approved run is handed to Accounts as a salary journal, with the statutory dues raised as bills to pay. Nobody re-keys a payroll figure, so there is no second version of the number to disagree with.</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>What if someone changes office mid-year?</h3>
+          <p>Transfers are kept as history with their effective dates. Arrears are then computed against the jurisdiction that applied at the time rather than the current one — which is one of the seven checks the engine asserts.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>How do people clock in?</h3>
+          <p>Geofenced clock-in against the office boundary with location pings recorded, or an NFC card tapped at the gate for shop floors and sites where phones are impractical. A missed punch becomes a regularisation request with an approver, not a silent edit.</p>
+        </div>
+        <div>
+          <span class="q">08</span>
+          <h3>Can employees answer their own questions?</h3>
+          <p>Self-service carries payslips, leave balance, loan balance and profile-change requests that route to HR for review. Most of what lands in an HR inbox is a screen the person already has.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Free Calculators Section -->
-    <section class="payroll-section" style="padding: 80px 0;">
-        <div class="container">
-            <h2 class="section-title" style="text-align: center; margin-bottom: 16px;">Free Payroll Calculators</h2>
-            <p style="text-align: center; color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px;">Use our free calculators to understand your salary components. All calculations follow latest FY 2025-26 rules.</p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 900px; margin: 0 auto;">
-                <a href="calculators/pf-calculator.html" style="background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 24px; text-decoration: none; transition: all 0.2s;">
-                    <h3 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 8px;">PF Calculator</h3>
-                    <p style="color: var(--text-tertiary); font-size: 14px; margin: 0;">Calculate EPF contribution</p>
-                </a>
-                <a href="calculators/esi-calculator.html" style="background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 24px; text-decoration: none; transition: all 0.2s;">
-                    <h3 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 8px;">ESI Calculator</h3>
-                    <p style="color: var(--text-tertiary); font-size: 14px; margin: 0;">Calculate ESI deductions</p>
-                </a>
-                <a href="calculators/tds-calculator.html" style="background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 24px; text-decoration: none; transition: all 0.2s;">
-                    <h3 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 8px;">TDS Calculator</h3>
-                    <p style="color: var(--text-tertiary); font-size: 14px; margin: 0;">Compare Old vs New Regime</p>
-                </a>
-                <a href="calculators/hra-calculator.html" style="background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 24px; text-decoration: none; transition: all 0.2s;">
-                    <h3 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 8px;">HRA Calculator</h3>
-                    <p style="color: var(--text-tertiary); font-size: 14px; margin: 0;">Calculate HRA exemption</p>
-                </a>
-                <a href="calculators/ctc-calculator.html" style="background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 24px; text-decoration: none; transition: all 0.2s;">
-                    <h3 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 8px;">CTC Calculator</h3>
-                    <p style="color: var(--text-tertiary); font-size: 14px; margin: 0;">CTC to in-hand salary</p>
-                </a>
-                <a href="calculators/gratuity-calculator.html" style="background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 24px; text-decoration: none; transition: all 0.2s;">
-                    <h3 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 8px;">Gratuity Calculator</h3>
-                    <p style="color: var(--text-tertiary); font-size: 14px; margin: 0;">Calculate gratuity amount</p>
-                </a>
-                <a href="calculators/professional-tax-calculator.html" style="background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 24px; text-decoration: none; transition: all 0.2s;">
-                    <h3 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 8px;">Professional Tax</h3>
-                    <p style="color: var(--text-tertiary); font-size: 14px; margin: 0;">State-wise PT slabs</p>
-                </a>
-            </div>
-        </div>
+    <!-- ══ Close ══ -->
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Let the payslip answer the question.</h2>
+      <p>Give your team a number they can check themselves, and give payroll a month-end that ends.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20HRMS%20—%20a%20walkthrough">Book a walkthrough →</a>
+      </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="cta-container">
-            <h2 class="cta-title">Never wonder how payroll was calculated again</h2>
-            <p class="cta-description">See the math. Trust the numbers. Pass the audit.</p>
-            <div class="cta-actions">
-                <a href="activate.html" class="btn-primary">Get Started Free</a>
-            </div>
-        </div>
-    </section>
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Footer -->
-    <div id="footer"></div>
+  <script>
+    'use strict';
 
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+    var HR_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ── one payslip, five steps ──────────────────────────────────────────────
+       The steps mirror what HRMS actually stores on a payslip's calculation
+       proof: working days and the proration factor, the earning items, the
+       statutory deductions with the rule behind each, the net, and the
+       invariant assertions the engine records before the run may proceed.
+       The seven invariant codes and their enforcement levels below are the
+       real ones from the payroll engine, not illustrative names.
+       Figures are for a fictional employee and are consistent across steps:
+       gross 52,884 − 7,400 deductions = 45,484 net. */
+    var STEPS = [
+      {
+        n: 'Step 1',
+        tab: 'The period',
+        head: 'Count the days before you count the money.',
+        sub: 'Payroll disagreements almost always start here, not in the tax. So the days are stated first, and everything after is derived from them.',
+        rows: [
+          ['Working days in July', 'calendar days less weekends and holidays', '26'],
+          ['Days present', 'from attendance — clock-ins and card taps', '24'],
+          ['Paid leave', 'approved, deducted from the leave balance', '1'],
+          ['Loss of pay', 'unpaid leave — the only kind that reduces the salary', '1']
+        ],
+        out: ['Proration factor', '25 / 26 = 0.9615'],
+        foot: 'One day of loss of pay, so the month is paid at <b>25 of 26 days</b>. That single factor is applied to each earning below — and because it is written down, anyone can check it against the attendance sheet.'
+      },
+      {
+        n: 'Step 2',
+        tab: 'Earnings',
+        head: 'Each component, prorated on its own.',
+        sub: 'The factor is applied per component rather than to the total, which is what keeps the components right when a structure changes mid-year.',
+        rows: [
+          ['Basic', '30,000 × 0.9615', '₹28,846'],
+          ['House rent allowance', '15,000 × 0.9615', '₹14,423'],
+          ['Special allowance', '8,000 × 0.9615', '₹7,692'],
+          ['Conveyance', '2,000 × 0.9615', '₹1,923']
+        ],
+        out: ['Gross earnings', '₹52,884'],
+        foot: 'Full monthly salary is ₹55,000. The day of loss of pay costs <b>₹2,116</b>, and the payslip says where it went rather than leaving the employee to work it out.'
+      },
+      {
+        n: 'Step 3',
+        tab: 'Statutory',
+        head: 'Every deduction names the rule that made it.',
+        sub: 'These come from the active country pack for India, resolved against the office this employee sits in. Change the pack version and the rule column changes with it.',
+        rows: [
+          ['Provident fund — employee', '12% of basic, capped at the 15,000 wage ceiling', '₹1,800'],
+          ['Employees’ state insurance', 'not applicable — gross is above the eligibility threshold', '—', 'muted'],
+          ['Professional tax', 'Maharashtra slab for this gross', '₹200'],
+          ['Income tax deducted at source', 'projected annual liability spread across remaining months', '₹2,400'],
+          ['Provident fund — employer', 'employer contribution, cost to company, not deducted', '₹1,800', 'muted']
+        ],
+        out: ['Statutory deductions', '₹4,400'],
+        foot: 'The insurance line is shown even though nothing was deducted. <b>A rule that did not apply is still a rule that ran</b>, and hiding it is how payroll queries start.'
+      },
+      {
+        n: 'Step 4',
+        tab: 'Net pay',
+        head: 'What actually reaches the bank.',
+        sub: 'Statutory first, then anything the employee agreed to — each one traceable to the document that authorised it.',
+        rows: [
+          ['Gross earnings', 'from step 2', '₹52,884'],
+          ['Statutory deductions', 'from step 3', '−₹4,400', 'neg'],
+          ['Salary advance repayment', 'EMI 4 of 10 against an approved advance', '−₹3,000', 'neg']
+        ],
+        out: ['Net pay', '₹45,484'],
+        foot: 'Had the deductions come to more than the earnings, the excess would have been <b>deferred to a later month rather than producing a negative payslip</b> — and recovered oldest first when there was room for it.'
+      },
+      {
+        n: 'Step 5',
+        tab: 'The checks',
+        head: 'Seven assertions, recorded on every payslip.',
+        sub: 'The engine checks its own arithmetic before a run may proceed, and writes the result onto the payslip. Two of these stop payroll outright; the rest are raised for review.',
+        invariants: [
+          ['NET_PAY_NON_NEGATIVE', 'stop', 'Net pay is never negative. If deductions exceed earnings, the excess is deferred instead.'],
+          ['ENGINE_VERSION_TRACKED', 'stop', 'Every payslip records the engine version that produced it, so an old payslip can always be explained.'],
+          ['ARREARS_CHAIN_COLLAPSED', 'warn', 'Where a revision supersedes an earlier one, only the latest arrears per employee per month is payable.'],
+          ['DEFERRED_RECOVERY_FIFO', 'warn', 'Deferred deductions are recovered oldest first, and the closing balance must equal opening plus new less recovered.'],
+          ['PAYSLIP_IMMUTABILITY', 'warn', 'Once approved or paid, a payslip’s amounts cannot change. A correction is a new adjustment record.'],
+          ['JURISDICTION_IMMUTABILITY_FOR_ARREARS', 'warn', 'Arrears use the jurisdiction in force at the effective date, not wherever the employee works now.'],
+          ['PRORATION_FACTORS_SUM', 'warn', 'Where earnings are split across locations, the proration factors must sum to exactly one.']
+        ],
+        out: ['This payslip', '7 of 7 passed'],
+        foot: 'Each assertion is stored with its evidence — the actual figures it was checked against. <b>That is what an auditor is handed</b>, rather than an assurance that the software is correct.'
+      }
+    ];
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    var step = 0;
+
+    function mountSteps() {
+      document.getElementById('hrSteps').innerHTML = STEPS.map(function (s, i) {
+        return '<button type="button" data-s="' + i + '" aria-pressed="' + (i === 0) + '">' +
+               '<span class="n">' + esc(s.n) + '</span><span class="l">' + esc(s.tab) + '</span></button>';
+      }).join('');
+      document.querySelectorAll('#hrSteps button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          step = Number(b.dataset.s);
+          renderStep();
+        });
+      });
+    }
+
+    function renderStep() {
+      var s = STEPS[step];
+      document.querySelectorAll('#hrSteps button').forEach(function (b, i) {
+        b.setAttribute('aria-pressed', String(i === step));
+      });
+      document.getElementById('hrHead').textContent = s.head;
+      document.getElementById('hrSub').textContent = s.sub;
+      document.getElementById('hrFoot').innerHTML = s.foot;
+      document.getElementById('hrOut').innerHTML =
+        '<span class="lbl">' + esc(s.out[0]) + '</span><span class="big">' + esc(s.out[1]) + '</span>';
+
+      var html;
+      if (s.invariants) {
+        html = s.invariants.map(function (v) {
+          return '<div class="hr-inv">' +
+                   '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>' +
+                   '<span><code>' + esc(v[0]) + '</code><span>' + esc(v[2]) + '</span></span>' +
+                   '<span class="hr-lvl ' + v[1] + '">' + (v[1] === 'stop' ? 'stops payroll' : 'raised for review') + '</span>' +
+                 '</div>';
+        }).join('');
+      } else {
+        html = s.rows.map(function (r) {
+          return '<div class="hr-row ' + (r[3] || '') + '">' +
+                   '<span class="k">' + esc(r[0]) + '</span>' +
+                   '<span class="r">' + esc(r[1]) + '</span>' +
+                   '<span class="v">' + esc(r[2]) + '</span>' +
+                 '</div>';
+        }).join('');
+      }
+      document.getElementById('hrRows').innerHTML = html;
+    }
+
+    mountSteps();
+    renderStep();
+
+    /* Sections settle in as they arrive; skipped under reduced motion. */
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (HR_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>

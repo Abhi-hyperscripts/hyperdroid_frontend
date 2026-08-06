@@ -1,0 +1,336 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   HRMS — "the payslip shows its working".
+   Loaded after landing-desk.css, scoped to body.hrms-desk. Nav, hero type,
+   section furniture, cards, thread and footer all come from the desk
+   language; only the payroll-specific pieces live here.
+
+   Payroll's whole problem is that nobody outside the payroll team can check
+   it. So the page walks one real payslip through the five steps the engine
+   actually records — period, earnings, statutory, net, and the invariants it
+   asserts before it will let the run through.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.hrms-desk {
+  --hr: #4CC9F0;
+}
+
+body.hrms-desk .dk-hero { padding: 56px 0 0; }
+body.hrms-desk .hr-note {
+  margin: 18px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+
+/* ── the proof bench ──────────────────────────────────────────────────────── */
+body.hrms-desk .hr-bench {
+  margin-top: 44px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  text-align: left;
+  position: relative;
+}
+body.hrms-desk .hr-bench::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(700px 320px at 12% -22%, var(--hr), transparent 70%);
+  opacity: 0.14;
+}
+body.hrms-desk .hr-bench > * { position: relative; }
+
+/* who the payslip belongs to — fixed above the steps, because it is the same
+   payslip all the way through and re-stating it per step would suggest not */
+body.hrms-desk .hr-who {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 20px 26px;
+  border-bottom: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.34);
+}
+body.hrms-desk .hr-who b {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+}
+body.hrms-desk .hr-who span { font-size: 13px; color: var(--dk-mute); }
+body.hrms-desk .hr-who .ref {
+  font-family: var(--font-family-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: var(--hr);
+}
+
+/* the five steps */
+body.hrms-desk .hr-steps {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border-bottom: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.4);
+}
+body.hrms-desk .hr-steps button {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  background: transparent;
+  color: var(--dk-mute);
+  padding: 15px 16px 13px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  position: relative;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+body.hrms-desk .hr-steps button:last-child { border-right: 0; }
+body.hrms-desk .hr-steps button:hover { background: rgba(255, 255, 255, 0.045); color: var(--dk-ink); }
+body.hrms-desk .hr-steps button .n {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: #6f7b91;
+  margin-bottom: 4px;
+}
+body.hrms-desk .hr-steps button .l { display: block; font-size: 13.5px; color: inherit; }
+body.hrms-desk .hr-steps button::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: var(--hr);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+body.hrms-desk .hr-steps button[aria-pressed="true"] { background: rgba(255, 255, 255, 0.06); color: var(--dk-ink); }
+body.hrms-desk .hr-steps button[aria-pressed="true"]::after { transform: scaleX(1); }
+body.hrms-desk .hr-steps button[aria-pressed="true"] .n { color: var(--hr); }
+body.hrms-desk .hr-steps button:focus-visible { outline: 2px solid var(--hr); outline-offset: -3px; }
+
+body.hrms-desk .hr-panel { padding: 30px 32px 34px; }
+body.hrms-desk .hr-head {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 0;
+}
+body.hrms-desk .hr-sub {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+  max-width: 720px;
+}
+
+/* ── generic proof rows ───────────────────────────────────────────────────── */
+body.hrms-desk .hr-rows { margin-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.09); }
+body.hrms-desk .hr-row {
+  display: grid;
+  /* the label column is sized to the labels, not to a share of the row — a
+     1fr label column pushes the rule so far right it reads as a third
+     unrelated column instead of an explanation of the line */
+  grid-template-columns: minmax(190px, 0.5fr) minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+body.hrms-desk .hr-row .k { font-size: 14px; color: var(--dk-ink); }
+/* the rule that produced the number, in the engine's own terms — this is the
+   column that makes the payslip checkable rather than merely itemised */
+body.hrms-desk .hr-row .r {
+  font-family: var(--font-family-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--dk-dim);
+}
+body.hrms-desk .hr-row .v {
+  font-family: var(--font-family-mono);
+  font-size: 13.5px;
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+body.hrms-desk .hr-row.muted .k,
+body.hrms-desk .hr-row.muted .v { color: var(--dk-dim); }
+body.hrms-desk .hr-row.neg .v { color: #fca5a5; }
+
+body.hrms-desk .hr-out {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding: 15px 18px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--hr) 12%, rgba(255, 255, 255, 0.03));
+  border: 1px solid color-mix(in srgb, var(--hr) 32%, transparent);
+}
+body.hrms-desk .hr-out .lbl {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-mute);
+}
+body.hrms-desk .hr-out .big {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 27px;
+  letter-spacing: -0.03em;
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+}
+body.hrms-desk .hr-foot {
+  margin: 16px 0 0;
+  font-size: 13px;
+  line-height: 1.62;
+  color: var(--dk-dim);
+}
+body.hrms-desk .hr-foot b { color: var(--dk-mute); font-weight: 500; }
+
+/* ── the invariants ───────────────────────────────────────────────────────── */
+body.hrms-desk .hr-inv {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+body.hrms-desk .hr-inv svg {
+  width: 15px; height: 15px;
+  margin-top: 3px;
+  fill: none;
+  stroke: #4ade80;
+  stroke-width: 2.6;
+}
+body.hrms-desk .hr-inv code {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--dk-ink);
+}
+body.hrms-desk .hr-inv span {
+  display: block;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--dk-dim);
+  margin-top: 3px;
+}
+body.hrms-desk .hr-lvl {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+body.hrms-desk .hr-lvl.stop {
+  color: #fca5a5;
+  background: rgba(248, 113, 113, 0.13);
+  border: 1px solid rgba(248, 113, 113, 0.32);
+}
+body.hrms-desk .hr-lvl.warn {
+  color: #fcd34d;
+  background: rgba(251, 191, 36, 0.11);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+}
+
+/* ── country packs ────────────────────────────────────────────────────────── */
+body.hrms-desk .hr-pack {
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--dk-line);
+  background: var(--dk-line);
+}
+body.hrms-desk .hr-pack > div {
+  background: rgba(10, 14, 22, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 26px 24px;
+}
+body.hrms-desk .hr-pack h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--dk-ink);
+}
+body.hrms-desk .hr-pack p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--dk-mute); }
+body.hrms-desk .hr-pack .st {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hr);
+  margin-bottom: 12px;
+}
+
+/* ── the real screen ──────────────────────────────────────────────────────── */
+body.hrms-desk .hr-shot {
+  margin: 0;
+  border-radius: 18px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+body.hrms-desk .hr-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-bottom: 1px solid var(--dk-line);
+}
+body.hrms-desk .hr-shot figcaption { padding: 15px 20px; font-size: 13px; color: var(--dk-dim); }
+body.hrms-desk .hr-shot figcaption b { color: var(--dk-ink); font-weight: 600; }
+
+/* ── responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  body.hrms-desk .hr-steps { grid-auto-flow: row; grid-auto-columns: auto; }
+  body.hrms-desk .hr-steps button {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    padding-left: 18px;
+  }
+  body.hrms-desk .hr-steps button::after {
+    top: 0; bottom: 0; left: 0; right: auto;
+    width: 3px; height: auto;
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  body.hrms-desk .hr-steps button[aria-pressed="true"]::after { transform: scaleY(1); }
+  body.hrms-desk .hr-row { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+  body.hrms-desk .hr-row .r { grid-column: 1 / -1; margin-top: 2px; }
+  body.hrms-desk .hr-panel { padding: 24px 20px 28px; }
+  body.hrms-desk .hr-who { padding: 18px 20px; }
+  body.hrms-desk .hr-inv { grid-template-columns: 18px minmax(0, 1fr); }
+  body.hrms-desk .hr-lvl { grid-column: 2; justify-self: start; margin-top: 6px; }
+}

@@ -378,6 +378,45 @@ body.desk-landing .dk-three .num {
   margin-bottom: 12px;
 }
 
+/* ── FAQ ──────────────────────────────────────────────────────────────────────
+   Shared by every product page. A landing page can only carry so many claims
+   before it stops being readable, and the ones it drops tend to be the
+   foundational ones a buyer assumes are missing precisely because nobody says
+   them out loud. This is where those go. */
+body.desk-landing .dk-faq {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px 44px;
+  margin-top: 40px;
+}
+body.desk-landing .dk-faq h3 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 16.5px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--dk-ink);
+}
+body.desk-landing .dk-faq p { margin: 0; font-size: 14px; line-height: 1.62; color: var(--dk-mute); }
+body.desk-landing .dk-faq p + p { margin-top: 9px; }
+body.desk-landing .dk-faq b { color: var(--dk-ink); font-weight: 600; }
+body.desk-landing .dk-faq code {
+  font-family: var(--font-family-mono);
+  font-size: 12.5px;
+  color: var(--dk-ink);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--dk-line);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+body.desk-landing .dk-faq .q {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--dk-accent);
+  margin-bottom: 10px;
+}
+
 /* ── close ────────────────────────────────────────────────────────────────── */
 body.desk-landing .dk-close {
   text-align: center;
