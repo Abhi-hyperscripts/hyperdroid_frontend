@@ -4,7 +4,7 @@
  *   1. SEO header (breadcrumb, title, KPIs) — crawlable text for Google
  *   2. Full interactive dashboard (iframe) — showcases product capabilities
  *   3. Article content (exec summary, findings, methodology) — SEO body text
- *   4. Dark/Light theme toggle with localStorage persistence
+ * The page is dark-only, in line with the rest of the public site.
  */
 (function () {
     'use strict';
@@ -19,46 +19,21 @@
     const MANIFEST_URL = '/pages/insights/manifest.json';
     const THEME_KEY = '_rz_insights_theme';
 
-    // ─── Theme Management ───
+    // ─── Theme ───
+    // The public site is dark-only, so there is no toggle and no stored
+    // preference to honour. A stale localStorage value from the old two-theme
+    // build is cleared on sight, otherwise returning visitors would keep
+    // getting the light palette that no longer matches the rest of the site.
     function initTheme() {
-        const saved = localStorage.getItem(THEME_KEY);
-        const theme = saved || 'light'; // default light for insights pages
-        applyTheme(theme);
-        // Toggle button injected later after report HTML is rendered
-    }
-
-    function applyTheme(theme) {
-        document.documentElement.setAttribute('data-insights-theme', theme);
+        try { localStorage.removeItem(THEME_KEY); } catch (e) {}
+        document.documentElement.setAttribute('data-insights-theme', 'dark');
         document.body.classList.add('insights-page');
-        localStorage.setItem(THEME_KEY, theme);
     }
 
-    function toggleTheme() {
-        const current = document.documentElement.getAttribute('data-insights-theme');
-        applyTheme(current === 'dark' ? 'light' : 'dark');
-    }
-
-    function injectThemeToggle() {
-        if (document.querySelector('.seo-theme-toggle')) return;
-        const btn = document.createElement('button');
-        btn.className = 'seo-theme-toggle';
-        btn.setAttribute('aria-label', 'Toggle dark/light mode');
-        btn.setAttribute('title', 'Toggle dark/light mode');
-        btn.innerHTML = `
-            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>`;
-        btn.addEventListener('click', toggleTheme);
-        // Try to place in header meta area, fallback to body
-        const header = document.querySelector('.seo-report-header');
-        if (header) {
-            header.appendChild(btn);
-        } else {
-            document.body.appendChild(btn);
-        }
+    // Belt and braces: an older cached copy of this script may still be live in
+    // a visitor's service worker and inject the button after us.
+    function removeStaleThemeToggle() {
+        document.querySelectorAll('.seo-theme-toggle').forEach(function (el) { el.remove(); });
     }
 
     // ─── Entry Point ───
@@ -320,8 +295,7 @@
         html += '</article>';
         container.innerHTML = html;
 
-        // Inject theme toggle into the rendered header
-        injectThemeToggle();
+        removeStaleThemeToggle();
     }
 
     // ─── Helpers ───

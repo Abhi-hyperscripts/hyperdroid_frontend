@@ -1,0 +1,245 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   INSIGHTS — the research shelf and the report pages.
+
+   Two jobs. First, reconcile insights-seo.css (which styles the interactive
+   dashboards and owns its own --seo-* palette) with the desk palette, so a
+   report doesn't feel like it belongs to a different site. Second, give the
+   hub a design of its own: these are reports, not products, so the index is
+   a shelf — the number that matters is the thing you see first, and the
+   title is what you read next.
+
+   Loaded AFTER insights-seo.css and content-desk.css.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. pull the dashboard palette onto the desk ───────────────────────────
+   The report pages set data-insights-theme="dark" on <html>; these overrides
+   retune that dark set to the desk's greys so the charts sit on the same
+   surface as everything else. */
+html[data-insights-theme="dark"] {
+  --seo-bg: #070a10;
+  --seo-bg-surface: #0c1118;
+  --seo-bg-elevated: #10161f;
+  --seo-bg-card: rgba(255, 255, 255, 0.03);
+  --seo-bg-card-hover: rgba(255, 255, 255, 0.055);
+  --seo-glass-border: rgba(255, 255, 255, 0.11);
+  --seo-text-primary: #e6ebf5;
+  --seo-text-secondary: #9aa5ba;
+  --seo-text-body: #9aa5ba;
+  --seo-text-muted: #6f7b91;
+  --seo-border: rgba(255, 255, 255, 0.11);
+  --seo-border-strong: rgba(255, 255, 255, 0.18);
+  --seo-strong-color: #e6ebf5;
+  --seo-gradient-hero: linear-gradient(150deg, #070a10 0%, #0c1118 60%, #070a10 100%);
+  --seo-footer-bg: #070a10;
+  --seo-iframe-bg: #070a10;
+}
+
+/* the report shell must never paint over the desk background */
+body.landing-page.insights-page { background: var(--dk-bg) !important; }
+
+/* report headings pick up the display face used everywhere else */
+body.insights-page .seo-hero-title,
+body.insights-page .seo-section-title,
+body.insights-page .seo-static-content h1,
+body.insights-page .seo-static-content h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  letter-spacing: -0.028em;
+}
+
+/* insights-seo.css ships a full-bleed hero; the desk nav already sits above
+   it, so drop the duplicated top padding */
+body.insights-page .seo-hero { padding-top: 34px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE SHELF — pages/insights/index.html (body.inshub-desk).
+
+   Not a card grid. A published-research index reads as rows: the figure that
+   makes the report worth opening, then what it is, then when it ran. The hub
+   carries no dashboard, so it does not load insights-seo.css at all and this
+   section owns its markup outright.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.inshub-desk { --ish: #60A5FA; }
+body.inshub-desk .ish { max-width: 1180px; margin: 0 auto; padding: 0 32px 96px; }
+
+body.inshub-desk .ish-crumb {
+  display: flex;
+  gap: 9px;
+  padding: 26px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+body.inshub-desk .ish-crumb a { color: #5f6b80; text-decoration: none; }
+body.inshub-desk .ish-crumb a:hover { color: var(--dk-mute); }
+
+/* ── masthead ─────────────────────────────────────────────────────────────── */
+body.inshub-desk .ish-head { padding: 40px 0 42px; border-bottom: 1px solid var(--dk-line); }
+body.inshub-desk .ish-kicker {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ish);
+  margin: 0 0 16px;
+}
+body.inshub-desk .ish-h1 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: clamp(31px, 4.3vw, 49px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: var(--dk-ink);
+  margin: 0;
+  max-width: 15ch;
+}
+body.inshub-desk .ish-lede {
+  margin: 20px 0 0;
+  max-width: 60ch;
+  font-size: 16px;
+  line-height: 1.66;
+  color: var(--dk-mute);
+}
+body.inshub-desk .ish-headcta {
+  display: inline-block;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--ish);
+  text-decoration: none;
+}
+body.inshub-desk .ish-headcta:hover { text-decoration: underline; }
+
+/* ── the shelf ────────────────────────────────────────────────────────────── */
+body.inshub-desk .ish-row {
+  display: grid;
+  grid-template-columns: 172px minmax(0, 1fr) 150px;
+  gap: 40px;
+  align-items: start;
+  padding: 30px 0;
+  border-bottom: 1px solid var(--dk-line);
+  text-decoration: none;
+  position: relative;
+  transition: background 0.16s ease;
+}
+/* a hairline in the gutter is the row's answer to a card lift */
+body.inshub-desk .ish-row::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 28px;
+  bottom: 28px;
+  width: 2px;
+  background: var(--ish);
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+body.inshub-desk .ish-row:hover { background: rgba(255, 255, 255, 0.022); }
+body.inshub-desk .ish-row:hover::before { opacity: 1; }
+
+body.inshub-desk .ish-fig { padding-top: 2px; }
+body.inshub-desk .ish-num {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--dk-ink);
+}
+body.inshub-desk .ish-numlabel {
+  display: block;
+  margin-top: 9px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  line-height: 1.45;
+}
+
+body.inshub-desk .ish-cat {
+  margin: 0 0 9px;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ish);
+}
+body.inshub-desk .ish-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1.24;
+  letter-spacing: -0.025em;
+  color: var(--dk-ink);
+  margin: 0 0 10px;
+}
+body.inshub-desk .ish-row:hover .ish-title { color: #fff; }
+body.inshub-desk .ish-desc {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: var(--dk-mute);
+  max-width: 64ch;
+}
+
+body.inshub-desk .ish-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  text-align: right;
+  padding-top: 4px;
+}
+body.inshub-desk .ish-date {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  color: #5f6b80;
+  white-space: nowrap;
+}
+body.inshub-desk .ish-cta { font-size: 13px; color: var(--ish); white-space: nowrap; }
+
+body.inshub-desk .ish-empty { padding: 60px 0; color: var(--dk-dim); font-size: 15px; }
+
+/* ── close ────────────────────────────────────────────────────────────────── */
+body.inshub-desk .ish-close {
+  margin-top: 56px;
+  padding: 34px 36px;
+  border: 1px solid var(--dk-line);
+  border-radius: 20px;
+  background: linear-gradient(155deg, rgba(96, 165, 250, 0.11), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 34px;
+  align-items: center;
+}
+body.inshub-desk .ish-close h2 {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.028em;
+  color: var(--dk-ink);
+  margin: 0 0 10px;
+}
+body.inshub-desk .ish-close p { margin: 0; font-size: 15px; line-height: 1.66; color: var(--dk-mute); max-width: 62ch; }
+body.inshub-desk .ish-closeacts { display: flex; gap: 12px; flex-wrap: wrap; }
+
+@media (max-width: 900px) {
+  body.inshub-desk .ish { padding: 0 20px 70px; }
+  body.inshub-desk .ish-row { grid-template-columns: 1fr; gap: 16px; padding: 26px 0; }
+  body.inshub-desk .ish-row::before { display: none; }
+  body.inshub-desk .ish-num { font-size: 32px; }
+  body.inshub-desk .ish-numlabel { display: inline; margin-left: 8px; }
+  body.inshub-desk .ish-meta {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-align: left;
+  }
+  body.inshub-desk .ish-close { grid-template-columns: 1fr; gap: 22px; padding: 28px 22px; }
+}

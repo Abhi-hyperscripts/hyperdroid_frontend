@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-IN" data-theme="dark">
+<html lang="en-IN" data-theme="dark" data-insights-theme="dark">
 <head>
     <!-- The desk language is dark-only; lock the theme before first paint. -->
     <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
@@ -53,16 +53,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/theme.css">
     <link rel="stylesheet" href="/css/landing.css">
-    <link rel="stylesheet" href="/css/insights-seo.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
-    <script>document.write('<link rel="stylesheet" href="../../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../../css/content-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="stylesheet" href="/css/landing-desk.css">
+    <link rel="stylesheet" href="/css/content-desk.css">
+    <link rel="stylesheet" href="/css/insights-desk.css">
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
-<body class="landing-page insights-page desk-landing content-desk">
+<body class="landing-page desk-landing content-desk inshub-desk">
       <div class="dk-wrap">
     <nav class="dk-nav">
       <a class="dk-logo" href="../../index.html" aria-label="Ragenaizer — home">
@@ -77,28 +77,46 @@
       <a class="dk-navcta" href="../login.html">Sign in</a>
     </nav>
 
-    <main class="insights-hub">
-        <div class="insights-hub-container">
-            <!-- Breadcrumb -->
-            <nav class="seo-breadcrumb" aria-label="Breadcrumb">
-                <a href="/">Home</a>
-                <span class="seo-breadcrumb-sep">/</span>
-                <span>Insights</span>
-            </nav>
+    <main class="ish">
+      <nav class="ish-crumb" aria-label="Breadcrumb">
+        <a href="../../index.html">Home</a><span>/</span><span>Insights</span>
+      </nav>
 
-            <div class="insights-hub-header">
-                <h1>Research Insights & Survey Reports</h1>
-                <p class="insights-hub-subtitle">AI-powered analysis of survey data. Explore interactive dashboards with executive summaries, key findings, and detailed analytics.</p>
-            </div>
+      <header class="ish-head">
+        <p class="ish-kicker">Published research</p>
+        <h1 class="ish-h1">Reports we ran on our own research desk.</h1>
+        <p class="ish-lede">
+          Every report below was built in Ragenaizer Research — the same module our
+          customers use. Fieldwork or sources in, cleaning and cross-tabs in the
+          middle, an interactive dashboard out. Nothing here was assembled by hand
+          in a slide deck, which is the point: this is what the product does when
+          you point it at a real question.
+        </p>
+        <a class="ish-headcta" href="../research.html">See how Research works &rarr;</a>
+      </header>
 
-            <div id="insights-hub-grid" class="insights-hub-grid">
-                <!-- Cards rendered by JS from manifest.json -->
-            </div>
+      <div id="insights-hub-grid" class="ish-shelf">
+        <!-- rows rendered from manifest.json -->
+      </div>
 
-            <div id="insights-hub-empty" class="insights-hub-empty" style="display:none;">
-                <p>No reports published yet. Check back soon.</p>
-            </div>
+      <div id="insights-hub-empty" class="ish-empty" style="display:none;">
+        <p>No reports published yet. Check back soon.</p>
+      </div>
+
+      <section class="ish-close">
+        <div>
+          <h2>Run this on your own question.</h2>
+          <p>
+            Survey design, distribution, response cleaning, weighting, cross-tabs and
+            the dashboard — one module, one licence, no separate analytics tool. Reports
+            publish to a link like the ones above, or stay private to your tenant.
+          </p>
         </div>
+        <div class="ish-closeacts">
+          <a class="dk-btn1" href="../research.html">Research module</a>
+          <a class="dk-btn2" href="../pricing.html">See pricing</a>
+        </div>
+      </section>
     </main>
 
         <footer class="dk-foot">
@@ -117,31 +135,6 @@
       </div>
     </footer>
   </div>
-    <script>
-    // Theme toggle for insights hub
-    (function() {
-        var KEY = '_rz_insights_theme';
-        var saved = localStorage.getItem(KEY) || 'light';
-        document.documentElement.setAttribute('data-insights-theme', saved);
-        document.body.classList.add('insights-page');
-
-        function toggle() {
-            var cur = document.documentElement.getAttribute('data-insights-theme');
-            var next = cur === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-insights-theme', next);
-            localStorage.setItem(KEY, next);
-        }
-
-        var btn = document.createElement('button');
-        btn.className = 'seo-theme-toggle';
-        btn.setAttribute('aria-label', 'Toggle dark/light mode');
-        btn.innerHTML = '<svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-        btn.addEventListener('click', toggle);
-        var header = document.querySelector('.insights-hub-header');
-        if (header) { header.style.position = 'relative'; header.appendChild(btn); }
-        else { document.body.appendChild(btn); }
-    })();
-    </script>
     <script>
     (function() {
         'use strict';
@@ -178,19 +171,31 @@
                     } catch(e) {}
                 }
 
+                var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                function niceDate(iso) {
+                    if (!iso) return '';
+                    var p = String(iso).split('-');
+                    if (p.length !== 3) return iso;
+                    return (MONTHS[+p[1] - 1] || '') + ' ' + (+p[2]) + ', ' + p[0];
+                }
+
                 grid.innerHTML = reports.map(function(r) {
+                    var stat = r.hero_stat || {};
                     return `
-                    <a href="/pages/insights/${r.slug}.html" class="insights-card">
-                        <div class="insights-card-header">
-                            <span class="insights-card-category">${r.category || 'Research'}</span>
-                            ${r.hero_stat ? `<span class="insights-card-stat">${r.hero_stat.value} <small>${r.hero_stat.label}</small></span>` : ''}
-                        </div>
-                        <h2 class="insights-card-title">${r.title}</h2>
-                        <p class="insights-card-desc">${r.meta_description || ''}</p>
-                        <div class="insights-card-footer">
-                            <span class="insights-card-date">${r.date_published || ''}</span>
-                            <span class="insights-card-cta">Read Report &rarr;</span>
-                        </div>
+                    <a href="/pages/insights/${r.slug}.html" class="ish-row">
+                      <div class="ish-fig">
+                        <span class="ish-num">${stat.value || ''}</span>
+                        <span class="ish-numlabel">${stat.label || ''}</span>
+                      </div>
+                      <div class="ish-body">
+                        <p class="ish-cat">${r.category || 'Research'}</p>
+                        <h2 class="ish-title">${r.title}</h2>
+                        <p class="ish-desc">${r.meta_description || ''}</p>
+                      </div>
+                      <div class="ish-meta">
+                        <span class="ish-date">${niceDate(r.date_published)}</span>
+                        <span class="ish-cta">Open report &rarr;</span>
+                      </div>
                     </a>`;
                 }).join('');
             } catch (err) {
