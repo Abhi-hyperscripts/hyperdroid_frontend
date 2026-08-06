@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="dark">
 <head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
@@ -11,7 +13,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
-    <title>Accounts - Online Accounting & Bookkeeping Software | Multi-Currency, GST Ready | Ragenaizer</title>
+    <title>Accounts - Online Accounting &amp; Bookkeeping Software | Multi-Currency, GST Ready | Ragenaizer</title>
     <meta name="description" content="Run your books, raise invoices, capture bills, manage purchase orders, reconcile bank statements, file GST returns and close the period — all in one accounting platform. Multi-currency, audit-ready, with one customer record across every product.">
 
     <!-- SEO Meta Tags -->
@@ -24,7 +26,7 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Ragenaizer">
     <meta property="og:url" content="https://ragenaizer.com/pages/accounts.html">
-    <meta property="og:title" content="Accounts - Online Accounting Software | Multi-Currency & GST Ready">
+    <meta property="og:title" content="Accounts - Online Accounting Software | Multi-Currency &amp; GST Ready">
     <meta property="og:description" content="Invoices, bills, purchase orders, bank reconciliation, GST returns, fixed assets, payroll-to-finance, period close. One accounting platform for the whole business.">
     <meta property="og:image" content="https://ragenaizer.com/assets/og-image.png">
     <meta property="og:image:width" content="1200">
@@ -64,7 +66,12 @@
         "description": "Complete online accounting platform with invoicing, vendor bills, purchase orders, proforma invoices, debit notes, multi-currency, bank reconciliation, GST/VAT returns, fixed assets depreciation, expense claims, subscription billing, period close and audit trail.",
         "url": "https://ragenaizer.com/pages/accounts.html",
         "author": { "@type": "Organization", "name": "Ragenaizer" },
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "offers": {
+            "@type": "Offer",
+            "price": "1200",
+            "priceCurrency": "INR",
+            "description": "Per user per month, billed annually as a fixed seat block. Exclusive of GST."
+        },
         "featureList": [
             "Customer Invoicing with Approval Workflow",
             "Accounts Receivable & AR Aging",
@@ -102,408 +109,406 @@
             "Full Audit Trail and Export",
             "Single Customer Record Across CRM, PMS and Procurement",
             "Payroll-to-Finance Integration with HRMS"
-        ],
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.9",
-            "ratingCount": "1480"
-        }
+        ]
     }
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script>document.write('<link rel="stylesheet" href="../css/landing-theme.css?v=' + CACHE_VERSION + '">');</script>
+
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/accounts-desk.css?v=' + CACHE_VERSION + '">');</script>
 </head>
-<body class="landing-page landing-accounts">
-    <!-- Navigation -->
-    <div id="navbar"></div>
+<body class="landing-page desk-landing accounts-desk">
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-bg">
-            <div class="hero-gradient"></div>
-            <div class="hero-grid"></div>
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="research.html">Research</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <!-- ══ Hero ══════════════════════════════════════════════════════════════
+         Finance buyers do not want to be told the books are accurate. They
+         want to see what the software does to them. So the page opens with
+         the claim and then, immediately, the evidence. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>Finance &amp; accounting</div>
+      <h1 class="dk-h1">Your books post<br>as you work.</h1>
+      <p class="dk-sub">Invoices, bills, purchase orders, stock, payroll and depreciation all write their own entries. Nothing waits for a month-end data dump, and nothing has to be re-keyed from another system to get there.</p>
+      <p class="ac-note">Pick a document below and watch what it does to the ledger</p>
+    </header>
+
+    <!-- The posting bench: the one thing on this page you operate. -->
+    <div class="ac-bench" id="bench">
+      <div class="ac-chips" role="group" aria-label="Choose a document" id="acChips"></div>
+      <div class="ac-body">
+        <div class="ac-doc">
+          <p class="ac-kick">The document</p>
+          <p class="ac-docno" id="acNo"></p>
+          <h2 class="ac-party" id="acParty"></h2>
+          <p class="ac-meta" id="acMeta"></p>
+          <div class="ac-items" id="acItems"></div>
+          <p class="ac-total" id="acTotal"></p>
+          <span class="ac-chip" id="acStatus"></span>
         </div>
-
-        <div class="hero-content">
-            <div class="hero-text">
-                <div class="hero-badge">Finance & Accounting</div>
-                <h1 class="hero-title">
-                    Run your books<br>
-                    <span class="highlight">like a finance team.</span>
-                </h1>
-                <p class="hero-description">
-                    Invoices, bills, purchase orders, bank reconciliation, tax returns and period close — all in one accounting platform that the rest of your business already feeds into. No more chasing numbers across spreadsheets.
-                </p>
-                <div class="hero-actions">
-                    <a href="activate.html" class="btn-primary">Get Started Free</a>
-                    <a href="#features" class="btn-secondary">See What's Inside</a>
-                </div>
-                <div class="hero-stats">
-                    <div class="stat-item">
-                        <div class="stat-value">Audit</div>
-                        <div class="stat-label">Ready</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">Any</div>
-                        <div class="stat-label">Currency</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">GST/VAT</div>
-                        <div class="stat-label">Compliant</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="hero-visual">
-                <div class="hero-mockup">
-                    <div class="mockup-header">
-                        <span class="mockup-dot"></span>
-                        <span class="mockup-dot"></span>
-                        <span class="mockup-dot"></span>
-                    </div>
-                    <div class="mockup-content">
-                        <svg width="100%" height="200" viewBox="0 0 400 200" fill="none">
-                            <!-- Top KPI cards -->
-                            <rect x="10" y="10" width="120" height="55" rx="8" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.30)" stroke-width="1"/>
-                            <text x="22" y="30" fill="rgba(255, 255, 255, 0.65)" font-size="9">Receivable</text>
-                            <text x="22" y="50" fill="rgba(255, 255, 255, 0.95)" font-size="15" font-weight="bold">$184,520</text>
-
-                            <rect x="140" y="10" width="120" height="55" rx="8" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.30)" stroke-width="1"/>
-                            <text x="152" y="30" fill="rgba(255, 255, 255, 0.65)" font-size="9">Payable</text>
-                            <text x="152" y="50" fill="rgba(255, 255, 255, 0.95)" font-size="15" font-weight="bold">$67,840</text>
-
-                            <rect x="270" y="10" width="120" height="55" rx="8" fill="rgba(59, 130, 246, 0.15)" stroke="rgba(59, 130, 246, 0.30)" stroke-width="1"/>
-                            <text x="282" y="30" fill="rgba(255, 255, 255, 0.65)" font-size="9">Cash on Hand</text>
-                            <text x="282" y="50" fill="rgba(255, 255, 255, 0.95)" font-size="15" font-weight="bold">$412,300</text>
-
-                            <!-- Mini bar chart -->
-                            <rect x="10" y="80" width="380" height="60" rx="6" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
-                            <text x="22" y="98" fill="rgba(255, 255, 255, 0.55)" font-size="9">Cash flow — last 6 months</text>
-                            <rect x="35"  y="115" width="20" height="20" rx="2" fill="rgba(16, 185, 129, 0.55)"/>
-                            <rect x="75"  y="108" width="20" height="27" rx="2" fill="rgba(16, 185, 129, 0.55)"/>
-                            <rect x="115" y="120" width="20" height="15" rx="2" fill="rgba(16, 185, 129, 0.55)"/>
-                            <rect x="155" y="105" width="20" height="30" rx="2" fill="rgba(16, 185, 129, 0.55)"/>
-                            <rect x="195" y="100" width="20" height="35" rx="2" fill="rgba(16, 185, 129, 0.55)"/>
-                            <rect x="235" y="95"  width="20" height="40" rx="2" fill="rgba(16, 185, 129, 0.55)"/>
-                            <text x="295" y="125" fill="rgba(255, 255, 255, 0.85)" font-size="11" font-weight="bold">+18.4%</text>
-
-                            <!-- Bottom rows: invoice list -->
-                            <rect x="10" y="155" width="380" height="14" rx="3" fill="rgba(255, 255, 255, 0.04)"/>
-                            <rect x="10" y="175" width="380" height="14" rx="3" fill="rgba(255, 255, 255, 0.04)"/>
-                            <text x="22" y="166" fill="rgba(255, 255, 255, 0.65)" font-size="9">INV-2026-0184  ·  Acme Corp  ·  Paid</text>
-                            <text x="22" y="186" fill="rgba(255, 255, 255, 0.65)" font-size="9">INV-2026-0185  ·  Globex Ltd  ·  Sent</text>
-                        </svg>
-                    </div>
-                </div>
-            </div>
+        <div class="ac-je">
+          <p class="ac-kick">What it posts, the moment it is approved</p>
+          <div id="acLines"></div>
+          <div class="ac-sum">
+            <span>Debits <b id="acDr"></b> &nbsp;·&nbsp; Credits <b id="acCr"></b></span>
+            <span id="acBal"></span>
+          </div>
+          <p class="ac-foot" id="acFoot"></p>
         </div>
+      </div>
+    </div>
+
+    <!-- ══ The real screen ══ -->
+    <section class="dk-section dk-reveal">
+      <div class="dk-kicker">The actual product</div>
+      <h2 class="dk-h2">This is the first screen after you sign in.</h2>
+      <p class="dk-lede">Cash position, what is owed to you and by whom, what is going out, and the four things that need a decision today — before you have opened a single report.</p>
+      <figure class="ac-shot" style="margin-top:36px">
+        <img src="../assets/screens/app-accounts.png" alt="Ragenaizer Accounts — cash position, overdue receivables and payables, stock expiring soon and pending approvals" width="1600" height="1000" loading="lazy">
+        <figcaption><b>Money</b> — cash position, receivables and payables ageing, and the month's revenue against expenses.</figcaption>
+      </figure>
     </section>
 
-    <!-- Features Section -->
-    <section class="features-section" id="features">
-        <div class="section-header">
-            <div class="section-badge">Features</div>
-            <h2 class="section-title">Everything finance teams need. Nothing they don't.</h2>
-            <p class="section-description">
-                A complete accounting platform built for fast-moving companies. Send invoices in seconds, capture vendor bills, run payroll into the GL, file GST returns and close the period with confidence.
-            </p>
+    <!-- ══ Coverage ══ -->
+    <section class="dk-section dk-reveal" id="covers">
+      <div class="dk-kicker">What it covers</div>
+      <h2 class="dk-h2">A finance department's worth of ground.</h2>
+      <p class="dk-lede">Not a light invoicing tool with an accounting label on it. Receivables through to year-end close, with the awkward parts — depreciation, metered billing, period locks, statutory returns — actually built rather than left to a spreadsheet.</p>
+      <div class="dk-grid">
+        <div class="dk-card" style="--accent:#22c55e">
+          <div class="ic" style="background:#22c55e22"><svg viewBox="0 0 24 24" stroke="#22c55e" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg></div>
+          <h3>Receivables</h3><p>Branded invoices, partial payments across several invoices at once, customer statements, and an ageing report that tells you exactly who to chase.</p>
         </div>
-
-        <div class="features-grid">
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Send Invoices in Seconds</h3>
-                <p class="feature-description">Create branded customer invoices, approve them with one click, and email them straight to your customer. Approved invoices automatically post to the ledger so your books stay current. Bulk-create invoices when you need to bill an entire customer list.</p>
-            </div>
-
-            <div class="feature-card amber">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Get Paid Faster</h3>
-                <p class="feature-description">Track every payment against every invoice with partial payments, multi-invoice allocation and automatic balance updates. Customer statements show invoices, payments, credits and outstanding balance in one view. AR aging tells you exactly who to chase.</p>
-            </div>
-
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Estimates That Convert</h3>
-                <p class="feature-description">Send proforma invoices to lock in deals before they hit the books. The estimate has zero financial impact until your customer accepts — then convert it to a real invoice with a single click. Auto-numbered, with full status tracking from draft to invoiced.</p>
-            </div>
-
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Capture Every Vendor Bill</h3>
-                <p class="feature-description">Record vendor bills, approve them, schedule payments and pay in full or in part. AP aging surfaces what's overdue. Vendor statements give you a clean reconciliation against the supplier's books. Bulk-create bills when you've got a stack to process.</p>
-            </div>
-
-            <div class="feature-card purple">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                        <path d="M9 16l2 2 4-4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Purchase Orders, End to End</h3>
-                <p class="feature-description">Raise purchase orders, route them for approval, send them to vendors, mark them received, and convert received POs straight into vendor bills. Auto-numbered with full status visibility (draft → approved → sent → received → billed). Approval automatically posts to the ledger.</p>
-            </div>
-
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="4" y1="9" x2="20" y2="9"/>
-                        <line x1="4" y1="15" x2="20" y2="15"/>
-                        <line x1="10" y1="3" x2="8" y2="21"/>
-                        <line x1="16" y1="3" x2="14" y2="21"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Multi-Currency, Everywhere</h3>
-                <p class="feature-description">Bill an Indian customer in INR, a US customer in USD and a European supplier in EUR — all from the same chart of accounts. Currency lives on every invoice, bill, PO, asset and journal entry. Trade across borders without spinning up a second instance.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 14V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v8"/>
-                        <path d="M2 14h20"/>
-                        <path d="M5 18l2 2 2-2"/>
-                        <path d="M15 18l2 2 2-2"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Bank Reconciliation, Sanely</h3>
-                <p class="feature-description">Connect every bank account to its GL account, record manual transactions, run inter-bank transfers, and walk through reconciliation in three clean steps — start the session, match transactions, complete. Razorpay and Stripe payments flow in automatically via signed webhooks.</p>
-            </div>
-
-            <div class="feature-card indigo">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <path d="M9 12l2 2 4-4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">GST, VAT and TDS Done Right</h3>
-                <p class="feature-description">Configure tax for any country, manage rates, maintain HSN/SAC codes, and generate GSTR-1, GSTR-3B and TDS return reports for any date range. India users get one-click GST setup. The on-the-fly tax calculator answers "how much tax on this amount?" without leaving the screen.</p>
-            </div>
-
-            <div class="feature-card teal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
-                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Chart of Accounts You Can Trust</h3>
-                <p class="feature-description">Build your chart of accounts as a tree, set opening balances, group accounts however you like, and pull a balances report whenever you need it. Start from a pre-built template for your industry or country, or import your existing accounts from CSV.</p>
-            </div>
-
-            <div class="feature-card slate">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 3h18v18H3z"/>
-                        <path d="M9 9h6v6H9z"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Manual Journals When You Need Them</h3>
-                <p class="feature-description">Post a journal entry across multiple accounts, lock or unlock it, reverse it cleanly when something changes. Multiple journal types (general, sales, purchase, adjustments) keep your ledger organized. Every action is logged with who did it and when.</p>
-            </div>
-
-            <div class="feature-card amber">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                        <polyline points="9 22 9 12 15 12 15 22"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Fixed Assets & Depreciation</h3>
-                <p class="feature-description">Register every asset, set its category and depreciation method, and run depreciation in one batch for all active assets — every entry posts to the ledger automatically. View the full depreciation schedule per asset. Dispose or sell assets and the system calculates the gain or loss for you.</p>
-            </div>
-
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M22 12l-3-3-3 3"/>
-                        <path d="M19 9v8"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Expense Claims, Without the Mess</h3>
-                <p class="feature-description">Set per-category expense policies, let employees submit claims with itemized expenses, route them through approval, and reimburse from any bank account. The reimbursement automatically books the GL entry. No more chasing receipts in inbox threads.</p>
-            </div>
-
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        <path d="M8 9h8M8 13h6"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Recurring & Usage-Based Billing</h3>
-                <p class="feature-description">Set up subscription plans, attach customers, and the system generates the next invoice for every due subscription in one batch. Need metered billing? Define usage meters, record usage events and bill what's been consumed. Customer token wallets handle prepaid balances.</p>
-            </div>
-
-            <div class="feature-card purple">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 3v18h18"/>
-                        <path d="M7 14l4-4 4 4 5-5"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Reports That Actually Match</h3>
-                <p class="feature-description">Trial balance, P&L, balance sheet, cash flow, ledger view, day book, cash book, AR aging, AP aging — every report ties back to the same source of truth. Export anything to share with auditors, investors or your accountant.</p>
-            </div>
-
-            <div class="feature-card pink">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Period & Year-End Close</h3>
-                <p class="feature-description">Manage fiscal years and accounting periods, lock periods so nobody backdates entries, run a closing checklist with line-item sign-off, and execute year-end close when the books are tied. Closing becomes a clean process instead of a panic.</p>
-            </div>
-
-            <div class="feature-card cyan">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Approvals With Real SLAs</h3>
-                <p class="feature-description">Sales, project and procurement teams submit "create this client / vendor" requests for finance review. Finance approves or rejects from one queue, and you get a real SLA report showing breach rate, average review time and pending counts by type. No more bottlenecks at the end of the month.</p>
-            </div>
-
-            <div class="feature-card teal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 11l3 3L22 4"/>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Audit Trail You Can Actually Use</h3>
-                <p class="feature-description">Every change, approval, posting and deletion is captured with the user, the timestamp and the before/after values. Pull logs by entity, by date or by user. Export the whole thing for your auditor. Critical actions like deletes and reversals are flagged.</p>
-            </div>
+        <div class="dk-card" style="--accent:#FB923C">
+          <div class="ic" style="background:#FB923C22"><svg viewBox="0 0 24 24" stroke="#FB923C" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <h3>Payables</h3><p>Vendor bills, scheduled payments, part payments and an AP ageing. Vendor statements reconcile cleanly against the supplier's own books.</p>
         </div>
+        <div class="dk-card" style="--accent:#A78BFA">
+          <div class="ic" style="background:#A78BFA22"><svg viewBox="0 0 24 24" stroke="#A78BFA" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><path d="M9 16l2 2 4-4"/></svg></div>
+          <h3>Purchase orders</h3><p>Raise, approve, send, receive, then convert a received PO straight into a vendor bill. Numbered, and visible at every step of the way.</p>
+        </div>
+        <div class="dk-card" style="--accent:#60A5FA">
+          <div class="ic" style="background:#60A5FA22"><svg viewBox="0 0 24 24" stroke="#60A5FA" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+          <h3>Estimates</h3><p>Proforma invoices with no financial effect until the customer accepts — then one click turns the estimate into a real, posted invoice.</p>
+        </div>
+        <div class="dk-card" style="--accent:#4CC9F0">
+          <div class="ic" style="background:#4CC9F022"><svg viewBox="0 0 24 24" stroke="#4CC9F0" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <h3>Inventory</h3><p>Batches, expiry dates, multiple locations and FIFO layers — with stock movements and the ledger kept in agreement rather than reconciled after the fact.</p>
+        </div>
+        <div class="dk-card" style="--accent:#2DD4BF">
+          <div class="ic" style="background:#2DD4BF22"><svg viewBox="0 0 24 24" stroke="#2DD4BF" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v8"/><path d="M2 14h20"/><path d="M5 18l2 2 2-2"/><path d="M15 18l2 2 2-2"/></svg></div>
+          <h3>Banking</h3><p>Every bank account wired to its GL account, inter-bank transfers, and reconciliation in three steps. Razorpay and Stripe receipts arrive on signed webhooks.</p>
+        </div>
+        <div class="dk-card" style="--accent:#6366F1">
+          <div class="ic" style="background:#6366F122"><svg viewBox="0 0 24 24" stroke="#6366F1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Tax</h3><p>GST, VAT and TDS configured per country, with an HSN and SAC library. GSTR-1, GSTR-3B and TDS reports over any date range, and one-click India setup.</p>
+        </div>
+        <div class="dk-card" style="--accent:#E879F9">
+          <div class="ic" style="background:#E879F922"><svg viewBox="0 0 24 24" stroke="#E879F9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+          <h3>Fixed assets</h3><p>A register per asset with its own schedule, depreciation run in a batch that posts itself, and disposals with the gain or loss already worked out.</p>
+        </div>
+        <div class="dk-card" style="--accent:#F59E0B">
+          <div class="ic" style="background:#F59E0B22"><svg viewBox="0 0 24 24" stroke="#F59E0B" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 12l-3-3-3 3"/></svg></div>
+          <h3>Expenses</h3><p>Per-category policies, itemised claims from the people who spent the money, approval, then reimbursement that books its own entry.</p>
+        </div>
+        <div class="dk-card" style="--accent:#38BDF8">
+          <div class="ic" style="background:#38BDF822"><svg viewBox="0 0 24 24" stroke="#38BDF8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <h3>Recurring &amp; metered</h3><p>Subscriptions that raise the next invoice for everything due in one batch, usage meters for what customers actually consumed, and prepaid wallets.</p>
+        </div>
+        <div class="dk-card" style="--accent:#94A3B8">
+          <div class="ic" style="background:#94A3B822"><svg viewBox="0 0 24 24" stroke="#94A3B8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div>
+          <h3>Reports</h3><p>Trial balance, P&amp;L, balance sheet, cash flow, day book, cash book, ledger and both ageings — every one of them off the same set of postings.</p>
+        </div>
+        <div class="dk-card" style="--accent:#FBBF24">
+          <div class="ic" style="background:#FBBF2422"><svg viewBox="0 0 24 24" stroke="#FBBF24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h3>Period close</h3><p>Fiscal years and periods you can lock so nobody backdates into a closed month, a closing checklist with line-item sign-off, and a clean year-end run.</p>
+        </div>
+        <div class="dk-card" style="--accent:#f87171">
+          <div class="ic" style="background:#f8717122"><svg viewBox="0 0 24 24" stroke="#f87171" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <h3>Audit trail</h3><p>Every posting, approval, reversal and deletion captured with the user, the timestamp and the before and after values. Export the lot for the auditor.</p>
+        </div>
+        <div class="dk-card" style="--accent:#EC4899">
+          <div class="ic" style="background:#EC489922"><svg viewBox="0 0 24 24" stroke="#EC4899" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></div>
+          <h3>Multi-currency</h3><p>Bill in rupees, dollars and euros off one chart of accounts. Currency sits on the invoice, bill, PO, asset and journal — no second instance to run.</p>
+        </div>
+        <div class="dk-card" style="--accent:#818CF8">
+          <div class="ic" style="background:#818CF822"><svg viewBox="0 0 24 24" stroke="#818CF8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <h3>Approvals with SLAs</h3><p>Sales and procurement request a new client or vendor, finance clears it from one queue, and the SLA report shows breach rate and average review time.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Integration Section -->
-    <section class="features-section" id="platform">
-        <div class="section-header">
-            <div class="section-badge">One Platform</div>
-            <h2 class="section-title">One customer record across every product</h2>
-            <p class="section-description">
-                Accounts is the single source of truth for customers and vendors across the platform. When sales wins a deal in CRM, when a project starts in PMS, when procurement raises a vendor, when payroll runs in HRMS — it all flows back into one set of books.
-            </p>
-        </div>
-
-        <div class="features-grid">
-            <div class="feature-card green">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Sales → Books</h3>
-                <p class="feature-description">When CRM marks a deal won, the customer record is created in Accounts automatically. Sales never asks finance "what's the customer ID?" again. Tags, owner and custom fields flow through.</p>
-            </div>
-
-            <div class="feature-card blue">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7" rx="1"/>
-                        <rect x="14" y="3" width="7" height="7" rx="1"/>
-                        <rect x="3" y="14" width="7" height="7" rx="1"/>
-                        <rect x="14" y="14" width="7" height="7" rx="1"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Projects → Invoicing</h3>
-                <p class="feature-description">PMS projects bill the same customer record finance uses. Hit a milestone in PMS and raise an invoice in Accounts in two clicks — no double entry, no mismatched names, no orphaned IDs.</p>
-            </div>
-
-            <div class="feature-card orange">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 3h18v4H3z"/>
-                        <path d="M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7"/>
-                        <path d="M10 11h4"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Procurement → Vendor Bills</h3>
-                <p class="feature-description">When procurement receives a purchase order, the vendor bill is created in Accounts automatically. The same vendor master, the same GST number, the same payment terms — finance just approves and pays.</p>
-            </div>
-
-            <div class="feature-card amber">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Payroll → Finance</h3>
-                <p class="feature-description">When HRMS finalizes a payroll run, the salary expense journal lands in Accounts and the statutory payments (PF, ESI, TDS, professional tax) appear as vendor bills ready to pay. Finance closes the loop without re-keying a single number.</p>
-            </div>
-        </div>
+    <!-- ══ The thread — the argument for buying it here rather than alone ══ -->
+    <section class="dk-section dk-reveal" id="thread">
+      <div class="dk-kicker">One customer record</div>
+      <h2 class="dk-h2">The rest of the company already feeds it.</h2>
+      <p class="dk-lede">The reason books go wrong is rarely the accounting. It is the retyping between the system that made the promise and the system that has to account for it. Here there is nothing in between.</p>
+      <div class="dk-thread">
+        <div class="dk-trow" style="--c:#60A5FA"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">01</div><div class="dk-tw"><b>Deal marked won</b> — the customer record is created here, tags and owner intact<span class="dk-tsrc">CRM → Accounts</span></div><div class="dk-ta">no re-keying</div></div>
+        <div class="dk-trow" style="--c:#A78BFA"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">02</div><div class="dk-tw"><b>Milestone hit</b> — raise the invoice against that same customer, not a lookalike<span class="dk-tsrc">Projects → Accounts</span></div><div class="dk-ta">2 clicks</div></div>
+        <div class="dk-trow" style="--c:#FB923C"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">03</div><div class="dk-tw"><b>Purchase order received</b> — the vendor bill is waiting, on the same vendor master<span class="dk-tsrc">Procurement → Accounts</span></div><div class="dk-ta">same GSTIN</div></div>
+        <div class="dk-trow" style="--c:#4CC9F0"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">04</div><div class="dk-tw"><b>Payroll finalised</b> — salary journal posted, statutory dues raised as bills to pay<span class="dk-tsrc">HRMS → Accounts</span></div><div class="dk-ta">0 spreadsheets</div></div>
+        <div class="dk-trow" style="--c:#22c55e"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">05</div><div class="dk-tw"><b>Period locked</b> — the month is closed and stays closed<span class="dk-tsrc">Accounts</span></div><div class="dk-ta">signed off</div></div>
+        <div class="dk-tfoot"><span>5 products, one set of books</span><span>0 integrations to maintain</span></div>
+      </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="cta-container">
-            <h2 class="cta-title">Stop running your business on spreadsheets</h2>
-            <p class="cta-description">Move to a real accounting platform that the rest of your business already feeds into. Free to start.</p>
-            <div class="cta-actions">
-                <a href="activate.html" class="btn-primary">Get Started Free</a>
-                <a href="pricing.html" class="btn-secondary">See Pricing</a>
-            </div>
-        </div>
+    <!-- ══ Close ══ -->
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Stop running the business on spreadsheets.</h2>
+      <p>Move to books the rest of your company already writes into — and see the entry behind every number.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20Accounts%20—%20a%20walkthrough">Book a walkthrough →</a>
+      </div>
     </section>
 
-    <!-- Footer -->
-    <div id="footer"></div>
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="hrms.html">HRMS</a><a href="accounts.html">Accounts</a><a href="pms.html">Projects</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Company</strong>
+        <a href="pricing.html">Pricing</a><a href="research.html">Research</a><a href="lms.html">Learning</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">A product of Wisetrack Technologies LLP. Built in Noida, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
 
-    <!-- Global Components -->
-    <script src="/js/navbar.js"></script>
-    <script src="/js/footer.js"></script>
+  <script>
+    'use strict';
+
+    var AC_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ── the documents ────────────────────────────────────────────────────────
+       Illustrative entries, deliberately ordinary ones: an 18% GST sale, the
+       purchase behind it, the receipt that clears it, the stock that left, a
+       depreciation batch and a payroll hand-off. Every party is fictional.
+       Totals are summed from the lines below rather than written down, so a
+       set of lines that does not balance shows up on the page instead of
+       quietly reading as though it does. */
+    var DOCS = [
+      {
+        key: 'invoice',
+        items: [{ t: 'Consultancy retainer — August', a: '₹1,00,000' }, { t: 'GST at 18%', a: '₹18,000' }],
+        tab: 'Customer invoice',
+        accent: '#22c55e',
+        no: 'INV-2026-0184',
+        party: 'Palm Cove Resorts',
+        meta: 'Dated 6 August · consultancy retainer, one line · ₹1,00,000 plus GST at 18%',
+        status: 'Approved · posted',
+        lines: [
+          { dc: 'Dr', acct: 'Accounts Receivable', code: '1100', amt: 118000 },
+          { dc: 'Cr', acct: 'Sales — Services', code: '4100', amt: 100000 },
+          { dc: 'Cr', acct: 'Output CGST', code: '2310', amt: 9000 },
+          { dc: 'Cr', acct: 'Output SGST', code: '2311', amt: 9000 }
+        ],
+        foot: 'Approving the invoice posts it. There is no separate "push to accounts" step to forget, and the ageing report reflects it immediately.'
+      },
+      {
+        key: 'bill',
+        items: [{ t: 'Kraft board 300gsm — 2,000 sheets', a: '₹40,000' }, { t: 'GST at 18%, fully claimable', a: '₹7,200' }],
+        tab: 'Vendor bill',
+        accent: '#FB923C',
+        no: 'BILL-2026-0067',
+        party: 'Northwind Supplies',
+        meta: 'Dated 2 August · converted from PO-2026-0051 on receipt · ₹40,000 plus GST at 18%',
+        status: 'Approved · payable',
+        lines: [
+          { dc: 'Dr', acct: 'Purchases — Materials', code: '5100', amt: 40000 },
+          { dc: 'Dr', acct: 'Input CGST', code: '1360', amt: 3600 },
+          { dc: 'Dr', acct: 'Input SGST', code: '1361', amt: 3600 },
+          { dc: 'Cr', acct: 'Accounts Payable', code: '2100', amt: 47200 }
+        ],
+        foot: 'Input tax is split and held separately, so the credit you can claim is a number you can read rather than one you have to derive at return time.'
+      },
+      {
+        key: 'receipt',
+        items: [{ t: 'Allocated to INV-2026-0184', a: '₹1,18,000' }, { t: 'Left outstanding on that invoice', a: '₹0' }],
+        tab: 'Payment received',
+        accent: '#60A5FA',
+        no: 'RCPT-2026-0231',
+        party: 'Palm Cove Resorts',
+        meta: 'Dated 9 August · UPI, settled same day · allocated in full against INV-2026-0184',
+        status: 'Cleared',
+        lines: [
+          { dc: 'Dr', acct: 'Bank — Current Account', code: '1210', amt: 118000 },
+          { dc: 'Cr', acct: 'Accounts Receivable', code: '1100', amt: 118000 }
+        ],
+        foot: 'A receipt can be split across several invoices, or part-pay one. Razorpay and Stripe settlements arrive on a signed webhook and post themselves.'
+      },
+      {
+        key: 'stock',
+        items: [{ t: '40 boxes · FG-WEDCARD-50', a: '₹64,000' }, { t: 'Lots consumed, oldest first', a: 'WC2405, WC2406' }],
+        tab: 'Stock issued',
+        accent: '#4CC9F0',
+        no: 'DN-2026-0142',
+        party: 'Baddi warehouse',
+        meta: 'Dated 6 August · 40 boxes against INV-2026-0184 · FIFO layers consumed oldest first',
+        status: 'Delivered',
+        lines: [
+          { dc: 'Dr', acct: 'Cost of Goods Sold', code: '5200', amt: 64000 },
+          { dc: 'Cr', acct: 'Inventory — Finished Goods', code: '1310', amt: 64000 }
+        ],
+        foot: 'Stock and the ledger move in the same posting. That is why the closing stock figure on the balance sheet matches the warehouse without a reconciliation.'
+      },
+      {
+        key: 'depreciation',
+        items: [{ t: '14 active assets, this month', a: '₹62,500' }, { t: 'Charged to the July period', a: 'not yet locked' }],
+        tab: 'Depreciation run',
+        accent: '#E879F9',
+        no: 'DEP-2026-07',
+        party: 'July batch · 14 active assets',
+        meta: 'Run once for every active asset · written-down value method per asset category',
+        status: 'Posted',
+        lines: [
+          { dc: 'Dr', acct: 'Depreciation Expense', code: '5400', amt: 62500 },
+          { dc: 'Cr', acct: 'Accumulated Depreciation', code: '1250', amt: 62500 }
+        ],
+        foot: 'One run covers every asset. Each one keeps its own schedule, so disposing of an asset mid-life computes the gain or loss without anybody reaching for a calculator.'
+      },
+      {
+        key: 'payroll',
+        items: [{ t: 'Gross salaries · 34 staff', a: '₹8,40,000' }, { t: 'Less provident fund and TDS', a: '₹1,62,800' }, { t: 'Net payable to staff', a: '₹6,77,200' }],
+        tab: 'Payroll hand-off',
+        accent: '#4CC9F0',
+        no: 'PAY-2026-07',
+        party: 'July payroll · 34 staff',
+        meta: 'Finalised in HRMS and handed to finance · statutory dues also raised as bills to pay',
+        status: 'From HRMS',
+        lines: [
+          { dc: 'Dr', acct: 'Salaries & Wages', code: '5300', amt: 840000 },
+          { dc: 'Cr', acct: 'Provident Fund Payable', code: '2320', amt: 100800 },
+          { dc: 'Cr', acct: 'TDS Payable', code: '2330', amt: 62000 },
+          { dc: 'Cr', acct: 'Net Salary Payable', code: '2340', amt: 677200 }
+        ],
+        foot: 'Payroll is calculated once, in HRMS, and lands here as a journal. Nobody re-keys a salary figure into the books, so there is no version of it to disagree with.'
+      }
+    ];
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function inr(n) {
+      return '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    }
+
+    var selected = 0;
+
+    function mountChips() {
+      document.getElementById('acChips').innerHTML = DOCS.map(function (d, i) {
+        return '<button type="button" data-i="' + i + '" aria-pressed="' + (i === 0) + '" style="--bc:' +
+               d.accent + '"><i></i>' + esc(d.tab) + '</button>';
+      }).join('');
+      document.querySelectorAll('.ac-chips button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          selected = Number(b.dataset.i);
+          render();
+        });
+      });
+    }
+
+    function render() {
+      var d = DOCS[selected];
+      document.body.style.setProperty('--ac', d.accent);
+
+      document.querySelectorAll('.ac-chips button').forEach(function (b, i) {
+        b.setAttribute('aria-pressed', String(i === selected));
+      });
+
+      document.getElementById('acNo').textContent = d.no;
+      document.getElementById('acParty').textContent = d.party;
+      document.getElementById('acMeta').textContent = d.meta;
+      document.getElementById('acItems').innerHTML = (d.items || []).map(function (it) {
+        return '<div class="ac-item"><span>' + esc(it.t) + '</span><b>' + esc(it.a) + '</b></div>';
+      }).join('');
+      document.getElementById('acStatus').textContent = d.status;
+      document.getElementById('acFoot').textContent = d.foot;
+
+      var dr = 0, cr = 0;
+      document.getElementById('acLines').innerHTML = d.lines.map(function (l) {
+        if (l.dc === 'Dr') { dr += l.amt; } else { cr += l.amt; }
+        return '<div class="ac-line ' + (l.dc === 'Cr' ? 'cr' : 'dr') + '">' +
+                 '<span class="dc">' + l.dc + '</span>' +
+                 '<span class="acct">' + esc(l.acct) + '<span class="ac-code">a/c ' + esc(l.code) + '</span></span>' +
+                 '<span class="amt">' + inr(l.amt) + '</span>' +
+               '</div>';
+      }).join('');
+
+      /* The document total is the debit side of its own entry, so the headline
+         figure and the posting cannot drift apart. */
+      document.getElementById('acTotal').textContent = inr(dr);
+      document.getElementById('acDr').textContent = inr(dr);
+      document.getElementById('acCr').textContent = inr(cr);
+      document.getElementById('acBal').innerHTML = (dr === cr)
+        ? '<span class="ac-ok"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Balanced</span>'
+        : '<span class="ac-ok ac-bad">Out by ' + inr(Math.abs(dr - cr)) + '</span>';
+    }
+
+    mountChips();
+    render();
+
+    /* Sections settle in as they arrive; grids and thread rows assemble rather
+       than snapping in. Skipped entirely under reduced motion. */
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (AC_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 </body>
 </html>

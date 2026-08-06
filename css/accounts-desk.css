@@ -1,0 +1,296 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCOUNTS — "every document lands in the ledger".
+   Loaded after landing-desk.css and scoped to body.accounts-desk, so the nav,
+   hero type, section furniture, thread, buttons and footer all come from the
+   desk language and only the accounting-specific pieces live here.
+
+   The one thing an accountant wants to know about a new system is what it
+   does to the books. So the page shows it: pick a document, see the exact
+   journal entry it writes, with the debits and credits summed and checked in
+   front of you. Nothing else on a finance landing page earns its space more.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.accounts-desk {
+  --ac: #22c55e;                      /* accent of the selected document */
+}
+
+body.accounts-desk .dk-hero { padding: 56px 0 0; }
+body.accounts-desk .ac-note {
+  margin: 18px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #5f6b80;
+}
+
+/* ── the posting bench ────────────────────────────────────────────────────── */
+body.accounts-desk .ac-bench {
+  margin-top: 44px;
+  border-radius: 20px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  text-align: left;
+  position: relative;
+}
+body.accounts-desk .ac-bench::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(700px 320px at 10% -20%, var(--ac), transparent 70%);
+  opacity: 0.15;
+}
+body.accounts-desk .ac-bench > * { position: relative; }
+
+/* document picker — chips rather than equal tabs, because the labels are
+   uneven and six equal columns would waste half of each */
+body.accounts-desk .ac-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.4);
+}
+body.accounts-desk .ac-chips button {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--dk-mute);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+body.accounts-desk .ac-chips button i {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--bc);
+  display: block;
+  opacity: 0.55;
+}
+body.accounts-desk .ac-chips button:hover { color: var(--dk-ink); background: rgba(255, 255, 255, 0.08); }
+body.accounts-desk .ac-chips button[aria-pressed="true"] {
+  color: var(--dk-ink);
+  border-color: color-mix(in srgb, var(--bc) 55%, transparent);
+  background: color-mix(in srgb, var(--bc) 16%, transparent);
+}
+body.accounts-desk .ac-chips button[aria-pressed="true"] i { opacity: 1; box-shadow: 0 0 10px var(--bc); }
+body.accounts-desk .ac-chips button:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+
+body.accounts-desk .ac-body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: 0;
+}
+/* the seam between the document and its posting is the whole point of the
+   panel, so it is drawn rather than implied by whitespace */
+body.accounts-desk .ac-doc {
+  padding: 30px 32px 34px;
+  border-right: 1px solid var(--dk-line);
+}
+body.accounts-desk .ac-je { padding: 30px 32px 34px; }
+
+body.accounts-desk .ac-kick {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6f7b91;
+  margin: 0 0 18px;
+}
+
+body.accounts-desk .ac-docno {
+  font-family: var(--font-family-mono);
+  font-size: 15px;
+  color: var(--ac);
+  margin: 0;
+}
+body.accounts-desk .ac-party {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  color: var(--dk-ink);
+  margin: 7px 0 0;
+}
+body.accounts-desk .ac-meta {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dk-mute);
+}
+/* the document's own lines, as the person who raised it sees them. Setting
+   these opposite the journal entry is the whole comparison: the same event,
+   written once for a human and once for the ledger. */
+body.accounts-desk .ac-items {
+  margin: 20px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+body.accounts-desk .ac-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  color: var(--dk-mute);
+}
+body.accounts-desk .ac-item b {
+  font-family: var(--font-family-mono);
+  font-weight: 400;
+  font-size: 12.5px;
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+body.accounts-desk .ac-total {
+  margin: 22px 0 0;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-weight: 700;
+  font-size: 34px;
+  letter-spacing: -0.03em;
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+}
+body.accounts-desk .ac-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ac);
+  background: color-mix(in srgb, var(--ac) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ac) 38%, transparent);
+}
+
+/* ── the journal entry ────────────────────────────────────────────────────── */
+body.accounts-desk .ac-line {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 14px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+body.accounts-desk .ac-line .dc {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--dk-dim);
+}
+body.accounts-desk .ac-line.cr .dc { color: #6f7b91; }
+body.accounts-desk .ac-line .acct { font-size: 14px; color: var(--dk-ink); }
+/* credits sit in from the debits, the way a journal is written on paper */
+body.accounts-desk .ac-line.cr .acct { padding-left: 26px; color: var(--dk-mute); }
+body.accounts-desk .ac-line .amt {
+  font-family: var(--font-family-mono);
+  font-size: 13.5px;
+  color: var(--dk-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+body.accounts-desk .ac-line.cr .amt { color: var(--dk-mute); }
+body.accounts-desk .ac-code {
+  display: block;
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: #5f6b80;
+  margin-top: 2px;
+}
+
+/* the balance check — computed from the lines, not asserted */
+body.accounts-desk .ac-sum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--dk-line);
+  font-family: var(--font-family-mono);
+  font-size: 12.5px;
+  color: var(--dk-mute);
+  font-variant-numeric: tabular-nums;
+}
+body.accounts-desk .ac-sum b { color: var(--dk-ink); font-weight: 400; }
+body.accounts-desk .ac-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #4ade80;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+}
+body.accounts-desk .ac-ok svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.6; }
+body.accounts-desk .ac-bad { color: #f87171; }
+body.accounts-desk .ac-foot {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--dk-dim);
+}
+
+/* ── the real screen ──────────────────────────────────────────────────────── */
+body.accounts-desk .ac-shot {
+  margin: 0;
+  border-radius: 18px;
+  border: 1px solid var(--dk-line);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+body.accounts-desk .ac-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-bottom: 1px solid var(--dk-line);
+}
+body.accounts-desk .ac-shot figcaption {
+  padding: 15px 20px;
+  font-size: 13px;
+  color: var(--dk-dim);
+}
+body.accounts-desk .ac-shot figcaption b { color: var(--dk-ink); font-weight: 600; }
+
+/* ── responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 940px) {
+  body.accounts-desk .ac-body { grid-template-columns: 1fr; }
+  body.accounts-desk .ac-doc { border-right: 0; border-bottom: 1px solid var(--dk-line); }
+}
+@media (max-width: 620px) {
+  body.accounts-desk .ac-doc,
+  body.accounts-desk .ac-je { padding: 24px 20px 26px; }
+  body.accounts-desk .ac-chips { padding: 14px; }
+  /* the entry stays three columns even here — stacking the amount under the
+     account turns a journal into a list and loses the shape people read */
+  body.accounts-desk .ac-line { grid-template-columns: 22px 1fr auto; gap: 8px; }
+  body.accounts-desk .ac-line .acct { font-size: 13px; }
+  body.accounts-desk .ac-line .amt { font-size: 12px; }
+  body.accounts-desk .ac-line.cr .acct { padding-left: 12px; }
+  body.accounts-desk .ac-sum { font-size: 11.5px; padding: 12px 13px; }
+}
