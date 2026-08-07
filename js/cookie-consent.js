@@ -416,3 +416,75 @@
         getStatus: getConsent
     };
 })();
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Reveal failsafe.
+
+   `.dk-reveal` sections start at opacity 0 and are cleared by a small
+   IntersectionObserver inlined at the bottom of each page. That design fails
+   INVISIBLE: ship the markup without the script and every section below the
+   hero is blank forever, with nothing in the console to say so. Four
+   comparison pages went live in exactly that state.
+
+   This runs on every page — cookie-consent.js is the one file all of them
+   load. It keeps checking rather than sampling once, because on several pages
+   no `.dk-reveal` is in the viewport at the top of the page, so a single check
+   at load would see nothing stuck and wrongly conclude all was well.
+
+   Each sweep decides one of three things:
+     • some section has `is-in`      → an observer is present and working, stop
+     • a section is on screen and is still hidden → nothing is clearing them,
+       so reveal everything and stop
+     • nothing on screen yet         → keep watching
+   The worst case becomes a missing animation instead of a missing page.
+   ───────────────────────────────────────────────────────────────────────────── */
+(function () {
+    'use strict';
+    var detached = false, pending = false;
+
+    function detach() {
+        detached = true;
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+    }
+
+    function sweep() {
+        pending = false;
+        if (detached) return;
+        var all = document.querySelectorAll('.dk-reveal');
+        if (!all.length) { detach(); return; }
+
+        // an observer that works clears anything in view within a frame or two
+        for (var i = 0; i < all.length; i++) {
+            if (all[i].classList.contains('is-in')) { detach(); return; }
+        }
+
+        var vh = window.innerHeight || document.documentElement.clientHeight;
+        for (var j = 0; j < all.length; j++) {
+            var r = all[j].getBoundingClientRect();
+            if (r.top < vh && r.bottom > 0) {          // on screen, still hidden
+                for (var k = 0; k < all.length; k++) all[k].classList.add('is-in');
+                console.warn('[reveal] no observer on this page — force-revealed ' +
+                             all.length + ' section(s). The page was rendering blank.');
+                detach();
+                return;
+            }
+        }
+        // nothing in view yet; wait for the reader to scroll
+    }
+
+    function onScroll() {
+        if (pending || detached) return;
+        pending = true;
+        setTimeout(sweep, 250);
+    }
+
+    function start() {
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+        setTimeout(sweep, 2000);
+    }
+
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start);
+})();
