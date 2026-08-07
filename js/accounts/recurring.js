@@ -332,16 +332,22 @@ async function saveRecurring() {
         if (!accountId) { Toast.error('Please select a GL account'); return; }
         templateData = { lines: [{ description, quantity: 1, unit_price: amount, account_id: accountId }] };
 
+        // The key MUST be payment_terms_days — that is what the generator reads
+        // (due_date = occurrenceDate + payment_terms_days, falling back to 30) and what the template
+        // validator bounds to 0..3650. We previously wrote `due_days`, which no backend code reads: the
+        // value was silently discarded and every generated invoice/bill fell through to the same hardcoded
+        // 30, so the bug was invisible only because the dead key's value equalled the default. Making this
+        // number user-configurable while the key stayed wrong would have shipped a silent data bug.
         if (type === 'invoice') {
             const custId = customerDropdown?.getValue();
             if (!custId) { Toast.error('Please select a customer'); return; }
             templateData.customer_id = custId;
-            templateData.due_days = 30;
+            templateData.payment_terms_days = 30;
         } else if (type === 'bill') {
             const vendId = vendorDropdown?.getValue();
             if (!vendId) { Toast.error('Please select a vendor'); return; }
             templateData.vendor_id = vendId;
-            templateData.due_days = 30;
+            templateData.payment_terms_days = 30;
         }
     }
 
