@@ -234,20 +234,6 @@
             <li>Maintains smooth transitions between speakers</li>
         </ul>
 
-        <h2>Virtual Backgrounds & Real-Time Processing</h2>
-        <p>Virtual backgrounds require running machine learning models directly in your browser—no easy feat. Here's what happens when you enable a virtual background in Ragenaizer Vision:</p>
-
-        <ol>
-            <li><strong>Segmentation Model:</strong> A neural network (running on your GPU via WebGL) identifies which pixels are "you" vs "background"</li>
-            <li><strong>Mask Generation:</strong> Creates a real-time mask updated 30 times per second</li>
-            <li><strong>Background Replacement:</strong> Composites your image over the chosen background</li>
-            <li><strong>Edge Smoothing:</strong> Applies feathering to prevent harsh cutout edges</li>
-        </ol>
-
-        <div class="info-callout">
-            <p><strong>Privacy First:</strong> All virtual background processing happens locally on your device. Your raw camera feed never leaves your computer—only the processed video is transmitted.</p>
-        </div>
-
         <h2>Comparison: Consumer vs Enterprise Architecture</h2>
         <table class="comparison-table">
             <thead>
