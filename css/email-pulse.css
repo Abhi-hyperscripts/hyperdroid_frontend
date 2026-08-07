@@ -946,6 +946,18 @@ body.email-page .email-rail > *,
 body.email-page .email-list > *,
 body.email-page .email-read > * { position: relative; z-index: 1; }
 
+/* …but the scrolling list is the pane's BASE layer, not another peer.
+   Every direct child above gets z-index 1, and .email-rows is last in the
+   markup, so among equal peers it painted on top of all of them — and since
+   the pulse restyle gave it an opaque card background, anything that drops
+   down over it disappeared. That is what put the search-tips popover and the
+   move-to-folder menu behind the message list: both live in earlier siblings,
+   so their own z-index (10060 in the popover's case) was sealed inside that
+   sibling's stacking context and could never win.
+   Dropping the list to 0 fixes the whole class at once — any overlay in this
+   pane, now or later, sits above the list without needing to know about it. */
+body.email-page .email-rows { z-index: 0; }
+
 /* THE structural change: the message list becomes its own floating card
    inside the pane, the way .vis-rows does in the ledger. Rows stay flush for
    density — the depth comes from the container, not from spacing them out. */
