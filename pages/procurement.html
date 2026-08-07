@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en-IN" data-theme="dark">
+<head>
+    <!-- The desk language is dark-only; lock the theme before first paint. -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Procurement Software | RFQs, Vendor Quote Comparison, Split Awards | Ragenaizer, the business OS</title>
+    <meta name="description" content="Inquiry to purchase order with the comparison in between: RFQs to many vendors, a quote portal vendors use without an account, weighted comparison on price, quality and delivery, split awards per line item, and vendor performance measured from your own POs.">
+
+    <!-- SEO Meta Tags -->
+    <meta name="keywords" content="procurement software, RFQ software, vendor quote comparison, e-sourcing, purchase order software, vendor management, split award, vendor performance tracking, supplier portal, procurement India">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/procurement.html">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/procurement.html">
+    <meta property="og:title" content="Procurement — RFQs, quote comparison and split awards">
+    <meta property="og:description" content="One RFQ to many vendors, quotes back through a portal they never sign up for, and a comparison you can defend.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-procurement.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="Procurement — RFQs, quote comparison and split awards">
+    <meta name="twitter:description" content="One RFQ to many vendors, quotes back through a portal they never sign up for, and a comparison you can defend.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-procurement.png">
+
+    <!-- Additional SEO -->
+    <meta name="theme-color" content="#050810">
+
+    <!-- Schema: Breadcrumb -->
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://ragenaizer.com/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Products",
+            "item": "https://ragenaizer.com/#products"
+        },
+        {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Procurement",
+            "item": "https://ragenaizer.com/pages/procurement.html"
+        }
+    ]
+}
+    </script>
+
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Ragenaizer Procurement",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "Procurement from inquiry to purchase order: RFQs to many vendors, a quote portal vendors use without an account, weighted comparison on price, quality and delivery, split awards per line item, and vendor performance measured from your own purchase orders.",
+    "url": "https://ragenaizer.com/pages/procurement.html",
+    "author": {
+        "@type": "Organization",
+        "name": "Ragenaizer"
+    },
+    "offers": {
+        "@type": "Offer",
+        "price": "1200",
+        "priceCurrency": "INR",
+        "description": "Per user per month, billed annually as a fixed seat block. Exclusive of GST."
+    }
+}
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/bench-desk.css?v=' + CACHE_VERSION + '">');</script>
+
+    <!-- Schema.org: FAQ -->
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Do vendors need an account to quote?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. A quote comes back through a tokenised link — the vendor opens it, sees only the items you asked them about, and submits. Nothing to sign up for and nothing to reset."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Does the AI choose the vendor?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. The deterministic comparison — lowest per item, lowest total — is always computed and always available. Weighted scoring sits above it and the AI explanation above that. The AI describes a decision; it never makes one alone."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can we set what \"best\" means?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Price, quality and delivery carry weights you set, constrained to add up to a hundred so the scoring cannot be quietly tuned to reach a chosen answer."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What if one vendor is cheaper on only half the list?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Award the half. A split award is previewed before you commit, showing what each vendor covers and what the split costs against a single award."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "How do we answer \"why did we buy from them\" later?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The decision is stored with the comparison it came from, whether it followed the recommendation or overrode it, and the override reason if a human disagreed."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Where do vendor ratings come from?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Your own purchase orders. Promised delivery against actual, delay days and rejection rate are computed rather than typed in, alongside quality scores and response times."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Does it know our items by our names?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "A master item list carries synonyms and per-vendor name mappings, so the same part quoted under three descriptions still lines up in one comparison."
+            }
+        }
+    ]
+}
+    </script>
+</head>
+<body class="landing-page desk-landing procurement-desk bench-desk">
+
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="../index.html#how">How it fits</a><a href="compare/index.html">Compare</a>
+        <a href="pricing.html">Pricing</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <!-- ══ Hero ══════════════════════════════════════════════════════════════
+         Every tool can hold a vendor list. The question a buyer is actually
+         asked, usually months later by an auditor or a partner, is why this
+         vendor — on what comparison, under whose weights, and who overrode
+         it. That is the page. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>The business OS &middot; Buying &amp; vendors</div>
+      <h1 class="dk-h1">Three quotes, and<br>a reason on the file.</h1>
+      <p class="dk-sub">One inquiry goes out to the vendors who can actually supply it, their quotes come back through a portal they do not need an account for, and the comparison is arithmetic before it is an opinion &mdash; with the reason you picked whoever you picked written down beside the order.</p>
+      <p class="dk-replaces"><b>One module, 3 products.</b> Sold separately almost everywhere else as vendor management, an RFQ or e-sourcing tool and a purchase-order system.</p>
+    </header>
+
+    <div class="rs-bench" id="bench">
+      <div class="rs-chips" role="group" aria-label="Choose part of Procurement" id="rsChips"></div>
+      <div class="rs-panel">
+        <h2 class="rs-head" id="rsHead"></h2>
+        <p class="rs-sub" id="rsSub"></p>
+        <div class="rs-rows" id="rsRows"></div>
+        <p class="rs-foot" id="rsFoot"></p>
+      </div>
+    </div>
+
+    <!-- ══ Coverage ══ -->
+    <section class="dk-section dk-reveal" id="covers">
+      <div class="dk-kicker">What it covers</div>
+      <h2 class="dk-h2">Inquiry to order, with the argument in between.</h2>
+      <p class="dk-lede">The part that usually happens over email and in a spreadsheet, where the quotes are compared once and the reasoning is lost.</p>
+      <div class="dk-list">
+          <div class="dk-lrow" style="--mod:#60A5FA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">An inquiry, not an email thread</span><span class="dk-ldesc">What somebody needs is raised as a record with its line items, so the request that started the spend is still attached to the order at the end of it.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#60A5FA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4L12 22l-9-9V3h10z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Items that survive vendor spelling</span><span class="dk-ldesc">A master item list, with synonyms and per-vendor name mappings, so "M8 hex bolt" and "Bolt Hex M8 SS" are the same thing when you compare. Unused synonyms decay rather than accumulating for ever.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#A78BFA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Vendors with a catalogue</span><span class="dk-ldesc">Vendor records with contacts, categories and the items they actually supply, so an RFQ goes to the ones who can quote it rather than to everyone.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#A78BFA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">One RFQ, many vendors</span><span class="dk-ldesc">A single request fans out to the vendors you pick, per item, and the responses come back into the same place instead of into an inbox.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#A78BFA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">A portal vendors do not sign up for</span><span class="dk-ldesc">Quotes are submitted through a tokenised link. No account, no password to reset, no chasing a supplier through a procurement suite they will never log into twice.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#7DD3A8">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M5 8l-2 6h4z"/><path d="M19 8l-2 6h4z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Arithmetic first, opinion second</span><span class="dk-ldesc">The comparison runs in three layers: the deterministic one (lowest per item, lowest total) is always computed, a weighted score sits on top of it, and the AI explanation comes last. The AI never decides on its own.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#7DD3A8">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><polyline points="7 14 11 9 15 12 20 6"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Your weights, not ours</span><span class="dk-ldesc">Price, quality and delivery are weighted to whatever your business actually optimises for, and the three are forced to add up to a hundred so the scoring cannot be quietly rigged.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#7DD3A8">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h6l3-6h9"/><path d="M12 18h9"/><polyline points="18 3 21 6 18 9"/><polyline points="18 15 21 18 18 21"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Split the award by line</span><span class="dk-ldesc">The cheapest vendor for the whole basket is rarely the cheapest for every line. Preview a split award, see the coverage each vendor gives you, and award line by line if that is what the numbers say.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#7DD3A8">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3a3 3 0 0 0-3 3v1a3 3 0 0 0 0 6v1a3 3 0 0 0 3 3"/><path d="M15 3a3 3 0 0 1 3 3v1a3 3 0 0 1 0 6v1a3 3 0 0 1-3 3"/><path d="M12 3v18"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">It says how sure it is</span><span class="dk-ldesc">Every comparison carries a confidence score and the factors behind it, low when the history is thin and higher as it builds &mdash; instead of presenting a guess and a recommendation with the same face.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#4CC9F0">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">The reason is on the record</span><span class="dk-ldesc">Why this vendor was chosen, whether it followed the recommendation or overrode it, and the override reason if a human disagreed. Six months later the question "why did we buy from them" has an answer.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#4CC9F0">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Purchase orders</span><span class="dk-ldesc">The decision becomes a PO with its items, so the order, the quotes it beat and the inquiry that started it all hang together.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#FB923C">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Performance measured, not remembered</span><span class="dk-ldesc">Promised delivery against actual, delay days and rejection rate computed by the database rather than typed in, quality scores and response times &mdash; built from your own orders, so the vendor rating is evidence.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#FB923C">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">A published ranking method</span><span class="dk-ldesc">How the ranking works is a page in the product, not a secret. A vendor who asks why they lost can be told, and a buyer who is challenged can show the method.</span></span>
+          </div>
+      </div>
+    </section>
+
+    <!-- ══ FAQ ══ -->
+    <section class="dk-section dk-reveal" id="faq">
+      <div class="dk-kicker">Straight answers</div>
+      <h2 class="dk-h2">The things people ask on the first call.</h2>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Do vendors need an account to quote?</h3>
+          <p>No. A quote comes back through a tokenised link — the vendor opens it, sees only the items you asked them about, and submits. Nothing to sign up for, nothing to reset, which is the difference between three quotes and one.</p>
+        </div>
+        <div>
+          <span class="q">02</span>
+          <h3>Does the AI choose the vendor?</h3>
+          <p>No, and it cannot. The deterministic comparison — lowest per item, lowest total — is always computed and always available. Weighted scoring sits above it and the AI explanation above that. The AI describes a decision; it never makes one on its own.</p>
+        </div>
+        <div>
+          <span class="q">03</span>
+          <h3>Can we set what "best" means?</h3>
+          <p>Yes. Price, quality and delivery carry weights you set, and the three are constrained to add up to a hundred, so nobody can quietly tune the scoring to reach a chosen answer.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>What if one vendor is cheaper on only half the list?</h3>
+          <p>Award the half. A split award is previewed before you commit — you see what each vendor covers and what the split costs against a single award — and the purchase orders follow the allocation you chose.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>How do we answer "why did we buy from them" later?</h3>
+          <p>The decision is stored with the comparison it came from, whether it followed the recommendation or overrode it, and the override reason if a human disagreed. The audit question has a written answer rather than a memory.</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>Where do vendor ratings come from?</h3>
+          <p>Your own orders. Promised delivery against actual, delay days and rejection rate are computed from the purchase orders rather than typed in, alongside quality scores and response times. It is measurement, not reputation.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>Does it know our items by our names?</h3>
+          <p>It learns them. A master item list carries synonyms and per-vendor name mappings, so the same part quoted under three different descriptions still lines up in one comparison. Synonyms that stop being used decay instead of accumulating.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ Close ══ -->
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Stop buying on the first quote.</h2>
+      <p>Send the request to the vendors who can supply it, compare on your own weights, and keep the reason.</p>
+      <p class="dk-osnote">This is one module of the business OS, not a point tool. Procurement on its own does what is usually sold as three: vendor management, an RFQ or e-sourcing tool and a purchase-order system. The same seat opens Meetings, Mail, Chat, Drive, CRM, HR, Accounts, Projects, Procurement, Learning and Research &mdash; eleven modules covering around twenty-five products' worth, on one login, one permission model and one ledger. You are not buying a procurement tool; you are putting the company on one system.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20Procurement%20—%20a%20walkthrough">Book a walkthrough →</a>
+      </div>
+    </section>
+
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Communication</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="accounts.html">Accounts</a><a href="hrms.html">HRMS</a><a href="pms.html">Projects</a><a href="procurement.html">Procurement</a><a href="lms.html">Learning</a><a href="research.html">Research</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Get started</strong>
+        <a href="pricing.html">Pricing</a><a href="activate.html">Activate a licence</a><a href="login.html">Sign in</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Resources</strong>
+        <a href="compare/index.html">Compare</a><a href="calculators/index.html">Calculators</a><a href="insights/index.html">Insights</a><a href="blog/index.html">Guides</a><a href="use-cases/index.html">Use cases</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="data-deletion.html">Delete my data</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">Ragenaizer is the business OS &mdash; every app a company runs on, sharing one login, one permission model and one ledger. A product of Wisetrack Technologies LLP. Built in India, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    'use strict';
+
+    var RS_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* Three comparison layers, tenant-set weights constrained to 100, split
+       awards with a coverage preview, decisions stored with an override
+       reason, and performance metrics computed in the database from the
+       purchase orders themselves — all real behaviour in the procurement
+       service. The page claims those and nothing beyond them. */
+    var PARTS = [
+      {
+        tab: 'The request',
+        accent: '#F59E0B',
+        head: 'Asked of the vendors who can supply it.',
+        sub: 'One inquiry, many vendors, and none of them made to keep an account with you in order to answer it.',
+        rows: [
+          ['One inquiry, many vendors', 'The same request goes to everyone you want quoting, so the replies are comparable by construction rather than by re-typing.'],
+          ['A portal, not a login', 'Vendors answer through a tokenised link. There is no account to create, no password to reset, and nothing to chase before the quoting can start.'],
+          ['Only their own line', 'A vendor sees the items they were asked about and their own quote. Not the inquiry’s other vendors, and not their prices.'],
+          ['Your item names', 'A master item list carries synonyms and per-vendor names, so the same part quoted under three descriptions still lands in one row.']
+        ],
+        foot: 'The reason buyers settle for one quote is that the second and third are administratively expensive. <b>This is the part that makes three cheap</b>.'
+      },
+      {
+        tab: 'The comparison',
+        accent: '#A78BFA',
+        head: 'Arithmetic first. Opinion clearly labelled.',
+        sub: 'Three layers, computed separately and shown separately, so you always know which one you are looking at.',
+        rows: [
+          ['Deterministic', 'Lowest per item and lowest total, computed from the quotes. No weighting, no model, no interpretation — the number that is simply true.'],
+          ['Weighted', 'Price, quality and delivery scored against weights your tenant sets. The three are forced to add up to a hundred, so nobody can quietly tune it to a chosen answer.'],
+          ['Qualitative', 'An explanation of the trade-off in words, with a confidence score attached to it.'],
+          ['Never alone', 'The AI layer describes; it does not decide. The deterministic comparison stays computed and available underneath it either way.']
+        ],
+        foot: 'A recommendation you cannot take apart is not a recommendation, it is an instruction. <b>All three layers stay legible</b>.'
+      },
+      {
+        tab: 'The award',
+        accent: '#38BDF8',
+        head: 'Cheapest overall is often nobody.',
+        sub: 'One vendor rarely wins every line. Splitting the order is normal buying, so it is a feature rather than a workaround.',
+        rows: [
+          ['Split it', 'Allocate line items across vendors instead of forcing the whole order onto one of them.'],
+          ['Preview first', 'See what each vendor covers and what the split costs against a single award, before anything is committed.'],
+          ['Coverage', 'Which vendor can actually supply which part of the list, so a split is not proposed against items nobody quoted.'],
+          ['Then orders', 'Purchase orders follow the allocation that was approved, rather than being re-keyed from it.']
+        ],
+        foot: 'The saving from a split is usually the largest single number in the process. <b>It should not require a spreadsheet to find</b>.'
+      },
+      {
+        tab: 'The record',
+        accent: '#22c55e',
+        head: 'Why you bought from them, in writing.',
+        sub: 'The question arrives long after the memory has gone. It is stored at the moment of the decision instead.',
+        rows: [
+          ['The decision', 'Kept against the comparison it came from, and marked as manual, as following the recommendation, or as an override.'],
+          ['The override reason', 'When a human disagrees with the score, the disagreement is recorded rather than being invisible in the outcome.'],
+          ['Measured, not rated', 'Promised delivery against actual, delay days and rejection rate are computed from your own purchase orders, alongside quality and response time.'],
+          ['Published method', 'How ranking works is written down and readable, so a vendor who lost can be told why in the same terms you used.']
+        ],
+        foot: 'A price you cannot justify is a price you will be asked about. <b>The justification is filed with the order</b>.'
+      }
+    ];
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    var part = 0;
+
+    function mountParts() {
+      document.getElementById('rsChips').innerHTML = PARTS.map(function (p, i) {
+        return '<button type="button" data-i="' + i + '" aria-pressed="' + (i === 0) + '" style="--bc:' +
+               p.accent + '"><i></i>' + p.tab + '</button>';
+      }).join('');
+      document.querySelectorAll('#rsChips button').forEach(function (b) {
+        b.addEventListener('click', function () { part = Number(b.dataset.i); renderPart(); });
+      });
+    }
+
+    function renderPart() {
+      var p = PARTS[part];
+      document.body.style.setProperty('--rs', p.accent);
+      document.querySelectorAll('#rsChips button').forEach(function (b, i) {
+        b.setAttribute('aria-pressed', String(i === part));
+      });
+      document.getElementById('rsHead').textContent = p.head;
+      document.getElementById('rsSub').textContent = p.sub;
+      document.getElementById('rsFoot').innerHTML = p.foot;
+      document.getElementById('rsRows').innerHTML = p.rows.map(function (r) {
+        return '<div class="rs-row"><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+      }).join('');
+    }
+
+    mountParts();
+    renderPart();
+
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (RS_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-lrow, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-lrow, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+</body>
+</html>
