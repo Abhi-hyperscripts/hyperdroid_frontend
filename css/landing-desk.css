@@ -1046,3 +1046,28 @@ body.desk-landing .dk-list .dk-ldesc { white-space: normal; max-width: 88ch; }
     border-right: 0;
   }
 }
+
+/* ── "one module, four products" ──────────────────────────────────────────────
+   The answer to "you only have ten apps" has to be near the top of a module
+   page, not in the closing note where it originally sat, more than half way
+   down. A bordered strip under the subhead: quiet enough not to compete with
+   the headline, specific enough to be checkable. */
+body.desk-landing .dk-replaces {
+  display: inline-block;
+  margin: 20px auto 0;
+  padding: 10px 16px;
+  border: 1px solid var(--dk-line);
+  border-left: 2px solid #7DD3A8;
+  border-radius: 0 10px 10px 0;
+  background: rgba(125, 211, 168, 0.06);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--dk-mute);
+  text-align: left;
+  max-width: 60ch;
+}
+body.desk-landing .dk-replaces b { color: var(--dk-ink); font-weight: 600; }
+
+@media (max-width: 640px) {
+  body.desk-landing .dk-replaces { display: block; font-size: 13px; }
+}
