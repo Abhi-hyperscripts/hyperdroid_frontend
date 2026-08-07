@@ -514,3 +514,17 @@ body.cmp-desk .cm-pick td:last-child {
   color: var(--dk-ink);
 }
 body.cmp-desk .cm-pick td.ours:last-child { color: #7DD3A8; }
+
+/* ── the scope table ──────────────────────────────────────────────────────────
+   Answers the app-count objection by showing what one of our modules actually
+   holds. The first column carries a paragraph rather than a label, so it takes
+   the room; the verdict column is a count, so it is set in mono. */
+body.cmp-desk .cm-scope td:first-child { width: 46%; }
+body.cmp-desk .cm-scope td:first-child b {
+  display: block;
+  font-size: 15px;
+  color: var(--dk-ink);
+  margin-bottom: 5px;
+}
+body.cmp-desk .cm-scope td:nth-child(2) { color: var(--dk-mute); font-size: 13.5px; }
+body.cmp-desk .cm-scope td:last-child { white-space: nowrap; text-align: right; }
