@@ -116,6 +116,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
     <script>document.write('<link rel="stylesheet" href="css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="css/agent-desk.css?v=' + CACHE_VERSION + '">');</script>
     <style>
         /* Homepage-specific styles */
         .home-page {
@@ -1941,6 +1942,7 @@
       </a>
       <div class="dk-navlinks">
         <a href="#platform">Platform</a>
+        <a href="pages/ai.html">AI</a>
         <a href="#how">How it fits</a>
         <a href="pages/compare/index.html">Compare</a>
         <a href="pages/pricing.html">Pricing</a>
@@ -2094,6 +2096,51 @@
 
 
 
+    <!-- ══ The USP: it is all callable by an agent ══════════════════════════
+         The modules above are the product; this is the thing nobody else in
+         the category has. Placed directly after the launcher so the reader
+         has just seen the eleven modules that the thousand-odd tools reach
+         into — the number means nothing before that.
+
+         Figures verified against the [CopilotTool] surface in the module
+         services, not rounded up from a roadmap. -->
+    <section class="dk-section dk-reveal" id="ai">
+      <div class="dk-kicker">The part nobody else has</div>
+      <h2 class="dk-h2">All eleven, operable by conversation.</h2>
+      <p class="dk-lede">Every module publishes its actions to an agent as tools &mdash; over a thousand of them, and roughly half change something. Raise the invoice, approve the leave, add the vendor, score the call. It calls the same endpoints the screens call, so it can only ever do what your own role already permits.</p>
+
+      <figure class="ag-term" style="--ag:#A78BFA">
+        <div class="ag-bar"><span class="ag-dots"><i></i><i></i><i></i></span><span class="t">Copilot &middot; any screen, any module</span></div>
+        <div class="ag-body">
+          <p class="ag-you">Raise the March invoice for Palm Cove Resorts from last month&rsquo;s approved timesheets, and tell me if they still owe us anything.</p>
+          <div class="ag-steps">
+            <div class="ag-step"><i></i><b>list_timesheets</b><em>March, approved only &middot; 6 members</em></div>
+            <div class="ag-step"><i></i><b>get_customer</b><em>matched one customer, GSTIN on file</em></div>
+            <div class="ag-step"><i></i><b>list_receivables</b><em>2 invoices open, 1 overdue 19 days</em></div>
+            <div class="ag-step"><i></i><b>create_invoice</b><em>held &mdash; preview shown, waiting for you</em></div>
+          </div>
+          <p class="ag-ans">Ready to raise: <b>&#8377;4,86,000</b> across 6 members at their project rates, tax applied from the customer&rsquo;s state. Separately, they are <b>19 days overdue</b> on an earlier invoice &mdash; worth mentioning before this one goes out.
+            <span class="cite">Nothing has been written yet &middot; the invoice is a preview until you confirm</span></p>
+        </div>
+      </figure>
+
+      <div class="dk-list" style="margin-top:26px">
+        <div class="dk-lrow" style="--mod:#22c55e">
+          <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 3l7 4v5c0 4.4-3 8.3-7 9-4-.7-7-4.6-7-9V7z"/></svg></span>
+          <span class="dk-lmid"><span class="dk-lname">It has no privileges you do not</span><span class="dk-ldesc">The tool list is cut to your licensed modules and your roles before the model sees it, and calls carry your own token to the module that owns the data.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#F59E0B">
+          <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+          <span class="dk-lmid"><span class="dk-lname">Nothing is written without you</span><span class="dk-ldesc">Writes are intercepted and previewed, and nothing changes until you confirm. Afterwards it re-reads the record to prove the change landed.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#38BDF8">
+          <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><polyline points="7 14 11 9 15 12 20 6"/></svg></span>
+          <span class="dk-lmid"><span class="dk-lname">And it does real jobs, not just lookups</span><span class="dk-ldesc">An analyst that runs cross-tabs and key drivers over your survey data. A copilot that puts objections in front of the host mid-call. Calls scored against your own playbook. A WhatsApp agent blocked from stating a number that is not in your knowledge base.</span></span>
+        </div>
+      </div>
+      <p class="dk-osnote" style="text-align:center">Your own API keys, included in the seat. <a href="pages/ai.html">See how the AI works &rarr;</a></p>
+    </section>
+
     <!-- ══ Proof: the thread ══ -->
     <section class="dk-section dk-reveal" id="how">
       <div class="dk-kicker">One thread</div>
@@ -2189,7 +2236,7 @@
       </div>
       <div class="dk-fcol">
         <strong>Get started</strong>
-        <a href="pages/pricing.html">Pricing</a><a href="pages/activate.html">Activate a licence</a><a href="pages/login.html">Sign in</a>
+        <a href="pages/ai.html">AI</a><a href="pages/pricing.html">Pricing</a><a href="pages/activate.html">Activate a licence</a><a href="pages/login.html">Sign in</a>
       </div>
       <div class="dk-fcol">
         <strong>Resources</strong>

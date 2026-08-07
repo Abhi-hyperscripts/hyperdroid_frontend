@@ -1,0 +1,189 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE AGENT TRANSCRIPT — a question, the tools it called, the answer.
+
+   Loaded after landing-desk.css. Scoped to .ag-term rather than to a body
+   class, because the same component runs on the homepage (the copilot across
+   every module) and on the Research page (the analyst over your survey data).
+
+   The point of the component is the middle band. Anyone can show a chatbot
+   answering; showing the tool calls between the question and the answer is
+   what says "it ran something real" — which is the actual claim.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ag-term {
+  --ag: #38BDF8;
+  margin: 44px 0 0;
+  border-radius: 18px;
+  border: 1px solid var(--dk-line);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  text-align: left;
+  position: relative;
+}
+.ag-term::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(680px 300px at 8% -20%, var(--ag), transparent 70%);
+  opacity: 0.14;
+}
+.ag-term > * { position: relative; }
+
+/* ── title bar ── */
+.ag-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--dk-line);
+  background: rgba(6, 9, 15, 0.42);
+}
+.ag-dots { display: flex; gap: 6px; flex: none; }
+.ag-dots i {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  display: block;
+}
+.ag-bar .t {
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+
+.ag-body { padding: 22px 24px 24px; }
+
+/* ── the question ── */
+.ag-you {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--dk-ink);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ag-you::before {
+  content: '';
+  flex: none;
+  margin-top: 7px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--ag);
+  box-shadow: 0 0 12px var(--ag);
+}
+
+/* ── the tool calls: the part that matters ── */
+.ag-steps {
+  margin: 18px 0 0;
+  padding: 14px 0 14px 17px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  display: grid;
+  gap: 9px;
+}
+.ag-step {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  color: var(--dk-dim);
+}
+.ag-step b {
+  color: var(--dk-ink);
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--dk-line);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.ag-step em { font-style: normal; color: var(--dk-mute); }
+.ag-step i {
+  flex: none;
+  width: 5px; height: 5px;
+  margin-left: -20px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--ag);
+  opacity: 0.75;
+}
+
+/* Steps arrive one at a time once the block is on screen. Two selectors each:
+   the figure may carry .dk-reveal itself (module pages) or sit inside a
+   revealed section (the homepage), and only one of those puts .is-in on the
+   figure. Missing the second is how the steps stay dimmed forever.
+
+   Steps arrive one at a time once the block is on screen — it reads as work
+   being done rather than as a static list. Purely decorative: the steps are
+   fully present and legible with no JS and no animation. */
+.ag-term .ag-step { opacity: 0.32; transition: opacity 0.45s ease; }
+.ag-term.is-in .ag-step,
+.is-in .ag-term .ag-step { opacity: 1; }
+.ag-term.is-in .ag-step:nth-child(1),
+.is-in .ag-term .ag-step:nth-child(1) { transition-delay: 0.10s; }
+.ag-term.is-in .ag-step:nth-child(2),
+.is-in .ag-term .ag-step:nth-child(2) { transition-delay: 0.45s; }
+.ag-term.is-in .ag-step:nth-child(3),
+.is-in .ag-term .ag-step:nth-child(3) { transition-delay: 0.80s; }
+.ag-term.is-in .ag-step:nth-child(4),
+.is-in .ag-term .ag-step:nth-child(4) { transition-delay: 1.15s; }
+.ag-term.is-in .ag-step:nth-child(5),
+.is-in .ag-term .ag-step:nth-child(5) { transition-delay: 1.50s; }
+.ag-term.is-in .ag-step:nth-child(6),
+.is-in .ag-term .ag-step:nth-child(6) { transition-delay: 1.85s; }
+
+/* ── the answer ── */
+.ag-ans {
+  margin-top: 16px;
+  padding: 15px 17px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--ag) 26%, transparent);
+  background: color-mix(in srgb, var(--ag) 8%, transparent);
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--dk-mute);
+  opacity: 0.32;
+  transition: opacity 0.5s ease 1.75s;
+}
+.ag-term.is-in .ag-ans,
+.is-in .ag-term .ag-ans { opacity: 1; }
+.ag-ans b { color: var(--dk-ink); font-weight: 600; }
+.ag-ans .cite {
+  display: block;
+  margin-top: 9px;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+
+.ag-note {
+  margin: 14px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5f6b80;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-term .ag-step,
+  .ag-term .ag-ans { opacity: 1; transition: none; }
+}
+
+@media (max-width: 700px) {
+  .ag-body { padding: 18px 16px 20px; }
+  .ag-you { font-size: 14.5px; }
+  .ag-step { font-size: 11.5px; }
+  .ag-steps { padding-left: 14px; }
+}

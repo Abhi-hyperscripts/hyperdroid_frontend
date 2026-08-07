@@ -13,8 +13,8 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
-    <title>Market Research Software | Cross-Tabs, Custom Tables, Rim Weighting, TURF, Key Drivers, Data Validation | Ragenaizer, the business OS</title>
-    <meta name="description" content="The most powerful market research platform. Get a publication-ready insights dashboard from your survey data in 10 minutes. Run cross-tabs, drivers, segmentation, TURF and significance testing without writing SPSS syntax. Transcribe focus groups with speaker ID. Clean fieldwork with twenty-five validation checks. Auto-code open-ends. Run AI desk research on any topic. Embed AI chat widgets in client portals.">
+    <title>AI Market Research Software | Ask Your Survey Data, Auto-Built Dashboards, Cross-Tabs, TURF, Key Drivers | Ragenaizer, the business OS</title>
+    <meta name="description" content="Ask your survey data a question and get an answer computed from it — the AI runs real cross-tabs, key drivers, TURF and segmentation rather than estimating. Auto-built insight dashboards you can replay next wave, significance on the effective base, rim weighting, twenty-five validation checks, focus group transcription and open-end coding.">
 
     <!-- SEO Meta Tags -->
     <meta name="keywords" content="market research software, AI market research, survey data analysis, SPSS analysis online, insights dashboard automation, cross tabulation software, significance testing, driver analysis, key driver analysis, NPS drivers, cluster segmentation, k-means segmentation, TURF analysis, portfolio optimization, focus group transcription, speaker diarization, AI focus group analysis, open end coding, verbatim coding software, AI codeframe generation, secondary research, desk research AI, questionnaire parsing, SPSS variable mapping, embeddable analytics widget, AI research chat, white label analytics, agentic AI analytics, natural language analytics">
@@ -26,8 +26,8 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Ragenaizer">
     <meta property="og:url" content="https://ragenaizer.com/pages/research.html">
-    <meta property="og:title" content="Market Research, Reinvented | From Raw Data to Insights in 10 Minutes">
-    <meta property="og:description" content="Upload survey data and get a publication-ready insights dashboard in 10 minutes. Cross-tabs, drivers, segmentation, TURF, focus group transcription, AI open-end coding, secondary research and embeddable widgets — all in one platform.">
+    <meta property="og:title" content="Research — ask your data, and it runs the tabs">
+    <meta property="og:description" content="Ask your survey data a question and get an answer computed from it — real cross-tabs, drivers and TURF, not an estimate. Dashboards it builds itself and can replay next wave.">
     <meta property="og:image" content="https://ragenaizer.com/assets/og-research.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -35,8 +35,8 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@ragenaizer">
-    <meta name="twitter:title" content="The Most Powerful Market Research Platform | Ragenaizer">
-    <meta name="twitter:description" content="Insights dashboard in 10 min. Cross-tabs, drivers, segmentation, TURF. Focus group transcription. AI open-end coding. Desk research.">
+    <meta name="twitter:title" content="Research — ask your data, and it runs the tabs">
+    <meta name="twitter:description" content="Ask your survey data a question and get an answer computed from it — real cross-tabs, drivers and TURF, not an estimate. Dashboards it builds itself and can replay next wave.">
     <meta name="twitter:image" content="https://ragenaizer.com/assets/og-research.png">
 
     <!-- Additional SEO -->
@@ -131,6 +131,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
     <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../css/bench-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/agent-desk.css?v=' + CACHE_VERSION + '">');</script>
 
     <!-- Schema.org: FAQ -->
     <script type="application/ld+json">
@@ -140,10 +141,26 @@
     "mainEntity": [
         {
             "@type": "Question",
-            "name": "Is this a survey tool or a tab package?",
+            "name": "Does the AI make the numbers up?",
             "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Both, and the second is the part people underestimate. Fieldwork and questionnaires are here, but so is the tabulation desk — banners, nets, derived variables, custom tables and significance testing — which is normally a separate purchase."
+                "text": "It cannot. It answers by calling the same statistical functions the tabulation engine runs — cross-tabs, driver regression, TURF, segmentation, weighting — and reading what comes back. Where no function fits it writes a query, which is validated at the syntax-tree level and capped on execution time, rows and memory before it runs. Every figure in an answer traces to the call that produced it."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can it actually build a dashboard, or just chat?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "It builds the dashboard. Pointed at a file it works in seven passes — reconnaissance, core metrics, cross-tabs with significance, advanced analytics, a verification pass over its own numbers, assembly, then market context. The cross-tab and advanced-analytics passes are required, so it cannot skip the hard part and hand you four pie charts."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can we re-run the same analysis on the next wave?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, and this is the part most AI analysis cannot do. Every tool call is recorded in order as a recipe stored beside the dashboard. Replay it mechanically to move only the numbers, smartly to have the narrative rewritten around them, or fully to analyse the wave from scratch. A tracker rebuilt by hand each round is a tracker whose rounds are not comparable."
             }
         },
         {
@@ -164,18 +181,18 @@
         },
         {
             "@type": "Question",
-            "name": "What happens when the next wave arrives?",
+            "name": "Whose AI keys does it use, and can we see the cost?",
             "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "It is dry-run against the existing datamap first and you get a compatibility report. The commit then re-checks a fingerprint of that datamap and refuses if it changed between the dry run and the merge, so a wave cannot land against a file that moved underneath it."
+                "text": "Your tenant’s own keys, held in the platform key store and used at the moment of the call. Coding runs report their cost per job rather than aggregating into a monthly surprise, and the model calls are kept in an audit log. On client work that is a cost of sale, so it belongs on the job."
             }
         },
         {
             "@type": "Question",
-            "name": "Do we have to accept what the AI produces?",
+            "name": "Can a client ask it questions directly?",
             "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "No, at every point it appears. A codeframe can be authored rather than generated, and a generated one is a starting point you edit. Coding runs as a job you can watch, stop and re-run against only new rows. The cost of a run is reported per job, on your own AI keys."
+                "text": "Yes. A dashboard or the agent itself can be embedded in a client portal with its own key you can rotate and its own session-level analytics, so you can see what was asked. Dashboards also publish behind a share token with view and visitor tracking."
             }
         },
         {
@@ -184,14 +201,6 @@
             "acceptedAnswer": {
                 "@type": "Answer",
                 "text": "Focus group recordings are transcribed with speakers separated, assembled into a transcript and turned into reports — with a .sav export so the qualitative sits beside the quantitative, and a public link when a client needs to read it without an account."
-            }
-        },
-        {
-            "@type": "Question",
-            "name": "Can a client see this without us exporting anything?",
-            "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Yes. Dashboards publish behind a share token with view and visitor tracking, and a dashboard or an AI chat over the data can be embedded in a client portal with its own rotatable key and its own session analytics."
             }
         }
     ]
@@ -207,6 +216,7 @@
       </a>
       <div class="dk-navlinks">
         <a href="../index.html#platform">Platform</a>
+        <a href="ai.html">AI</a>
         <a href="../index.html#how">How it fits</a><a href="compare/index.html">Compare</a>
         <a href="pricing.html">Pricing</a>
       </div>
@@ -215,15 +225,40 @@
 
     <!-- ══ Hero ══════════════════════════════════════════════════════════════
          Anyone can point a model at survey data. The question a research
-         buyer asks is whether they can defend the output — which codeframe,
-         which rows, what it cost, and what changed. -->
+         buyer asks is whether the numbers can be defended — what was run,
+         on what base, and whether it can be reproduced next wave. -->
     <header class="dk-hero">
       <div class="dk-eyebrow"><i></i>The business OS &middot; Research &amp; analysis</div>
-      <h1 class="dk-h1">A tabulation desk,<br>not a survey tool.</h1>
-      <p class="dk-sub">SPSS file in, weighted cross-tabs with significance out &mdash; plus the techniques a research agency actually bills for: TURF, key-driver regression, segmentation, rim weighting and trend decomposition. Open-end coding is one part of it, not the whole product.</p>
+      <h1 class="dk-h1">Ask the data.<br>It runs the tabs.</h1>
+      <p class="dk-sub">An analyst that reads your SPSS file, runs the actual statistical functions &mdash; cross-tabs with significance, key drivers, TURF, segmentation, rim weighting &mdash; and answers in a sentence. It does not estimate the number. It computes it, and shows you what it ran.</p>
       <p class="dk-replaces"><b>One module, 3 products.</b> Sold separately almost everywhere else as a survey platform, a tabulation and statistics package, and a focus-group analysis tool.</p>
-      <p class="rs-note">The four parts of the job</p>
     </header>
+
+    <!-- ══ The agent, shown rather than described ═══════════════════════════
+         The tool calls between the question and the answer are the claim. The
+         function names and the guardrails below are the ones the service
+         actually exposes to the model — execute_function, execute_query,
+         get_variable_details, search_questions, create_visualization,
+         internet_search — not an illustration of a generic chatbot.
+
+         The figures in the answer are illustrative of the shape of a result,
+         not a real study. -->
+    <figure class="ag-term dk-reveal" style="--ag:#38BDF8">
+      <div class="ag-bar"><span class="ag-dots"><i></i><i></i><i></i></span><span class="t">Ask the data</span></div>
+      <div class="ag-body">
+        <p class="ag-you">Which drivers move overall satisfaction most, and does the metro/non-metro gap actually hold?</p>
+        <div class="ag-steps">
+          <div class="ag-step"><i></i><b>search_questions</b><em>matched 6 satisfaction items in the datamap</em></div>
+          <div class="ag-step"><i></i><b>get_variable_details</b><em>value labels, missing codes, weight variable</em></div>
+          <div class="ag-step"><i></i><b>execute_function</b><em>driver_regression &middot; standardised betas, VIF checked</em></div>
+          <div class="ag-step"><i></i><b>execute_function</b><em>cross_tab &middot; satisfaction &times; region, significance at 95%</em></div>
+          <div class="ag-step"><i></i><b>execute_query</b><em>verifying the base before answering</em></div>
+        </div>
+        <p class="ag-ans">Two drivers carry most of it &mdash; <b>resolution time</b> and <b>first-contact accuracy</b> &mdash; and they are not collinear, so they are separate levers rather than one measured twice. The metro gap <b>is</b> significant; the tier-2 gap in the same table is not, on an effective base too small to call.
+          <span class="cite">Every figure came from a function call, on the effective base, not from the model</span></p>
+      </div>
+    </figure>
+    <p class="ag-note">The same agent builds the dashboard &mdash; below</p>
 
     <div class="rs-bench" id="bench">
       <div class="rs-chips" role="group" aria-label="Choose part of Research" id="rsChips"></div>
@@ -299,7 +334,15 @@
           </div>
           <div class="dk-lrow" style="--mod:#4CC9F0">
             <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-            <span class="dk-lmid"><span class="dk-lname">Ask the data</span><span class="dk-ldesc">A chat session against the dataset, with every query validated before it runs and written to an audit log — so an answer can be traced back to the query that produced it.</span></span>
+            <span class="dk-lmid"><span class="dk-lname">Ask the data</span><span class="dk-ldesc">An agent, not a search box. It finds the right question in the datamap, calls the statistical functions — cross-tabs, drivers, TURF, segmentation — reads the results and answers. Where no function fits it writes a query, which is checked at the syntax-tree level and capped on time, rows and memory before it runs, then written to an audit log. Every figure traces back to the call that produced it.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#A78BFA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">A dashboard it builds itself</span><span class="dk-ldesc">Point it at the file and it works in seven passes — reconnaissance, core metrics, cross-tabs with significance, advanced analytics, a verification pass over its own numbers, assembly, then market context. The mandatory passes are mandatory; it cannot quietly skip the cross-tabs and hand you four pie charts.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#F59E0B">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Run the same analysis next wave</span><span class="dk-ldesc">Every tool call the agent made is kept in order as a recipe, stored beside the dashboard. Replay it mechanically to move only the numbers, smartly to have the narrative rewritten around them, or fully to start again — which is what makes a tracker comparable round to round.</span></span>
           </div>
           <div class="dk-lrow" style="--mod:#4CC9F0">
             <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></span>
@@ -315,45 +358,50 @@
       <div class="dk-faq">
         <div>
           <span class="q">01</span>
-          <h3>Is this a survey tool or a tab package?</h3>
-          <p>Both, and the second is the part people underestimate. Fieldwork and questionnaires are here, but so is the tabulation desk — banners, nets, derived variables, custom tables and significance testing — which is normally a separate purchase.</p>
+          <h3>Does the AI make the numbers up?</h3>
+          <p>It cannot. It answers by calling the same statistical functions the tabulation engine runs — cross-tabs, driver regression, TURF, segmentation, weighting — and reading what comes back. Where no function fits it writes a query, which is validated at the syntax-tree level and capped on execution time, rows and memory before it runs. Every figure in an answer traces to the call that produced it.</p>
         </div>
         <div>
           <span class="q">02</span>
+          <h3>Can it actually build a dashboard, or just chat?</h3>
+          <p>It builds the dashboard. Pointed at a file it works in seven passes — reconnaissance, core metrics, cross-tabs with significance, advanced analytics, a verification pass over its own numbers, assembly, then market context. The cross-tab and advanced-analytics passes are required, so it cannot skip the hard part and hand you four pie charts.</p>
+        </div>
+        <div>
+          <span class="q">03</span>
+          <h3>Can we re-run the same analysis on the next wave?</h3>
+          <p>Yes, and this is the part most AI analysis cannot do. Every tool call is recorded in order as a recipe stored beside the dashboard. Replay it mechanically to move only the numbers, smartly to have the narrative rewritten around them, or fully to analyse the wave from scratch. A tracker rebuilt by hand each round is a tracker whose rounds are not comparable.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
           <h3>How is significance calculated on weighted data?</h3>
           <p>On the effective base, not the row count. Weighted means, variances and standard errors feed the test, because a weighted sample of a thousand does not carry a thousand rows of information and a test that pretends otherwise will report differences that are not there.</p>
         </div>
         <div>
-          <span class="q">03</span>
+          <span class="q">05</span>
           <h3>Can it clean the data, or only analyse it?</h3>
           <p>Twenty-five checks run over the file — speeders, flatliners, patterns, ranges, skip and gate routing, punch validity, grids, ranks, constant sums, duplicates, outliers, dates, codes, PII and open-end quality. They are written in a script with loops and conditionals, so a large grid is one loop rather than fifty pasted blocks, and a custom rule can run in the same pass.</p>
         </div>
         <div>
-          <span class="q">04</span>
-          <h3>What happens when the next wave arrives?</h3>
-          <p>It is dry-run against the existing datamap first and you get a compatibility report. The commit then re-checks a fingerprint of that datamap and refuses if it changed between the dry run and the merge, so a wave cannot land against a file that moved underneath it.</p>
-        </div>
-        <div>
-          <span class="q">05</span>
-          <h3>Do we have to accept what the AI produces?</h3>
-          <p>No, at every point it appears. A codeframe can be authored rather than generated, and a generated one is a starting point you edit. Coding runs as a job you can watch, stop and re-run against only new rows. The cost of a run is reported per job, on your own AI keys.</p>
-        </div>
-        <div>
           <span class="q">06</span>
-          <h3>Does it handle qualitative work?</h3>
-          <p>Focus group recordings are transcribed with speakers separated, assembled into a transcript and turned into reports — with a .sav export so the qualitative sits beside the quantitative, and a public link when a client needs to read it without an account.</p>
+          <h3>Whose AI keys does it use, and can we see the cost?</h3>
+          <p>Your tenant’s own keys, held in the platform key store and used at the moment of the call. Coding runs report their cost per job rather than aggregating into a monthly surprise, and the model calls are kept in an audit log. On client work that is a cost of sale, so it belongs on the job.</p>
         </div>
         <div>
           <span class="q">07</span>
-          <h3>Can a client see this without us exporting anything?</h3>
-          <p>Yes. Dashboards publish behind a share token with view and visitor tracking, and a dashboard or an AI chat over the data can be embedded in a client portal with its own rotatable key and its own session analytics.</p>
+          <h3>Can a client ask it questions directly?</h3>
+          <p>Yes. A dashboard or the agent itself can be embedded in a client portal with its own key you can rotate and its own session-level analytics, so you can see what was asked. Dashboards also publish behind a share token with view and visitor tracking.</p>
+        </div>
+        <div>
+          <span class="q">08</span>
+          <h3>Does it handle qualitative work?</h3>
+          <p>Focus group recordings are transcribed with speakers separated, assembled into a transcript and turned into reports — with a .sav export so the qualitative sits beside the quantitative, and a public link when a client needs to read it without an account.</p>
         </div>
       </div>
     </section>
 
     <!-- ══ Close ══ -->
     <section class="dk-close dk-reveal">
-      <h2 class="dk-h2">Give the tab job to the software.</h2>
+      <h2 class="dk-h2">Ask it the question you would have tabbed for.</h2>
       <p>Faster is only useful if you can still show your working when the client asks.</p>
       <p class="dk-osnote">This is one module of the business OS, not a point tool. Research on its own does what is usually sold as three: a survey platform, a tabulation and statistics package, and a focus-group analysis tool. The same seat opens Meetings, Mail, Chat, Drive, CRM, HR, Accounts, Projects, Procurement, Learning and Research &mdash; eleven modules covering around twenty-five products' worth, on one login, one permission model and one ledger. You are not buying a survey tool; you are putting the company on one system.</p>
       <div class="dk-actions">
@@ -373,7 +421,7 @@
       </div>
       <div class="dk-fcol">
         <strong>Get started</strong>
-        <a href="pricing.html">Pricing</a><a href="activate.html">Activate a licence</a><a href="login.html">Sign in</a>
+        <a href="ai.html">AI</a><a href="pricing.html">Pricing</a><a href="activate.html">Activate a licence</a><a href="login.html">Sign in</a>
       </div>
       <div class="dk-fcol">
         <strong>Resources</strong>
@@ -395,68 +443,67 @@
 
     var RS_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /* Every claim below maps to something in the research service: the function
-       set under Services/Functions (cross-tab, custom tables + pivot engine,
-       rim weighting, TURF, driver regression, clustering, correlation, trend
-       decomposition, descriptives, derivations), the twenty-five checks under
-       Services/Validation/Checks driven by the .dvs script parser, the wave
-       dry-run/commit pair, and the insights, embed and focus-group
-       controllers. Open-end coding is one part of this, not the product. */
+    /* Grounded in the service: the chat agent's toolset (execute_function,
+       execute_query, get_variable_details, search_questions,
+       create_visualization, internet_search), the seven-phase insights loop
+       with its mandatory verification phase, the recipe captured by
+       RecipeBuilder and replayed in three tiers, the AST-level SQL validator
+       with its execution caps, query_audit_log, and the function set under
+       Services/Functions. Nothing here is aspirational. */
     var PARTS = [
       {
-        tab: 'The tables',
+        tab: 'The analyst',
         accent: '#38BDF8',
-        head: 'The tab job, done properly.',
-        sub: 'Banners, nets, derived variables and custom tables — the work that fills the week between fieldwork closing and the deck going out.',
+        head: 'It runs the function. It does not guess the number.',
+        sub: 'An agent with your datamap, your weights and the whole statistical library in reach — answering in the loop rather than handing back a query for you to run.',
         rows: [
-          ['Cross-tabs', 'Banner points, nets and grouped codes, run across the file rather than assembled question by question.'],
-          ['Custom tables', 'A pivot engine underneath, so a table can be specified rather than hand-built and then rebuilt when the spec changes.'],
-          ['Derived variables', 'Recode, calculate, count, any-of, reverse and row statistics, defined once and available to every table after.'],
-          ['Open-ends, in the same tables', 'Coded verbatims cross-tabulate like any other variable, instead of living in a separate document nobody opens.']
+          ['Finds the question', 'Semantic search over the parsed questionnaire, so "satisfaction" reaches the right battery without you knowing it was called Q7b.'],
+          ['Runs the real thing', 'Cross-tabs, custom tables, driver regression, TURF, segmentation, correlation and trend decomposition are called as tools — the same functions the tab team would run.'],
+          ['Queries the data', 'Where no function fits, it writes a query against your data — validated before it runs and logged after.'],
+          ['Draws it', 'A chart comes back with the answer when a chart is the answer.'],
+          ['Looks outward', 'It can search the market for context when the question needs a benchmark rather than a base.']
         ],
-        foot: 'Most of a research week is not analysis, it is table production. <b>That is the part this replaces</b>.'
+        foot: 'The difference between a chatbot and an analyst is whether anything was executed. <b>Every figure here came from a function call</b>.'
       },
       {
-        tab: 'The statistics',
+        tab: 'The dashboard it builds',
         accent: '#A78BFA',
-        head: 'Significance on the base you actually have.',
-        sub: 'Weighted data has a smaller effective base than its row count, and a test that ignores that reports differences which are not there.',
+        head: 'A deck-shaped answer, built in seven passes.',
+        sub: 'Point it at the file and it works the way a good analyst works: reconnaissance, core metrics, cross-tabs, advanced analytics, verification, assembly, context.',
         rows: [
-          ['Effective base', 'Significance is computed on the effective base, with weighted means, variances and standard errors — not on the raw count.'],
-          ['Rim weighting', 'Raked to your targets over successive iterations, reporting convergence and weight efficiency rather than just handing back a weight.'],
-          ['TURF', 'Reach and frequency for portfolio questions, greedy for large item sets and exhaustive when the set is small enough to search properly.'],
-          ['Key drivers', 'Regression with standardised betas, p-values, R² and adjusted R², and VIF checks so collinear inputs are flagged instead of quietly inflating a driver.'],
-          ['And the rest', 'Cluster segmentation, correlation matrices, trend decomposition and descriptive statistics.']
+          ['It cannot skip the hard part', 'Cross-tabs with significance and the advanced set — key drivers, segmentation — are required passes, not options it can quietly decline.'],
+          ['It checks its own numbers', 'A verification pass re-reads every figure against the functions that produced it before the dashboard is assembled.'],
+          ['It looks up the market', 'External context is gathered and cited, so the dashboard sits against a benchmark rather than only against itself.'],
+          ['Then it assembles', 'KPI cards and charts are placed one call at a time, which is what makes the next point possible.']
         ],
-        foot: 'A number you cannot defend in a debrief is worse than no number. <b>The base and the test are shown, not assumed</b>.'
+        foot: 'Seven passes takes longer than one prompt. <b>That is the entire reason the output is usable</b>.'
       },
       {
-        tab: 'The data you got back',
+        tab: 'Run it again next wave',
         accent: '#F59E0B',
-        head: 'Twenty-five checks, and a language to run them in.',
-        sub: 'Fieldwork arrives dirty. Cleaning it by eye is how a speeder or a straightliner reaches a client table.',
+        head: 'The AI\'s working is kept, not just its output.',
+        sub: 'Every tool call the agent made is recorded in order as a recipe and stored beside the dashboard — so the dashboard is reproducible rather than a one-off you dare not touch.',
         rows: [
-          ['The checks', 'Speeders, flatliners, patterns, ranges, skip and gate routing, single and multi punches, grids, ranks, constant sums, duplicates, outliers, dates, codes, PII and open-end quality.'],
-          ['A script, not a checklist', 'Checks are written in a .dvs script with loops and if/else, so a fifty-question grid is one loop rather than fifty pasted blocks.'],
-          ['Your own rule', 'Where the standard checks stop, a custom check runs your own logic in the same pass.'],
-          ['Questionnaire round-trip', 'The questionnaire is parsed from the document, then reconstructed from what was parsed and compared back to the original, so a misread question surfaces as a coverage gap rather than a missing table.'],
-          ['Later waves', 'A wave is dry-run against the existing datamap first. The commit re-checks a fingerprint of that datamap and refuses if it moved in between.']
+          ['Mechanical', 'Re-run the same functions against the new wave and keep the charts exactly as they were. Numbers move, nothing else does.'],
+          ['Smart', 'Re-run the functions, then have the narrative rewritten around the new numbers while the structure holds. The default.'],
+          ['Full', 'Ignore the recipe and analyse the wave from scratch, for when the story genuinely changed.'],
+          ['Why it matters', 'A tracker whose dashboard is rebuilt by hand each round is a tracker whose rounds are not comparable.']
         ],
-        foot: 'Every one of these is a finding a client can spot before you do. <b>Better that the software finds it</b>.'
+        foot: 'Most AI analysis cannot be run twice and produce the same shape. <b>This one is recorded so it can</b>.'
       },
       {
-        tab: 'What leaves the desk',
+        tab: 'Why the numbers hold',
         accent: '#22c55e',
-        head: 'A deliverable, not an export folder.',
-        sub: 'The tables are the middle of the job. What the client sees is the part that decides whether you are asked back.',
+        head: 'The rigour underneath the conversation.',
+        sub: 'The reason you can put an AI answer in front of a client is everything the AI is not allowed to do.',
         rows: [
-          ['Dashboards', 'Generated from the data and replayable, so a refresh is a re-run rather than a rebuild.'],
-          ['Shared, and measured', 'A share link carries its own token, and you can see the views and the visitors against it.'],
-          ['Embedded', 'A dashboard or an AI chat over your data can sit inside a client portal, with its own key you can rotate and its own session-level analytics.'],
-          ['Focus groups', 'Recordings in, transcript assembled and speakers separated, reports out — including a .sav export and a public report link.'],
-          ['Desk research', 'Secondary research generated into the same dashboard surface, with a history of what was run.']
+          ['Significance on the effective base', 'Weighted data carries less information than its row count. Tests use weighted means, variances and standard errors, so weighting cannot inflate how confident the letters look.'],
+          ['Rim weighting you can inspect', 'Raked to your targets over successive iterations, reporting convergence and weight efficiency rather than just handing back a weight column.'],
+          ['Collinearity flagged', 'Driver regression reports standardised betas, p-values, R² and adjusted R², with VIF checks so two versions of the same question do not read as two drivers.'],
+          ['The data cleaned first', 'Twenty-five validation checks — speeders, flatliners, routing, punch validity, duplicates, outliers, PII — written in a script with loops, not ticked off a list.'],
+          ['Nothing destructive, everything logged', 'Generated queries are checked at the syntax-tree level and capped on time, rows and memory before they run. Each one lands in an audit log.']
         ],
-        foot: 'A tab package hands you files. <b>This hands the client something they can open</b>.'
+        foot: 'An AI answer is only worth as much as the constraints around it. <b>These are the constraints</b>.'
       }
     ];
 

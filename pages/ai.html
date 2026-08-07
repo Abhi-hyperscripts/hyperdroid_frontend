@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en-IN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Agentic AI for Business | Tool-Calling Across Every Module | Ragenaizer, the business OS</title>
+    <meta name="description" content="Not a chatbot on the side. More than a thousand actions across eleven modules exposed to an agent as tools, filtered by your licence and your role, with a preview and confirmation before anything is written. Plus an analyst that runs real statistics over survey data, live sales and interview copilots, call scoring against your own playbook, and a WhatsApp agent that cannot quote a number that is not in your knowledge base.">
+    <meta name="keywords" content="agentic AI, AI tool calling, AI copilot for business, AI ERP assistant, conversational business software, AI sales copilot, AI interview copilot, AI call scoring, WhatsApp AI agent, AI market research analyst">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/ai.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/ai.html">
+    <meta property="og:title" content="Run the company by talking to it">
+    <meta property="og:description" content="More than a thousand actions across eleven modules, callable by an agent that can only do what your role already lets you do &mdash; and never writes without showing you first.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-ai.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="Run the company by talking to it">
+    <meta name="twitter:description" content="More than a thousand actions across eleven modules, callable by an agent that can only do what your role already lets you do &mdash; and never writes without showing you first.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-ai.png">
+
+    <meta name="theme-color" content="#050810">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/bench-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/agent-desk.css?v=' + CACHE_VERSION + '">');</script>
+
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Ragenaizer",
+            "item": "https://ragenaizer.com/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "AI",
+            "item": "https://ragenaizer.com/pages/ai.html"
+        }
+    ]
+}
+    </script>
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Ragenaizer AI",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "url": "https://ragenaizer.com/pages/ai.html",
+    "description": "Agentic AI across a whole business OS: more than a thousand tool-callable actions across eleven modules, filtered by licence and role, with a confirmation gate on every write; an analyst that runs real statistical functions over survey data; live sales and interview copilots; call scoring against your own playbook; and a WhatsApp agent that cannot state a number absent from your knowledge base.",
+    "offers": {
+        "@type": "Offer",
+        "price": "1200",
+        "priceCurrency": "INR"
+    }
+}
+    </script>
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Is this a chatbot bolted onto the side?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. It calls the same endpoints the screens call, routed to the owning module with your own token, so it is subject to exactly the authorisation the interface is. There is no second, looser path into your data — the copilot is another client of the same API, not a shortcut around it."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can it change things, or only look them up?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Both. Roughly half the tool surface writes. Every write is intercepted before it runs, shown to you as a preview and held until you confirm it — and after it lands the copilot re-reads the record to check the change is actually there rather than assuming its own success."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What stops it doing something it should not?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Three things, in order. The tool list is filtered to your tenant’s licensed modules and your roles, so a tool you are not entitled to use is never offered to the model at all. Parameters are machine-checked against the schema before execution. And the write confirmation gate sits in front of anything that changes state."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Does it invent numbers?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "It is engineered not to, and in the places where that matters most the prevention is deterministic rather than a polite instruction. On the research side every figure comes from a statistical function call or a validated query. On WhatsApp auto-replies, a guard checks that every significant number in the outgoing message literally exists in your knowledge base, the conversation or the stored customer facts, and blocks the reply if it does not."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Whose AI keys does it use?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yours. Keys are held encrypted in the platform key store and used at the moment of the call, so the spend is on your account and the data goes where you have chosen to send it. Where cost matters — coding runs, for instance — it is reported per job rather than aggregated into a monthly surprise."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Does it work during a live call?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, and only for the host. In a sales meeting it watches the transcript for the moment the other side stops talking and puts an objection, a missed next step or a suggested close in front of the host — never in the shared room. In an interview it pulls the candidate and the job description from HR and rates answers as the interview runs."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What happens when it cannot answer?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "It escalates rather than improvising, and the failure is visible. Failed auto-reply jobs raise an alert to admins within the hour, drafts left unapproved past the messaging window expire rather than sending late, and a weekly digest reports what the AI could not answer so the gap gets filled."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Which models does it use?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Anthropic’s Claude for reasoning and tool calling, on a two-tier setup — the stronger model where the decision is hard and a fast one for mechanical passes like rewriting a narrative around new numbers. Speech uses a cloud provider by default with local models available where audio must not leave your infrastructure."
+            }
+        }
+    ]
+}
+    </script>
+</head>
+<body class="landing-page desk-landing ai-desk bench-desk">
+
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="ai.html">AI</a>
+        <a href="../index.html#how">How it fits</a><a href="compare/index.html">Compare</a>
+        <a href="pricing.html">Pricing</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <!-- Hero. The claim that separates this from "we added AI" is tool calling
+         into the real API surface, under the real permission model, with a gate
+         in front of writes. So that is the hero, not a general AI boast. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>The business OS &middot; Agentic AI</div>
+      <h1 class="dk-h1">Run the company<br>by talking to it.</h1>
+      <p class="dk-sub">Over a thousand actions across all eleven modules are exposed to an agent as tools &mdash; raise the invoice, approve the leave, add the vendor, score the call. It calls the same endpoints the screens call, sees only what your role allows, and shows you every write before it happens.</p>
+      <p class="dk-replaces"><b>Not a chatbot bolted on.</b> There is no second, looser path into your data. The copilot is another client of the same API, under the same authorisation.</p>
+    </header>
+
+    <!-- Shown rather than described: the tool calls between the question and
+         the answer are the entire point of the component. -->
+    <figure class="ag-term dk-reveal" style="--ag:#A78BFA">
+      <div class="ag-bar"><span class="ag-dots"><i></i><i></i><i></i></span><span class="t">Copilot &middot; any screen, any module</span></div>
+      <div class="ag-body">
+        <p class="ag-you">Raise the March invoice for Palm Cove Resorts from last month&rsquo;s approved timesheets, and tell me if they still owe us anything.</p>
+        <div class="ag-steps">
+          <div class="ag-step"><i></i><b>list_timesheets</b><em>March, approved only &middot; 6 members</em></div>
+          <div class="ag-step"><i></i><b>get_customer</b><em>matched one customer, GSTIN on file</em></div>
+          <div class="ag-step"><i></i><b>list_receivables</b><em>2 invoices open, 1 overdue 19 days</em></div>
+          <div class="ag-step"><i></i><b>create_invoice</b><em>held &mdash; preview shown, waiting for you</em></div>
+        </div>
+        <p class="ag-ans">Ready to raise: <b>&#8377;4,86,000</b> across 6 members at their project rates, tax applied from the customer&rsquo;s state. Separately, they are <b>19 days overdue</b> on an earlier invoice &mdash; worth mentioning before this one goes out.
+          <span class="cite">Nothing has been written yet &middot; the invoice is a preview until you confirm</span></p>
+      </div>
+    </figure>
+    <p class="ag-note">Every write works this way &mdash; preview first, then verified after</p>
+
+    <div class="rs-bench" id="bench">
+      <div class="rs-chips" role="group" aria-label="Choose part of the AI" id="rsChips"></div>
+      <div class="rs-panel">
+        <h2 class="rs-head" id="rsHead"></h2>
+        <p class="rs-sub" id="rsSub"></p>
+        <div class="rs-rows" id="rsRows"></div>
+        <p class="rs-foot" id="rsFoot"></p>
+      </div>
+    </div>
+
+    <section class="dk-section dk-reveal" id="covers">
+      <div class="dk-kicker">Where it already is</div>
+      <h2 class="dk-h2">Not one assistant. Fifteen jobs.</h2>
+      <p class="dk-lede">Every one of these runs in the product today, on the same key store and the same permission model.</p>
+      <div class="dk-list">
+          <div class="dk-lrow" style="--mod:#60A5FA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z M5 10v2a7 7 0 0 0 14 0v-2 M12 19v3"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Ask, and it does it</span><span class="dk-ldesc">More than a thousand actions across eleven modules are exposed to the copilot as tools &mdash; raise an invoice, approve a leave, add a vendor, log time, move a deal. Not a search box over your data: the same operations the screens perform.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#22c55e">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4 M12 3l7 4v5c0 4.4-3 8.3-7 9-4-.7-7-4.6-7-9V7z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">It can only do what you can</span><span class="dk-ldesc">The tool list is filtered to your tenant&rsquo;s licensed modules and your roles before the model ever sees it, and calls are routed to the owning service with your own token. The copilot has no privileges you do not.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#F59E0B">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4 M12 17h.01 M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Nothing is written without you</span><span class="dk-ldesc">Write actions are intercepted, previewed and held for confirmation. Once you approve, the copilot re-reads the record to verify the change actually landed instead of reporting its own success.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#A78BFA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18 M7 14l4-5 4 3 5-6"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">An analyst for your survey data</span><span class="dk-ldesc">On the research side it is not answering from memory &mdash; it runs cross-tabs with significance, key-driver regression, TURF and segmentation as tool calls, checks the base, and answers. Every figure traces back to the function that produced it.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#38BDF8">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z M8 20h8 M12 16v4"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">It builds the dashboard too</span><span class="dk-ldesc">Pointed at a dataset it works in seven passes, and the hard ones are mandatory &mdash; cross-tabs with significance, advanced analytics, then a verification pass over its own numbers before anything is assembled. It cannot skip to four pie charts.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#F472B6">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7 M3 4v6h6"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">And can run it again next wave</span><span class="dk-ldesc">Every tool call is recorded in order as a recipe stored beside the dashboard, so the same analysis replays against new data &mdash; numbers only, narrative rewritten, or from scratch. Reproducible AI analysis, which is rarer than it sounds.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#4CC9F0">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">A second pair of ears on the call</span><span class="dk-ldesc">In a live meeting it follows the transcript, waits for the other side to finish, and puts an objection, a missed next step or a suggested close in front of the host &mdash; privately. Three modes, from prompt-me-only to autonomous.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#F97316">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">And in the interview room</span><span class="dk-ldesc">When the meeting is an interview it pulls the candidate and the job description from HR and rates answers as they happen &mdash; demonstrated, partial or not yet &mdash; with the follow-up worth asking next.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#8B5CF6">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1 M22 4L12 14.01l-3-3"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Calls scored against your playbook</span><span class="dk-ldesc">Recorded calls are transcribed, summarised and scored on discovery, objection handling, closing and next steps &mdash; weighted the way you weight them, against your own sales motion, ICP and value proposition. Upload your own rubric and it is validated before it scores anything.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#25D366">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-4-1L3 21l2.1-5a8.4 8.4 0 0 1-1-4 8.4 8.4 0 0 1 8.4-8.4 8.4 8.4 0 0 1 8.5 8.4z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">A WhatsApp agent that cannot make a price up</span><span class="dk-ldesc">Auto-replies are checked after generation, not just instructed beforehand: every significant number must exist in your knowledge base, the conversation or the customer&rsquo;s stored facts, and each quoted price must sit on the same row as the product it was quoted for. A reply that fails either check is blocked before it reaches the customer.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#EF4444">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4 M12 16h.01 M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">It tells you when it failed</span><span class="dk-ldesc">Failed reply jobs raise an admin alert within the hour, drafts left unapproved past the messaging window expire rather than sending late, and a weekly digest lists what the AI could not answer so the knowledge base gets fixed.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#FB923C">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2 M9 2h6v4H9z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Quotes compared, never decided</span><span class="dk-ldesc">In procurement the deterministic comparison is always computed and always shown. A weighted score sits on top of it, and the AI explanation on top of that, with a confidence figure. The model describes the trade-off; it does not pick the vendor.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#94A3B8">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M12 2v3 M12 19v3 M4.2 4.2l2.1 2.1 M17.7 17.7l2.1 2.1 M2 12h3 M19 12h3 M4.2 19.8l2.1-2.1 M17.7 6.3l2.1-2.1"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Your keys, your spend</span><span class="dk-ldesc">API keys are held encrypted in the platform key store and used at the moment of the call, so the model spend is on your account. Where cost is a cost of sale &mdash; a coding run on client work &mdash; it is reported per job.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#2DD4BF">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13 M9 9l12-2 M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">It hears the room</span><span class="dk-ldesc">Live captions are produced per speaker during a meeting, transcripts and summaries after it, and focus-group recordings come back as a diarised transcript. Cloud speech by default, local models where the audio must not leave your infrastructure.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#60A5FA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">It opens with what needs you</span><span class="dk-ldesc">The copilot knows which screen you are on and arrives already holding the relevant figures &mdash; and on open it offers what is overdue, what is waiting on your approval and what is about to be late, before you have asked anything.</span></span>
+          </div>
+      </div>
+      <p class="dk-osnote">This is what the AI does across the business OS &mdash; the modules themselves are on <a href="../index.html#platform">the platform overview</a>. The same seat opens Meetings, Mail, Chat, Drive, CRM, HR, Accounts, Projects, Procurement, Learning and Research, and the copilot reaches into all of them from wherever you happen to be standing.</p>
+    </section>
+
+    <section class="dk-section dk-reveal" id="faq">
+      <div class="dk-kicker">Straight answers</div>
+      <h2 class="dk-h2">The questions a careful buyer asks.</h2>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Is this a chatbot bolted onto the side?</h3>
+          <p>No. It calls the same endpoints the screens call, routed to the owning module with your own token, so it is subject to exactly the authorisation the interface is. There is no second, looser path into your data — the copilot is another client of the same API, not a shortcut around it.</p>
+        </div>
+        <div>
+          <span class="q">02</span>
+          <h3>Can it change things, or only look them up?</h3>
+          <p>Both. Roughly half the tool surface writes. Every write is intercepted before it runs, shown to you as a preview and held until you confirm it — and after it lands the copilot re-reads the record to check the change is actually there rather than assuming its own success.</p>
+        </div>
+        <div>
+          <span class="q">03</span>
+          <h3>What stops it doing something it should not?</h3>
+          <p>Three things, in order. The tool list is filtered to your tenant’s licensed modules and your roles, so a tool you are not entitled to use is never offered to the model at all. Parameters are machine-checked against the schema before execution. And the write confirmation gate sits in front of anything that changes state.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>Does it invent numbers?</h3>
+          <p>It is engineered not to, and in the places where that matters most the prevention is deterministic rather than a polite instruction. On the research side every figure comes from a statistical function call or a validated query. On WhatsApp auto-replies, a guard checks that every significant number in the outgoing message literally exists in your knowledge base, the conversation or the stored customer facts, and blocks the reply if it does not.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>Whose AI keys does it use?</h3>
+          <p>Yours. Keys are held encrypted in the platform key store and used at the moment of the call, so the spend is on your account and the data goes where you have chosen to send it. Where cost matters — coding runs, for instance — it is reported per job rather than aggregated into a monthly surprise.</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>Does it work during a live call?</h3>
+          <p>Yes, and only for the host. In a sales meeting it watches the transcript for the moment the other side stops talking and puts an objection, a missed next step or a suggested close in front of the host — never in the shared room. In an interview it pulls the candidate and the job description from HR and rates answers as the interview runs.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>What happens when it cannot answer?</h3>
+          <p>It escalates rather than improvising, and the failure is visible. Failed auto-reply jobs raise an alert to admins within the hour, drafts left unapproved past the messaging window expire rather than sending late, and a weekly digest reports what the AI could not answer so the gap gets filled.</p>
+        </div>
+        <div>
+          <span class="q">08</span>
+          <h3>Which models does it use?</h3>
+          <p>Anthropic’s Claude for reasoning and tool calling, on a two-tier setup — the stronger model where the decision is hard and a fast one for mechanical passes like rewriting a narrative around new numbers. Speech uses a cloud provider by default with local models available where audio must not leave your infrastructure.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Ask it to do the thing.</h2>
+      <p>Rather than finding the screen where you can do the thing.</p>
+      <p class="dk-osnote">AI is not a module you buy on top. It is included in the seat, it runs on your own API keys, and it is bounded by the same licence and the same roles as everything else. You are not buying an AI product; you are putting the company on one system and then talking to it.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20AI%20—%20a%20walkthrough">Book a walkthrough &rarr;</a>
+      </div>
+    </section>
+
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Communication</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="accounts.html">Accounts</a><a href="hrms.html">HRMS</a><a href="pms.html">Projects</a><a href="procurement.html">Procurement</a><a href="lms.html">Learning</a><a href="research.html">Research</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Get started</strong>
+        <a href="ai.html">AI</a><a href="pricing.html">Pricing</a><a href="activate.html">Activate a licence</a><a href="login.html">Sign in</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Resources</strong>
+        <a href="compare/index.html">Compare</a><a href="calculators/index.html">Calculators</a><a href="insights/index.html">Insights</a><a href="blog/index.html">Guides</a><a href="use-cases/index.html">Use cases</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="data-deletion.html">Delete my data</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">Ragenaizer is the business OS &mdash; every app a company runs on, sharing one login, one permission model and one ledger. A product of Wisetrack Technologies LLP. Built in India, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
+
+  </div>
+
+  <script>
+    'use strict';
+
+    var RS_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* NOTE: tab/head/sub/rows are rendered with textContent or esc(),
+       so they must use literal characters, never HTML entities. Only `foot`
+       is innerHTML and may carry markup.
+
+       Grounded in the code, not in ambition: the [CopilotTool] surface across
+       the module services, the aggregator's licence + role filter, the
+       router's JWT propagation to the owning service, the write confirmation
+       gate, the research agent's tool loop and seven-phase insights run,
+       Vision's live copilot pipeline with its speaker-turn detection, CRM's
+       call rubric builder, and the two WhatsApp reply guards. */
+    var PARTS = [
+      {
+        tab: 'What it can do',
+        accent: '#A78BFA',
+        head: 'Over a thousand actions, not a search box.',
+        sub: 'Every module publishes its operations to the agent as tools. Roughly half of them write.',
+        rows: [
+          ['Across eleven modules', 'HR and payroll, accounts and inventory, projects, procurement, CRM, learning, research, meetings and files all publish their actions to the same agent.'],
+          ['Reads and writes', 'Look up a balance, list what is overdue — and also raise the invoice, approve the leave, add the vendor, log the time, cancel the order.'],
+          ['It knows where you are', 'The copilot is told which screen you are on and arrives already holding the figures that screen is about.'],
+          ['It opens with what needs you', 'Before you ask anything it offers what is overdue, what is waiting on your approval and what is about to be late.']
+        ],
+        foot: 'The test of an assistant is whether it can finish the job. <b>Roughly half of this surface changes something</b>.'
+      },
+      {
+        tab: 'What stops it',
+        accent: '#22c55e',
+        head: 'It has no privileges you do not.',
+        sub: 'The reason it is safe to let an agent write to your books is not the prompt. It is the four things underneath it.',
+        rows: [
+          ['Filtered before the model sees it', 'The tool list is cut to your licensed modules and your roles first, so a tool you may not use is never offered to the model at all.'],
+          ['Your token, the owning service', 'Calls are routed to the module that owns the data, carrying your own credentials — the same authorisation path the screens use, not a back door.'],
+          ['Checked before it runs', 'Parameters are validated against the tool schema, and errors go back to the model to correct rather than through to your data.'],
+          ['Confirmed before it writes', 'Write actions are intercepted and shown to you as a preview. Nothing changes until you say so, and afterwards it re-reads the record to prove the change landed.']
+        ],
+        foot: 'An agent that can act needs a reason you can trust it. <b>These four are that reason</b>.'
+      },
+      {
+        tab: 'Where it does real work',
+        accent: '#38BDF8',
+        head: 'The jobs it does that a chatbot cannot.',
+        sub: 'Tool calling is the mechanism. These are the places it is pointed at something specialised.',
+        rows: [
+          ['The analyst', 'Over survey data it runs cross-tabs with significance, key drivers, TURF and segmentation as tool calls, then answers — and builds the whole dashboard in seven passes, verification included.'],
+          ['The second pair of ears', 'In a live sales call it watches the transcript and puts objections, missed next steps and suggested closes in front of the host, privately. In an interview it pulls the candidate and job description from HR and rates answers as they come.'],
+          ['The call reviewer', 'Recorded calls are transcribed, summarised and scored on discovery, objection handling, closing and next steps — weighted your way, against your own motion, ICP and value proposition.'],
+          ['The front desk', 'WhatsApp enquiries answered from your knowledge base, with a draft-and-approve mode where the stakes justify one.'],
+          ['The buyer’s assistant', 'In procurement it explains the trade-off between quotes and scores its own confidence — on top of a deterministic comparison it cannot overrule.']
+        ],
+        foot: 'Generic assistants answer questions about your data. <b>These do jobs you currently pay someone to do</b>.'
+      },
+      {
+        tab: 'Why it does not lie',
+        accent: '#F59E0B',
+        head: 'Instructions are not guarantees.',
+        sub: 'Telling a model not to invent a number is a request. Where a wrong number would reach a customer or a client, it is enforced afterwards instead.',
+        rows: [
+          ['Numbers must exist somewhere', 'Every significant number in an outgoing WhatsApp reply is checked against your knowledge base, the conversation and the customer’s stored facts. If it appears in none of them the reply is blocked, not sent.'],
+          ['Prices must match the product', 'A price is only allowed if it sits on the same knowledge-base row as the product it was quoted for — which is what catches the right price against the wrong model number.'],
+          ['Figures come from functions', 'In research, numbers are not produced by the model at all. They come back from the statistical functions it called, on the effective base.'],
+          ['Queries are checked and capped', 'Where it writes a query, that query is validated at the syntax-tree level and capped on time, rows and memory before it runs — then logged.'],
+          ['Failure is visible', 'Failed jobs alert admins within the hour, unapproved drafts expire rather than sending late, and a weekly digest reports what the AI could not answer.']
+        ],
+        foot: 'Anyone can promise their AI does not hallucinate. <b>These are the checks that run after it speaks</b>.'
+      }
+    ];
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    var part = 0;
+
+    function mountParts() {
+      document.getElementById('rsChips').innerHTML = PARTS.map(function (p, i) {
+        return '<button type="button" data-i="' + i + '" aria-pressed="' + (i === 0) + '" style="--bc:' +
+               p.accent + '"><i></i>' + p.tab + '</button>';
+      }).join('');
+      document.querySelectorAll('#rsChips button').forEach(function (b) {
+        b.addEventListener('click', function () { part = Number(b.dataset.i); renderPart(); });
+      });
+    }
+
+    function renderPart() {
+      var p = PARTS[part];
+      document.body.style.setProperty('--rs', p.accent);
+      document.querySelectorAll('#rsChips button').forEach(function (b, i) {
+        b.setAttribute('aria-pressed', String(i === part));
+      });
+      document.getElementById('rsHead').textContent = p.head;
+      document.getElementById('rsSub').textContent = p.sub;
+      document.getElementById('rsFoot').innerHTML = p.foot;
+      document.getElementById('rsRows').innerHTML = p.rows.map(function (r) {
+        return '<div class="rs-row"><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+      }).join('');
+    }
+
+    mountParts();
+    renderPart();
+
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (RS_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-lrow, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-lrow, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+</body>
+</html>
