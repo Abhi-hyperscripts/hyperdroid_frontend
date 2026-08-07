@@ -20,6 +20,34 @@
  *   });
  */
 
+/**
+ * Does this element open a stacking context?
+ *
+ * Anything inside one is sealed in: however high a descendant's z-index, it is
+ * composited as part of this ancestor and can never rise above a sibling OF
+ * the ancestor. For a dropdown that means opening underneath the next card on
+ * the page with no way to style out of it — the menu has to leave the subtree.
+ *
+ * Positioned-with-z-index is deliberately NOT treated as trapping: it is far
+ * too common (toolbars, sticky headers, cards) and on its own rarely traps
+ * anything, because the menu usually shares that same context. The properties
+ * below are the ones that isolate unconditionally.
+ */
+function createsStackingContext(el, cs) {
+    cs = cs || getComputedStyle(el);
+    if (cs.position === 'fixed' || cs.position === 'sticky') return true;
+    if (cs.transform !== 'none' || cs.perspective !== 'none') return true;
+    if (cs.filter !== 'none') return true;
+    if (cs.backdropFilter && cs.backdropFilter !== 'none') return true;
+    if (cs.webkitBackdropFilter && cs.webkitBackdropFilter !== 'none') return true;
+    if (parseFloat(cs.opacity) < 1) return true;
+    if (cs.isolation === 'isolate') return true;
+    if (cs.mixBlendMode && cs.mixBlendMode !== 'normal') return true;
+    if (/transform|opacity|filter/.test(cs.willChange || '')) return true;
+    if (/paint|layout|strict|content/.test(cs.contain || '')) return true;
+    return false;
+}
+
 const SearchableDropdown = (function() {
     'use strict';
 
@@ -501,6 +529,18 @@ const SearchableDropdown = (function() {
                 const ox = cs.overflowX, oy = cs.overflowY;
                 if (ox === 'auto' || ox === 'hidden' || ox === 'scroll' ||
                     oy === 'auto' || oy === 'hidden' || oy === 'scroll') {
+                    this._fixedEscapeActive = true;
+                    break;
+                }
+                // An ancestor that opens a STACKING CONTEXT traps the menu just
+                // as effectively as one that clips it, and the symptom is worse
+                // because nothing looks broken: the menu opens, correctly
+                // placed, underneath whatever paints next. No z-index on the
+                // menu can win it, because the contest is settled between
+                // ancestors, not between the menu and the thing covering it.
+                // The CRM analytics filter bar hit exactly this — its team
+                // filter opened behind the Executive Summary card below it.
+                if (createsStackingContext(el, cs)) {
                     this._fixedEscapeActive = true;
                     break;
                 }
