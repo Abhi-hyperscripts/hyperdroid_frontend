@@ -957,7 +957,13 @@ body.email-page .email-rows {
   backdrop-filter: blur(16px) saturate(1.14);
   -webkit-backdrop-filter: blur(16px) saturate(1.14);
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.22);
-  overflow: hidden;
+  /* `overflow: hidden` was here to clip rows to the card's rounded corners,
+     but this element is also the scroll container for the whole message list
+     — email.css gives it `flex: 1; overflow-y: auto` — and the shorthand
+     silently reset that axis, so the list could not be scrolled at all.
+     Clip sideways, scroll vertically. The radius still clips. */
+  overflow-x: hidden;
+  overflow-y: auto;
   padding-bottom: 0;
 }
 body.email-page .email-rows > .email-row:last-child { border-bottom: none; }
