@@ -452,6 +452,37 @@
         return wrapper;
     }
 
+
+    /**
+     * Would an ancestor of this input trap an inline calendar — by clipping it
+     * (overflow) or by sealing it in a stacking context?
+     *
+     * Uses the predicate exported by searchable-dropdown.js so the two
+     * components cannot disagree about what isolates; falls back to a local
+     * check on the properties that matter most if that file is not loaded.
+     */
+    function hasTrappingAncestor(el) {
+        const isolates = (typeof window !== 'undefined' && window.rzCreatesStackingContext)
+            ? window.rzCreatesStackingContext
+            : function (node, cs) {
+                cs = cs || getComputedStyle(node);
+                return cs.position === 'fixed' || cs.position === 'sticky' ||
+                       cs.transform !== 'none' || cs.filter !== 'none' ||
+                       (cs.backdropFilter && cs.backdropFilter !== 'none') ||
+                       parseFloat(cs.opacity) < 1;
+            };
+        let node = el.parentElement;
+        while (node && node !== document.body) {
+            const cs = getComputedStyle(node);
+            const ox = cs.overflowX, oy = cs.overflowY;
+            if (ox === 'auto' || ox === 'hidden' || ox === 'scroll' ||
+                oy === 'auto' || oy === 'hidden' || oy === 'scroll') return true;
+            if (isolates(node, cs)) return true;
+            node = node.parentElement;
+        }
+        return false;
+    }
+
     // Default Flatpickr configuration
     const defaultConfig = {
         dateFormat: 'Y-m-d',
@@ -696,7 +727,16 @@
             // drift, and lets compact filter bars place a date picker without
             // the global popup-positioning gotchas.
             if (input.dataset.flatpickrStatic === 'true') {
-                customOptions.static = true;
+                // …but only where it is safe. `static` renders the calendar
+                // inline next to the input, which means it inherits every
+                // ancestor's stacking context and overflow. Inside a container
+                // that isolates — the CRM analytics filter bar carries
+                // backdrop-filter — the calendar opens correctly and then
+                // disappears behind whatever paints next, and its z-index of
+                // 999998 cannot help because the contest is settled between
+                // ancestors. In that case fall back to the default
+                // appendTo: document.body, which cannot be trapped.
+                customOptions.static = !hasTrappingAncestor(input);
             }
 
             if (input.dataset.minDate) {

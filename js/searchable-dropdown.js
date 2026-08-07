@@ -48,6 +48,10 @@ function createsStackingContext(el, cs) {
     return false;
 }
 
+// Shared: the date picker needs the same test, and two copies of this list
+// would drift the moment a new isolating property is added to CSS.
+if (typeof window !== 'undefined') window.rzCreatesStackingContext = createsStackingContext;
+
 const SearchableDropdown = (function() {
     'use strict';
 
