@@ -329,7 +329,9 @@ async function loadMovements() {
             });
         }
         const itemId = moveFilterDD?.getValue?.() || '';
-        const rows = await api.request(AccountsCommon.buildUrl('inventory/movements', itemId ? { itemId, limit: 200 } : { limit: 200 }), { _skipSpinner: true });
+        // unwrap(): /inventory/movements now returns { items, count, limit, offset, truncated } like every
+        // other paged list, so a caller can tell a capped page from the whole set. unwrap tolerates both shapes.
+        const rows = unwrap(await api.request(AccountsCommon.buildUrl('inventory/movements', itemId ? { itemId, limit: 200 } : { limit: 200 }), { _skipSpinner: true }));
         const tb = document.getElementById('movementsTable');
         tb.innerHTML = rows.length ? rows.map(m => {
             const isIn = m.movement_type.includes('in') || m.movement_type === 'opening';
