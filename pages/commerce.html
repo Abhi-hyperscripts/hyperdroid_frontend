@@ -137,10 +137,18 @@
         },
         {
             "@type": "Question",
-            "name": "Can I change the code?",
+            "name": "Do I get the source code?",
             "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Yes — it is yours to run and yours to modify, on your own infrastructure and your own domain. The trade for that is that you are running it: the hosting, the updates and the backups are on your side of the line."
+                "text": "Not today, and it is worth being precise about that. What is public is the deployment — the install script, the compose file and the reverse-proxy config are on GitHub and yours to read and change. The storefront itself ships as prebuilt container images, so you run it on your own server, on your own domain, holding your own data and secrets, but the application source is not published. \"Self-hosted\" here means you own the infrastructure, not that you own the codebase."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can I see it before committing anything?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Run the installer without a key and it boots a demo store with sample products and an admin login, so you can walk the whole thing — catalogue, checkout, discounts, returns — before you point it at a real tenant."
             }
         }
     ]
@@ -216,7 +224,7 @@
           </div>
           <div class="dk-lrow" style="--mod:#60A5FA">
             <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z M2 20h20"/></svg></span>
-            <span class="dk-lmid"><span class="dk-lname">Your infrastructure, your domain</span><span class="dk-ldesc">You host it. The code is yours to run and to change, on a server you control, behind a domain you own — with the API key and every payment and shipping secret encrypted at rest on your side.</span></span>
+            <span class="dk-lmid"><span class="dk-lname">Your infrastructure, your domain</span><span class="dk-ldesc">You host it on a server you control, behind a domain you own, with the API key and every payment and shipping secret encrypted at rest on your side. The storefront's own database holds shopper accounts, carts and theme &mdash; never your accounting data, which stays in Ragenaizer.</span></span>
           </div>
       </div>
     </section>
@@ -315,10 +323,40 @@
         </div>
         <div>
           <span class="q">07</span>
-          <h3>Can I change the code?</h3>
-          <p>Yes — it is yours to run and yours to modify, on your own infrastructure and your own domain. The trade for that is that you are running it: the hosting, the updates and the backups are on your side of the line.</p>
+          <h3>Do I get the source code?</h3>
+          <p>Not today, and it is worth being precise about that. What is public is the deployment — the install script, the compose file and the reverse-proxy config are on GitHub and yours to read and change. The storefront itself ships as prebuilt container images, so you run it on your own server, on your own domain, holding your own data and secrets, but the application source is not published. "Self-hosted" here means you own the infrastructure, not that you own the codebase.</p>
+        </div>
+        <div>
+          <span class="q">08</span>
+          <h3>Can I see it before committing anything?</h3>
+          <p>Run the installer without a key and it boots a demo store with sample products and an admin login, so you can walk the whole thing — catalogue, checkout, discounts, returns — before you point it at a real tenant.</p>
         </div>
       </div>
+    </section>
+
+    <section class="dk-section dk-reveal" id="install">
+      <div class="dk-kicker">Getting it running</div>
+      <h2 class="dk-h2">One command, on your own server.</h2>
+      <p class="dk-lede">Any Linux box with Docker. The installer asks for your domain and your storefront API key, generates its own secrets, pulls the images and brings everything up behind automatic HTTPS.</p>
+      <div class="cm-tablewrap">
+        <table class="cm-table">
+          <tbody>
+          <tr class="dom"><td colspan="2">Install</td></tr>
+          <tr><td colspan="2"><code>curl -fsSL https://raw.githubusercontent.com/Abhi-hyperscripts/ragenaizer-commerce/main/install.sh | bash</code></td></tr>
+          <tr class="dom"><td colspan="2">What it needs</td></tr>
+          <tr><td>A domain</td><td class="ours">Its A record pointing at the server, so a certificate can be issued</td></tr>
+          <tr><td>Ports 80 and 443</td><td class="ours">Open to the internet</td></tr>
+          <tr><td>A storefront API key</td><td class="ours">Ragenaizer &rarr; Settings &rarr; API Keys &rarr; Generate storefront key</td></tr>
+          <tr class="dom"><td colspan="2">What it brings up</td></tr>
+          <tr><td>Caddy</td><td class="ours">HTTPS reverse proxy &mdash; the only thing exposed to the internet</td></tr>
+          <tr><td>Storefront and admin</td><td class="ours">Prebuilt images; nothing to compile</td></tr>
+          <tr><td>Postgres</td><td class="ours">Shopper accounts, carts and theme only &mdash; never accounting data</td></tr>
+          <tr><td>Redis</td><td class="ours">A disposable short-lived cache of catalogue, stock and price</td></tr>
+          <tr><td>Watchtower</td><td class="ours">Optional automatic updates</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cm-note">Leave the API key blank on the first run and it boots a <b>demo store</b> with sample products and an admin login, so you can walk the whole flow before pointing it at real books. The install script, the compose file and the proxy config are public on <a href="https://github.com/Abhi-hyperscripts/ragenaizer-commerce">GitHub</a>.</p>
     </section>
 
     <section class="dk-close dk-reveal">
@@ -326,7 +364,7 @@
       <p>Free to run, yours to host, and already speaking to your books.</p>
       <p class="dk-osnote">The storefront is free and self-hosted; what it needs is a Ragenaizer tenant to post into, because the invoices, the stock and the returns belong to the Accounts module. That is the whole trade: you run the shop, the business OS keeps the books, and neither has to be told what the other did.</p>
       <div class="dk-actions">
-        <a class="dk-btn1" href="accounts.html">See Accounts</a>
+        <a class="dk-btn1" href="https://github.com/Abhi-hyperscripts/ragenaizer-commerce">Get it on GitHub</a>
         <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20Commerce%20—%20a%20walkthrough">Book a walkthrough &rarr;</a>
       </div>
     </section>
@@ -342,7 +380,7 @@
       </div>
       <div class="dk-fcol">
         <strong>Get started</strong>
-        <a href="ai.html">AI</a><a href="commerce.html">Commerce</a><a href="pricing.html">Pricing</a><a href="activate.html">Activate a licence</a><a href="login.html">Sign in</a>
+        <a href="ai.html">AI</a><a href="pricing.html">Pricing</a><a href="activate.html">Activate a licence</a><a href="login.html">Sign in</a>
       </div>
       <div class="dk-fcol">
         <strong>Resources</strong>
