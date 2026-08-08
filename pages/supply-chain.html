@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en-IN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Supply Chain on One Ledger | RFQ to GST Invoice, FIFO Costing, BOM &amp; Work Orders | Ragenaizer</title>
+    <meta name="description" content="Follow one order from RFQ to GST invoice without it leaving the ledger: quotes compared and split-awarded, goods received into FIFO cost layers, batches and serials traced, a recursive bill of materials exploded, work orders that move real stock, counts that post their variance, and vendors scored on what actually happened.">
+    <meta name="keywords" content="supply chain software india, procurement to pay, source to pay, FIFO inventory costing, bill of materials software, work order inventory, batch expiry traceability, serial number tracking, GST inventory accounting, multi location stock">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/supply-chain.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/supply-chain.html">
+    <meta property="og:title" content="Source to sale, on one ledger">
+    <meta property="og:description" content="One order from RFQ to GST invoice — compared, awarded, received, costed FIFO, exploded through a BOM, built, counted and sold — without ever leaving the books.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-supply-chain.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="Source to sale, on one ledger">
+    <meta name="twitter:description" content="One order from RFQ to GST invoice — compared, awarded, received, costed FIFO, exploded through a BOM, built, counted and sold — without ever leaving the books.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-supply-chain.png">
+
+    <meta name="theme-color" content="#050810">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Ragenaizer",
+            "item": "https://ragenaizer.com/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Supply chain",
+            "item": "https://ragenaizer.com/pages/supply-chain.html"
+        }
+    ]
+}
+    </script>
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Is this a supply chain management system?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Not in the enterprise sense, and we would rather be precise than borrow the term. What runs end to end here is the physical and financial chain: source, buy, receive, cost, make, store, move, sell, and score the vendor on the result. What a full SCM suite adds on top is demand planning, warehouse management and transport management, and those are named as gaps further up this page rather than left for you to discover."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Do I have to buy two things?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Procurement and Accounts are both modules of the same business OS, on the same seat and the same licence. This page exists because the interesting part is what happens between them, not because it is a separate purchase."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What actually passes between them?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The award. When a comparison is decided, the allocation becomes purchase orders in the books rather than a note somebody re-types &mdash; so the receipt, the cost layer and the vendor bill all trace back to the quote that won."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "How is the cost of a sale worked out?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "FIFO. Receipts create cost layers and a sale consumes the oldest first, so the cost that leaves is the cost of the units that actually left. An average would smooth a price rise into invisibility, which is exactly when you most want to see it."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Does manufacturing really move stock?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, and that is the point. Issuing material to a work order is a stock movement out; completing it is a movement back in carrying the accumulated cost. Nothing is a status flag with the arithmetic done elsewhere."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can we trace a batch after it has shipped?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Batches and expiry are captured on the way in and serial numbers on the way out, so a specific unit can be walked back to the receipt it arrived on and forward to the invoice it left on."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What about a shortfall between what was made and what was issued?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "A stock count posts the variance to the ledger. The quantity and the value move together because they are the same record, which is what stops the annual argument between the storekeeper and the accountant."
+            }
+        }
+    ]
+}
+    </script>
+</head>
+<body class="landing-page desk-landing chain-desk">
+
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="ai.html">AI</a>
+        <a href="../index.html#how">How it fits</a><a href="compare/index.html">Compare</a>
+        <a href="pricing.html">Pricing</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <!-- Hero. This is a journey across two modules that already exist, not a
+         twelfth module — so it must not touch the eleven-module count, and the
+         copy has to keep saying "one seat" rather than implying a purchase. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>Procurement &plus; Accounts &middot; one seat</div>
+      <h1 class="dk-h1">Source to sale,<br>on one ledger.</h1>
+      <p class="dk-sub">Most businesses run this across a purchase register, an accounting package and a spreadsheet, then spend the month-end deciding which of the three was telling the truth. Here the whole chain &mdash; the quote, the award, the receipt, the cost, the build, the count and the invoice &mdash; is one set of records that were never apart.</p>
+      <p class="dk-replaces"><b>Not a separate product.</b> Procurement and Accounts are two modules on the same seat. This page is about what happens between them.</p>
+    </header>
+
+    <section class="dk-section dk-reveal" id="thread">
+      <div class="dk-kicker">One order</div>
+      <h2 class="dk-h2">Follow it from the request to the invoice.</h2>
+      <p class="dk-lede">Twenty-two days of a sub-assembly, start to finish. Every line is a real record in the system rather than a stage in a diagram &mdash; the movement types named underneath are the ones the inventory ledger actually writes.</p>
+      <div class="dk-thread">
+          <div class="dk-trow" style="--c:#60A5FA"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 1</div><div class="dk-tw"><b>A requirement is raised</b> &mdash; 400 units of a sub-assembly<span class="dk-tsrc">Procurement &middot; an inquiry record, not an email thread</span></div><div class="dk-ta">&mdash;</div></div>
+          <div class="dk-trow" style="--c:#60A5FA"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 1</div><div class="dk-tw"><b>One RFQ</b> goes to the five vendors who actually supply it<span class="dk-tsrc">Procurement &middot; item synonyms match their part names to yours</span></div><div class="dk-ta">5 vendors</div></div>
+          <div class="dk-trow" style="--c:#38BDF8"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 3</div><div class="dk-tw"><b>Quotes come back</b> through a portal none of them signed up for<span class="dk-tsrc">Procurement &middot; each vendor sees only their own line</span></div><div class="dk-ta">4 of 5</div></div>
+          <div class="dk-trow" style="--c:#38BDF8"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 4</div><div class="dk-tw"><b>Compared three ways</b> &mdash; lowest per item, weighted, then explained<span class="dk-tsrc">Procurement &middot; price, quality and delivery weights that sum to 100</span></div><div class="dk-ta">&mdash;</div></div>
+          <div class="dk-trow" style="--c:#A78BFA"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 4</div><div class="dk-tw"><b>Split award</b> &mdash; two vendors, previewed before it is committed<span class="dk-tsrc">Procurement &middot; the reason and any override are stored with it</span></div><div class="dk-ta">&#8377;3,84,000</div></div>
+          <div class="dk-trow" style="--c:#A78BFA"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 4</div><div class="dk-tw"><b>Purchase orders raised</b> against the allocation that was approved<span class="dk-tsrc">Procurement &rarr; Accounts &middot; not re-keyed</span></div><div class="dk-ta">2 POs</div></div>
+          <div class="dk-trow" style="--c:#22c55e"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 11</div><div class="dk-tw"><b>Goods received</b> against the PO, with batch and expiry captured<span class="dk-tsrc">Accounts &middot; movement type purchase_in</span></div><div class="dk-ta">400 units</div></div>
+          <div class="dk-trow" style="--c:#22c55e"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 11</div><div class="dk-tw"><b>Costed on arrival</b> into a FIFO layer, not an average anyone can argue with<span class="dk-tsrc">Accounts &middot; stock_cost_layers</span></div><div class="dk-ta">&#8377;960/unit</div></div>
+          <div class="dk-trow" style="--c:#F59E0B"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 12</div><div class="dk-tw"><b>Moved to the plant</b> from the receiving location<span class="dk-tsrc">Accounts &middot; movement type transfer_in</span></div><div class="dk-ta">&mdash;</div></div>
+          <div class="dk-trow" style="--c:#F59E0B"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 14</div><div class="dk-tw"><b>The BOM is exploded</b> &mdash; every level of it, not just the top<span class="dk-tsrc">Accounts &middot; a recursive bill of materials</span></div><div class="dk-ta">9 components</div></div>
+          <div class="dk-trow" style="--c:#F97316"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 14</div><div class="dk-tw"><b>Work order issues material</b> out of stock and into production<span class="dk-tsrc">Accounts &middot; movement type build_out</span></div><div class="dk-ta">&#8377;3,84,000</div></div>
+          <div class="dk-trow" style="--c:#F97316"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 18</div><div class="dk-tw"><b>Completed</b> &mdash; the finished item comes back in carrying its cost<span class="dk-tsrc">Accounts &middot; movement type build_in</span></div><div class="dk-ta">380 units</div></div>
+          <div class="dk-trow" style="--c:#EF4444"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 19</div><div class="dk-tw"><b>Counted</b> &mdash; a stock count reconciles what is on the floor<span class="dk-tsrc">Accounts &middot; variance posts to the ledger, not to a note</span></div><div class="dk-ta">&minus;2 units</div></div>
+          <div class="dk-trow" style="--c:#F472B6"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 22</div><div class="dk-tw"><b>Sales order and delivery challan</b> against a customer<span class="dk-tsrc">Accounts &middot; serials recorded on the way out</span></div><div class="dk-ta">300 units</div></div>
+          <div class="dk-trow" style="--c:#F472B6"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Day 22</div><div class="dk-tw"><b>GST invoice</b> &mdash; and the cost of sale leaves the same FIFO layer<span class="dk-tsrc">Accounts &middot; movement type sale_out</span></div><div class="dk-ta">&#8377;5,40,000</div></div>
+          <div class="dk-trow" style="--c:#2DD4BF"><span class="dk-node" aria-hidden="true"></span><div class="dk-tt">Ongoing</div><div class="dk-tw"><b>The vendors are scored</b> on what actually happened, not on memory<span class="dk-tsrc">Procurement &middot; delay days and rejection rate computed from these POs</span></div><div class="dk-ta">&mdash;</div></div>
+      </div>
+      <p class="dk-osnote">Nothing in that sequence was re-keyed, exported or reconciled. The vendor bill traces to the quote that won it, the cost of the sale traces to the layer the units arrived in, and the finished unit traces to the batch it was made from.</p>
+    </section>
+
+    <section class="dk-section dk-reveal" id="covers">
+      <div class="dk-kicker">What holds it together</div>
+      <h2 class="dk-h2">The parts most systems keep in separate buildings.</h2>
+      <div class="dk-list">
+          <div class="dk-lrow" style="--mod:#60A5FA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Buying that ends in a document</span><span class="dk-ldesc">An inquiry goes to many vendors at once, quotes come back through a portal, the comparison is arithmetic before it is an opinion, and the award &mdash; including a split across two vendors &mdash; becomes purchase orders without being re-keyed.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#22c55e">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Stock that knows what it cost</span><span class="dk-ldesc">Receipts land in FIFO cost layers, so the cost of a sale is the cost of the units that actually left &mdash; not a rolling average that quietly smooths over a price rise.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#38BDF8">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7 M10 12h4"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Batches, expiry and serials</span><span class="dk-ldesc">Traceability down to the batch that came in and the serial that went out &mdash; which is the difference between a recall you can scope and a recall you cannot.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#F59E0B">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20 M2 12h20 M4.9 4.9l14.2 14.2 M19.1 4.9L4.9 19.1"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">More than one place to keep it</span><span class="dk-ldesc">Stock sits per location with transfers between them, so the plant, the godown and the counter are not three spreadsheets pretending to agree.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#F97316">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 15h6 M9 11h2"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">A bill of materials that goes all the way down</span><span class="dk-ldesc">The explosion is recursive, so a sub-assembly made of sub-assemblies resolves properly rather than stopping one level in and leaving you to do the rest by hand.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#EF4444">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10 M18 20V4 M6 20v-4"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Work orders that move real stock</span><span class="dk-ldesc">Issuing material takes it out of inventory and completing the order brings the finished item back in carrying its cost. Production is a set of stock movements, not a status field.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#A78BFA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H5a2 2 0 0 0-2 2v7h18v-7a2 2 0 0 0-2-2h-4 M9 11V5a3 3 0 0 1 6 0v6"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Counted, and the variance goes to the books</span><span class="dk-ldesc">A stock count posts its difference to the ledger. Nobody adjusts a quantity in one system and a value in another, which is where most inventory arguments start.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#2DD4BF">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1 M22 4L12 14.01l-3-3"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Vendors judged on the record</span><span class="dk-ldesc">Promised delivery against actual, delay days and rejection rate, computed from the purchase orders themselves. The next RFQ is weighted by what really happened.</span></span>
+          </div>
+      </div>
+    </section>
+
+    <!-- The gaps, stated plainly. "Supply chain management" is an enterprise
+         term that implies planning, WMS and TMS; we have none of those three,
+         and claiming the category would be the same mistake as the survey
+         fielding claim on Research. Say it here instead. -->
+    <section class="dk-section dk-reveal" id="not">
+      <div class="dk-kicker">Where the term stops</div>
+      <h2 class="dk-h2">What this is not.</h2>
+      <p class="dk-lede">This is a supply chain in the sense that goods and money move through it end to end. It is not a supply chain <em>management</em> suite, and there are four specific reasons why &mdash; better read here than found out in month three.</p>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Demand planning</h3>
+          <p>There is a reorder level, which is a threshold, not a forecast. Nothing here predicts what you will need next quarter from seasonality or a sales plan &mdash; and the "Forecast" in CRM is a sales pipeline number, which is a different thing wearing the same word.</p>
+        </div>
+        <div>
+          <span class="q">02</span>
+          <h3>Warehouse management</h3>
+          <p>Stock sits per location and moves between locations. It does not sit in a bin on a rack, and there is no pick list, packing station or putaway routine. For a plant or a godown that is usually fine; for a fulfilment centre it is not.</p>
+        </div>
+        <div>
+          <span class="q">03</span>
+          <h3>Transport management</h3>
+          <p>No carrier rates, no freight costing, no supplier lead times and no route planning. Outbound parcels can go through a courier integration; the inbound leg is a date on a purchase order.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>Production scheduling</h3>
+          <p>Work orders issue material and complete, which is execution. There are no work centres, no routings and no capacity plan, so nothing here tells you the line is overbooked on Thursday.</p>
+        </div>
+      </div>
+      <p class="dk-osnote">If those four are what you came for, an enterprise SCM product is the honest answer and we would rather say so. If what you actually need is for buying, stock, making and the books to stop disagreeing, that is this page.</p>
+    </section>
+
+    <section class="dk-section dk-reveal" id="faq">
+      <div class="dk-kicker">Straight answers</div>
+      <h2 class="dk-h2">The things an operations head asks.</h2>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>Is this a supply chain management system?</h3>
+          <p>Not in the enterprise sense, and we would rather be precise than borrow the term. What runs end to end here is the physical and financial chain: source, buy, receive, cost, make, store, move, sell, and score the vendor on the result. What a full SCM suite adds on top is demand planning, warehouse management and transport management, and those are named as gaps further up this page rather than left for you to discover.</p>
+        </div>
+        <div>
+          <span class="q">02</span>
+          <h3>Do I have to buy two things?</h3>
+          <p>No. Procurement and Accounts are both modules of the same business OS, on the same seat and the same licence. This page exists because the interesting part is what happens between them, not because it is a separate purchase.</p>
+        </div>
+        <div>
+          <span class="q">03</span>
+          <h3>What actually passes between them?</h3>
+          <p>The award. When a comparison is decided, the allocation becomes purchase orders in the books rather than a note somebody re-types &mdash; so the receipt, the cost layer and the vendor bill all trace back to the quote that won.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>How is the cost of a sale worked out?</h3>
+          <p>FIFO. Receipts create cost layers and a sale consumes the oldest first, so the cost that leaves is the cost of the units that actually left. An average would smooth a price rise into invisibility, which is exactly when you most want to see it.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>Does manufacturing really move stock?</h3>
+          <p>Yes, and that is the point. Issuing material to a work order is a stock movement out; completing it is a movement back in carrying the accumulated cost. Nothing is a status flag with the arithmetic done elsewhere.</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>Can we trace a batch after it has shipped?</h3>
+          <p>Batches and expiry are captured on the way in and serial numbers on the way out, so a specific unit can be walked back to the receipt it arrived on and forward to the invoice it left on.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>What about a shortfall between what was made and what was issued?</h3>
+          <p>A stock count posts the variance to the ledger. The quantity and the value move together because they are the same record, which is what stops the annual argument between the storekeeper and the accountant.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Stop reconciling the chain to itself.</h2>
+      <p>The purchase order, the stock and the books were never three systems here.</p>
+      <p class="dk-osnote">Both halves of this are modules of the business OS, on one login and one bill &mdash; <a href="procurement.html">Procurement</a> for the buying and <a href="accounts.html">Accounts</a> for the stock and the ledger. The same seat also opens Meetings, Mail, Chat, Drive, CRM, HR, Projects, Learning and Research.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="pricing.html">See pricing</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20supply%20chain%20—%20a%20walkthrough">Book a walkthrough &rarr;</a>
+      </div>
+    </section>
+
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Communication</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="accounts.html">Accounts</a><a href="hrms.html">HRMS</a><a href="pms.html">Projects</a><a href="procurement.html">Procurement</a><a href="lms.html">Learning</a><a href="research.html">Research</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Get started</strong>
+        <a href="ai.html">AI</a><a href="merch.html">Merch</a><a href="pricing.html">Pricing</a><a href="activate.html">Activate a licence</a><a href="login.html">Sign in</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Resources</strong>
+        <a href="compare/index.html">Compare</a><a href="supply-chain.html">Supply chain</a><a href="calculators/index.html">Calculators</a><a href="insights/index.html">Insights</a><a href="blog/index.html">Guides</a><a href="use-cases/index.html">Use cases</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="data-deletion.html">Delete my data</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">Ragenaizer is the business OS &mdash; every app a company runs on, sharing one login, one permission model and one ledger. A product of Wisetrack Technologies LLP. Built in India, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
+
+  </div>
+
+  <script>
+    'use strict';
+
+    var RS_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (RS_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-lrow, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-lrow, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+</body>
+</html>
