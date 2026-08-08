@@ -1072,14 +1072,28 @@ body.desk-landing .dk-replaces b { color: var(--dk-ink); font-weight: 600; }
   body.desk-landing .dk-replaces { display: block; font-size: 13px; }
 }
 
-/* ── Commerce theme swatches ─────────────────────────────────────────────────
-   The chip is filled with the preset's own primary colour, and several presets
-   are dark-canvas looks whose primary is near-black (#111111, #1F2937). On a
-   dark card those read as an empty hole, so the circle carries a faint ring —
-   the same trick a colour picker uses to make a black swatch legible.
-   `stroke` is a real CSS property on SVG shapes, so this needs no markup. */
+/* ── Merch theme swatches ────────────────────────────────────────────────────
+   The chip shows each preset's own primary colour, and nine of the thirty are
+   dark-canvas looks whose primary is near-black (#0A0A0A, #111111, #1F2937).
+   The launcher's usual treatment tints BOTH the container and the glyph from
+   --mod, so for those nine the whole icon area disappeared into the card.
+
+   Fix in two parts, the way a colour picker handles a black swatch:
+     1. the container stops taking the colour and sits on a neutral surface,
+        so there is always something to see the disc against;
+     2. the disc keeps the colour and carries a bright ring, so a near-black
+        fill reads as a dark disc that is plainly on purpose.
+   `stroke` is a real CSS property on SVG shapes, so no markup changes. */
+body.commerce-desk #themes .dk-lic {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px var(--dk-line);
+}
+body.commerce-desk #themes .dk-lic svg {
+  width: 22px;
+  height: 22px;
+}
 body.commerce-desk #themes .dk-lic svg circle {
   stroke: var(--dk-ink);
-  stroke-width: 1.25;
-  stroke-opacity: 0.4;
+  stroke-width: 1.5;
+  stroke-opacity: 0.75;
 }
