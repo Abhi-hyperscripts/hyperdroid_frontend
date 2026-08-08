@@ -1071,3 +1071,15 @@ body.desk-landing .dk-replaces b { color: var(--dk-ink); font-weight: 600; }
 @media (max-width: 640px) {
   body.desk-landing .dk-replaces { display: block; font-size: 13px; }
 }
+
+/* ── Commerce theme swatches ─────────────────────────────────────────────────
+   The chip is filled with the preset's own primary colour, and several presets
+   are dark-canvas looks whose primary is near-black (#111111, #1F2937). On a
+   dark card those read as an empty hole, so the circle carries a faint ring —
+   the same trick a colour picker uses to make a black swatch legible.
+   `stroke` is a real CSS property on SVG shapes, so this needs no markup. */
+body.commerce-desk #themes .dk-lic svg circle {
+  stroke: var(--dk-ink);
+  stroke-width: 1.25;
+  stroke-opacity: 0.4;
+}
