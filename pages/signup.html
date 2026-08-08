@@ -49,6 +49,12 @@
 
     <!-- Razorpay Checkout -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+      /* Honeypot: out of view and out of the tab order, but still a real,
+         fillable input in the DOM so a form-filling bot trips it. */
+      .hp-field { position: absolute; left: -9999px; top: -9999px;
+                  width: 1px; height: 1px; overflow: hidden; }
+    </style>
 </head>
 <body class="landing-page desk-landing form-desk">
 
@@ -213,7 +219,16 @@
                                 </div>
                             </div>
 
-                            <div class="form-group">
+                            <!-- Honeypot. Off-screen rather than display:none, because some bots skip
+                             hidden fields but fill anything they can see in the DOM. A human
+                             never focuses this; a bot fills it and the server discards the
+                             submission. tabindex/autocomplete keep it out of a human's path. -->
+                        <div class="hp-field" aria-hidden="true">
+                            <label for="website">Website</label>
+                            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+                        </div>
+
+                        <div class="form-group">
                                 <label for="phone">Phone <span style="opacity:0.5; font-weight:400;">(optional)</span></label>
                                 <input type="tel" id="phone" name="phone" placeholder="+91 98765 43210" autocomplete="tel">
                             </div>
@@ -389,6 +404,7 @@
                     adminFirstName: firstName,
                     adminLastName: lastName,
                     adminPhone: phone || null,
+                    website: (document.getElementById('website') || {}).value || '',
                     seatCount: seats
                 };
 
