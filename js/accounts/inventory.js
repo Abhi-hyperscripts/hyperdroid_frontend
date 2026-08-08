@@ -117,9 +117,35 @@ function initItemModalDropdowns(selectedCat, selectedType) {
     schedDD = new SearchableDropdown(document.getElementById('itSchedule'), { id: 'itScheduleDD', options: SCHED_OPTS, value: arguments[4] || 'none', compact: true });
 }
 
+// Storefront images: parse the textarea (one URL per line) into a clean array of http(s) links (capped).
+function parseItemImageUrls() {
+    return (document.getElementById('itImageUrls').value || '')
+        .split('\n').map(s => s.trim())
+        .filter(u => /^https?:\/\//i.test(u))
+        .slice(0, 12);
+}
+
+// Live thumbnail strip under the Image URLs field. Builds nodes via the DOM (no innerHTML) so a pasted URL
+// can never inject markup; a URL that fails to load dims instead of showing a broken-image icon.
+function renderItemImagePreview() {
+    const host = document.getElementById('itImagePreview');
+    if (!host) return;
+    host.innerHTML = '';
+    parseItemImageUrls().forEach((u, idx) => {
+        const img = document.createElement('img');
+        img.src = u;
+        img.alt = 'Preview ' + (idx + 1);
+        img.title = idx === 0 ? 'Main image' : u;
+        img.style.cssText = 'width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-tertiary);';
+        img.onerror = () => { img.style.opacity = '.35'; img.title = 'Could not load: ' + u; };
+        host.appendChild(img);
+    });
+}
+
 function showItemModal() {
     document.getElementById('itemModalTitle').textContent = 'New Item';
-    ['itemId', 'itSku', 'itName', 'itSalePrice', 'itPurchasePrice', 'itHsn', 'itBarcode', 'itPurchaseUnit', 'itPurchaseConv', 'itSaleUnit', 'itSaleConv', 'itRack'].forEach(id => document.getElementById(id).value = '');
+    ['itemId', 'itSku', 'itName', 'itSalePrice', 'itPurchasePrice', 'itHsn', 'itBarcode', 'itPurchaseUnit', 'itPurchaseConv', 'itSaleUnit', 'itSaleConv', 'itRack', 'itDescription', 'itImageUrls'].forEach(id => document.getElementById(id).value = '');
+    renderItemImagePreview();
     document.getElementById('itUnit').value = 'pcs';
     document.getElementById('itWarranty').value = '0';
     document.getElementById('itReorder').value = '0';
@@ -156,6 +182,9 @@ function editItem(id) {
     document.getElementById('itTrack').checked = i.track_inventory;
     document.getElementById('itSellable').checked = i.is_sellable !== false;
     document.getElementById('itPurchasable').checked = i.is_purchasable !== false;
+    document.getElementById('itDescription').value = i.description || '';
+    document.getElementById('itImageUrls').value = (Array.isArray(i.image_urls) ? i.image_urls : []).join('\n');
+    renderItemImagePreview();
     ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule'].forEach(id => document.getElementById(id).innerHTML = '');
     initItemModalDropdowns(i.category_id, i.item_type, i.tracking_mode || 'none', i.valuation_method || 'weighted_avg', i.drug_schedule || 'none');
     initItemSaltRows(null, i.id);   // async-loads the item's saved composition
@@ -187,6 +216,8 @@ async function saveItem() {
         track_inventory: document.getElementById('itTrack').checked,
         is_sellable: document.getElementById('itSellable').checked,
         is_purchasable: document.getElementById('itPurchasable').checked,
+        description: document.getElementById('itDescription').value.trim() || null,
+        image_urls: parseItemImageUrls(),
         tracking_mode: trackDD?.getValue?.() || 'none',
         valuation_method: valDD?.getValue?.() || 'weighted_avg',
         drug_schedule: schedDD?.getValue?.() || 'none'

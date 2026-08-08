@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Storefront - Accounts | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts-skin.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/rail-drawer.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard acct-skin">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html"><img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo"></a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Storefront</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Storefront</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">API Keys</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="organization-layout">
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Storefront</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <div class="nav-group" data-group="storefront">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M3 9h18"/></svg>
+                                Storefront
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="sf-keys"><span class="nav-number">1</span><span class="nav-label">API Keys</span></button>
+                            <button class="sidebar-btn" data-tab="sf-coupons"><span class="nav-number">2</span><span class="nav-label">Coupons</span></button>
+                            <button class="sidebar-btn" data-tab="sf-discounts"><span class="nav-number">3</span><span class="nav-label">Discounts</span></button>
+                            <button class="sidebar-btn" data-tab="sf-bxgy"><span class="nav-number">4</span><span class="nav-label">BXGY</span></button>
+                            <button class="sidebar-btn" data-tab="sf-giftcards"><span class="nav-number">5</span><span class="nav-label">Gift Cards</span></button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="organization-content">
+
+                <!-- ── API Keys ─────────────────────────────────────────────────────────── -->
+                <div class="tab-content active" id="sf-keys">
+                    <div class="glass-card" style="padding:1rem 1.25rem;margin-bottom:1rem;">
+                        <p style="margin:0;color:var(--text-secondary);font-size:.9rem;">
+                            A <strong>storefront key</strong> lets your self-hosted online store read this tenant's catalog, pricing and stock, and place orders — every sale books a GST invoice here automatically. Generate a key, then paste it into your storefront's <em>Connect</em> screen. The plaintext key is shown <strong>once</strong>, so copy it immediately.
+                        </p>
+                    </div>
+                    <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;">
+                        <button class="btn btn-primary" data-admin-only onclick="mintKey()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                            Generate storefront key
+                        </button>
+                    </div>
+                    <div id="sfKeyReveal" style="display:none;margin-bottom:1rem;"></div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead><tr><th>Key</th><th>Label</th><th>Status</th><th>Last used</th><th>Created</th><th>Actions</th></tr></thead>
+                            <tbody id="sfKeysTable"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary);">Loading…</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ── Coupons ──────────────────────────────────────────────────────────── -->
+                <div class="tab-content" id="sf-coupons">
+                    <div class="glass-card" style="padding:.85rem 1.25rem;margin-bottom:1rem;">
+                        <p style="margin:0;color:var(--text-secondary);font-size:.9rem;">Discount codes shoppers type at checkout. The store validates and applies them; every discount is booked on the invoice here.</p>
+                    </div>
+                    <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;">
+                        <button class="btn btn-primary" data-admin-only onclick="openCoupon()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            New coupon
+                        </button>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead><tr><th>Code</th><th>Discount</th><th>Min order</th><th>Used</th><th>Valid</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="sfCouponsTable"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary);">Loading…</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ── Automatic discounts ──────────────────────────────────────────────── -->
+                <div class="tab-content" id="sf-discounts">
+                    <div class="glass-card" style="padding:.85rem 1.25rem;margin-bottom:1rem;">
+                        <p style="margin:0;color:var(--text-secondary);font-size:.9rem;">No-code discounts the store applies automatically — no coupon needed. Optionally scope to a customer segment or add free shipping. Highest priority wins when more than one qualifies.</p>
+                    </div>
+                    <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;">
+                        <button class="btn btn-primary" data-admin-only onclick="openDiscount()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            New automatic discount
+                        </button>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead><tr><th>Title</th><th>Discount</th><th>Min order</th><th>Segment</th><th>Free ship</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="sfDiscountsTable"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary);">Loading…</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ── BXGY ─────────────────────────────────────────────────────────────── -->
+                <div class="tab-content" id="sf-bxgy">
+                    <div class="glass-card" style="padding:.85rem 1.25rem;margin-bottom:1rem;">
+                        <p style="margin:0;color:var(--text-secondary);font-size:.9rem;">Buy-X-get-Y offers on a single item — e.g. "buy 2, get 1 at 100% off". The store applies it automatically at checkout.</p>
+                    </div>
+                    <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;">
+                        <button class="btn btn-primary" data-admin-only onclick="openBxgy()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            New BXGY offer
+                        </button>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead><tr><th>Title</th><th>Item</th><th>Buy / Get</th><th>Discount on Y</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="sfBxgyTable"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary);">Loading…</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ── Gift cards ───────────────────────────────────────────────────────── -->
+                <div class="tab-content" id="sf-giftcards">
+                    <div class="glass-card" style="padding:.85rem 1.25rem;margin-bottom:1rem;">
+                        <p style="margin:0;color:var(--text-secondary);font-size:.9rem;">Prepaid bearer cards shoppers redeem at checkout. Issuing books the liability in your accounts; redemptions draw it down.</p>
+                    </div>
+                    <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;">
+                        <button class="btn btn-primary" data-admin-only onclick="openGift()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Issue gift card
+                        </button>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead><tr><th>Code</th><th>Balance</th><th>Initial</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="sfGiftTable"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary);">Loading…</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Coupon modal -->
+    <div id="couponModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="couponModalTitle">New coupon</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('couponModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="cpId">
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="cpCode">Code *</label><input type="text" id="cpCode" class="form-control" placeholder="e.g. WELCOME10" style="text-transform:uppercase;"></div>
+                        <div class="form-group"><label>Discount type</label><div class="searchable-dropdown-container" id="cpType"></div></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="cpValue">Value *</label><input type="number" id="cpValue" class="form-control" min="0" step="0.01" placeholder="10"><small class="field-hint">Percent (10 = 10%) or a flat ₹ amount, per the type.</small></div>
+                        <div class="form-group"><label for="cpMaxDisc">Max discount <span class="opt">(₹, caps a % coupon)</span></label><input type="number" id="cpMaxDisc" class="form-control" min="0" step="0.01" placeholder="No cap"></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="cpMinOrder">Minimum order <span class="opt">(₹)</span></label><input type="number" id="cpMinOrder" class="form-control" min="0" step="0.01" value="0"></div>
+                        <div class="form-group"><label for="cpUsageLimit">Total uses <span class="opt">(blank = unlimited)</span></label><input type="number" id="cpUsageLimit" class="form-control" min="0" step="1" placeholder="Unlimited"></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="cpPerCust">Per-customer uses <span class="opt">(blank = unlimited)</span></label><input type="number" id="cpPerCust" class="form-control" min="0" step="1" placeholder="Unlimited"></div>
+                        <div class="form-group"><label style="display:flex;gap:6px;align-items:center;margin-top:1.9rem;"><input type="checkbox" id="cpActive" checked> Active</label></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="cpStarts">Starts <span class="opt">(optional)</span></label><input type="text" id="cpStarts" class="form-control" placeholder="Immediately"></div>
+                        <div class="form-group"><label for="cpExpires">Expires <span class="opt">(optional)</span></label><input type="text" id="cpExpires" class="form-control" placeholder="Never"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('couponModal')">Cancel</button>
+                    <button class="btn btn-primary" id="cpSaveBtn" onclick="saveCoupon()">Save coupon</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Automatic discount modal -->
+    <div id="discountModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="discountModalTitle">New automatic discount</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('discountModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="dsId">
+                    <div class="form-group"><label for="dsTitle">Title *</label><input type="text" id="dsTitle" class="form-control" placeholder="e.g. Festive 10% off"></div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label>Discount type</label><div class="searchable-dropdown-container" id="dsType"></div></div>
+                        <div class="form-group"><label for="dsValue">Value *</label><input type="number" id="dsValue" class="form-control" min="0" step="0.01" placeholder="10"><small class="field-hint">Percent (10 = 10%) or a flat ₹ amount.</small></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="dsMaxDisc">Max discount <span class="opt">(₹, caps a % discount)</span></label><input type="number" id="dsMaxDisc" class="form-control" min="0" step="0.01" placeholder="No cap"></div>
+                        <div class="form-group"><label for="dsMinOrder">Minimum order <span class="opt">(₹)</span></label><input type="number" id="dsMinOrder" class="form-control" min="0" step="0.01" value="0"></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="dsCustomerTag">Customer segment <span class="opt">(tag; blank = everyone)</span></label><input type="text" id="dsCustomerTag" class="form-control" placeholder="e.g. wholesale"></div>
+                        <div class="form-group"><label for="dsPriority">Priority <span class="opt">(higher wins)</span></label><input type="number" id="dsPriority" class="form-control" min="0" step="1" value="0"></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label style="display:flex;gap:6px;align-items:center;margin-top:1.9rem;"><input type="checkbox" id="dsFreeShip"> Also give free shipping</label></div>
+                        <div class="form-group"><label style="display:flex;gap:6px;align-items:center;margin-top:1.9rem;"><input type="checkbox" id="dsActive" checked> Active</label></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="dsStarts">Starts <span class="opt">(optional)</span></label><input type="text" id="dsStarts" class="form-control" placeholder="Immediately"></div>
+                        <div class="form-group"><label for="dsExpires">Expires <span class="opt">(optional)</span></label><input type="text" id="dsExpires" class="form-control" placeholder="Never"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('discountModal')">Cancel</button>
+                    <button class="btn btn-primary" id="dsSaveBtn" onclick="saveDiscount()">Save discount</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BXGY modal -->
+    <div id="bxgyModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bxgyModalTitle">New BXGY offer</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('bxgyModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="bxId">
+                    <div class="form-group"><label for="bxTitle">Title *</label><input type="text" id="bxTitle" class="form-control" placeholder="e.g. Buy 2 get 1 free"></div>
+                    <div class="form-group"><label>Item *</label><div class="searchable-dropdown-container" id="bxItem"></div><small class="field-hint">The single item this offer applies to.</small></div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="bxBuy">Buy quantity *</label><input type="number" id="bxBuy" class="form-control" min="1" step="1" value="2"></div>
+                        <div class="form-group"><label for="bxGet">Get quantity *</label><input type="number" id="bxGet" class="form-control" min="1" step="1" value="1"></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="bxDisc">Discount on the "get" units <span class="opt">(%)</span></label><input type="number" id="bxDisc" class="form-control" min="0" max="100" step="1" value="100"><small class="field-hint">100 = the Y units are free.</small></div>
+                        <div class="form-group"><label for="bxPriority">Priority <span class="opt">(higher wins)</span></label><input type="number" id="bxPriority" class="form-control" min="0" step="1" value="0"></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label style="display:flex;gap:6px;align-items:center;margin-top:1.9rem;"><input type="checkbox" id="bxActive" checked> Active</label></div>
+                        <div class="form-group"></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="bxStarts">Starts <span class="opt">(optional)</span></label><input type="text" id="bxStarts" class="form-control" placeholder="Immediately"></div>
+                        <div class="form-group"><label for="bxExpires">Expires <span class="opt">(optional)</span></label><input type="text" id="bxExpires" class="form-control" placeholder="Never"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('bxgyModal')">Cancel</button>
+                    <button class="btn btn-primary" id="bxSaveBtn" onclick="saveBxgy()">Save offer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gift card modal -->
+    <div id="giftModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Issue gift card</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('giftModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="gcAmount">Amount *</label><input type="number" id="gcAmount" class="form-control" min="1" step="0.01" placeholder="500"><small class="field-hint">Value loaded onto the card (₹).</small></div>
+                        <div class="form-group"><label for="gcCode">Custom code <span class="opt">(blank = auto)</span></label><input type="text" id="gcCode" class="form-control" placeholder="Auto-generated" style="text-transform:uppercase;"></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="gcExpires">Expires <span class="opt">(optional)</span></label><input type="text" id="gcExpires" class="form-control" placeholder="Never"></div>
+                        <div class="form-group"><label for="gcFunding">Funding account <span class="opt">(blank = cash/bank)</span></label><input type="text" id="gcFunding" class="form-control" placeholder="e.g. 4200 for a giveaway"></div>
+                    </div>
+                    <div class="form-group"><label for="gcNote">Note <span class="opt">(optional)</span></label><input type="text" id="gcNote" class="form-control" placeholder="e.g. Diwali gift for Acme"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('giftModal')">Cancel</button>
+                    <button class="btn btn-primary" id="gcSaveBtn" onclick="issueGift()">Issue card</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/storefront.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="accounts" data-title="Accounts Assistant"><\/script>');</script>
+    <script>
+    window.RAIL_DRAWER_ITEMS = [
+        { href: 'dashboard.html',   title: 'Dashboard',   color: '#60A5FA', svg: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' },
+        { href: 'receivables.html', title: 'Receivables', color: '#22c55e', svg: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
+        { href: 'payables.html',    title: 'Payables',    color: '#ef4444', svg: '<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>' },
+        { href: 'banking.html',     title: 'Banking',     color: '#4CC9F0', svg: '<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/>' },
+        { href: 'inventory.html',   title: 'Inventory',   color: '#FB923C', svg: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>' },
+        { href: 'pos.html',         title: 'POS',         color: '#A78BFA', svg: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>' },
+        { href: 'storefront.html',  title: 'Storefront',  color: '#14b8a6', svg: '<path d="M3 9l1-5h16l1 5"/><path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M3 9h18"/>' },
+        { href: 'ledger.html',      title: 'Ledger',      color: '#F472B6', svg: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>' },
+        { href: 'reports.html',     title: 'Reports',     color: '#34d399', svg: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>' },
+        { href: 'taxation.html',    title: 'Taxation',    color: '#eab308', svg: '<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>' },
+        { href: 'parties.html',     title: 'Parties',     color: '#2DD4BF', svg: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+        { href: 'setup.html',       title: 'Setup',       color: 'var(--text-muted)', svg: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>' }
+    ];
+    </script>
+    <script>document.write('<script src="../../js/rail-drawer.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>
