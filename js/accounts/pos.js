@@ -1235,8 +1235,11 @@ async function promptSerials(invoices, soldDate) {
         const { c } = serialLines[li];
         let opts = [];
         try {
-            const free = await api.request(AccountsCommon.buildUrl('inventory/serials', { itemId: c.item.id, status: 'in_stock', limit: 200 }), { _skipSpinner: true });
-            opts = free.map(s => s.serial_no);
+            // /inventory/serials returns a { items, ... } page envelope; tolerate both shapes. A bare
+            // .map() here threw into the swallowing catch below, which left the picker silently EMPTY —
+            // the cashier could not assign a serial at all, with no error to explain why.
+            const res = await api.request(AccountsCommon.buildUrl('inventory/serials', { itemId: c.item.id, status: 'in_stock', limit: 200 }), { _skipSpinner: true });
+            opts = (Array.isArray(res) ? res : (res?.items || [])).map(s => s.serial_no);
         } catch { }
         for (let u = 0; u < c.qty; u++) {
             inner += `<div class="form-group"><label>${esc(c.item.name)} — unit ${u + 1}</label>

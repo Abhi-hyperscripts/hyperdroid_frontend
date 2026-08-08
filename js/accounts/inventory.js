@@ -412,7 +412,9 @@ function renderMovementCharts(rows) {
 // ── Serials & warranty ─────────────────────────────────────────────────────
 async function loadSerials() {
     try {
-        const rows = await api.request(AccountsCommon.buildUrl('inventory/serials', { limit: 200 }), { _skipSpinner: true });
+        // unwrap(): /inventory/serials returns { items, count, limit, offset, truncated } like every other
+        // paged list now, so a caller can tell a capped page from the whole set. unwrap tolerates both.
+        const rows = unwrap(await api.request(AccountsCommon.buildUrl('inventory/serials', { limit: 200 }), { _skipSpinner: true }));
         const tb = document.getElementById('serialsTable');
         const badge = s => ({ in_stock: 'status-active', sold: 'status-pending', returned: 'status-pending', claimed: 'status-rejected' })[s] || '';
         tb.innerHTML = rows.length ? rows.map(s => `<tr>
