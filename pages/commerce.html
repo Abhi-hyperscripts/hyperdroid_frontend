@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en-IN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Free Self-Hosted Ecommerce Storefront | GST Invoices Straight Into Your Books | Ragenaizer Commerce</title>
+    <meta name="description" content="A free, self-hosted storefront that sells and books in one pass. Every order writes a GST-correct invoice and a balanced ledger entry, stock moves on FIFO, gift cards sit as a liability and returns issue credit notes. Thirty PWA themes across ten retail verticals, installable on Android and iOS. Connects to your Ragenaizer accounts with one API key.">
+    <meta name="keywords" content="free ecommerce platform, self hosted storefront, shopify alternative india, woocommerce alternative, GST ecommerce, accounting integrated storefront, PWA ecommerce, ecommerce themes india, COD checkout, razorpay storefront">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/commerce.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/commerce.html">
+    <meta property="og:title" content="Sell and book in one pass">
+    <meta property="og:description" content="A free, self-hosted storefront where every order posts a GST invoice and a balanced ledger entry. Thirty PWA themes. One API key.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-commerce.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="Sell and book in one pass">
+    <meta name="twitter:description" content="A free, self-hosted storefront where every order posts a GST invoice and a balanced ledger entry. Thirty PWA themes. One API key.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-commerce.png">
+
+    <meta name="theme-color" content="#050810">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/compare-desk.css?v=' + CACHE_VERSION + '">');</script>
+
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Ragenaizer",
+            "item": "https://ragenaizer.com/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Commerce",
+            "item": "https://ragenaizer.com/pages/commerce.html"
+        }
+    ]
+}
+    </script>
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "RzCommerce",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "url": "https://ragenaizer.com/pages/commerce.html",
+    "description": "A free, self-hosted ecommerce storefront that posts every order straight into your books: a GST-correct invoice and a balanced general-ledger entry per sale, FIFO inventory, gift cards carried as a liability and returns issued as credit notes. Thirty PWA themes across ten retail verticals, installable on Android and iOS. Connects to Ragenaizer Accounts with one storefront API key.",
+    "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR",
+        "description": "The storefront is free and self-hosted. It connects to a Ragenaizer Accounts tenant."
+    }
+}
+    </script>
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "What does it cost?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The storefront is free and you host it yourself. There is no transaction fee, no per-app subscription and nothing metered — the parts that are usually sold as add-ons elsewhere, like returns, subscriptions and gift cards, are simply in it. What you need is a Ragenaizer licence, because the books it posts into are the Accounts module."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "How does it connect to my books?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "One storefront API key, generated in Ragenaizer under Settings. The storefront backend holds it and calls Ragenaizer over the network; the browser never sees it, and it is stored encrypted along with your payment and shipping secrets. Point it at your tenant and the catalogue, stock and prices are the ones your accounts already have."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What does \"accounting-native\" actually mean?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "That an order is not an event you reconcile later. Placing one writes a GST-correct invoice and a balanced general-ledger entry, moves stock on FIFO, and — for a return — issues a credit note rather than an informal refund note. A gift card is carried as a liability until it is redeemed, because that is what it is. There is no export, no nightly sync and no second system holding a different number."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Is it really thirty themes, or one theme in thirty colours?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Thirty presets across ten retail verticals, built on four genuinely different homepage structures — an editorial split hero, a full-bleed spotlight, a search-first market grid, and a deals layout with a promo rail. Grid density, card shape and typography change with the structure, not just the palette. What it is not is a drag-and-drop builder; you are picking and tuning a preset."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "How does the phone app work?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "It is a progressive web app, so a customer installs it from the browser on Android or iOS and there is no app-store build, review or release to manage. The manifest is generated from your theme, so the icon, name, splash and colours are yours — the installed app is your brand, not ours."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Where does it fall short of Shopify?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Breadth, and we would rather say it here than let you find out later. There is no app marketplace, no multi-channel selling into marketplaces and social, and no email-campaign suite. Payments are Razorpay today. Tax is Indian GST. Those are real gaps for some businesses and none at all for others, which is why the table above marks them rather than omitting them."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can I change the code?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes — it is yours to run and yours to modify, on your own infrastructure and your own domain. The trade for that is that you are running it: the hosting, the updates and the backups are on your side of the line."
+            }
+        }
+    ]
+}
+    </script>
+</head>
+<body class="landing-page desk-landing commerce-desk cmp-desk">
+
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="ai.html">AI</a>
+        <a href="../index.html#how">How it fits</a><a href="compare/index.html">Compare</a>
+        <a href="pricing.html">Pricing</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <!-- Hero. The differentiator is not the storefront, which everyone has —
+         it is that the storefront IS the accounting system, so there is no
+         reconciliation step. Lead with that, not with theme count. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>Free &amp; self-hosted &middot; Commerce</div>
+      <h1 class="dk-h1">Sell and book<br>in one pass.</h1>
+      <p class="dk-sub">A storefront you host yourself, free, pointed at your Ragenaizer books with a single API key. Every order writes a GST-correct invoice and a balanced ledger entry as it happens &mdash; so there is no export, no nightly sync, and no second system holding a different number.</p>
+      <p class="dk-replaces"><b>Thirty themes, ten trades, installs like an app.</b> A progressive web app your customers add to the home screen on Android or iOS &mdash; carrying your brand, with no app store in the way.</p>
+    </header>
+
+    <section class="dk-section dk-reveal" id="why">
+      <div class="dk-kicker">The difference</div>
+      <h2 class="dk-h2">They sell, then you reconcile.</h2>
+      <p class="dk-lede">On the usual setup the store is one system and the books are another. You bolt on a tax app, export to Tally, and count stock by hand to find out which of the two was right. Here the storefront is the accounting system, which is the one thing that cannot be retrofitted onto an incumbent.</p>
+      <div class="dk-list">
+          <div class="dk-lrow" style="--mod:#22c55e">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">An order is a ledger entry</span><span class="dk-ldesc">Every sale writes a GST-correct invoice and a balanced general-ledger entry as it happens. Not an export, not a nightly sync, not a spreadsheet someone reconciles on Monday.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#38BDF8">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Stock that cannot drift</span><span class="dk-ldesc">The catalogue, the prices and the stock are the ones in your books, costed FIFO. Selling from the storefront and selling from the counter move the same numbers, because there is only one set.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#F59E0B">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4L12 22l-9-9V4a1 1 0 0 1 1-1h9l7.6 7.6a2 2 0 0 1 0 2.8z M7.5 7.5h.01"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Offers that post correctly</span><span class="dk-ldesc">Coupons with caps and expiry, automatic discounts scoped to a customer segment, buy-X-get-Y and free shipping — each one posting through the same single ledger entry rather than being typed over a total.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#F472B6">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4 M4 6v12a2 2 0 0 0 2 2h14v-4 M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Gift cards as a real liability</span><span class="dk-ldesc">An unredeemed gift card is money you owe, so it sits on the balance sheet as a liability and comes off when it is spent. Most storefronts treat it as a discount code and quietly understate what the business owes.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#A78BFA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7 M3 4v6h6"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Returns that produce a credit note</span><span class="dk-ldesc">An RMA runs the return through the books properly — a credit note against the invoice, stock back where it came from, tax reversed. Not a refund somebody remembers to record.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#4CC9F0">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Subscriptions and digital goods</span><span class="dk-ldesc">Recurring orders bill on a schedule, and a digital product or a course is delivered as access with a link and instructions rather than as a shipment — checkout skips the address entirely.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#EF4444">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z M3 6h18 M16 10a4 4 0 0 1-8 0"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">The carts people abandon</span><span class="dk-ldesc">Recovery for the ones that stall at checkout, wishlists and reviews for the ones that do not, and Meta Pixel, CAPI and UTM capture so the ad spend can be judged against orders rather than clicks.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#2DD4BF">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z M2 12h20 M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Thirty looks, ten trades</span><span class="dk-ldesc">Thirty theme presets across grocery, fashion, electronics, beauty, luxury, wellness, furniture, food, FMCG and general retail — built on four different homepage structures, so a grocery store is laid out like a grocery store rather than a recoloured fashion site.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#8B5CF6">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18h.01 M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Installs like an app, without being one</span><span class="dk-ldesc">Customers add it to the home screen on Android or iOS straight from the browser. There is no store listing, no review queue and no release to ship — and the installed icon, name and splash screen carry your brand, because the manifest is generated from your theme.</span></span>
+          </div>
+          <div class="dk-lrow" style="--mod:#60A5FA">
+            <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z M2 20h20"/></svg></span>
+            <span class="dk-lmid"><span class="dk-lname">Your infrastructure, your domain</span><span class="dk-ldesc">You host it. The code is yours to run and to change, on a server you control, behind a domain you own — with the API key and every payment and shipping secret encrypted at rest on your side.</span></span>
+          </div>
+      </div>
+    </section>
+
+    <!-- The honest comparison. Our gaps are in the same table as our wins,
+         because a merchant who finds them after buying is a much more
+         expensive problem than one who finds them here. -->
+    <section class="dk-section dk-reveal" id="compare">
+      <div class="dk-kicker">Side by side</div>
+      <h2 class="dk-h2">Where we match them, and where we do not.</h2>
+      <p class="dk-lede">Assessed against the shipped build. Shopify and WooCommerce are marked <b>Partial</b> where a capability needs a paid tier, a first-party app or a third-party plugin &mdash; and we are marked the same way, or crossed out, wherever that is the truth.</p>
+      <div class="cm-tablewrap">
+        <table class="cm-table">
+          <thead><tr><th></th><th>Shopify</th><th>WooCommerce</th><th>RzCommerce</th></tr></thead>
+          <tbody>
+          <tr class="dom"><td colspan="4">Core commerce</td></tr>
+          <tr><td>Catalog, variants and search</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Collections, manual and smart</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Cart and checkout, COD and online</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr class="dom"><td colspan="4">Discounts and promotions</td></tr>
+          <tr><td>Coupon codes with caps, limits and expiry</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Automatic discounts and customer segments</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Buy-X-get-Y</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Free-shipping discounts</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Gift cards, tracked as a liability</td><td><span class="cm-p">Partial</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr class="dom"><td colspan="4">Fulfilment and operations</td></tr>
+          <tr><td>Fulfilment, tracking and timeline</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Returns and RMA, as credit notes</td><td><span class="cm-p">Partial</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Shipping zones and rate rules</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Courier and 3PL integration</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-p">Partial</span></td></tr>
+          <tr class="dom"><td colspan="4">Selling models</td></tr>
+          <tr><td>Subscriptions and recurring orders</td><td><span class="cm-p">Partial</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Digital products and course access</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Wholesale and B2B price lists</td><td><span class="cm-p">Partial</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-p">Partial</span></td></tr>
+          <tr class="dom"><td colspan="4">Customers and marketing</td></tr>
+          <tr><td>Accounts and order history</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Wishlist and reviews</td><td><span class="cm-p">Partial</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Abandoned-cart recovery</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Meta Pixel, CAPI and UTM capture</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Email campaigns and automations</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-n">&#10007;</span></td></tr>
+          <tr><td>SEO depth and analytics</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-p">Partial</span></td></tr>
+          <tr class="dom"><td colspan="4">Storefront and platform</td></tr>
+          <tr><td>Themes, count and quality</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Visual drag-and-drop editor</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-p">Partial</span></td></tr>
+          <tr><td>PWA, installable on a phone</td><td><span class="cm-p">Partial</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Multi-language, including RTL</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-p">Partial</span></td></tr>
+          <tr><td>Self-hostable, own your data</td><td><span class="cm-n">&#10007;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>App and plugin ecosystem</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-n">&#10007;</span></td></tr>
+          <tr><td>Multi-channel selling</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-n">&#10007;</span></td></tr>
+          <tr class="dom"><td colspan="4">Payments, tax and books</td></tr>
+          <tr><td>Accounting-native, GL and invoices</td><td><span class="cm-n">&#10007;</span></td><td><span class="cm-n">&#10007;</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Inventory tied to the ledger</td><td><span class="cm-p">Partial</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>GST and India tax compliance</td><td><span class="cm-p">Partial</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Payment-gateway breadth</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-y">&#10003;</span></td><td class="ours"><span class="cm-p">Partial</span></td></tr>
+          <tr><td>Multi-currency</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          <tr><td>Built-in POS</td><td><span class="cm-y">&#10003;</span></td><td><span class="cm-p">Partial</span></td><td class="ours"><span class="cm-y">&#10003;</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cm-note">The core commerce loop is complete: catalogue, cart, checkout, discounts, fulfilment, returns, subscriptions and digital goods are all shipped. What we do not have is breadth &mdash; an app marketplace, multi-channel selling, an email-campaign suite, and gateways beyond Razorpay. If your business needs those, an incumbent is the honest answer today.</p>
+    </section>
+
+    <section class="dk-section dk-reveal" id="faq">
+      <div class="dk-kicker">Straight answers</div>
+      <h2 class="dk-h2">The things a merchant asks first.</h2>
+      <div class="dk-faq">
+        <div>
+          <span class="q">01</span>
+          <h3>What does it cost?</h3>
+          <p>The storefront is free and you host it yourself. There is no transaction fee, no per-app subscription and nothing metered — the parts that are usually sold as add-ons elsewhere, like returns, subscriptions and gift cards, are simply in it. What you need is a Ragenaizer licence, because the books it posts into are the Accounts module.</p>
+        </div>
+        <div>
+          <span class="q">02</span>
+          <h3>How does it connect to my books?</h3>
+          <p>One storefront API key, generated in Ragenaizer under Settings. The storefront backend holds it and calls Ragenaizer over the network; the browser never sees it, and it is stored encrypted along with your payment and shipping secrets. Point it at your tenant and the catalogue, stock and prices are the ones your accounts already have.</p>
+        </div>
+        <div>
+          <span class="q">03</span>
+          <h3>What does "accounting-native" actually mean?</h3>
+          <p>That an order is not an event you reconcile later. Placing one writes a GST-correct invoice and a balanced general-ledger entry, moves stock on FIFO, and — for a return — issues a credit note rather than an informal refund note. A gift card is carried as a liability until it is redeemed, because that is what it is. There is no export, no nightly sync and no second system holding a different number.</p>
+        </div>
+        <div>
+          <span class="q">04</span>
+          <h3>Is it really thirty themes, or one theme in thirty colours?</h3>
+          <p>Thirty presets across ten retail verticals, built on four genuinely different homepage structures — an editorial split hero, a full-bleed spotlight, a search-first market grid, and a deals layout with a promo rail. Grid density, card shape and typography change with the structure, not just the palette. What it is not is a drag-and-drop builder; you are picking and tuning a preset.</p>
+        </div>
+        <div>
+          <span class="q">05</span>
+          <h3>How does the phone app work?</h3>
+          <p>It is a progressive web app, so a customer installs it from the browser on Android or iOS and there is no app-store build, review or release to manage. The manifest is generated from your theme, so the icon, name, splash and colours are yours — the installed app is your brand, not ours.</p>
+        </div>
+        <div>
+          <span class="q">06</span>
+          <h3>Where does it fall short of Shopify?</h3>
+          <p>Breadth, and we would rather say it here than let you find out later. There is no app marketplace, no multi-channel selling into marketplaces and social, and no email-campaign suite. Payments are Razorpay today. Tax is Indian GST. Those are real gaps for some businesses and none at all for others, which is why the table above marks them rather than omitting them.</p>
+        </div>
+        <div>
+          <span class="q">07</span>
+          <h3>Can I change the code?</h3>
+          <p>Yes — it is yours to run and yours to modify, on your own infrastructure and your own domain. The trade for that is that you are running it: the hosting, the updates and the backups are on your side of the line.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Put the shop on the same ledger as the shop floor.</h2>
+      <p>Free to run, yours to host, and already speaking to your books.</p>
+      <p class="dk-osnote">The storefront is free and self-hosted; what it needs is a Ragenaizer tenant to post into, because the invoices, the stock and the returns belong to the Accounts module. That is the whole trade: you run the shop, the business OS keeps the books, and neither has to be told what the other did.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="accounts.html">See Accounts</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Ragenaizer%20Commerce%20—%20a%20walkthrough">Book a walkthrough &rarr;</a>
+      </div>
+    </section>
+
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Communication</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="accounts.html">Accounts</a><a href="hrms.html">HRMS</a><a href="pms.html">Projects</a><a href="procurement.html">Procurement</a><a href="lms.html">Learning</a><a href="research.html">Research</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Get started</strong>
+        <a href="ai.html">AI</a><a href="commerce.html">Commerce</a><a href="pricing.html">Pricing</a><a href="activate.html">Activate a licence</a><a href="login.html">Sign in</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Resources</strong>
+        <a href="compare/index.html">Compare</a><a href="calculators/index.html">Calculators</a><a href="insights/index.html">Insights</a><a href="blog/index.html">Guides</a><a href="use-cases/index.html">Use cases</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="data-deletion.html">Delete my data</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">Ragenaizer is the business OS &mdash; every app a company runs on, sharing one login, one permission model and one ledger. A product of Wisetrack Technologies LLP. Built in India, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
+
+  </div>
+
+  <script>
+    'use strict';
+
+    var RS_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (RS_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-lrow, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-lrow, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+</body>
+</html>
