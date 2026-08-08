@@ -1097,3 +1097,11 @@ body.commerce-desk #themes .dk-lic svg circle {
   stroke-width: 1.5;
   stroke-opacity: 0.75;
 }
+/* Same root cause on the right-hand label, which the launcher also colours
+   from --mod: on the near-black presets it was black text on a dark card and
+   effectively invisible. The swatch already carries the colour, so the label
+   has no reason to repeat it and takes the normal muted text colour instead. */
+body.commerce-desk #themes .dk-lfact {
+  color: var(--dk-mute);
+  opacity: 1;
+}
