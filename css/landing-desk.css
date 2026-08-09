@@ -1380,3 +1380,60 @@ body.desk-landing .mk-curlwrap .mk-curl{
   white-space:pre-wrap;
   overflow-wrap:anywhere;
 }
+
+/* ── hero wave ────────────────────────────────────────────────────────────────
+   The signature data-wave as the BACKDROP of a hero, for the pages that have
+   no product screenshot to open on. Injected by js/landing-hero-wave.js when
+   the body carries data-hero-wave; there is no markup for it in the pages.
+
+   Positioning follows .dk-desk-wave above, for the reason documented there:
+   the wave must reach both edges of the SCREEN, not both edges of .dk-wrap
+   (which caps at 1260px and left the graphic sitting in a box on a wide
+   monitor). Anchored to the viewport; the bleed is contained by
+   `.landing-page { overflow-x: clip }` in landing.css, which every one of
+   these pages carries. */
+body.desk-landing .dk-hero { position: relative; }
+
+body.desk-landing .dk-hero-wave {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -46px;
+  width: 100vw;
+  height: 300px;
+  /* Above `body.desk-landing::after`, which is a FIXED full-viewport glow at
+     z-index 0. Generated content paints after the element content at the same
+     level, so a wave at z-index 0 is invisible — drawn correctly, sized
+     correctly, and completely covered. It cost a while to find because the
+     hero's extra padding still applied, so the page looked like the script had
+     run and produced nothing. */
+  z-index: 1;
+  pointer-events: none;
+}
+body.desk-landing .dk-hero-wave svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* The hero's own content sits above it. Without this the text keeps the
+   default z-index and the fill can wash over the sub-copy. */
+body.desk-landing .dk-hero > *:not(.dk-hero-wave) {
+  position: relative;
+  z-index: 2;
+}
+
+/* A waved hero needs real room beneath the copy, not a token gap.
+
+   The wave is anchored to the hero's BOTTOM edge, and its line sits in the
+   lower part of its own box — so the padding here is what decides whether the
+   line passes behind the text or below it. At 78px the line ran straight
+   through the closing callout and the accent dots landed on top of words.
+   This much clears the copy entirely, and the space is not empty: the wave is
+   what fills it. */
+body.desk-landing .dk-hero[data-waved] { padding-bottom: 210px; }
+
+@media (max-width: 760px) {
+  body.desk-landing .dk-hero-wave { height: 200px; bottom: -30px; }
+  body.desk-landing .dk-hero[data-waved] { padding-bottom: 140px; }
+}
