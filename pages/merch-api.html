@@ -83,7 +83,7 @@
 
     <section class="dk-section dk-reveal" id="start">
       <div class="dk-kicker">Before the endpoint list</div>
-      <h2 class="dk-h2">Four things worth knowing first.</h2>
+      <h2 class="dk-h2">Six things worth knowing first.</h2>
       <div class="dk-list">
         <div class="dk-lrow" style="--mod:#60A5FA">
           <span class="dk-lmid"><span class="dk-lname">The base URL is your own store</span><span class="dk-ldesc">Every path below is served from the shop&rsquo;s own domain &mdash; <code>https://shop.example.com/api/&hellip;</code>. There is no Ragenaizer-hosted API to sign up for and no extra host or port; the store you installed is the API.</span></span>
@@ -91,13 +91,45 @@
         <div class="dk-lrow" style="--mod:#4ADE80">
           <span class="dk-lmid"><span class="dk-lname">Authentication is a bearer token</span><span class="dk-ldesc">Send <code>Authorization: Bearer &lt;token&gt;</code>. A shopper token comes from the shopper sign-in endpoint; the browsing endpoints need no token at all. It is a stateless JWT, so there is no session affinity and no cookie handling &mdash; a mobile app authenticates exactly as a browser does.</span></span>
         </div>
+        <div class="dk-lrow" style="--mod:#C084FC">
+          <span class="dk-lmid"><span class="dk-lname">You can call it straight from the browser</span><span class="dk-ldesc">The store answers every origin, method and header, on purpose &mdash; so a front end on a different domain to the store needs no proxy of its own. Because the credential is an <code>Authorization</code> header and not a cookie, nothing depends on the two sharing a site.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#F87171">
+          <span class="dk-lmid"><span class="dk-lname">Every failure is the same JSON shape</span><span class="dk-ldesc">A failed call answers <code>{"error": "&hellip;"}</code>, with a message written to be shown to a shopper as-is. <code>400</code> is a rejected request, <code>401</code> a missing or expired token, <code>404</code> an unknown id, <code>429</code> rate limiting, and <code>503</code> the store being temporarily unreachable &mdash; that last one adds <code>"storeUnavailable": true</code> so you can tell it apart from an ordinary refusal and retry rather than blame the shopper.</span></span>
+        </div>
         <div class="dk-lrow" style="--mod:#FB923C">
-          <span class="dk-lmid"><span class="dk-lname">Sign-in, checkout and payment are rate limited</span><span class="dk-ldesc">Per client IP, answering <code>429</code> with a JSON body. Treat it as back-off rather than failure. Browsing is not limited the same way, so a catalogue-heavy front end is not penalised.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">Sign-in, checkout and payment are rate limited</span><span class="dk-ldesc">Per client IP, in fixed one-minute windows: 15 for sign-in, 25 for checkout and payment, 90 for cart previews like coupons and gift cards, 120 for product-by-id. Over the line answers <code>429</code> in the usual error shape. The catalogue, collections and blog are not limited, so a browse-heavy front end is not penalised.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#94A3B8">
           <span class="dk-lmid"><span class="dk-lname">What is not here, and will not be</span><span class="dk-ldesc">Administering the shop stays with the bundled admin panel, and the API the store uses to reach your books is internal and never published &mdash; your front end never handles a Ragenaizer key, because the store holds it server-side. This is the shopfront contract, nothing wider.</span></span>
         </div>
       </div>
+    </section>
+
+    <section class="dk-section dk-reveal" id="checkout">
+      <div class="dk-kicker">The one flow you cannot guess</div>
+      <h2 class="dk-h2">There are two ways to place an order. Pick one.</h2>
+      <p class="dk-lede">Both take the <em>same</em> request body, so nothing about their shapes tells you which to call. Choosing wrong is the one mistake here that costs money, so it is worth thirty seconds: <strong>an order is created by exactly one call, and which call it is depends on whether you are collecting payment up front.</strong></p>
+      <div class="mk-flows">
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">A</span> Paying later &mdash; cash on delivery, or an invoice to settle</div>
+          <ol class="mk-steps">
+            <li><code>POST /api/checkout</code> with the cart, the customer, and any coupon or gift card.</li>
+            <li>That is the whole flow. The order exists, and the response carries its id, order reference and invoice PDF.</li>
+          </ol>
+          <p class="mk-flownote">Do not touch the payment endpoints on this path.</p>
+        </div>
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">B</span> Paying now &mdash; card, UPI, net banking</div>
+          <ol class="mk-steps">
+            <li><code>POST /api/payment/create-order</code> with that same body. Nothing is ordered yet; you get back what the payment widget needs.</li>
+            <li>Open the gateway with the <code>keyId</code>, <code>amount</code> and <code>razorpayOrderId</code> it returned. Note the <code>amount</code> is in <strong>paise</strong>, not rupees.</li>
+            <li>On success the gateway hands you three values. <code>POST /api/payment/verify</code> with them. <strong>This is the call that creates the order</strong>, and it answers with the same shape <code>/api/checkout</code> would have.</li>
+          </ol>
+          <p class="mk-flownote"><strong>Never call <code>/api/checkout</code> as well.</strong> It would place a second, unpaid order for the same basket.</p>
+        </div>
+      </div>
+      <p class="dk-osnote">Two things that will save you writing code you do not need. Verifying twice is safe &mdash; a repeated <code>verify</code> returns the order already created, never a second one &mdash; so a retry after a dropped connection needs no guard of your own. And if the shopper pays and closes the tab before your <code>verify</code> fires, the store still receives the gateway&rsquo;s own notification and creates the order anyway, so that basket is not lost.</p>
     </section>
 
     <section class="dk-section dk-reveal" id="endpoints">
@@ -110,7 +142,7 @@
           <details class="mk-ep" open>
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/catalog</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The product list. Optional query: search, category, minPrice, maxPrice, inStock, sort and locale. Prices and stock are live from the merchant&#x27;s books, and hidden products are already excluded.</p>
+              <p class="mk-desc">The product list, returned as a bare array &mdash; there is no envelope and <strong>no pagination</strong>, so one call gives you the whole visible catalogue and any paging is yours to do client-side. Optional query: <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>locale</code>, and <code>sort</code>, which accepts exactly <code>price_asc</code>, <code>price_desc</code> or <code>name</code> &mdash; any other value is ignored rather than rejected, so a typo silently returns catalogue order. Products that share a variant group fold to one card here; use the variants endpoint to expand it. Prices and stock are live from the merchant&#x27;s books, and hidden products are already excluded.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl https://your-shop.example.com/api/catalog</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
@@ -1386,6 +1418,66 @@
         });
       }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
       els.forEach(function (el) { io.observe(el); });
+    })();
+
+    /* Copy-to-clipboard on each curl command. Injected rather than baked into the
+       markup so the page still renders a clean, selectable block without JS. */
+    (function () {
+      var blocks = document.querySelectorAll('pre.mk-curl');
+      if (!blocks.length) return;
+
+      /* navigator.clipboard is unavailable on insecure origins, which includes
+         anyone reading this over plain http on a LAN. Fall back rather than
+         throw, so the button never silently does nothing. */
+      function write(text) {
+        if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+        return new Promise(function (resolve, reject) {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.cssText = 'position:fixed;top:-9999px;opacity:0';
+          document.body.appendChild(ta);
+          ta.select();
+          var ok = false;
+          try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+          document.body.removeChild(ta);
+          ok ? resolve() : reject(new Error('copy failed'));
+        });
+      }
+
+      blocks.forEach(function (pre) {
+        var wrap = document.createElement('div');
+        wrap.className = 'mk-curlwrap';
+        pre.parentNode.insertBefore(wrap, pre);
+        wrap.appendChild(pre);
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mk-copy';
+        btn.textContent = 'Copy';
+        /* The visible label changes to "Copied", which a screen reader would not
+           otherwise announce; this says what the button does regardless. */
+        btn.setAttribute('aria-label', 'Copy this command to the clipboard');
+        wrap.appendChild(btn);
+
+        var revert;
+        btn.addEventListener('click', function () {
+          /* textContent, not innerHTML — the command contains real quotes and
+             braces that were escaped for HTML, and the clipboard must get the
+             runnable original, not the escaped source. */
+          write(pre.textContent).then(function () {
+            btn.textContent = 'Copied';
+            btn.classList.add('is-done');
+          }, function () {
+            btn.textContent = 'Press Ctrl+C';
+          });
+          clearTimeout(revert);
+          revert = setTimeout(function () {
+            btn.textContent = 'Copy';
+            btn.classList.remove('is-done');
+          }, 2000);
+        });
+      });
     })();
   </script>
 </body>
