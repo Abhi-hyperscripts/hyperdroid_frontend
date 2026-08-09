@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
     <title>Merch Storefront API — Build Your Own E-Commerce Front End | Ragenaizer</title>
-    <meta name="description" content="The Merch storefront HTTP API: 37 documented endpoints for catalogue, cart, checkout, shopper accounts, payments, returns and subscriptions. Build a custom e-commerce front end in React, Vue, Svelte, Flutter or native — your store serves its own OpenAPI document.">
+    <meta name="description" content="The Merch storefront HTTP API: 43 documented endpoints for catalogue, cart, checkout, shopper accounts, payments, returns and subscriptions. Build a custom e-commerce front end in React, Vue, Svelte, Flutter or native — your store serves its own OpenAPI document.">
     <meta name="keywords" content="free ecommerce platform, self hosted ecommerce, online store software india, shopify alternative india, woocommerce alternative, GST ecommerce, accounting integrated ecommerce, PWA online store, ecommerce themes india, COD checkout, razorpay ecommerce">
     <meta name="author" content="Ragenaizer">
     <meta name="robots" content="index, follow">
@@ -74,7 +74,7 @@
            spelling (26 uses to 10 of "e-commerce"). -->
       <h1 class="dk-h1">Build your own<br>ecommerce.</h1>
       <p class="dk-sub">Merch ships with thirty-two designs, and if none of them is what you want, the front end is replaceable. The shop that ships with it is just one consumer of this HTTP API and holds no privileged access &mdash; so anything it does, your own front end can do, in React, Vue, Svelte, Flutter or a native app, while the invoices, the FIFO stock and the books stay exactly as they are.</p>
-      <p class="dk-replaces"><b>Thirty-seven endpoints, on your own domain.</b> Your store serves its own OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>. This page is the same surface, so you can read it before installing anything.</p>
+      <p class="dk-replaces"><b>Forty-three endpoints, on your own domain.</b> Your store serves its own OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>. This page is the same surface, so you can read it before installing anything.</p>
       <div class="dk-actions">
         <a class="dk-btn1" href="merch.html">About Merch &rarr;</a>
         <a class="dk-btn2" href="https://github.com/Abhi-hyperscripts/ragenaizer-commerce">Install it</a>
@@ -102,7 +102,7 @@
 
     <section class="dk-section dk-reveal" id="endpoints">
       <div class="dk-kicker">The surface</div>
-      <h2 class="dk-h2">Thirty-seven endpoints.</h2>
+      <h2 class="dk-h2">Forty-three endpoints, all documented.</h2>
       <p class="dk-lede">Grouped the way a front end consumes them. Open any one for a runnable curl, what it does, its parameters, and the JSON going in and out. The shapes are illustrative &mdash; field names and types are real, the values are placeholders.</p>
       <div class="mk-eps">
         <section class="mk-group">
@@ -218,7 +218,37 @@
                 <li><code>handle</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
                 <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
               </ul>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;collection&quot;: {
+    &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;handle&quot;: &quot;string&quot;,
+    &quot;title&quot;: &quot;string&quot;,
+    &quot;description&quot;: &quot;string&quot;,
+    &quot;imageUrl&quot;: &quot;string&quot;
+  },
+  &quot;products&quot;: [
+    {
+      &quot;id&quot;: &quot;string&quot;,
+      &quot;name&quot;: &quot;string&quot;,
+      &quot;description&quot;: &quot;string&quot;,
+      &quot;imageUrls&quot;: [
+        &quot;string&quot;
+      ],
+      &quot;category&quot;: &quot;string&quot;,
+      &quot;unit&quot;: &quot;string&quot;,
+      &quot;price&quot;: 0.0,
+      &quot;mrp&quot;: 0.0,
+      &quot;taxNote&quot;: &quot;string&quot;,
+      &quot;availability&quot;: &quot;string&quot;,
+      &quot;qtyHint&quot;: 0,
+      &quot;featured&quot;: false,
+      &quot;variantGroupId&quot;: &quot;string&quot;,
+      &quot;variantCount&quot;: 0,
+      &quot;isDigital&quot;: false
+    }
+  ]
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -378,7 +408,7 @@
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>seed</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <p class="mk-note">Answers with an image (<code>image/svg+xml</code>), not JSON.</p>
             </div>
           </details>
           <details class="mk-ep">
@@ -455,6 +485,11 @@
   &quot;rating&quot;: 5,
   &quot;title&quot;: &quot;string&quot;,
   &quot;body&quot;: &quot;string&quot;
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: false,
+  &quot;verified&quot;: false
 }</pre>
             </div>
           </details>
@@ -639,6 +674,23 @@
   &quot;email&quot;: &quot;shopper@example.com&quot;,
   &quot;reference&quot;: &quot;SO-1A2B3C4D&quot;
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;invoiceId&quot;: &quot;string&quot;,
+  &quot;orderRef&quot;: &quot;string&quot;,
+  &quot;status&quot;: &quot;string&quot;,
+  &quot;total&quot;: 0.0,
+  &quot;invoicePdfUrl&quot;: &quot;string&quot;,
+  &quot;createdAt&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+  &quot;awb&quot;: &quot;string&quot;,
+  &quot;trackingUrl&quot;: &quot;string&quot;,
+  &quot;fulfillmentStatus&quot;: &quot;string&quot;,
+  &quot;carrier&quot;: &quot;string&quot;,
+  &quot;trackingNumber&quot;: &quot;string&quot;,
+  &quot;fulfilledAt&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+  &quot;cancelledAt&quot;: &quot;2026-08-09T00:00:00Z&quot;
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -650,7 +702,38 @@
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;order&quot;: {
+    &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;invoiceId&quot;: &quot;string&quot;,
+    &quot;orderRef&quot;: &quot;string&quot;,
+    &quot;status&quot;: &quot;string&quot;,
+    &quot;total&quot;: 0.0,
+    &quot;invoicePdfUrl&quot;: &quot;string&quot;,
+    &quot;createdAt&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+    &quot;awb&quot;: &quot;string&quot;,
+    &quot;trackingUrl&quot;: &quot;string&quot;,
+    &quot;fulfillmentStatus&quot;: &quot;string&quot;,
+    &quot;carrier&quot;: &quot;string&quot;,
+    &quot;trackingNumber&quot;: &quot;string&quot;,
+    &quot;fulfilledAt&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+    &quot;cancelledAt&quot;: &quot;2026-08-09T00:00:00Z&quot;
+  },
+  &quot;events&quot;: [
+    {
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;at&quot;: &quot;2026-08-09T00:00:00Z&quot;
+    }
+  ],
+  &quot;access&quot;: [
+    {
+      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;name&quot;: &quot;string&quot;,
+      &quot;url&quot;: &quot;string&quot;
+    }
+  ]
+}</pre>
             </div>
           </details>
         </section>
@@ -738,7 +821,10 @@
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: false
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -764,6 +850,10 @@
   &quot;pincode&quot;: &quot;110001&quot;,
   &quot;makeDefault&quot;: false
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: false
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -777,7 +867,10 @@
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: false
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -793,6 +886,16 @@
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;credential&quot;: &quot;string&quot;
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;token&quot;: &quot;string&quot;,
+  &quot;shopper&quot;: {
+    &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;email&quot;: &quot;string&quot;,
+    &quot;name&quot;: &quot;string&quot;,
+    &quot;phone&quot;: &quot;string&quot;
+  }
 }</pre>
             </div>
           </details>
@@ -822,7 +925,25 @@
               <pre class="mk-curl">curl https://your-shop.example.com/api/shopper/orders \
   -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">[
+  {
+    &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;invoiceId&quot;: &quot;string&quot;,
+    &quot;orderRef&quot;: &quot;string&quot;,
+    &quot;status&quot;: &quot;string&quot;,
+    &quot;total&quot;: 0.0,
+    &quot;invoicePdfUrl&quot;: &quot;string&quot;,
+    &quot;createdAt&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+    &quot;awb&quot;: &quot;string&quot;,
+    &quot;trackingUrl&quot;: &quot;string&quot;,
+    &quot;fulfillmentStatus&quot;: &quot;string&quot;,
+    &quot;carrier&quot;: &quot;string&quot;,
+    &quot;trackingNumber&quot;: &quot;string&quot;,
+    &quot;fulfilledAt&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+    &quot;cancelledAt&quot;: &quot;2026-08-09T00:00:00Z&quot;
+  }
+]</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -870,7 +991,10 @@
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>itemId</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: false
+}</pre>
             </div>
           </details>
         </section>
@@ -923,6 +1047,19 @@
   &quot;giftCardCode&quot;: &quot;GIFT500&quot;,
   &quot;shippingRateId&quot;: &quot;string&quot;
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;razorpayOrderId&quot;: &quot;string&quot;,
+  &quot;amount&quot;: 0,
+  &quot;currency&quot;: &quot;string&quot;,
+  &quot;keyId&quot;: &quot;string&quot;,
+  &quot;name&quot;: &quot;string&quot;,
+  &quot;prefill&quot;: {
+    &quot;name&quot;: &quot;string&quot;,
+    &quot;email&quot;: &quot;string&quot;,
+    &quot;contact&quot;: &quot;string&quot;
+  }
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -939,6 +1076,17 @@
   &quot;razorpayPaymentId&quot;: &quot;string&quot;,
   &quot;razorpaySignature&quot;: &quot;string&quot;
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;invoiceId&quot;: &quot;string&quot;,
+  &quot;orderRef&quot;: &quot;string&quot;,
+  &quot;status&quot;: &quot;string&quot;,
+  &quot;total&quot;: 0.0,
+  &quot;invoicePdfUrl&quot;: &quot;string&quot;,
+  &quot;giftCardApplied&quot;: 0.0,
+  &quot;amountDue&quot;: 0.0
+}</pre>
             </div>
           </details>
         </section>
@@ -952,7 +1100,23 @@
               <pre class="mk-curl">curl https://your-shop.example.com/api/returns \
   -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">[
+  {
+    &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;orderId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;orderRef&quot;: &quot;string&quot;,
+    &quot;invoiceId&quot;: &quot;string&quot;,
+    &quot;reason&quot;: &quot;string&quot;,
+    &quot;status&quot;: &quot;string&quot;,
+    &quot;creditNoteNumber&quot;: &quot;string&quot;,
+    &quot;refundAmount&quot;: 0.0,
+    &quot;adminNote&quot;: &quot;string&quot;,
+    &quot;orderTotal&quot;: 0.0,
+    &quot;createdAt&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+    &quot;resolvedAt&quot;: &quot;2026-08-09T00:00:00Z&quot;
+  }
+]</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -970,6 +1134,21 @@
   &quot;orderId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
   &quot;reason&quot;: &quot;string&quot;
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;orderId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;orderRef&quot;: &quot;string&quot;,
+  &quot;invoiceId&quot;: &quot;string&quot;,
+  &quot;reason&quot;: &quot;string&quot;,
+  &quot;status&quot;: &quot;string&quot;,
+  &quot;creditNoteNumber&quot;: &quot;string&quot;,
+  &quot;refundAmount&quot;: 0.0,
+  &quot;adminNote&quot;: &quot;string&quot;,
+  &quot;orderTotal&quot;: 0.0,
+  &quot;createdAt&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+  &quot;resolvedAt&quot;: &quot;2026-08-09T00:00:00Z&quot;
+}</pre>
             </div>
           </details>
         </section>
@@ -983,7 +1162,17 @@
               <pre class="mk-curl">curl https://your-shop.example.com/api/subscriptions \
   -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">[
+  {
+    &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;title&quot;: &quot;string&quot;,
+    &quot;frequency&quot;: &quot;string&quot;,
+    &quot;status&quot;: &quot;string&quot;,
+    &quot;nextRun&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+    &quot;createdAt&quot;: &quot;2026-08-09T00:00:00Z&quot;
+  }
+]</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -1016,6 +1205,23 @@
   &quot;frequency&quot;: &quot;string&quot;,
   &quot;title&quot;: &quot;string&quot;
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;title&quot;: &quot;string&quot;,
+  &quot;frequency&quot;: &quot;string&quot;,
+  &quot;status&quot;: &quot;string&quot;,
+  &quot;nextRun&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+  &quot;createdAt&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+  &quot;access&quot;: [
+    {
+      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;name&quot;: &quot;string&quot;,
+      &quot;url&quot;: &quot;string&quot;
+    }
+  ],
+  &quot;accessPendingPayment&quot;: false
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -1030,7 +1236,15 @@
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
                 <li><code>op</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;title&quot;: &quot;string&quot;,
+  &quot;frequency&quot;: &quot;string&quot;,
+  &quot;status&quot;: &quot;string&quot;,
+  &quot;nextRun&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+  &quot;createdAt&quot;: &quot;2026-08-09T00:00:00Z&quot;
+}</pre>
             </div>
           </details>
         </section>
@@ -1042,7 +1256,16 @@
               <p class="mk-desc">Published posts, newest first, without bodies — for an index page.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl https://your-shop.example.com/api/blog</pre>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">[
+  {
+    &quot;slug&quot;: &quot;string&quot;,
+    &quot;title&quot;: &quot;string&quot;,
+    &quot;excerpt&quot;: &quot;string&quot;,
+    &quot;coverUrl&quot;: &quot;string&quot;,
+    &quot;createdAt&quot;: &quot;2026-08-09T00:00:00Z&quot;
+  }
+]</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -1054,7 +1277,18 @@
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>slug</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;slug&quot;: &quot;string&quot;,
+  &quot;title&quot;: &quot;string&quot;,
+  &quot;excerpt&quot;: &quot;string&quot;,
+  &quot;coverUrl&quot;: &quot;string&quot;,
+  &quot;body&quot;: &quot;string&quot;,
+  &quot;published&quot;: false,
+  &quot;createdAt&quot;: &quot;2026-08-09T00:00:00Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-08-09T00:00:00Z&quot;
+}</pre>
             </div>
           </details>
         </section>
