@@ -956,6 +956,135 @@ body.desk-landing .mk-tn {
   body.desk-landing .mk-trade:hover { transform: none; }
 }
 
+/* ── merch-api.html: expandable endpoint reference ──────────────────────────
+   <details> rather than JS: it works with no script, is keyboard and screen
+   reader accessible for free, and Cmd-F finds text inside a collapsed block in
+   modern browsers. */
+body.desk-landing .mk-eps { margin-top: 40px; }
+
+body.desk-landing .mk-group { margin: 0 0 34px; }
+body.desk-landing .mk-gname {
+  margin: 0 0 12px;
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dk-ink);
+}
+body.desk-landing .mk-gname span { color: var(--dk-dim); margin-left: 8px; }
+
+body.desk-landing .mk-ep {
+  border: 1px solid var(--dk-line);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  background: var(--dk-bg);
+  overflow: hidden;
+}
+body.desk-landing .mk-ep[open] { border-color: rgb(255 255 255 / 0.22); }
+body.desk-landing .mk-ep > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  cursor: pointer;
+  list-style: none;
+  transition: background .15s ease;
+}
+body.desk-landing .mk-ep > summary::-webkit-details-marker { display: none; }
+body.desk-landing .mk-ep > summary:hover { background: rgb(255 255 255 / 0.03); }
+/* chevron, drawn rather than an asset */
+body.desk-landing .mk-ep > summary::after {
+  content: "";
+  margin-left: auto;
+  width: 7px; height: 7px;
+  border-right: 1.5px solid var(--dk-dim);
+  border-bottom: 1.5px solid var(--dk-dim);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform .18s ease;
+}
+body.desk-landing .mk-ep[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+
+body.desk-landing .mk-epbody {
+  padding: 2px 16px 18px;
+  border-top: 1px solid var(--dk-line);
+}
+body.desk-landing .mk-desc {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--dk-ink);
+  max-width: 78ch;
+}
+body.desk-landing .mk-note {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--dk-dim);
+}
+body.desk-landing .mk-sub {
+  margin: 18px 0 8px;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.desk-landing .mk-params { margin: 0; padding: 0; list-style: none; }
+body.desk-landing .mk-params li {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 5px 0;
+  font-size: 13px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.05);
+}
+body.desk-landing .mk-params li:last-child { border-bottom: 0; }
+body.desk-landing .mk-params code { font-size: 12.5px; color: var(--dk-ink); }
+body.desk-landing .mk-loc,
+body.desk-landing .mk-ty {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dk-dim);
+}
+body.desk-landing .mk-params em { font-style: normal; font-size: 10.5px; color: #FCA5A5; }
+
+body.desk-landing .mk-json {
+  margin: 0;
+  padding: 13px 15px;
+  border: 1px solid var(--dk-line);
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.32);
+  font-family: var(--font-family-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: #C8D3E6;
+  overflow-x: auto;      /* long values scroll here, never the page */
+  white-space: pre;
+}
+
+body.desk-landing .mk-auth {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgb(226 232 240 / 0.1);
+  color: #CBD5E1;
+}
+
+@media (max-width: 560px) {
+  body.desk-landing .mk-ep > summary { flex-wrap: wrap; gap: 8px; padding: 12px 13px; }
+  body.desk-landing .mk-epbody { padding: 2px 13px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.desk-landing .mk-ep > summary,
+  body.desk-landing .mk-ep > summary::after { transition: none; }
+}
+
 /* Endpoint rows on merch-api.html — a verb chip and a monospace path. Colours
    are the conventional REST ones so a developer reads the list at a glance
    rather than parsing each line. */

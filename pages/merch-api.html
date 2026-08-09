@@ -100,85 +100,561 @@
     <section class="dk-section dk-reveal" id="endpoints">
       <div class="dk-kicker">The surface</div>
       <h2 class="dk-h2">Thirty-seven endpoints.</h2>
-      <p class="dk-lede">Grouped the way a front end consumes them. Request and response shapes are in the OpenAPI document your own store serves &mdash; that one is generated from the running code, so it is always accurate for the version you are on.</p>
-      <div class="dk-launch">
-        <section class="dk-lgroup">
-          <div class="dk-lhead"><h3>Storefront</h3><p>17 endpoints.</p></div>
-          <div class="dk-lrows">
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/catalog</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/catalog/{id}</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/categories</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/collections</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/collections/{handle}</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/coupon/validate</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/currencies</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/discounts/auto</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/discounts/bxgy</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/events</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/giftcard/check</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/media/ph/{seed}.svg</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/products/{id}/variants</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/products/{itemId}/reviews</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/products/{itemId}/reviews</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/shipping/quote</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/theme</span></span></div>
-          </div>
+      <p class="dk-lede">Grouped the way a front end consumes them. Open any one for what it does, its parameters, and the JSON going in and out. The shapes are illustrative &mdash; field names and types are real, the values are placeholders.</p>
+      <div class="mk-eps">
+        <section class="mk-group">
+          <h3 class="mk-gname">Storefront <span>17 endpoints</span></h3>
+          <details class="mk-ep" open>
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/catalog</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The product list. Optional query: search, category, minPrice, maxPrice, inStock, sort and locale. Prices and stock are live from the merchant&#x27;s books, and hidden products are already excluded.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>search</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>category</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>minPrice</code> <span class="mk-loc">query</span> <span class="mk-ty">number</span></li>
+                <li><code>maxPrice</code> <span class="mk-loc">query</span> <span class="mk-ty">number</span></li>
+                <li><code>inStock</code> <span class="mk-loc">query</span> <span class="mk-ty">boolean</span></li>
+                <li><code>sort</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/catalog/{id}</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">One product in full, including its description, images and live price and availability.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+                <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/categories</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The category facets present in the catalogue, for building navigation or a filter rail.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/collections</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Merchandising collections — manual picks and rule-based ones — as configured by the merchant.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/collections/{handle}</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">One collection and the products currently in it, resolved at request time so a smart collection stays current.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>handle</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+                <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/coupon/validate</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Preview a coupon code against the current basket without applying it. The subtotal is computed server-side from live prices, so a client cannot claim a total.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;code&quot;: &quot;string&quot;,
+  &quot;lines&quot;: [
+    {
+      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;qty&quot;: 0
+    }
+  ]
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/currencies</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The display currencies the merchant has enabled, with their rates, for a currency switcher.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/discounts/auto</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Preview the best automatic (no-code) discount for the current basket, so the saving can be shown before checkout.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;lines&quot;: [
+    {
+      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;qty&quot;: 0
+    }
+  ]
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/discounts/bxgy</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Preview any buy-X-get-Y saving that applies to the current basket.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;lines&quot;: [
+    {
+      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;qty&quot;: 0
+    }
+  ]
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/events</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Report a small batch of funnel events (viewed, added to cart, and so on) for the merchant&#x27;s analytics. Unknown event types are ignored rather than rejected.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;sessionId&quot;: &quot;string&quot;,
+  &quot;events&quot;: [
+    {
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;itemId&quot;: &quot;string&quot;
+    }
+  ]
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/giftcard/check</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Check a gift card&#x27;s balance before offering it at checkout. This does not redeem it.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;code&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/media/ph/{seed}.svg</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">A deterministic placeholder image, generated locally. Useful while building against a demo store with no product photography.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>seed</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/products/{id}/variants</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The sibling options of a product (size, colour and so on) for a variant selector on the product page.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+                <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/products/{itemId}/reviews</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Published reviews for a product, with the rating summary used for stars on a listing.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>itemId</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/products/{itemId}/reviews</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Write or update the signed-in shopper&#x27;s review. Requires a shopper token. Whether the review counts as verified is decided server-side from that shopper&#x27;s order history — a client cannot claim it.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>itemId</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+              </ul>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;rating&quot;: 0,
+  &quot;title&quot;: &quot;string&quot;,
+  &quot;body&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shipping/quote</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The delivery cost for a destination pincode and basket. This is the FINAL figure checkout will charge, resolved the same way the order is priced, so the number shown is the number billed.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;pincode&quot;: &quot;string&quot;,
+  &quot;lines&quot;: [
+    {
+      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;qty&quot;: 0
+    }
+  ],
+  &quot;paymentMethod&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/theme</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The shop&#x27;s branding and layout — colours, fonts, logo, banners, legal pages and the chosen design preset. Fetch this first; it is what makes the storefront look like this particular business.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
         </section>
-        <section class="dk-lgroup">
-          <div class="dk-lhead"><h3>Cart and checkout</h3><p>4 endpoints.</p></div>
-          <div class="dk-lrows">
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/cart/save</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/checkout</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/orders/lookup</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/orders/{id}</span></span></div>
-          </div>
+        <section class="mk-group">
+          <h3 class="mk-gname">Cart and checkout <span>4 endpoints</span></h3>
+          <details class="mk-ep" open>
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/cart/save</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Persist the in-progress basket against an email address. This is what makes abandoned-cart recovery possible; guests are included deliberately.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;email&quot;: &quot;string&quot;,
+  &quot;lines&quot;: [
+    {
+      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;name&quot;: &quot;string&quot;,
+      &quot;qty&quot;: 0,
+      &quot;price&quot;: 0.0
+    }
+  ]
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/checkout</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Place a Cash-on-Delivery order. Works for a guest with inline customer details or for a signed-in shopper. Online payment uses the payment endpoints instead, because there the order must not exist until the money is verified.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;lines&quot;: [
+    {
+      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;qty&quot;: 0
+    }
+  ],
+  &quot;customer&quot;: {
+    &quot;name&quot;: &quot;string&quot;,
+    &quot;email&quot;: &quot;string&quot;,
+    &quot;phone&quot;: &quot;string&quot;,
+    &quot;address&quot;: &quot;string&quot;,
+    &quot;city&quot;: &quot;string&quot;,
+    &quot;state&quot;: &quot;string&quot;,
+    &quot;pincode&quot;: &quot;string&quot;
+  },
+  &quot;paymentMethod&quot;: &quot;string&quot;,
+  &quot;idempotencyKey&quot;: &quot;string&quot;,
+  &quot;couponCode&quot;: &quot;string&quot;,
+  &quot;giftCardCode&quot;: &quot;string&quot;,
+  &quot;shippingRateId&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/orders/lookup</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Guest order lookup by email plus an order reference. Both must match, and it is rate limited, so it cannot be used to enumerate other people&#x27;s orders.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;email&quot;: &quot;string&quot;,
+  &quot;reference&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/orders/{id}</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">An order&#x27;s current status and timeline, for the confirmation page.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
         </section>
-        <section class="dk-lgroup">
-          <div class="dk-lhead"><h3>Shopper accounts</h3><p>12 endpoints.</p></div>
-          <div class="dk-lrows">
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/auth/config</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/shopper/addresses</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/shopper/addresses</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-delete">DELETE</span><span class="dk-lmid"><span class="mk-path">/api/shopper/addresses/{id}</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-put">PUT</span><span class="dk-lmid"><span class="mk-path">/api/shopper/addresses/{id}</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/shopper/addresses/{id}/default</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/shopper/google</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/shopper/me</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/shopper/orders</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/shopper/wishlist</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/shopper/wishlist</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-delete">DELETE</span><span class="dk-lmid"><span class="mk-path">/api/shopper/wishlist/{itemId}</span></span></div>
-          </div>
+        <section class="mk-group">
+          <h3 class="mk-gname">Shopper accounts <span>12 endpoints</span></h3>
+          <details class="mk-ep" open>
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/auth/config</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Which sign-in methods this shop offers, so the front end knows whether to render a Google button. The client id it returns is public by design.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/shopper/addresses</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The shopper&#x27;s saved delivery addresses. Requires a shopper token.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/addresses</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Save a new delivery address for the signed-in shopper.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;name&quot;: &quot;string&quot;,
+  &quot;phone&quot;: &quot;string&quot;,
+  &quot;line&quot;: &quot;string&quot;,
+  &quot;city&quot;: &quot;string&quot;,
+  &quot;state&quot;: &quot;string&quot;,
+  &quot;pincode&quot;: &quot;string&quot;,
+  &quot;makeDefault&quot;: false
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-delete">DELETE</span><code class="mk-path">/api/shopper/addresses/{id}</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Remove one of the shopper&#x27;s saved addresses.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-put">PUT</span><code class="mk-path">/api/shopper/addresses/{id}</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Update one of the shopper&#x27;s saved addresses.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+              </ul>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;name&quot;: &quot;string&quot;,
+  &quot;phone&quot;: &quot;string&quot;,
+  &quot;line&quot;: &quot;string&quot;,
+  &quot;city&quot;: &quot;string&quot;,
+  &quot;state&quot;: &quot;string&quot;,
+  &quot;pincode&quot;: &quot;string&quot;,
+  &quot;makeDefault&quot;: false
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/addresses/{id}/default</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Mark a saved address as the shopper&#x27;s default for checkout.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/google</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Sign in with a Google ID token. The token is verified server-side and the shopper is found or created from the verified email. Returns a shopper JWT.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;credential&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/shopper/me</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The signed-in shopper&#x27;s profile. Requires a shopper token.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/shopper/orders</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The signed-in shopper&#x27;s order history. Requires a shopper token.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/shopper/wishlist</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The signed-in shopper&#x27;s wishlist. Requires a shopper token.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/wishlist</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Add a product to the shopper&#x27;s wishlist.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;itemId&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-delete">DELETE</span><code class="mk-path">/api/shopper/wishlist/{itemId}</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Remove a product from the shopper&#x27;s wishlist.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>itemId</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
         </section>
-        <section class="dk-lgroup">
-          <div class="dk-lhead"><h3>Payments</h3><p>3 endpoints.</p></div>
-          <div class="dk-lrows">
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/payment/config</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/payment/create-order</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/payment/verify</span></span></div>
-          </div>
+        <section class="mk-group">
+          <h3 class="mk-gname">Payments <span>3 endpoints</span></h3>
+          <details class="mk-ep" open>
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/payment/config</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Whether online payment is switched on, and the public key needed to open the payment widget. Never returns the secret.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/payment/create-order</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Price the basket server-side and open a payment against it. The amount is computed from live prices, coupons and gift cards — the client never states what it owes.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;lines&quot;: [
+    {
+      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;qty&quot;: 0
+    }
+  ],
+  &quot;customer&quot;: {
+    &quot;name&quot;: &quot;string&quot;,
+    &quot;email&quot;: &quot;string&quot;,
+    &quot;phone&quot;: &quot;string&quot;,
+    &quot;address&quot;: &quot;string&quot;,
+    &quot;city&quot;: &quot;string&quot;,
+    &quot;state&quot;: &quot;string&quot;,
+    &quot;pincode&quot;: &quot;string&quot;
+  },
+  &quot;paymentMethod&quot;: &quot;string&quot;,
+  &quot;idempotencyKey&quot;: &quot;string&quot;,
+  &quot;couponCode&quot;: &quot;string&quot;,
+  &quot;giftCardCode&quot;: &quot;string&quot;,
+  &quot;shippingRateId&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/payment/verify</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Verify the signed payment result and create the order. Idempotent per payment, so a retried or duplicated callback cannot produce two orders.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;razorpayOrderId&quot;: &quot;string&quot;,
+  &quot;razorpayPaymentId&quot;: &quot;string&quot;,
+  &quot;razorpaySignature&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
         </section>
-        <section class="dk-lgroup">
-          <div class="dk-lhead"><h3>Returns</h3><p>2 endpoints.</p></div>
-          <div class="dk-lrows">
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/returns</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/returns</span></span></div>
-          </div>
+        <section class="mk-group">
+          <h3 class="mk-gname">Returns <span>2 endpoints</span></h3>
+          <details class="mk-ep" open>
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/returns</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The signed-in shopper&#x27;s own return requests and their status.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/returns</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Request a return against one of the shopper&#x27;s own orders. The merchant&#x27;s books issue a credit note when it is accepted.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;orderId&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;reason&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
         </section>
-        <section class="dk-lgroup">
-          <div class="dk-lhead"><h3>Subscriptions</h3><p>3 endpoints.</p></div>
-          <div class="dk-lrows">
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/subscriptions</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/subscriptions</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/subscriptions/{id}/{op}</span></span></div>
-          </div>
+        <section class="mk-group">
+          <h3 class="mk-gname">Subscriptions <span>3 endpoints</span></h3>
+          <details class="mk-ep" open>
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/subscriptions</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The signed-in shopper&#x27;s recurring orders.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/subscriptions</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Start a recurring order for the signed-in shopper.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;lines&quot;: [
+    {
+      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;qty&quot;: 0
+    }
+  ],
+  &quot;customer&quot;: {
+    &quot;name&quot;: &quot;string&quot;,
+    &quot;email&quot;: &quot;string&quot;,
+    &quot;phone&quot;: &quot;string&quot;,
+    &quot;address&quot;: &quot;string&quot;,
+    &quot;city&quot;: &quot;string&quot;,
+    &quot;state&quot;: &quot;string&quot;,
+    &quot;pincode&quot;: &quot;string&quot;
+  },
+  &quot;frequency&quot;: &quot;string&quot;,
+  &quot;title&quot;: &quot;string&quot;
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/subscriptions/{id}/{op}</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Change a subscription&#x27;s state. The operation is one of pause, resume or cancel.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+                <li><code>op</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
         </section>
-        <section class="dk-lgroup">
-          <div class="dk-lhead"><h3>Blog</h3><p>2 endpoints.</p></div>
-          <div class="dk-lrows">
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/blog</span></span></div>
-            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/blog/{slug}</span></span></div>
-          </div>
+        <section class="mk-group">
+          <h3 class="mk-gname">Blog <span>2 endpoints</span></h3>
+          <details class="mk-ep" open>
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/blog</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Published posts, newest first, without bodies — for an index page.</p>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/blog/{slug}</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">One published post in full, by slug.</p>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>slug</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
+              </ul>
+              <p class="mk-note">The exact response shape is in your store&rsquo;s own OpenAPI document, which is generated from the running build.</p>
+            </div>
+          </details>
         </section>
       </div>
       <p class="dk-osnote">Generated from a live store&rsquo;s OpenAPI document. If your store is a newer build, trust <code>/api/openapi.json</code> on it over this page.</p>
