@@ -140,7 +140,15 @@
             "name": "Do I get the source code?",
             "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Not today, and it is worth being precise about that. What is public is the deployment — the install script, the compose file and the reverse-proxy config are on GitHub and yours to read and change. The store itself ships as prebuilt container images, so you run it on your own server, on your own domain, holding your own data and secrets, but the application source is not published. \"Self-hosted\" here means you own the infrastructure, not that you own the codebase."
+                "text": "Not today, and it is worth being precise about that. What is public is the deployment — the install script, the compose file and the reverse-proxy config are on GitHub and yours to read and change. The store itself ships as prebuilt container images, so you run it on your own server, on your own domain, holding your own data and secrets, but the application source is not published. \"Self-hosted\" here means you own the infrastructure, not that you own the codebase. You can, however, replace the entire front end — see the next answer."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Can I build my own storefront against it?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. The storefront that ships is one consumer of a documented HTTP API and holds no privileged access, so anything it does, your own front end can do — in React, Vue, Svelte, Flutter or a native app. Your store serves an OpenAPI document at /api/openapi.json and a browsable page at /api/docs, on your own domain; authentication is a bearer JWT with a shopper role and an admin role. What is published is the storefront surface — catalogue, cart, checkout, accounts, wishlist, reviews, returns, subscriptions. Administering the shop stays with the bundled admin panel, and the API the store uses to reach your books is internal and never public, so your front end never handles a Ragenaizer key."
             }
         },
         {
@@ -212,6 +220,32 @@
         <a class="mk-trade" href="#themes" style="--mk:#FDE047"><span class="mk-tname">Marketplace &amp; deals</span><span class="mk-tlooks">Kart</span><span class="mk-tn">1 design</span></a>
       </div>
       <p class="cm-note">Every design is free, and you can switch between them after launch without rebuilding the shop &mdash; the catalogue, orders and customers stay where they are. These are layouts for <b>your own</b> shop: &ldquo;Marketplace &amp; deals&rdquo; is the look of an everything-store, not multi-vendor selling &mdash; there is one seller, and it is you.</p>
+    </section>
+
+    <!-- Headless. Sits next to the designs because it answers the same question
+         one step further out: what if none of the thirty-two is what you want. -->
+    <section class="dk-section dk-reveal" id="headless">
+      <div class="dk-kicker">For developers</div>
+      <h2 class="dk-h2">Or build the front end yourself.</h2>
+      <p class="dk-lede">The thirty-two designs are presets, not a ceiling. The storefront that ships is one consumer of a documented HTTP API, and it holds no privileged access &mdash; so a developer can replace it entirely with React, Vue, Svelte, Flutter or a native app, and keep every part that is hard: the GST-correct invoices, the FIFO stock, the books.</p>
+      <div class="dk-list">
+        <div class="dk-lrow" style="--mod:#60A5FA">
+          <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg></span>
+          <span class="dk-lmid"><span class="dk-lname">An OpenAPI document, on your own store</span><span class="dk-ldesc">Served at <code>/api/openapi.json</code> with a browsable page at <code>/api/docs</code> &mdash; on your domain, not ours. Load it into Postman, Insomnia or a code generator and start. It is generated from the routes themselves, so it cannot drift from what the server actually does.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#4ADE80">
+          <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zM8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <span class="dk-lmid"><span class="dk-lname">Ordinary bearer tokens</span><span class="dk-ldesc">Authentication is a stateless JWT in the <code>Authorization</code> header, with a shopper role and an admin role. No session affinity, no cookie dance, no CSRF ceremony &mdash; a phone app authenticates the same way a browser does.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#E5C07B"><span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M12 3v18"/></svg></span>
+          <span class="dk-lmid"><span class="dk-lname">The catalogue, cart, checkout and accounts</span><span class="dk-ldesc">Products and variants, collections, search, cart and checkout, payments, shopper accounts and addresses, wishlist, reviews, returns, subscriptions, digital products and currency &mdash; the whole surface the bundled storefront is built on.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#94A3B8">
+          <span class="dk-lic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></span>
+          <span class="dk-lmid"><span class="dk-lname">What is deliberately not in it</span><span class="dk-ldesc">Administering the shop stays with the bundled admin panel, and the API this store uses to reach your books is internal and never public &mdash; your front end does not need a Ragenaizer key, because the store holds it server-side. You are replacing the shopfront, not the accounting.</span></span>
+        </div>
+      </div>
+      <p class="cm-note">This does not make the store open source &mdash; the application still ships as prebuilt images, and the answer to &ldquo;do I get the source?&rdquo; below is still no. It makes the <b>front end</b> yours.</p>
     </section>
 
     <section class="dk-section dk-reveal" id="why">
@@ -585,10 +619,15 @@
         <div>
           <span class="q">07</span>
           <h3>Do I get the source code?</h3>
-          <p>Not today, and it is worth being precise about that. What is public is the deployment — the install script, the compose file and the reverse-proxy config are on GitHub and yours to read and change. The store itself ships as prebuilt container images, so you run it on your own server, on your own domain, holding your own data and secrets, but the application source is not published. "Self-hosted" here means you own the infrastructure, not that you own the codebase.</p>
+          <p>Not today, and it is worth being precise about that. What is public is the deployment — the install script, the compose file and the reverse-proxy config are on GitHub and yours to read and change. The store itself ships as prebuilt container images, so you run it on your own server, on your own domain, holding your own data and secrets, but the application source is not published. "Self-hosted" here means you own the infrastructure, not that you own the codebase. You can, however, replace the entire front end — see the next answer.</p>
         </div>
         <div>
           <span class="q">08</span>
+          <h3>Can I build my own storefront against it?</h3>
+          <p>Yes. The storefront that ships is one consumer of a documented HTTP API and holds no privileged access, so anything it does, your own front end can do — in React, Vue, Svelte, Flutter or a native app. Your store serves an OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>, on your own domain; authentication is a bearer JWT with a shopper role and an admin role. What is published is the storefront surface — catalogue, cart, checkout, accounts, wishlist, reviews, returns, subscriptions. Administering the shop stays with the bundled admin panel, and the API the store uses to reach your books is internal and never public, so your front end never handles a Ragenaizer key.</p>
+        </div>
+        <div>
+          <span class="q">09</span>
           <h3>Can I see it before committing anything?</h3>
           <p>Run the installer without a key and it boots a demo store with sample products and an admin login, so you can walk the whole thing — catalogue, checkout, discounts, returns — before you point it at a real tenant.</p>
         </div>
