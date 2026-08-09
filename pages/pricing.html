@@ -57,10 +57,10 @@
             "highPrice": "1200",
             "offerCount": "4",
             "offers": [
-                { "@type": "Offer", "name": "Mini", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "A ten-seat block. CRM, HRMS, Vision, Chat, Drive, Mail, Reminders and AI Engine." },
-                { "@type": "Offer", "name": "Starter", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "A twenty-seat block. Every Ragenaizer app — CRM, HRMS, Vision, Chat, Drive, Mail, Accounts, Projects, Procurement, Learning, Research and AI Engine." },
-                { "@type": "Offer", "name": "Pro", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "Most popular. A fifty-seat block, every app included." },
-                { "@type": "Offer", "name": "Enterprise", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "A hundred-and-fifty-seat block, every app included. Annual contract." }
+                { "@type": "Offer", "name": "Mini", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "A ten-seat block, billed annually. The apps included in each block are listed live on the pricing page." },
+                { "@type": "Offer", "name": "Starter", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "A twenty-seat block, billed annually. The apps included in each block are listed live on the pricing page." },
+                { "@type": "Offer", "name": "Pro", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "Most popular. A fifty-seat block, billed annually. The apps included in each block are listed live on the pricing page." },
+                { "@type": "Offer", "name": "Enterprise", "price": "1200", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "A hundred-and-fifty-seat block on an annual contract. The apps included in each block are listed live on the pricing page." }
             ]
         }
     }
@@ -341,13 +341,24 @@
     var APP_ORDER = ['email', 'vision', 'chat', 'drive', 'crm', 'hrms', 'accounts', 'pms', 'lms', 'aiengine', 'reminders', 'research', 'procurement', 'news'];
     /* Plumbing every tenant gets regardless — listing it would pad the page
        with things nobody is choosing between. */
-    var HIDDEN = ['payment', 'notification', 'authentication', 'auth', 'gateway', 'billing'];
+    var HIDDEN = ['payment', 'notification', 'authentication', 'auth', 'gateway',
+                  'billing', 'tenantmanager', 'tenant'];
     /* Each block gets its own colour so switching between them changes the
        character of the slab, not just a number inside it. */
     var BLOCK_ACCENTS = ['#4CC9F0', '#2DD4BF', '#6366F1', '#A78BFA'];
 
+    /* The billing system names a service after the microservice that owns it,
+       and those carry housekeeping suffixes the customer should never see:
+       EmailService, ResearchBackend. Strip them so the key lands on the
+       vocabulary below.
+
+       Both suffixes, not just one. With only /service$/ stripped, adding
+       ResearchBackend to a plan put a row labelled "researchbackend" in the
+       comparison table — the page did not break, it just started speaking in
+       internal names on a pricing page. Found by simulating a plan change
+       rather than by reading. */
     function normService(name) {
-      return String(name).toLowerCase().replace(/service$/, '');
+      return String(name).toLowerCase().replace(/(service|backend)$/, '');
     }
     function esc(s) {
       return String(s).replace(/[&<>"']/g, function (c) {
@@ -459,7 +470,7 @@
       });
 
       document.getElementById('pName').textContent = p.displayName;
-      document.getElementById('pBlurb').textContent = p.description || '';
+      document.getElementById('pBlurb').textContent = blurb(p);
 
       var priceEl = document.getElementById('pPrice');
       var sameEl = document.getElementById('pSame');
@@ -596,6 +607,51 @@
     }
 
     /* ── load ─────────────────────────────────────────────────────────────── */
+    /* The plan's one-line summary, DERIVED — never the free-text description
+       the billing system stores.
+
+       This exists because the stored copy said "Includes every Ragenaizer app"
+       while the entitlements granted 14 of the 16 the page knows about, and
+       Procurement returns a hard 403 to anyone who believes the sentence. Any
+       hand-written list of apps is a claim that stops being true the moment
+       someone edits a plan, and nobody remembers to come back and fix prose.
+
+       Counting instead makes the claim self-correcting: "every app" is only
+       printed when the plan genuinely carries every app any plan carries, and
+       it downgrades itself to "12 of the 14" the moment that stops being so.
+       Both numbers come from the same serviceConfigs the table below reads, so
+       the sentence and the ticks cannot disagree. */
+    function blurb(p) {
+      var total = MASTER.length;
+      var has = p.appCount;
+
+      if (p.isTrial) {
+        return 'A free trial' + (p.trialDays ? ' for ' + p.trialDays + ' days' : '') +
+               ', with ' + appPhrase(has, total) + '.';
+      }
+      return 'A ' + p.seats + '-seat block, with ' + appPhrase(has, total) +
+             '. The same per-user price as every other block.';
+    }
+
+    /* Says "the apps below", NEVER "every app we make".
+
+       The distinction is not pedantry. MASTER only holds apps that appear in
+       at least one plan, so if a whole product is missing from every plan —
+       which is exactly the state Procurement and Research are in — the count
+       silently excludes it and a plan carrying the rest would announce itself
+       as complete. The sentence would be perfectly consistent with the data
+       and still untrue about the company.
+
+       Scoping the claim to the table keeps it true by construction: whatever
+       the backend sends is what gets counted, and what gets counted is what
+       the reader can see ticked a few centimetres below. */
+    function appPhrase(has, total) {
+      if (!total) return 'the apps listed below';
+      if (has === 0) return 'none of the apps listed below';
+      if (has >= total) return 'all ' + total + ' apps listed below';
+      return has + ' of the ' + total + ' apps listed below';
+    }
+
     function prepare(raw) {
       PLANS = raw.slice().sort(function (a, b) {
         return (a.displayOrder || 0) - (b.displayOrder || 0);
