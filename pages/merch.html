@@ -132,7 +132,7 @@
             "name": "Where does it fall short of Shopify?",
             "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Breadth, and we would rather say it here than let you find out later. There is no app marketplace, no multi-channel selling into marketplaces and social, and no email-campaign suite. Payments are Razorpay today and couriers are Shiprocket. Tax is Indian GST. Those are real gaps for some businesses and none at all for others, which is why the table above marks them rather than omitting them."
+                "text": "Breadth, and we would rather say it here than let you find out later. There is no app marketplace, no multi-channel selling into marketplaces and social, and no email-campaign suite. Payments are Razorpay today and couriers are Shiprocket. Tax is Indian GST. Those are real gaps for some businesses and none at all for others, which is why the table above marks them rather than omitting them. The documented storefront API changes what the first gap costs you — a developer can build a custom front end or wire in an outside service — but it is a build rather than an install, so it helps a team with engineering and not a merchant who wants to click Install this afternoon."
             }
         },
         {
@@ -148,7 +148,7 @@
             "name": "Can I build my own storefront against it?",
             "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Yes. The storefront that ships is one consumer of a documented HTTP API and holds no privileged access, so anything it does, your own front end can do — in React, Vue, Svelte, Flutter or a native app. Your store serves an OpenAPI document at /api/openapi.json and a browsable page at /api/docs, on your own domain; authentication is a bearer JWT with a shopper role and an admin role. What is published is the storefront surface — catalogue, cart, checkout, accounts, wishlist, reviews, returns, subscriptions. Administering the shop stays with the bundled admin panel, and the API the store uses to reach your books is internal and never public, so your front end never handles a Ragenaizer key."
+                "text": "Yes. The storefront that ships is one consumer of a documented HTTP API and holds no privileged access, so anything it does, your own front end can do — in React, Vue, Svelte, Flutter or a native app. Your store serves an OpenAPI document at /api/openapi.json and a browsable page at /api/docs, on your own domain; authentication is a bearer JWT with a shopper role and an admin role. What is published is the storefront surface — catalogue, cart, checkout, accounts, wishlist, reviews, returns, subscriptions. Administering the shop stays with the bundled admin panel, and the API the store uses to reach your books is internal and never public, so your front end never handles a Ragenaizer key. The full endpoint list, with descriptions and request and response shapes, is at https://ragenaizer.com/pages/merch-api.html."
             }
         },
         {
@@ -246,6 +246,9 @@
         </div>
       </div>
       <p class="cm-note">This does not make the store open source &mdash; the application still ships as prebuilt images, and the answer to &ldquo;do I get the source?&rdquo; below is still no. It makes the <b>front end</b> yours.</p>
+      <div class="dk-actions">
+        <a class="dk-btn2" href="merch-api.html">Read the API reference &rarr;</a>
+      </div>
     </section>
 
     <section class="dk-section dk-reveal" id="why">
@@ -579,7 +582,7 @@
           </tbody>
         </table>
       </div>
-      <p class="cm-note">The core commerce loop is complete: catalogue, cart, checkout, discounts, fulfilment, returns, subscriptions and digital goods are all shipped. What we do not have is breadth &mdash; an app marketplace, multi-channel selling, an email-campaign suite, gateways beyond Razorpay and couriers beyond Shiprocket. If your business needs those, an incumbent is the honest answer today.</p>
+      <p class="cm-note">The core commerce loop is complete: catalogue, cart, checkout, discounts, fulfilment, returns, subscriptions and digital goods are all shipped. What we do not have is breadth &mdash; an app marketplace, multi-channel selling, an email-campaign suite, gateways beyond Razorpay and couriers beyond Shiprocket. The <a href="merch-api.html">storefront API</a> softens that for anyone with a developer: a custom front end or an outside integration is buildable. It does not replace an app store, though &mdash; that is a build, not an install. If you want to click Install on a loyalty app this afternoon, an incumbent is the honest answer today.</p>
     </section>
 
     <section class="dk-section dk-reveal" id="faq">
@@ -614,7 +617,7 @@
         <div>
           <span class="q">06</span>
           <h3>Where does it fall short of Shopify?</h3>
-          <p>Breadth, and we would rather say it here than let you find out later. There is no app marketplace, no multi-channel selling into marketplaces and social, and no email-campaign suite. Payments are Razorpay today and couriers are Shiprocket. Tax is Indian GST. Those are real gaps for some businesses and none at all for others, which is why the table above marks them rather than omitting them.</p>
+          <p>Breadth, and we would rather say it here than let you find out later. There is no app marketplace, no multi-channel selling into marketplaces and social, and no email-campaign suite. Payments are Razorpay today and couriers are Shiprocket. Tax is Indian GST. Those are real gaps for some businesses and none at all for others, which is why the table above marks them rather than omitting them. The documented storefront API changes what the first gap costs you — a developer can build a custom front end or wire in an outside service — but it is a build rather than an install, so it helps a team with engineering and not a merchant who wants to click Install this afternoon.</p>
         </div>
         <div>
           <span class="q">07</span>
@@ -624,7 +627,7 @@
         <div>
           <span class="q">08</span>
           <h3>Can I build my own storefront against it?</h3>
-          <p>Yes. The storefront that ships is one consumer of a documented HTTP API and holds no privileged access, so anything it does, your own front end can do — in React, Vue, Svelte, Flutter or a native app. Your store serves an OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>, on your own domain; authentication is a bearer JWT with a shopper role and an admin role. What is published is the storefront surface — catalogue, cart, checkout, accounts, wishlist, reviews, returns, subscriptions. Administering the shop stays with the bundled admin panel, and the API the store uses to reach your books is internal and never public, so your front end never handles a Ragenaizer key.</p>
+          <p>Yes. The storefront that ships is one consumer of a documented HTTP API and holds no privileged access, so anything it does, your own front end can do — in React, Vue, Svelte, Flutter or a native app. Your store serves an OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>, on your own domain; authentication is a bearer JWT with a shopper role and an admin role. What is published is the storefront surface — catalogue, cart, checkout, accounts, wishlist, reviews, returns, subscriptions. Administering the shop stays with the bundled admin panel, and the API the store uses to reach your books is internal and never public, so your front end never handles a Ragenaizer key. The full endpoint list, with descriptions and request and response shapes, is on the <a href="merch-api.html">Merch API reference</a>.</p>
         </div>
         <div>
           <span class="q">09</span>
