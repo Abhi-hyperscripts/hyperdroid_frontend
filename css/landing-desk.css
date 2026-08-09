@@ -1051,6 +1051,24 @@ body.desk-landing .mk-ty {
 }
 body.desk-landing .mk-params em { font-style: normal; font-size: 10.5px; color: #FCA5A5; }
 
+/* The curl. Given its own treatment rather than reusing .mk-json because it is
+   the one block a reader selects and copies, so it should be obvious at a
+   glance which one that is. */
+body.desk-landing .mk-curl {
+  margin: 0;
+  padding: 13px 15px;
+  border: 1px solid rgb(96 165 250 / 0.28);
+  border-radius: 10px;
+  background: rgb(96 165 250 / 0.06);
+  font-family: var(--font-family-mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #DCE6F7;
+  overflow-x: auto;
+  white-space: pre;
+  user-select: all;      /* one click selects the whole command */
+}
+
 body.desk-landing .mk-json {
   margin: 0;
   padding: 13px 15px;

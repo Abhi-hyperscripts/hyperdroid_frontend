@@ -103,7 +103,7 @@
     <section class="dk-section dk-reveal" id="endpoints">
       <div class="dk-kicker">The surface</div>
       <h2 class="dk-h2">Thirty-seven endpoints.</h2>
-      <p class="dk-lede">Grouped the way a front end consumes them. Open any one for what it does, its parameters, and the JSON going in and out. The shapes are illustrative &mdash; field names and types are real, the values are placeholders.</p>
+      <p class="dk-lede">Grouped the way a front end consumes them. Open any one for a runnable curl, what it does, its parameters, and the JSON going in and out. The shapes are illustrative &mdash; field names and types are real, the values are placeholders.</p>
       <div class="mk-eps">
         <section class="mk-group">
           <h3 class="mk-gname">Storefront <span>17 endpoints</span></h3>
@@ -111,6 +111,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/catalog</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The product list. Optional query: search, category, minPrice, maxPrice, inStock, sort and locale. Prices and stock are live from the merchant&#x27;s books, and hidden products are already excluded.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/catalog</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>search</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
                 <li><code>category</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
@@ -148,6 +150,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/catalog/{id}</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">One product in full, including its description, images and live price and availability.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/catalog/ITM-001</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
                 <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
@@ -178,6 +182,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/categories</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The category facets present in the catalogue, for building navigation or a filter rail.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/categories</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">[
   &quot;string&quot;
@@ -188,6 +194,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/collections</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Merchandising collections — manual picks and rule-based ones — as configured by the merchant.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/collections</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">[
   {
@@ -204,6 +212,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/collections/{handle}</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">One collection and the products currently in it, resolved at request time so a smart collection stays current.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/collections/coffee-essentials</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>handle</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
                 <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
@@ -215,13 +225,17 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/coupon/validate</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Preview a coupon code against the current basket without applying it. The subtotal is computed server-side from live prices, so a client cannot claim a total.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/coupon/validate \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;code&quot;:&quot;SAVE10&quot;,&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}]}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
-  &quot;code&quot;: &quot;string&quot;,
+  &quot;code&quot;: &quot;SAVE10&quot;,
   &quot;lines&quot;: [
     {
-      &quot;itemId&quot;: &quot;string&quot;,
-      &quot;qty&quot;: 0
+      &quot;itemId&quot;: &quot;ITM-001&quot;,
+      &quot;qty&quot;: 2
     }
   ]
 }</pre>
@@ -239,6 +253,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/currencies</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The display currencies the merchant has enabled, with their rates, for a currency switcher.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/currencies</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
   &quot;base&quot;: {
@@ -259,12 +275,16 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/discounts/auto</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Preview the best automatic (no-code) discount for the current basket, so the saving can be shown before checkout.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/discounts/auto \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}]}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;lines&quot;: [
     {
-      &quot;itemId&quot;: &quot;string&quot;,
-      &quot;qty&quot;: 0
+      &quot;itemId&quot;: &quot;ITM-001&quot;,
+      &quot;qty&quot;: 2
     }
   ]
 }</pre>
@@ -282,12 +302,16 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/discounts/bxgy</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Preview any buy-X-get-Y saving that applies to the current basket.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/discounts/bxgy \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}]}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;lines&quot;: [
     {
-      &quot;itemId&quot;: &quot;string&quot;,
-      &quot;qty&quot;: 0
+      &quot;itemId&quot;: &quot;ITM-001&quot;,
+      &quot;qty&quot;: 2
     }
   ]
 }</pre>
@@ -303,13 +327,17 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/events</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Report a small batch of funnel events (viewed, added to cart, and so on) for the merchant&#x27;s analytics. Unknown event types are ignored rather than rejected.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/events \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;sessionId&quot;:&quot;string&quot;,&quot;events&quot;:[{&quot;type&quot;:&quot;view&quot;,&quot;itemId&quot;:&quot;ITM-001&quot;}]}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;sessionId&quot;: &quot;string&quot;,
   &quot;events&quot;: [
     {
-      &quot;type&quot;: &quot;string&quot;,
-      &quot;itemId&quot;: &quot;string&quot;
+      &quot;type&quot;: &quot;view&quot;,
+      &quot;itemId&quot;: &quot;ITM-001&quot;
     }
   ]
 }</pre>
@@ -324,9 +352,13 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/giftcard/check</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Check a gift card&#x27;s balance before offering it at checkout. This does not redeem it.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/giftcard/check \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;code&quot;:&quot;GIFT500&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
-  &quot;code&quot;: &quot;string&quot;
+  &quot;code&quot;: &quot;GIFT500&quot;
 }</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
@@ -341,6 +373,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/media/ph/{seed}.svg</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">A deterministic placeholder image, generated locally. Useful while building against a demo store with no product photography.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/media/ph/ITM-001-a.svg</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>seed</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
@@ -351,6 +385,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/products/{id}/variants</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The sibling options of a product (size, colour and so on) for a variant selector on the product page.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/products/ITM-001/variants</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
                 <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
@@ -376,6 +412,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/products/{itemId}/reviews</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Published reviews for a product, with the rating summary used for stars on a listing.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/products/ITM-001/reviews</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>itemId</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
@@ -403,13 +441,18 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/products/{itemId}/reviews</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Write or update the signed-in shopper&#x27;s review. Requires a shopper token. Whether the review counts as verified is decided server-side from that shopper&#x27;s order history — a client cannot claim it.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/products/ITM-001/reviews \
+  -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;rating&quot;:5,&quot;title&quot;:&quot;string&quot;,&quot;body&quot;:&quot;string&quot;}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>itemId</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
-  &quot;rating&quot;: 0,
+  &quot;rating&quot;: 5,
   &quot;title&quot;: &quot;string&quot;,
   &quot;body&quot;: &quot;string&quot;
 }</pre>
@@ -419,16 +462,20 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shipping/quote</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The delivery cost for a destination pincode and basket. This is the FINAL figure checkout will charge, resolved the same way the order is priced, so the number shown is the number billed.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shipping/quote \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;pincode&quot;:&quot;110001&quot;,&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;paymentMethod&quot;:&quot;cod&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
-  &quot;pincode&quot;: &quot;string&quot;,
+  &quot;pincode&quot;: &quot;110001&quot;,
   &quot;lines&quot;: [
     {
-      &quot;itemId&quot;: &quot;string&quot;,
-      &quot;qty&quot;: 0
+      &quot;itemId&quot;: &quot;ITM-001&quot;,
+      &quot;qty&quot;: 2
     }
   ],
-  &quot;paymentMethod&quot;: &quot;string&quot;
+  &quot;paymentMethod&quot;: &quot;cod&quot;
 }</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
@@ -453,6 +500,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/theme</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The shop&#x27;s branding and layout — colours, fonts, logo, banners, legal pages and the chosen design preset. Fetch this first; it is what makes the storefront look like this particular business.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/theme</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
   &quot;brandName&quot;: &quot;string&quot;,
@@ -511,14 +560,18 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/cart/save</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Persist the in-progress basket against an email address. This is what makes abandoned-cart recovery possible; guests are included deliberately.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/cart/save \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;name&quot;:&quot;string&quot;,&quot;qty&quot;:2,&quot;price&quot;:0.0}]}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
-  &quot;email&quot;: &quot;string&quot;,
+  &quot;email&quot;: &quot;shopper@example.com&quot;,
   &quot;lines&quot;: [
     {
-      &quot;itemId&quot;: &quot;string&quot;,
+      &quot;itemId&quot;: &quot;ITM-001&quot;,
       &quot;name&quot;: &quot;string&quot;,
-      &quot;qty&quot;: 0,
+      &quot;qty&quot;: 2,
       &quot;price&quot;: 0.0
     }
   ]
@@ -533,27 +586,31 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/checkout</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Place a Cash-on-Delivery order. Works for a guest with inline customer details or for a signed-in shopper. Online payment uses the payment endpoints instead, because there the order must not exist until the money is verified.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/checkout \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;string&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;string&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;paymentMethod&quot;:&quot;cod&quot;,&quot;idempotencyKey&quot;:&quot;string&quot;,&quot;couponCode&quot;:&quot;SAVE10&quot;,&quot;giftCardCode&quot;:&quot;GIFT500&quot;,&quot;shippingRateId&quot;:&quot;string&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;lines&quot;: [
     {
-      &quot;itemId&quot;: &quot;string&quot;,
-      &quot;qty&quot;: 0
+      &quot;itemId&quot;: &quot;ITM-001&quot;,
+      &quot;qty&quot;: 2
     }
   ],
   &quot;customer&quot;: {
     &quot;name&quot;: &quot;string&quot;,
-    &quot;email&quot;: &quot;string&quot;,
-    &quot;phone&quot;: &quot;string&quot;,
+    &quot;email&quot;: &quot;shopper@example.com&quot;,
+    &quot;phone&quot;: &quot;9999999999&quot;,
     &quot;address&quot;: &quot;string&quot;,
-    &quot;city&quot;: &quot;string&quot;,
-    &quot;state&quot;: &quot;string&quot;,
-    &quot;pincode&quot;: &quot;string&quot;
+    &quot;city&quot;: &quot;New Delhi&quot;,
+    &quot;state&quot;: &quot;DL&quot;,
+    &quot;pincode&quot;: &quot;110001&quot;
   },
-  &quot;paymentMethod&quot;: &quot;string&quot;,
+  &quot;paymentMethod&quot;: &quot;cod&quot;,
   &quot;idempotencyKey&quot;: &quot;string&quot;,
-  &quot;couponCode&quot;: &quot;string&quot;,
-  &quot;giftCardCode&quot;: &quot;string&quot;,
+  &quot;couponCode&quot;: &quot;SAVE10&quot;,
+  &quot;giftCardCode&quot;: &quot;GIFT500&quot;,
   &quot;shippingRateId&quot;: &quot;string&quot;
 }</pre>
               <div class="mk-sub">Response</div>
@@ -573,10 +630,14 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/orders/lookup</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Guest order lookup by email plus an order reference. Both must match, and it is rate limited, so it cannot be used to enumerate other people&#x27;s orders.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/orders/lookup \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;reference&quot;:&quot;SO-1A2B3C4D&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
-  &quot;email&quot;: &quot;string&quot;,
-  &quot;reference&quot;: &quot;string&quot;
+  &quot;email&quot;: &quot;shopper@example.com&quot;,
+  &quot;reference&quot;: &quot;SO-1A2B3C4D&quot;
 }</pre>
             </div>
           </details>
@@ -584,6 +645,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/orders/{id}</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">An order&#x27;s current status and timeline, for the confirmation page.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/orders/ITM-001</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
@@ -597,6 +660,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/auth/config</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Which sign-in methods this shop offers, so the front end knows whether to render a Google button. The client id it returns is public by design.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/auth/config</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
   &quot;google&quot;: {
@@ -610,6 +675,9 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/shopper/addresses</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The shopper&#x27;s saved delivery addresses. Requires a shopper token.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/shopper/addresses \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">[
@@ -630,15 +698,20 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/addresses</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Save a new delivery address for the signed-in shopper.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/addresses \
+  -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;name&quot;:&quot;string&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;line&quot;:&quot;12 Nehru Place&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;,&quot;makeDefault&quot;:false}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;name&quot;: &quot;string&quot;,
-  &quot;phone&quot;: &quot;string&quot;,
-  &quot;line&quot;: &quot;string&quot;,
-  &quot;city&quot;: &quot;string&quot;,
-  &quot;state&quot;: &quot;string&quot;,
-  &quot;pincode&quot;: &quot;string&quot;,
+  &quot;phone&quot;: &quot;9999999999&quot;,
+  &quot;line&quot;: &quot;12 Nehru Place&quot;,
+  &quot;city&quot;: &quot;New Delhi&quot;,
+  &quot;state&quot;: &quot;DL&quot;,
+  &quot;pincode&quot;: &quot;110001&quot;,
   &quot;makeDefault&quot;: false
 }</pre>
               <div class="mk-sub">Response</div>
@@ -658,6 +731,9 @@
             <summary><span class="mk-verb mk-delete">DELETE</span><code class="mk-path">/api/shopper/addresses/{id}</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Remove one of the shopper&#x27;s saved addresses.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X DELETE https://your-shop.example.com/api/shopper/addresses/ITM-001 \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
@@ -669,6 +745,11 @@
             <summary><span class="mk-verb mk-put">PUT</span><code class="mk-path">/api/shopper/addresses/{id}</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Update one of the shopper&#x27;s saved addresses.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X PUT https://your-shop.example.com/api/shopper/addresses/ITM-001 \
+  -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;name&quot;:&quot;string&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;line&quot;:&quot;12 Nehru Place&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;,&quot;makeDefault&quot;:false}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
@@ -676,11 +757,11 @@
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;name&quot;: &quot;string&quot;,
-  &quot;phone&quot;: &quot;string&quot;,
-  &quot;line&quot;: &quot;string&quot;,
-  &quot;city&quot;: &quot;string&quot;,
-  &quot;state&quot;: &quot;string&quot;,
-  &quot;pincode&quot;: &quot;string&quot;,
+  &quot;phone&quot;: &quot;9999999999&quot;,
+  &quot;line&quot;: &quot;12 Nehru Place&quot;,
+  &quot;city&quot;: &quot;New Delhi&quot;,
+  &quot;state&quot;: &quot;DL&quot;,
+  &quot;pincode&quot;: &quot;110001&quot;,
   &quot;makeDefault&quot;: false
 }</pre>
             </div>
@@ -689,6 +770,9 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/addresses/{id}/default</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Mark a saved address as the shopper&#x27;s default for checkout.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/addresses/ITM-001/default \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
@@ -700,6 +784,11 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/google</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Sign in with a Google ID token. The token is verified server-side and the shopper is found or created from the verified email. Returns a shopper JWT.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/google \
+  -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;credential&quot;:&quot;string&quot;}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
@@ -711,6 +800,9 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/shopper/me</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The signed-in shopper&#x27;s profile. Requires a shopper token.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/shopper/me \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
@@ -726,6 +818,9 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/shopper/orders</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The signed-in shopper&#x27;s order history. Requires a shopper token.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/shopper/orders \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
             </div>
@@ -734,6 +829,9 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/shopper/wishlist</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The signed-in shopper&#x27;s wishlist. Requires a shopper token.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/shopper/wishlist \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">[
@@ -745,10 +843,15 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/wishlist</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Add a product to the shopper&#x27;s wishlist.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/wishlist \
+  -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;itemId&quot;:&quot;ITM-001&quot;}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
-  &quot;itemId&quot;: &quot;string&quot;
+  &quot;itemId&quot;: &quot;ITM-001&quot;
 }</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
@@ -760,6 +863,9 @@
             <summary><span class="mk-verb mk-delete">DELETE</span><code class="mk-path">/api/shopper/wishlist/{itemId}</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Remove a product from the shopper&#x27;s wishlist.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X DELETE https://your-shop.example.com/api/shopper/wishlist/ITM-001 \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>itemId</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
@@ -774,6 +880,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/payment/config</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Whether online payment is switched on, and the public key needed to open the payment widget. Never returns the secret.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/payment/config</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
   &quot;enabled&quot;: false,
@@ -788,27 +896,31 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/payment/create-order</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Price the basket server-side and open a payment against it. The amount is computed from live prices, coupons and gift cards — the client never states what it owes.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/payment/create-order \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;string&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;string&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;paymentMethod&quot;:&quot;cod&quot;,&quot;idempotencyKey&quot;:&quot;string&quot;,&quot;couponCode&quot;:&quot;SAVE10&quot;,&quot;giftCardCode&quot;:&quot;GIFT500&quot;,&quot;shippingRateId&quot;:&quot;string&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;lines&quot;: [
     {
-      &quot;itemId&quot;: &quot;string&quot;,
-      &quot;qty&quot;: 0
+      &quot;itemId&quot;: &quot;ITM-001&quot;,
+      &quot;qty&quot;: 2
     }
   ],
   &quot;customer&quot;: {
     &quot;name&quot;: &quot;string&quot;,
-    &quot;email&quot;: &quot;string&quot;,
-    &quot;phone&quot;: &quot;string&quot;,
+    &quot;email&quot;: &quot;shopper@example.com&quot;,
+    &quot;phone&quot;: &quot;9999999999&quot;,
     &quot;address&quot;: &quot;string&quot;,
-    &quot;city&quot;: &quot;string&quot;,
-    &quot;state&quot;: &quot;string&quot;,
-    &quot;pincode&quot;: &quot;string&quot;
+    &quot;city&quot;: &quot;New Delhi&quot;,
+    &quot;state&quot;: &quot;DL&quot;,
+    &quot;pincode&quot;: &quot;110001&quot;
   },
-  &quot;paymentMethod&quot;: &quot;string&quot;,
+  &quot;paymentMethod&quot;: &quot;cod&quot;,
   &quot;idempotencyKey&quot;: &quot;string&quot;,
-  &quot;couponCode&quot;: &quot;string&quot;,
-  &quot;giftCardCode&quot;: &quot;string&quot;,
+  &quot;couponCode&quot;: &quot;SAVE10&quot;,
+  &quot;giftCardCode&quot;: &quot;GIFT500&quot;,
   &quot;shippingRateId&quot;: &quot;string&quot;
 }</pre>
             </div>
@@ -817,6 +929,10 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/payment/verify</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Verify the signed payment result and create the order. Idempotent per payment, so a retried or duplicated callback cannot produce two orders.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/payment/verify \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;razorpayOrderId&quot;:&quot;string&quot;,&quot;razorpayPaymentId&quot;:&quot;string&quot;,&quot;razorpaySignature&quot;:&quot;string&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;razorpayOrderId&quot;: &quot;string&quot;,
@@ -832,6 +948,9 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/returns</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The signed-in shopper&#x27;s own return requests and their status.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/returns \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
             </div>
@@ -840,6 +959,11 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/returns</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Request a return against one of the shopper&#x27;s own orders. The merchant&#x27;s books issue a credit note when it is accepted.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/returns \
+  -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;orderId&quot;:&quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,&quot;reason&quot;:&quot;string&quot;}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
@@ -855,6 +979,9 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/subscriptions</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The signed-in shopper&#x27;s recurring orders.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/subscriptions \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
             </div>
@@ -863,23 +990,28 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/subscriptions</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Start a recurring order for the signed-in shopper.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/subscriptions \
+  -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;string&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;string&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;frequency&quot;:&quot;string&quot;,&quot;title&quot;:&quot;string&quot;}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;lines&quot;: [
     {
-      &quot;itemId&quot;: &quot;string&quot;,
-      &quot;qty&quot;: 0
+      &quot;itemId&quot;: &quot;ITM-001&quot;,
+      &quot;qty&quot;: 2
     }
   ],
   &quot;customer&quot;: {
     &quot;name&quot;: &quot;string&quot;,
-    &quot;email&quot;: &quot;string&quot;,
-    &quot;phone&quot;: &quot;string&quot;,
+    &quot;email&quot;: &quot;shopper@example.com&quot;,
+    &quot;phone&quot;: &quot;9999999999&quot;,
     &quot;address&quot;: &quot;string&quot;,
-    &quot;city&quot;: &quot;string&quot;,
-    &quot;state&quot;: &quot;string&quot;,
-    &quot;pincode&quot;: &quot;string&quot;
+    &quot;city&quot;: &quot;New Delhi&quot;,
+    &quot;state&quot;: &quot;DL&quot;,
+    &quot;pincode&quot;: &quot;110001&quot;
   },
   &quot;frequency&quot;: &quot;string&quot;,
   &quot;title&quot;: &quot;string&quot;
@@ -890,6 +1022,9 @@
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/subscriptions/{id}/{op}</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Change a subscription&#x27;s state. The operation is one of pause, resume or cancel.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/subscriptions/ITM-001/pause \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
@@ -905,6 +1040,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/blog</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">Published posts, newest first, without bodies — for an index page.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/blog</pre>
               <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
             </div>
           </details>
@@ -912,6 +1049,8 @@
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/blog/{slug}</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">One published post in full, by slug.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/blog/coffee-essentials</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>slug</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
