@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en-IN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Merch Storefront API — Build Your Own E-Commerce Front End | Ragenaizer</title>
+    <meta name="description" content="The Merch storefront HTTP API: 37 documented endpoints for catalogue, cart, checkout, shopper accounts, payments, returns and subscriptions. Build a custom e-commerce front end in React, Vue, Svelte, Flutter or native — your store serves its own OpenAPI document.">
+    <meta name="keywords" content="free ecommerce platform, self hosted ecommerce, online store software india, shopify alternative india, woocommerce alternative, GST ecommerce, accounting integrated ecommerce, PWA online store, ecommerce themes india, COD checkout, razorpay ecommerce">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/merch-api.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/merch.html">
+    <meta property="og:title" content="Sell and book in one pass">
+    <meta property="og:description" content="A free, self-hosted online store where every order posts a GST invoice and a balanced ledger entry. Thirty-two designs, eleven trades. One API key.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-merch.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="Sell and book in one pass">
+    <meta name="twitter:description" content="A free, self-hosted online store where every order posts a GST invoice and a balanced ledger entry. Thirty-two designs, eleven trades. One API key.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-merch.png">
+
+    <meta name="theme-color" content="#050810">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/compare-desk.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body class="landing-page desk-landing commerce-desk cmp-desk">
+
+  <div class="dk-wrap">
+    <nav class="dk-nav">
+      <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+        <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+      </a>
+      <div class="dk-navlinks">
+        <a href="../index.html#platform">Platform</a>
+        <a href="ai.html">AI</a>
+        <a href="../index.html#how">How it fits</a><a href="compare/index.html">Compare</a>
+        <a href="pricing.html">Pricing</a>
+      </div>
+      <a class="dk-navcta" href="login.html">Sign in</a>
+    </nav>
+
+    <!-- Developer reference for the Merch storefront API. The endpoint tables
+         below are GENERATED from the live OpenAPI document a store serves at
+         /api/openapi.json — regenerate them rather than hand-editing, or this
+         page will drift from the product. The authoritative, always-current
+         spec is the one on the merchant's own store; this page exists so a
+         developer can evaluate the surface BEFORE installing anything. -->
+    <header class="dk-hero">
+      <div class="dk-eyebrow"><i></i>Merch &middot; storefront API</div>
+      <h1 class="dk-h1">Build your own<br>store front.</h1>
+      <p class="dk-sub">Merch ships with thirty-two designs, and if none of them is what you want, the front end is replaceable. The storefront that ships is one consumer of this HTTP API and holds no privileged access &mdash; so anything it does, your own front end can do, in React, Vue, Svelte, Flutter or a native app, while the invoices, the FIFO stock and the books stay exactly as they are.</p>
+      <p class="dk-replaces"><b>Thirty-seven endpoints, on your own domain.</b> Your store serves its own OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>. This page is the same surface, so you can read it before installing anything.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="merch.html">About Merch &rarr;</a>
+        <a class="dk-btn2" href="https://github.com/Abhi-hyperscripts/ragenaizer-commerce">Install it</a>
+      </div>
+    </header>
+
+    <section class="dk-section dk-reveal" id="start">
+      <div class="dk-kicker">Before the endpoint list</div>
+      <h2 class="dk-h2">Four things worth knowing first.</h2>
+      <div class="dk-list">
+        <div class="dk-lrow" style="--mod:#60A5FA">
+          <span class="dk-lmid"><span class="dk-lname">The base URL is your own store</span><span class="dk-ldesc">Every path below is served from the shop&rsquo;s own domain &mdash; <code>https://shop.example.com/api/&hellip;</code>. There is no Ragenaizer-hosted API to sign up for and no extra host or port; the store you installed is the API.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#4ADE80">
+          <span class="dk-lmid"><span class="dk-lname">Authentication is a bearer token</span><span class="dk-ldesc">Send <code>Authorization: Bearer &lt;token&gt;</code>. A shopper token comes from the shopper sign-in endpoint; the browsing endpoints need no token at all. It is a stateless JWT, so there is no session affinity and no cookie handling &mdash; a mobile app authenticates exactly as a browser does.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#FB923C">
+          <span class="dk-lmid"><span class="dk-lname">Sign-in, checkout and payment are rate limited</span><span class="dk-ldesc">Per client IP, answering <code>429</code> with a JSON body. Treat it as back-off rather than failure. Browsing is not limited the same way, so a catalogue-heavy front end is not penalised.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#94A3B8">
+          <span class="dk-lmid"><span class="dk-lname">What is not here, and will not be</span><span class="dk-ldesc">Administering the shop stays with the bundled admin panel, and the API the store uses to reach your books is internal and never published &mdash; your front end never handles a Ragenaizer key, because the store holds it server-side. This is the shopfront contract, nothing wider.</span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="dk-section dk-reveal" id="endpoints">
+      <div class="dk-kicker">The surface</div>
+      <h2 class="dk-h2">Thirty-seven endpoints.</h2>
+      <p class="dk-lede">Grouped the way a front end consumes them. Request and response shapes are in the OpenAPI document your own store serves &mdash; that one is generated from the running code, so it is always accurate for the version you are on.</p>
+      <div class="dk-launch">
+        <section class="dk-lgroup">
+          <div class="dk-lhead"><h3>Storefront</h3><p>17 endpoints.</p></div>
+          <div class="dk-lrows">
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/catalog</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/catalog/{id}</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/categories</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/collections</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/collections/{handle}</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/coupon/validate</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/currencies</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/discounts/auto</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/discounts/bxgy</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/events</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/giftcard/check</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/media/ph/{seed}.svg</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/products/{id}/variants</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/products/{itemId}/reviews</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/products/{itemId}/reviews</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/shipping/quote</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/theme</span></span></div>
+          </div>
+        </section>
+        <section class="dk-lgroup">
+          <div class="dk-lhead"><h3>Cart and checkout</h3><p>4 endpoints.</p></div>
+          <div class="dk-lrows">
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/cart/save</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/checkout</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/orders/lookup</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/orders/{id}</span></span></div>
+          </div>
+        </section>
+        <section class="dk-lgroup">
+          <div class="dk-lhead"><h3>Shopper accounts</h3><p>12 endpoints.</p></div>
+          <div class="dk-lrows">
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/auth/config</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/shopper/addresses</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/shopper/addresses</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-delete">DELETE</span><span class="dk-lmid"><span class="mk-path">/api/shopper/addresses/{id}</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-put">PUT</span><span class="dk-lmid"><span class="mk-path">/api/shopper/addresses/{id}</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/shopper/addresses/{id}/default</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/shopper/google</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/shopper/me</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/shopper/orders</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/shopper/wishlist</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/shopper/wishlist</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-delete">DELETE</span><span class="dk-lmid"><span class="mk-path">/api/shopper/wishlist/{itemId}</span></span></div>
+          </div>
+        </section>
+        <section class="dk-lgroup">
+          <div class="dk-lhead"><h3>Payments</h3><p>3 endpoints.</p></div>
+          <div class="dk-lrows">
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/payment/config</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/payment/create-order</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/payment/verify</span></span></div>
+          </div>
+        </section>
+        <section class="dk-lgroup">
+          <div class="dk-lhead"><h3>Returns</h3><p>2 endpoints.</p></div>
+          <div class="dk-lrows">
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/returns</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/returns</span></span></div>
+          </div>
+        </section>
+        <section class="dk-lgroup">
+          <div class="dk-lhead"><h3>Subscriptions</h3><p>3 endpoints.</p></div>
+          <div class="dk-lrows">
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/subscriptions</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/subscriptions</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-post">POST</span><span class="dk-lmid"><span class="mk-path">/api/subscriptions/{id}/{op}</span></span></div>
+          </div>
+        </section>
+        <section class="dk-lgroup">
+          <div class="dk-lhead"><h3>Blog</h3><p>2 endpoints.</p></div>
+          <div class="dk-lrows">
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/blog</span></span></div>
+            <div class="dk-lrow"><span class="mk-verb mk-get">GET</span><span class="dk-lmid"><span class="mk-path">/api/blog/{slug}</span></span></div>
+          </div>
+        </section>
+      </div>
+      <p class="dk-osnote">Generated from a live store&rsquo;s OpenAPI document. If your store is a newer build, trust <code>/api/openapi.json</code> on it over this page.</p>
+    </section>
+
+    <section class="dk-section dk-reveal" id="how">
+      <div class="dk-kicker">Getting the document</div>
+      <h2 class="dk-h2">Point your tooling at your store.</h2>
+      <div class="cm-tablewrap">
+        <table class="cm-table">
+          <tbody>
+          <tr class="dom"><td colspan="2">The OpenAPI document</td></tr>
+          <tr><td>Spec</td><td class="ours"><code>https://your-shop.example.com/api/openapi.json</code></td></tr>
+          <tr><td>Browsable</td><td class="ours"><code>https://your-shop.example.com/api/docs</code></td></tr>
+          <tr class="dom"><td colspan="2">What to do with it</td></tr>
+          <tr><td>Explore</td><td class="ours">Import the spec into Postman, Insomnia or Bruno</td></tr>
+          <tr><td>Generate a client</td><td class="ours">Any OpenAPI generator &mdash; TypeScript, Dart, Swift, Kotlin, Python</td></tr>
+          <tr><td>Try it before installing</td><td class="ours">Leave the API key blank on first run and the store boots a demo with sample products, so the API answers with real data immediately</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cm-note">The store is free and self-hosted. It still needs a Ragenaizer tenant to post into, because the invoices, the stock and the returns belong to the Accounts module &mdash; that is the trade: you build the front end, the business OS keeps the books.</p>
+    </section>
+
+    <section class="dk-close dk-reveal">
+      <h2 class="dk-h2">Your front end. Our ledger.</h2>
+      <p>Thirty-two designs if you want one, and a documented API if you do not.</p>
+      <p class="dk-osnote">This does not make Merch open source &mdash; the application ships as prebuilt container images and its source is not published. What is yours is the shopfront: the API is a contract you can build anything against, without inheriting the part that is genuinely hard to get right, which is GST-correct invoicing and stock that agrees with the books.</p>
+      <div class="dk-actions">
+        <a class="dk-btn1" href="https://github.com/Abhi-hyperscripts/ragenaizer-commerce">Get it on GitHub</a>
+        <a class="dk-btn2" href="mailto:sales@ragenaizer.com?subject=Merch%20API%20%E2%80%94%20a%20question">Ask a question &rarr;</a>
+      </div>
+    </section>
+
+    <footer class="dk-foot">
+      <div class="dk-fcol">
+        <strong>Communication</strong>
+        <a href="email.html">Mail</a><a href="vision.html">Meetings</a><a href="chat.html">Chat</a><a href="drive.html">Drive</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Business</strong>
+        <a href="crm.html">CRM</a><a href="accounts.html">Accounts</a><a href="hrms.html">HRMS</a><a href="pms.html">Projects</a><a href="procurement.html">Procurement</a><a href="lms.html">Learning</a><a href="research.html">Research</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Platform</strong>
+        <a href="ai.html">AI</a><a href="supply-chain.html">Supply chain</a><a href="merch.html">Merch</a><a href="merch-api.html">Merch API</a><a href="compare/index.html">Compare</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Get started</strong>
+        <a href="pricing.html">Pricing</a><a href="activate.html">Activate a licence</a><a href="login.html">Sign in</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Resources</strong>
+        <a href="calculators/index.html">Calculators</a><a href="insights/index.html">Insights</a><a href="blog/index.html">Guides</a><a href="use-cases/index.html">Use cases</a>
+      </div>
+      <div class="dk-fcol">
+        <strong>Legal</strong>
+        <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="data-deletion.html">Delete my data</a>
+      </div>
+      <div class="dk-fcol">
+        <img class="dk-flogo" src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80" loading="lazy">
+        <span class="dk-fnote">Ragenaizer is the business OS &mdash; every app a company runs on, sharing one login, one permission model and one ledger. A product of Wisetrack Technologies LLP. Built in India, run by teams in 14 countries.</span>
+      </div>
+    </footer>
+  </div>
+
+  </div>
+
+  <script>
+    'use strict';
+
+    var RS_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    (function () {
+      var els = document.querySelectorAll('.dk-reveal');
+      if (!els.length) return;
+      if (RS_STILL || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) {
+          el.classList.add('is-in');
+          el.querySelectorAll('.dk-card, .dk-lrow, .dk-trow').forEach(function (c) { c.classList.add('is-in'); });
+        });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('.dk-card, .dk-lrow, .dk-trow').forEach(function (c, i) {
+            c.style.transitionDelay = Math.min(i * 45, 360) + 'ms';
+            c.classList.add('is-in');
+          });
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+</body>
+</html>
