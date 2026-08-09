@@ -1370,5 +1370,13 @@ body.desk-landing .mk-copy{position:absolute;top:8px;right:8px;z-index:2;
 body.desk-landing .mk-copy:hover{background:rgb(255 255 255 / 0.13);color:var(--dk-ink)}
 body.desk-landing .mk-copy:focus-visible{outline:2px solid var(--dk-accent);outline-offset:2px}
 body.desk-landing .mk-copy.is-done{color:#4ADE80;border-color:rgb(74 222 128 / 0.4)}
-/* Keep long commands clear of the button on narrow screens. */
-body.desk-landing .mk-curlwrap .mk-curl{padding-right:76px}
+/* Keep long commands clear of the button. Wrapping rather than scrolling
+   matters here: with horizontal overflow a long line slides UNDERNEATH the
+   Copy button and is unreadable (a git clone URL did exactly that). Wrapping
+   is safe for copying — the button copies textContent, so the real newlines
+   travel regardless of where the text visually breaks. */
+body.desk-landing .mk-curlwrap .mk-curl{
+  padding-right:76px;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}

@@ -76,10 +76,41 @@
       <p class="dk-sub">Merch ships with thirty-two designs, and if none of them is what you want, the front end is replaceable. The shop that ships with it is just one consumer of this HTTP API and holds no privileged access &mdash; so anything it does, your own front end can do, in React, Vue, Svelte, Flutter or a native app, while the invoices, the FIFO stock and the books stay exactly as they are.</p>
       <p class="dk-replaces"><b>Forty-three endpoints, on your own domain.</b> Your store serves its own OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>. This page is the same surface, so you can read it before installing anything.</p>
       <div class="dk-actions">
-        <a class="dk-btn1" href="merch.html">About Merch &rarr;</a>
-        <a class="dk-btn2" href="https://github.com/Abhi-hyperscripts/ragenaizer-commerce">Install it</a>
+        <a class="dk-btn1" href="https://github.com/Abhi-hyperscripts/merch-reference-storefront">Get the starter storefront &rarr;</a>
+        <a class="dk-btn2" href="merch.html">About Merch</a>
       </div>
     </header>
+
+    <section class="dk-section dk-reveal" id="starter">
+      <div class="dk-kicker">Start from working code</div>
+      <h2 class="dk-h2">A whole shop front you can clone, in plain JavaScript.</h2>
+      <p class="dk-lede">Everything on this page, already built. <b>No framework, no build step, no dependencies</b> &mdash; separate <code>.html</code>, <code>.css</code> and <code>.js</code> files, so a team that knows HTML, CSS and JavaScript can read all of it and change any of it. Point one line at your shop and it runs.</p>
+      <div class="mk-flows">
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">&#10003;</span> What it already does</div>
+          <ol class="mk-steps">
+            <li>Catalogue with search, category, sort and in-stock filtering</li>
+            <li>Product pages &mdash; gallery, variant options, stock, reviews</li>
+            <li>Cart that re-prices against the store before anyone pays</li>
+            <li>Coupons, gift cards and delivery quotes</li>
+            <li>Checkout, order confirmation with timeline, and order tracking</li>
+          </ol>
+          <p class="mk-flownote">Exercised against a real store: an order was placed from the browser and the total shown matched the amount charged, to the paisa.</p>
+        </div>
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">&rarr;</span> Running it takes about two minutes</div>
+          <pre class="mk-curl">git clone https://github.com/Abhi-hyperscripts/merch-reference-storefront
+cd merch-reference-storefront
+
+# edit ONE line in config.js:
+#   export const API_BASE = 'https://shop.mybrand.com';
+
+python3 -m http.server 5610</pre>
+          <p class="mk-flownote">It is a folder of static files, so it deploys to GitHub Pages, Netlify, Vercel or your own nginx with nothing to build. And it does not have to live on the same domain as your shop.</p>
+        </div>
+      </div>
+      <p class="dk-osnote">MIT licensed &mdash; fork it, strip it, rewrite it. The README calls out the handful of things that are genuinely easy to get wrong, including the two checkout paths below and a shipping flag whose name means the opposite of what you would assume. <a href="https://github.com/Abhi-hyperscripts/merch-reference-storefront">Read the code on GitHub &rarr;</a></p>
+    </section>
 
     <section class="dk-section dk-reveal" id="start">
       <div class="dk-kicker">Before the endpoint list</div>
