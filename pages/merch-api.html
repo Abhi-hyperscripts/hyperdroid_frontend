@@ -225,6 +225,14 @@
     }
   ]
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;valid&quot;: false,
+  &quot;reason&quot;: &quot;string&quot;,
+  &quot;code&quot;: &quot;string&quot;,
+  &quot;discountAmount&quot;: 0.0,
+  &quot;newSubtotal&quot;: 0.0
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -260,6 +268,14 @@
     }
   ]
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;applies&quot;: false,
+  &quot;title&quot;: &quot;string&quot;,
+  &quot;discountAmount&quot;: 0.0,
+  &quot;newSubtotal&quot;: 0.0,
+  &quot;freeShipping&quot;: false
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -274,6 +290,12 @@
       &quot;qty&quot;: 0
     }
   ]
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;applies&quot;: false,
+  &quot;title&quot;: &quot;string&quot;,
+  &quot;discountAmount&quot;: 0.0
 }</pre>
             </div>
           </details>
@@ -291,6 +313,11 @@
     }
   ]
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: false,
+  &quot;recorded&quot;: 0
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -300,6 +327,13 @@
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;code&quot;: &quot;string&quot;
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;valid&quot;: false,
+  &quot;reason&quot;: &quot;string&quot;,
+  &quot;code&quot;: &quot;string&quot;,
+  &quot;balance&quot;: 0.0
 }</pre>
             </div>
           </details>
@@ -396,6 +430,23 @@
   ],
   &quot;paymentMethod&quot;: &quot;string&quot;
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;available&quot;: false,
+  &quot;shipping&quot;: 0.0,
+  &quot;courier&quot;: &quot;string&quot;,
+  &quot;etaDays&quot;: 0,
+  &quot;options&quot;: [
+    {
+      &quot;id&quot;: &quot;string&quot;,
+      &quot;name&quot;: &quot;string&quot;,
+      &quot;amount&quot;: 0.0,
+      &quot;etaMin&quot;: 0,
+      &quot;etaMax&quot;: 0,
+      &quot;live&quot;: false
+    }
+  ]
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -472,6 +523,10 @@
     }
   ]
 }</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: false
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -500,6 +555,17 @@
   &quot;couponCode&quot;: &quot;string&quot;,
   &quot;giftCardCode&quot;: &quot;string&quot;,
   &quot;shippingRateId&quot;: &quot;string&quot;
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;invoiceId&quot;: &quot;string&quot;,
+  &quot;orderRef&quot;: &quot;string&quot;,
+  &quot;status&quot;: &quot;string&quot;,
+  &quot;total&quot;: 0.0,
+  &quot;invoicePdfUrl&quot;: &quot;string&quot;,
+  &quot;giftCardApplied&quot;: 0.0,
+  &quot;amountDue&quot;: 0.0
 }</pre>
             </div>
           </details>
@@ -545,7 +611,19 @@
             <div class="mk-epbody">
               <p class="mk-desc">The shopper&#x27;s saved delivery addresses. Requires a shopper token.</p>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">[
+  {
+    &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+    &quot;name&quot;: &quot;string&quot;,
+    &quot;phone&quot;: &quot;string&quot;,
+    &quot;line&quot;: &quot;string&quot;,
+    &quot;city&quot;: &quot;string&quot;,
+    &quot;state&quot;: &quot;string&quot;,
+    &quot;pincode&quot;: &quot;string&quot;,
+    &quot;isDefault&quot;: false
+  }
+]</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -562,6 +640,17 @@
   &quot;state&quot;: &quot;string&quot;,
   &quot;pincode&quot;: &quot;string&quot;,
   &quot;makeDefault&quot;: false
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;name&quot;: &quot;string&quot;,
+  &quot;phone&quot;: &quot;string&quot;,
+  &quot;line&quot;: &quot;string&quot;,
+  &quot;city&quot;: &quot;string&quot;,
+  &quot;state&quot;: &quot;string&quot;,
+  &quot;pincode&quot;: &quot;string&quot;,
+  &quot;isDefault&quot;: false
 }</pre>
             </div>
           </details>
@@ -623,7 +712,14 @@
             <div class="mk-epbody">
               <p class="mk-desc">The signed-in shopper&#x27;s profile. Requires a shopper token.</p>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;id&quot;: &quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,
+  &quot;email&quot;: &quot;string&quot;,
+  &quot;name&quot;: &quot;string&quot;,
+  &quot;phone&quot;: &quot;string&quot;,
+  &quot;linked&quot;: false
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -639,7 +735,10 @@
             <div class="mk-epbody">
               <p class="mk-desc">The signed-in shopper&#x27;s wishlist. Requires a shopper token.</p>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
-              <p class="mk-note">The response shape for this endpoint is not yet declared in the document. Call it against your own store to see it &mdash; the fields are stable, they are simply not described here yet.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">[
+  &quot;string&quot;
+]</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -650,6 +749,10 @@
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;itemId&quot;: &quot;string&quot;
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: false
 }</pre>
             </div>
           </details>
