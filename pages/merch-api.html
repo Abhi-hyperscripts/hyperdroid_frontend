@@ -559,7 +559,7 @@ python3 -m http.server 5610</pre>
           <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shipping/quote</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The delivery cost for a destination pincode and basket. This is the FINAL figure checkout will charge, resolved the same way the order is priced, so the number shown is the number billed.</p>
+              <p class="mk-desc">The delivery cost for a destination pincode and basket. This is the FINAL figure checkout will charge, resolved the same way the order is priced, so the number shown is the number billed. <strong>READ <code>options</code>, NOT <code>available</code>.</strong> Despite the name, <code>available</code> reports only whether a LIVE COURIER RATE was found &mdash; a store on flat-rate shipping, or one that has not connected a courier account, answers <code>available: false</code> on every quote while shipping perfectly happily. Wiring that flag to &ldquo;we cannot deliver to your pincode&rdquo; tells most shoppers of most stores that the shop does not serve them. <code>options</code> is always populated and is the real answer; <code>shipping</code> is the cheapest option&rsquo;s amount.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shipping/quote \
   -H &quot;Content-Type: application/json&quot; \
