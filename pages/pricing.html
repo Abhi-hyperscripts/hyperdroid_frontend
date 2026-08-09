@@ -89,7 +89,7 @@
             "name": "Why does every Ragenaizer plan cost the same per user?",
             "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Because features are not held back to sell a higher tier. The rate per user is the same on every plan; what differs is how many seats the block contains. From twenty seats upward, every app is included."
+                "text": "Because the rate per user is the same on every plan; what differs is how many seats the block contains. The apps each block carries are listed live on the pricing page."
             }
         },
         {
@@ -190,7 +190,15 @@
     <header class="dk-hero">
       <div class="dk-eyebrow"><i></i>Same price on every plan</div>
       <h1 class="dk-h1">One price.<br>Pick the size of your desk.</h1>
-      <p class="dk-sub">There is no feature ladder here. Every plan is the same per-user price — what changes is how many seats come in the block. From twenty seats up, every app is switched on.</p>
+      <!-- This used to read "There is no feature ladder here … From twenty seats
+           up, every app is switched on." Those two sentences contradicted each
+           other — the second describes a rung on the ladder the first denies —
+           and the second was also wrong, because which apps a block carries is
+           plan data that moves. The first sentence is a fact about PRICE and
+           stays hard-coded; the clause about apps is filled in from the live
+           entitlements by ladderSentence(). -->
+      <p class="dk-sub">Every block is the same per-user price &mdash; what changes is how many
+        seats come in it. <span id="pLadder"></span></p>
       <p class="pr-note">Prices below are live from our billing system · ex-GST · billed annually</p>
     </header>
 
@@ -501,8 +509,12 @@
         sameEl.innerHTML = missing
           ? 'The same rate as every other block. <b>' + esc(p.displayName) + '</b> is the small one — the ' +
             missing + ' app' + (missing === 1 ? '' : 's') + ' it leaves out arrive with any larger block, at this same rate.'
-          : 'The same rate as every other block, with every app switched on. <b>' + esc(p.displayName) +
-            '</b> is bigger, not richer.';
+          /* Deliberately not "<name> is bigger, not richer" — that reads as
+             nonsense on the SMALLEST block, which is exactly where it lands
+             the moment every block carries the same apps. Say it of the
+             blocks in general and it stays true whichever one is selected. */
+          : 'The same rate as every other block, with every app in the table below. ' +
+            'Blocks differ by size, not by what is switched on.';
         ledgerEl.innerHTML =
           row('Seats in the block', p.seats) +
           row('Twelve months, ' + p.seats + ' seats', inr(p.base)) +
@@ -607,6 +619,33 @@
     }
 
     /* ── load ─────────────────────────────────────────────────────────────── */
+    /* The hero's claim about apps, worked out from the entitlements.
+
+       The old copy asserted a specific number — "from twenty seats up" — which
+       was true when someone typed it and is a hostage to the next plan edit.
+       This finds the smallest block that carries everything the table shows,
+       so if the app sets are ever levelled the sentence changes on its own,
+       and if they are re-tiered it names the new threshold rather than the old
+       one. Scoped to "the table below" for the same reason appPhrase is: a
+       product missing from EVERY plan is not in MASTER, so "every app" would
+       be a claim this page cannot see far enough to make. */
+    function ladderSentence() {
+      if (!PLANS.length || !MASTER.length) return '';
+
+      var full = PLANS.filter(function (p) { return p.appCount >= MASTER.length; });
+
+      if (full.length === PLANS.length) {
+        return 'Every block carries the same apps.';
+      }
+      if (!full.length) {
+        /* No block carries the lot. Say nothing rather than something clever —
+           the table below is doing the explaining. */
+        return '';
+      }
+      var threshold = Math.min.apply(null, full.map(function (p) { return p.seats; }));
+      return 'From ' + threshold + ' seats up, every app in the table below is included.';
+    }
+
     /* The plan's one-line summary, DERIVED — never the free-text description
        the billing system stores.
 
@@ -691,6 +730,9 @@
       PLANS.forEach(function (p) {
         p.appCount = MASTER.filter(function (k) { return p.svc.keys[k]; }).length;
       });
+
+      var ladder = document.getElementById('pLadder');
+      if (ladder) ladder.textContent = ladderSentence();
 
       // open on whichever block is merchandised as popular
       selected = 0;
