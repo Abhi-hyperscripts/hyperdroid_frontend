@@ -4,7 +4,7 @@
  *
  * Why: most product pages here open on a screenshot (assets/screens/app-*.png).
  * The pages that have no screenshot — Merch, the API reference, AI, Pricing,
- * Research, Procurement, LMS, Supply chain — open on a wall of centred text
+ * Research, Procurement, LMS, Supply chain, Pharma — open on a wall of centred text
  * with nothing to look at, which reads as an unfinished page rather than a
  * deliberate one.
  *
@@ -44,6 +44,7 @@
     procurement:  [3390, 32, 0.58, 5],
     lms:          [8874, 28, 0.68, 4],
     'supply-chain': [5562, 38, 0.52, 6],
+    pharma:       [1748, 36, 0.56, 6],
   };
   var cfg = PRESETS[preset] || PRESETS.merch;
 

@@ -411,6 +411,44 @@
     </section>
 
     <!-- ══ The thread — the argument for buying it here rather than alone ══ -->
+    <!-- The trade side, named.
+
+         Added 2026-08-10 after measuring the RENDERED page: Schedule H, drug
+         licence, barcode, serials, BOM, price lists, PDC and delivery challans
+         appeared ZERO times on screen, while every one of them sat in the
+         page's <meta name="keywords"> — a tag search engines have ignored
+         since 2009. The bench above shows how a document reaches the ledger,
+         which is the better argument, but it does not answer the checklist a
+         Tally or Marg buyer arrives holding. This does.
+
+         Everything here was checked against AccountsService controllers first.
+         Do not add e-way bill, GSTR-9 or GSTR-2A/2B — none exist. -->
+    <section class="dk-section dk-reveal" id="trade">
+      <div class="dk-kicker">Beyond the books</div>
+      <h2 class="dk-h2">The parts a trader needs, already in it.</h2>
+      <p class="dk-lede">Most accounting packages stop at the invoice and sell you stock, manufacturing and a counter as separate products &mdash; or as a different product line altogether. These run on the same engine as the ledger, which is why a lot written off, a scheme given away and a counter sale all post themselves.</p>
+      <div class="dk-list">
+        <div class="dk-lrow" style="--mod:#4ADE80">
+          <span class="dk-lmid"><span class="dk-lname">Stock, in depth</span><span class="dk-ldesc">Batches with expiry and a price per batch. Serial numbers through sale and return, with a mismatch report. Locations typed store, warehouse or rack, with a rack and shelf against the item, balances per location and transfers between them. Stock register, valuation, reorder report and physical counts.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#A78BFA">
+          <span class="dk-lmid"><span class="dk-lname">Making things</span><span class="dk-ldesc">A bill of materials (BOM) per item and an explosion that walks it down to components. Work orders from create to issue to complete, and a quick build for when a kit is assembled in one go &mdash; each writing its own consumption and output movements.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#FB923C">
+          <span class="dk-lmid"><span class="dk-lname">The counter</span><span class="dk-ldesc">Scan a barcode or type a code and get back price, HSN, live stock and the exact lot to hand over next &mdash; earliest expiry first, with its MRP. Built for a shop where the queue does not wait while somebody checks three screens.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#60A5FA">
+          <span class="dk-lmid"><span class="dk-lname">Wholesale and distribution</span><span class="dk-ldesc">Price lists per customer, trade schemes including free goods, sales orders that convert to invoices, delivery challans, post-dated cheques (PDC) tracked to presentation, and interest charged on overdue accounts.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#F87171">
+          <span class="dk-lmid"><span class="dk-lname">Pharma, specifically</span><span class="dk-ldesc">Salts against each item and substitutes drawn from your own shelves, a Schedule H register produced from the sales that happened, and a drug licence on the customer, the vendor and your own organisation. <a href="pharma.html">The pharma page goes through it &rarr;</a></span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#38BDF8">
+          <span class="dk-lmid"><span class="dk-lname">Filings that come out of the ledger</span><span class="dk-ldesc">GSTR-1 and its JSON, GSTR-3B, TDS and TDS receivable, and an HSN/SAC summary &mdash; assembled from the entries rather than typed into a return. E-invoicing is written but stays off until a GSP connection is live; e-way bills, GSTR-9 and GSTR-2A/2B reconciliation are not built.</span></span>
+        </div>
+      </div>
+    </section>
+
     <section class="dk-section dk-reveal" id="thread">
       <div class="dk-kicker">One customer record</div>
       <h2 class="dk-h2">The rest of the company already feeds it.</h2>
@@ -500,7 +538,7 @@
       </div>
       <div class="dk-fcol">
         <strong>Platform</strong>
-        <a href="ai.html">AI</a><a href="supply-chain.html">Supply chain</a><a href="merch.html">Merch</a><a href="merch-api.html">Merch API</a><a href="compare/index.html">Compare</a>
+        <a href="ai.html">AI</a><a href="pharma.html">Pharma</a><a href="supply-chain.html">Supply chain</a><a href="merch.html">Merch</a><a href="merch-api.html">Merch API</a><a href="compare/index.html">Compare</a>
       </div>
       <div class="dk-fcol">
         <strong>Get started</strong>
