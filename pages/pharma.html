@@ -174,7 +174,12 @@
 </head>
 <body class="landing-page desk-landing pharma-desk" data-hero-wave="pharma">
 
-<nav class="dk-nav">
+  <!-- Everything on a desk page lives inside .dk-wrap — it is what gives the
+       page its max-width and side gutters. The closing </div> comes with the
+       footer block, so omitting this one leaves the content flush against the
+       left edge AND the markup unbalanced. -->
+  <div class="dk-wrap">
+    <nav class="dk-nav">
       <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
         <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
       </a>
@@ -352,102 +357,16 @@
   <script>
     'use strict';
 
+    /* Only the reveal wiring. This page was first built by copying the
+       procurement page's skeleton, which dragged 100 lines of ITS bench
+       renderer along with it — data for tabs that do not exist here, writing
+       into elements this page never had. It threw
+       "Cannot set properties of null" on load, and because that happened
+       BEFORE the observer below was wired, every .dk-lrow stayed at its
+       starting opacity of 0 and each list rendered as an empty box. The page
+       looked fine at the hero and was broken everywhere underneath. */
+
     var RS_STILL = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    /* Three comparison layers, tenant-set weights constrained to 100, split
-       awards with a coverage preview, decisions stored with an override
-       reason, and performance metrics computed in the database from the
-       purchase orders themselves — all real behaviour in the procurement
-       service. The page claims those and nothing beyond them. */
-    var PARTS = [
-      {
-        tab: 'The request',
-        accent: '#F59E0B',
-        head: 'Asked of the vendors who can supply it.',
-        sub: 'One inquiry, many vendors, and none of them made to keep an account with you in order to answer it.',
-        rows: [
-          ['One inquiry, many vendors', 'The same request goes to everyone you want quoting, so the replies are comparable by construction rather than by re-typing.'],
-          ['A portal, not a login', 'Vendors answer through a tokenised link. There is no account to create, no password to reset, and nothing to chase before the quoting can start.'],
-          ['Only their own line', 'A vendor sees the items they were asked about and their own quote. Not the inquiry’s other vendors, and not their prices.'],
-          ['Your item names', 'A master item list carries synonyms and per-vendor names, so the same part quoted under three descriptions still lands in one row.']
-        ],
-        foot: 'The reason buyers settle for one quote is that the second and third are administratively expensive. <b>This is the part that makes three cheap</b>.'
-      },
-      {
-        tab: 'The comparison',
-        accent: '#A78BFA',
-        head: 'Arithmetic first. Opinion clearly labelled.',
-        sub: 'Three layers, computed separately and shown separately, so you always know which one you are looking at.',
-        rows: [
-          ['Deterministic', 'Lowest per item and lowest total, computed from the quotes. No weighting, no model, no interpretation — the number that is simply true.'],
-          ['Weighted', 'Price, quality and delivery scored against weights your tenant sets. The three are forced to add up to a hundred, so nobody can quietly tune it to a chosen answer.'],
-          ['Qualitative', 'An explanation of the trade-off in words, with a confidence score attached to it.'],
-          ['Never alone', 'The AI layer describes; it does not decide. The deterministic comparison stays computed and available underneath it either way.']
-        ],
-        foot: 'A recommendation you cannot take apart is not a recommendation, it is an instruction. <b>All three layers stay legible</b>.'
-      },
-      {
-        tab: 'The award',
-        accent: '#38BDF8',
-        head: 'Cheapest overall is often nobody.',
-        sub: 'One vendor rarely wins every line. Splitting the order is normal buying, so it is a feature rather than a workaround.',
-        rows: [
-          ['Split it', 'Allocate line items across vendors instead of forcing the whole order onto one of them.'],
-          ['Preview first', 'See what each vendor covers and what the split costs against a single award, before anything is committed.'],
-          ['Coverage', 'Which vendor can actually supply which part of the list, so a split is not proposed against items nobody quoted.'],
-          ['Then orders', 'Purchase orders follow the allocation that was approved, rather than being re-keyed from it.']
-        ],
-        foot: 'The saving from a split is usually the largest single number in the process. <b>It should not require a spreadsheet to find</b>.'
-      },
-      {
-        tab: 'The record',
-        accent: '#22c55e',
-        head: 'Why you bought from them, in writing.',
-        sub: 'The question arrives long after the memory has gone. It is stored at the moment of the decision instead.',
-        rows: [
-          ['The decision', 'Kept against the comparison it came from, and marked as manual, as following the recommendation, or as an override.'],
-          ['The override reason', 'When a human disagrees with the score, the disagreement is recorded rather than being invisible in the outcome.'],
-          ['Measured, not rated', 'Promised delivery against actual, delay days and rejection rate are computed from your own purchase orders, alongside quality and response time.'],
-          ['Published method', 'How ranking works is written down and readable, so a vendor who lost can be told why in the same terms you used.']
-        ],
-        foot: 'A price you cannot justify is a price you will be asked about. <b>The justification is filed with the order</b>.'
-      }
-    ];
-
-    function esc(s) {
-      return String(s).replace(/[&<>"']/g, function (c) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-      });
-    }
-
-    var part = 0;
-
-    function mountParts() {
-      document.getElementById('rsChips').innerHTML = PARTS.map(function (p, i) {
-        return '<button type="button" data-i="' + i + '" aria-pressed="' + (i === 0) + '" style="--bc:' +
-               p.accent + '"><i></i>' + p.tab + '</button>';
-      }).join('');
-      document.querySelectorAll('#rsChips button').forEach(function (b) {
-        b.addEventListener('click', function () { part = Number(b.dataset.i); renderPart(); });
-      });
-    }
-
-    function renderPart() {
-      var p = PARTS[part];
-      document.body.style.setProperty('--rs', p.accent);
-      document.querySelectorAll('#rsChips button').forEach(function (b, i) {
-        b.setAttribute('aria-pressed', String(i === part));
-      });
-      document.getElementById('rsHead').textContent = p.head;
-      document.getElementById('rsSub').textContent = p.sub;
-      document.getElementById('rsFoot').innerHTML = p.foot;
-      document.getElementById('rsRows').innerHTML = p.rows.map(function (r) {
-        return '<div class="rs-row"><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
-      }).join('');
-    }
-
-    mountParts();
-    renderPart();
 
     (function () {
       var els = document.querySelectorAll('.dk-reveal');

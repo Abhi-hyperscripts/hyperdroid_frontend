@@ -1437,3 +1437,29 @@ body.desk-landing .dk-hero[data-waved] { padding-bottom: 210px; }
   body.desk-landing .dk-hero-wave { height: 200px; bottom: -30px; }
   body.desk-landing .dk-hero[data-waved] { padding-bottom: 140px; }
 }
+
+/* ── prose links ──────────────────────────────────────────────────────────────
+   Only .dk-osnote a was ever styled, so an inline link anywhere else in the
+   copy fell through to the browser default — near-black-on-black, effectively
+   invisible, on a page whose whole background is #070a10. Six of them were
+   live across accounts, merch and procurement before anyone noticed.
+
+   Underlined on purpose: colour alone is not enough to mark a link for a
+   reader who cannot distinguish it, and these sit mid-sentence where there is
+   no other cue. */
+body.desk-landing .dk-lede a,
+body.desk-landing .dk-sub a,
+body.desk-landing .dk-ldesc a,
+body.desk-landing .dk-replaces a,
+body.desk-landing .dk-faq a,
+body.desk-landing .dk-close a:not(.dk-btn1):not(.dk-btn2) {
+  color: #A5B4FC;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+body.desk-landing .dk-lede a:hover,
+body.desk-landing .dk-sub a:hover,
+body.desk-landing .dk-ldesc a:hover,
+body.desk-landing .dk-replaces a:hover,
+body.desk-landing .dk-faq a:hover { color: #C7D2FE; }
