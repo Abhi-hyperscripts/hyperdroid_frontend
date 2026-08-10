@@ -2396,13 +2396,10 @@
             });
         });
 
-        // Hidden TenantManager access - double-click on footer logo
-        const footerLogo = document.getElementById('footerLogo');
-        if (footerLogo) {
-            footerLogo.addEventListener('dblclick', function() {
-                window.location.href = 'pages/tenant-manager/login.html';
-            });
-        }
+        /* The tenant-manager shortcut used to live here, bound to #footerLogo.
+           The redesigned footer has no such id, so it had been attaching to
+           nothing since the rebuild. Moved to pages/refund.html — the least-read
+           page on the site, and not one any Meta App Review reviewer opens. */
     </script>
 
     <!-- ══ The desk rotates through the modules as you scroll ══════════════════

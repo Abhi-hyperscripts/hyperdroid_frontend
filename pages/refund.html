@@ -415,6 +415,30 @@
       }, { rootMargin: '-10% 0px -70% 0px' });
       secs.forEach(function (s) { io.observe(s); });
     })();
+
+    /* Operator shortcut to the tenant manager.
+
+       It used to live on the homepage footer logo and broke in the redesign:
+       the handler bound to #footerLogo and the rebuilt footer renders the mark
+       as <img class="dk-flogo"> with no id, so it silently attached to
+       nothing. Moved here on purpose — a refund policy is the page least
+       likely to be read by anyone who is not already asking for a refund, and
+       unlike privacy, terms and data-deletion it is not a URL any Meta App
+       Review reviewer opens.
+
+       This is obscurity, not access control. Anyone reading this file can see
+       both the gesture and the destination. What actually guards the tenant
+       manager is the login on it, plus Disallow: /pages/tenant-manager/ in
+       robots.txt keeping it out of search results. Deliberately no cursor
+       change, no title and no hover state — a visible affordance would defeat
+       the only thing this gives us. */
+    (function () {
+      var mark = document.querySelector('.dk-flogo');
+      if (!mark) return;
+      mark.addEventListener('dblclick', function () {
+        window.location.href = 'tenant-manager/login.html';
+      });
+    })();
   </script>
 </body>
 </html>
