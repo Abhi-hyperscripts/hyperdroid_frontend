@@ -453,6 +453,28 @@
                         </div>
                     </div>
 
+                    <div class="glass-card" style="margin-bottom:1rem;">
+                        <div class="glass-card-body">
+                            <h4 style="margin:0 0 4px;">4 &middot; Opening balances (what is owed)</h4>
+                            <div style="font-size:.78rem;color:var(--text-secondary);margin-bottom:.75rem;">
+                                What each customer still owes you, and what you still owe each supplier, as at
+                                your changeover date. Import the party list first. These are kept out of GSTR-1
+                                and GSTR-3B — your previous system already reported those supplies.
+                            </div>
+                            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+                                <button class="btn btn-outline btn-sm" onclick="downloadImportTemplate('opening-balances')">Template</button>
+                                <button class="btn btn-primary btn-sm" onclick="document.getElementById('impBalFile').click()">Choose file</button>
+                                <input type="file" id="impBalFile" accept=".csv,.xlsx,.xls,text/csv" style="display:none;" onchange="pickImportFile(this,'opening-balances')">
+                                <select id="impBalType" class="form-control" style="max-width:210px;">
+                                    <option value="">Type is in the file</option>
+                                    <option value="vendor">All supplier balances</option>
+                                    <option value="customer">All customer balances</option>
+                                </select>
+                                <input type="text" id="impBalAsOf" class="form-control" placeholder="As of date" style="max-width:150px;">
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="impResultArea"></div>
                 </div>
             </main>

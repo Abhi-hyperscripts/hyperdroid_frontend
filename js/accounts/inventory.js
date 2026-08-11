@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
     AccountsCommon.setupTabs(tabNames, onTabSwitch);
     accountsRoles.applyRBAC();
-    AccountsCommon.initDatePickers(['adjDate', 'registerAsOf', 'xfDate', 'woDate', 'woExpiry', 'scDate', 'impAsOf']);
+    AccountsCommon.initDatePickers(['adjDate', 'registerAsOf', 'xfDate', 'woDate', 'woExpiry', 'scDate', 'impAsOf', 'impBalAsOf']);
     AccountsCommon.setDateField('registerAsOf', AccountsCommon.todayLocal());
     document.getElementById('itemSearch')?.addEventListener('input', () => renderItems());
     document.getElementById('itemShowInactive')?.addEventListener('change', () => loadItems());
@@ -1534,6 +1534,10 @@ const IMP_ALIASES = {
     mfg_date:       ['mfg_date', 'mfg', 'mfg date', 'manufactured'],
     expiry_date:    ['expiry_date', 'expiry', 'exp date', 'expiry date', 'best before'],
     party_type:     ['party_type', 'type', 'party type'],
+    party:          ['party', 'party name', 'ledger', 'ledger name', 'account name', 'supplier', 'customer', 'name'],
+    amount:         ['amount', 'balance', 'outstanding', 'closing balance', 'opening balance', 'due'],
+    reference:      ['reference', 'ref', 'bill no', 'invoice no', 'document no', 'voucher no'],
+    due_date:       ['due_date', 'due date', 'due'],
     gstin:          ['gstin', 'gst no', 'gst number', 'gstin/uin', 'tax id', 'gst'],
     email:          ['email', 'e-mail', 'email id'],
     phone:          ['phone', 'mobile', 'contact', 'phone no', 'mobile no', 'contact no'],
@@ -1615,6 +1619,7 @@ async function pickImportFile(input, kind) {
 
         const need = kind === 'items' ? ['sku', 'name']
                    : kind === 'parties' ? ['name']
+                   : kind === 'opening-balances' ? ['party', 'amount']
                    : ['sku', 'quantity', 'unit_cost'];
         const missing = need.filter(f => map[f] === undefined);
         if (missing.length) {
@@ -1624,6 +1629,17 @@ async function pickImportFile(input, kind) {
 
         const cell = (r, f) => map[f] === undefined ? null : r[map[f]];
         _impKind = kind;
+        if (kind === 'opening-balances') {
+            _impRows = rows.slice(1).map((r, i) => ({
+                row_number: i + 2,
+                party_type: _impStr(cell(r, 'party_type')), party: _impStr(cell(r, 'party')),
+                amount: _impNum(cell(r, 'amount')), reference: _impStr(cell(r, 'reference')),
+                due_date: _impDate(cell(r, 'due_date'))
+            }));
+            if (ignored.length) Toast.warning(`Ignored ${ignored.length} unrecognised column(s): ${ignored.slice(0, 6).join(', ')}`);
+            await runImport(true);
+            return;
+        }
         if (kind === 'parties') {
             _impRows = rows.slice(1).map((r, i) => ({
                 row_number: i + 2,
@@ -1675,6 +1691,12 @@ async function runImport(dryRun) {
     } else if (_impKind === 'parties') {
         path = 'import/parties';
         body.default_party_type = document.getElementById('impPartyType')?.value || null;
+    } else if (_impKind === 'opening-balances') {
+        path = 'import/opening-balances';
+        body.default_party_type = document.getElementById('impBalType')?.value || null;
+        const asOf = document.getElementById('impBalAsOf')?.value;
+        if (!asOf) { Toast.error('Pick the "as of" date for the opening balances first.'); return; }
+        body.as_of_date = asOf;
     } else {
         path = 'import/opening-stock';
         const asOf = document.getElementById('impAsOf')?.value;
