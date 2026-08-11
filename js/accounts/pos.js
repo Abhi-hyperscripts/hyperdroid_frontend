@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 || posItems.find(i => i.sku.toLowerCase() === q)
                 || filteredItems().find(sellable);
             if (hit) { addToCart(hit.id); search.value = ''; renderGrid(); }
+            else if (looksLikeBarcode(q)) { search.value = ''; renderGrid(); posQuickAdd(q); }
         }
     });
 });
@@ -537,7 +538,7 @@ document.addEventListener('keydown', (e) => {
             const hit = posItems.find(i => (i.barcode || '').toLowerCase() === code)
                 || posItems.find(i => i.sku.toLowerCase() === code);
             if (hit) { e.preventDefault(); addToCart(hit.id); }
-            else Toast.error(`No item with barcode '${code}'`);
+            else { e.preventDefault(); posQuickAdd(code); }
         }
         return;
     }
@@ -569,7 +570,7 @@ async function startCameraScan() {
                     || posItems.find(i => i.sku.toLowerCase() === raw);
                 stopCameraScan();
                 if (hit) { addToCart(hit.id); navigator.vibrate?.(60); }
-                else Toast.error(`No item with barcode '${raw}'`);
+                else { navigator.vibrate?.(60); posQuickAdd(raw); }
             } catch { /* per-frame detect errors are harmless */ }
         }, 250);
     } catch (err) {
@@ -613,7 +614,12 @@ function connectStockHub() {
                 ok = cart.reduce((s, c) => s + c.qty, 0) > before;
                 label = ok ? hit.name : `'${hit.name}' out of stock`;
                 if (!ok) label = `'${hit.name}' — out of stock`;
-            } else Toast.error(label);
+            } else {
+                // The phone is not where the item gets created — the till is. Ack honestly (nothing was
+                // added) and open the form on the counter screen, where someone is standing.
+                label = `New item — finish on the counter screen`;
+                posQuickAdd(raw);
+            }
             if (pairToken) posHub.invoke('AckScan', pairToken, ok, label).catch(() => {});
         });
         posHub.start().then(() => console.log('[POS] stock hub connected'))
@@ -1391,4 +1397,123 @@ async function offerSubstitutes(item) {
             </span>
         </button>`).join('');
     AccountsCommon.openModal('posSubsModal');
+}
+
+// ── Quick-add at the counter ────────────────────────────────────────────────
+//
+// A shop whose stock is on paper cannot digitise eight thousand SKUs before its
+// first sale. So an unknown scan must be recoverable AT THE TILL, in seconds —
+// otherwise the teller, who cannot leave a queue, sells the item off-system and
+// the stock figures drift from the shelf permanently.
+//
+// The form asks the shortest set of questions that still produces a CORRECT
+// item: what it is, what it sells for, what tax it carries. Everything else has
+// a default and can be corrected later from the Items screen. Creation goes
+// through the ordinary item path server-side, so an item born here is exactly as
+// valid as one typed in properly.
+
+/** True for input that is plausibly a scanned barcode rather than a typed search. */
+function looksLikeBarcode(s) { return /^\d{6,}$/.test((s || '').trim()); }
+
+function posQuickAdd(code) {
+    const barcode = (code || '').trim();
+    document.getElementById('posQuickAddModal')?.remove();
+
+    const slabs = (taxConfigs || [])
+        .filter(t => (t.tax_type || 'GST') === 'GST' && t.is_active !== false)
+        .map(t => `<option value="${AccountsCommon.escapeHtml(t.name)}">${AccountsCommon.escapeHtml(t.name)}</option>`)
+        .join('');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal active';
+    overlay.id = 'posQuickAddModal';
+    overlay.innerHTML = `<div class="modal-content" style="max-width:460px;">
+        <div class="modal-header">
+            <h3>New item</h3>
+            <button class="close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+        </div>
+        <div class="modal-body">
+            ${barcode ? `<div style="font-size:.78rem;color:var(--text-secondary);margin-bottom:.75rem;">
+                Barcode <strong style="color:var(--text-primary);">${AccountsCommon.escapeHtml(barcode)}</strong> —
+                not in your catalogue yet. Add it now and keep selling.</div>` : ''}
+            <div class="form-group">
+                <label>Item name</label>
+                <input type="text" id="qaName" class="form-control" placeholder="e.g. Tata Salt 1kg" autocomplete="off">
+            </div>
+            <div style="display:flex;gap:.6rem;">
+                <div class="form-group" style="flex:1;">
+                    <label>Selling price</label>
+                    <input type="number" id="qaPrice" class="form-control" step="0.01" min="0" inputmode="decimal">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>GST</label>
+                    <select id="qaTax" class="form-control"><option value="">No tax</option>${slabs}</select>
+                </div>
+            </div>
+            <div style="display:flex;gap:.6rem;">
+                <div class="form-group" style="flex:1;">
+                    <label>In stock now <span style="color:var(--text-secondary);font-weight:400;">(optional)</span></label>
+                    <input type="number" id="qaQty" class="form-control" step="0.001" min="0" inputmode="decimal">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Cost each</label>
+                    <input type="number" id="qaCost" class="form-control" step="0.01" min="0" inputmode="decimal">
+                </div>
+            </div>
+            <p style="font-size:.74rem;color:var(--text-secondary);margin:0;">
+                Leave the stock boxes blank if you are not sure — you can count it later.
+                If you do enter a quantity, enter what it cost you, or it goes on the shelf worth nothing.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="this.closest('.modal').remove()">Cancel</button>
+            <button class="btn btn-primary" id="qaSave" onclick="saveQuickAdd()">Add &amp; sell</button>
+        </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.dataset.barcode = barcode;
+
+    const name = document.getElementById('qaName');
+    name.focus();
+    // Enter anywhere in the form saves — at a queue, reaching for the mouse is the slow part.
+    overlay.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); saveQuickAdd(); }
+        if (e.key === 'Escape') overlay.remove();
+    });
+}
+
+async function saveQuickAdd() {
+    const overlay = document.getElementById('posQuickAddModal');
+    if (!overlay) return;
+    const val = id => document.getElementById(id)?.value?.trim() || '';
+    const num = id => { const v = val(id); return v === '' ? null : Number(v); };
+
+    const name = val('qaName');
+    if (!name) { Toast.error('Give the item a name'); document.getElementById('qaName')?.focus(); return; }
+    const price = num('qaPrice');
+    if (price === null || isNaN(price) || price < 0) { Toast.error('Enter a selling price'); document.getElementById('qaPrice')?.focus(); return; }
+
+    const btn = document.getElementById('qaSave');
+    if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
+    try {
+        const created = await api.request(AccountsCommon.buildUrl('inventory/quick-item'), {
+            method: 'POST',
+            body: JSON.stringify({
+                barcode: overlay.dataset.barcode || null,
+                name, sale_price: price,
+                tax_rate: val('qaTax') || null,
+                opening_qty: num('qaQty'),
+                purchase_price: num('qaCost')
+            })
+        });
+        overlay.remove();
+        // Refresh the catalogue so the new item exists client-side, THEN ring it up: addToCart works
+        // off posItems, so adding before the refresh would silently do nothing.
+        await refreshPosItems(true);
+        addToCart(created.item_id);
+        Toast.success(`${created.name} added`);
+    } catch (err) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Add & sell'; }
+        Toast.error(err?.message || 'Could not add that item');
+    }
 }
