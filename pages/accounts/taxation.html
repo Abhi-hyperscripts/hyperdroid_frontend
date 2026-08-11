@@ -380,6 +380,23 @@
                             </svg>
                             Generate
                         </button>
+                        <span style="flex:1"></span>
+                        <input type="month" id="gstr3bMonth" class="form-control" style="max-width:180px;" title="Return month for the portal JSON">
+                        <button class="btn btn-outline" onclick="openGstr3bAdjustments()" title="Interest, late fee and ITC reversals — figures no document produces, so they must be entered before filing">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                            Interest &amp; reversals
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadGstr3bJson()" title="Build the GSTN-portal-uploadable GSTR-3B JSON for the selected month">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Portal JSON
+                        </button>
                     </div>
                     <div id="gstr3bReportArea" class="glass-card" style="margin-top:1rem;">
                         <div class="glass-card-body">
@@ -544,6 +561,77 @@
     <!-- ================================================================== -->
 
     <!-- Tax Config Detail Modal -->
+    <!-- GSTR-3B adjustments: the figures NO document produces. Without these the export files 4(B) and
+         5.1 as zero, which for a filer who owes a late fee is a WRONG return that looks complete. -->
+    <div id="gstr3bAdjModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Interest, late fee &amp; ITC reversals</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('gstr3bAdjModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:0;">
+                        Nothing in your books produces these — they come from the portal or your CA, so they must be
+                        entered here or the return files them as zero. Saved against one return month; re-exporting
+                        reproduces exactly what you filed.
+                    </p>
+                    <form id="gstr3bAdjForm">
+                        <div class="form-group">
+                            <label class="form-label">Return month</label>
+                            <input type="month" id="adjMonth" class="form-control" style="max-width:200px;">
+                            <small class="form-hint">Which month these figures belong to.</small>
+                        </div>
+
+                        <h6 style="margin:1.25rem 0 0.5rem;color:var(--text-primary);">4(B) — ITC reversed</h6>
+                        <small class="form-hint" style="display:block;margin-bottom:0.5rem;">Credit you claimed earlier and are giving back. Rule 42/43 is the proportionate reversal for exempt supplies; anything else goes under Other.</small>
+                        <div class="form-row two-col">
+                            <div class="form-group"><label class="form-label">Rule 42/43 — IGST</label><input type="number" step="0.01" min="0" id="adjRevRuleI" class="form-control" placeholder="0.00"></div>
+                            <div class="form-group"><label class="form-label">Rule 42/43 — CGST</label><input type="number" step="0.01" min="0" id="adjRevRuleC" class="form-control" placeholder="0.00"></div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group"><label class="form-label">Rule 42/43 — SGST</label><input type="number" step="0.01" min="0" id="adjRevRuleS" class="form-control" placeholder="0.00"></div>
+                            <div class="form-group"><label class="form-label">Rule 42/43 — Cess</label><input type="number" step="0.01" min="0" id="adjRevRuleCs" class="form-control" placeholder="0.00"></div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group"><label class="form-label">Other — IGST</label><input type="number" step="0.01" min="0" id="adjRevOthI" class="form-control" placeholder="0.00"></div>
+                            <div class="form-group"><label class="form-label">Other — CGST</label><input type="number" step="0.01" min="0" id="adjRevOthC" class="form-control" placeholder="0.00"></div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group"><label class="form-label">Other — SGST</label><input type="number" step="0.01" min="0" id="adjRevOthS" class="form-control" placeholder="0.00"></div>
+                            <div class="form-group"><label class="form-label">Other — Cess</label><input type="number" step="0.01" min="0" id="adjRevOthCs" class="form-control" placeholder="0.00"></div>
+                        </div>
+
+                        <h6 style="margin:1.25rem 0 0.5rem;color:var(--text-primary);">5.1 — Interest &amp; late fee</h6>
+                        <small class="form-hint" style="display:block;margin-bottom:0.5rem;">Interest is charged per head. Late fee is CGST + SGST only — there is no IGST or cess on it.</small>
+                        <div class="form-row two-col">
+                            <div class="form-group"><label class="form-label">Interest — IGST</label><input type="number" step="0.01" min="0" id="adjIntI" class="form-control" placeholder="0.00"></div>
+                            <div class="form-group"><label class="form-label">Interest — CGST</label><input type="number" step="0.01" min="0" id="adjIntC" class="form-control" placeholder="0.00"></div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group"><label class="form-label">Interest — SGST</label><input type="number" step="0.01" min="0" id="adjIntS" class="form-control" placeholder="0.00"></div>
+                            <div class="form-group"><label class="form-label">Interest — Cess</label><input type="number" step="0.01" min="0" id="adjIntCs" class="form-control" placeholder="0.00"></div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group"><label class="form-label">Late fee — CGST</label><input type="number" step="0.01" min="0" id="adjLateC" class="form-control" placeholder="0.00"></div>
+                            <div class="form-group"><label class="form-label">Late fee — SGST</label><input type="number" step="0.01" min="0" id="adjLateS" class="form-control" placeholder="0.00"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Notes</label>
+                            <input type="text" id="adjNotes" class="form-control" placeholder="e.g. late fee per portal challan 2026-08">
+                            <small class="form-hint">Optional. Why these figures — useful when the return is questioned months later.</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('gstr3bAdjModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveGstr3bAdjustments()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="taxDetailModal" class="modal" style="display:none">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">

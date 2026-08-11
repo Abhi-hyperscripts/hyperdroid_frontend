@@ -87,7 +87,11 @@ function onTabSwitch(tabId) {
             // Default the portal-JSON month to the last completed month (what's due for filing).
             { const m = document.getElementById('gstr1Month'); if (m && !m.value) { const d = new Date(); d.setMonth(d.getMonth() - 1); m.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; } }
             break;
-        case 'gstr-3b':         setDefaultDatesAndGenerate('gstr3bFrom', 'gstr3bTo', generateGSTR3B); break;
+        case 'gstr-3b':
+            setDefaultDatesAndGenerate('gstr3bFrom', 'gstr3bTo', generateGSTR3B);
+            // Same default as GSTR-1: the last COMPLETED month, which is what is actually due.
+            { const m = document.getElementById('gstr3bMonth'); if (m && !m.value) { const d = new Date(); d.setMonth(d.getMonth() - 1); m.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; } }
+            break;
         case 'tds-return':      setDefaultDatesAndGenerate('tdsFrom', 'tdsTo', generateTDSReturn); break;
         case 'tax-calculator':  populateCalcConfigSelect(); break;
         case 'tax-ledger':      loadTaxLedger(); break;
@@ -1099,4 +1103,141 @@ function renderTaxLedger() {
             <td class="text-right">${AccountsCommon.formatCurrency(total)}</td>
         </tr>`;
     }).join('');
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GSTR-3B — portal JSON + the figures no document produces
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Build the GSTN-portal-uploadable GSTR-3B JSON for a return month and download it, then render a review
+ * summary of what went into the file.
+ *
+ * The review card is not decoration. GSTR-3B is a SUMMARY return, so the uploaded file is a handful of
+ * totals with no invoice-level detail to sanity-check against — the only chance to notice something wrong
+ * is before it is filed. It deliberately shows the five outward categories separately (a figure in the
+ * wrong one is the classic 3B error) and calls out when interest/reversals have never been entered.
+ */
+async function downloadGstr3bJson() {
+    const monthInput = document.getElementById('gstr3bMonth')?.value; // YYYY-MM
+    if (!monthInput) { Toast.error('Pick the return month first'); return; }
+    const [year, month] = monthInput.split('-').map(Number);
+    try {
+        const url = AccountsCommon.buildUrl('tax/reports/gstr3b-json', { year, month });
+        const res = await api.request(url);
+
+        const blob = new Blob([JSON.stringify(res.payload, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = res.file_name;
+        a.click();
+        URL.revokeObjectURL(a.href);
+
+        const s = res.summary || {};
+        const money = v => '₹' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const tile = (label, value, hint) => `
+            <div style="background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.85rem;">
+                <div style="font-size:0.72rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;">${label}</div>
+                <div style="font-size:1.05rem;font-weight:700;color:var(--text-primary);margin-top:2px;">${value}</div>
+                ${hint ? `<div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;">${AccountsCommon.escapeHtml(hint)}</div>` : ''}
+            </div>`;
+
+        // ⚠️ The one warning worth interrupting for: with nothing recorded, 4(B) and 5.1 file as ZERO. For a
+        // filer who owes a late fee that is not an incomplete return, it is a WRONG one that looks complete.
+        const adjWarn = s.filer_entered_figures_recorded ? '' : `
+            <p style="color:var(--color-warning);margin-top:0.75rem;">
+                ⚠ No interest, late fee or ITC reversal has been recorded for this month, so 4(B) and 5.1 will file
+                as zero. If your portal challan shows any of them, enter them under
+                <strong>Interest &amp; reversals</strong> and export again.
+            </p>`;
+
+        document.getElementById('gstr3bReportArea').innerHTML = `
+            <div class="glass-card-header"><h3>Portal JSON built — ${AccountsCommon.escapeHtml(res.file_name)}</h3></div>
+            <div class="glass-card-body">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0.75rem;">
+                    ${tile('3.1(a) Taxable', money(s.outward_taxable), 'Ordinary outward supplies')}
+                    ${tile('3.1(b) Zero-rated', money(s.outward_zero_rated), 'Exports / LUT')}
+                    ${tile('3.1(c) Nil &amp; exempt', money(s.outward_nil_exempt), 'No tax charged')}
+                    ${tile('3.1(e) Non-GST', money(s.outward_non_gst), 'Outside GST entirely')}
+                    ${tile('3.1(d) Reverse charge', money(s.reverse_charge_taxable), 'You self-assess this')}
+                    ${tile('Output tax', money(s.output_tax), 'Including reverse charge')}
+                    ${tile('ITC available', money(s.itc_available), '4(A) before reversals')}
+                    ${tile('ITC ineligible', money(s.itc_ineligible), '4(D) — never claimed')}
+                    ${tile('Net ITC', money(s.itc_net), '4(C) = (A) − (B)')}
+                    ${tile('Payable in cash', money(s.net_tax_payable), 'After setting off ITC')}
+                    ${tile('Carried forward', money(s.itc_carried_forward), 'Credit surplus, if any')}
+                    ${tile('Documents', `${s.invoice_count ?? 0} inv · ${s.credit_note_count ?? 0} CN · ${s.purchase_count ?? 0} bills`, 'What fed this return')}
+                </div>
+                ${adjWarn}
+                <p style="color:var(--text-secondary);margin-top:0.75rem;font-size:0.85rem;">
+                    Upload at gst.gov.in → Returns → GSTR-3B → Prepare Offline → Upload JSON, review, then file with EVC/DSC.
+                    Check these figures against GSTR-1 for the same month before filing — the portal compares them.
+                </p>
+            </div>`;
+        Toast.success('GSTR-3B portal JSON downloaded');
+    } catch (err) {
+        Toast.error(err?.message || 'GSTR-3B JSON export failed');
+    }
+}
+
+/** Load whatever is already recorded for the chosen month and open the editor. */
+async function openGstr3bAdjustments() {
+    const monthInput = document.getElementById('gstr3bMonth')?.value;
+    if (!monthInput) { Toast.error('Pick the return month first'); return; }
+    const [year, month] = monthInput.split('-').map(Number);
+    document.getElementById('adjMonth').value = monthInput;
+
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v === 0 || v) ? v : ''; };
+    try {
+        const a = await api.request(AccountsCommon.buildUrl('tax/reports/gstr3b-adjustments', { year, month }));
+        // A month with nothing recorded returns null — clear the form rather than showing the last month's
+        // numbers, which would be the easiest way to file one month's late fee against another.
+        set('adjRevRuleI', a?.itc_rev_rule_iamt); set('adjRevRuleC', a?.itc_rev_rule_camt);
+        set('adjRevRuleS', a?.itc_rev_rule_samt); set('adjRevRuleCs', a?.itc_rev_rule_csamt);
+        set('adjRevOthI', a?.itc_rev_other_iamt); set('adjRevOthC', a?.itc_rev_other_camt);
+        set('adjRevOthS', a?.itc_rev_other_samt); set('adjRevOthCs', a?.itc_rev_other_csamt);
+        set('adjIntI', a?.interest_iamt); set('adjIntC', a?.interest_camt);
+        set('adjIntS', a?.interest_samt); set('adjIntCs', a?.interest_csamt);
+        set('adjLateC', a?.late_fee_camt); set('adjLateS', a?.late_fee_samt);
+        set('adjNotes', a?.notes);
+    } catch (err) {
+        Toast.error(err?.message || 'Could not load the recorded figures');
+        return;
+    }
+    AccountsCommon.openModal('gstr3bAdjModal');
+}
+
+async function saveGstr3bAdjustments() {
+    const monthInput = document.getElementById('adjMonth')?.value;
+    if (!monthInput) { Toast.error('Pick the return month'); return; }
+    const [year, month] = monthInput.split('-').map(Number);
+    const num = id => { const v = parseFloat(document.getElementById(id)?.value); return isNaN(v) ? 0 : v; };
+
+    // Refuse negatives HERE as well as in the database. A negative interest or reversal is a mis-key, not a
+    // correction, and the portal rejects one anyway — better to say so beside the field than to surface a
+    // constraint violation as a failed save.
+    const body = {
+        return_year: year, return_month: month,
+        itc_rev_rule_iamt: num('adjRevRuleI'), itc_rev_rule_camt: num('adjRevRuleC'),
+        itc_rev_rule_samt: num('adjRevRuleS'), itc_rev_rule_csamt: num('adjRevRuleCs'),
+        itc_rev_other_iamt: num('adjRevOthI'), itc_rev_other_camt: num('adjRevOthC'),
+        itc_rev_other_samt: num('adjRevOthS'), itc_rev_other_csamt: num('adjRevOthCs'),
+        interest_iamt: num('adjIntI'), interest_camt: num('adjIntC'),
+        interest_samt: num('adjIntS'), interest_csamt: num('adjIntCs'),
+        late_fee_camt: num('adjLateC'), late_fee_samt: num('adjLateS'),
+        notes: document.getElementById('adjNotes')?.value || null
+    };
+    if (Object.entries(body).some(([k, v]) => typeof v === 'number' && k !== 'return_year' && k !== 'return_month' && v < 0)) {
+        Toast.error('These figures cannot be negative — they add to what you owe, they never reduce it.');
+        return;
+    }
+
+    try {
+        await api.request(AccountsCommon.buildUrl('tax/reports/gstr3b-adjustments'), { method: 'PUT', body: JSON.stringify(body) });
+        AccountsCommon.closeModal('gstr3bAdjModal');
+        Toast.success('Saved — export the portal JSON again to include them');
+    } catch (err) {
+        Toast.error(err?.message || 'Could not save');
+    }
 }
