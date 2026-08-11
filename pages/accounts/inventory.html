@@ -92,6 +92,7 @@
                             <button class="sidebar-btn" data-tab="inv-reorder"><span class="nav-number">9</span><span class="nav-label">Reorder Report</span></button>
                             <button class="sidebar-btn" data-tab="inv-movements"><span class="nav-number">10</span><span class="nav-label">Movements</span></button>
                             <button class="sidebar-btn" data-tab="inv-serials"><span class="nav-number">11</span><span class="nav-label">Serials &amp; Warranty</span></button>
+                            <button class="sidebar-btn" data-tab="inv-import"><span class="nav-number">12</span><span class="nav-label">Bulk Import</span></button>
                         </div>
                     </div>
                 </nav>
@@ -387,6 +388,52 @@
                             <tbody id="reorderTable"></tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- BULK IMPORT -->
+                <div class="tab-content" id="inv-import">
+                    <p style="margin:0 0 12px;font-size:.85rem;color:var(--text-secondary);">
+                        Load your item master and opening stock from a spreadsheet instead of typing them in.
+                        Export a CSV from Marg, Tally, Busy or Excel, download the template below to see the
+                        column names, then upload. <strong>Nothing is written until you press Import</strong> —
+                        the preview shows exactly what would happen, row by row.
+                    </p>
+
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+                        <div class="glass-card" style="flex:1;min-width:320px;">
+                            <div class="glass-card-body">
+                                <h4 style="margin:0 0 4px;">1 &middot; Item master</h4>
+                                <div style="font-size:.78rem;color:var(--text-secondary);margin-bottom:.75rem;">
+                                    SKU, name, barcode, category, HSN, unit, GST rate, prices.
+                                </div>
+                                <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+                                    <button class="btn btn-outline btn-sm" onclick="downloadImportTemplate('items')">Template</button>
+                                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('impItemsFile').click()">Choose CSV</button>
+                                    <input type="file" id="impItemsFile" accept=".csv,text/csv" style="display:none;" onchange="pickImportFile(this,'items')">
+                                    <label style="display:flex;align-items:center;gap:.35rem;font-size:.78rem;color:var(--text-secondary);">
+                                        <input type="checkbox" id="impCreateCats"> create missing categories
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card" style="flex:1;min-width:320px;">
+                            <div class="glass-card-body">
+                                <h4 style="margin:0 0 4px;">2 &middot; Opening stock</h4>
+                                <div style="font-size:.78rem;color:var(--text-secondary);margin-bottom:.75rem;">
+                                    SKU, quantity, unit cost, batch &amp; expiry. Import items first.
+                                </div>
+                                <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+                                    <button class="btn btn-outline btn-sm" onclick="downloadImportTemplate('opening-stock')">Template</button>
+                                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('impStockFile').click()">Choose CSV</button>
+                                    <input type="file" id="impStockFile" accept=".csv,text/csv" style="display:none;" onchange="pickImportFile(this,'opening-stock')">
+                                    <input type="text" id="impAsOf" class="form-control" placeholder="As of date" style="max-width:150px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="impResultArea"></div>
                 </div>
             </main>
         </div>

@@ -21,11 +21,11 @@ const esc = s => AccountsCommon.escapeHtml(s ?? '');
 
 document.addEventListener('DOMContentLoaded', async function () {
     if (!await AccountsCommon.initPage('inventory', '../')) return;
-    const tabNames = { 'inv-items': 'Items', 'inv-stock': 'Stock on Hand', 'inv-locations': 'Locations', 'inv-batches': 'Batches & Expiry', 'inv-workorders': 'Work Orders', 'inv-count': 'Stock Count', 'inv-pricelists': 'Price Lists', 'inv-schemes': 'Schemes', 'inv-reorder': 'Reorder Report', 'inv-movements': 'Movements', 'inv-serials': 'Serials & Warranty' };
+    const tabNames = { 'inv-items': 'Items', 'inv-stock': 'Stock on Hand', 'inv-locations': 'Locations', 'inv-batches': 'Batches & Expiry', 'inv-workorders': 'Work Orders', 'inv-count': 'Stock Count', 'inv-pricelists': 'Price Lists', 'inv-schemes': 'Schemes', 'inv-import': 'Bulk Import', 'inv-reorder': 'Reorder Report', 'inv-movements': 'Movements', 'inv-serials': 'Serials & Warranty' };
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
     AccountsCommon.setupTabs(tabNames, onTabSwitch);
     accountsRoles.applyRBAC();
-    AccountsCommon.initDatePickers(['adjDate', 'registerAsOf', 'xfDate', 'woDate', 'woExpiry', 'scDate']);
+    AccountsCommon.initDatePickers(['adjDate', 'registerAsOf', 'xfDate', 'woDate', 'woExpiry', 'scDate', 'impAsOf']);
     AccountsCommon.setDateField('registerAsOf', AccountsCommon.todayLocal());
     document.getElementById('itemSearch')?.addEventListener('input', () => renderItems());
     document.getElementById('itemShowInactive')?.addEventListener('change', () => loadItems());
@@ -1462,4 +1462,223 @@ async function saveLotWriteOff() {
     } catch (err) {
         Toast.error(err?.message || 'Failed to write off the lot');
     } finally { btn.disabled = false; }
+}
+
+// ============================================================================
+// BULK IMPORT — item master and opening stock
+//
+// The file is parsed here and sent as rows, matching how the bank-statement
+// import already works. Everything that decides whether a row is ACCEPTABLE
+// lives on the server: this side only turns a spreadsheet into JSON.
+//
+// Two things carry all the risk, and both are handled deliberately below —
+// parsing CSV correctly (a naive split on commas silently corrupts any file
+// with a quoted comma in an item name, which in a grocery master is most of
+// them), and never letting a preview be mistaken for a completed import.
+// ============================================================================
+
+let _impRows = null, _impKind = null, _impFileName = '';
+
+/**
+ * RFC 4180 CSV. Handles quoted fields, commas and newlines INSIDE quotes,
+ * doubled quotes as an escape, a UTF-8 BOM, and CR/CRLF/LF line endings.
+ *
+ * Written out rather than split(',') because "Britannia Good Day, Cashew 200g"
+ * is an entirely ordinary item name, and splitting on the comma turns one
+ * product into two broken rows without saying anything.
+ */
+function parseCsv(text) {
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);   // strip BOM
+    const rows = [];
+    let row = [], field = '', inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (text[i + 1] === '"') { field += '"'; i++; }   // "" -> literal quote
+                else inQuotes = false;
+            } else field += ch;
+            continue;
+        }
+        if (ch === '"') { inQuotes = true; continue; }
+        if (ch === ',') { row.push(field); field = ''; continue; }
+        if (ch === '\r') { if (text[i + 1] === '\n') i++; rows.push([...row, field]); row = []; field = ''; continue; }
+        if (ch === '\n') { rows.push([...row, field]); row = []; field = ''; continue; }
+        field += ch;
+    }
+    if (field.length || row.length) rows.push([...row, field]);
+    // Drop trailing blank lines, which every spreadsheet export produces.
+    return rows.filter(r => r.some(c => (c || '').trim().length));
+}
+
+// Column aliases. A Marg or Tally export does not say "sale_price" — refusing
+// those files over a header name would defeat the point of the importer.
+const IMP_ALIASES = {
+    sku:            ['sku', 'item code', 'itemcode', 'code', 'product code', 'alias'],
+    name:           ['name', 'item name', 'product name', 'particulars', 'description'],
+    barcode:        ['barcode', 'ean', 'upc', 'bar code'],
+    category:       ['category', 'group', 'item group', 'stock group'],
+    hsn_sac:        ['hsn_sac', 'hsn', 'hsn code', 'hsn/sac', 'sac'],
+    unit:           ['unit', 'uom', 'unit of measure', 'units'],
+    tax_rate:       ['tax_rate', 'tax rate', 'gst', 'gst rate', 'gst%', 'tax', 'gst %'],
+    sale_price:     ['sale_price', 'sale price', 'selling price', 'sales rate', 'sale rate'],
+    purchase_price: ['purchase_price', 'purchase price', 'purchase rate', 'cost price', 'cost'],
+    mrp:            ['mrp', 'max retail price'],
+    reorder_level:  ['reorder_level', 'reorder level', 'reorder', 'min qty', 'minimum qty'],
+    tracking_mode:  ['tracking_mode', 'tracking', 'batch tracked'],
+    price_includes_tax: ['price_includes_tax', 'inclusive', 'tax inclusive', 'incl tax'],
+    quantity:       ['quantity', 'qty', 'stock', 'opening qty', 'opening quantity', 'closing qty'],
+    unit_cost:      ['unit_cost', 'unit cost', 'rate', 'cost', 'purchase rate', 'value'],
+    batch_number:   ['batch_number', 'batch', 'batch no', 'lot'],
+    mfg_date:       ['mfg_date', 'mfg', 'mfg date', 'manufactured'],
+    expiry_date:    ['expiry_date', 'expiry', 'exp date', 'expiry date', 'best before']
+};
+
+function mapHeaders(headerRow) {
+    const norm = h => (h || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const map = {}, used = new Set();
+    headerRow.forEach((h, idx) => {
+        const n = norm(h);
+        for (const [field, aliases] of Object.entries(IMP_ALIASES)) {
+            if (map[field] === undefined && aliases.includes(n)) { map[field] = idx; used.add(idx); return; }
+        }
+    });
+    // Columns we did not recognise are REPORTED, never silently dropped — otherwise a
+    // mis-named price column looks like a successful import of items with no price.
+    const ignored = headerRow.map((h, i) => used.has(i) ? null : (h || '').trim()).filter(h => h);
+    return { map, ignored };
+}
+
+const _impNum = v => { const n = parseFloat(String(v ?? '').replace(/[₹,\s]/g, '')); return isNaN(n) ? null : n; };
+const _impStr = v => { const s = String(v ?? '').trim(); return s.length ? s : null; };
+const _impBool = v => { const s = String(v ?? '').trim().toLowerCase(); return ['y','yes','true','1'].includes(s) ? true : (['n','no','false','0'].includes(s) ? false : null); };
+/** dd-mm-yyyy / dd/mm/yyyy / yyyy-mm-dd → ISO, or null. */
+const _impDate = v => {
+    const s = String(v ?? '').trim(); if (!s) return null;
+    let m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    return m ? `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}` : null;
+};
+
+async function pickImportFile(input, kind) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    _impFileName = file.name;
+    try {
+        const rows = parseCsv(await file.text());
+        if (rows.length < 2) { Toast.error('That file has no data rows under the header.'); return; }
+        const { map, ignored } = mapHeaders(rows[0]);
+
+        const need = kind === 'items' ? ['sku', 'name'] : ['sku', 'quantity', 'unit_cost'];
+        const missing = need.filter(f => map[f] === undefined);
+        if (missing.length) {
+            Toast.error(`Could not find a column for: ${missing.join(', ')}. Download the template to see the expected names.`);
+            return;
+        }
+
+        const cell = (r, f) => map[f] === undefined ? null : r[map[f]];
+        _impKind = kind;
+        _impRows = rows.slice(1).map((r, i) => kind === 'items' ? {
+            row_number: i + 2,                       // +2: 1-based, and the header is row 1
+            sku: _impStr(cell(r, 'sku')), name: _impStr(cell(r, 'name')),
+            barcode: _impStr(cell(r, 'barcode')), category: _impStr(cell(r, 'category')),
+            hsn_sac: _impStr(cell(r, 'hsn_sac')), unit: _impStr(cell(r, 'unit')),
+            tax_rate: _impStr(cell(r, 'tax_rate')),
+            sale_price: _impNum(cell(r, 'sale_price')), purchase_price: _impNum(cell(r, 'purchase_price')),
+            mrp: _impNum(cell(r, 'mrp')), reorder_level: _impNum(cell(r, 'reorder_level')),
+            tracking_mode: _impStr(cell(r, 'tracking_mode')),
+            price_includes_tax: _impBool(cell(r, 'price_includes_tax'))
+        } : {
+            row_number: i + 2,
+            sku: _impStr(cell(r, 'sku')),
+            quantity: _impNum(cell(r, 'quantity')), unit_cost: _impNum(cell(r, 'unit_cost')),
+            batch_number: _impStr(cell(r, 'batch_number')),
+            mfg_date: _impDate(cell(r, 'mfg_date')), expiry_date: _impDate(cell(r, 'expiry_date'))
+        });
+
+        if (ignored.length) Toast.warning(`Ignored ${ignored.length} unrecognised column(s): ${ignored.slice(0, 6).join(', ')}`);
+        await runImport(true);
+    } catch (err) {
+        Toast.error(err?.message || 'Could not read that file');
+    }
+}
+
+async function runImport(dryRun) {
+    if (!_impRows) return;
+    const body = { rows: _impRows, dry_run: dryRun };
+    let path = 'import/items';
+    if (_impKind === 'items') {
+        body.update_existing = true;
+        body.create_missing_categories = !!document.getElementById('impCreateCats')?.checked;
+    } else {
+        path = 'import/opening-stock';
+        const asOf = document.getElementById('impAsOf')?.value;
+        if (!asOf) { Toast.error('Pick the "as of" date for the opening stock first.'); return; }
+        body.as_of_date = asOf;
+    }
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(path), { method: 'POST', body: JSON.stringify(body) });
+        renderImportResult(res);
+        if (!dryRun) {
+            Toast.success(`Imported — ${res.created} created, ${res.updated} updated, ${res.skipped} skipped, ${res.errors} failed`);
+            _impRows = null;
+            if (_impKind === 'items') { await loadItems(); }
+        }
+    } catch (err) {
+        Toast.error(err?.message || 'Import failed');
+    }
+}
+
+function renderImportResult(r) {
+    const tile = (label, value, tone) => `
+        <div style="background:var(--bg-tertiary);border:1px solid ${tone ? `var(--color-${tone})` : 'var(--border-color)'};border-radius:10px;padding:.6rem .85rem;min-width:110px;">
+            <div style="font-size:.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;">${label}</div>
+            <div style="font-size:1.1rem;font-weight:700;color:${tone ? `var(--color-${tone})` : 'var(--text-primary)'};">${value}</div>
+        </div>`;
+
+    // The DETAIL column carries the whole value of the preview — it is the column that tells someone
+    // holding a spreadsheet which row to go and fix. Explicit widths, because left to itself the table
+    // gives the space to Row/SKU/Outcome and squeezes the reason down to one word per line.
+    const rowsHtml = (r.rows || []).map(x => `
+        <tr>
+            <td>${x.row_number}</td>
+            <td style="overflow-wrap:anywhere;">${AccountsCommon.escapeHtml(x.sku || '—')}</td>
+            <td><span class="status-badge" style="background:var(--color-${x.outcome === 'error' ? 'error' : x.outcome === 'skipped' ? 'warning' : 'success'});color:var(--text-inverse);">${AccountsCommon.escapeHtml(x.outcome)}</span></td>
+            <td style="white-space:normal;overflow:visible;text-overflow:clip;line-height:1.45;font-size:.78rem;color:var(--text-secondary);">${AccountsCommon.escapeHtml(x.message || '')}</td>
+        </tr>`).join('');
+
+    document.getElementById('impResultArea').innerHTML = `
+        <div class="glass-card">
+            <div class="glass-card-body">
+                <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.75rem;">
+                    <h4 style="margin:0;">${r.dry_run ? 'Preview' : 'Import complete'}</h4>
+                    <span style="font-size:.78rem;color:var(--text-secondary);">${AccountsCommon.escapeHtml(_impFileName)} · ${r.total_rows} row(s)</span>
+                    ${r.dry_run ? `<span style="flex:1"></span>
+                        <button class="btn btn-primary btn-sm" onclick="runImport(false)" ${r.errors && !r.created && !r.updated ? 'disabled' : ''}>
+                            Import ${r.created + r.updated} row(s)
+                        </button>` : ''}
+                </div>
+                ${r.dry_run ? `<p style="margin:0 0 .75rem;font-size:.8rem;color:var(--text-secondary);">
+                    Nothing has been saved yet. Check the rows below, then press Import.</p>` : ''}
+                <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:.9rem;">
+                    ${tile('Create', r.created)}
+                    ${tile('Update', r.updated)}
+                    ${tile('Skip', r.skipped, r.skipped ? 'warning' : null)}
+                    ${tile('Failed', r.errors, r.errors ? 'error' : null)}
+                </div>
+                ${(r.warnings || []).map(w => `<p style="margin:0 0 .4rem;font-size:.8rem;color:var(--color-warning);">${AccountsCommon.escapeHtml(w)}</p>`).join('')}
+                ${rowsHtml ? `<div class="data-table-container" style="max-height:420px;overflow:auto;">
+                    <table class="data-table" style="table-layout:fixed;width:100%;">
+                        <thead><tr><th style="width:6%;">Row</th><th style="width:18%;">SKU</th><th style="width:12%;">Outcome</th><th style="width:64%;">Detail</th></tr></thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table></div>` : ''}
+            </div>
+        </div>`;
+}
+
+function downloadImportTemplate(kind) {
+    window.open(AccountsCommon.buildUrl(`import/template/${kind}`), '_blank');
 }
