@@ -2908,7 +2908,11 @@ a.dv-tile:hover { transform: translateY(-2px);
 .tpl-card:hover { border-color: color-mix(in srgb, var(--brand-primary) 40%, var(--border-color)); }
 .tpl-card h5 { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
 .tpl-card p { margin: 0; font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); flex: 1; }
-.tpl-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+/* Wraps because this footer now carries THREE actions (View / Chart only / Set up business) plus the
+   account count. As a rigid single row the primary button was clipped by the card edge on every card
+   at the common grid width — the one action you actually want was the one you could not read. */
+.tpl-card-foot { display: flex; justify-content: space-between; align-items: center;
+                 margin-top: 8px; flex-wrap: wrap; gap: 8px; }
 .tpl-count { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
     color: var(--text-secondary); }
 :root[data-theme="light"] .tpl-card { background: #fff; border-color: #e2e8f0; }

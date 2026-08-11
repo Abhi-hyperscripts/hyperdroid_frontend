@@ -1572,7 +1572,8 @@ async function loadCoaTemplates() {
                     <span class="tpl-count">${t.account_count} accounts</span>
                     <div style="display:flex;gap:6px;">
                         <button class="btn btn-sm btn-outline" onclick="viewCoaTemplate('${esc(t.code)}')">View</button>
-                        <button class="btn btn-sm btn-primary" onclick="initializeTemplate('${esc(t.code)}')" data-admin-only>Apply</button>
+                        <button class="btn btn-sm btn-outline" onclick="initializeTemplate('${esc(t.code)}')" data-admin-only title="Accounts only — you will still need to set the financial year and tax slabs yourself">Chart only</button>
+                        <button class="btn btn-sm btn-primary" onclick="provisionFromTemplate('${esc(t.code)}')" data-admin-only>Set up business</button>
                     </div>
                 </div>
             </div>`).join('');
@@ -1622,7 +1623,7 @@ async function initializeTemplate(templateCode) {
     const label = tpl ? tpl.name : code;
     const ok = await Confirm.show({
         title: 'Apply Template',
-        message: `Apply "${label}"? This creates its account types, groups and accounts. Safe to run on an existing chart — accounts you already have are kept, only missing ones are added.`,
+        message: `Apply "${label}"? This creates its account types, groups and accounts — and NOTHING else. You will still need to set the financial year and seed the tax slabs by hand. Use "Set up business" unless you specifically want the chart on its own. Safe to re-run: accounts you already have are kept.`,
         confirmText: 'Apply Template', type: 'warning'
     });
     if (!ok) return;
@@ -2297,4 +2298,138 @@ function initDropdowns() {
         });
         if (activeId) loadFiscalPeriods();
     }
+}
+
+// ============================================================================
+// 9c. FULL PROVISION FROM AN INDUSTRY TEMPLATE
+// ============================================================================
+// Applying a chart made a tenant with ACCOUNTS. It did not make one that WORKS —
+// the financial year, tax slabs and organisation identity each lived on their
+// own screen, and every onboarding walked the same four screens by hand. The
+// one most often skipped was the tax slabs, whose symptom (every row of the
+// item import rejected on its tax column) shows up two screens from its cause.
+//
+// Re-running is safe by design, so the form does not need to know whether this
+// tenant was half set up already.
+
+function provisionFromTemplate(templateCode) {
+    const tpl = _coaTemplates.find(t => t.code === templateCode);
+    const label = tpl ? tpl.name : templateCode;
+    document.getElementById('provisionModal')?.remove();
+
+    // Default to the financial year the business is CURRENTLY in. India runs April
+    // to March, so before April the current year began in the previous calendar
+    // year — defaulting to January would file the whole first quarter wrongly, and
+    // nothing downstream would complain.
+    const now = new Date();
+    const fyStartYear = now.getMonth() + 1 >= 4 ? now.getFullYear() : now.getFullYear() - 1;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal active';
+    overlay.id = 'provisionModal';
+    overlay.innerHTML = `<div class="modal-content" style="max-width:540px;">
+        <div class="modal-header">
+            <h3>Set up ${AccountsCommon.escapeHtml(label)}</h3>
+            <button class="close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:.85rem;color:var(--text-secondary);margin:0 0 14px;">
+                Creates the chart of accounts, the financial year with its monthly periods, and the GST
+                slabs — and records who the business is. Safe to run again; anything already done is skipped.
+            </p>
+            <div class="form-group">
+                <label>Business name</label>
+                <input type="text" id="pvName" class="form-control" placeholder="As it appears on the GST certificate">
+            </div>
+            <div style="display:flex;gap:.6rem;">
+                <div class="form-group" style="flex:2;">
+                    <label>GSTIN</label>
+                    <input type="text" id="pvGstin" class="form-control" placeholder="27AAAAA0000A1Z5" autocapitalize="characters">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>State code</label>
+                    <input type="text" id="pvState" class="form-control" placeholder="27" inputmode="numeric" maxlength="2">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Financial year starts</label>
+                <input type="date" id="pvFyStart" class="form-control" value="${fyStartYear}-04-01">
+            </div>
+            <p style="font-size:.74rem;color:var(--text-secondary);margin:0;">
+                Leave GSTIN blank if they are not registered — it can be added later, but no GST return
+                can be produced without it.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="this.closest('.modal').remove()">Cancel</button>
+            <button class="btn btn-primary" id="pvGo" onclick="runProvision('${AccountsCommon.escapeHtml(templateCode)}')">Set up business</button>
+        </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('pvName')?.focus();
+    overlay.addEventListener('keydown', e => { if (e.key === 'Escape') overlay.remove(); });
+}
+
+async function runProvision(templateCode) {
+    const val = id => document.getElementById(id)?.value?.trim() || '';
+    const btn = document.getElementById('pvGo');
+    if (btn) { btn.disabled = true; btn.textContent = 'Setting up…'; }
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('coa/provision'), {
+            method: 'POST',
+            body: JSON.stringify({
+                template_code: templateCode,
+                org_legal_name: val('pvName') || null,
+                org_gstin: val('pvGstin').toUpperCase() || null,
+                state_code: val('pvState') || null,
+                fiscal_year_start: val('pvFyStart') || null
+            })
+        });
+        document.getElementById('provisionModal')?.remove();
+        showProvisionResult(res);
+        await Promise.all([loadAccountTypes(), loadAccountGroups()]);
+        await loadAccounts();
+    } catch (err) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Set up business'; }
+        Toast.error(err?.message || 'Could not set up the business');
+    }
+}
+
+/** Shows what each step did — and, just as importantly, what still needs a human. */
+function showProvisionResult(res) {
+    document.getElementById('provisionResultModal')?.remove();
+    const esc = AccountsCommon.escapeHtml;
+    const tone = s => s === 'failed' ? 'error' : (s === 'skipped' ? 'warning' : 'success');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal active';
+    overlay.id = 'provisionResultModal';
+    overlay.innerHTML = `<div class="modal-content" style="max-width:560px;">
+        <div class="modal-header">
+            <h3>${res.complete ? 'Business set up' : 'Set up with problems'}</h3>
+            <button class="close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+                ${(res.steps || []).map(s => `
+                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                        <span class="status-badge" style="background:var(--color-${tone(s.status)});color:var(--text-inverse);white-space:nowrap;">${esc(s.status)}</span>
+                        <div>
+                            <div style="font-weight:600;">${esc(s.step)}</div>
+                            ${s.detail ? `<div style="font-size:.78rem;color:var(--text-secondary);">${esc(s.detail)}</div>` : ''}
+                        </div>
+                    </div>`).join('')}
+            </div>
+            ${(res.remaining || []).length ? `
+                <h4 style="margin:0 0 6px;font-size:.9rem;">Still to do</h4>
+                <ul style="margin:0;padding-left:20px;font-size:.82rem;color:var(--text-secondary);">
+                    ${res.remaining.map(r => `<li style="margin-bottom:4px;">${esc(r)}</li>`).join('')}
+                </ul>` : ''}
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="this.closest('.modal').remove()">Done</button>
+        </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    if (res.complete) Toast.success('Business set up'); else Toast.warning('Set up finished with problems — check the steps');
 }
