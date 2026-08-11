@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         'hsn-sac': 'HSN/SAC Codes',
         'gstr-1': 'GSTR-1',
         'gstr-3b': 'GSTR-3B',
+        'gstr-2b': 'GSTR-2B Match',
         'tds-return': 'TDS Return',
         'tax-calculator': 'Tax Calculator',
         'tax-ledger': 'Tax Ledger'
@@ -91,6 +92,10 @@ function onTabSwitch(tabId) {
             setDefaultDatesAndGenerate('gstr3bFrom', 'gstr3bTo', generateGSTR3B);
             // Same default as GSTR-1: the last COMPLETED month, which is what is actually due.
             { const m = document.getElementById('gstr3bMonth'); if (m && !m.value) { const d = new Date(); d.setMonth(d.getMonth() - 1); m.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; } }
+            break;
+        case 'gstr-2b':
+            // Default to the last COMPLETED month — 2B for the current month does not exist yet.
+            { const m = document.getElementById('gstr2bMonth'); if (m && !m.value) { const d = new Date(); d.setMonth(d.getMonth() - 1); m.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; } }
             break;
         case 'tds-return':      setDefaultDatesAndGenerate('tdsFrom', 'tdsTo', generateTDSReturn); break;
         case 'tax-calculator':  populateCalcConfigSelect(); break;
@@ -1240,4 +1245,187 @@ async function saveGstr3bAdjustments() {
     } catch (err) {
         Toast.error(err?.message || 'Could not save');
     }
+}
+
+// ============================================================================
+// GSTR-2B MATCH
+//
+// The one screen in this module that compares us against an OUTSIDE source.
+// GSTR-1 and GSTR-3B are generated from our own books, so they can only ever
+// be checked against themselves; GSTR-2B is built by the portal from what our
+// SUPPLIERS filed. The gap between the two sides is money — credit we have not
+// claimed, or credit we have claimed and are not entitled to.
+//
+// Nothing on this screen writes to the books. Both sides can be the wrong one,
+// so every row states what it found and leaves the correction to a human.
+// ============================================================================
+
+let _g2bResult = null;
+let _g2bFilter = 'all';
+
+const G2B_BUCKETS = [
+    { key: 'only_in_books',  label: 'Missing at portal', tone: 'error',   hint: 'You booked it, your supplier has not filed it. Credit at risk.' },
+    { key: 'value_mismatch', label: 'Value differs',     tone: 'warning', hint: 'Same document, different tax. One side has a keying error.' },
+    { key: 'only_in_2b',     label: 'Not in your books', tone: 'warning', hint: 'Your supplier filed it and you have no bill. Possibly unclaimed credit.' },
+    { key: 'date_mismatch',  label: 'Date differs',      tone: 'warning', hint: 'Same invoice number, different date.' },
+    { key: 'probable',       label: 'Probable match',    tone: 'warning', hint: 'Matched only by ignoring punctuation — confirm before relying on it.' },
+    { key: 'exact',          label: 'Matched',           tone: 'success', hint: 'Portal and books agree.' }
+];
+
+function _g2bMoney(v) {
+    const n = Number(v || 0);
+    return (n < 0 ? '-' : '') + '₹' + Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function _g2bPeriod() {
+    const v = document.getElementById('gstr2bMonth')?.value; // YYYY-MM
+    if (!v) return null;
+    const [y, m] = v.split('-');
+    return `${m}${y}`;
+}
+
+async function uploadGstr2b(input) {
+    const file = input.files && input.files[0];
+    input.value = '';                       // let the same file be re-picked after a fix
+    if (!file) return;
+    try {
+        const text = await file.text();
+        const res = await api.request(
+            AccountsCommon.buildUrl('tax/gstr2b/import', { filename: file.name }),
+            { method: 'POST', body: text });
+
+        // Set the month picker from the FILE, not the other way round: the file states which period it is
+        // for, and letting a stale picker value disagree with it is how you reconcile the wrong month.
+        const mm = res.return_period?.slice(0, 2), yyyy = res.return_period?.slice(2);
+        if (mm && yyyy) document.getElementById('gstr2bMonth').value = `${yyyy}-${mm}`;
+
+        Toast.success(`Loaded ${res.document_count} document(s) for ${mm}/${yyyy}`);
+        (res.warnings || []).forEach(w => Toast.warning(w));
+        await reconcileGstr2b();
+    } catch (err) {
+        Toast.error(err?.message || 'Could not read that file');
+    }
+}
+
+async function reconcileGstr2b() {
+    const period = _g2bPeriod();
+    if (!period) { Toast.error('Pick the return month first'); return; }
+    try {
+        _g2bResult = await api.request(AccountsCommon.buildUrl('tax/gstr2b/reconcile', { period }));
+        _g2bFilter = 'all';
+        renderGstr2b();
+        (_g2bResult.warnings || []).forEach(w => Toast.warning(w));
+    } catch (err) {
+        _g2bResult = null;
+        document.getElementById('gstr2bSummary').innerHTML = '';
+        document.getElementById('gstr2bReportArea').innerHTML =
+            `<div class="glass-card-body"><div class="empty-message"><p>${AccountsCommon.escapeHtml(err?.message || 'Could not reconcile')}</p></div></div>`;
+        document.getElementById('gstr2bImportInfo').textContent = '';
+    }
+}
+
+function setGstr2bFilter(key) {
+    _g2bFilter = key;
+    renderGstr2b();
+}
+
+function renderGstr2b() {
+    const r = _g2bResult;
+    if (!r) return;
+    const counts = r.counts || {};
+
+    document.getElementById('gstr2bImportInfo').textContent =
+        `2B uploaded ${new Date(r.imported_at).toLocaleString('en-IN')} · ${r.rows.length} row(s)`;
+
+    // ── Headline figures. The DIFFERENCE is the number a CA reads first, and its SIGN is the whole
+    // meaning: negative means we have booked more credit than the portal grants.
+    const d = r.itc_delta || {};
+    const overclaiming = [d.igst, d.cgst, d.sgst, d.cess].some(v => Number(v || 0) < -0.5);
+    const atRisk = (r.itc_at_risk?.igst || 0) + (r.itc_at_risk?.cgst || 0) + (r.itc_at_risk?.sgst || 0) + (r.itc_at_risk?.cess || 0);
+    const totalOf = h => Number(h?.igst || 0) + Number(h?.cgst || 0) + Number(h?.sgst || 0) + Number(h?.cess || 0);
+
+    const tile = (label, value, hint, tone) => `
+        <div style="background:var(--bg-tertiary);border:1px solid ${tone ? `var(--color-${tone})` : 'var(--border-color)'};border-radius:10px;padding:0.75rem 0.9rem;flex:1;min-width:190px;">
+            <div style="font-size:0.72rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;">${AccountsCommon.escapeHtml(label)}</div>
+            <div style="font-size:1.15rem;font-weight:700;margin-top:2px;color:${tone ? `var(--color-${tone})` : 'var(--text-primary)'};">${value}</div>
+            <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:3px;">${AccountsCommon.escapeHtml(hint)}</div>
+        </div>`;
+
+    document.getElementById('gstr2bSummary').innerHTML = `
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            ${tile('Credit per portal', _g2bMoney(totalOf(r.itc_per_2b)), 'What GSTR-2B grants for this period')}
+            ${tile('Credit per your books', _g2bMoney(totalOf(r.itc_per_books)), 'Eligible credit on matched bills')}
+            ${tile('Difference', _g2bMoney(totalOf(d)),
+                overclaiming ? 'Negative — you have booked MORE than the portal grants' : 'Positive means credit you have not claimed',
+                overclaiming ? 'error' : null)}
+            ${tile('Credit at risk', _g2bMoney(atRisk), 'On bills your suppliers have not filed', atRisk > 0.5 ? 'warning' : null)}
+        </div>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.75rem;">
+            <button class="btn btn-sm ${_g2bFilter === 'all' ? 'btn-primary' : 'btn-outline'}" onclick="setGstr2bFilter('all')">All ${r.rows.length}</button>
+            ${G2B_BUCKETS.map(b => `
+                <button class="btn btn-sm ${_g2bFilter === b.key ? 'btn-primary' : 'btn-outline'}"
+                        onclick="setGstr2bFilter('${b.key}')" title="${AccountsCommon.escapeHtml(b.hint)}">
+                    ${AccountsCommon.escapeHtml(b.label)} ${counts[b.key] || 0}
+                </button>`).join('')}
+        </div>`;
+
+    // Ordered so the buckets that need action come FIRST — a screen that opens on 400 matched rows buries
+    // the four that cost money.
+    const order = G2B_BUCKETS.map(b => b.key);
+    const rows = (_g2bFilter === 'all' ? r.rows : r.rows.filter(x => x.kind === _g2bFilter))
+        .slice()
+        .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+
+    if (!rows.length) {
+        document.getElementById('gstr2bReportArea').innerHTML =
+            `<div class="glass-card-body"><div class="empty-message"><p>Nothing in this group.</p></div></div>`;
+        return;
+    }
+
+    const badge = kind => {
+        const b = G2B_BUCKETS.find(x => x.key === kind);
+        return `<span class="status-badge" style="background:var(--color-${b?.tone || 'info'});color:var(--text-inverse);">${AccountsCommon.escapeHtml(b?.label || kind)}</span>`;
+    };
+    const dt = v => v ? new Date(v).toLocaleDateString('en-IN') : '—';
+    const headsCell = h => h
+        ? `<div style="font-weight:600;">${_g2bMoney(Number(h.igst || 0) + Number(h.cgst || 0) + Number(h.sgst || 0) + Number(h.cess || 0))}</div>
+           <div style="font-size:0.7rem;color:var(--text-secondary);">on ${_g2bMoney(h.taxable)}</div>`
+        : '<span style="color:var(--text-secondary);">—</span>';
+
+    document.getElementById('gstr2bReportArea').innerHTML = `
+        <div class="glass-card-body" style="padding:0;">
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th><th>Supplier</th>
+                            <th>Portal document</th><th>Tax per portal</th>
+                            <th>Your bill</th><th>Tax per books</th>
+                            <th>What to do</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(x => `
+                            <tr>
+                                <td>${badge(x.kind)}</td>
+                                <td>
+                                    <div>${AccountsCommon.escapeHtml(x.supplier_name || '—')}</div>
+                                    <div style="font-size:0.7rem;color:var(--text-secondary);">${AccountsCommon.escapeHtml(x.supplier_gstin || 'no GSTIN')}</div>
+                                </td>
+                                <td>
+                                    <div>${AccountsCommon.escapeHtml(x.portal_doc_number || '—')}</div>
+                                    <div style="font-size:0.7rem;color:var(--text-secondary);">${x.portal_doc_number ? dt(x.portal_doc_date) : ''}</div>
+                                </td>
+                                <td>${headsCell(x.portal_heads)}</td>
+                                <td>
+                                    <div>${AccountsCommon.escapeHtml(x.supplier_invoice_number || x.bill_number || '—')}</div>
+                                    <div style="font-size:0.7rem;color:var(--text-secondary);">${x.bill_number ? dt(x.bill_date) : ''}</div>
+                                </td>
+                                <td>${headsCell(x.book_heads)}</td>
+                                <td style="min-width:280px;max-width:360px;font-size:0.78rem;line-height:1.45;color:var(--text-secondary);white-space:normal;overflow:visible;text-overflow:clip;">${AccountsCommon.escapeHtml(x.note || 'Agrees with the portal.')}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
 }

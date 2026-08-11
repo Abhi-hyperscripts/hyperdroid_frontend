@@ -324,6 +324,20 @@ const AccountsCommon = {
         if (hash && document.getElementById(hash)) {
             activate(hash);
         }
+
+        // ...and on every LATER hash change.
+        //
+        // Changing only the fragment is a same-document navigation: the browser does not reload, so the
+        // load-time check above never runs again. Without this listener a link to `page.html#some-tab` from
+        // that same page does nothing at all, and the address bar ends up disagreeing with what is on screen.
+        //
+        // Guarded on "not already active" so a tab that is switched by click (which rewrites the hash) cannot
+        // re-enter activate and re-fire its load callback.
+        window.addEventListener('hashchange', () => {
+            const h = window.location.hash.replace('#', '');
+            const panel = h && document.getElementById(h);
+            if (panel && !panel.classList.contains('active')) activate(h);
+        });
     },
 
     /**

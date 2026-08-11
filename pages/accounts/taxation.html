@@ -134,8 +134,11 @@
                             <button class="sidebar-btn" data-tab="gstr-3b" id="gstr3bTab" data-admin-only>
                                 <span class="nav-number">5</span><span class="nav-label">GSTR-3B</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="gstr-2b" id="gstr2bTab" data-admin-only>
+                                <span class="nav-number">6</span><span class="nav-label">GSTR-2B Match</span>
+                            </button>
                             <button class="sidebar-btn" data-tab="tds-return" id="tdsReturnTab" data-admin-only>
-                                <span class="nav-number">6</span><span class="nav-label">TDS Return</span>
+                                <span class="nav-number">7</span><span class="nav-label">TDS Return</span>
                             </button>
                         </div>
                     </div>
@@ -153,10 +156,10 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="tax-calculator" id="taxCalculatorTab">
-                                <span class="nav-number">7</span><span class="nav-label">Tax Calculator</span>
+                                <span class="nav-number">8</span><span class="nav-label">Tax Calculator</span>
                             </button>
                             <button class="sidebar-btn" data-tab="tax-ledger" id="taxLedgerTab">
-                                <span class="nav-number">8</span><span class="nav-label">Tax Ledger</span>
+                                <span class="nav-number">9</span><span class="nav-label">Tax Ledger</span>
                             </button>
                         </div>
                     </div>
@@ -406,6 +409,53 @@
                                     <polyline points="14 2 14 8 20 8"></polyline>
                                 </svg>
                                 <p>Select a date range and click Generate to view GSTR-3B report</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- GSTR-2B MATCH — the portal's view of our input credit         -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="gstr-2b">
+                    <div class="filters-bar" style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                        <input type="month" id="gstr2bMonth" class="form-control" style="max-width:180px;" title="Return period of the GSTR-2B you downloaded from the portal">
+                        <button class="btn btn-primary" onclick="document.getElementById('gstr2bFile').click()" title="Upload the GSTR-2B JSON downloaded from the GST portal">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Upload 2B JSON
+                        </button>
+                        <input type="file" id="gstr2bFile" accept=".json,application/json" style="display:none;" onchange="uploadGstr2b(this)">
+                        <button class="btn btn-secondary" onclick="reconcileGstr2b()" title="Compare the uploaded 2B against your purchase ledger">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            Reconcile
+                        </button>
+                        <span style="flex:1"></span>
+                        <span id="gstr2bImportInfo" style="font-size:0.78rem;color:var(--text-secondary);"></span>
+                    </div>
+
+                    <p style="font-size:0.8rem;color:var(--text-secondary);margin:0.6rem 0 0;">
+                        GSTR-2B is built by the portal from what your <strong>suppliers</strong> filed. Download it from
+                        the GST portal (Returns &rarr; GSTR-2B &rarr; Download JSON) and upload it here to see which of
+                        your purchase bills the portal actually accounts for. Nothing here changes your books.
+                    </p>
+
+                    <div id="gstr2bSummary" style="margin-top:1rem;"></div>
+                    <div id="gstr2bReportArea" class="glass-card" style="margin-top:1rem;">
+                        <div class="glass-card-body">
+                            <div class="empty-message">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                    <path d="M9 11l3 3L22 4"></path>
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                </svg>
+                                <p>Pick a month, upload the portal's GSTR-2B JSON, then click Reconcile</p>
                             </div>
                         </div>
                     </div>

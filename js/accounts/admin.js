@@ -57,7 +57,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         'job-log': 'Job Log',
         'closing-checklists': 'Closing Checklists',
         'year-end': 'Year-End Closing',
-        'custom-fields': 'Custom Fields'
+        'custom-fields': 'Custom Fields',
+        'email-sending': 'Email Sending'
     };
     if (isSuperadmin) {
         const grp = document.getElementById('superadminNavGroup');

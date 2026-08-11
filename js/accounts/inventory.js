@@ -21,7 +21,7 @@ const esc = s => AccountsCommon.escapeHtml(s ?? '');
 
 document.addEventListener('DOMContentLoaded', async function () {
     if (!await AccountsCommon.initPage('inventory', '../')) return;
-    const tabNames = { 'inv-items': 'Items', 'inv-stock': 'Stock on Hand', 'inv-locations': 'Locations', 'inv-batches': 'Batches & Expiry', 'inv-workorders': 'Work Orders', 'inv-count': 'Stock Count', 'inv-pricelists': 'Price Lists', 'inv-reorder': 'Reorder Report', 'inv-movements': 'Movements', 'inv-serials': 'Serials & Warranty' };
+    const tabNames = { 'inv-items': 'Items', 'inv-stock': 'Stock on Hand', 'inv-locations': 'Locations', 'inv-batches': 'Batches & Expiry', 'inv-workorders': 'Work Orders', 'inv-count': 'Stock Count', 'inv-pricelists': 'Price Lists', 'inv-schemes': 'Schemes', 'inv-reorder': 'Reorder Report', 'inv-movements': 'Movements', 'inv-serials': 'Serials & Warranty' };
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
     AccountsCommon.setupTabs(tabNames, onTabSwitch);
     accountsRoles.applyRBAC();

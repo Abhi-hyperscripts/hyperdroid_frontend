@@ -60,7 +60,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         'sales-orders': 'Sales Orders',
         'ar-aging': 'AR Aging',
         'overdue-interest': 'Overdue Interest',
-        'customer-statements': 'Customer Statements'
+        'customer-statements': 'Customer Statements',
+        'tds-receivable': 'TDS Receivable'
     };
 
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
