@@ -1532,7 +1532,19 @@ const IMP_ALIASES = {
     unit_cost:      ['unit_cost', 'unit cost', 'rate', 'cost', 'purchase rate', 'value'],
     batch_number:   ['batch_number', 'batch', 'batch no', 'lot'],
     mfg_date:       ['mfg_date', 'mfg', 'mfg date', 'manufactured'],
-    expiry_date:    ['expiry_date', 'expiry', 'exp date', 'expiry date', 'best before']
+    expiry_date:    ['expiry_date', 'expiry', 'exp date', 'expiry date', 'best before'],
+    party_type:     ['party_type', 'type', 'party type'],
+    gstin:          ['gstin', 'gst no', 'gst number', 'gstin/uin', 'tax id', 'gst'],
+    email:          ['email', 'e-mail', 'email id'],
+    phone:          ['phone', 'mobile', 'contact', 'phone no', 'mobile no', 'contact no'],
+    address_line1:  ['address_line1', 'address', 'address 1', 'address line 1', 'street'],
+    city:           ['city', 'town'],
+    state:          ['state', 'state name'],
+    state_code:     ['state_code', 'state code', 'gst state code'],
+    country:        ['country'],
+    postal_code:    ['postal_code', 'pincode', 'pin code', 'zip', 'postcode'],
+    gst_treatment:  ['gst_treatment', 'gst treatment', 'registration type', 'gst type'],
+    payment_terms_days: ['payment_terms_days', 'payment terms', 'credit days', 'terms']
 };
 
 function mapHeaders(headerRow) {
@@ -1562,17 +1574,48 @@ const _impDate = v => {
     return m ? `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}` : null;
 };
 
+/**
+ * Reads an .xlsx into the same array-of-arrays the CSV path produces, so everything downstream —
+ * header mapping, preview, commit — is shared and there is only one import pipeline to trust.
+ *
+ * SheetJS is fetched ONLY when someone actually picks a spreadsheet: most imports are CSV, and a
+ * library this size has no business loading on every visit to the inventory page.
+ *
+ * `raw: false` matters more than it looks. Excel stores a date as a serial number, and reading one
+ * raw turns an expiry date into "45914" — which would sail through as a number and silently give a
+ * batch of milk an expiry in the year 2125. Formatted values give back what the user sees.
+ */
+async function readXlsx(file) {
+    if (!window.XLSX) {
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Could not load the Excel reader. Check your connection, or save the file as CSV.'));
+            document.head.appendChild(s);
+        });
+    }
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: false });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    if (!sheet) throw new Error('That workbook has no sheets.');
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+    return rows.filter(r => r.some(c => String(c ?? '').trim().length));
+}
+
 async function pickImportFile(input, kind) {
     const file = input.files && input.files[0];
     input.value = '';
     if (!file) return;
     _impFileName = file.name;
     try {
-        const rows = parseCsv(await file.text());
+        const isExcel = /\.xlsx?$/i.test(file.name);
+        const rows = isExcel ? await readXlsx(file) : parseCsv(await file.text());
         if (rows.length < 2) { Toast.error('That file has no data rows under the header.'); return; }
         const { map, ignored } = mapHeaders(rows[0]);
 
-        const need = kind === 'items' ? ['sku', 'name'] : ['sku', 'quantity', 'unit_cost'];
+        const need = kind === 'items' ? ['sku', 'name']
+                   : kind === 'parties' ? ['name']
+                   : ['sku', 'quantity', 'unit_cost'];
         const missing = need.filter(f => map[f] === undefined);
         if (missing.length) {
             Toast.error(`Could not find a column for: ${missing.join(', ')}. Download the template to see the expected names.`);
@@ -1581,6 +1624,22 @@ async function pickImportFile(input, kind) {
 
         const cell = (r, f) => map[f] === undefined ? null : r[map[f]];
         _impKind = kind;
+        if (kind === 'parties') {
+            _impRows = rows.slice(1).map((r, i) => ({
+                row_number: i + 2,
+                party_type: _impStr(cell(r, 'party_type')), code: _impStr(cell(r, 'code')),
+                name: _impStr(cell(r, 'name')), gstin: _impStr(cell(r, 'gstin')),
+                email: _impStr(cell(r, 'email')), phone: _impStr(cell(r, 'phone')),
+                address_line1: _impStr(cell(r, 'address_line1')), city: _impStr(cell(r, 'city')),
+                state: _impStr(cell(r, 'state')), state_code: _impStr(cell(r, 'state_code')),
+                country: _impStr(cell(r, 'country')), postal_code: _impStr(cell(r, 'postal_code')),
+                gst_treatment: _impStr(cell(r, 'gst_treatment')),
+                payment_terms_days: _impNum(cell(r, 'payment_terms_days'))
+            }));
+            if (ignored.length) Toast.warning(`Ignored ${ignored.length} unrecognised column(s): ${ignored.slice(0, 6).join(', ')}`);
+            await runImport(true);
+            return;
+        }
         _impRows = rows.slice(1).map((r, i) => kind === 'items' ? {
             row_number: i + 2,                       // +2: 1-based, and the header is row 1
             sku: _impStr(cell(r, 'sku')), name: _impStr(cell(r, 'name')),
@@ -1613,6 +1672,9 @@ async function runImport(dryRun) {
     if (_impKind === 'items') {
         body.update_existing = true;
         body.create_missing_categories = !!document.getElementById('impCreateCats')?.checked;
+    } else if (_impKind === 'parties') {
+        path = 'import/parties';
+        body.default_party_type = document.getElementById('impPartyType')?.value || null;
     } else {
         path = 'import/opening-stock';
         const asOf = document.getElementById('impAsOf')?.value;
@@ -1680,5 +1742,13 @@ function renderImportResult(r) {
 }
 
 function downloadImportTemplate(kind) {
-    window.open(AccountsCommon.buildUrl(`import/template/${kind}`), '_blank');
+    // ⭐ buildUrl returns a PATH ('/accounts/…') for api.request to prefix with the Accounts API base.
+    // window.open resolves a bare path against the PAGE origin instead, so this opened
+    // localhost:5501/accounts/… — the static frontend — and served a 404 page. The template is the first
+    // thing a user clicks, so it was the first thing that broke.
+    //
+    // Prefixed here with exactly what api.request would prefix, and opened as a real navigation. The
+    // endpoint is AllowAnonymous precisely so this works without attaching a bearer token to a download.
+    const url = CONFIG.accountsApiBaseUrl + AccountsCommon.buildUrl(`import/template/${kind}`);
+    window.open(url, '_blank');
 }

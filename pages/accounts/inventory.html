@@ -393,9 +393,9 @@
                 <!-- BULK IMPORT -->
                 <div class="tab-content" id="inv-import">
                     <p style="margin:0 0 12px;font-size:.85rem;color:var(--text-secondary);">
-                        Load your item master and opening stock from a spreadsheet instead of typing them in.
-                        Export a CSV from Marg, Tally, Busy or Excel, download the template below to see the
-                        column names, then upload. <strong>Nothing is written until you press Import</strong> —
+                        Load your item master, opening stock and party list from a spreadsheet instead of typing them in.
+                        CSV or Excel (.xlsx) — export from Marg, Tally, Busy or Excel, download a template below to see
+                        the column names, then upload. <strong>Nothing is written until you press Import</strong> —
                         the preview shows exactly what would happen, row by row.
                     </p>
 
@@ -409,7 +409,7 @@
                                 <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
                                     <button class="btn btn-outline btn-sm" onclick="downloadImportTemplate('items')">Template</button>
                                     <button class="btn btn-primary btn-sm" onclick="document.getElementById('impItemsFile').click()">Choose CSV</button>
-                                    <input type="file" id="impItemsFile" accept=".csv,text/csv" style="display:none;" onchange="pickImportFile(this,'items')">
+                                    <input type="file" id="impItemsFile" accept=".csv,.xlsx,.xls,text/csv" style="display:none;" onchange="pickImportFile(this,'items')">
                                     <label style="display:flex;align-items:center;gap:.35rem;font-size:.78rem;color:var(--text-secondary);">
                                         <input type="checkbox" id="impCreateCats"> create missing categories
                                     </label>
@@ -426,9 +426,29 @@
                                 <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
                                     <button class="btn btn-outline btn-sm" onclick="downloadImportTemplate('opening-stock')">Template</button>
                                     <button class="btn btn-primary btn-sm" onclick="document.getElementById('impStockFile').click()">Choose CSV</button>
-                                    <input type="file" id="impStockFile" accept=".csv,text/csv" style="display:none;" onchange="pickImportFile(this,'opening-stock')">
+                                    <input type="file" id="impStockFile" accept=".csv,.xlsx,.xls,text/csv" style="display:none;" onchange="pickImportFile(this,'opening-stock')">
                                     <input type="text" id="impAsOf" class="form-control" placeholder="As of date" style="max-width:150px;">
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card" style="margin-bottom:1rem;">
+                        <div class="glass-card-body">
+                            <h4 style="margin:0 0 4px;">3 &middot; Suppliers &amp; customers</h4>
+                            <div style="font-size:.78rem;color:var(--text-secondary);margin-bottom:.75rem;">
+                                Name, GSTIN, contact and address. The GSTIN is checked against the state code —
+                                they decide IGST vs CGST+SGST on every future document for that party.
+                            </div>
+                            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+                                <button class="btn btn-outline btn-sm" onclick="downloadImportTemplate('parties')">Template</button>
+                                <button class="btn btn-primary btn-sm" onclick="document.getElementById('impPartyFile').click()">Choose file</button>
+                                <input type="file" id="impPartyFile" accept=".csv,.xlsx,.xls,text/csv" style="display:none;" onchange="pickImportFile(this,'parties')">
+                                <select id="impPartyType" class="form-control" style="max-width:210px;">
+                                    <option value="">Type is in the file</option>
+                                    <option value="vendor">All suppliers</option>
+                                    <option value="customer">All customers</option>
+                                </select>
                             </div>
                         </div>
                     </div>
