@@ -1805,9 +1805,9 @@ async function loadEmailSending() {
         // The catalog can legitimately come back empty — EmailService down, or no mailbox shared yet. That is
         // a state to EXPLAIN, not an error to throw: the tenant simply keeps sending from the platform address.
         [_sharedMailboxes] = await Promise.all([
-            api.request(AccountsCommon.buildUrl('accounts/mailboxes/available'))
+            api.request(AccountsCommon.buildUrl('mailboxes/available'))
         ]);
-        const assignments = await api.request(AccountsCommon.buildUrl('accounts/mailboxes/assignments'));
+        const assignments = await api.request(AccountsCommon.buildUrl('mailboxes/assignments'));
 
         const defaultRow = assignments.find(a => a.source === 'default');
         document.getElementById('mbDefaultSelect').innerHTML =
@@ -1857,10 +1857,10 @@ async function setFlowMailbox(sel) {
     const mailboxId = sel.value;
     try {
         if (mailboxId) {
-            await api.request(AccountsCommon.buildUrl('accounts/mailboxes/assignments'),
+            await api.request(AccountsCommon.buildUrl('mailboxes/assignments'),
                 { method: 'PUT', body: JSON.stringify({ flowType, mailboxId }) });
         } else {
-            await api.request(AccountsCommon.buildUrl(`accounts/mailboxes/assignments/${flowType}`), { method: 'DELETE' });
+            await api.request(AccountsCommon.buildUrl(`mailboxes/assignments/${flowType}`), { method: 'DELETE' });
         }
         Toast.success('Saved');
         loadEmailSending();   // re-read so the SOURCE column reflects the new truth rather than a guess
@@ -1875,10 +1875,10 @@ document.addEventListener('change', async (e) => {
     const mailboxId = e.target.value;
     try {
         if (mailboxId) {
-            await api.request(AccountsCommon.buildUrl('accounts/mailboxes/default'),
+            await api.request(AccountsCommon.buildUrl('mailboxes/default'),
                 { method: 'PUT', body: JSON.stringify({ mailboxId }) });
         } else {
-            await api.request(AccountsCommon.buildUrl('accounts/mailboxes/default'), { method: 'DELETE' });
+            await api.request(AccountsCommon.buildUrl('mailboxes/default'), { method: 'DELETE' });
         }
         Toast.success('Default saved');
         loadEmailSending();
