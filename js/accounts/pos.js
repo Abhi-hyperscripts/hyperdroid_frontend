@@ -91,7 +91,9 @@ async function refreshPosItems(silent = true) {
                 if (fresh.sale_unit && line.uom.toLowerCase() === fresh.sale_unit.toLowerCase()) line.uom = fresh.sale_unit;
                 else { line.uom = null; packChanged = true; }
             }
-            if (!fresh.track_inventory) return;
+            // A line created at this counter seconds ago is exempt: its stock reads zero BECAUSE it
+            // was just created, and capping to zero would delete the sale in progress.
+            if (!fresh.track_inventory || line.counterCreated) return;
             if (!remaining.has(fresh.id)) remaining.set(fresh.id, fresh.qty_on_hand);
             const avail = remaining.get(fresh.id);
             const conv = lineConv(line);
@@ -954,20 +956,36 @@ function renderGrid(keepCount) {
     if (all.length > rows.length) armPosScroll();
 }
 
-function addToCart(itemId) {
+/**
+ * @param {boolean} justCreated Set ONLY by quick-add, for the item created seconds ago from a product
+ *   the teller is physically holding.
+ *
+ *   The stock guard below exists to stop a counter ringing more than the shelf holds — right in every
+ *   normal case, and wrong in exactly this one. A just-created item has no recorded stock by
+ *   definition, so the guard refused to sell the very product that caused it to be created: the form
+ *   succeeded, the item appeared in the grid greyed out, and the sale could not be completed. If no
+ *   quantity was entered, stock goes to -1 after the sale, which is the truthful record — one was sold
+ *   that was never recorded as received — and the reorder report and next stock count both surface it.
+ */
+function addToCart(itemId, justCreated = false) {
     const it = posItems.find(x => x.id === itemId);
     if (!it) return;
     // Scans/taps are one physical piece — always the BASE-unit line (pack lines are separate).
     const line = cart.find(c => c.item.id === itemId && !c.uom);
     // Counter sales are physical goods in hand: never ring more than the shelf holds.
     // (The B2B invoice flow still allows advance-order oversell — that's deliberate.)
-    if (it.track_inventory) {
+    if (it.track_inventory && !justCreated) {
         const inCartBase = itemBaseInCart(itemId, null);
         const sell = posSellable(it);   // non-expired for batch items — expired-only ⇒ offer a substitute
         if (sell <= 0) { offerSubstitutes(it); return; }
         if (inCartBase + 1 > sell) { Toast.error(`Only ${sell} ${it.unit || ''} of '${it.name}' in stock.`); return; }
     }
-    if (line) line.qty += 1; else cart.push({ item: it, qty: 1, disc: 0, uom: null });
+    if (line) line.qty += 1;
+    // counterCreated survives on the LINE, not just this call: the 15-second multi-counter refresh
+    // re-caps every line against fresh stock, and a just-created item reads zero by definition —
+    // it would cap this line to 0 and then filter it out, silently deleting the very sale that
+    // caused the item to be created. The teller is holding the product; the shelf provably has it.
+    else cart.push({ item: it, qty: 1, disc: 0, uom: null, counterCreated: justCreated || undefined });
     ensureLotMrp(it);
     renderCart();
 }
@@ -1475,6 +1493,14 @@ function posQuickAdd(code) {
 
     const name = document.getElementById('qaName');
     name.focus();
+
+    // ⭐ Ask the shared catalogue what this barcode is — WITHOUT making the teller wait for it.
+    //
+    // The modal is already on screen and already focused, so a slow or failed lookup costs nothing:
+    // worst case the form stays blank, which is exactly where it would have been anyway. Blocking the
+    // form on a network call would make the common case (a national product somebody has already
+    // named) FEEL slower than the rare one, which is the wrong way round at a queue.
+    if (barcode) prefillFromCatalogue(barcode);
     // Enter anywhere in the form saves — at a queue, reaching for the mouse is the slow part.
     overlay.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); saveQuickAdd(); }
@@ -1510,10 +1536,74 @@ async function saveQuickAdd() {
         // Refresh the catalogue so the new item exists client-side, THEN ring it up: addToCart works
         // off posItems, so adding before the refresh would silently do nothing.
         await refreshPosItems(true);
-        addToCart(created.item_id);
-        Toast.success(`${created.name} added`);
+        addToCart(created.item_id, true);
+        Toast.success(Number(created.qty_on_hand) > 0
+            ? `${created.name} added`
+            : `${created.name} added — stock will read negative until you count it`);
     } catch (err) {
         if (btn) { btn.disabled = false; btn.textContent = 'Add & sell'; }
         Toast.error(err?.message || 'Could not add that item');
     }
+}
+
+/**
+ * Fills the new-item form from the shared catalogue, if another shop has already named this barcode.
+ *
+ * Only ever fills fields the teller has NOT touched. A scan-then-type race is real — they can start
+ * typing before the response lands — and overwriting someone mid-word is worse than not helping at
+ * all. Every filled field stays editable: this is a suggestion with its provenance shown, not an
+ * answer, and the shop can see its own shelf while we cannot.
+ */
+async function prefillFromCatalogue(barcode) {
+    let res;
+    try {
+        res = await api.request(
+            AccountsCommon.buildUrl(`inventory/catalogue/${encodeURIComponent(barcode)}`),
+            { _skipSpinner: true });
+    } catch { return; }   // fail-soft: a blank form is the status quo, not a regression
+
+    const overlay = document.getElementById('posQuickAddModal');
+    // The teller may have finished and closed the form while this was in flight.
+    if (!overlay || overlay.dataset.barcode !== barcode || !res?.found || !res.entry) return;
+
+    const e = res.entry;
+    const nameEl = document.getElementById('qaName');
+    const taxEl = document.getElementById('qaTax');
+    let filled = false;
+
+    if (nameEl && !nameEl.value.trim()) { nameEl.value = e.name; filled = true; }
+
+    // The catalogue stores a RATE; this tenant has its own slabs. Match on the number in each option
+    // rather than the label, because "GST 5%" and "5%" and "GST5" are all the same slab to a shopkeeper.
+    if (taxEl && !taxEl.value && e.gst_rate != null) {
+        const wanted = Number(e.gst_rate);
+        const hit = [...taxEl.options].find(o => {
+            const m = (o.value || '').match(/\d+(?:\.\d+)?/);
+            return m && Number(m[0]) === wanted;
+        });
+        if (hit) { taxEl.value = hit.value; filled = true; }   // patched setter mirrors this to the visible control
+    }
+
+    if (!filled) return;
+
+    // Say where it came from and how much to trust it. One shop reporting a name is a guess; several
+    // agreeing is a fact, and the teller is the one who can see the packet.
+    const confirmed = e.confirmations > 1
+        ? `confirmed by ${e.confirmations} shops`
+        : 'reported by one shop — worth a glance';
+    const body = overlay.querySelector('.modal-body');
+    if (body && !document.getElementById('qaFromCatalogue')) {
+        const note = document.createElement('div');
+        note.id = 'qaFromCatalogue';
+        note.style.cssText = 'margin:-4px 0 12px;padding:8px 10px;border-radius:6px;'
+            + 'background:var(--bg-tertiary);border:1px solid var(--color-success);'
+            + 'font-size:.75rem;color:var(--text-secondary);';
+        note.innerHTML = `Filled in from the shared catalogue — ${AccountsCommon.escapeHtml(confirmed)}. `
+            + `Edit anything that looks wrong.`;
+        body.insertBefore(note, body.firstChild);
+    }
+
+    // Everything we could know is known; the price is the one thing only this shop can say.
+    const priceEl = document.getElementById('qaPrice');
+    if (priceEl && !priceEl.value && document.activeElement === nameEl) priceEl.focus();
 }
