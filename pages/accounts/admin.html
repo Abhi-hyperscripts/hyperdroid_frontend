@@ -106,6 +106,9 @@
                             <button class="sidebar-btn" data-tab="custom-fields" id="customFieldsTab">
                                 <span class="nav-number">0</span><span class="nav-label">Custom Fields</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="email-sending" id="emailSendingTab" data-admin-only>
+                                <span class="nav-number">0</span><span class="nav-label">Email Sending</span>
+                            </button>
                         </div>
                     </div>
 
@@ -386,6 +389,53 @@
                 <!-- ============================================================ -->
                 <!-- Tab 2: Pending Approvals -->
                 <!-- ============================================================ -->
+                <!-- ============================================================ -->
+                <!-- Email Sending — which shared mailbox sends which document      -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="email-sending">
+                    <div class="glass-card">
+                        <div class="glass-card-header">
+                            <h3>Which address sends your Accounts email</h3>
+                        </div>
+                        <div class="glass-card-body">
+                            <p style="color:var(--text-secondary);font-size:0.88rem;margin-top:0;">
+                                Invoices and reminders can go out from your own address instead of ours — customers
+                                recognise it, and it is delivered on your domain. Only <strong>shared</strong> mailboxes
+                                can be used: a personal one would attribute every invoice to one person and stop working
+                                the day they leave. Set them up under Mail → Settings first.
+                            </p>
+
+                            <div class="form-group" style="max-width:420px;">
+                                <label for="mbDefaultSelect">Default for everything</label>
+                                <select id="mbDefaultSelect" class="form-control"></select>
+                                <small class="form-hint">Used for any document without its own address below. Most
+                                    businesses set only this.</small>
+                            </div>
+
+                            <div class="data-table-container" style="margin-top:1rem;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Document</th>
+                                            <th>Sends from</th>
+                                            <th style="text-align:center;">Where this comes from</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="mailboxAssignmentsBody">
+                                        <tr><td colspan="3" style="text-align:center;color:var(--text-secondary);">Loading…</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p style="color:var(--text-secondary);font-size:0.82rem;margin-top:0.75rem;">
+                                <strong>Where this comes from</strong> tells you why a message used a given address —
+                                its own setting, the default above, or ours because nothing is set. Nothing set is fine:
+                                mail still goes out, just from our address.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="tab-content" id="pending-approvals">
                     <div id="pendingApprovalsContainer">
                         <div class="empty-message">

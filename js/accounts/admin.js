@@ -234,6 +234,7 @@ function onTabSwitch(tabId) {
         case 'closing-checklists':  loadChecklists(); break;
         case 'year-end':            break;
         case 'custom-fields':       loadCustomFields(); break;
+        case 'email-sending':       loadEmailSending(); break;
     }
 }
 
@@ -1766,3 +1767,123 @@ async function closeFinancialYear() {
         Toast.error(err.message || 'Failed to close fiscal year');
     }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Email Sending — which shared mailbox sends which Accounts document
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// Accounts never holds mailbox credentials; it holds an id and asks EmailService to send. So this screen
+// only ever moves ids around, and the addresses shown are read live rather than cached — a renamed mailbox
+// must not keep displaying its old address here.
+
+const MAILBOX_FLOWS = [
+    { type: 'invoice',   label: 'Invoices',   hint: 'Sent when an invoice is issued' },
+    { type: 'reminder',  label: 'Reminders',  hint: 'Overdue-payment chasers' },
+    { type: 'statement', label: 'Statements', hint: 'Account statements' },
+    { type: 'quote',     label: 'Quotes',     hint: 'Quotations and proformas' }
+];
+
+let _sharedMailboxes = [];
+
+/** Options shared by every picker. Empty value = "not set", which is a legitimate choice, not a prompt. */
+function mailboxOptions(selectedId, emptyLabel) {
+    const opts = [`<option value="">${AccountsCommon.escapeHtml(emptyLabel)}</option>`];
+    for (const m of _sharedMailboxes) {
+        const label = m.displayName ? `${m.email} — ${m.displayName}` : m.email;
+        // An INACTIVE mailbox is still listed when it is the current choice, so the screen never silently
+        // drops the thing it is configured with — it says so instead.
+        const suffix = m.isActive ? '' : ' (inactive)';
+        opts.push(`<option value="${AccountsCommon.escapeHtml(m.id)}"${m.id === selectedId ? ' selected' : ''}>${AccountsCommon.escapeHtml(label + suffix)}</option>`);
+    }
+    return opts.join('');
+}
+
+async function loadEmailSending() {
+    const body = document.getElementById('mailboxAssignmentsBody');
+    try {
+        // The catalog can legitimately come back empty — EmailService down, or no mailbox shared yet. That is
+        // a state to EXPLAIN, not an error to throw: the tenant simply keeps sending from the platform address.
+        [_sharedMailboxes] = await Promise.all([
+            api.request(AccountsCommon.buildUrl('accounts/mailboxes/available'))
+        ]);
+        const assignments = await api.request(AccountsCommon.buildUrl('accounts/mailboxes/assignments'));
+
+        const defaultRow = assignments.find(a => a.source === 'default');
+        document.getElementById('mbDefaultSelect').innerHTML =
+            mailboxOptions(defaultRow ? defaultRow.mailboxId : '', 'Not set — use Ragenaizer\'s address');
+
+        if (!_sharedMailboxes.length) {
+            body.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);padding:1.25rem;">
+                No shared mailboxes yet. Share one under Mail → Settings and it will appear here.<br>
+                <small>Until then your Accounts email goes out from Ragenaizer's address, which is a working setup.</small>
+            </td></tr>`;
+            return;
+        }
+
+        const badge = src => {
+            const map = {
+                flow:     ['Its own setting', 'var(--status-active)'],
+                default:  ['The default above', 'var(--text-secondary)'],
+                platform: ["Ragenaizer's address", 'var(--text-secondary)']
+            };
+            const [text, colour] = map[src] || [src, 'var(--text-secondary)'];
+            return `<span style="color:${colour};font-size:0.82rem;">${AccountsCommon.escapeHtml(text)}</span>`;
+        };
+
+        body.innerHTML = MAILBOX_FLOWS.map(f => {
+            const a = assignments.find(x => x.flowType === f.type) || { source: 'platform', mailboxId: null };
+            // Only an EXPLICIT attachment preselects the row. When the row is inheriting, the picker shows
+            // "use the default" — otherwise changing the default would leave every row looking pinned to the
+            // old address.
+            const selected = a.source === 'flow' ? a.mailboxId : '';
+            return `<tr>
+                <td><strong>${AccountsCommon.escapeHtml(f.label)}</strong><br>
+                    <small style="color:var(--text-secondary);">${AccountsCommon.escapeHtml(f.hint)}</small></td>
+                <td><select class="form-control" data-flow="${f.type}" onchange="setFlowMailbox(this)">
+                        ${mailboxOptions(selected, 'Use the default')}
+                    </select></td>
+                <td style="text-align:center;">${badge(a.source)}</td>
+            </tr>`;
+        }).join('');
+    } catch (err) {
+        body.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--color-error);">${AccountsCommon.escapeHtml(err?.message || 'Could not load')}</td></tr>`;
+    }
+}
+
+/** Attach a mailbox to one document type, or detach it so the row falls back to the default. */
+async function setFlowMailbox(sel) {
+    const flowType = sel.dataset.flow;
+    const mailboxId = sel.value;
+    try {
+        if (mailboxId) {
+            await api.request(AccountsCommon.buildUrl('accounts/mailboxes/assignments'),
+                { method: 'PUT', body: JSON.stringify({ flowType, mailboxId }) });
+        } else {
+            await api.request(AccountsCommon.buildUrl(`accounts/mailboxes/assignments/${flowType}`), { method: 'DELETE' });
+        }
+        Toast.success('Saved');
+        loadEmailSending();   // re-read so the SOURCE column reflects the new truth rather than a guess
+    } catch (err) {
+        Toast.error(err?.message || 'Could not save');
+        loadEmailSending();   // and on failure, put the picker back to what the server actually holds
+    }
+}
+
+document.addEventListener('change', async (e) => {
+    if (e.target?.id !== 'mbDefaultSelect') return;
+    const mailboxId = e.target.value;
+    try {
+        if (mailboxId) {
+            await api.request(AccountsCommon.buildUrl('accounts/mailboxes/default'),
+                { method: 'PUT', body: JSON.stringify({ mailboxId }) });
+        } else {
+            await api.request(AccountsCommon.buildUrl('accounts/mailboxes/default'), { method: 'DELETE' });
+        }
+        Toast.success('Default saved');
+        loadEmailSending();
+    } catch (err) {
+        Toast.error(err?.message || 'Could not save the default');
+        loadEmailSending();
+    }
+});
