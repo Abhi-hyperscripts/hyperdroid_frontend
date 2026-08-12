@@ -81,6 +81,95 @@
       </div>
     </header>
 
+    <section class="dk-section dk-reveal" id="deploy">
+      <div class="dk-kicker">Getting the store online</div>
+      <h2 class="dk-h2">Stand up your store, then point a front end at it.</h2>
+      <p class="dk-lede">The store ships as <b>prebuilt container images</b> &mdash; nothing to compile on your server. You run the backend, connect it to your Ragenaizer books, and put a front end in front: the bundled thirty-two-design storefront, or your own. It is the <em>same</em> backend behind both, and it takes two decisions &mdash; where it runs, and what talks to it.</p>
+
+      <div class="dk-list">
+        <div class="dk-lrow" style="--mod:#60A5FA">
+          <span class="dk-lmid"><span class="dk-lname">First, a storefront key from your Ragenaizer tenant</span><span class="dk-ldesc">In Ragenaizer, open <b>Settings &rarr; API Keys</b> and generate a <b>storefront key</b>. It is scoped &mdash; it can read your catalogue, stock and prices and write orders, and nothing else. The store holds it server-side; your front end never sees it.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#4ADE80">
+          <span class="dk-lmid"><span class="dk-lname">A server with Docker, and a domain</span><span class="dk-ldesc">Any Linux box that runs Docker and Docker Compose. Point a DNS <code>A</code> record at it and open ports <code>80</code> and <code>443</code> &mdash; the HTTPS certificate is issued and renewed for you.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#C084FC">
+          <span class="dk-lmid"><span class="dk-lname">Three images &mdash; pick what fits</span><span class="dk-ldesc"><code>rzc-backend</code> is the API with the admin panel baked in (bring your own Postgres and Redis). <code>rzc-allinone</code> is the same with Redis inside, so a single <code>docker run</code> needs nothing external but a database. <code>rzc-frontend</code> is the thirty-two-design storefront, portable to any backend at run time.</span></span>
+        </div>
+      </div>
+
+      <p class="dk-lede" style="margin-top:2.4rem">There are two shapes to run it in. New to servers? <b>Pick A</b> &mdash; it stands up everything for you. Pick B when you want the backend and front end on separate domains, or your own front end in place of ours.</p>
+      <div class="mk-flows" style="grid-template-columns:1fr">
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">A</span> One box, one domain &mdash; the simplest</div>
+          <p class="mk-flownote" style="margin-top:0">Backend, front end, Postgres, Redis and an HTTPS proxy on a single server. The installer asks for your domain and key, generates the secrets, and brings the whole thing up.</p>
+          <pre class="mk-curl">curl -fsSL https://raw.githubusercontent.com/Abhi-hyperscripts/ragenaizer-commerce/main/install.sh | bash</pre>
+          <p class="mk-flownote">Prefer it by hand? Copy <code>deploy/.env.example</code> to <code>.env</code>, fill in the domain and key, then <code>docker compose -f deploy/docker-compose.yml up -d</code>. Your shop is at <code>https://your-domain</code>, the admin at <code>/admin</code>.</p>
+        </div>
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">B</span> Split &mdash; backend and front end on their own domains</div>
+          <p class="mk-flownote" style="margin-top:0"><b>More moving parts. New to servers? Use A.</b> You assemble four containers &mdash; a database, a cache, the backend and the front end &mdash; with a proxy that gives each a domain and its own HTTPS. Point two DNS <code>A</code> records at the server: <code>api.mystore.com</code> and <code>www.mystore.com</code>. Every line below is runnable as-is once you replace the two placeholders in capitals.</p>
+          <p class="mk-flownote"><b>1.</b> A private network, plus a Postgres and a Redis for the backend to use:</p>
+          <pre class="mk-curl">docker network create store
+docker run -d --name store-db --network store -v store-pg:/var/lib/postgresql/data \
+  -e POSTGRES_DB=merch -e POSTGRES_USER=merch -e POSTGRES_PASSWORD=CHANGE_ME postgres:17-alpine
+docker run -d --name store-cache --network store redis:7-alpine</pre>
+          <p class="mk-flownote"><b>2.</b> The backend &mdash; reading that database, your storefront key, and where your Ragenaizer books live. No published port: only the proxy reaches it.</p>
+          <pre class="mk-curl">docker run -d --name store-api --network store \
+  -e ConnectionStrings__Postgres="Host=store-db;Database=merch;Username=merch;Password=CHANGE_ME" \
+  -e Redis__Connection="store-cache:6379" \
+  -e Ragenaizer__ApiUrl="https://accounts.ragenaizer.com" \
+  -e Ragenaizer__ApiKey="YOUR_STOREFRONT_KEY" \
+  -e RZC_MASTER_KEY="$(openssl rand -base64 32)" \
+  abhishekanand0586/rzc-backend</pre>
+          <p class="mk-flownote"><b>3.</b> The prebuilt storefront, pointed at the backend over the private network &mdash; the same image, no rebuild:</p>
+          <pre class="mk-curl">docker run -d --name store-web --network store \
+  -e MERCH_BACKEND_URL="http://store-api:8080" \
+  abhishekanand0586/rzc-frontend</pre>
+          <p class="mk-flownote"><b>4.</b> Caddy in front, giving each container a domain and fetching its own certificate. Save this as <code>Caddyfile</code>&hellip;</p>
+          <pre class="mk-curl">api.mystore.com {
+    reverse_proxy store-api:8080
+}
+www.mystore.com {
+    reverse_proxy store-web:3000
+}</pre>
+          <p class="mk-flownote">&hellip;then run Caddy on the same network &mdash; it is the only thing that opens a port to the internet:</p>
+          <pre class="mk-curl">docker run -d --name store-proxy --network store -p 80:80 -p 443:443 \
+  -v $PWD/Caddyfile:/etc/caddy/Caddyfile -v caddy-data:/data caddy:2</pre>
+          <p class="mk-flownote">Nothing above publishes the backend&rsquo;s <code>8080</code> &mdash; the proxy reaches it privately, which is exactly right: the backend trusts <code>X-Forwarded-For</code> for rate limiting and must always sit behind a proxy. On genuinely <em>separate</em> servers, drop <code>--network store</code>, publish each port, and set <code>MERCH_BACKEND_URL</code> to <code>https://api.mystore.com</code>.</p>
+        </div>
+      </div>
+
+      <div class="mk-flows">
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">&rarr;</span> Finish the setup inside the store</div>
+          <p class="mk-flownote" style="margin-top:0">If you passed the database and key as environment &mdash; both compose paths do &mdash; the store boots already connected, so skip to step four. If you ran a bare backend with no database, it boots into a demo you sign into and connect from:</p>
+          <ol class="mk-steps">
+            <li>Open <code>/admin</code> and sign in with the demo login shown on the screen (<code>admin@demo</code> / <code>demo</code>).</li>
+            <li>Go to <b>Integrations</b> and paste your <b>Postgres connection string</b> and your <b>Ragenaizer storefront key</b>.</li>
+            <li>They are verified together in one step. The moment both pass, the demo login is disabled and the session key is rotated &mdash; the well-known password is never a way in once real data is attached.</li>
+            <li>The catalogue loads live from your books. Set <b>Appearance</b>, then <b>Settings</b> (shipping, payment, price list) and your policy pages, and you are selling.</li>
+          </ol>
+          <p class="mk-flownote"><b>Confirm it is live.</b> Open your domain in a browser &mdash; a fresh store shows a demo catalogue you can click through, and the admin is at <code>/admin</code>. If it does not load, <code>docker ps</code> should show every container <em>Up</em>, and <code>docker logs store-api</code> tells you if it could not reach the database or your books.</p>
+          <p class="mk-flownote">Bringing your own front end instead of the bundled one? Set <b>Settings &rarr; Storefront mode &rarr; Headless</b>, so the theme controls &mdash; which only style our storefront image &mdash; get out of your way.</p>
+        </div>
+      </div>
+
+      <div class="cm-tablewrap">
+        <table class="cm-table">
+          <tbody>
+            <tr class="dom"><td colspan="2">The environment variables that matter</td></tr>
+            <tr><td><code>ConnectionStrings__Postgres</code></td><td class="ours">The store&rsquo;s own database &mdash; shopper accounts, cart, theme &mdash; not your books. Or leave it blank and connect in the admin.</td></tr>
+            <tr><td><code>Ragenaizer__ApiKey</code></td><td class="ours">The storefront key. Or paste it in the admin instead.</td></tr>
+            <tr><td><code>MERCH_BACKEND_URL</code></td><td class="ours">On the front-end image only &mdash; the backend it talks to, read at run time, so one image is portable to any store.</td></tr>
+            <tr><td><code>RZC_MASTER_KEY</code></td><td class="ours">Encrypts your stored key and payment secrets. <strong>Back it up.</strong> Lose it and you re-enter them; a random one is generated and kept in a volume if you do not set it.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="dk-osnote"><b>Updates</b> are <code>docker compose pull &amp;&amp; docker compose up -d</code> &mdash; pin <code>IMAGE_TAG</code> to a version if you would rather not track latest. Containers re-read their environment on restart, so the database, the key and the backend URL survive an upgrade. And a store that is truly headless does not need the bundled front end at all: point your own React, Vue, Flutter or native app at the same API &mdash; which is the rest of this page.</p>
+    </section>
+
     <section class="dk-section dk-reveal" id="starter">
       <div class="dk-kicker">Start from working code</div>
       <h2 class="dk-h2">A whole shop front you can clone, in plain JavaScript.</h2>
