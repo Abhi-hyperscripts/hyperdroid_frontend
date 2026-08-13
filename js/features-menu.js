@@ -66,17 +66,47 @@
         ['Merch storefront', 'merch.html'],
         ['Merch API reference', 'merch-api.html']
       ] },
-    { name: 'CRM', href: 'crm.html', tag: 'Sales &amp; leads' },
+    { name: 'CRM', href: 'crm.html', tag: 'Sales &amp; leads', pages: [
+        ['Lead management', 'features/lead-management.html'],
+        ['Lead journey &amp; follow-ups', 'features/lead-journey.html'],
+        ['Deals &amp; pipeline', 'features/deals-pipeline.html'],
+        ['Calls &amp; dialler', 'features/calls-dialer.html'],
+        ['WhatsApp', 'features/whatsapp.html'],
+        ['Sequences &amp; campaigns', 'features/sequences.html'],
+        ['Facebook Lead Ads', 'features/facebook-lead-ads.html'],
+        ['Google Sheets sync', 'features/google-sheets-sync.html'],
+        ['Teams &amp; territories', 'features/teams-territories.html'],
+        ['CRM reporting', 'features/crm-reports.html']
+      ] },
     { name: 'HRMS', href: 'hrms.html', tag: 'People &amp; payroll', pages: [
-        ['Payroll, attendance and leave', 'features/hrms-payroll.html']
+        ['Payroll', 'features/hrms-payroll.html'],
+        ['Statutory compliance', 'features/statutory-compliance.html'],
+        ['Attendance', 'features/attendance.html'],
+        ['Leave management', 'features/leave-management.html'],
+        ['Employee records', 'features/employee-records.html'],
+        ['Recruitment', 'features/recruitment.html'],
+        ['Employee self-service', 'features/employee-self-service.html'],
+        ['HR reports', 'features/hr-reports.html']
       ] },
-    { name: 'Projects', href: 'pms.html', tag: 'Delivery &amp; billing' },
+    { name: 'Projects', href: 'pms.html', tag: 'Delivery &amp; billing', pages: [
+        ['Projects &amp; clients', 'features/projects-clients.html'],
+        ['Tasks &amp; issues', 'features/tasks-issues.html'],
+        ['Time &amp; timesheets', 'features/time-timesheets.html']
+      ] },
     { name: 'Procurement', href: 'procurement.html', tag: 'Buying &amp; vendors', pages: [
-        ['RFQs, comparison and awards', 'features/procurement.html']
+        ['Overview', 'features/procurement.html'],
+        ['RFQs &amp; sourcing', 'features/rfq-sourcing.html'],
+        ['Quote comparison', 'features/quote-comparison.html'],
+        ['Vendor management', 'features/vendor-management.html']
       ] },
-    { name: 'Mail', href: 'email.html', tag: 'One inbox' },
+    { name: 'Mail', href: 'email.html', tag: 'One inbox', pages: [
+        ['Mailboxes', 'features/business-mailboxes.html'],
+        ['Messages &amp; folders', 'features/messages-folders.html'],
+        ['Compose &amp; scheduling', 'features/compose-scheduling.html']
+      ] },
     { name: 'Meetings', href: 'vision.html', tag: 'HD video and captions', pages: [
-        ['Meetings, captions and recordings', 'features/video-conferencing.html']
+        ['Video conferencing', 'features/video-conferencing.html'],
+        ['Transcripts &amp; summaries', 'features/meeting-transcripts.html']
       ] },
     { name: 'Chat', href: 'chat.html', tag: 'Direct and group', pages: [
         ['Messaging, groups and presence', 'features/team-chat.html']
@@ -84,9 +114,21 @@
     { name: 'Drive', href: 'drive.html', tag: 'Files &amp; sharing', pages: [
         ['Uploads, links and the audit log', 'features/cloud-storage.html']
       ] },
-    { name: 'Learning', href: 'lms.html', tag: 'Courses &amp; training' },
-    { name: 'Research', href: 'research.html', tag: 'Survey analysis' },
-    { name: 'AI', href: 'ai.html', tag: 'Agentic AI' }
+    { name: 'Learning', href: 'lms.html', tag: 'Courses &amp; training', pages: [
+        ['Courses &amp; content', 'features/courses-content.html'],
+        ['Learning paths', 'features/learning-paths.html'],
+        ['Quizzes &amp; assignments', 'features/quizzes-assignments.html'],
+        ['Certificates &amp; reports', 'features/certificates-reports.html']
+      ] },
+    { name: 'Research', href: 'research.html', tag: 'Survey analysis', pages: [
+        ['Questionnaires', 'features/questionnaires.html'],
+        ['Data files &amp; waves', 'features/data-files.html'],
+        ['Analysis &amp; insights', 'features/analysis-insights.html'],
+        ['Open-end coding', 'features/open-end-coding.html']
+      ] },
+    { name: 'AI', href: 'ai.html', tag: 'Agentic AI', pages: [
+        ['AI copilot', 'features/ai-copilot.html']
+      ] }
   ];
 
   /* Found by LABEL, scoped to the nav.
