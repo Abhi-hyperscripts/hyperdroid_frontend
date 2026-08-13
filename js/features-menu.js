@@ -56,10 +56,15 @@
         ['Budgets &amp; cost centres', 'features/budgets-cost-centres.html'],
         ['Multi-currency', 'features/multi-currency.html'],
         ['Data import', 'features/data-import.html'],
-        /* Pharma is a VERTICAL of Accounts, not a peer app. Its own page says
-           "This is Accounts, with the parts a chemist and a distributor need
-           already in it" — listing it top-level implied a separate product. */
-        ['Pharma distribution', 'pharma.html']
+        /* Verticals and front ends onto the same engine, not peer products.
+           Pharma's own page says "This is Accounts, with the parts a chemist
+           and a distributor need already in it", and Merch is a storefront
+           that talks to Accounts' /v1/storefront API with a tenant key — it
+           holds no ledger and no stock of its own. Listing either top-level
+           implied a separate product with its own books. */
+        ['Pharma distribution', 'pharma.html'],
+        ['Merch storefront', 'merch.html'],
+        ['Merch API reference', 'merch-api.html']
       ] },
     { name: 'CRM', href: 'crm.html', tag: 'Sales &amp; leads' },
     { name: 'HRMS', href: 'hrms.html', tag: 'People &amp; payroll', pages: [
@@ -78,9 +83,6 @@
       ] },
     { name: 'Drive', href: 'drive.html', tag: 'Files &amp; sharing', pages: [
         ['Uploads, links and the audit log', 'features/cloud-storage.html']
-      ] },
-    { name: 'Merch', href: 'merch.html', tag: 'Free self-hosted store', pages: [
-        ['Storefront API reference', 'merch-api.html']
       ] },
     { name: 'Learning', href: 'lms.html', tag: 'Courses &amp; training' },
     { name: 'Research', href: 'research.html', tag: 'Survey analysis' },
