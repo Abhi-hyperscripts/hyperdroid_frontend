@@ -697,9 +697,15 @@
     /* ── the trades ───────────────────────────────────────────────────────────
        Every capability named here was checked against the AccountsService
        controllers before it went on the page. Things the backend does NOT have
-       yet — multiple units of measure, e-way bills, GSTR-2A/2B reconciliation,
-       GSTR-9 — are deliberately absent, and e-invoicing is not claimed because
-       it is still gated behind a GSP connection. */
+       — e-way bills and GSTR-9 — are deliberately absent, and e-invoicing is
+       not claimed because it is still gated behind a GSP connection.
+
+       ⚠ "NOT BUILT" CLAIMS EXPIRE. This comment previously also excluded
+       multiple units of measure and GSTR-2B reconciliation. BOTH now exist:
+       UoM has BusinessLayer_UomMath wired into invoices, challans and stock,
+       and GSTR-2B has its own controller plus a 932-line business layer. Both
+       sat wrongly excluded here for a while. Re-verify against the controllers
+       before repeating any exclusion from this list. */
     var TRADES = [
       {
         tab: 'Pharma distribution',
