@@ -45,6 +45,35 @@
     lms:          [8874, 28, 0.68, 4],
     'supply-chain': [5562, 38, 0.52, 6],
     pharma:       [1748, 36, 0.56, 6],
+
+    /* The Accounts feature pages, plus the five rebuilt module pages. Seeded
+       so each opens on its own silhouette rather than 27 copies of one. */
+    invoicing:      [8284, 26, 0.44, 3],
+    recurring:      [11638, 30, 0.72, 6],
+    receivables:    [74349, 34, 0.68, 3],
+    payables:       [27461, 38, 0.62, 6],
+    po:             [87963, 42, 0.58, 3],
+    expenses:       [46429, 46, 0.52, 6],
+    inventory:      [9082, 26, 0.44, 3],
+    gst:            [31567, 30, 0.72, 6],
+    'gstr2b':       [6311, 34, 0.68, 3],
+    import:         [86038, 38, 0.62, 6],
+    pos:            [986, 42, 0.58, 3],
+    banking:        [13574, 46, 0.52, 6],
+    gl:             [6919, 26, 0.44, 3],
+    assets:         [1231, 30, 0.72, 6],
+    close:          [53900, 34, 0.68, 3],
+    reports:        [77250, 38, 0.62, 6],
+    budgets:        [2550, 42, 0.58, 3],
+    wholesale:      [6, 46, 0.52, 6],
+    manufacturing:  [52252, 26, 0.44, 3],
+    counts:         [25568, 30, 0.72, 6],
+    storefront:     [95946, 34, 0.68, 3],
+    currency:       [69494, 38, 0.62, 6],
+    vision:         [77251, 42, 0.58, 3],
+    chat:           [10469, 46, 0.52, 6],
+    drive:          [16210, 26, 0.44, 3],
+    hrms:           [83275, 30, 0.72, 6],
   };
   var cfg = PRESETS[preset] || PRESETS.merch;
 

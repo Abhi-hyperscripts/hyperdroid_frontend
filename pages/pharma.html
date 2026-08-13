@@ -209,8 +209,10 @@
            serials ............... items/{id}/serials, serials/{no}/sell,
                                    serial-mismatches
 
-         DO NOT add e-way bill, GSTR-9 or GSTR-2A/2B reconciliation to this
-         page. None exist. E-invoicing is written but gated behind
+         DO NOT add e-way bill or GSTR-9 to this page — neither exists.
+         (GSTR-2B reconciliation DID not exist when this page was written and
+         now does: Gstr2bController plus a 932-line business layer. Re-verify
+         before repeating any "not built" claim; they expire.) E-invoicing is written but gated behind
          EInvoice:Enabled and a GSP connection that is not live, so it is named
          in "What it does not do" and nowhere else. -->
     <header class="dk-hero">
@@ -308,7 +310,7 @@
           <span class="dk-lmid"><span class="dk-lname">E-invoicing is written but not switched on</span><span class="dk-ldesc">The IRN path exists and stays disabled until a GSP connection is live. We would rather say that than let you find out at your first B2B invoice over the threshold.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#94A3B8">
-          <span class="dk-lmid"><span class="dk-lname">No GSTR-2A/2B reconciliation, no GSTR-9</span><span class="dk-ldesc">GSTR-1, GSTR-3B, TDS and the HSN summary are built and come out of the ledger. The annual return and purchase reconciliation are not.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">No GSTR-9</span><span class="dk-ldesc">The annual return is not built. GSTR-1, GSTR-3B, TDS, the HSN summary and <a href="features/gstr-2b.html">GSTR-2B reconciliation</a> all are.</span></span>
         </div>
       </div>
     </section>
@@ -341,7 +343,7 @@
       </div>
       <div class="dk-fcol">
         <strong>Resources</strong>
-        <a href="calculators/index.html">Calculators</a><a href="insights/index.html">Insights</a><a href="blog/index.html">Guides</a><a href="use-cases/index.html">Use cases</a>
+        <a href="features/index.html">Features</a><a href="calculators/index.html">Calculators</a><a href="insights/index.html">Insights</a><a href="blog/index.html">Guides</a><a href="use-cases/index.html">Use cases</a>
       </div>
       <div class="dk-fcol">
         <strong>Legal</strong>
