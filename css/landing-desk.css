@@ -1514,6 +1514,25 @@ body.desk-landing .fx-menu.is-open .fx-trigger svg { transform: rotate(180deg); 
    is hidden by attribute AND styled with `display` needs this rule. */
 body.desk-landing .fx-panel[hidden] { display: none; }
 
+/* BRIDGE THE GAP BETWEEN TRIGGER AND PANEL.
+
+   The panel sits 16px below the trigger, and that gap was a dead zone: moving
+   the pointer down to click an item left the trigger's box before entering
+   the panel's, `mouseleave` fired, and the menu closed under the cursor. The
+   menu was effectively unusable by mouse.
+
+   This pseudo-element extends the panel's hit area up to meet the trigger, so
+   the pointer is never over neither. Invisible, and it only exists while the
+   panel is open because [hidden] removes the panel entirely. */
+body.desk-landing .fx-panel::before {
+  content: '';
+  position: absolute;
+  top: -18px;
+  left: 0;
+  right: 0;
+  height: 18px;
+}
+
 body.desk-landing .fx-panel {
   position: absolute;
   top: calc(100% + 16px);

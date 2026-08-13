@@ -198,10 +198,29 @@
 
   /* Hover opens it on a device that has hover. A touch device fires no
      mouseenter, so the click above is the route there — which is why the
-     trigger is a button rather than a link. */
+     trigger is a button rather than a link.
+
+     CLOSING IS DELAYED, and that is not a nicety. The panel sits below the
+     trigger with a gap, and a pointer travelling to an item crosses ground
+     that belongs to neither. Closing on the first mouseleave shut the menu
+     under the cursor and made it impossible to click anything in it. CSS
+     bridges the gap; this covers the rest — a diagonal move that clips the
+     corner, or a hand that leaves and comes straight back. */
   if (window.matchMedia('(hover: hover)').matches) {
-    wrap.addEventListener('mouseenter', function () { setOpen(true); });
-    wrap.addEventListener('mouseleave', function () { setOpen(false); });
+    var closeTimer = null;
+    var cancelClose = function () {
+      if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    };
+    wrap.addEventListener('mouseenter', function () {
+      cancelClose();
+      setOpen(true);
+    });
+    wrap.addEventListener('mouseleave', function () {
+      cancelClose();
+      closeTimer = setTimeout(function () { setOpen(false); }, 260);
+    });
+    /* A click inside should not be undone by a pending close. */
+    wrap.addEventListener('click', cancelClose);
   }
 
   document.addEventListener('click', function (e) {
