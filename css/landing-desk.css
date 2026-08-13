@@ -1561,7 +1561,11 @@ body.desk-landing .fx-panel {
      visibly different height and a menu nearly as tall as the viewport.
      Capping the panel and letting each column scroll inside it keeps them
      equal whichever app is selected. */
-  max-height: min(460px, calc(100vh - 140px));
+  /* Tall enough that all twelve apps fit without scrolling on a normal
+     laptop — the list needs ~570px at 46px a row, and a menu you have to
+     scroll to see the last three apps hides them in practice. Still clamped
+     to the viewport, so a short window scrolls rather than overflowing. */
+  max-height: min(600px, calc(100vh - 120px));
 }
 
 body.desk-landing .fx-apps {
@@ -1575,26 +1579,56 @@ body.desk-landing .fx-apps {
      content. Same reason the detail column carries it. */
   min-height: 0;
 }
+/* TWO ROWS, NOT THREE.
+
+   The tag carried `grid-column: 1 / -1`, which pushed it out of row one — so
+   auto-placement dropped the chevron onto a row of its own and every app read
+   as three stacked lines. Each cell is now placed explicitly: name and tag
+   stack in column one, and the chevron sits in column two spanning both,
+   vertically centred against them. */
 body.desk-landing .fx-app {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 14px;
+  grid-template-rows: auto auto;
   align-items: center;
-  gap: 2px 8px;
-  padding: 8px 10px;
+  column-gap: 8px;
+  row-gap: 1px;
+  padding: 7px 10px;
   border-radius: 9px;
   text-decoration: none;
   color: var(--dk-ink);
+  transition: background .12s ease;
 }
 body.desk-landing .fx-app:hover,
 body.desk-landing .fx-app.is-on { background: rgb(255 255 255 / 0.07); }
-body.desk-landing .fx-appname { font-size: 14px; font-weight: 600; }
-body.desk-landing .fx-apptag {
-  grid-column: 1 / -1;
-  font-size: 11.5px;
-  color: var(--dk-dim);
-  line-height: 1.35;
+
+body.desk-landing .fx-appname {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.25;
 }
-body.desk-landing .fx-more { color: var(--dk-dim); font-size: 17px; line-height: 1; }
+body.desk-landing .fx-apptag {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: 11px;
+  color: var(--dk-dim);
+  line-height: 1.3;
+}
+body.desk-landing .fx-more {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  justify-self: end;
+  align-self: center;
+  color: var(--dk-dim);
+  font-size: 15px;
+  line-height: 1;
+  opacity: .55;
+  transition: opacity .12s ease, transform .12s ease;
+}
+body.desk-landing .fx-app:hover .fx-more,
+body.desk-landing .fx-app.is-on .fx-more { opacity: 1; transform: translateX(2px); }
 
 body.desk-landing .fx-detail { padding: 14px 16px; overflow-y: auto; min-height: 0; }
 body.desk-landing .fx-dhead {
