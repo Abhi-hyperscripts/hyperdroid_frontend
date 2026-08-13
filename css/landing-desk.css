@@ -1463,3 +1463,165 @@ body.desk-landing .dk-sub a:hover,
 body.desk-landing .dk-ldesc a:hover,
 body.desk-landing .dk-replaces a:hover,
 body.desk-landing .dk-faq a:hover { color: #C7D2FE; }
+
+/* ── features mega-menu ───────────────────────────────────────────────────────
+   Built at runtime by js/features-menu.js from the "Features" nav link, so
+   there is one definition rather than a copy on each of ~123 pages.
+
+   Dense frost on the panel, per the suite's rule for floating surfaces: a
+   nested backdrop-filter caps how much the blur can sample, so the opacity
+   has to carry readability on its own. */
+/* The nav is a flex row of bare <a>s with NO padding at 13.5px. The trigger
+   has to match that exactly or it breaks the row two ways at once: it was
+   14.5px with 8px of padding, which pushed its own label ~8px below its
+   neighbours AND, because the row stretches to its tallest child, made every
+   other link's box taller than it should be. Same size, same zero padding. */
+body.desk-landing .fx-menu { position: relative; display: inline-flex; align-items: center; }
+
+body.desk-landing .fx-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: inherit;
+  line-height: inherit;
+  color: #96a0b5;
+  cursor: pointer;
+  transition: color 0.14s ease;
+}
+body.desk-landing .fx-trigger:hover,
+body.desk-landing .fx-menu.is-open .fx-trigger { color: var(--dk-ink); }
+body.desk-landing .fx-trigger svg {
+  width: 13px; height: 13px;
+  fill: none; stroke: currentColor; stroke-width: 2.4;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .18s ease;
+}
+body.desk-landing .fx-menu.is-open .fx-trigger svg { transform: rotate(180deg); }
+
+/* THE HIDDEN ATTRIBUTE LOSES TO ANY AUTHOR `display`.
+
+   `[hidden]` is only `display: none` in the UA stylesheet, so the
+   `display: grid` below outranked it and the panel was permanently open —
+   the toggle set panel.hidden and nothing happened. This exact bug bit the
+   Merch reference storefront's cart badge earlier (`display: inline-grid`
+   over `hidden`), so it is a house pattern, not a one-off: any element that
+   is hidden by attribute AND styled with `display` needs this rule. */
+body.desk-landing .fx-panel[hidden] { display: none; }
+
+body.desk-landing .fx-panel {
+  position: absolute;
+  top: calc(100% + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: grid;
+  grid-template-columns: 244px 380px;
+  /* The row too, not just the columns. min-height:0 on the children was not
+     enough: the panel was 460px while its IMPLICIT ROW measured 856px, so the
+     children filled the row and the panel clipped them. minmax(0, 1fr) is
+     what actually forces the row to the container's height and lets the
+     children scroll. */
+  grid-template-rows: minmax(0, 1fr);
+  width: 624px;
+  border: 1px solid var(--dk-line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgb(9 12 20 / 0.97);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.55);
+  /* The CAP BELONGS HERE, not on a column. With max-height on .fx-apps alone
+     the grid row still stretched to the tallest column, so Accounts' 22 links
+     made a 700px panel with the app list scrolling inside it — two columns of
+     visibly different height and a menu nearly as tall as the viewport.
+     Capping the panel and letting each column scroll inside it keeps them
+     equal whichever app is selected. */
+  max-height: min(460px, calc(100vh - 140px));
+}
+
+body.desk-landing .fx-apps {
+  padding: 8px;
+  overflow-y: auto;
+  border-right: 1px solid var(--dk-line);
+  /* A grid child will not shrink below its content height without this, so
+     `overflow-y: auto` alone did nothing: the columns grew to 856px inside a
+     462px panel and were simply CLIPPED by the panel's overflow:hidden. The
+     scrollbar only appears once the item is allowed to be shorter than its
+     content. Same reason the detail column carries it. */
+  min-height: 0;
+}
+body.desk-landing .fx-app {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 8px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  text-decoration: none;
+  color: var(--dk-ink);
+}
+body.desk-landing .fx-app:hover,
+body.desk-landing .fx-app.is-on { background: rgb(255 255 255 / 0.07); }
+body.desk-landing .fx-appname { font-size: 14px; font-weight: 600; }
+body.desk-landing .fx-apptag {
+  grid-column: 1 / -1;
+  font-size: 11.5px;
+  color: var(--dk-dim);
+  line-height: 1.35;
+}
+body.desk-landing .fx-more { color: var(--dk-dim); font-size: 17px; line-height: 1; }
+
+body.desk-landing .fx-detail { padding: 14px 16px; overflow-y: auto; min-height: 0; }
+body.desk-landing .fx-dhead {
+  margin: 0 0 10px;
+  font-family: var(--font-family-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-accent);
+}
+body.desk-landing .fx-dnote { margin: 0; font-size: 13px; line-height: 1.6; color: var(--dk-mute); }
+body.desk-landing .fx-dnote a { color: #A5B4FC; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Two columns once there are more than a handful — Accounts has 22, and a
+   single column of them is what made the panel unmanageably tall. */
+body.desk-landing .fx-dlist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 6px;
+}
+body.desk-landing .fx-dlist.is-short { grid-template-columns: 1fr; }
+body.desk-landing .fx-dlist a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--dk-mute);
+  text-decoration: none;
+}
+body.desk-landing .fx-dlist a:hover { background: rgb(255 255 255 / 0.07); color: var(--dk-ink); }
+
+/* NOTE ON SMALL SCREENS. There is deliberately no mobile variant here.
+   `.dk-navlinks` is display:none below 900px (see the rule further up), so the
+   Features trigger does not exist there at all and a panel style for that
+   width would be unreachable code pretending to be a feature.
+
+   Below 900px the routes to the feature pages are the footer's Resources
+   column and the in-body drill-down on the module pages, both of which work.
+   If a mobile nav is ever added, this menu needs a single-column panel pinned
+   to the viewport rather than centred on the trigger — it is 624px wide. */
+
+/* Quiet scrollbars inside the menu. */
+body.desk-landing .fx-apps::-webkit-scrollbar,
+body.desk-landing .fx-detail::-webkit-scrollbar { width: 8px; }
+body.desk-landing .fx-apps::-webkit-scrollbar-thumb,
+body.desk-landing .fx-detail::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.12);
+  border-radius: 99px;
+}

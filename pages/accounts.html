@@ -235,6 +235,7 @@
       </a>
       <div class="dk-navlinks">
         <a href="../index.html#platform">Platform</a>
+        <a href="features/index.html">Features</a>
         <a href="ai.html">AI</a>
         <a href="../index.html#how">How it fits</a><a href="compare/index.html">Compare</a>
         <a href="pricing.html">Pricing</a>
@@ -416,6 +417,54 @@
     </section>
 
     <!-- ══ The thread — the argument for buying it here rather than alone ══ -->
+    <!-- Drill-down into the feature pages.
+
+         The "what it covers" list above names 21 capabilities in one line
+         each; these are the pages that explain them. Without this section the
+         only route to /pages/features/ was a footer link and a nav item, and
+         neither reaches somebody who is already reading about Accounts —
+         which is the highest-intent moment there is. -->
+    <section class="dk-section dk-reveal" id="detail">
+      <div class="dk-kicker">In detail</div>
+      <h2 class="dk-h2">A page for each of them.</h2>
+      <p class="dk-lede">Everything above has its own page, written against the code. Where something is not built, the page says so.</p>
+      <div class="dk-list">
+        <a class="dk-lrow" href="features/invoicing.html" style="--mod:#4ADE80">
+          <span class="dk-lmid"><span class="dk-lname">Invoicing</span><span class="dk-ldesc">Approve, send, chase, part-pay, credit-note and write off</span></span>
+          <span class="dk-larrow">&rarr;</span>
+        </a>
+        <a class="dk-lrow" href="features/inventory.html" style="--mod:#60A5FA">
+          <span class="dk-lmid"><span class="dk-lname">Inventory</span><span class="dk-ldesc">Batches, serials, locations, transfers and FIFO valuation</span></span>
+          <span class="dk-larrow">&rarr;</span>
+        </a>
+        <a class="dk-lrow" href="features/gst-filing.html" style="--mod:#FB923C">
+          <span class="dk-lmid"><span class="dk-lname">GST returns</span><span class="dk-ldesc">GSTR-1, GSTR-3B, portal JSON, HSN summary and TDS</span></span>
+          <span class="dk-larrow">&rarr;</span>
+        </a>
+        <a class="dk-lrow" href="features/gstr-2b.html" style="--mod:#A78BFA">
+          <span class="dk-lmid"><span class="dk-lname">GSTR-2B reconciliation</span><span class="dk-ldesc">Match the portal against the bills you recorded</span></span>
+          <span class="dk-larrow">&rarr;</span>
+        </a>
+        <a class="dk-lrow" href="features/pos-billing.html" style="--mod:#F87171">
+          <span class="dk-lmid"><span class="dk-lname">POS billing</span><span class="dk-ldesc">Barcode, MRP pricing and the right lot chosen for you</span></span>
+          <span class="dk-larrow">&rarr;</span>
+        </a>
+        <a class="dk-lrow" href="features/wholesale.html" style="--mod:#38BDF8">
+          <span class="dk-lmid"><span class="dk-lname">Wholesale and distribution</span><span class="dk-ldesc">Price lists, trade schemes, challans and post-dated cheques</span></span>
+          <span class="dk-larrow">&rarr;</span>
+        </a>
+        <a class="dk-lrow" href="features/manufacturing.html" style="--mod:#FBBF24">
+          <span class="dk-lmid"><span class="dk-lname">Manufacturing</span><span class="dk-ldesc">Bills of material, explosion, work orders and costed output</span></span>
+          <span class="dk-larrow">&rarr;</span>
+        </a>
+        <a class="dk-lrow" href="features/general-ledger.html" style="--mod:#22C55E">
+          <span class="dk-lmid"><span class="dk-lname">General ledger</span><span class="dk-ldesc">Chart of accounts, journals, trial balance and audit trail</span></span>
+          <span class="dk-larrow">&rarr;</span>
+        </a>
+      </div>
+      <p class="dk-osnote" style="margin-top:22px"><a href="features/index.html">All 28 feature pages &rarr;</a></p>
+    </section>
+
     <section class="dk-section dk-reveal" id="thread">
       <div class="dk-kicker">One customer record</div>
       <h2 class="dk-h2">The rest of the company already feeds it.</h2>
@@ -845,5 +894,6 @@
       els.forEach(function (el) { io.observe(el); });
     })();
   </script>
+  <script>document.write('<script src="../js/features-menu.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </body>
 </html>
