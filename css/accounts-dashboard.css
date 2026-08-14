@@ -14,14 +14,18 @@ body.accounts-dashboard {
     flex-direction: column;
 }
 
+/* The light-mode wash is HALF what it was. At 0.08/0.05/0.04 the blue and
+   green radials were plainly visible as a tint across the header and behind
+   the cards — the page looked faintly stained rather than atmospheric. Dark
+   mode keeps its stronger values below, where the effect belongs. */
 body.accounts-dashboard::before {
     content: '';
     position: fixed;
     inset: 0;
     background:
-        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 45%),
-        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 45%);
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(16, 185, 129, 0.022) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(139, 92, 246, 0.02) 0%, transparent 45%);
     pointer-events: none;
     z-index: 0;
 }
