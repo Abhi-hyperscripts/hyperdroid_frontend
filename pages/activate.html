@@ -262,5 +262,13 @@
     </footer>
   </div>
   <script>document.write('<script src="../js/features-menu.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+  <!-- Activation handler. The redesign dropped these includes, so the form had
+       no submit handler: pressing "Activate License" just GET-submitted the key
+       into the URL and reloaded the page — the "nothing happens" symptom.
+       config.js provides CONFIG.authApiBaseUrl; activate.js wires the form. -->
+  <script>
+        document.write('<script src="../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../js/activate.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
 </body>
 </html>

@@ -127,6 +127,16 @@ function initActivatePage() {
         return;
     }
 
+    // Activation links are distributed as activate.html?licenseKey=<key>, so
+    // prefill the field from the URL when present. The key is URL-encoded and
+    // may contain '+' and '/' (base64), which URLSearchParams decodes correctly.
+    // Only prefill an empty field so we never clobber what the user typed.
+    const licenseTextarea = document.getElementById('licenseKey');
+    const keyFromUrl = new URLSearchParams(window.location.search).get('licenseKey');
+    if (keyFromUrl && licenseTextarea && !licenseTextarea.value.trim()) {
+        licenseTextarea.value = keyFromUrl.trim();
+    }
+
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
 
