@@ -48,6 +48,11 @@
     <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../css/form-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <!-- activate.css carries the success-card styling (credential rows, license-info
+         rows, service badges). The redesign dropped it, so on a successful activation
+         the credentials/details/services rendered unstyled and ran together. Loaded
+         last so its success-card rules win. -->
+    <script>document.write('<link rel="stylesheet" href="../css/activate.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
 <body class="landing-page desk-landing form-desk">
