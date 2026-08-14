@@ -48,11 +48,121 @@
     <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../css/form-desk.css?v=' + CACHE_VERSION + '">');</script>
-    <!-- activate.css carries the success-card styling (credential rows, license-info
-         rows, service badges). The redesign dropped it, so on a successful activation
-         the credentials/details/services rendered unstyled and ran together. Loaded
-         last so its success-card rules win. -->
-    <script>document.write('<link rel="stylesheet" href="../css/activate.css?v=' + CACHE_VERSION + '">');</script>
+    <!-- Success-card design.
+
+         The redesign (form-desk.css) themed the card SHELLS (#successCard,
+         .success-card as glass cards) but never the CONTENTS, and the markup still
+         carried the pre-redesign activate.css classes. Loading old activate.css to
+         cover the gap dragged in the old blue theme, three stacked cards and an
+         invisible button. So instead the success card's contents are designed here,
+         in the redesign's own language: --dk-* tokens, the --fm accent, glass
+         sub-cards and mono uppercase labels, exactly like the form and order-summary. -->
+    <style>
+      /* One card. The .login-form-panel is the card (same as the form view); the
+         success wrapper and inner card are flattened so we don't stack three. */
+      body.form-desk #successCard,
+      body.form-desk #successCard .success-card {
+        background: none; border: 0; box-shadow: none;
+        padding: 0; border-radius: 0;
+        backdrop-filter: none; -webkit-backdrop-filter: none;
+      }
+      body.form-desk #successCard .success-card { text-align: center; }
+
+      /* Check + heading */
+      body.form-desk #successCard .success-icon {
+        width: 52px; height: 52px; margin: 0 auto 16px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 999px;
+        background: rgba(74, 222, 128, 0.14);
+        border: 1px solid rgba(74, 222, 128, 0.42);
+        color: #4ade80;
+      }
+      body.form-desk #successCard .success-icon svg { width: 26px; height: 26px; }
+      body.form-desk #successCard h2 {
+        font-family: 'Bricolage Grotesque', var(--font-family);
+        font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+        color: var(--dk-ink); margin: 0 0 6px;
+      }
+      body.form-desk #successCard .subtitle {
+        font-size: 14px; color: var(--dk-mute); margin: 0 0 22px;
+      }
+
+      /* Credentials — a glass sub-card, like the order summary */
+      body.form-desk #successCard .credentials-box {
+        text-align: left; margin: 0 0 16px; padding: 18px 20px;
+        border-radius: 14px; border: 1px solid var(--dk-line);
+        background: rgba(255, 255, 255, 0.04);
+      }
+      body.form-desk #successCard .credentials-box h4 {
+        font-family: var(--font-family-mono);
+        font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--dk-dim); margin: 0 0 12px;
+      }
+      body.form-desk #successCard .credential-row {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 14px; padding: 9px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      body.form-desk #successCard .credential-row:first-of-type { border-top: 0; }
+      body.form-desk #successCard .credential-label { font-size: 13px; color: var(--dk-mute); }
+      body.form-desk #successCard .credential-value {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-family: var(--font-family-mono); font-size: 13.5px;
+        color: var(--dk-ink); word-break: break-all; text-align: right;
+      }
+      body.form-desk #successCard .copy-btn {
+        flex: 0 0 auto; display: inline-flex; padding: 2px;
+        background: none; border: 0; cursor: pointer; color: var(--dk-dim);
+      }
+      body.form-desk #successCard .copy-btn:hover { color: var(--fm); }
+
+      /* Warning strip — amber, matching the message pattern */
+      body.form-desk #successCard .warning-text {
+        display: flex; align-items: flex-start; gap: 10px; text-align: left;
+        margin: 0 0 16px; padding: 12px 14px; font-size: 13px;
+        border-radius: 11px;
+        border: 1px solid rgba(251, 191, 36, 0.34);
+        background: rgba(251, 191, 36, 0.1);
+        color: #fcd34d;
+      }
+      body.form-desk #successCard .warning-text svg { flex: 0 0 auto; margin-top: 1px; }
+      body.form-desk #successCard .warning-text strong { color: #fde68a; }
+
+      /* License info — clean full-width rows */
+      body.form-desk #successCard .license-info { text-align: left; margin: 0 0 22px; }
+      body.form-desk #successCard .license-info-row {
+        display: flex; justify-content: space-between; align-items: baseline;
+        gap: 16px; padding: 10px 0; font-size: 13px; color: var(--dk-mute);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      body.form-desk #successCard .license-info-row > span:first-child { flex: 0 0 auto; }
+      body.form-desk #successCard .license-info-row > span:last-child {
+        font-family: var(--font-family-mono); color: var(--dk-ink); text-align: right;
+      }
+      body.form-desk #successCard .license-info-row.services-row {
+        flex-direction: column; align-items: stretch;
+        border-bottom: 0; gap: 10px; padding-top: 14px;
+      }
+      body.form-desk #successCard .services-list { display: flex; flex-wrap: wrap; gap: 8px; }
+      body.form-desk #successCard .service-badge {
+        font-family: var(--font-family); font-size: 11.5px; font-weight: 500;
+        color: #fff; background: var(--fm);
+        padding: 5px 12px; border-radius: 999px;
+      }
+
+      /* Proceed button — identical to the form's submit button */
+      body.form-desk #successCard .proceed-btn {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; box-sizing: border-box;
+        padding: 13px 26px; border: 0; border-radius: 11px;
+        background: var(--fm); color: #fff;
+        font-size: 14.5px; font-weight: 600; text-decoration: none;
+        transition: filter 0.15s ease, transform 0.15s ease;
+      }
+      body.form-desk #successCard .proceed-btn:hover {
+        filter: brightness(1.1); transform: translateY(-1px); text-decoration: none;
+      }
+    </style>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
 </head>
 <body class="landing-page desk-landing form-desk">
