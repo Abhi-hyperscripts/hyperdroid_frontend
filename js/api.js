@@ -1329,12 +1329,19 @@ class API {
     // ==================== CHAT API ====================
 
     // Conversations
+    // Chat READS skip the global doodle-spinner overlay. Chat is real-time: it
+    // refetches conversations and messages on every SignalR reconnect (the 15s
+    // server timeout makes those frequent on real networks), so a full-screen
+    // blocking spinner flashed "from time to time" with no user action behind it.
+    // The conversations list has its own inline .loading-spinner, and messages
+    // just appear — the overlay was redundant and disruptive. Same treatment the
+    // Vision live-participants poll already uses.
     async getConversations(limit = 50, offset = 0) {
-        return this.request(`/chat/conversations?limit=${limit}&offset=${offset}`);
+        return this.request(`/chat/conversations?limit=${limit}&offset=${offset}`, { _skipSpinner: true });
     }
 
     async getConversation(conversationId) {
-        return this.request(`/chat/conversations/${conversationId}`);
+        return this.request(`/chat/conversations/${conversationId}`, { _skipSpinner: true });
     }
 
     async createDirectConversation(targetUserId) {
@@ -1389,14 +1396,14 @@ class API {
     }
 
     async getArchivedConversations(limit = 50, offset = 0) {
-        return this.request(`/chat/conversations/archived?limit=${limit}&offset=${offset}`);
+        return this.request(`/chat/conversations/archived?limit=${limit}&offset=${offset}`, { _skipSpinner: true });
     }
 
     // Messages
     async getMessages(conversationId, beforeMessageId = null, limit = 50) {
         let query = `?limit=${limit}`;
         if (beforeMessageId) query += `&before_message_id=${beforeMessageId}`;
-        return this.request(`/chat/conversations/${conversationId}/messages${query}`);
+        return this.request(`/chat/conversations/${conversationId}/messages${query}`, { _skipSpinner: true });
     }
 
     async sendMessage(conversationId, content, messageType = 'text', fileId = null, fileName = null, fileSize = null, fileContentType = null, replyToMessageId = null) {
@@ -1428,9 +1435,13 @@ class API {
     }
 
     async markAsRead(conversationId, messageId) {
+        // Fires on EVERY received message and on opening a conversation — the
+        // single most frequent chat call. It must never flash the overlay; it is
+        // a silent background acknowledgement.
         return this.request(`/chat/conversations/${conversationId}/read`, {
             method: 'POST',
-            body: JSON.stringify({ message_id: messageId })
+            body: JSON.stringify({ message_id: messageId }),
+            _skipSpinner: true
         });
     }
 
@@ -1476,7 +1487,7 @@ class API {
     // added here, so every pin/unpin threw "is not a function" and the
     // pinned bar never populated.
     async getPinnedMessages(conversationId) {
-        return this.request(`/chat/conversations/${conversationId}/pinned-messages`);
+        return this.request(`/chat/conversations/${conversationId}/pinned-messages`, { _skipSpinner: true });
     }
 
     async pinMessage(messageId) {
