@@ -112,24 +112,63 @@ const LeadHistoryPanel = (() => {
             }).join('');
     }
 
+    /// Opens are NOT one-per-read. A tracking pixel refires on every fetch of
+    /// the image: Gmail's proxy prefetches it, the client refetches on scroll,
+    /// each device and each re-open counts again. Eight rows reading "Opened"
+    /// at the same minute is the normal shape of that data, not a duplicate
+    /// bug — but rendering them as eight identical lines makes it look like
+    /// one, and tells the reader nothing they could act on.
+    ///
+    /// So events are collapsed to one row per (send, kind), carrying the count
+    /// and the span. "Opened 8 times, first 11:16, last 14:02" is the fact a
+    /// rep actually wants; eight copies of "Opened 11:16" is noise.
+    ///
+    /// Clicks additionally key on the URL — two different links clicked are two
+    /// different signals and must not merge.
+    ///
+    /// Known limit: this endpoint returns no subject (EmailEngagementEvent
+    /// carries send_id, kind and time only), so a row cannot say WHICH email
+    /// was opened. The lead timeline shows that, and inventing a label here
+    /// would be worse than omitting one.
     function engagementView(rows) {
         if (!rows.length) {
             return empty('No opens or clicks recorded. They appear once this lead is sent a tracked campaign email.');
         }
-        return rows
-            .slice()
-            .sort((a, b) => new Date(b.event_at) - new Date(a.event_at))
-            .map(e => {
-                const kind = String(e.event_kind || '').toLowerCase();
+
+        const groups = new Map();
+        for (const e of rows) {
+            const kind = String(e.event_kind || '').toLowerCase();
+            const key = `${e.send_id || ''}|${kind}|${kind === 'clicked' ? (e.click_url || '') : ''}`;
+            const at = new Date(e.event_at).getTime();
+            const g = groups.get(key);
+            if (!g) {
+                groups.set(key, { kind, clickUrl: e.click_url, count: 1, first: at, last: at });
+            } else {
+                g.count += 1;
+                if (at < g.first) g.first = at;
+                if (at > g.last) g.last = at;
+            }
+        }
+
+        return [...groups.values()]
+            .sort((a, b) => b.last - a.last)
+            .map(g => {
+                const spans = g.count > 1 && g.last - g.first >= 60000;
                 return `
-                <div class="lhp-row lhp-ev-${esc(kind)}">
+                <div class="lhp-row lhp-ev-${esc(g.kind)}">
                     <span class="lhp-dot"></span>
                     <div class="lhp-row-text">
                         <div class="lhp-row-title">
-                            ${esc(kind || 'event')}
+                            ${esc(g.kind || 'event')}
+                            ${g.count > 1 ? `<span class="lhp-count">${g.count}×</span>` : ''}
                         </div>
-                        ${e.click_url ? `<p class="lhp-row-note lhp-url">${esc(e.click_url)}</p>` : ''}
-                        <div class="lhp-row-meta">${esc(when(e.event_at))} · ${esc(exactDate(e.event_at))}</div>
+                        ${g.clickUrl ? `<p class="lhp-row-note lhp-url">${esc(g.clickUrl)}</p>` : ''}
+                        <div class="lhp-row-meta">
+                            ${esc(when(new Date(g.last).toISOString()))} ·
+                            ${spans
+                                ? `${esc(exactDate(new Date(g.first).toISOString()))} → ${esc(exactDate(new Date(g.last).toISOString()))}`
+                                : esc(exactDate(new Date(g.last).toISOString()))}
+                        </div>
                     </div>
                 </div>`;
             }).join('');

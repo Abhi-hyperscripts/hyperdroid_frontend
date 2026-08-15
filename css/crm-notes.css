@@ -698,3 +698,18 @@
   color: var(--text-primary);
   overflow-wrap: anywhere;
 }
+
+/* Repeat count on a collapsed engagement row. A tracking pixel refires on
+   every image fetch, so "Opened" legitimately arrives many times for one
+   read — the count is the fact, not the repetition. */
+.lhp-count {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  background: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}

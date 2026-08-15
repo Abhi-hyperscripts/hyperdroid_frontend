@@ -520,10 +520,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         // — that is what avoids the race the comment above describes. Links
         // from the dashboard activity feed and the related-records panels use
         // the URL form because a plain <a href> is a real, copyable link.
-        const openId = sessionStorage.getItem('crm_openLeadId')
-            || new URLSearchParams(window.location.search).get('lead');
+        // The URL wins over the sessionStorage handoff, and the handoff key is
+        // consumed either way.
+        //
+        // The setter writes crm_openLeadId and then navigates, so the key only
+        // clears if the destination actually reaches this callback. Anything
+        // that interrupts that — navigating elsewhere first, a failed load —
+        // leaves it in sessionStorage for the life of the tab. Read
+        // handoff-first, that stale id then silently overrode every later
+        // ?lead=<id> link: you click through to one lead and the panel opens a
+        // different one. Observed exactly that.
+        //
+        // A URL parameter is the caller's explicit, current intent; the handoff
+        // is a fallback for callers that cannot put it in the URL.
+        const params = new URLSearchParams(window.location.search);
+        const handoffId = sessionStorage.getItem('crm_openLeadId');
+        sessionStorage.removeItem('crm_openLeadId');   // consume unconditionally
+        const openId = params.get('lead') || handoffId;
+
         if (openId && typeof window.openLeadDetailPanel === 'function') {
-            sessionStorage.removeItem('crm_openLeadId');
             try { window.openLeadDetailPanel(decodeURIComponent(openId)); }
             catch (e) { console.warn('[leads] deep-link auto-open failed', e); }
         }
