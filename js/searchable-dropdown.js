@@ -106,6 +106,17 @@ const SearchableDropdown = (function() {
             this.quickAdd = typeof options.quickAdd === 'function'
                 ? { title: 'Add new', onClick: options.quickAdd }
                 : (options.quickAdd || null);
+            // Optional "create what you typed" row, for pickers backed by a resolve-or-create endpoint
+            // (brands, tags) where making the user leave the form to define a value first is the whole
+            // friction we are removing.
+            // Usage: allowCreate: true   or   allowCreate: { label: 'Add' }
+            //
+            // ⭐ The typed name is held as a PENDING CREATE, never as a value. selectedValue stays null and
+            // data-value stays empty, so nothing that reads getValue() or the DOM can mistake a name the
+            // backend has not resolved yet for a real id. Callers opt in explicitly via getPendingCreate().
+            this.allowCreate = options.allowCreate === true ? {} : (options.allowCreate || null);
+            this.pendingCreate = null;
+            this.lastQuery = '';
 
             // If a prior instance was registered under this SAME id, tear it down first. The accounts
             // full-page forms re-create dropdowns on fixed container ids (itCatDD, challanCustomerSD,
@@ -170,16 +181,41 @@ const SearchableDropdown = (function() {
             this.textEl = this.container.querySelector('.searchable-dropdown-text');
         }
 
+        /**
+         * The "create «typed text»" row, or '' when it does not apply.
+         * Suppressed on an EXACT case-insensitive label match, because offering to create something that
+         * already exists is how a list ends up with "Sunfeast" and "sunfeast" as two separate records.
+         */
+        renderCreateRow() {
+            if (!this.allowCreate) return '';
+            const q = (this.lastQuery || '').trim();
+            if (!q) return '';
+            if (this.options.some(o => (o.label || '').trim().toLowerCase() === q.toLowerCase())) return '';
+
+            const verb = this.allowCreate.label || 'Create';
+            return `
+                <div class="searchable-dropdown-create" role="option" data-query="${escapeHtml(q)}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>${escapeHtml(verb)} &ldquo;<strong>${escapeHtml(q)}</strong>&rdquo;</span>
+                </div>
+            `;
+        }
+
         renderOptions() {
+            const createRow = this.renderCreateRow();
+
             if (this.filteredOptions.length === 0) {
-                return '<div class="searchable-dropdown-empty">No results found</div>';
+                return createRow || '<div class="searchable-dropdown-empty">No results found</div>';
             }
 
             if (this.virtualScroll && this.filteredOptions.length > 50) {
-                return this.renderVirtualOptions();
+                return createRow + this.renderVirtualOptions();
             }
 
-            return this.filteredOptions.map((option, index) => `
+            return createRow + this.filteredOptions.map((option, index) => `
                 <div class="searchable-dropdown-option ${String(option.value) === String(this.selectedValue) ? 'selected' : ''} ${index === this.highlightedIndex ? 'highlighted' : ''}"
                      data-value="${escapeHtml(String(option.value))}"
                      data-index="${index}"
@@ -272,6 +308,11 @@ const SearchableDropdown = (function() {
 
             // Option click
             this.optionsEl.addEventListener('click', (e) => {
+                // Checked BEFORE the option lookup: the create row deliberately carries no data-value, so
+                // falling through to select() would resolve nothing and silently do nothing at all.
+                const createEl = e.target.closest('.searchable-dropdown-create');
+                if (createEl) { this.commitCreate(createEl.dataset.query); return; }
+
                 const optionEl = e.target.closest('.searchable-dropdown-option');
                 if (optionEl && !optionEl.classList.contains('disabled')) {
                     this.select(optionEl.dataset.value);
@@ -315,6 +356,11 @@ const SearchableDropdown = (function() {
                     e.preventDefault();
                     if (this.highlightedIndex >= 0 && this.filteredOptions[this.highlightedIndex]) {
                         this.select(this.filteredOptions[this.highlightedIndex].value);
+                    } else if (this.renderCreateRow()) {
+                        // Nothing highlighted and a create row is showing — i.e. the query matched no
+                        // existing option. Enter is the natural key for "yes, that new one", and without
+                        // this the keyboard path dead-ends where the mouse path works.
+                        this.commitCreate(this.lastQuery);
                     }
                     break;
                 case 'Escape':
@@ -382,6 +428,7 @@ const SearchableDropdown = (function() {
         }
 
         filter(query) {
+            this.lastQuery = query;
             const q = query.toLowerCase().trim();
             this.filteredOptions = this.options.filter(option => {
                 const label = (option.label || '').toLowerCase();
@@ -426,6 +473,9 @@ const SearchableDropdown = (function() {
             this.dropdownEl.classList.add('open');
             this.triggerEl.setAttribute('aria-expanded', 'true');
             this.searchInput.value = '';
+            // Must track the cleared box: renderOptions() reads lastQuery, so a leftover query from the
+            // previous open would draw a "Create «…»" row above a full, unfiltered list.
+            this.lastQuery = '';
             this.filteredOptions = [...this.options];
             this.highlightedIndex = -1;
             this.optionsEl.innerHTML = this.renderOptions();
@@ -631,6 +681,10 @@ const SearchableDropdown = (function() {
          * auto-selected.
          */
         refreshOptions(newOptions, newValue) {
+            // The usual caller is a quick-add flow that has just PERSISTED the thing — so a staged name is
+            // now either a real option or abandoned. Either way it must not survive into the save payload.
+            this.pendingCreate = null;
+            this.lastQuery = '';
             this.options = newOptions || [];
             this.filteredOptions = [...this.options];
             if (newValue !== undefined) this.selectedValue = newValue;
@@ -638,9 +692,39 @@ const SearchableDropdown = (function() {
             this.bindEvents();
         }
 
+        /**
+         * Adopt the typed text as a pending new value. See the allowCreate note in the constructor for why
+         * this never becomes selectedValue.
+         */
+        commitCreate(query) {
+            const q = (query || '').trim();
+            if (!q) return;
+
+            this.pendingCreate = q;
+            this.selectedValue = null;
+            this.textEl.textContent = q;
+            this.textEl.classList.remove('placeholder');
+            this.dropdownEl.dataset.value = '';
+            if (this.linkedSelect) {
+                this.linkedSelect.value = '';
+                this.linkedSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            this.close();
+
+            this.onChange(null, { value: null, label: q, isNew: true });
+        }
+
+        /** The name the user typed and asked to create, or null. Cleared by any real selection. */
+        getPendingCreate() {
+            return this.pendingCreate;
+        }
+
         select(value) {
             const option = this.options.find(o => String(o.value) === String(value));
             if (option) {
+                // Picking a real option abandons any pending name — otherwise a user who types "Sunfest",
+                // notices the typo, and then picks the existing "Sunfeast" would still create the typo.
+                this.pendingCreate = null;
                 this.selectedValue = option.value;
                 this.textEl.textContent = option.label;
                 this.textEl.classList.remove('placeholder');
@@ -662,6 +746,9 @@ const SearchableDropdown = (function() {
         }
 
         setValue(value, triggerChange = false) {
+            // Programmatic assignment is authoritative — it replaces whatever the user had staged, including
+            // a pending create. Reopening a form on a saved record must not resurrect a name from last time.
+            this.pendingCreate = null;
             const option = this.options.find(o => String(o.value) === String(value));
             if (option) {
                 this.selectedValue = option.value;
@@ -689,6 +776,8 @@ const SearchableDropdown = (function() {
         }
 
         setOptions(options, preserveValue = true) {
+            this.pendingCreate = null;
+            this.lastQuery = '';
             const previousValue = this.selectedValue;
             this.options = options;
             this.filteredOptions = [...options];

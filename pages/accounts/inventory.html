@@ -93,6 +93,7 @@
                             <button class="sidebar-btn" data-tab="inv-movements"><span class="nav-number">10</span><span class="nav-label">Movements</span></button>
                             <button class="sidebar-btn" data-tab="inv-serials"><span class="nav-number">11</span><span class="nav-label">Serials &amp; Warranty</span></button>
                             <button class="sidebar-btn" data-tab="inv-import"><span class="nav-number">12</span><span class="nav-label">Bulk Import</span></button>
+                            <button class="sidebar-btn" data-tab="inv-merch"><span class="nav-number">13</span><span class="nav-label">Brands &amp; Categories</span></button>
                         </div>
                     </div>
                 </nav>
@@ -477,6 +478,42 @@
 
                     <div id="impResultArea"></div>
                 </div>
+
+                <div class="tab-content" id="inv-merch">
+                    <p style="margin:0 0 12px;font-size:.85rem;color:var(--text-secondary);">
+                        Brands and categories are how shoppers narrow things down on your online store, and how
+                        your own staff find an item quickly. Renaming one here updates it everywhere it is used —
+                        no item needs re-tagging.
+                    </p>
+
+                    <div class="section-title" style="display:flex;align-items:center;gap:10px;">
+                        <span>Brands</span>
+                        <span style="flex:1"></span>
+                        <button class="btn btn-primary btn-sm" onclick="showBrandModal()" data-admin-only>+ New Brand</button>
+                    </div>
+                    <div class="data-table-container" style="margin-top:8px;">
+                        <table class="data-table">
+                            <thead><tr><th>Brand</th><th>Store link</th><th>Items</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="brandsTable"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="section-title" style="display:flex;align-items:center;gap:10px;margin-top:24px;">
+                        <span>Categories</span>
+                        <span style="flex:1"></span>
+                        <button class="btn btn-outline btn-sm" onclick="showCategoryModal()" data-admin-only>+ New Category</button>
+                    </div>
+                    <p style="margin:6px 0 0;font-size:.8rem;color:var(--text-secondary);">
+                        Nest a category under a parent to build your store menu — e.g. Beverages &rsaquo; Soft Drinks.
+                        One level of nesting is plenty for most shops.
+                    </p>
+                    <div class="data-table-container" style="margin-top:8px;">
+                        <table class="data-table">
+                            <thead><tr><th>Category</th><th>Sits under</th><th>Store link</th><th>Order</th><th>Actions</th></tr></thead>
+                            <tbody id="merchCatsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -512,6 +549,29 @@
                         <div class="form-group"><label>Sale Price</label><input type="number" id="itSalePrice" class="form-control" step="0.01" min="0"></div>
                         <div class="form-group"><label>Purchase Price <span class="opt">(cost hint)</span></label><input type="number" id="itPurchasePrice" class="form-control" step="0.01" min="0"></div>
                         <div class="form-group"><label>HSN / SAC</label><input type="text" id="itHsn" class="form-control" maxlength="20"></div>
+                    </div>
+                </div>
+
+                <!-- Merchandising: what the online storefront filters on. Optional everywhere — an item
+                     with none of these behaves exactly as it did before the feature existed. -->
+                <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Storefront &amp; Merchandising</div>
+                    <div class="pgrid">
+                        <div class="form-group">
+                            <label>Brand</label>
+                            <div class="searchable-dropdown-container" id="itBrand"></div>
+                            <small class="form-hint">Shoppers filter by brand on your storefront. Type a new name to create it.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Colour</label>
+                            <input type="text" id="itColor" class="form-control" maxlength="120" placeholder="e.g. Black">
+                            <small class="form-hint">One colour per item — a black and a white shirt are two items.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Size / Pack</label>
+                            <input type="text" id="itSize" class="form-control" maxlength="120" placeholder="e.g. 250 ML">
+                            <small class="form-hint">Leave blank to keep the current value; clear it to remove.</small>
+                        </div>
                     </div>
                 </div>
 
@@ -641,8 +701,39 @@
     <div class="modal" id="categoryModal">
         <div class="modal-content" style="max-width:420px;">
             <div class="modal-header"><h3>New Category</h3><button class="close-btn" onclick="AccountsCommon.closeModal('categoryModal')">&times;</button></div>
-            <div class="modal-body"><div class="form-group"><label>Name *</label><input type="text" id="catName" class="form-control"></div></div>
+            <div class="modal-body">
+                <input type="hidden" id="catId">
+                <div class="form-group"><label>Name *</label><input type="text" id="catName" class="form-control"></div>
+                <div class="form-group">
+                    <label>Sits under</label>
+                    <div class="searchable-dropdown-container" id="catParent"></div>
+                    <small class="field-hint">Leave as "Top level" for a main menu heading. Nesting builds your store menu, e.g. Beverages &rsaquo; Soft Drinks.</small>
+                </div>
+                <div class="form-group">
+                    <label>Order</label>
+                    <input type="number" id="catOrder" class="form-control" min="0" value="0">
+                    <small class="field-hint">Lower numbers appear first in the store menu. Leave at 0 to sort by name.</small>
+                </div>
+            </div>
             <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('categoryModal')">Cancel</button><button class="btn btn-primary" onclick="saveCategory()">Save</button></div>
+        </div>
+    </div>
+
+    <!-- Brand modal -->
+    <div class="modal" id="brandModal">
+        <div class="modal-content" style="max-width:460px;">
+            <div class="modal-header"><h3 id="brandModalTitle">New Brand</h3><button class="close-btn" onclick="AccountsCommon.closeModal('brandModal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="brandId">
+                <div class="form-group"><label>Name *</label><input type="text" id="brandName" class="form-control" maxlength="120" placeholder="e.g. Britannia"></div>
+                <div class="form-group">
+                    <label>Logo URL</label>
+                    <input type="text" id="brandLogo" class="form-control" placeholder="https://…/logo.png">
+                    <small class="field-hint">Shown on the brand page of your online store. Optional.</small>
+                </div>
+                <div class="form-group"><label>Description</label><textarea id="brandDescription" class="form-control" rows="2" maxlength="1000" placeholder="A line about the brand, shown on its store page."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline" onclick="AccountsCommon.closeModal('brandModal')">Cancel</button><button class="btn btn-primary" onclick="saveBrand()">Save</button></div>
         </div>
     </div>
 

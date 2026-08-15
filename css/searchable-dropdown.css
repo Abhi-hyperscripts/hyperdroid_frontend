@@ -287,6 +287,36 @@
     display: block;
 }
 
+/* "Create «typed text»" row (allowCreate). Sits above the matches and reads as an action rather than an
+   option, so nobody mistakes it for an existing record. */
+.searchable-dropdown-create {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 13px;
+    color: var(--brand-primary, #3b82f6);
+    border-bottom: 1px solid var(--border-primary, #e2e8f0);
+}
+
+.searchable-dropdown-create:hover {
+    background: var(--bg-hover, var(--gray-100, #f1f5f9));
+}
+
+.searchable-dropdown-create svg {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+}
+
+.searchable-dropdown-create span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* Empty state */
 .searchable-dropdown-empty {
     padding: 20px 16px;

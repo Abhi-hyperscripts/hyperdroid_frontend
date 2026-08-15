@@ -6,6 +6,13 @@
 let items = [];
 let categories = [];
 let itemDD = null, typeDD = null, catDD = null, adjItemDD = null, snItemDD = null, moveFilterDD = null;
+let brandDD = null;
+let brands = [];   // tenant brands, cached for the item form's picker
+// The brand the open item actually holds, and whether the picker managed to offer it as an option. Both are
+// needed before "No brand" may be read as a REMOVAL: if the brand list failed to load, every item would look
+// unbranded and every save would quietly strip its brand.
+let _itemBrandAtOpen = '';
+let _itemBrandRepresentable = false;
 // New-feature state
 let locations = [];
 let trackDD = null, valDD = null, schedDD = null;           // item modal enums
@@ -21,7 +28,7 @@ const esc = s => AccountsCommon.escapeHtml(s ?? '');
 
 document.addEventListener('DOMContentLoaded', async function () {
     if (!await AccountsCommon.initPage('inventory', '../')) return;
-    const tabNames = { 'inv-items': 'Items', 'inv-stock': 'Stock on Hand', 'inv-locations': 'Locations', 'inv-batches': 'Batches & Expiry', 'inv-workorders': 'Work Orders', 'inv-count': 'Stock Count', 'inv-pricelists': 'Price Lists', 'inv-schemes': 'Schemes', 'inv-import': 'Bulk Import', 'inv-reorder': 'Reorder Report', 'inv-movements': 'Movements', 'inv-serials': 'Serials & Warranty' };
+    const tabNames = { 'inv-items': 'Items', 'inv-stock': 'Stock on Hand', 'inv-locations': 'Locations', 'inv-batches': 'Batches & Expiry', 'inv-workorders': 'Work Orders', 'inv-count': 'Stock Count', 'inv-pricelists': 'Price Lists', 'inv-schemes': 'Schemes', 'inv-import': 'Bulk Import', 'inv-reorder': 'Reorder Report', 'inv-movements': 'Movements', 'inv-serials': 'Serials & Warranty', 'inv-merch': 'Brands & Categories' };
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
     AccountsCommon.setupTabs(tabNames, onTabSwitch);
     accountsRoles.applyRBAC();
@@ -31,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.getElementById('itemShowInactive')?.addEventListener('change', () => loadItems());
     document.getElementById('serialLookup')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); lookupSerial(); } });
     await loadCategories();
+    await loadBrands();
     await loadItems();
 });
 
@@ -47,13 +55,40 @@ function onTabSwitch(tabId) {
         case 'inv-reorder': loadReorder(); break;
         case 'inv-movements': loadMovements(); break;
         case 'inv-serials': loadSerials(); break;
+        case 'inv-merch': loadMerchTab(); break;
     }
+}
+
+// Re-pulls both masters on entry: the item form creates brands on the fly, so a list cached at page load
+// goes stale the moment someone tags an item with a new brand.
+async function loadMerchTab() {
+    await Promise.all([loadBrands(), loadCategories()]);
+    renderBrands();
+    renderMerchCategories();
 }
 
 // ── Items ──────────────────────────────────────────────────────────────────
 async function loadCategories() {
     try { categories = await api.request(AccountsCommon.buildUrl('inventory/categories'), { _skipSpinner: true }); } catch { categories = []; }
 }
+
+async function loadBrands() {
+    // Non-fatal: an older backend without the brands endpoint must not break the whole items page, so a
+    // failure leaves the picker empty rather than throwing on page load.
+    //
+    // includeInactive: a deactivated brand still has items pointing at it. If the picker cannot OFFER that
+    // brand it renders "No brand" for an item that has one — and then saving would submit clear_brand and
+    // silently un-brand it. The editor must be able to represent whatever the item actually holds.
+    try { brands = await api.request(AccountsCommon.buildUrl('inventory/brands', { includeInactive: true }), { _skipSpinner: true }); } catch { brands = []; }
+}
+
+// "Touched" tracking for the two attribute inputs. ABSENT must mean LEAVE ALONE and BLANK must mean
+// REMOVE — so an edit that never opens these fields cannot wipe a colour set by the importer. Marking on
+// first input is what distinguishes "the user cleared it" from "the user never looked at it".
+function markAttributeTouched(el) { if (el) el.dataset.touched = '1'; }
+document.addEventListener('input', e => {
+    if (e.target && (e.target.id === 'itColor' || e.target.id === 'itSize')) markAttributeTouched(e.target);
+});
 
 async function loadItems() {
     try {
@@ -104,17 +139,29 @@ function renderItems() {
     </tr>`).join('');
 }
 
-function initItemModalDropdowns(selectedCat, selectedType) {
+// The trailing arguments used to be read off `arguments[2..4]`, which is why the brand slot silently never
+// arrived — every call site passes five values, so `arguments[5]` was permanently undefined. Named now.
+function initItemModalDropdowns(selectedCat, selectedType, selectedTracking, selectedValuation, selectedSchedule, selectedBrand) {
     const catOpts = [{ value: '', label: 'No category' }, ...categories.map(c => ({ value: c.id, label: c.name }))];
+    // Brand picker. Offers the tenant's existing brands; a name the merchant types that is not in the list
+    // is offered as "Create «name»" and sent as brand_name for the backend to resolve-or-create, so they
+    // never have to go define a brand elsewhere just to tag an item.
+    const brandOpts = [{ value: '', label: 'No brand' }, ...brands.map(b => ({ value: b.id, label: b.name }))];
+    _itemBrandAtOpen = selectedBrand || '';
+    _itemBrandRepresentable = !_itemBrandAtOpen || brandOpts.some(o => String(o.value) === String(_itemBrandAtOpen));
+    brandDD = new SearchableDropdown(document.getElementById('itBrand'), {
+        id: 'itBrandDD', options: brandOpts, value: selectedBrand || '', placeholder: 'No brand',
+        searchPlaceholder: 'Search or type a new brand…', allowCreate: true, compact: true
+    });
     catDD = new SearchableDropdown(document.getElementById('itCategory'), { id: 'itCatDD', options: catOpts, value: selectedCat || '', placeholder: 'No category', compact: true });
     typeDD = new SearchableDropdown(document.getElementById('itType'), {
         id: 'itTypeDD',
         options: [{ value: 'goods', label: 'Goods (stockable)' }, { value: 'service', label: 'Service' }],
         value: selectedType || 'goods', compact: true
     });
-    trackDD = new SearchableDropdown(document.getElementById('itTracking'), { id: 'itTrackingDD', options: TRACK_OPTS, value: arguments[2] || 'none', compact: true });
-    valDD = new SearchableDropdown(document.getElementById('itValuation'), { id: 'itValuationDD', options: VAL_OPTS, value: arguments[3] || 'weighted_avg', compact: true });
-    schedDD = new SearchableDropdown(document.getElementById('itSchedule'), { id: 'itScheduleDD', options: SCHED_OPTS, value: arguments[4] || 'none', compact: true });
+    trackDD = new SearchableDropdown(document.getElementById('itTracking'), { id: 'itTrackingDD', options: TRACK_OPTS, value: selectedTracking || 'none', compact: true });
+    valDD = new SearchableDropdown(document.getElementById('itValuation'), { id: 'itValuationDD', options: VAL_OPTS, value: selectedValuation || 'weighted_avg', compact: true });
+    schedDD = new SearchableDropdown(document.getElementById('itSchedule'), { id: 'itScheduleDD', options: SCHED_OPTS, value: selectedSchedule || 'none', compact: true });
 }
 
 // Storefront images: parse the textarea (one URL per line) into a clean array of http(s) links (capped).
@@ -153,7 +200,7 @@ function showItemModal() {
     document.getElementById('itTrack').checked = true;
     document.getElementById('itSellable').checked = true;
     document.getElementById('itPurchasable').checked = true;
-    ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule'].forEach(id => document.getElementById(id).innerHTML = '');
+    ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule', 'itBrand'].forEach(id => document.getElementById(id).innerHTML = '');
     initItemModalDropdowns(null, 'goods', 'none', 'weighted_avg', 'none');
     initItemSaltRows([]);
     AccountsCommon.showFormPage('itemModal');
@@ -169,6 +216,15 @@ function editItem(id) {
     document.getElementById('itSalePrice').value = i.sale_price;
     document.getElementById('itPurchasePrice').value = i.purchase_price ?? '';
     document.getElementById('itHsn').value = i.hsn_sac || '';
+    // Merchandising fields, shown at their STORED values — blanking them here made the form claim the item
+    // had no colour/size when it did, and the only way to find out otherwise was to look at the storefront.
+    // The "touched" flag is cleared so that merely viewing an item and saving cannot remove a colour the
+    // importer set; only an actual edit marks them for submission.
+    const attrs = i.attributes || {};
+    [['itColor', 'color'], ['itSize', 'size']].forEach(([elId, key]) => {
+        const el = document.getElementById(elId);
+        if (el) { el.value = attrs[key] || ''; delete el.dataset.touched; }
+    });
     document.getElementById('itBarcode').value = i.barcode || '';
     document.getElementById('itUnit').value = i.unit;
     document.getElementById('itPurchaseUnit').value = i.purchase_unit || '';
@@ -185,8 +241,8 @@ function editItem(id) {
     document.getElementById('itDescription').value = i.description || '';
     document.getElementById('itImageUrls').value = (Array.isArray(i.image_urls) ? i.image_urls : []).join('\n');
     renderItemImagePreview();
-    ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule'].forEach(id => document.getElementById(id).innerHTML = '');
-    initItemModalDropdowns(i.category_id, i.item_type, i.tracking_mode || 'none', i.valuation_method || 'weighted_avg', i.drug_schedule || 'none');
+    ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule', 'itBrand'].forEach(id => document.getElementById(id).innerHTML = '');
+    initItemModalDropdowns(i.category_id, i.item_type, i.tracking_mode || 'none', i.valuation_method || 'weighted_avg', i.drug_schedule || 'none', i.brand_id || '');
     initItemSaltRows(null, i.id);   // async-loads the item's saved composition
     AccountsCommon.showFormPage('itemModal');
 }
@@ -201,6 +257,33 @@ async function saveItem() {
         sale_price: parseFloat(document.getElementById('itSalePrice').value) || 0,
         purchase_price: parseFloat(document.getElementById('itPurchasePrice').value) || null,
         hsn_sac: document.getElementById('itHsn').value.trim() || null,
+        // Merchandising. A dropdown VALUE is an existing brand id; a PENDING CREATE is a name the backend
+        // resolves-or-creates. Only ever one of the two, because sending both is ambiguous.
+        //
+        // ⚠ This deliberately reads getPendingCreate() rather than treating a non-id getValue() as a name:
+        // getValue() can only ever return one of the option values it was given, so the "free text" branch
+        // this replaced was unreachable and no typed brand was ever sent.
+        ...(() => {
+            const pending = brandDD?.getPendingCreate?.();
+            if (pending) return { brand_name: pending };
+            const v = (brandDD?.getValue?.() || '').trim();
+            if (v) return { brand_id: v };
+            // "No brand" on an item that HAS one is a removal, and must be explicit: omitting brand_id
+            // means "leave it alone" server-side, so without this the picker could never un-brand anything.
+            // Only when the picker could actually SHOW that brand, though — otherwise a failed brand fetch
+            // renders every item as unbranded and turns a routine save into a silent strip.
+            return (id && _itemBrandAtOpen && _itemBrandRepresentable) ? { clear_brand: true } : {};
+        })(),
+        // ABSENT means leave alone, BLANK means remove — the same contract the backend and the importer
+        // use, so an edit that never touches these fields cannot wipe them.
+        attributes: (() => {
+            const out = {};
+            ['color', 'size'].forEach(k => {
+                const el = document.getElementById(k === 'color' ? 'itColor' : 'itSize');
+                if (el && el.dataset.touched === '1') out[k] = el.value.trim();
+            });
+            return Object.keys(out).length ? out : null;
+        })(),
         barcode: document.getElementById('itBarcode').value.trim() || null,
         unit: document.getElementById('itUnit').value.trim() || 'pcs',
         purchase_unit: document.getElementById('itPurchaseUnit').value.trim() || null,
@@ -237,6 +320,10 @@ async function saveItem() {
         }
         Toast.success(id ? 'Item updated' : 'Item created');
         AccountsCommon.hideFormPage('itemModal');
+        // A typed brand_name may have just CREATED a brand server-side. Without re-pulling the list, the
+        // picker's options stay stale, so reopening the very item you just saved shows "No brand" — the
+        // value is stored, the option to display it simply isn't loaded.
+        if (payload.brand_name) await loadBrands();
         await loadItems();
     } catch (err) { Toast.error(err.message || 'Failed to save item'); }
     finally { btn.disabled = false; }
@@ -250,16 +337,162 @@ async function toggleItem(id, active) {
     } catch (err) { Toast.error(err.message || 'Failed'); }
 }
 
-function showCategoryModal() { document.getElementById('catName').value = ''; AccountsCommon.openModal('categoryModal'); }
+// ── Brands & Categories tab ────────────────────────────────────────────────
+// The merchandising masters. Both are reachable from the item form too (the brand picker creates on the
+// fly), but renaming, re-nesting and retiring need a place of their own.
+
+let catParentDD = null;
+
+function renderBrands() {
+    const tb = document.getElementById('brandsTable');
+    if (!tb) return;
+    if (!brands.length) {
+        tb.innerHTML = `<tr><td colspan="5" class="empty-state">No brands yet. Add one here, or just type a brand name on any item — it gets created for you.</td></tr>`;
+        return;
+    }
+    tb.innerHTML = brands.map(b => {
+        // camelCase here on purpose: the brands endpoint serialises a C# record, so its fields come back
+        // productCount / isActive / logoUrl — unlike the snake_case item rows on the same page.
+        const count = b.productCount ?? 0;
+        const active = b.isActive !== false;
+        return `<tr>
+            <td><strong>${esc(b.name)}</strong>${b.description ? `<div style="font-size:.78rem;color:var(--text-secondary);">${esc(b.description)}</div>` : ''}</td>
+            <td><code>/brands/${esc(b.slug)}</code></td>
+            <td>${count}</td>
+            <td><span class="status-badge ${active ? 'status-active' : 'status-inactive'}">${active ? 'Active' : 'Hidden'}</span></td>
+            <td class="actions-cell">
+                <button class="btn btn-sm btn-outline" onclick="editBrand('${b.id}')" data-admin-only>Edit</button>
+                <button class="btn btn-sm btn-outline" onclick="toggleBrand('${b.id}', ${!active})" data-admin-only>${active ? 'Hide' : 'Restore'}</button>
+            </td>
+        </tr>`;
+    }).join('');
+    accountsRoles.applyRBAC();
+}
+
+function showBrandModal() {
+    document.getElementById('brandModalTitle').textContent = 'New Brand';
+    ['brandId', 'brandName', 'brandLogo', 'brandDescription'].forEach(id => document.getElementById(id).value = '');
+    AccountsCommon.openModal('brandModal');
+}
+
+function editBrand(id) {
+    const b = brands.find(x => x.id === id);
+    if (!b) return;
+    document.getElementById('brandModalTitle').textContent = 'Edit Brand';
+    document.getElementById('brandId').value = b.id;
+    document.getElementById('brandName').value = b.name || '';
+    document.getElementById('brandLogo').value = b.logoUrl || '';
+    document.getElementById('brandDescription').value = b.description || '';
+    AccountsCommon.openModal('brandModal');
+}
+
+async function saveBrand() {
+    const id = document.getElementById('brandId').value;
+    const name = document.getElementById('brandName').value.trim();
+    if (!name) { Toast.error('Name is required'); return; }
+    const body = {
+        name,
+        logo_url: document.getElementById('brandLogo').value.trim() || null,
+        description: document.getElementById('brandDescription').value.trim() || null
+    };
+    try {
+        if (id) await api.request(AccountsCommon.buildUrl(`inventory/brands/${id}`), { method: 'PUT', body: JSON.stringify(body) });
+        else await api.request(AccountsCommon.buildUrl('inventory/brands'), { method: 'POST', body: JSON.stringify(body) });
+        Toast.success(id ? 'Brand updated' : 'Brand created');
+        AccountsCommon.closeModal('brandModal');
+        await loadBrands();
+        renderBrands();
+    } catch (err) { Toast.error(err.message || 'Failed to save brand'); }
+}
+
+async function toggleBrand(id, active) {
+    try {
+        await api.request(AccountsCommon.buildUrl(`inventory/brands/${id}`), { method: 'PUT', body: JSON.stringify({ is_active: active }) });
+        // Hiding a brand does NOT unbrand its items — they keep pointing at it and reappear if it is
+        // restored. Said plainly here because "Hide" could otherwise read as a delete.
+        Toast.success(active ? 'Brand restored' : 'Brand hidden from your store — its items keep the brand');
+        await loadBrands();
+        renderBrands();
+    } catch (err) { Toast.error(err.message || 'Failed'); }
+}
+
+function renderMerchCategories() {
+    const tb = document.getElementById('merchCatsTable');
+    if (!tb) return;
+    if (!categories.length) {
+        tb.innerHTML = `<tr><td colspan="5" class="empty-state">No categories yet. Add one to group your items.</td></tr>`;
+        return;
+    }
+    const byId = Object.fromEntries(categories.map(c => [c.id, c]));
+    tb.innerHTML = categories.map(c => `<tr>
+        <td><strong>${esc(c.name)}</strong></td>
+        <td>${c.parent_id && byId[c.parent_id] ? esc(byId[c.parent_id].name) : '<span style="font-size:.78rem;color:var(--text-secondary);">Top level</span>'}</td>
+        <td>${c.slug ? `<code>/categories/${esc(c.slug)}</code>` : '<span style="font-size:.78rem;color:var(--text-secondary);">—</span>'}</td>
+        <td>${c.display_order ?? 0}</td>
+        <td class="actions-cell"><button class="btn btn-sm btn-outline" onclick="editCategory('${c.id}')" data-admin-only>Edit</button></td>
+    </tr>`).join('');
+    accountsRoles.applyRBAC();
+}
+
+// Parent options exclude the category itself — the backend refuses a cycle, but offering a choice that can
+// only be rejected is a worse way to learn that than simply not offering it.
+function initCategoryParentDD(selfId, selectedParent) {
+    const opts = [{ value: '', label: 'Top level' },
+        ...categories.filter(c => c.id !== selfId).map(c => ({ value: c.id, label: c.name }))];
+    document.getElementById('catParent').innerHTML = '';
+    catParentDD = new SearchableDropdown(document.getElementById('catParent'), {
+        id: 'catParentDD', options: opts, value: selectedParent || '', placeholder: 'Top level', compact: true
+    });
+}
+
+function showCategoryModal() {
+    document.querySelector('#categoryModal .modal-header h3').textContent = 'New Category';
+    document.getElementById('catId').value = '';
+    document.getElementById('catName').value = '';
+    document.getElementById('catName').disabled = false;
+    document.getElementById('catOrder').value = 0;
+    initCategoryParentDD(null, '');
+    AccountsCommon.openModal('categoryModal');
+}
+
+function editCategory(id) {
+    const c = categories.find(x => x.id === id);
+    if (!c) return;
+    document.querySelector('#categoryModal .modal-header h3').textContent = 'Edit Category';
+    document.getElementById('catId').value = c.id;
+    document.getElementById('catName').value = c.name || '';
+    // Renaming a category is not supported by the API (only create + re-nest), so the field is shown for
+    // context and disabled rather than accepting an edit that would be silently dropped on save.
+    document.getElementById('catName').disabled = true;
+    document.getElementById('catOrder').value = c.display_order ?? 0;
+    initCategoryParentDD(c.id, c.parent_id || '');
+    AccountsCommon.openModal('categoryModal');
+}
 
 async function saveCategory() {
+    const id = document.getElementById('catId').value;
     const name = document.getElementById('catName').value.trim();
-    if (!name) { Toast.error('Name is required'); return; }
+    if (!id && !name) { Toast.error('Name is required'); return; }
+
+    const parentId = (catParentDD?.getValue?.() || '').trim();
+    const order = parseInt(document.getElementById('catOrder').value, 10) || 0;
+
     try {
-        await api.request(AccountsCommon.buildUrl('inventory/categories'), { method: 'POST', body: JSON.stringify({ name }) });
-        Toast.success('Category created');
+        let catId = id;
+        if (!id) catId = (await api.request(AccountsCommon.buildUrl('inventory/categories'), { method: 'POST', body: JSON.stringify({ name }) }))?.id;
+
+        // clear_parent, not a null parent_id: the API cannot tell "make this a root" from "leave the parent
+        // alone" otherwise — the same absent-vs-explicit distinction the item brand uses.
+        if (catId) {
+            await api.request(AccountsCommon.buildUrl(`inventory/categories/${catId}/hierarchy`), {
+                method: 'PUT',
+                body: JSON.stringify({ parent_id: parentId || null, clear_parent: !parentId, display_order: order })
+            });
+        }
+        Toast.success(id ? 'Category updated' : 'Category created');
         AccountsCommon.closeModal('categoryModal');
         await loadCategories();
+        renderMerchCategories();
     } catch (err) { Toast.error(err.message || 'Failed'); }
 }
 
@@ -1519,6 +1752,14 @@ const IMP_ALIASES = {
     name:           ['name', 'item name', 'product name', 'particulars', 'description'],
     barcode:        ['barcode', 'ean', 'upc', 'bar code'],
     category:       ['category', 'group', 'item group', 'stock group'],
+    // Merchandising (2026-08). The backend template ADVERTISES these four columns and the importer READS
+    // them — so they must be mapped here or a filled-in brand column is discarded before it ever leaves
+    // the browser. That is exactly the `mrp` trap the backend importer documents: a template that invites
+    // a column with nowhere to go and drops it in silence.
+    parent_category:['parent_category', 'parent category', 'parent group', 'main group', 'super group'],
+    brand:          ['brand', 'brand name', 'make', 'manufacturer', 'company'],
+    color:          ['color', 'colour', 'shade'],
+    size:           ['size', 'pack size', 'variant', 'pack'],
     hsn_sac:        ['hsn_sac', 'hsn', 'hsn code', 'hsn/sac', 'sac'],
     unit:           ['unit', 'uom', 'unit of measure', 'units'],
     tax_rate:       ['tax_rate', 'tax rate', 'gst', 'gst rate', 'gst%', 'tax', 'gst %'],
@@ -1660,6 +1901,9 @@ async function pickImportFile(input, kind) {
             row_number: i + 2,                       // +2: 1-based, and the header is row 1
             sku: _impStr(cell(r, 'sku')), name: _impStr(cell(r, 'name')),
             barcode: _impStr(cell(r, 'barcode')), category: _impStr(cell(r, 'category')),
+            parent_category: _impStr(cell(r, 'parent_category')),
+            brand: _impStr(cell(r, 'brand')),
+            color: _impStr(cell(r, 'color')), size: _impStr(cell(r, 'size')),
             hsn_sac: _impStr(cell(r, 'hsn_sac')), unit: _impStr(cell(r, 'unit')),
             tax_rate: _impStr(cell(r, 'tax_rate')),
             sale_price: _impNum(cell(r, 'sale_price')), purchase_price: _impNum(cell(r, 'purchase_price')),
