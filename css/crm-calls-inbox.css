@@ -624,3 +624,119 @@ body.crm-calls-inbox-page #ciTable thead th {
   .rs-bar { grid-column: 1 / -1; }
   .rs-counts { grid-column: 1 / -1; }
 }
+
+/* ── Per-call AI score (drawer) ─────────────────────────────────────────
+   GET /api/Calls/{id}/score. The scoreboard shows team averages; this is the
+   only view that explains a number, so it leads with the grade and puts the
+   WEAKEST dimension first — that is the coachable one.
+   ──────────────────────────────────────────────────────────────────────── */
+.ci-score-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ci-score-rescore {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.ci-score-rescore:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+.ci-score-rescore:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 1px; }
+
+.ci-score-hero {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 14px;
+}
+.ci-score-grade {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-inverse, #fff);
+}
+.ci-score-grade.band-a { background: var(--color-success); }
+.ci-score-grade.band-b { background: color-mix(in srgb, var(--color-success) 75%, var(--color-warning)); }
+.ci-score-grade.band-c { background: var(--color-warning); }
+.ci-score-grade.band-d { background: color-mix(in srgb, var(--color-warning) 45%, var(--color-error)); }
+.ci-score-grade.band-f { background: var(--color-error); }
+
+.ci-score-total {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+.ci-score-total b { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.03em; }
+.ci-score-total i { font-style: normal; font-size: 0.75rem; color: var(--text-muted); }
+.ci-score-verdict {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.ci-score-dims { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+.ci-score-dim {
+  display: grid;
+  grid-template-columns: minmax(90px, 0.9fr) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+}
+.ci-score-dim-name { color: var(--text-secondary); text-transform: capitalize; }
+.ci-score-dim-bar {
+  height: 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+  overflow: hidden;
+}
+.ci-score-dim-bar i {
+  display: block; height: 100%; border-radius: inherit;
+  background: var(--brand-primary);
+}
+.ci-score-dim-num {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ci-score-block { margin-bottom: 12px; }
+.ci-score-block-h {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.ci-score-viol .ci-score-block-h { color: var(--color-error); }
+.ci-score-tips .ci-score-block-h { color: var(--brand-primary); }
+.ci-score-block ul, .ci-score-block ol {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.ci-score-block li { margin-bottom: 3px; }
+
+.ci-score-foot {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}

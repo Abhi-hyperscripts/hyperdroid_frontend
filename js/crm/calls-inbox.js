@@ -312,6 +312,7 @@
                 <h4 class="ci-drawer-h">Transcript</h4>
                 <div class="ci-transcript">${escapeHtml(c.transcript)}</div>
             </div>` : ''}
+            <div class="ci-drawer-section" id="ciScoreSection"></div>
             <div class="ci-drawer-section">
                 <h4 class="ci-drawer-h">Lifecycle</h4>
                 ${lifecycleHtml}
@@ -322,7 +323,122 @@
         `;
         $('ciDrawerOverlay').classList.add('active');
         $('ciDrawer').classList.add('active');
+        loadCallScore(callId);
     }
+
+    // ─── AI call score ──────────────────────────────────────────────────
+    //
+    // GET /api/Calls/{id}/score had no caller anywhere in the app, even though
+    // LeadCallScore's own doc comment reads "the frontend's call detail panel
+    // reads dimension_scores, playbook_violations, top_3_coaching_suggestions
+    // straight off this blob" — the backend was written expecting this panel.
+    // The Calls page showed team AVERAGES with no way to open a single call and
+    // see why it scored what it did, which is the only view that coaches anyone.
+    //
+    // 404 = not_scored_yet and is the normal state for a call whose recording
+    // has not finished transcribing, so it renders as a status line, not an
+    // error.
+    const GRADE_BAND = { A: 'a', B: 'b', C: 'c', D: 'd', F: 'f' };
+
+    async function loadCallScore(callId) {
+        const host = $('ciScoreSection');
+        if (!host) return;
+        host.innerHTML = '<h4 class="ci-drawer-h">Call score</h4><p class="ci-mute">Loading…</p>';
+        let score;
+        try {
+            score = await api.request(`/crm/calls/${encodeURIComponent(callId)}/score`);
+        } catch (e) {
+            const notYet = String(e.status) === '404';
+            host.innerHTML = `<h4 class="ci-drawer-h">Call score</h4>
+                <p class="ci-mute">${notYet
+                    ? 'Not scored yet. Calls are scored automatically once the recording finishes transcribing.'
+                    : escapeHtml(e.message || 'Could not load the score.')}</p>`;
+            return;
+        }
+        if (_drawerCallId !== callId) return;   // drawer moved on while we fetched
+
+        let blob = {};
+        try {
+            blob = typeof score.score_json === 'string'
+                ? JSON.parse(score.score_json || '{}')
+                : (score.score_json || {});
+        } catch { blob = {}; }
+
+        const grade = String(score.letter_grade || '').toUpperCase();
+        const band = GRADE_BAND[grade] || 'c';
+        const total = Number(score.total_score ?? blob.total_weighted_score ?? 0);
+
+        // dimension_scores is an OBJECT keyed by dimension, each { raw_score,
+        // evidence[] } — not an array. Sorted worst-first: the weak dimension
+        // is the coachable one and should not be buried under the strong ones.
+        const dims = Object.entries(blob.dimension_scores || {})
+            .map(([k, v]) => ({
+                name: k.replace(/_/g, ' '),
+                raw: Number(v && typeof v === 'object' ? v.raw_score : v) || 0,
+                evidence: (v && v.evidence) || []
+            }))
+            .sort((a, b) => a.raw - b.raw);
+
+        const violations = blob.playbook_violations || [];
+        const tips = blob.top_3_coaching_suggestions || [];
+
+        host.innerHTML = `
+            <div class="ci-score-head">
+                <h4 class="ci-drawer-h">Call score</h4>
+                <button class="ci-score-rescore" data-rescore="${escapeHtml(callId)}"
+                        title="Re-run scoring against the current rubric">Re-score</button>
+            </div>
+
+            <div class="ci-score-hero">
+                <span class="ci-score-grade band-${band}">${escapeHtml(grade || '—')}</span>
+                <span class="ci-score-total"><b>${total}</b><i>/100</i></span>
+                ${blob.one_line_verdict
+                    ? `<p class="ci-score-verdict">${escapeHtml(blob.one_line_verdict)}</p>` : ''}
+            </div>
+
+            ${dims.length ? `<div class="ci-score-dims">
+                ${dims.map(d => `
+                    <div class="ci-score-dim">
+                        <span class="ci-score-dim-name">${escapeHtml(d.name)}</span>
+                        <span class="ci-score-dim-bar"><i style="width:${Math.max(3, Math.min(100, d.raw * 10))}%"></i></span>
+                        <span class="ci-score-dim-num">${d.raw}</span>
+                    </div>`).join('')}
+            </div>` : ''}
+
+            ${violations.length ? `<div class="ci-score-block ci-score-viol">
+                <span class="ci-score-block-h">Playbook missed</span>
+                <ul>${violations.map(v => `<li>${escapeHtml(typeof v === 'string' ? v : (v.description || JSON.stringify(v)))}</li>`).join('')}</ul>
+            </div>` : ''}
+
+            ${tips.length ? `<div class="ci-score-block ci-score-tips">
+                <span class="ci-score-block-h">Coach on this</span>
+                <ol>${tips.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ol>
+            </div>` : ''}
+
+            <p class="ci-score-foot">Scored ${escapeHtml(new Date(score.scored_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }))}${score.rubric_id ? ` · rubric ${escapeHtml(score.rubric_id)}` : ''}</p>`;
+    }
+
+    // Re-score is admin-only and costs a paid LLM call per use, so it confirms
+    // first and says plainly that the result is not instant.
+    async function rescoreCall(callId) {
+        const ok = await showConfirm(
+            'Re-score this call against the current rubric? This runs the AI scorer again and can take a few seconds.',
+            'Re-score call');
+        if (!ok) return;
+        try {
+            await api.request(`/crm/calls/${encodeURIComponent(callId)}/rescore`, { method: 'POST' });
+            Toast.success('Re-scoring queued — reopen this call in a few seconds.');
+        } catch (e) {
+            Toast.error(String(e.status) === '403'
+                ? 'Only an admin can re-score a call.'
+                : (e.message || 'Could not queue re-scoring'));
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-rescore]');
+        if (btn) rescoreCall(btn.getAttribute('data-rescore'));
+    });
     window.openCallDrawer = openCallDrawer;
 
     function closeCallDrawer() {

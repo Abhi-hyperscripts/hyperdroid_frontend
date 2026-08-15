@@ -308,7 +308,10 @@ body.crm-tasks-page .rail-item.active { background: color-mix(in srgb, #A78BFA 1
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   column-gap: 14px;
-  padding: 12px 16px 13px;
+  /* A queue row earns its height from its two text lines, nothing else.
+     Trimmed from 65px to ~48px: same information, a third more rows on
+     screen, which is the whole point of a list over a card grid. */
+  padding: 8px 16px 9px;
   transition: background 0.15s ease;
 }
 /* Each row is lit from its left edge by its own urgency. Across a full queue
@@ -375,9 +378,9 @@ body.crm-tasks-page {
 .tsk-row-title {
   margin: 0;
   font-family: 'Bricolage Grotesque', var(--font-family);
-  font-size: 0.94rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.25;
   letter-spacing: -0.012em;
   color: var(--text-primary);
   overflow: hidden;
@@ -385,12 +388,13 @@ body.crm-tasks-page {
   white-space: nowrap;
 }
 .tsk-row-meta {
-  margin: 2px 0 0;
+  margin: 1px 0 0;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0 7px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  line-height: 1.25;
   color: var(--text-muted);
   min-width: 0;
 }
@@ -433,12 +437,12 @@ body.crm-tasks-page {
   align-items: baseline;
   justify-content: flex-end;
   gap: 6px;
-  min-width: 116px;
+  min-width: 104px;
 }
 .tsk-age-num {
   font-family: var(--font-family-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 1.45rem;
+  font-size: 1.2rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -477,17 +481,17 @@ body.crm-tasks-page {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 9px;
+  border-radius: 8px;
   background: transparent;
   color: color-mix(in srgb, var(--text-muted) 80%, transparent);
   cursor: pointer;
   transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
 }
-.tsk-act svg { width: 15px; height: 15px; }
+.tsk-act svg { width: 14px; height: 14px; }
 .tsk-act:hover {
   background: color-mix(in srgb, var(--text-primary) 8%, transparent);
   color: var(--text-primary);

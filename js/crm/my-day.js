@@ -276,6 +276,9 @@
         renderTileSection('effortGrid', tileDefs.effort, data.effort || {});
         renderTileSection('outcomeGrid', tileDefs.outcome, data.outcome || {});
         renderMissed(data.missed || {});
+        // Independent of the report payload — its own endpoint, so a failure
+        // here must not take the rest of the page down with it.
+        loadComingUp();
         renderActivityMixChart(data.effort || {});
         renderCallsFunnelChart(data.effort || {}, data.outcome || {});
         renderTimelineChart(data.timeline || []);
@@ -757,6 +760,117 @@
         if (days > 30) return '60';
         return '30';
     }
+
+    // ─── Coming up ────────────────────────────────────────────────────────
+    //
+    // GET /api/leads/followups/due — everything scheduled in the next 24 hours,
+    // team-scoped by the backend. It had no caller: My Day reported what had
+    // already slipped and never what was about to. A rep opening this page in
+    // the morning could see their debts but not their day.
+    //
+    // Forward-looking, so no ageing gauge — the ledger language is for work
+    // that is already late. Here the useful figure is how long you have.
+
+    const FOLLOWUP_ICON = {
+        call: '📞', email: '✉️', meeting: '📅', whatsapp: '💬', task: '✅'
+    };
+
+    // "in 40m" / "in 6h" / "now". Anything already past reads as "now" rather
+    // than a negative — an overdue item belongs in the missed cards above, and
+    // showing "in -3h" here would just be wrong twice.
+    function untilLabel(iso) {
+        const d = new Date(iso);
+        if (isNaN(d)) return '';
+        const mins = Math.round((d.getTime() - Date.now()) / 60000);
+        if (mins <= 0) return 'now';
+        if (mins < 60) return `in ${mins}m`;
+        const hrs = Math.round(mins / 60);
+        return `in ${hrs}h`;
+    }
+
+    async function loadComingUp() {
+        const host = document.getElementById('upNext');
+        if (!host) return;
+        host.innerHTML = '<p class="md-upnext-state">Loading…</p>';
+        let rows;
+        try {
+            const res = await api.request('/crm/leads/followups/due');
+            rows = Array.isArray(res) ? res : (res?.items || []);
+        } catch (e) {
+            console.error('[my-day] coming up failed:', e);
+            host.innerHTML = `<p class="md-upnext-state">Could not load what is coming up. ${escapeHtml(e.message || '')}</p>`;
+            return;
+        }
+        if (!rows.length) {
+            host.innerHTML = '<p class="md-upnext-state">Nothing scheduled in the next 24 hours. '
+                + 'Follow-ups you book on a lead show up here.</p>';
+            return;
+        }
+
+        host.innerHTML = rows
+            .slice()
+            .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
+            .map(f => {
+                const type = String(f.followup_type || 'follow-up');
+                const at = new Date(f.scheduled_at);
+                const clock = isNaN(at) ? '' : at.toLocaleTimeString('en-IN',
+                    { hour: '2-digit', minute: '2-digit' });
+                return `
+                <div class="md-up-row" data-followup="${escapeAttr(f.id)}" data-lead="${escapeAttr(f.lead_id || '')}">
+                    <span class="md-up-icon">${FOLLOWUP_ICON[type] || '•'}</span>
+                    <div class="md-up-main">
+                        <div class="md-up-title">${escapeHtml(type.replace(/_/g, ' '))}</div>
+                        ${f.notes ? `<p class="md-up-note">${escapeHtml(String(f.notes).replace(/\s+/g, ' ').trim())}</p>` : ''}
+                    </div>
+                    <div class="md-up-when">
+                        <span class="md-up-in">${escapeHtml(untilLabel(f.scheduled_at))}</span>
+                        <span class="md-up-clock">${escapeHtml(clock)}</span>
+                    </div>
+                    <div class="md-up-actions">
+                        <button type="button" class="md-up-btn" data-up="open">Open lead</button>
+                        <button type="button" class="md-up-btn md-up-btn-done" data-up="done">Done</button>
+                    </div>
+                </div>`;
+            }).join('');
+    }
+
+    // Bound once at module level — the section re-renders on every period
+    // change, and a listener per render would fire one click N times.
+    document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('#upNext [data-up]');
+        if (!btn) return;
+        const row = btn.closest('.md-up-row');
+        const leadId = row?.getAttribute('data-lead');
+        const fid = row?.getAttribute('data-followup');
+
+        if (btn.getAttribute('data-up') === 'open') {
+            // Same sessionStorage handoff the missed rows use — leads.js opens
+            // the panel after its own load completes.
+            if (leadId) sessionStorage.setItem('crm_openLeadId', encodeURIComponent(leadId));
+            window.location = `leads.html?${ownerLinkParam()}`;
+            return;
+        }
+
+        btn.disabled = true;
+        const original = btn.textContent;
+        btn.textContent = '…';
+        try {
+            await api.request(`/crm/leads/followups/${encodeURIComponent(fid)}/complete`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completed_notes: 'Marked done from My Day' })
+            });
+            row.classList.add('is-done');
+            if (typeof Toast !== 'undefined') Toast.success('Follow-up marked done');
+            // Re-read rather than just hiding the row: the count above is
+            // derived from the same data and would otherwise disagree.
+            setTimeout(loadComingUp, 600);
+        } catch (err) {
+            btn.disabled = false;
+            btn.textContent = original;
+            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Could not complete it');
+        }
+    });
 
     function renderMissedItem(item) {
         const title = item.title || '(untitled)';

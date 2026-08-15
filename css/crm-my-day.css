@@ -590,3 +590,132 @@ body.crm-myday-page {
   .mdp-hero .md-header { padding: 18px 16px 14px; }
   .md-container { padding: 16px 16px 48px; }
 }
+
+/* ── Coming up: the next 24 hours ─────────────────────────────────────────
+   Forward-looking, so no ageing gauge — that language belongs to work that is
+   already late. Same panel material as the missed cards so the two sections
+   read as one page.
+   ──────────────────────────────────────────────────────────────────────── */
+.md-upnext {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--mdp-line);
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--bg-card) 62%, transparent),
+      color-mix(in srgb, var(--bg-card) 38%, transparent));
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
+    0 1px 2px color-mix(in srgb, #000 30%, transparent),
+    0 16px 36px -20px color-mix(in srgb, #000 58%, transparent);
+}
+
+.md-up-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px 9px;
+  transition: background 0.15s ease, opacity 0.25s ease;
+}
+.md-up-row + .md-up-row { box-shadow: inset 0 1px 0 var(--mdp-line); }
+.md-up-row:hover { background: var(--mdp-hover); }
+.md-up-row.is-done { opacity: 0.4; }
+
+.md-up-icon {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 7px;
+  background: var(--bg-tertiary);
+  font-size: 0.78rem;
+}
+.md-up-main { min-width: 0; }
+.md-up-title {
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+.md-up-note {
+  margin: 1px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  /* Newlines are collapsed in the renderer instead of preserved here: with a
+     one-line clamp, pre-wrap truncated at the note's first line break and hid
+     the half that carried the context. */
+}
+
+/* Side by side on one baseline, not stacked. Stacked, this block measured 45px
+   and was single-handedly setting the row height — taller than the title and
+   note it sits beside. */
+.md-up-when {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 7px;
+  white-space: nowrap;
+  line-height: 1;
+}
+.md-up-in {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--brand-primary);
+}
+.md-up-clock { font-size: 0.7rem; line-height: 1; color: var(--text-muted); }
+
+.md-up-actions { display: flex; gap: 6px; }
+.md-up-btn {
+  padding: 3px 9px;
+  border-radius: 7px;
+  line-height: 1.5;
+  border: 1px solid var(--mdp-line);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+.md-up-btn:hover { color: var(--text-primary); border-color: var(--brand-primary); }
+.md-up-btn:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 1px; }
+.md-up-btn-done {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 36%, transparent);
+  background: color-mix(in srgb, var(--color-success) 11%, transparent);
+}
+.md-up-btn-done:hover {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--text-inverse, #fff);
+}
+
+.md-upnext-state {
+  margin: 0;
+  padding: 22px 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 720px) {
+  .md-up-row { grid-template-columns: auto minmax(0, 1fr) auto; row-gap: 8px; }
+  .md-up-actions { grid-column: 2 / -1; }
+}

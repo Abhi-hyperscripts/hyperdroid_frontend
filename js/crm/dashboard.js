@@ -48,25 +48,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (railAnalytics) railAnalytics.style.display = '';
     }
 
-    // WhatsApp Inbox card — SUPERADMIN-only AND only when WhatsApp is
-    // actually configured (i.e. /whatsapp/numbers returns at least one
-    // active number). Without this gate, the card would 404-ish into an
-    // empty inbox for tenants who haven't connected Interakt yet.
-    if (isSuperadmin) {
-        try {
-            const resp = await api.request('/whatsapp/numbers');
-            const numbers = (resp && resp.numbers) ? resp.numbers : [];
-            const hasActive = numbers.some(n => n.is_active ?? n.isActive);
-            if (hasActive) {
-                const waCard = document.getElementById('cardWhatsappInbox');
-                if (waCard) waCard.style.display = '';
-                const railWa = document.getElementById('railWhatsapp');
-                if (railWa) railWa.style.display = '';
-            }
-        } catch (err) {
-            // Endpoint missing / 403 / network blip — leave the card hidden.
-            console.warn('[Dashboard] WhatsApp numbers check failed (card stays hidden):', err);
+    // WhatsApp Inbox card — shown only when WhatsApp is actually configured.
+    //
+    // This used to derive that from /whatsapp/numbers behind an isSuperadmin
+    // check, which meant a rep on a tenant WITH WhatsApp connected never saw
+    // the inbox at all — the gate was hiding a working feature from the people
+    // who use it. /whatsapp/feature-status exists for exactly this question,
+    // is open to CRM_USER, and returns only { enabled, active_numbers_count }
+    // — no numbers, no credentials — so reading it here leaks nothing.
+    try {
+        const status = await api.request('/whatsapp/feature-status');
+        if (status && status.enabled) {
+            const waCard = document.getElementById('cardWhatsappInbox');
+            if (waCard) waCard.style.display = '';
+            const railWa = document.getElementById('railWhatsapp');
+            if (railWa) railWa.style.display = '';
         }
+    } catch (err) {
+        // The endpoint already treats a backing-service failure as "disabled",
+        // so anything reaching here is a network blip — stay hidden.
+        console.warn('[Dashboard] WhatsApp feature-status check failed (card stays hidden):', err);
     }
 
     // Setup gating — disable action cards until functional area + team + pipeline exist.
