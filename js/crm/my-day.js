@@ -711,10 +711,18 @@
             // Rewrite the canned `?ownerUserId=me` in def.link to point at the
             // currently-selected rep when a manager is viewing someone else.
             const link = def.link.replace(/ownerUserId=me/, ownerParam);
+            // The card carries the age of its WORST item. That is what makes a
+            // card holding a 93-day debt read differently from one holding a
+            // 5-day slip, before any text is read.
+            const ages = list.map(i => overdueDays(i.due_at)).filter(d => d != null);
+            const oldest = ages.length ? Math.max(...ages) : null;
             return `
-                <div class="md-missed-card ${isEmpty ? 'empty' : ''}">
+                <div class="md-missed-card ${isEmpty ? 'empty' : ''}" data-age="${ageBucket(oldest)}">
                     <div class="md-missed-head">
                         <span class="md-missed-title">${escapeHtml(def.title)}</span>
+                        ${oldest != null
+                            ? `<span class="md-missed-oldest">oldest <b>${oldest}d</b></span>`
+                            : ''}
                         <span class="md-missed-count">${count}</span>
                     </div>
                     ${isEmpty
@@ -729,9 +737,35 @@
         }).join('');
     }
 
+    // ─── Ageing ───────────────────────────────────────────────────────────
+    // Overdue work is arrears, so it is bucketed the way a receivables ageing
+    // report buckets debt: 1–30, 31–60, 61–90, 90+. The bucket drives colour;
+    // the position within 0→90 drives the gauge. Anything past 90 pins full.
+    const AGE_CAP = 90;
+
+    function overdueDays(iso) {
+        if (!iso) return null;
+        const due = new Date(iso);
+        if (isNaN(due)) return null;
+        const days = Math.floor((Date.now() - due.getTime()) / 86400000);
+        return days >= 1 ? days : null;
+    }
+
+    function ageBucket(days) {
+        if (days == null) return 'clear';
+        if (days > 60) return '90';
+        if (days > 30) return '60';
+        return '30';
+    }
+
     function renderMissedItem(item) {
         const title = item.title || '(untitled)';
         const due = item.due_at ? formatDueMeta(item.due_at) : '';
+        const days = overdueDays(item.due_at);
+        const bucket = ageBucket(days);
+        // Gauge fill is the item's position on the 0→90-day scale. A 4% floor
+        // keeps a one-day-old item visible as a mark rather than nothing.
+        const fill = days == null ? 0 : Math.max(4, Math.min(100, (days / AGE_CAP) * 100));
         // Each row uses sessionStorage to hand off the target lead id, then
         // navigates to leads.html?ownerUserId=<target>. leads.js reads the
         // handoff after init and opens the detail panel — avoids the race we
@@ -742,9 +776,12 @@
             ? `sessionStorage.setItem('crm_openLeadId','${encodeURIComponent(leadId)}'); window.location='leads.html?${ownerParam}'; return false;`
             : `window.location='leads.html?${ownerParam}'; return false;`;
         return `
-            <li onclick="${onclick}">
+            <li onclick="${onclick}" data-age="${bucket}" style="--age-fill:${fill}%">
                 <span class="md-item-title" title="${escapeAttr(title)}">${escapeHtml(title)}</span>
-                <span class="md-item-meta">${escapeHtml(due)}</span>
+                <span class="md-item-age">${days == null
+                    ? `<em>${escapeHtml(due || 'no date')}</em>`
+                    : `${days}<em>d</em>`}</span>
+                <span class="md-item-gauge" aria-hidden="true"></span>
             </li>
         `;
     }
