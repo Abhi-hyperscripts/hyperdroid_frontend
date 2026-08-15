@@ -80,6 +80,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Keyboard shortcuts (/, s, f, c, Esc) + saved-views chips.
     window.addEventListener('keydown', dealKeyboardHandler);
     renderSavedViewsBar();
+
+    // Deep link: ?deal=<id> opens that deal's panel. The related-records
+    // panels on companies and contacts link here, and a link that only lands
+    // you on the pipeline is a link that made you search again.
+    const dealId = new URLSearchParams(window.location.search).get('deal');
+    if (dealId) openDealDetailPanel(dealId);
 });
 
 function initSearchableDropdowns() {
@@ -1592,6 +1598,17 @@ async function openDealDetailPanel(dealId) {
     document.getElementById('dealTimeline').innerHTML = '<div class="import-loading">Loading timeline...</div>';
     document.getElementById('dealDetailInfo').innerHTML = '';
     document.getElementById('dealDetailName').textContent = 'Deal Details';
+
+    // Notes written on the deal form were unreachable afterwards — nothing
+    // listed them. Mount the panel that does.
+    if (typeof NotesPanel !== 'undefined') {
+        NotesPanel.mount(document.getElementById('dealNotesPanel'), 'deal', dealId);
+    }
+    // Activities could be logged and read but never corrected, completed or
+    // removed — the timeline projection carries no activity id to act on.
+    if (typeof ActivitiesPanel !== 'undefined') {
+        ActivitiesPanel.mount(document.getElementById('dealActivitiesPanel'), 'deal', dealId);
+    }
 
     try {
         const deal = await api.request(`/crm/deals/${dealId}`);

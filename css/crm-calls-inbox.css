@@ -448,3 +448,179 @@ body.crm-calls-inbox-page #ciTable thead th {
 @media (max-width: 1023px) {
   body.crm-calls-inbox-page nav.pulse-rail { display: none !important; }
 }
+
+/* ============================================================================
+   Coaching scoreboard — GET /api/Calls/rep-scores
+   Collapsed by default; the inbox below is what the page is for.
+   ========================================================================= */
+
+.rs {
+  margin: 0 0 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  overflow: hidden;
+}
+.rs-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.rs-summary::-webkit-details-marker { display: none; }
+.rs-summary:hover { background: var(--bg-card); }
+.rs-summary:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: -2px; }
+.rs-summary > svg:first-child {
+  width: 16px; height: 16px; flex: 0 0 16px;
+  color: var(--brand-primary);
+}
+.rs-summary-text {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.rs-summary-hint {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.rs-chev {
+  width: 16px; height: 16px;
+  margin-left: auto;
+  color: var(--text-secondary);
+  transition: transform 0.18s ease;
+}
+.rs[open] .rs-chev { transform: rotate(180deg); }
+
+.rs-body {
+  padding: 4px 16px 16px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rs-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+}
+.rs-lede {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 60ch;
+}
+.rs-lede strong { color: var(--text-primary); }
+
+.rs-ranges { display: flex; gap: 6px; }
+.rs-range {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rs-range:hover { color: var(--text-primary); border-color: var(--brand-primary); }
+.rs-range.active {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: var(--text-inverse, #fff);
+}
+
+.rs-list { display: flex; flex-direction: column; gap: 8px; }
+
+.rs-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.4fr) auto minmax(120px, 2fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+}
+
+.rs-rep { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rs-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  flex: 0 0 28px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-inverse, #fff);
+}
+.rs-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rs-score { display: flex; align-items: baseline; gap: 5px; }
+.rs-score-num {
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.rs-score-of { font-size: 0.72rem; color: var(--text-secondary); }
+
+.rs-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  overflow: hidden;
+}
+.rs-bar-fill { display: block; height: 100%; border-radius: 999px; }
+
+.rs-counts { display: flex; gap: 12px; white-space: nowrap; }
+.rs-count { font-size: 0.75rem; color: var(--text-secondary); }
+.rs-count strong { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.rs-good strong { color: var(--color-success, #2ea043); }
+.rs-bad strong { color: var(--color-error, #f85149); }
+
+/* Grade bands. Applied to both the avatar (as background) and the numeral +
+   bar (as colour), so one class drives all three. */
+.rs-avatar.rs-a { background: var(--color-success, #2ea043); }
+.rs-avatar.rs-b { background: #3fb950; }
+.rs-avatar.rs-c { background: var(--color-warning, #d29922); }
+.rs-avatar.rs-d { background: #db6d28; }
+.rs-avatar.rs-f { background: var(--color-error, #f85149); }
+.rs-score-num.rs-a, .rs-bar-fill.rs-a { color: var(--color-success, #2ea043); background: var(--color-success, #2ea043); }
+.rs-score-num.rs-b, .rs-bar-fill.rs-b { color: #3fb950; background: #3fb950; }
+.rs-score-num.rs-c, .rs-bar-fill.rs-c { color: var(--color-warning, #d29922); background: var(--color-warning, #d29922); }
+.rs-score-num.rs-d, .rs-bar-fill.rs-d { color: #db6d28; background: #db6d28; }
+.rs-score-num.rs-f, .rs-bar-fill.rs-f { color: var(--color-error, #f85149); background: var(--color-error, #f85149); }
+/* The numeral must not inherit the fill's background — it only wants the hue. */
+.rs-score-num { background: none !important; }
+
+.rs-state {
+  margin: 0;
+  padding: 20px 14px;
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+}
+
+@media (max-width: 820px) {
+  .rs-row { grid-template-columns: 1fr auto; row-gap: 8px; }
+  .rs-bar { grid-column: 1 / -1; }
+  .rs-counts { grid-column: 1 / -1; }
+}

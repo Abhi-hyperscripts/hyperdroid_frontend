@@ -38,6 +38,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-teams-setup.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-outbox.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-settings-skin.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/rail-drawer.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/rail-drawer.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -2167,6 +2168,13 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- ─── Email outbox ─────────────────────────────────────────────
+                         Sent mail + the replies that came back. Reads
+                         /api/mailbox-send/history and .../history/{id}/replies,
+                         both of which had no caller anywhere in the app. -->
+                    <div id="emailOutboxSection"
+                         style="border: 1px solid var(--border-color); border-radius: 12px; padding: 18px 20px; margin-bottom: 24px; background: var(--bg-secondary);"></div>
 
                     <!-- Picker modal: choose a shared mailbox from EmailService catalog.
                          Uses the .modal + .modal.active convention (see openModal()/closeModal()
@@ -4794,6 +4802,7 @@
         document.write('<script src="../../js/crm/team-email-triggers.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/automations-tab.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/mailboxes.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/email-outbox.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/email-templates.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/email-campaigns.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/whatsapp-settings.js?v=' + CACHE_VERSION + '"><\/script>');

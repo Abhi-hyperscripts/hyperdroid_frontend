@@ -25,6 +25,8 @@
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-notes.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard crm-page">
@@ -206,6 +208,33 @@
         </div>
     </div>
 
+    <!-- ═══ Company detail panel ═══════════════════════════════════════════
+         Companies had a table and nothing else — no way to see who we know
+         there or what is in play. Backs GET /api/Companies/{id}/contacts and
+         /deals, neither of which had a caller anywhere in the app. -->
+    <div class="slide-panel-overlay" id="companyDetailOverlay" onclick="closeCompanyDetailPanel()"></div>
+    <div class="slide-panel" id="companyDetailPanel" style="--panel-width: 520px;">
+        <div class="panel-header">
+            <h3 class="panel-title" id="companyDetailName">Company</h3>
+            <button class="panel-close-btn" onclick="closeCompanyDetailPanel()" aria-label="Close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="companyDetailInfo" class="lead-detail-info"></div>
+
+            <hr style="border:none;border-top:1px solid var(--border-color);margin:14px 0;">
+
+            <div id="companyRelatedPanel" class="panel-section"></div>
+
+            <hr style="border:none;border-top:1px solid var(--border-color);margin:14px 0;">
+
+            <div id="companyNotesPanel" class="panel-section"></div>
+        </div>
+    </div>
+
     <!-- Delete Confirmation Modal -->
     <div class="gm-overlay" id="deleteModal">
         <div class="gm-modal gm-sm">
@@ -249,6 +278,8 @@
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/phone-link.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/related-panel.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/notes-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/companies.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

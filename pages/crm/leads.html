@@ -30,6 +30,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-notes.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/sequences.css?v=' + CACHE_VERSION + '">');</script>
     <!-- TinyMCE 7 community (replaces Quill) — used by the shared email
@@ -70,6 +71,10 @@
         <div class="rail-item" onclick="location.href='my-day.html'" title="My Day">
             <div class="ric" style="color:#4CC9F0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
             <span>My Day</span>
+        </div>
+        <div class="rail-item" onclick="window.location='tasks.html'" title="Tasks">
+            <div class="ric" style="color:#A78BFA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+            <span>Tasks</span>
         </div>
         <div class="rail-item active" title="Leads">
             <div class="ric" style="color:#60A5FA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg></div>
@@ -508,6 +513,18 @@
                     </div>
                 </div>
                 <div id="leadTimeline" class="lead-timeline"></div>
+            </div>
+
+            <div class="panel-section">
+                <div id="leadNotesPanel"></div>
+            </div>
+
+            <div class="panel-section">
+                <div id="leadActivitiesPanel"></div>
+            </div>
+
+            <div class="panel-section">
+                <div id="leadHistoryPanel"></div>
             </div>
         </div>
     </div>
@@ -1093,13 +1110,22 @@
             <div class="gm-header">
                 <div class="gm-header-left">
                     <div class="gm-title-group">
-                        <h3 class="gm-title">Help requests for you</h3>
-                        <p class="gm-subtitle">Teammates waiting on a decision or input. Click into a lead to read the full timeline; resolve here when you're done.</p>
+                        <h3 class="gm-title">Help requests</h3>
+                        <p class="gm-subtitle" id="helpInboxSubtitle">Teammates waiting on a decision or input. Click into a lead to read the full timeline; resolve here when you're done.</p>
                     </div>
                 </div>
                 <button class="gm-close" onclick="closeHelpInboxModal()">&times;</button>
             </div>
             <div class="gm-body">
+                <!-- Two sides of the same feature. "For you" was the only one
+                     wired; GET /leads/help-requests/raised-by-me — what YOU are
+                     waiting on — had no caller anywhere in the app. -->
+                <div class="help-tabs" role="tablist">
+                    <button type="button" class="help-tab active" role="tab"
+                            data-help-tab="inbox" onclick="switchHelpTab('inbox')">For you</button>
+                    <button type="button" class="help-tab" role="tab"
+                            data-help-tab="mine" onclick="switchHelpTab('mine')">I raised</button>
+                </div>
                 <div id="helpInboxList"><p style="color:var(--text-secondary);text-align:center;padding:20px;">Loading…</p></div>
             </div>
         </div>
@@ -1287,6 +1313,33 @@
                     </div>
                     <div id="importUploadError" class="import-error" style="display:none;"></div>
 
+                    <!-- Saved mappings + past imports.
+                         Both were queryable and neither had a screen: a saved
+                         mapping could be created by ticking the box on the last
+                         step and then never renamed, removed, or even seen, and
+                         nothing showed what had been imported before. -->
+                    <details class="imp-library" id="importLibrary">
+                        <summary>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 4-5"/></svg>
+                            Saved mappings &amp; past imports
+                            <span class="imp-library-count" id="importLibraryCount"></span>
+                        </summary>
+                        <div class="imp-library-body">
+                            <div class="imp-lib-block">
+                                <h5>Saved mappings</h5>
+                                <p class="imp-lib-hint">Reuse a column mapping instead of re-matching every
+                                   column. Tick <em>Save this mapping</em> on the last step to create one.</p>
+                                <div id="importSavedConfigs" class="imp-lib-list"></div>
+                            </div>
+                            <div class="imp-lib-block">
+                                <h5>Past imports</h5>
+                                <p class="imp-lib-hint">What was uploaded, how many rows landed, and how many
+                                   were skipped as duplicates.</p>
+                                <div id="importHistoryList" class="imp-lib-list"></div>
+                            </div>
+                        </div>
+                    </details>
+
                     <!-- Saved configs -->
                     <div class="import-configs-section" id="importConfigsSection" style="display:none;">
                         <h4>Choose a saved mapping</h4>
@@ -1460,6 +1513,9 @@
         document.write('<script src="../../js/crm/lead-fields-runtime.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-discovery.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-import.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/notes-panel.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/activities-panel.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/lead-history-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-journey.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-qr-modal.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/bulk-whatsapp-modal.js?v=' + CACHE_VERSION + '"><\/script>');

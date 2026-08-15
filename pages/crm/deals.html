@@ -26,6 +26,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/crm-pipeline.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-notes.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-deals.css?v=' + CACHE_VERSION + '">');</script>
@@ -55,6 +56,10 @@
         <div class="rail-item" onclick="window.location='my-day.html'" title="My Day">
             <div class="ric" style="color:#4CC9F0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
             <span>My Day</span>
+        </div>
+        <div class="rail-item" onclick="window.location='tasks.html'" title="Tasks">
+            <div class="ric" style="color:#A78BFA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+            <span>Tasks</span>
         </div>
         <div class="rail-item" onclick="window.location='leads.html'" title="Leads">
             <div class="ric" style="color:#60A5FA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg></div>
@@ -415,6 +420,14 @@
                 </div>
                 <div id="dealTimeline" class="lead-timeline"></div>
             </div>
+
+            <div class="panel-section">
+                <div id="dealNotesPanel"></div>
+            </div>
+
+            <div class="panel-section">
+                <div id="dealActivitiesPanel"></div>
+            </div>
         </div>
     </div>
 
@@ -428,6 +441,8 @@
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/phone-link.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/notes-panel.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/activities-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/deals.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>

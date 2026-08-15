@@ -319,6 +319,23 @@
         // sessionStorage key after loadLeads() and re-opens the panel.
         try { sessionStorage.setItem('crm_openLeadId', encodeURIComponent(leadId)); } catch (_) {}
 
+        // Notes on a lead had no UI at all — the API listed, edited, pinned and
+        // deleted them and nothing called it.
+        if (typeof NotesPanel !== 'undefined') {
+            NotesPanel.mount(document.getElementById('leadNotesPanel'), 'lead', leadId);
+        }
+        // Activities could be logged and read but never corrected, completed or
+        // removed — the timeline projection carries no activity id to act on.
+        if (typeof ActivitiesPanel !== 'undefined') {
+            ActivitiesPanel.mount(document.getElementById('leadActivitiesPanel'), 'lead', leadId);
+        }
+
+        // Follow-ups, email engagement and ownership history were all recorded
+        // and none of them had anywhere to show.
+        if (typeof LeadHistoryPanel !== 'undefined') {
+            LeadHistoryPanel.mount(document.getElementById('leadHistoryPanel'), leadId);
+        }
+
         // Open panel
         document.getElementById('leadDetailOverlay').classList.add('active');
         document.getElementById('leadDetailPanel').classList.add('active');
@@ -2598,15 +2615,94 @@
 
     // ─── Help Inbox (recipient view) ──────────────────────────────────────
 
+    // Which side of the feature the modal is showing: 'inbox' = requests for
+    // me to answer, 'mine' = requests I raised and am waiting on.
+    let _helpTab = 'inbox';
+
     async function openHelpInboxModal() {
+        document.getElementById('helpInboxOverlay').classList.add('active');
+        await loadHelpTab(_helpTab);
+    }
+
+    async function switchHelpTab(tab) {
+        _helpTab = tab;
+        document.querySelectorAll('.help-tab').forEach(b =>
+            b.classList.toggle('active', b.getAttribute('data-help-tab') === tab));
+        const sub = document.getElementById('helpInboxSubtitle');
+        if (sub) {
+            sub.textContent = tab === 'mine'
+                ? "Requests you raised that nobody has answered yet. Cancel one if it is no longer needed."
+                : "Teammates waiting on a decision or input. Click into a lead to read the full timeline; resolve here when you're done.";
+        }
+        await loadHelpTab(tab);
+    }
+
+    async function loadHelpTab(tab) {
         const list = document.getElementById('helpInboxList');
         list.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;">Loading…</p>';
-        document.getElementById('helpInboxOverlay').classList.add('active');
+        const url = tab === 'mine'
+            ? '/crm/leads/help-requests/raised-by-me'
+            : '/crm/leads/help-requests/inbox';
         try {
-            const reqs = await api.request('/crm/leads/help-requests/inbox');
-            renderHelpInbox(reqs || []);
+            const reqs = await api.request(url);
+            // A slow tab must not paint over one the user has since clicked.
+            if (_helpTab !== tab) return;
+            if (tab === 'mine') renderHelpRaisedByMe(reqs || []);
+            else renderHelpInbox(reqs || []);
         } catch (e) {
+            if (_helpTab !== tab) return;
             list.innerHTML = `<p style="color:var(--color-error);">${esc(e?.message || 'Failed to load')}</p>`;
+        }
+    }
+
+    // Requester's view. Deliberately NOT resolvable from here — you do not
+    // close your own request, the person you asked does. Cancel is the only
+    // action that is yours.
+    function renderHelpRaisedByMe(reqs) {
+        const list = document.getElementById('helpInboxList');
+        if (!reqs.length) {
+            list.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;">' +
+                'You have no open requests. Ask for help from a lead when you need a decision from someone else.</p>';
+            return;
+        }
+        const fmtDate = ts => { try { return new Date(ts).toLocaleString(); } catch { return ''; } };
+        list.innerHTML = reqs.map(r => `
+            <div class="help-inbox-row" style="border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--bg-card);">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <strong style="color:var(--text-primary);">${esc(r.lead_name || '(unnamed lead)')}</strong>
+                            ${r.lead_number ? `<span style="font-size:11px;color:var(--text-secondary);">${esc(r.lead_number)}</span>` : ''}
+                            <span style="font-size:11px;color:var(--text-secondary);">•</span>
+                            <span style="font-size:12px;color:var(--text-secondary);">waiting on ${esc(r.recipient_name || r.recipient_user_id || 'teammate')}</span>
+                        </div>
+                        <div style="margin-top:6px;color:var(--text-primary);font-size:13px;white-space:pre-wrap;word-break:break-word;">${esc(r.reason)}</div>
+                        <div style="margin-top:6px;font-size:11px;color:var(--text-secondary);">Asked ${fmtDate(r.created_at)}${r.team_name ? ` · team ${esc(r.team_name)}` : ''}</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <button class="btn btn-sm btn-outline-primary" onclick="openLeadDetailPanel('${esc(r.lead_id)}'); closeHelpInboxModal();">Open lead</button>
+                        <!-- btn-outline-danger, not btn-outline: this page loads
+                             Bootstrap, which defines the -danger/-primary
+                             variants but has no bare .btn-outline, so that
+                             class renders as an unstyled empty box. -->
+                        <button class="btn btn-sm btn-outline-danger" onclick="cancelHelpRequestFromInbox('${esc(r.id)}')">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function cancelHelpRequestFromInbox(id) {
+        const ok = await showConfirm(
+            'Cancel this help request? The person you asked will stop seeing it.',
+            'Cancel request', 'danger');
+        if (!ok) return;
+        try {
+            await api.request(`/crm/leads/help-requests/${id}/cancel`, { method: 'POST' });
+            Toast.success('Request cancelled');
+            await loadHelpTab('mine');
+        } catch (e) {
+            Toast.error(e?.message || 'Could not cancel the request');
         }
     }
 
@@ -2753,6 +2849,8 @@
     window.submitHelpRequest = submitHelpRequest;
     window.openHelpInboxModal = openHelpInboxModal;
     window.closeHelpInboxModal = closeHelpInboxModal;
+    window.switchHelpTab = switchHelpTab;
+    window.cancelHelpRequestFromInbox = cancelHelpRequestFromInbox;
     window.openHelpResolveModal = openHelpResolveModal;
     window.closeHelpResolveModal = closeHelpResolveModal;
     window.submitHelpResolve = submitHelpResolve;

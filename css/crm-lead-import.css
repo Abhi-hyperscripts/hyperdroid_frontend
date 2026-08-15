@@ -1471,3 +1471,144 @@ body > .tox.tox-silver-sink,
     background: rgba(239,68,68,0.10);
     border: 1px solid rgba(239,68,68,0.20);
 }
+
+/* ── Saved mappings & past imports ───────────────────────────────────────
+   Both were queryable and neither had a screen. Collapsed by default so the
+   wizard's first step stays about the file you are dropping.
+   ──────────────────────────────────────────────────────────────────────── */
+.imp-library {
+  margin-top: 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.imp-library > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  list-style: none;
+}
+.imp-library > summary::-webkit-details-marker { display: none; }
+.imp-library > summary:hover { color: var(--text-primary); }
+.imp-library > summary svg { width: 14px; height: 14px; color: var(--brand-primary); }
+.imp-library-count {
+  margin-left: auto;
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.imp-library-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  padding: 4px 14px 14px;
+}
+.imp-lib-block h5 {
+  margin: 0 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.imp-lib-hint {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.imp-lib-list { display: flex; flex-direction: column; gap: 6px; }
+
+.imp-lib-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.imp-lib-row.is-failed { border-color: color-mix(in srgb, var(--color-error) 45%, transparent); }
+.imp-lib-row-text { min-width: 0; flex: 1 1 auto; }
+.imp-lib-row-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.imp-lib-row-meta { font-size: 11px; color: var(--text-muted); }
+.imp-lib-row-meta strong { color: var(--color-success); }
+
+.imp-lib-row-actions { display: flex; gap: 2px; flex: 0 0 auto; }
+.imp-lib-act {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 24px; height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.imp-lib-act svg { width: 12px; height: 12px; }
+.imp-lib-act:hover { color: var(--text-primary); border-color: var(--border-color); }
+.imp-lib-act-danger:hover { color: var(--color-error); border-color: var(--color-error); }
+
+.imp-lib-status {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-muted) 15%, transparent);
+  color: var(--text-secondary);
+  flex: 0 0 auto;
+}
+.imp-lib-status-completed {
+  background: color-mix(in srgb, var(--color-success) 18%, transparent);
+  color: var(--color-success);
+}
+.imp-lib-status-failed {
+  background: color-mix(in srgb, var(--color-error) 18%, transparent);
+  color: var(--color-error);
+}
+
+.imp-lib-empty {
+  margin: 0;
+  padding: 12px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+}
+
+/* Help-requests modal tabs — "For you" (inbox) vs "I raised" (raised-by-me). */
+.help-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+.help-tab {
+  padding: 8px 14px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.help-tab:hover { color: var(--text-primary); }
+.help-tab.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); }
+.help-tab:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: -2px; }

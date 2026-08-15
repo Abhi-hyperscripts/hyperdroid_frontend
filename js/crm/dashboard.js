@@ -190,7 +190,8 @@ async function loadDashboard() {
             loadAnalytics(),
             loadNotifications(),
             loadRecentLeads(),
-            loadLeadsWave()
+            loadLeadsWave(),
+            loadRecentActivity()
         ]);
     } catch (error) {
         console.error('Error loading dashboard:', error);
@@ -374,6 +375,13 @@ async function loadStats() {
         if (activeDealsEl) activeDealsEl.textContent = activeDeals;
         if (pipelineValueEl) pipelineValueEl.textContent = formatCurrency(pipelineValue);
         if (convertedLeadsEl) convertedLeadsEl.textContent = stats.converted ?? 0;
+
+        // These stages were already on the wire and only ever collapsed into
+        // the two chips above — the page showed where LEADS were but never
+        // where the DEALS sat. Rendered from the payload in hand rather than
+        // re-fetching /dashboard/pipeline-summary, which returns this same
+        // object for the only pipeline that exists.
+        renderDealPipelineChart(stages);
     } catch (error) {
         console.error('Error loading stats:', error);
         document.getElementById('totalLeads').textContent = '0';
@@ -604,6 +612,109 @@ function renderPipelineChart(breakdown, totalLeads) {
     )).join('');
     const totalEl = document.getElementById('funnelTotal');
     if (totalEl) totalEl.textContent = total + ' leads';
+}
+
+// Deal pipeline — one bar per stage, sized by VALUE rather than count, because
+// "six deals in Negotiation" says much less than "₹25.5L sitting in
+// Negotiation". Count rides along in the label.
+function renderDealPipelineChart(stages) {
+    const el = document.getElementById('chartDealPipeline');
+    if (!el) return;
+    const rows = (stages || []).filter(s => (s.deal_count || 0) > 0);
+    if (!rows.length) {
+        el.innerHTML = '<div class="pulse-empty">No deals yet — qualify a lead to open one.</div>';
+        const note = document.getElementById('dealPipelineTotal');
+        if (note) note.textContent = '';
+        return;
+    }
+    rows.sort((a, b) => (a.stage_order || 0) - (b.stage_order || 0));
+    const max = Math.max(...rows.map(s => parseFloat(s.total_value) || 0));
+    const STAGE_COLOR = {
+        won: 'var(--color-success, #2ea043)',
+        lost: 'var(--color-error, #f85149)',
+        open: 'var(--brand-primary)'
+    };
+    el.innerHTML = rows.map(s => {
+        const value = parseFloat(s.total_value) || 0;
+        const width = max > 0 ? Math.max((value / max) * 100, 2) : 2;
+        const color = STAGE_COLOR[String(s.stage_type || 'open').toLowerCase()] || STAGE_COLOR.open;
+        const label = `${s.stage_name} · ${s.deal_count}`;
+        return `<div class="pbar">
+            <span class="lbl" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+            <span class="track"><span class="fill" style="width:${width}%;background:${color}"></span></span>
+            <span class="cnt">${escapeHtml(formatCurrency(value))}</span>
+        </div>`;
+    }).join('');
+
+    // "Open" excludes won and lost — the number a manager actually forecasts on.
+    const openValue = rows
+        .filter(s => String(s.stage_type || 'open').toLowerCase() === 'open')
+        .reduce((sum, s) => sum + (parseFloat(s.total_value) || 0), 0);
+    const note = document.getElementById('dealPipelineTotal');
+    if (note) note.textContent = `${formatCurrency(openValue)} open`;
+}
+
+// Recent activity — GET /api/Activities/recent. Backend already scopes this to
+// what the caller may see, so nothing is filtered here.
+const ACTIVITY_ICON = {
+    call: '📞', email: '✉️', meeting: '📅', note: '📝', whatsapp: '💬', task: '✅'
+};
+
+async function loadRecentActivity() {
+    const el = document.getElementById('recentActivityList');
+    if (!el) return;
+    try {
+        const res = await api.request('/crm/activities/recent?limit=12');
+        const items = Array.isArray(res) ? res : (res?.items || []);
+        const note = document.getElementById('recentActivityNote');
+
+        if (!items.length) {
+            el.innerHTML = '<div class="pulse-empty">Nothing logged yet. Calls, emails and meetings show up here as your team works.</div>';
+            if (note) note.textContent = '';
+            return;
+        }
+        if (note) note.textContent = `last ${items.length}`;
+
+        el.innerHTML = items.map(a => {
+            const type = String(a.activity_type || '').toLowerCase();
+            const icon = ACTIVITY_ICON[type] || '•';
+            const title = a.subject || `${capitalizeFirst(type || 'activity')} logged`;
+            const when = timeAgo(a.performed_at || a.created_at);
+            // Links to the owning record — a feed you cannot act from is a
+            // feed you stop reading.
+            const href = a.entity_type === 'lead' ? `leads.html?lead=${encodeURIComponent(a.entity_id)}`
+                       : a.entity_type === 'deal' ? `deals.html?deal=${encodeURIComponent(a.entity_id)}`
+                       : a.entity_type === 'contact' ? `contacts.html?contact=${encodeURIComponent(a.entity_id)}`
+                       : null;
+            const body = `
+                <span class="ra-icon">${icon}</span>
+                <span class="ra-text">
+                    <span class="ra-title">${escapeHtml(title)}</span>
+                    <span class="ra-meta">${escapeHtml(capitalizeFirst(a.entity_type || ''))} · ${escapeHtml(when)}</span>
+                </span>`;
+            return href
+                ? `<a class="ra-row" href="${href}">${body}</a>`
+                : `<div class="ra-row">${body}</div>`;
+        }).join('');
+    } catch (e) {
+        console.error('Failed to load recent activity:', e);
+        el.innerHTML = '<div class="pulse-empty">Could not load recent activity.</div>';
+    }
+}
+
+// Relative time for the activity feed. Kept local so the feed does not depend
+// on a helper defined in another page's script.
+function timeAgo(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    const mins = Math.round((Date.now() - d.getTime()) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.round(hrs / 24);
+    if (days < 30) return `${days}d ago`;
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function renderConversionFooter(data) {

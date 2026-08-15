@@ -515,7 +515,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // the table state was ready and got the user logged out.
     applyDeepLinkFilters();
     loadLeads().then(() => {
-        const openId = sessionStorage.getItem('crm_openLeadId');
+        // ?lead=<id> is accepted as an equivalent source. It is read HERE,
+        // inside the post-loadLeads callback, and not in applyDeepLinkFilters
+        // — that is what avoids the race the comment above describes. Links
+        // from the dashboard activity feed and the related-records panels use
+        // the URL form because a plain <a href> is a real, copyable link.
+        const openId = sessionStorage.getItem('crm_openLeadId')
+            || new URLSearchParams(window.location.search).get('lead');
         if (openId && typeof window.openLeadDetailPanel === 'function') {
             sessionStorage.removeItem('crm_openLeadId');
             try { window.openLeadDetailPanel(decodeURIComponent(openId)); }

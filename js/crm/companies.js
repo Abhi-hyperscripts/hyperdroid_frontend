@@ -112,7 +112,7 @@ function renderCompanies() {
                         <div style="width: 32px; height: 32px; border-radius: var(--border-radius-sm); background: var(--brand-secondary); color: var(--text-inverse); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; flex-shrink: 0;">
                             ${escapeHtml(initial)}
                         </div>
-                        <span style="font-weight: 500;">${escapeHtml(company.company_name)}</span>
+                        <button type="button" class="company-name-link" onclick="openCompanyDetailPanel('${company.id}')">${escapeHtml(company.company_name)}</button>
                     </div>
                 </td>
                 <td>${company.industry ? `<span class="badge badge-neutral">${escapeHtml(company.industry)}</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
@@ -374,3 +374,72 @@ function showLoading(show) {
         loadingEl.style.display = 'none';
     }
 }
+
+// ─── Company detail panel ───────────────────────────────────────────────────
+//
+// Companies were a table and nothing more: you could edit a row or delete it,
+// but not answer "who do we know here, and what is in play". Both rollups
+// existed on the backend the whole time —
+//   GET /api/Companies/{id}/contacts
+//   GET /api/Companies/{id}/deals
+// — with no caller anywhere in the app. This panel is their surface, plus the
+// notes panel so a company can carry context of its own.
+
+function openCompanyDetailPanel(companyId) {
+    document.getElementById('companyDetailOverlay').classList.add('active');
+    document.getElementById('companyDetailPanel').classList.add('active');
+
+    const company = companies.find(c => c.id === companyId);
+    document.getElementById('companyDetailName').textContent =
+        company?.company_name || 'Company';
+
+    const esc = escapeHtml;
+    const field = (label, value, html) => value
+        ? `<div class="lead-detail-item"><span class="lead-detail-label">${label}</span><span>${html || esc(value)}</span></div>`
+        : '';
+
+    const info = document.getElementById('companyDetailInfo');
+    if (company) {
+        const site = company.website
+            ? `<a href="${esc(company.website)}" target="_blank" rel="noopener" style="color:var(--brand-primary);">${esc(truncateUrl(company.website))}</a>`
+            : null;
+        info.innerHTML = `
+            <div class="lead-detail-grid">
+                ${field('Industry', company.industry)}
+                ${field('Website', company.website, site)}
+                ${field('Phone', company.phone, company.phone ? crmPhoneLink(company.phone) : null)}
+                ${field('Email', company.email)}
+                ${field('Location', buildLocation(company.city, company.state, company.country))}
+                ${field('Status', company.status, renderCompanyStatus(company.status))}
+                ${field('Employees', company.employee_count ? String(company.employee_count) : null)}
+                ${field('Created', company.created_at ? formatDate(company.created_at) : null)}
+            </div>`;
+    } else {
+        // Opened before the list finished loading, or from a stale row.
+        info.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;">Company details unavailable — reload the page.</p>';
+    }
+
+    if (typeof RelatedPanel !== 'undefined') {
+        RelatedPanel.mount(document.getElementById('companyRelatedPanel'), [
+            { key: 'contacts', label: 'Contacts', shape: 'contacts',
+              url: `/crm/companies/${companyId}/contacts` },
+            { key: 'deals', label: 'Deals', shape: 'deals',
+              url: `/crm/companies/${companyId}/deals` }
+        ]);
+    }
+    if (typeof NotesPanel !== 'undefined') {
+        NotesPanel.mount(document.getElementById('companyNotesPanel'), 'company', companyId);
+    }
+}
+
+function closeCompanyDetailPanel() {
+    document.getElementById('companyDetailOverlay').classList.remove('active');
+    document.getElementById('companyDetailPanel').classList.remove('active');
+}
+
+// Esc closes the panel, matching every other slide-panel in the CRM.
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const panel = document.getElementById('companyDetailPanel');
+    if (panel && panel.classList.contains('active')) closeCompanyDetailPanel();
+});

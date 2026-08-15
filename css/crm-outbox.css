@@ -1,0 +1,273 @@
+/* ============================================================================
+   Email outbox — Settings → Mailboxes
+   Sent mail with expandable reply threads. Loaded only by settings.html.
+   ========================================================================= */
+
+.obx {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.obx-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.obx-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.obx-sub {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+.obx-head-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.obx-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── The list ─────────────────────────────────────────────────────────── */
+.obx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.obx-row {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+.obx-row:hover { border-color: var(--brand-primary); }
+.obx-row.has-replies { border-left: 3px solid var(--color-success, #2ea043); }
+
+/* The whole row is the disclosure control, so it must reset button styling
+   rather than inherit the theme's button chrome. */
+.obx-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 14px;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.obx-row-main:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: -2px;
+}
+
+.obx-row-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.obx-to {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.obx-subject {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+.obx-preview {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.obx-when {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+.obx-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.obx-chip-sent {
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+.obx-chip-replied {
+  color: var(--color-success, #2ea043);
+  border-color: color-mix(in srgb, var(--color-success, #2ea043) 45%, transparent);
+  background: color-mix(in srgb, var(--color-success, #2ea043) 12%, transparent);
+}
+.obx-chip-bounced {
+  color: var(--color-error, #f85149);
+  border-color: color-mix(in srgb, var(--color-error, #f85149) 45%, transparent);
+  background: color-mix(in srgb, var(--color-error, #f85149) 12%, transparent);
+}
+.obx-chip-pending {
+  color: var(--color-warning, #d29922);
+  border-color: color-mix(in srgb, var(--color-warning, #d29922) 45%, transparent);
+  background: color-mix(in srgb, var(--color-warning, #d29922) 12%, transparent);
+}
+
+.obx-replies {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--brand-primary);
+}
+
+/* ── Reply thread ─────────────────────────────────────────────────────── */
+.obx-thread {
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  padding: 10px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.obx-thread[hidden] { display: none; }
+
+.obx-reply {
+  border-left: 2px solid var(--brand-primary);
+  padding-left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.obx-reply-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+.obx-reply-when {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.obx-reply-subject {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.obx-reply-body {
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.obx-thread-foot {
+  display: flex;
+  justify-content: flex-end;
+}
+.obx-probe { margin-left: 8px; }
+
+/* ── States ───────────────────────────────────────────────────────────── */
+.obx-empty,
+.obx-loading {
+  margin: 0;
+  padding: 18px 14px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.55;
+}
+.obx-empty-thread {
+  padding: 8px 0;
+  text-align: left;
+}
+.obx-list > .obx-empty,
+.obx-list > .obx-loading {
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+}
+
+.obx-foot {
+  display: flex;
+  justify-content: center;
+}
+.obx-foot button[hidden] { display: none; }
+
+/* ── Expandable helper panel ─────────────────────────────────────────────
+   Duplicated from crm-notes.css — page stylesheets in this app are
+   self-contained, and settings.html does not load that file.
+   ──────────────────────────────────────────────────────────────────────── */
+.crm-help {
+  flex: 0 0 auto;
+  margin: 0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.crm-help > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  list-style: none;
+  user-select: none;
+}
+.crm-help > summary::-webkit-details-marker { display: none; }
+.crm-help > summary:hover { color: var(--text-primary); }
+.crm-help > summary svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  color: var(--brand-primary);
+}
+.crm-help > summary:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: -2px;
+}
+.crm-help-body {
+  padding: 0 14px 12px 36px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.crm-help-body p { margin: 0; }
+
+@media (max-width: 640px) {
+  .obx-head { flex-direction: column; align-items: stretch; }
+  .obx-head-right { justify-content: space-between; }
+}

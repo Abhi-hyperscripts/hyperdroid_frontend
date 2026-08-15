@@ -28,7 +28,107 @@
     }
 
     // ── Open / Close ──
+    // ── Saved mappings + history ──────────────────────────────────────
+    // GET /configs, PUT /configs/{id}, DELETE /configs/{id} and GET /history
+    // were all served and none had a screen. A mapping could be created (the
+    // checkbox on the last step) and then never renamed, removed or listed.
+    async function loadImportLibrary() {
+        const cfgEl = document.getElementById('importSavedConfigs');
+        const histEl = document.getElementById('importHistoryList');
+        const countEl = document.getElementById('importLibraryCount');
+        if (!cfgEl || !histEl) return;
+
+        cfgEl.innerHTML = '<p class="imp-lib-empty">Loading…</p>';
+        histEl.innerHTML = '<p class="imp-lib-empty">Loading…</p>';
+
+        const [configs, history] = await Promise.all([
+            apiGet('/leads/import/configs').catch(() => []),
+            apiGet('/leads/import/history').catch(() => [])
+        ]);
+        const cfgs = Array.isArray(configs) ? configs : [];
+        const hist = Array.isArray(history) ? history : [];
+        if (countEl) countEl.textContent = `${cfgs.length} saved · ${hist.length} imports`;
+
+        cfgEl.innerHTML = cfgs.length ? cfgs.map(c => `
+            <div class="imp-lib-row" data-config-id="${esc(c.id)}">
+                <div class="imp-lib-row-text">
+                    <div class="imp-lib-row-title">${esc(c.config_name)}</div>
+                    <div class="imp-lib-row-meta">
+                        ${c.use_count || 0} use${(c.use_count || 0) === 1 ? '' : 's'}
+                        ${c.last_used_at ? ' · last used ' + esc(shortDate(c.last_used_at)) : ''}
+                        ${Array.isArray(c.source_headers) ? ' · ' + c.source_headers.length + ' columns' : ''}
+                    </div>
+                </div>
+                <div class="imp-lib-row-actions">
+                    <button type="button" class="imp-lib-act" data-imp="rename" data-id="${esc(c.id)}" title="Rename">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button type="button" class="imp-lib-act imp-lib-act-danger" data-imp="delete" data-id="${esc(c.id)}" title="Delete mapping">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            </div>`).join('')
+            : '<p class="imp-lib-empty">No saved mappings yet.</p>';
+
+        histEl.innerHTML = hist.length ? hist.slice(0, 12).map(h => {
+            const failed = h.status === 'failed';
+            return `
+            <div class="imp-lib-row${failed ? ' is-failed' : ''}">
+                <div class="imp-lib-row-text">
+                    <div class="imp-lib-row-title">${esc(h.file_name)}</div>
+                    <div class="imp-lib-row-meta">
+                        <strong>${h.imported_count ?? 0}</strong> imported
+                        · ${h.duplicate_count ?? 0} duplicate${(h.duplicate_count ?? 0) === 1 ? '' : 's'}
+                        · ${h.error_count ?? 0} error${(h.error_count ?? 0) === 1 ? '' : 's'}
+                        of ${h.total_rows ?? 0} rows
+                        ${h.created_at ? ' · ' + esc(shortDate(h.created_at)) : ''}
+                    </div>
+                </div>
+                <span class="imp-lib-status imp-lib-status-${esc(h.status || 'pending')}">${esc(h.status || 'pending')}</span>
+            </div>`;
+        }).join('')
+            : '<p class="imp-lib-empty">Nothing imported yet.</p>';
+    }
+
+    function shortDate(iso) {
+        const d = new Date(iso);
+        return isNaN(d) ? '' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    async function renameConfig(id) {
+        const row = document.querySelector(`[data-config-id="${CSS.escape(id)}"] .imp-lib-row-title`);
+        const current = row ? row.textContent.trim() : '';
+        const name = await showPrompt('New name for this mapping', current, 'Rename mapping');
+        if (!name || !name.trim() || name.trim() === current) return;
+        try {
+            await api.request(`/crm/leads/import/configs/${encodeURIComponent(id)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ config_name: name.trim() })
+            });
+            Toast.success('Mapping renamed');
+            loadImportLibrary();
+        } catch (e) {
+            Toast.error(e.message || 'Could not rename the mapping');
+        }
+    }
+
+    async function deleteConfig(id) {
+        const ok = await showConfirm(
+            'Delete this saved mapping? Imports already run with it are unaffected.',
+            'Delete mapping', 'danger');
+        if (!ok) return;
+        try {
+            await api.request(`/crm/leads/import/configs/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            Toast.success('Mapping deleted');
+            loadImportLibrary();
+        } catch (e) {
+            Toast.error(e.message || 'Could not delete the mapping');
+        }
+    }
+
     function openImportWizard() {
+        loadImportLibrary();
         _currentStep = 1;
         _uploadResult = null;
         _selectedConfigId = null;
@@ -555,6 +655,14 @@
     window.closeImportWizard = closeImportWizard;
     window.importGoNext = importGoNext;
     window.importGoBack = importGoBack;
+    document.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-imp]');
+        if (!b) return;
+        const id = b.getAttribute('data-id');
+        if (b.getAttribute('data-imp') === 'rename') renameConfig(id);
+        else if (b.getAttribute('data-imp') === 'delete') deleteConfig(id);
+    });
+
     window.importSelectConfig = importSelectConfig;
     window.importUseNewMapping = importUseNewMapping;
     window.clearImportFile = clearImportFile;

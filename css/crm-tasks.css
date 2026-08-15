@@ -1,0 +1,622 @@
+/* ============================================================================
+   CRM — Tasks
+   ----------------------------------------------------------------------------
+   Self-contained: this page loads crm-tasks.css instead of crm-contacts.css, so
+   the shell classes are defined here rather than inherited. Visual language and
+   tokens deliberately match the rest of the CRM (glass surface over the page
+   gradient, Bricolage display face for the H1, theme variables throughout) so
+   the page reads as part of the product and not as a bolt-on.
+
+   Every colour comes from a theme variable — no hex literals — so both themes
+   resolve as a set.
+   ============================================================================ */
+
+body.crm-tasks-page {
+  --tsk-glass: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  --tsk-glass-dense: color-mix(in srgb, var(--bg-card) 93%, transparent);
+  --tsk-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  /* One height for every control in the toolbar. The tabs, the status dropdown
+     and the search box are three different components; without this they render
+     at 42 / 32 / 38px on four different baselines and the strip looks ragged. */
+  --tsk-ctl-h: 40px;
+  /* clear the fixed 78px rail and the 52px top navbar */
+  padding-left: 78px;
+  padding-top: 52px;
+}
+@media (max-width: 1023px) {
+  body.crm-tasks-page { padding-left: 0; padding-top: 0; }
+}
+
+/* ── Icon rail ─────────────────────────────────────────────────────────
+   Lifted verbatim from crm-contacts.css and re-scoped to this page. The rail
+   markup lives in every CRM page but its styles are duplicated per page
+   stylesheet, so a new page that ships without them renders the rail as a
+   column of full-size SVGs and pushes the content off screen.
+   ──────────────────────────────────────────────────────────────────────── */
+body.crm-tasks-page nav.pulse-rail { display: none; }
+/* glass icon rail */
+body.crm-tasks-page nav.pulse-rail {
+  position: fixed !important;
+  left: 0; top: 52px; bottom: 0;
+  width: 78px;
+  border-right: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+body.crm-tasks-page .rail-item {
+  width: 60px; padding: 8px 0 6px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; color: var(--text-muted); text-align: center;
+}
+body.crm-tasks-page .rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+body.crm-tasks-page .rail-item .ric svg { width: 18px; height: 18px; }
+body.crm-tasks-page .rail-item span { font-size: 9px; letter-spacing: 0.02em; }
+body.crm-tasks-page .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+/* Tasks accent — the rail icon colour for this page, matching the violet used
+   on the Tasks item itself rather than the pink inherited from Contacts. */
+body.crm-tasks-page .rail-item.active { background: color-mix(in srgb, #A78BFA 15%, transparent); color: #A78BFA; }
+@media (max-width: 1023px) {
+  body.crm-tasks-page nav.pulse-rail { display: none; }
+}
+@media (max-width: 1023px) {
+  nav.pulse-rail { display: none !important; }
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.rlx-header {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px 30px 0;
+  position: relative;
+  /* styles.css flattens EVERY direct child of body.dashboard to z-index:1 with a
+     long :not() chain that exempts only the overlay classes. The header and the
+     card grid therefore tie, DOM order decides, and the status dropdown opens
+     *behind* the cards — four of its five options become unclickable while the
+     control still looks fine. That selector's specificity cannot be beaten by a
+     class, so this is one of the few places !important is the honest fix. */
+  z-index: 900 !important;
+}
+.rlx-header-inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.rlx-title-block { min-width: 0; }
+.rlx-title {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.rlx-sub {
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.85em;
+}
+
+/* ── Expandable helper panel (page + modal) ──────────────────────────── */
+.crm-help {
+  /* Inside the modal's flex column a <details> gets compressed below its own
+     content height, and overflow:hidden then clips the copy mid-sentence. */
+  flex: 0 0 auto;
+  margin: 16px 0 0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.crm-help > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  list-style: none;
+  user-select: none;
+}
+.crm-help > summary::-webkit-details-marker { display: none; }
+.crm-help > summary:hover { color: var(--text-primary); }
+.crm-help > summary svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  color: var(--brand-primary);
+}
+.crm-help > summary:focus-visible {
+  outline: 2px solid var(--border-color-focus, var(--brand-primary));
+  outline-offset: -2px;
+}
+.crm-help-body {
+  padding: 0 14px 12px 36px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.crm-help-body p { margin: 0; }
+.crm-help-body strong { color: var(--text-primary); font-weight: 600; }
+.crm-help-body em { color: var(--text-muted); }
+.crm-help-sm { margin: 0 0 18px; }
+
+/* ── Toolbar: tabs + filters ─────────────────────────────────────────── */
+.tsk-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.tsk-toolbar > .tsk-filters { flex: 1 1 auto; justify-content: flex-end; }
+.tsk-tabs {
+  display: inline-flex;
+  align-items: center;
+  height: var(--tsk-ctl-h);
+  gap: 2px;
+  padding: 3px;
+  background: var(--tsk-glass);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+.tsk-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  height: 100%;
+  padding: 0 16px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.tsk-tab:hover { color: var(--text-primary); }
+.tsk-tab.active {
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+}
+.tsk-tab:focus-visible {
+  outline: 2px solid var(--border-color-focus, var(--brand-primary));
+  outline-offset: 2px;
+}
+
+.tsk-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;   /* status, search and count read as one control strip */
+  min-width: 0;
+}
+.tsk-field { display: flex; align-items: center; }
+/* Visually hidden: the control already reads "Any status", so the label added
+   height above one item only and knocked the row off a common baseline. */
+.tsk-field > label {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.tsk-field select { min-width: 160px; }
+.tsk-field .searchable-dropdown-container,
+.tsk-field .searchable-dropdown { min-width: 168px; }
+.tsk-field .searchable-dropdown-trigger {
+  height: var(--tsk-ctl-h);
+  display: flex;
+  align-items: center;
+}
+
+.rlx-search { position: relative; min-width: 180px; flex: 1 1 320px; }
+.rlx-search svg {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.rlx-search input {
+  width: 100%;
+  height: var(--tsk-ctl-h);
+  padding: 0 14px 0 38px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--tsk-glass);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+.rlx-search input:focus {
+  outline: none;
+  border-color: var(--border-color-focus, var(--brand-primary));
+}
+.rlx-search input::placeholder { color: var(--text-muted); }
+
+.tsk-count {
+  font-family: var(--font-family-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  height: var(--tsk-ctl-h);
+}
+
+/* ── Grid + cards ────────────────────────────────────────────────────── */
+.rlx-wrap {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 22px 30px 60px;
+  position: relative;
+  z-index: 1;   /* the value styles.css forces anyway; stated so the pairing with
+                   the header's 900 above is visible in one place */
+}
+/* ═══ The queue ══════════════════════════════════════════════════════════════
+   Tasks were a 4-across grid of 220px cards. A backlog is SCANNED, not
+   browsed: thirty cards meant three screens of scrolling and thirty separate
+   ageing figures scattered across four columns with nothing to compare them
+   against. As rows the same thirty fit in a third of the scroll, and every
+   figure lands in one right-hand column so the list reads as a ranked queue.
+
+   Same arrears-ledger language as My Day: priority is a lit dot, the day count
+   is the figure, and the ageing gauge doubles as the row divider.
+   ────────────────────────────────────────────────────────────────────────── */
+.tsk-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--tsk-line);
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--bg-card) 62%, transparent),
+      color-mix(in srgb, var(--bg-card) 38%, transparent));
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
+    0 1px 2px color-mix(in srgb, #000 30%, transparent),
+    0 18px 40px -20px color-mix(in srgb, #000 60%, transparent);
+}
+
+.tsk-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 14px;
+  padding: 12px 16px 13px;
+  transition: background 0.15s ease;
+}
+/* Each row is lit from its left edge by its own urgency. Across a full queue
+   this reads as a heat gradient down the list — where the trouble is, before
+   any figure is read. */
+.tsk-row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+              color-mix(in srgb, var(--tsk-edge, transparent) 13%, transparent),
+              transparent 34%);
+}
+.tsk-row:hover { background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+.tsk-row:hover::before {
+  background: linear-gradient(90deg,
+              color-mix(in srgb, var(--tsk-edge, transparent) 22%, transparent),
+              transparent 40%);
+}
+
+.tsk-row.pri-urgent { --tsk-edge: var(--color-error); }
+.tsk-row.pri-high   { --tsk-edge: var(--color-warning); }
+.tsk-row.pri-medium { --tsk-edge: var(--brand-primary); }
+.tsk-row.pri-low    { --tsk-edge: color-mix(in srgb, var(--text-muted) 55%, transparent); }
+
+/* Ageing ramp — same language as My Day's arrears ledger. Derived from theme
+   tokens (project rule bans hex), which also keeps it right in light mode.
+   These MUST be defined here: an undefined --age makes every color-mix that
+   consumes it invalid, which silently voids the whole gradient declaration and
+   the gauge renders as nothing at all. */
+body.crm-tasks-page {
+  --age-clear: var(--color-success);
+  --age-30:    var(--color-warning);
+  --age-60:    color-mix(in srgb, var(--color-warning) 40%, var(--color-error));
+  --age-90:    var(--color-error);
+}
+.tsk-row[data-age="clear"] { --age: var(--age-clear); }
+.tsk-row[data-age="30"]    { --age: var(--age-30); }
+.tsk-row[data-age="60"]    { --age: var(--age-60); }
+.tsk-row[data-age="90"]    { --age: var(--age-90); }
+
+/* Overdue rows are lit by AGE rather than by the label someone typed. */
+.tsk-row.is-overdue { --tsk-edge: var(--age, var(--color-error)); }
+.tsk-row.is-done { opacity: 0.45; --tsk-edge: transparent; }
+.tsk-row.is-done .tsk-row-title { text-decoration: line-through; }
+
+/* ── priority mark ── */
+.tsk-row-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tsk-pri-c, var(--text-muted));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--tsk-pri-c, transparent) 75%, transparent);
+  position: relative;
+}
+.tsk-row.pri-urgent { --tsk-pri-c: var(--color-error); }
+.tsk-row.pri-high   { --tsk-pri-c: var(--color-warning); }
+.tsk-row.pri-medium { --tsk-pri-c: var(--brand-primary); }
+.tsk-row.pri-low    { --tsk-pri-c: var(--text-muted); }
+
+/* ── title + meta ── */
+.tsk-row-main { min-width: 0; position: relative; }
+.tsk-row-title {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', var(--font-family);
+  font-size: 0.94rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tsk-row-meta {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 7px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-width: 0;
+}
+/* Middot separators drawn by CSS so the markup carries no punctuation. */
+.tsk-row-meta > span + span::before {
+  content: '·';
+  margin-right: 7px;
+  opacity: 0.5;
+}
+.tsk-row-meta > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 26ch;
+}
+/* entity_type arrives as the raw column value ("lead", "deal") — a machine
+   name showing through into the interface. */
+.tsk-row-entity { text-transform: capitalize; }
+.tsk-row-pri {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--tsk-pri-c, var(--text-muted));
+}
+.tsk-row-status {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+.tsk-status-in_progress { color: var(--brand-primary); }
+.tsk-status-completed   { color: var(--color-success); }
+.tsk-status-cancelled   { color: var(--text-muted); }
+
+/* ── the figure ── */
+.tsk-row-age {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 116px;
+}
+.tsk-age-num {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--age, var(--text-primary));
+  /* The figure emits its own light — the one flourish in the row, spent on the
+     single fact the row exists to communicate. */
+  text-shadow: 0 0 20px color-mix(in srgb, var(--age, transparent) 42%, transparent);
+}
+.tsk-age-num em {
+  font-style: normal;
+  font-size: 0.5em;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+  margin-left: 1px;
+}
+.tsk-age-word {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--age, var(--text-secondary)) 70%, var(--text-secondary));
+}
+/* Not overdue: ordinary metadata. Only debt earns the figure, or the emphasis
+   would mean nothing. */
+.tsk-age-due { font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; }
+
+/* ── actions ── */
+.tsk-row-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.tsk-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: color-mix(in srgb, var(--text-muted) 80%, transparent);
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+.tsk-act svg { width: 15px; height: 15px; }
+.tsk-act:hover {
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  color: var(--text-primary);
+}
+.tsk-act:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 1px;
+}
+.tsk-act-done {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 34%, transparent);
+  background: color-mix(in srgb, var(--color-success) 11%, transparent);
+}
+.tsk-act-done:hover {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--text-inverse);
+}
+.tsk-act-del:hover {
+  background: color-mix(in srgb, var(--color-error) 13%, transparent);
+  color: var(--color-error);
+}
+
+/* ── the gauge, doubling as the row divider ──
+   A separate 1px rule plus a gauge was two lines doing one job. The gauge
+   track spans the row's full width and IS the division. */
+.tsk-row-gauge {
+  grid-column: 1 / -1;
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  overflow: hidden;
+}
+.tsk-row-gauge::before {
+  content: '';
+  display: block;
+  height: 100%;
+  width: var(--age-fill, 0%);
+  background: linear-gradient(90deg,
+              color-mix(in srgb, var(--age, var(--age-30)) 40%, transparent),
+              var(--age, var(--age-30)));
+  box-shadow: 0 0 7px color-mix(in srgb, var(--age, transparent) 40%, transparent);
+  transform-origin: left center;
+  animation: tsk-age-fill 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* The last row's track would draw a line hard against the container's bottom
+   edge, inside the radius. Nothing to divide there. */
+.tsk-row:last-child .tsk-row-gauge { background: transparent; }
+@keyframes tsk-age-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tsk-row-gauge::before { animation: none; }
+  .tsk-row { transition: none; }
+}
+
+@media (max-width: 720px) {
+  .tsk-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: 8px;
+  }
+  .tsk-row-age { grid-column: 2 / -1; justify-content: flex-start; min-width: 0; }
+  .tsk-row-actions { grid-row: 1; }
+}
+
+/* ── Empty + loading ─────────────────────────────────────────────────── */
+.rlx-empty {
+  text-align: center;
+  padding: 70px 20px;
+  color: var(--text-secondary);
+}
+.rlx-empty svg { width: 44px; height: 44px; color: var(--text-muted); margin-bottom: 10px; }
+.rlx-empty h3 { margin: 0 0 6px; font-size: 1.05rem; color: var(--text-primary); }
+.rlx-empty p { margin: 0 auto; max-width: 52ch; font-size: 0.9rem; }
+
+.crm-loading { display: none; padding: 60px 0; text-align: center; }
+.crm-loading-spinner {
+  width: 30px;
+  height: 30px;
+  margin: 0 auto;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--brand-primary);
+  border-radius: 50%;
+  animation: tsk-spin 0.8s linear infinite;
+}
+@keyframes tsk-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .crm-loading-spinner { animation-duration: 2.4s; }
+  .tsk-card { transition: none; }
+}
+
+/* ── Modal bits this page adds ───────────────────────────────────────── */
+.crm-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+#taskModal .gm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+}
+/* .crm-form-row is a 2-column grid, so a row holding a single field only fills
+   the first column. Title and Details are full-width fields. */
+#taskModal .crm-form-row--full { grid-template-columns: 1fr; }
+#taskModal .crm-form-group { min-width: 0; }
+#taskModal input[type="text"],
+#taskModal input[type="date"],
+#taskModal textarea { width: 100%; }
+#taskModal textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 72px;
+}
+
+/* ── Narrow ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .rlx-header { padding: 16px 16px 0; }
+  .rlx-wrap { padding: 18px 16px 48px; }
+  .tsk-toolbar { align-items: stretch; }
+  .tsk-tabs { width: 100%; }
+  .tsk-tab { flex: 1; text-align: center; }
+  .tsk-filters { flex-wrap: wrap; }
+  .rlx-search { min-width: 0; flex-basis: 100%; }
+  .tsk-count { padding-bottom: 0; }
+}

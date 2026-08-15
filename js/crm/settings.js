@@ -459,6 +459,11 @@ function switchSettingsTab(tabName) {
         loadMailboxesTab();
         // Phase 3 unified-mailbox picker — loads alongside the legacy mailbox table.
         if (typeof refreshSharedMailboxPicker === 'function') refreshSharedMailboxPicker();
+        // Outbox: sent mail + replies. Mount is idempotent (binds its delegated
+        // listener once per container) so re-entering the tab only refetches.
+        if (typeof EmailOutbox !== 'undefined') {
+            EmailOutbox.mount(document.getElementById('emailOutboxSection'));
+        }
     } else if (tabName === 'templates' && typeof loadTemplatesTab === 'function') {
         loadTemplatesTab();
     } else if (tabName === 'automations' && typeof loadAutomationsTab === 'function') {
@@ -4551,6 +4556,13 @@ function gsBuildRows(connections, sheets) {
         return {
             lead_source_id: s.lead_source_id,
             connection_id: isSa ? 'sa' : s.connection_id,
+            // Carried through for the mapping editor: it re-opens the wizard's
+            // mapping step against this exact sheet, so it needs the id and
+            // the mapping/assignment state the PUT would otherwise overwrite.
+            spreadsheet_id: s.spreadsheet_id,
+            field_mappings: s.field_mappings,
+            auto_assign_user_id: s.auto_assign_user_id ?? null,
+            auto_assign_team_id: s.auto_assign_team_id ?? null,
             spreadsheet_name: s.spreadsheet_name || s.source_name || '(untitled sheet)',
             sheet_tab_name: s.sheet_tab_name || '',
             source_name: s.source_name || '',
@@ -4713,6 +4725,7 @@ function gsRenderTable() {
                         <button class="btn btn-sm btn-primary" onclick="syncGoogleSheetNow('${escapeHtml(r.lead_source_id)}', this)" title="Re-scan sheet from row 1. Already-imported leads stay untouched.">Sync now</button>
                         <button class="btn btn-sm btn-outline" onclick="openGoogleSheetSyncLogs('${escapeHtml(r.lead_source_id)}', '${escapeHtml(r.spreadsheet_name)}', '${escapeHtml(r.sheet_tab_name || '')}')" title="Polling sync history">Logs</button>
                         <button class="btn btn-sm btn-outline" onclick="openActivityLog('/crm/GoogleSheets/sources/${escapeHtml(r.lead_source_id)}/audit-log?limit=200', '${escapeHtml(r.spreadsheet_name)}')" title="Audit trail — who paused / resumed / disconnected, with timestamps">Activity</button>
+                        <button class="btn btn-sm btn-outline" onclick="openGoogleSheetMappingEditor('${escapeHtml(r.lead_source_id)}')" title="Change which sheet column feeds which CRM field. Applies from the next sync.">Mapping</button>
                         <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${escapeHtml(r.lead_source_id)}', ${!r.is_active})">${toggleLabel}</button>
                         <!-- Remove hidden (May 2026): identical DB effect as Pause but
                              confused users into thinking their data was wiped.
@@ -4995,6 +5008,10 @@ function closeGoogleSheetPicker() {
     _gsSelectedTab = null;
     _gsHeaders = [];
     _gsSampleRows = [];
+    // Clear edit mode too, or the next "Connect a sheet" would PUT the new
+    // mapping onto whichever source was last edited instead of connecting.
+    _gsEditSourceId = null;
+    _gsEditMapping = null;
 }
 
 function loadGoogleSpreadsheetsDebounced() {
@@ -5106,12 +5123,21 @@ async function gsReloadPreview() {
     tbody.innerHTML = '<tr><td colspan="4" style="padding:12px; color: var(--text-secondary);">Loading preview…</td></tr>';
     const headerRow = Math.max(1, parseInt(document.getElementById('gsHeaderRow').value || '1', 10));
     try {
-        const res = await api.request(
-            `/crm/GoogleSheets/connections/${_gsSelectedConnectionId}` +
-            `/spreadsheets/${encodeURIComponent(_gsSelectedSpreadsheet.spreadsheet_id)}` +
-            `/tabs/${encodeURIComponent(_gsSelectedTab.name)}` +
-            `/preview?headerRow=${headerRow}`
-        );
+        // Service-account sheets have no OAuth connection row — their preview
+        // lives under a different path. The mapping editor can be opened on
+        // either kind, so the branch has to exist here rather than at the one
+        // call site the connect wizard used.
+        const isSa = _gsSelectedConnectionId === 'sa' || !_gsSelectedConnectionId;
+        const url = isSa
+            ? `/crm/GoogleSheets/service-account` +
+              `/spreadsheets/${encodeURIComponent(_gsSelectedSpreadsheet.spreadsheet_id)}` +
+              `/tabs/${encodeURIComponent(_gsSelectedTab.name)}` +
+              `/preview?headerRow=${headerRow}`
+            : `/crm/GoogleSheets/connections/${_gsSelectedConnectionId}` +
+              `/spreadsheets/${encodeURIComponent(_gsSelectedSpreadsheet.spreadsheet_id)}` +
+              `/tabs/${encodeURIComponent(_gsSelectedTab.name)}` +
+              `/preview?headerRow=${headerRow}`;
+        const res = await api.request(url);
         _gsHeaders = res.headers || [];
         _gsSampleRows = res.sample_rows || [];
         renderGsMappingTable();
@@ -5165,7 +5191,11 @@ function renderGsMappingTable() {
         const letter = gsColLetter(i);
         const header = _gsHeaders[i] || `Column ${letter}`;
         const sample = (_gsSampleRows[0] && _gsSampleRows[0][i]) || '';
-        const guess = gsGuessMapping(header);
+        // In edit mode the sheet already has a mapping — that is the truth,
+        // and the name-guesser must not override it. A user who deliberately
+        // mapped "Contact" → company_name would otherwise have it silently
+        // reset every time they opened the editor.
+        const guess = gsResolveExistingMapping(letter) ?? gsGuessMapping(header);
         tableHtml += `
             <tr>
                 <td><strong>${letter}</strong></td>
@@ -5214,6 +5244,81 @@ function renderGsMappingTable() {
         placeholder: '(none — CRM generates one)',
         compact: true,
     });
+}
+
+// ─── Edit the mapping of an ALREADY-connected sheet ─────────────────────────
+//
+// PUT /api/GoogleSheets/sheets/{sourceId}/mapping existed from the start with
+// no caller. Without it the only way to fix a mapping — after a column is
+// added, renamed or reordered in the sheet — was to walk the whole connect
+// wizard again, re-picking the account, spreadsheet and tab you had already
+// picked. This drops the user straight onto the mapping step for a sheet they
+// have, with their current mapping already selected.
+let _gsEditSourceId = null;      // non-null ⇒ save PUTs instead of connecting
+let _gsEditMapping = null;       // the sheet's current field_mappings
+
+// Returns the mapped value for a column letter in edit mode, or null when we
+// are connecting a new sheet (so the caller falls back to the name-guesser).
+// A `custom:foo` mapping resolves to the __custom__ option; the free-text name
+// is filled in separately once the dropdown exists.
+function gsResolveExistingMapping(letter) {
+    if (!_gsEditMapping) return null;
+    const v = _gsEditMapping[letter];
+    if (v == null) return 'skip';                     // present-but-unmapped is a real answer
+    if (typeof v === 'string' && v.startsWith('custom:')) return '__custom__';
+    return v;
+}
+
+async function openGoogleSheetMappingEditor(sourceId) {
+    const row = (_gsList?.rows || []).find(r => r.lead_source_id === sourceId);
+    if (!row) { Toast.error('Sheet not found — refresh and try again.'); return; }
+
+    let mapping = {};
+    try {
+        mapping = typeof row.field_mappings === 'string'
+            ? JSON.parse(row.field_mappings || '{}')
+            : (row.field_mappings || {});
+    } catch { mapping = {}; }
+
+    _gsEditSourceId = sourceId;
+    _gsEditMapping = mapping;
+    _gsSelectedConnectionId = row.connection_id;
+    _gsSelectedSpreadsheet = { spreadsheet_id: row.spreadsheet_id, name: row.spreadsheet_name };
+    _gsSelectedTab = { name: row.sheet_tab_name, index: 0 };
+
+    document.getElementById('gsSheetPickerModal').classList.add('active');
+    ['gsStageSpreadsheets', 'gsStageTabs'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+    document.getElementById('gsStageMapping').style.display = 'block';
+    document.getElementById('gsModalTitle').textContent = 'Edit column mapping';
+    document.getElementById('gsModalSubtitle').textContent =
+        `${row.spreadsheet_name} › ${row.sheet_tab_name}`;
+    document.getElementById('gsMappingSpreadsheetName').textContent = row.spreadsheet_name;
+    document.getElementById('gsMappingTabName').textContent = row.sheet_tab_name;
+    document.getElementById('gsSaveBtn').style.display = 'inline-flex';
+
+    // The header row is stored inside the mapping itself; honour it so the
+    // preview lines up with what the poller actually reads.
+    const headerRow = Number(mapping._header_row) || 1;
+    document.getElementById('gsHeaderRow').value = headerRow;
+
+    const labelInput = document.getElementById('gsSourceNameInput');
+    if (labelInput) labelInput.value = row.source_name || '';
+
+    await gsReloadPreview();
+    gsFillCustomFieldNames();
+}
+
+// After the dropdowns exist, write the custom field names back into their
+// free-text inputs — the dropdown only knows "__custom__", not "custom:city".
+function gsFillCustomFieldNames() {
+    if (!_gsEditMapping) return;
+    for (const [col, val] of Object.entries(_gsEditMapping)) {
+        if (typeof val !== 'string' || !val.startsWith('custom:')) continue;
+        const input = document.querySelector(`.gs-col-custom-name[data-col="${col}"]`);
+        if (input) { input.value = val.slice('custom:'.length); input.style.display = ''; }
+    }
 }
 
 async function saveGoogleSheetConnection() {
@@ -5273,6 +5378,27 @@ async function saveGoogleSheetConnection() {
     map['_header_row'] = headerRow;
 
     try {
+        if (_gsEditSourceId) {
+            // Editing an existing sheet: the account, spreadsheet and tab are
+            // already settled, so only the mapping moves. Carry the current
+            // auto-assign settings through — this endpoint overwrites them,
+            // and omitting them would silently unassign the source.
+            const existing = (_gsList?.rows || []).find(r => r.lead_source_id === _gsEditSourceId);
+            await api.request(`/crm/GoogleSheets/sheets/${_gsEditSourceId}/mapping`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    field_mappings: JSON.stringify(map),
+                    auto_assign_user_id: existing?.auto_assign_user_id ?? null,
+                    auto_assign_team_id: existing?.auto_assign_team_id ?? null
+                })
+            });
+            Toast.success('Mapping updated. The next sync uses the new columns.');
+            closeGoogleSheetPicker();
+            await loadGoogleSheetsState();
+            return;
+        }
+
         await api.request('/crm/GoogleSheets/sheets/connect', {
             method: 'POST',
             body: JSON.stringify({

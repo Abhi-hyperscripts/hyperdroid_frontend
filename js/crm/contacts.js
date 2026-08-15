@@ -61,6 +61,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load companies first (needed for contact table rendering)
     await loadCompanies();
     await loadContacts();
+
+    // Deep link: ?contact=<id> opens that contact's panel straight away. The
+    // related-records panels on companies link here, and a link that only
+    // lands you on the list is a link that made you search again.
+    const contactId = new URLSearchParams(window.location.search).get('contact');
+    if (contactId) openContactDetailPanel(contactId);
 });
 
 function initSearchableDropdowns() {
@@ -582,6 +588,15 @@ async function openContactDetailPanel(contactId) {
                 <div class="lead-detail-item"><span class="lead-detail-label">Created</span><span>${new Date(contact.created_at).toLocaleString()}</span></div>
             </div>
         `;
+
+        // Deals this contact is on. Mounted before the timeline fetch so it
+        // paints while the (much larger) timeline is still loading.
+        if (typeof RelatedPanel !== 'undefined') {
+            RelatedPanel.mount(document.getElementById('contactRelatedPanel'), [
+                { key: 'deals', label: 'Deals', shape: 'deals',
+                  url: `/crm/contacts/${contactId}/deals` }
+            ]);
+        }
 
         // Load timeline
         const timeline = await api.request(`/crm/contacts/${contactId}/timeline`);
