@@ -270,13 +270,18 @@ body.crm-sequences-page .rail-item.active { background: color-mix(in srgb, var(-
   border: 1px solid var(--sqx-line);
   border-radius: 12px;
 }
-#seqBuilderOverlay .btn-outline {
+/* Outline buttons (Cancel, "+ Add step") — Bootstrap defaults their text to
+   near-black (#212529), invisible on the dark CRM surface. The modal fixed this
+   scoped to #seqBuilderOverlay; the full-page builder needs the same. */
+#seqBuilderOverlay .btn-outline,
+.crm-seqb-page .btn-outline {
   border: 1px solid var(--sqx-line);
   background: transparent;
   color: var(--text-primary);
   border-radius: 8px;
 }
-#seqBuilderOverlay .btn-outline:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+#seqBuilderOverlay .btn-outline:hover,
+.crm-seqb-page .btn-outline:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
 
 @media (max-width: 1023px) {
   body.crm-sequences-page { padding-left: 0; padding-top: 0; }
@@ -286,4 +291,60 @@ body.crm-sequences-page .rail-item.active { background: color-mix(in srgb, var(-
 }
 @media (max-width: 1023px) {
   body.crm-sequences-page nav.pulse-rail { display: none !important; }
+}
+
+/* ══ Full-page sequence builder (sequence-builder.html) ══════════════════════
+   Replaces the old gm-overlay modal. The step-type SearchableDropdown opens in
+   normal page flow now, so nothing sits behind a scrim. */
+.seqb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.8em;
+  font-weight: 500;
+  margin-bottom: 6px;
+  transition: color 0.15s ease;
+}
+.seqb-back:hover { color: var(--brand-primary); }
+.seqb-back svg { width: 14px; height: 14px; }
+
+/* A readable single column, like the invoice / bill editors — not the full
+   1440px list width. */
+.seqb-wrap { max-width: 860px; }
+
+/* The form sits on a light glass panel so it reads as an editor rather than
+   loose fields floating on the page. */
+.seqb-form.seq-builder-body {
+  background: var(--sqx-glass);
+  border: 1px solid var(--sqx-line);
+  border-radius: 14px;
+  padding: 20px 24px 26px;
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+}
+
+/* Sticky action bar — the page equivalent of the modal footer. Stays in view
+   while the form scrolls so Save / Cancel are always reachable. */
+.seqb-actionbar {
+  /* !important: body.dashboard > :not(...) forces position:relative on every
+     body child (for the background-layer z-index) at a specificity no plain
+     selector beats — the codebase's documented reason to reach for !important. */
+  position: sticky !important;
+  bottom: 0;
+  z-index: 30;
+  margin-top: 16px;
+  border-top: 1px solid var(--sqx-line);
+  background: var(--sqx-glass-dense);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+}
+.seqb-actionbar-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }

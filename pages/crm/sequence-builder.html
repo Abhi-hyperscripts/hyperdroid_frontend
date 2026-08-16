@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
-    <title>Sequences - CRM | Ragenaizer</title>
+    <title>Sequence builder - CRM | Ragenaizer</title>
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/sw-update.js"></script>
@@ -19,10 +19,8 @@
           integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/sequences.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-sequences.css?v=' + CACHE_VERSION + '">');</script>
@@ -31,7 +29,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
-<body class="dashboard crm-page crm-sequences-page">
+<body class="dashboard crm-page crm-sequences-page crm-seqb-page">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <nav class="navbar">
         <div class="navbar-brand">
@@ -71,7 +69,7 @@
             <div class="ric" style="color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
             <span>Analytics</span>
         </div>
-        <div class="rail-item active" title="Sequences">
+        <div class="rail-item active" onclick="window.location='sequences.html'" title="Sequences">
             <div class="ric" style="color:#FB923C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
             <span>Sequences</span>
         </div>
@@ -81,66 +79,35 @@
         </div>
     </nav>
 
-    <!-- ══ Hero: title + count + New Sequence ══ -->
-    <header class="sqx-hero">
+    <!-- ══ Page header ══ -->
+    <header class="sqx-hero seqb-hero">
         <div class="sqx-headrow">
             <div>
-                <div class="sqx-id">
-                    <h1>Sequences</h1>
-                    <span class="sqx-count" id="sqxCount">—</span>
-                </div>
-                <p class="sqx-sub">Multi-step cadences that auto-fire emails, WhatsApp templates, call tasks, and status flips for the leads you enroll.</p>
+                <a href="sequences.html" class="seqb-back">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Sequences
+                </a>
+                <h1 id="seqbTitle">New sequence</h1>
+                <p class="sqx-sub">Give the cadence a name, set when a lead should drop out, and add the ordered steps that fire automatically.</p>
             </div>
-            <button class="btn btn-primary" id="btnNewSequence" onclick="openSequenceBuilder()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                New Sequence
-            </button>
         </div>
     </header>
 
-    <div class="sqx-wrap">
-
-        <!-- Helper "What is this?" — collapsible per the helper-text rule -->
-        <details class="seq-helper">
-            <summary>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                </svg>
-                What is a sequence?
-            </summary>
-            <div class="seq-helper-body">
-                <p>A <strong>sequence</strong> is a pre-scripted, multi-day series of touchpoints that the CRM auto-fires for any lead you enroll. Think of it as a recipe you apply, and the system handles the timing.</p>
-                <p><strong>Example:</strong> "SaaS Founder Outreach" might be Day 0 email → Day 2 call task → Day 4 WhatsApp template → Day 7 follow-up email. You enroll 50 leads on Monday — the rep doesn't have to remember anything; tasks land in their queue at the right time.</p>
-                <p><strong>The smart bit:</strong> if the lead <em>replies</em> to your email, <em>messages you on WhatsApp</em>, or you <em>change their status</em> (e.g. they got qualified), the sequence automatically stops for that lead — so you don't keep hammering someone who already engaged.</p>
-                <p><strong>What you can do here:</strong></p>
-                <ul>
-                    <li>Click <strong>New Sequence</strong> to design a cadence</li>
-                    <li>Activate or pause sequences without deleting them</li>
-                    <li>Enroll leads from the lead detail panel or the leads list (multi-select)</li>
-                    <li>Watch progress on each lead's timeline as steps fire</li>
-                </ul>
-            </div>
-        </details>
-
-        <!-- List -->
-        <div id="seqEmptyState" class="seq-empty" style="display:none;">
-            <div class="seq-empty-icon">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/>
-                </svg>
-            </div>
-            <h3>No sequences yet</h3>
-            <p>Create your first cadence to start putting follow-ups on autopilot.</p>
-            <button class="btn btn-primary" onclick="openSequenceBuilder()">+ Create your first sequence</button>
-        </div>
-
-        <div id="seqList" class="sqx-grid"></div>
+    <!-- The builder form is rendered here by sequence-builder.js.
+         Reuses the .seq-builder-body form styles from sequences.css; no modal,
+         so the step-type dropdown opens in normal page flow with nothing to sit
+         behind. -->
+    <div class="sqx-wrap seqb-wrap">
+        <div id="seqBuilderRoot" class="seq-builder-body seqb-form"></div>
     </div>
 
-    <!-- The builder is now the full page sequence-builder.html; no modal here. -->
+    <!-- Sticky action bar — the page equivalent of the modal footer -->
+    <div class="seqb-actionbar" id="seqbActionbar">
+        <div class="seqb-actionbar-inner">
+            <button class="btn btn-outline" onclick="window.location='sequences.html'">Cancel</button>
+            <button class="btn btn-primary" id="seqbSaveBtn">Create sequence</button>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -148,6 +115,6 @@
     <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
-    <script>document.write('<script src="../../js/crm/sequences.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/crm/sequence-builder.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </body>
 </html>
