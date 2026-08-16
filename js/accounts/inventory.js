@@ -1749,9 +1749,18 @@ function parseCsv(text) {
 // those files over a header name would defeat the point of the importer.
 const IMP_ALIASES = {
     sku:            ['sku', 'item code', 'itemcode', 'code', 'product code', 'alias'],
-    name:           ['name', 'item name', 'product name', 'particulars', 'description'],
+    // ⚠️ 'description' was an alias of NAME (Tally-style, where the item name column is headed
+    // "Description"). It is not one any more, because `description` is now a real column of its own and
+    // mapping it to the invoice name would put a paragraph of storefront copy on every invoice line —
+    // wrong far more often than the Tally case it served. Tally's own headers, 'particulars' and
+    // 'item name', are both still aliased, so that file still imports.
+    name:           ['name', 'item name', 'product name', 'particulars'],
     barcode:        ['barcode', 'ean', 'upc', 'bar code'],
     category:       ['category', 'group', 'item group', 'stock group'],
+    // Storefront presentation. Several image URLs go in one cell separated by a pipe.
+    description:    ['description', 'product description', 'long description', 'details', 'about'],
+    image_urls:     ['image_urls', 'image url', 'image urls', 'images', 'image', 'photo', 'photos',
+                     'image link', 'product image', 'product images'],
     // Merchandising (2026-08). The backend template ADVERTISES these four columns and the importer READS
     // them — so they must be mapped here or a filled-in brand column is discarded before it ever leaves
     // the browser. That is exactly the `mrp` trap the backend importer documents: a template that invites
@@ -1801,6 +1810,18 @@ function mapHeaders(headerRow) {
             if (map[field] === undefined && aliases.includes(n)) { map[field] = idx; used.add(idx); return; }
         }
     });
+    // ⭐ LAST-RESORT FALLBACK: a file with a "Description" column and NO name column at all.
+    //
+    // That is the Tally/Busy shape, where the item-name column is headed "Description" — and it used to
+    // work, because 'description' was an alias of `name`. Now that `description` is a real column of its
+    // own, the plain mapping above sends it to the storefront copy field and leaves the file with no name,
+    // so EVERY row fails on "No item name". Both readings cannot be right, but only one of them imports:
+    // an item must have a name, and it need not have a description. So when nothing else supplies a name,
+    // the description column is read as one.
+    if (map.name === undefined && map.description !== undefined) {
+        map.name = map.description;
+        delete map.description;
+    }
     // Columns we did not recognise are REPORTED, never silently dropped — otherwise a
     // mis-named price column looks like a successful import of items with no price.
     const ignored = headerRow.map((h, i) => used.has(i) ? null : (h || '').trim()).filter(h => h);
@@ -1909,7 +1930,12 @@ async function pickImportFile(input, kind) {
             sale_price: _impNum(cell(r, 'sale_price')), purchase_price: _impNum(cell(r, 'purchase_price')),
             mrp: _impNum(cell(r, 'mrp')), reorder_level: _impNum(cell(r, 'reorder_level')),
             tracking_mode: _impStr(cell(r, 'tracking_mode')),
-            price_includes_tax: _impBool(cell(r, 'price_includes_tax'))
+            price_includes_tax: _impBool(cell(r, 'price_includes_tax')),
+            // Storefront presentation. The backend template advertises both and BuildItemRequest reads
+            // them, so they must be mapped here or a filled-in image column is discarded in the browser
+            // and the import reports a success that shipped an imageless catalogue.
+            description: _impStr(cell(r, 'description')),
+            image_urls: _impStr(cell(r, 'image_urls'))
         } : {
             row_number: i + 2,
             sku: _impStr(cell(r, 'sku')),
