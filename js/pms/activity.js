@@ -267,5 +267,11 @@ function escapeHtml(str) {
     if (!str) return '';
     const div = document.createElement('div');
     div.textContent = str;
-    return div.innerHTML;
+    // Quote-safe. Serialising a TEXT node to innerHTML escapes & < > and
+    // nothing else, so a value containing a double quote used to break
+    // straight out of any quoted HTML attribute it was interpolated into
+    // — and lead names, company names and WhatsApp display names all
+    // arrive from outside. Over-escaping is free in text context, where
+    // &quot; renders as a plain quote.
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

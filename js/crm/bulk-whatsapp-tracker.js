@@ -74,6 +74,23 @@
             .replace(/'/g, '&#39;');
     }
 
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escJsAttr(s) {
+        return esc(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
+    }
+
     // ─── State + persistence ─────────────────────────────────────
 
     /** In-memory state: { [batchId]: { batchId, expanded, lastPoll, pollHandle, autoDismissHandle, dismissed } } */
@@ -171,7 +188,7 @@
         el.className = `bulk-wa-chip ${chipClass} ${chip.expanded ? 'is-expanded' : ''}`;
 
         const headerHtml = `
-            <div class="bulk-wa-chip-head" onclick="bulkWaToggle('${esc(chip.batchId)}')">
+            <div class="bulk-wa-chip-head" onclick="bulkWaToggle('${escJsAttr(chip.batchId)}')">
                 <div class="bulk-wa-chip-icon" aria-hidden="true">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M20.52 3.48A11.94 11.94 0 0 0 12.02 0C5.4 0 .07 5.35.07 11.96c0 2.11.55 4.17 1.6 5.99L0 24l6.21-1.63a11.93 11.93 0 0 0 5.81 1.48h.01c6.62 0 11.95-5.35 11.95-11.96 0-3.19-1.24-6.19-3.46-8.41z"/>
@@ -185,7 +202,7 @@
                     </div>
                     <div class="bulk-wa-chip-bar"><div class="bulk-wa-chip-bar-inner" style="width:${pct}%"></div></div>
                 </div>
-                <button class="bulk-wa-chip-dismiss" title="Dismiss" onclick="event.stopPropagation(); bulkWaDismiss('${esc(chip.batchId)}')">×</button>
+                <button class="bulk-wa-chip-dismiss" title="Dismiss" onclick="event.stopPropagation(); bulkWaDismiss('${escJsAttr(chip.batchId)}')">×</button>
             </div>
         `;
         const expandedHtml = chip.expanded ? `<div class="bulk-wa-chip-detail" id="bulkWaChipDetail_${esc(chip.batchId)}">${renderDetail(chip)}</div>` : '';

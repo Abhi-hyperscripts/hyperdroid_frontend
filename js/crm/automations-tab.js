@@ -31,6 +31,23 @@
         }[c]));
     }
 
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escJsAttr(s) {
+        return esc(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
+    }
+
     function statusBadge(status) {
         const label = STATUS_LABELS[status] || status;
         return `<span class="trigger-status-pill">${esc(label)}</span>`;
@@ -101,7 +118,7 @@
                                 No triggers configured
                             </span>
                         </div>
-                        <button class="btn btn-secondary btn-sm" onclick="openTriggersModalFromAutomations('${esc(group.teamId)}', '${esc(group.teamName).replace(/'/g, "\\'")}')">
+                        <button class="btn btn-secondary btn-sm" onclick="openTriggersModalFromAutomations('${escJsAttr(group.teamId)}', '${escJsAttr(group.teamName)}')">
                             Add triggers
                         </button>
                     </div>
@@ -139,7 +156,7 @@
                             ${group.triggers.length} trigger${group.triggers.length === 1 ? '' : 's'}
                         </span>
                     </div>
-                    <button class="btn btn-secondary btn-sm" onclick="openTriggersModalFromAutomations('${esc(group.teamId)}', '${esc(group.teamName).replace(/'/g, "\\'")}')">
+                    <button class="btn btn-secondary btn-sm" onclick="openTriggersModalFromAutomations('${escJsAttr(group.teamId)}', '${escJsAttr(group.teamName)}')">
                         Manage
                     </button>
                 </div>

@@ -858,7 +858,7 @@
             const waPhone = isWa && e.meta ? (e.meta.customer_phone || '') : '';
             const waBiz = isWa && e.meta ? (e.meta.business_phone || '') : '';
             const waOpenAttrs = isWa && waPhone
-                ? ` style="cursor:pointer" onclick="openWhatsAppThreadModal('${esc(waPhone)}', '${esc(waBiz)}')" title="Open this conversation"`
+                ? ` style="cursor:pointer" onclick="openWhatsAppThreadModal('${escJsAttr(waPhone)}', '${escJsAttr(waBiz)}')" title="Open this conversation"`
                 : '';
 
             // Stamp the entry's UTC ISO timestamp on the DOM so the call
@@ -1436,7 +1436,30 @@
         if (!s) return '';
         const d = document.createElement('div');
         d.textContent = s;
-        return d.innerHTML;
+        // Quote-safe. Serialising a TEXT node to innerHTML escapes & < > and
+        // nothing else, so a value containing a double quote used to break
+        // straight out of any quoted HTML attribute it was interpolated into
+        // — and lead names, company names and WhatsApp display names all
+        // arrive from outside. Over-escaping is free in text context, where
+        // &quot; renders as a plain quote.
+        return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escJsAttr(s) {
+        return esc(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
     }
 
     // ─── Transfer Request ─────────────────────────────────────────────────
@@ -2680,12 +2703,12 @@
                         <div style="margin-top:6px;font-size:11px;color:var(--text-secondary);">Asked ${fmtDate(r.created_at)}${r.team_name ? ` · team ${esc(r.team_name)}` : ''}</div>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:6px;">
-                        <button class="btn btn-sm btn-outline-primary" onclick="openLeadDetailPanel('${esc(r.lead_id)}'); closeHelpInboxModal();">Open lead</button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="openLeadDetailPanel('${escJsAttr(r.lead_id)}'); closeHelpInboxModal();">Open lead</button>
                         <!-- btn-outline-danger, not btn-outline: this page loads
                              Bootstrap, which defines the -danger/-primary
                              variants but has no bare .btn-outline, so that
                              class renders as an unstyled empty box. -->
-                        <button class="btn btn-sm btn-outline-danger" onclick="cancelHelpRequestFromInbox('${esc(r.id)}')">Cancel</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="cancelHelpRequestFromInbox('${escJsAttr(r.id)}')">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -2736,8 +2759,8 @@
                         <div style="margin-top:6px;font-size:11px;color:var(--text-secondary);">${fmtDate(r.created_at)} · team ${esc(r.team_name || '')}</div>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:6px;">
-                        <button class="btn btn-sm btn-outline-primary" onclick="openLeadDetailPanel('${esc(r.lead_id)}'); closeHelpInboxModal();">Open lead</button>
-                        <button class="btn btn-sm btn-primary" onclick="openHelpResolveModal('${esc(r.id)}', '${esc((r.lead_name || '').replace(/'/g,'&#39;'))}')">Resolve</button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="openLeadDetailPanel('${escJsAttr(r.lead_id)}'); closeHelpInboxModal();">Open lead</button>
+                        <button class="btn btn-sm btn-primary" onclick="openHelpResolveModal('${escJsAttr(r.id)}', '${escJsAttr(r.lead_name || '')}')">Resolve</button>
                     </div>
                 </div>
             </div>

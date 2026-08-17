@@ -26,3 +26,7 @@ package-lock.json
 # KB working notes, secrets, internal verification screenshots
 KnowledgeBase/crm/_*
 KnowledgeBase/crm/facebook-leads-images/_*
+
+# Playwright run artefacts
+test-results/
+playwright-report/

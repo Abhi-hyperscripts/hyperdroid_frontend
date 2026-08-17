@@ -130,10 +130,10 @@
                 <div class="sqx-foot">
                     <span class="sqx-steps-n">${hasSteps ? seq.steps.length + (seq.steps.length === 1 ? ' step' : ' steps') : ''}</span>
                     <div class="sqx-actions">
-                        <button class="btn" onclick="editSequence('${esc(seq.id)}')" title="Edit sequence">Edit</button>
+                        <button class="btn" onclick="editSequence('${escJsAttr(seq.id)}')" title="Edit sequence">Edit</button>
                         ${seq.is_active
-                            ? `<button class="btn warn" onclick="toggleActive('${esc(seq.id)}', false)" title="Pause — new enrolments blocked, in-flight ones pause">Pause</button>`
-                            : `<button class="btn ok" onclick="toggleActive('${esc(seq.id)}', true)" title="Activate — sequence accepts new enrolments again">Activate</button>`
+                            ? `<button class="btn warn" onclick="toggleActive('${escJsAttr(seq.id)}', false)" title="Pause — new enrolments blocked, in-flight ones pause">Pause</button>`
+                            : `<button class="btn ok" onclick="toggleActive('${escJsAttr(seq.id)}', true)" title="Activate — sequence accepts new enrolments again">Activate</button>`
                         }
                     </div>
                 </div>
@@ -184,6 +184,23 @@
         return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         })[c]);
+    }
+
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escJsAttr(s) {
+        return esc(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
     }
     function safeParseJson(s) {
         if (!s) return {};

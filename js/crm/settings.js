@@ -15,7 +15,30 @@ function escapeHtml(text) {
     if (text == null) return '';
     const div = document.createElement('div');
     div.textContent = text;
-    return div.innerHTML;
+    // Quote-safe. Serialising a TEXT node to innerHTML escapes & < > and
+    // nothing else, so a value containing a double quote used to break
+    // straight out of any quoted HTML attribute it was interpolated into
+    // — and lead names, company names and WhatsApp display names all
+    // arrive from outside. Over-escaping is free in text context, where
+    // &quot; renders as a plain quote.
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// A value going into a JS STRING inside an inline handler needs BOTH
+// escapings, and HTML-escaping alone cannot do it. The parser decodes
+// entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+// real quote again and `');alert(1);//` still breaks out — verified in a
+// browser, see tests/security/escaper-quote-safety.spec.js.
+//
+// JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+// decodes to \' and reaches JS as an escaped quote. It also fixes an
+// ordinary bug — a lead called O'Brien currently breaks these handlers
+// outright with a syntax error.
+function escapeHtmlJsAttr(s) {
+    return escapeHtml(String(s ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r?\n/g, '\\n'));
 }
 
 // Format date for display
@@ -2280,7 +2303,7 @@ function renderLeadSources() {
                     ${source.webhook_key ? `
                         <div style="display: flex; align-items: center; gap: 6px; max-width: 300px;">
                             <code class="webhook-url-text" style="font-size: 0.7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary);">${escapeHtml(webhookUrl)}</code>
-                            <button class="crm-action-btn" onclick="copyWebhookUrl('${escapeHtml(source.webhook_key)}')" title="Copy URL" style="flex-shrink: 0;">
+                            <button class="crm-action-btn" onclick="copyWebhookUrl('${escapeHtmlJsAttr(source.webhook_key)}')" title="Copy URL" style="flex-shrink: 0;">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -4726,11 +4749,11 @@ function gsRenderTable() {
                     <td style="text-align:right;">${r.total_leads_received.toLocaleString()}</td>
                     <td>${escapeHtml(lastSync)}</td>
                     <td class="gs-actions-cell">
-                        <button class="btn btn-sm btn-primary" onclick="syncGoogleSheetNow('${escapeHtml(r.lead_source_id)}', this)" title="Re-scan sheet from row 1. Already-imported leads stay untouched.">Sync now</button>
-                        <button class="btn btn-sm btn-outline" onclick="openGoogleSheetSyncLogs('${escapeHtml(r.lead_source_id)}', '${escapeHtml(r.spreadsheet_name)}', '${escapeHtml(r.sheet_tab_name || '')}')" title="Polling sync history">Logs</button>
-                        <button class="btn btn-sm btn-outline" onclick="openActivityLog('/crm/GoogleSheets/sources/${escapeHtml(r.lead_source_id)}/audit-log?limit=200', '${escapeHtml(r.spreadsheet_name)}')" title="Audit trail — who paused / resumed / disconnected, with timestamps">Activity</button>
-                        <button class="btn btn-sm btn-outline" onclick="openGoogleSheetMappingEditor('${escapeHtml(r.lead_source_id)}')" title="Change which sheet column feeds which CRM field. Applies from the next sync.">Mapping</button>
-                        <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${escapeHtml(r.lead_source_id)}', ${!r.is_active})">${toggleLabel}</button>
+                        <button class="btn btn-sm btn-primary" onclick="syncGoogleSheetNow('${escapeHtmlJsAttr(r.lead_source_id)}', this)" title="Re-scan sheet from row 1. Already-imported leads stay untouched.">Sync now</button>
+                        <button class="btn btn-sm btn-outline" onclick="openGoogleSheetSyncLogs('${escapeHtmlJsAttr(r.lead_source_id)}', '${escapeHtmlJsAttr(r.spreadsheet_name)}', '${escapeHtmlJsAttr(r.sheet_tab_name || '')}')" title="Polling sync history">Logs</button>
+                        <button class="btn btn-sm btn-outline" onclick="openActivityLog('/crm/GoogleSheets/sources/${escapeHtml(r.lead_source_id)}/audit-log?limit=200', '${escapeHtmlJsAttr(r.spreadsheet_name)}')" title="Audit trail — who paused / resumed / disconnected, with timestamps">Activity</button>
+                        <button class="btn btn-sm btn-outline" onclick="openGoogleSheetMappingEditor('${escapeHtmlJsAttr(r.lead_source_id)}')" title="Change which sheet column feeds which CRM field. Applies from the next sync.">Mapping</button>
+                        <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${escapeHtmlJsAttr(r.lead_source_id)}', ${!r.is_active})">${toggleLabel}</button>
                         <!-- Remove hidden (May 2026): identical DB effect as Pause but
                              confused users into thinking their data was wiped.
                              Disconnect at the Google account level for full revoke. -->
@@ -5072,7 +5095,7 @@ async function gsSelectSpreadsheet(spreadsheetId, name) {
             return;
         }
         container.innerHTML = tabs.map(t => `
-            <div class="gs-pickable-row" onclick="gsSelectTab('${escapeHtml(t.name)}', ${t.index})"
+            <div class="gs-pickable-row" onclick="gsSelectTab('${escapeHtmlJsAttr(t.name)}', ${t.index})"
                  style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:6px; cursor:pointer;">
                 <div style="font-weight:500;">${escapeHtml(t.name)}</div>
                 <span style="color: var(--text-secondary);">&rarr;</span>
@@ -5543,7 +5566,7 @@ async function verifyGoogleSheetShared() {
         const tabs = res.tabs || [];
         const list = document.getElementById('gsShareTabsList');
         list.innerHTML = tabs.map(t => `
-            <div class="gs-pickable-row" onclick="gsShareSelectTab('${escapeHtml(t.name)}', ${t.index})"
+            <div class="gs-pickable-row" onclick="gsShareSelectTab('${escapeHtmlJsAttr(t.name)}', ${t.index})"
                  style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:6px; cursor:pointer;">
                 <div style="font-weight:500;">${escapeHtml(t.name)}</div>
                 <span style="color: var(--text-secondary);">&rarr;</span>

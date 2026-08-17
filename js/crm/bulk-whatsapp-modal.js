@@ -84,6 +84,23 @@
             .replace(/'/g, '&#39;');
     }
 
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escJsAttr(s) {
+        return esc(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
+    }
+
     /** Pull the in-memory selected-lead cache from leads.js. The cache
      *  holds every row the user has scrolled through; selections survive
      *  pagination because leads.js maintains it across requests. */
@@ -222,7 +239,7 @@
                     </div>
                     <div class="bulk-wa-recipient-phone">${esc(r.phone || '—')}</div>
                     <button type="button" class="bulk-wa-recipient-remove" title="Remove from this batch"
-                        onclick="bulkWaRemoveRecipient('${esc(r.id)}')">×</button>
+                        onclick="bulkWaRemoveRecipient('${escJsAttr(r.id)}')">×</button>
                 </div>
             `;
         }).join('');

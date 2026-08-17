@@ -94,7 +94,7 @@
                     <td class="hide-mobile" style="font-family: monospace; font-size: 0.8em;">${escapeHtml(truncate(a.redirectUri, 50))}</td>
                     <td>${statusBadge}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline" onclick="deleteOAuthApp('${a.id}', '${escapeHtml(providerLabel)}')">
+                        <button class="btn btn-sm btn-outline" onclick="deleteOAuthApp('${a.id}', '${escapeHtmlJsAttr(providerLabel)}')">
                             Delete
                         </button>
                     </td>
@@ -143,8 +143,8 @@
                     <td>${status}</td>
                     <td class="hide-mobile" title="${m.connectionType === 'imap_smtp' ? 'IMAP IDLE support' : 'Uses push notifications'}">${idle}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline" onclick="openMailboxSyncLogs('${m.id}', '${escapeHtml(m.emailAddress)}')">Logs</button>
-                        <button class="btn btn-sm btn-outline" onclick="deleteMailbox('${m.id}', '${escapeHtml(m.emailAddress)}')">
+                        <button class="btn btn-sm btn-outline" onclick="openMailboxSyncLogs('${m.id}', '${escapeHtmlJsAttr(m.emailAddress)}')">Logs</button>
+                        <button class="btn btn-sm btn-outline" onclick="deleteMailbox('${m.id}', '${escapeHtmlJsAttr(m.emailAddress)}')">
                             Disconnect
                         </button>
                     </td>
@@ -643,6 +643,23 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escapeHtmlJsAttr(s) {
+        return escapeHtml(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
     }
 
     function truncate(str, n) {

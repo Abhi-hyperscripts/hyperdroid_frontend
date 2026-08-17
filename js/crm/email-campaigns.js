@@ -271,7 +271,7 @@
                 <span class="camp-lead-name" title="${escapeHtml(nm)}">${escapeHtml(nm)}</span>
                 <span class="camp-lead-email ${l.email ? '' : 'muted'}" title="${escapeHtml(l.email || '')}">${escapeHtml(l.email || '(no email)')}</span>
                 <span class="camp-lead-company" title="${escapeHtml(l.companyName || '')}">${escapeHtml(l.companyName || '')}</span>
-                <button class="camp-lead-remove" title="Remove" onclick="removePreselectedLead('${escapeHtml(l.id)}')">&times;</button>
+                <button class="camp-lead-remove" title="Remove" onclick="removePreselectedLead('${escapeHtmlJsAttr(l.id)}')">&times;</button>
             </div>`;
         }).join('') + (rest > 0
             ? `<div class="camp-lead-more">…and <strong>${rest}</strong> more</div>`
@@ -460,6 +460,23 @@
         return String(s ?? '')
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escapeHtmlJsAttr(s) {
+        return escapeHtml(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
     }
 
     // Auto-open the New Campaign modal when the Leads page sends us here

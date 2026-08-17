@@ -60,6 +60,23 @@
         return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
     }
 
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escJsAttr(s) {
+        return esc(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
+    }
+
     function toastErr(e, fallback) {
         const msg = (e && e.message) || fallback || 'Something went wrong';
         if (typeof Toast !== 'undefined') Toast.error(msg);
@@ -130,10 +147,10 @@
                     <td><span style="color: var(--text-secondary);">${esc(fg.description || '—')}</span></td>
                     <td><span class="${badgeClass}">${count} team${count === 1 ? '' : 's'}</span></td>
                     <td style="text-align: right;">
-                        <button class="team-card-iconbtn" onclick="openEditFunctionalGroupModal('${esc(fg.id)}')" aria-label="Edit">
+                        <button class="team-card-iconbtn" onclick="openEditFunctionalGroupModal('${escJsAttr(fg.id)}')" aria-label="Edit">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="team-card-iconbtn team-card-iconbtn--danger" onclick="deleteFunctionalGroup('${esc(fg.id)}', '${esc(fg.name)}')" aria-label="Delete">
+                        <button class="team-card-iconbtn team-card-iconbtn--danger" onclick="deleteFunctionalGroup('${escJsAttr(fg.id)}', '${escJsAttr(fg.name)}')" aria-label="Delete">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                     </td>
@@ -343,7 +360,7 @@
             const fas = (t.functional_areas || []);
             const statusClass = `team-card-status--${t.status}`;
             return `
-                <div class="team-card" onclick="openEditTeamModal('${esc(t.id)}')">
+                <div class="team-card" onclick="openEditTeamModal('${escJsAttr(t.id)}')">
                     <div class="team-card-head">
                         <div style="min-width: 0;">
                             <h4 class="team-card-title">${esc(t.team_name)}</h4>
@@ -360,7 +377,7 @@
                     ${_telephonyConfigured ? `
                     <label class="team-card-inbound" onclick="event.stopPropagation()" data-tooltip="When ON, this team's members are rung when a customer calls our number">
                         <input type="checkbox" ${t.receives_inbound_calls ? 'checked' : ''}
-                               onchange="toggleTeamInbound('${esc(t.id)}', this.checked, this)">
+                               onchange="toggleTeamInbound('${escJsAttr(t.id)}', this.checked, this)">
                         <span class="team-card-inbound-label">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
@@ -382,10 +399,10 @@
                             ${memberCount}
                         </span>
                         <div class="team-card-actions">
-                            <button class="team-card-iconbtn" onclick="event.stopPropagation(); window.openTriggersModal && window.openTriggersModal('${esc(t.id)}', '${esc(t.team_name)}')" aria-label="Email triggers" data-tooltip="Email automations — fire a template when a lead enters a status">
+                            <button class="team-card-iconbtn" onclick="event.stopPropagation(); window.openTriggersModal && window.openTriggersModal('${escJsAttr(t.id)}', '${escJsAttr(t.team_name)}')" aria-label="Email triggers" data-tooltip="Email automations — fire a template when a lead enters a status">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                             </button>
-                            <button class="team-card-iconbtn team-card-iconbtn--danger" onclick="event.stopPropagation(); deleteTeam('${esc(t.id)}', '${esc(t.team_name)}')" aria-label="Delete" data-tooltip="Delete this team">
+                            <button class="team-card-iconbtn team-card-iconbtn--danger" onclick="event.stopPropagation(); deleteTeam('${escJsAttr(t.id)}', '${escJsAttr(t.team_name)}')" aria-label="Delete" data-tooltip="Delete this team">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
                             </button>
                         </div>

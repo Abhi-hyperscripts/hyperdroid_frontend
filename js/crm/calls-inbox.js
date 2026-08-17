@@ -37,6 +37,23 @@
         }[c]));
     }
 
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escapeHtmlJsAttr(s) {
+        return escapeHtml(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
+    }
+
     // Today in IST → UTC bounds. Mirrors backend default so a Today filter
     // matches the stats strip even when the user's browser is on another TZ.
     function scopeBounds(scope) {
@@ -150,10 +167,10 @@
         const leadLabel = c.lead_name ? escapeHtml(c.lead_name) : 'View lead →';
         const leadSub = c.lead_number ? `<span class="ci-lead-sub">${escapeHtml(c.lead_number)}</span>` : '';
         const leadCell = c.lead_id
-            ? `<a class="ci-lead-link" href="#" onclick="event.preventDefault(); event.stopPropagation(); openLeadPopup('${escapeHtml(c.lead_id)}')">${leadLabel}</a>${leadSub}`
-            : `<button class="ci-convert-btn" onclick="event.stopPropagation(); openConvertModal('${escapeHtml(c.id)}')">Convert to Lead</button>`;
+            ? `<a class="ci-lead-link" href="#" onclick="event.preventDefault(); event.stopPropagation(); openLeadPopup('${escapeHtmlJsAttr(c.lead_id)}')">${leadLabel}</a>${leadSub}`
+            : `<button class="ci-convert-btn" onclick="event.stopPropagation(); openConvertModal('${escapeHtmlJsAttr(c.id)}')">Convert to Lead</button>`;
         return `
-            <tr data-call-id="${escapeHtml(c.id)}" onclick="openCallDrawer('${escapeHtml(c.id)}')">
+            <tr data-call-id="${escapeHtml(c.id)}" onclick="openCallDrawer('${escapeHtmlJsAttr(c.id)}')">
                 <td>${directionIcon(c.direction)}</td>
                 <td><span class="ci-phone">${escapeHtml(otherPhone || '—')}</span></td>
                 <td>${leadCell}</td>
@@ -162,7 +179,7 @@
                 <td>${statusChip(c.status)}</td>
                 <td class="hide-mobile">${escapeHtml(fmtDuration(c.duration_seconds))}</td>
                 <td>${playerHtml}</td>
-                <td><button class="ci-row-action" onclick="event.stopPropagation(); openCallDrawer('${escapeHtml(c.id)}')" aria-label="Open detail">›</button></td>
+                <td><button class="ci-row-action" onclick="event.stopPropagation(); openCallDrawer('${escapeHtmlJsAttr(c.id)}')" aria-label="Open detail">›</button></td>
             </tr>`;
     }
 
@@ -290,8 +307,8 @@
             ? `<ul class="ci-life">${lifecycleStamps.map(s => `<li><span class="ci-life-dot"></span><div><div class="ci-life-label">${escapeHtml(s.label)}</div><div class="ci-life-when">${escapeHtml(new Date(s.when).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }))}</div></div></li>`).join('')}</ul>`
             : '<p class="ci-mute">No lifecycle stamps yet.</p>';
         const leadActionsHtml = c.lead_id
-            ? `<button class="btn btn-secondary" onclick="openLeadPopup('${escapeHtml(c.lead_id)}')">View lead →</button>`
-            : `<button class="btn btn-primary" onclick="openConvertModal('${escapeHtml(c.id)}')">Convert to Lead</button>`;
+            ? `<button class="btn btn-secondary" onclick="openLeadPopup('${escapeHtmlJsAttr(c.lead_id)}')">View lead →</button>`
+            : `<button class="btn btn-primary" onclick="openConvertModal('${escapeHtmlJsAttr(c.id)}')">Convert to Lead</button>`;
         $('ciDrawerTitle').textContent = `${isInbound ? 'Incoming' : 'Outgoing'} · ${otherPhone || '—'}`;
         $('ciDrawerBody').innerHTML = `
             <div class="ci-drawer-section">

@@ -129,7 +129,7 @@
                                 <line x1="3" y1="21" x2="10" y2="14"/>
                             </svg>
                         </button>` : ''}
-                        <button class="action-btn danger" data-tooltip="Delete document" onclick="kbDeleteDoc('${d.id}', '${escapeHtml((d.file_name || d.fileName || '').replace(/'/g, ''))}')">
+                        <button class="action-btn danger" data-tooltip="Delete document" onclick="kbDeleteDoc('${d.id}', '${escapeHtmlJsAttr((d.file_name || d.fileName || '').replace(/'/g, ''))}')">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -242,6 +242,23 @@
     function escapeHtml(s) {
         return String(s ?? '').replace(/[&<>"']/g, c =>
             ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escapeHtmlJsAttr(s) {
+        return escapeHtml(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
     }
 
     // ─── Expose globals for onclick handlers ────────────────────────────────

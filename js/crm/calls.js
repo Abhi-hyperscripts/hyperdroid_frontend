@@ -25,6 +25,23 @@
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escJsAttr(s) {
+        return esc(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
+    }
+
     // ─── Lead-detail "Call" button reveal ─────────────────────────────────
     // The button is in the DOM with display:none. We flip it on whenever
     // the open lead has a phone AND the tenant has Exotel configured (so we
@@ -201,7 +218,7 @@
                 </div>
                 <div class="gm-footer" style="padding:16px 20px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border-color-light);">
                     <button class="btn btn-secondary" onclick="document.getElementById('placeCallModal').remove()">Cancel</button>
-                    <button class="btn btn-primary" id="pcPlaceBtn" onclick="window._submitPlaceCall('${esc(leadId)}')">Call</button>
+                    <button class="btn btn-primary" id="pcPlaceBtn" onclick="window._submitPlaceCall('${escJsAttr(leadId)}')">Call</button>
                 </div>
             </div>
         `;
@@ -462,7 +479,7 @@
         `;
         const phone = evt.fromPhone || 'Unknown number';
         const openLink = evt.leadId
-            ? `<a href="javascript:void(0)" onclick="openLeadDetailPanel('${esc(evt.leadId)}'); document.getElementById('${id}').remove()" style="color:var(--brand-primary);font-weight:600;">Open lead →</a>`
+            ? `<a href="javascript:void(0)" onclick="openLeadDetailPanel('${escJsAttr(evt.leadId)}'); document.getElementById('${id}').remove()" style="color:var(--brand-primary);font-weight:600;">Open lead →</a>`
             : '';
         wrap.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;">

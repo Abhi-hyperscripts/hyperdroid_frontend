@@ -2673,7 +2673,13 @@ function escHtml(s) {
     if (!s) return '';
     const d = document.createElement('div');
     d.textContent = s;
-    return d.innerHTML;
+    // Quote-safe. Serialising a TEXT node to innerHTML escapes & < > and
+    // nothing else, so a value containing a double quote used to break
+    // straight out of any quoted HTML attribute it was interpolated into
+    // — and lead names, company names and WhatsApp display names all
+    // arrive from outside. Over-escaping is free in text context, where
+    // &quot; renders as a plain quote.
+    return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 async function confirmBulkAssign(teamId, teamName) {
@@ -3143,7 +3149,7 @@ function renderLatestSummaryCell(lead) {
         <div class="crm-summary-cell" style="cursor:pointer; line-height:1.3;"
               data-tooltip="Click to see all summaries on this lead"
               data-tooltip-position="top"
-              onclick="event.stopPropagation(); openLeadSummariesModal('${escapeHtml(lead.id)}', '${safeName.replace(/'/g, '&#39;')}')">
+              onclick="event.stopPropagation(); openLeadSummariesModal('${escapeHtmlJsAttr(lead.id)}', '${safeName.replace(/'/g, '&#39;')}')">
             <div style="font-size:0.82rem; color:var(--text-primary);
                         word-break:break-word; overflow-wrap:anywhere;
                         display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${typePill}${escapeHtml(preview)}</div>
@@ -3438,7 +3444,30 @@ function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
-    return div.innerHTML;
+    // Quote-safe. Serialising a TEXT node to innerHTML escapes & < > and
+    // nothing else, so a value containing a double quote used to break
+    // straight out of any quoted HTML attribute it was interpolated into
+    // — and lead names, company names and WhatsApp display names all
+    // arrive from outside. Over-escaping is free in text context, where
+    // &quot; renders as a plain quote.
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// A value going into a JS STRING inside an inline handler needs BOTH
+// escapings, and HTML-escaping alone cannot do it. The parser decodes
+// entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+// real quote again and `');alert(1);//` still breaks out — verified in a
+// browser, see tests/security/escaper-quote-safety.spec.js.
+//
+// JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+// decodes to \' and reaches JS as an escaped quote. It also fixes an
+// ordinary bug — a lead called O'Brien currently breaks these handlers
+// outright with a syntax error.
+function escapeHtmlJsAttr(s) {
+    return escapeHtml(String(s ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r?\n/g, '\\n'));
 }
 
 // Lead Desk: the quick-actions bar is rendered inside the scrolling panel-body by

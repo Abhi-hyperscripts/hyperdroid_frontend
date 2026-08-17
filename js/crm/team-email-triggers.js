@@ -124,7 +124,7 @@
                     <div class="trig-pill">
                         <span class="trig-pill-name">${escapeHtml(t.template_name || '(deleted)')}</span>
                         <button class="trig-pill-x" type="button"
-                                onclick="window.removeTrigger && removeTrigger('${escapeHtml(t.team_id)}', ${t.lead_source_id ? `'${escapeHtml(t.lead_source_id)}'` : 'null'}, '${escapeHtml(t.status)}', '${escapeHtml(t.template_id)}')"
+                                onclick="window.removeTrigger && removeTrigger('${escapeHtmlJsAttr(t.team_id)}', ${t.lead_source_id ? `'${escapeHtmlJsAttr(t.lead_source_id)}'` : 'null'}, '${escapeHtmlJsAttr(t.status)}', '${escapeHtmlJsAttr(t.template_id)}')"
                                 title="Remove this trigger">×</button>
                     </div>`).join('');
             return `
@@ -135,7 +135,7 @@
                     <div class="trig-row-body">
                         ${rowsHtml}
                         <button type="button" class="trig-add-btn"
-                                onclick="window.openTriggerPickTemplate && openTriggerPickTemplate('${escapeHtml(s.code)}')">
+                                onclick="window.openTriggerPickTemplate && openTriggerPickTemplate('${escapeHtmlJsAttr(s.code)}')">
                             + Add template
                         </button>
                     </div>
@@ -172,7 +172,7 @@
             empty.style.display = 'none';
             list.innerHTML = candidates.map(tp => `
                 <button type="button" class="trig-pick-row"
-                        onclick="window.confirmTriggerPickTemplate && confirmTriggerPickTemplate('${escapeHtml(tp.id)}')">
+                        onclick="window.confirmTriggerPickTemplate && confirmTriggerPickTemplate('${escapeHtmlJsAttr(tp.id)}')">
                     <div class="trig-pick-name">${escapeHtml(tp.name)}</div>
                     <div class="trig-pick-sub">${escapeHtml(tp.subject || '(no subject)')}</div>
                 </button>`).join('');
@@ -238,6 +238,23 @@
         return String(s).replace(/[&<>"']/g, c => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         })[c]);
+    }
+
+    // A value going into a JS STRING inside an inline handler needs BOTH
+    // escapings, and HTML-escaping alone cannot do it. The parser decodes
+    // entities in an attribute BEFORE the JS is parsed, so &#39; becomes a
+    // real quote again and `');alert(1);//` still breaks out — verified in a
+    // browser, see tests/security/escaper-quote-safety.spec.js.
+    //
+    // JS-escape first, then HTML-escape: the backslash survives as \&#39;,
+    // decodes to \' and reaches JS as an escaped quote. It also fixes an
+    // ordinary bug — a lead called O'Brien currently breaks these handlers
+    // outright with a syntax error.
+    function escapeHtmlJsAttr(s) {
+        return escapeHtml(String(s ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n/g, '\\n'));
     }
 
     // Each Settings sub-page defines its own showModal/hideModal locally
