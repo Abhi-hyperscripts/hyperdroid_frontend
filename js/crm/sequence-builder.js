@@ -235,6 +235,17 @@
                                data-step-idx="${idx}" data-field="config.template_language"
                                placeholder="en, en_US, hi, etc."
                                value="${esc(cfg.template_language || 'en')}" />
+                    </div>
+                    <div class="form-row">
+                        <label>Send from number
+                            <small>(leave blank if you have one WhatsApp number)</small></label>
+                        <input class="form-control" type="text"
+                               data-step-idx="${idx}" data-field="config.business_phone_number"
+                               placeholder="e.g. 918586084450 — digits with country code"
+                               value="${esc(cfg.business_phone_number || '')}" />
+                        <small class="form-hint">Required when your workspace has more than one
+                            WhatsApp business number, otherwise this step cannot pick a sender
+                            and will fail.</small>
                     </div>`;
                 break;
             case 'call_task':
