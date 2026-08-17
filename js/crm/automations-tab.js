@@ -19,8 +19,9 @@
         contacted:   'Contacted',
         qualified:   'Qualified',
         unqualified: 'Unqualified',
-        converted:   'Converted',
-        lost:        'Lost'
+        // No 'lost'. It is not a lead status — retired when Won/Lost moved to
+        // deal stages, and forbidden by the leads CHECK constraint.
+        converted:   'Converted'
     };
 
     function esc(s) {

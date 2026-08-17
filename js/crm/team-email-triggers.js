@@ -16,6 +16,15 @@
     // Lead statuses come from the CRM status machine. Order matters — the UI
     // shows them in pipeline order so the user reads top-to-bottom as the
     // lead's journey unfolds. Keep in sync with LeadStatuses on the server.
+    //
+    // That last sentence was here while the list carried an eighth entry the
+    // server does not have. 'Lost' was retired when Won/Lost moved to deal
+    // stages, and the leads CHECK constraint forbids it — so a template
+    // attached to the Lost tile saved, listed as an active automation, and
+    // could never fire, while the leads that actually die are written
+    // 'unqualified'. A tenant's lost-lead nurture sent nothing and looked
+    // healthy. Do not re-add a status here without one existing in
+    // LeadStatuses.All.
     const STATUSES = [
         { code: 'new',         label: 'New',         hint: 'Just imported / created — no team assignment yet' },
         { code: 'assigned',    label: 'Assigned',    hint: 'Picked up by a team' },
@@ -23,7 +32,6 @@
         { code: 'qualified',   label: 'Qualified',   hint: 'Marked as a real prospect' },
         { code: 'unqualified', label: 'Unqualified', hint: 'Dead lead — no follow-up' },
         { code: 'converted',   label: 'Converted',   hint: 'Won — became a customer' },
-        { code: 'lost',        label: 'Lost',        hint: 'Closed lost' },
     ];
 
     let _state = {
