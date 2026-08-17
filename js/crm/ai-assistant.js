@@ -37,7 +37,11 @@
         const label = document.getElementById('aiUsageLabel');
         const bar = document.getElementById('aiUsageBar');
         if (!label || !bar || !aiOverview) return;
-        const used = aiOverview.replies_today ?? 0;
+        // generations_today is what the ceiling actually enforces — it counts
+        // model calls, including drafts nobody has approved. replies_today is
+        // the backwards-compatible alias carrying the same value, kept so an
+        // older cached bundle keeps showing a real figure.
+        const used = aiOverview.generations_today ?? aiOverview.replies_today ?? 0;
         const cap = aiOverview.tenant_daily_cap ?? 300;
         const pct = cap > 0 ? Math.min(100, Math.round((used / cap) * 100)) : 0;
         label.textContent = `${used} of ${cap} (${pct}%)`;

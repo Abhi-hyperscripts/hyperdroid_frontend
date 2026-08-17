@@ -1510,11 +1510,16 @@
                         <!-- Today usage meter -->
                         <div style="margin-bottom:14px;">
                             <div style="display:flex; justify-content:space-between; font-size:0.82rem; color:var(--text-secondary); margin-bottom:4px;">
-                                <span>AI replies sent today (whole company)</span>
+                                <span>AI replies written today (whole company)</span>
                                 <span id="aiUsageLabel">—</span>
                             </div>
                             <div style="height:8px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:999px; overflow:hidden;">
                                 <div id="aiUsageBar" style="height:100%; width:0%; background:var(--brand-primary); border-radius:999px; transition:width 0.3s ease;"></div>
+                            </div>
+                            <div style="font-size:0.76rem; color:var(--text-secondary); margin-top:5px;">
+                                Counts every reply the assistant writes — including drafts still waiting for
+                                approval and ones you rejected, because each one already cost a request.
+                                The daily limit below stops the assistant once this is reached.
                             </div>
                         </div>
 
