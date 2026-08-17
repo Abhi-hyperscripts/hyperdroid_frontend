@@ -68,7 +68,18 @@
 
         tbody.innerHTML = campaigns.map(c => {
             const total = c.total_leads || 1;
-            const done = (c.sent_count || 0) + (c.failed_count || 0) + (c.unsubscribed_count || 0);
+            // "Done" means a recipient this campaign will not act on again:
+            // sent, failed, or skipped because they were already on the
+            // suppression list. It is deliberately NOT unsubscribed_count —
+            // that column carries BOTH "skipped, already suppressed" and
+            // "unsubscribed because of this campaign", and counting the second
+            // as progress would let real unsubscribes push the bar towards
+            // 100% while sends were still outstanding.
+            //
+            // Falls back to unsubscribed_count so an older backend, which has
+            // no skipped_suppressed_count, keeps behaving exactly as before.
+            const skipped = c.skipped_suppressed_count ?? c.unsubscribed_count ?? 0;
+            const done = (c.sent_count || 0) + (c.failed_count || 0) + skipped;
             const pct = Math.min(100, Math.round((done / total) * 100));
             return `
                 <tr>
@@ -79,7 +90,8 @@
                         <span title="Opened">👁 ${c.opened_count || 0}</span> &nbsp;
                         <span title="Clicked">👆 ${c.clicked_count || 0}</span> &nbsp;
                         <span title="Replied">✉ ${c.replied_count || 0}</span> &nbsp;
-                        <span title="Bounced">⚠ ${c.bounced_count || 0}</span>
+                        <span title="Bounced">⚠ ${c.bounced_count || 0}</span> &nbsp;
+                        <span title="Unsubscribed from this campaign">🚫 ${Math.max(0, (c.unsubscribed_count || 0) - (c.skipped_suppressed_count || 0))}</span>
                     </td>
                     <td class="hide-mobile">
                         <div class="progress-mini">
