@@ -283,13 +283,7 @@
                             <div class="col-md-6">
                                 <label for="dealCurrency" class="form-label">Currency</label>
                                 <select class="form-select" id="dealCurrency" name="currency">
-                                    <option value="USD">USD</option>
-                                    <option value="EUR">EUR</option>
-                                    <option value="GBP">GBP</option>
-                                    <option value="INR">INR</option>
-                                    <option value="AED">AED</option>
-                                    <option value="CAD">CAD</option>
-                                    <option value="AUD">AUD</option>
+                                    <!-- populated from js/crm/currencies.js -->
                                 </select>
                             </div>
                         </div>
@@ -443,6 +437,7 @@
         document.write('<script src="../../js/crm/phone-link.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/notes-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/activities-panel.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/currencies.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/deals.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>

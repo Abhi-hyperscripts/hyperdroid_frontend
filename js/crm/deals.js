@@ -91,6 +91,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initSearchableDropdowns() {
     if (typeof convertSelectToSearchable !== 'function') return;
 
+    // Fill the currency <select> BEFORE it is converted — the searchable
+    // dropdown reads the options once, so anything added later is invisible to
+    // it. The list lives in currencies.js so this page and the settings page
+    // cannot drift from each other or from the backend again; the form used to
+    // offer 7 currencies while the accounting service denominated 41.
+    if (typeof populateCurrencySelect === 'function') populateCurrencySelect('dealCurrency', false);
+
     if (!dealCurrencyDropdown) {
         dealCurrencyDropdown = convertSelectToSearchable('dealCurrency', {
             placeholder: 'Select currency...',

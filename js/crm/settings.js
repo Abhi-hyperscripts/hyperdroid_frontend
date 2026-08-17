@@ -244,6 +244,10 @@ function initSearchableDropdowns() {
         });
     }
 
+    // Populate before converting — see the note in deals.js. This page
+    // offered 12 of the 41 currencies AccountsService denominates invoices in.
+    if (typeof populateCurrencySelect === 'function') populateCurrencySelect('defaultCurrency', true);
+
     if (!defaultCurrencyDropdown) {
         defaultCurrencyDropdown = convertSelectToSearchable('defaultCurrency', {
             placeholder: 'Select currency...',

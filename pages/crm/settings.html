@@ -734,18 +734,7 @@
                                 Used as the default for new deals and pipeline value display.
                             </p>
                             <select id="defaultCurrency">
-                                <option value="USD">USD ($) - US Dollar</option>
-                                <option value="EUR">EUR (&euro;) - Euro</option>
-                                <option value="GBP">GBP (&pound;) - British Pound</option>
-                                <option value="INR">INR (&#8377;) - Indian Rupee</option>
-                                <option value="AED">AED - UAE Dirham</option>
-                                <option value="CAD">CAD (C$) - Canadian Dollar</option>
-                                <option value="AUD">AUD (A$) - Australian Dollar</option>
-                                <option value="JPY">JPY (&yen;) - Japanese Yen</option>
-                                <option value="CNY">CNY (&yen;) - Chinese Yuan</option>
-                                <option value="KRW">KRW (&#8361;) - South Korean Won</option>
-                                <option value="BRL">BRL (R$) - Brazilian Real</option>
-                                <option value="ZAR">ZAR (R) - South African Rand</option>
+                                <!-- populated from js/crm/currencies.js -->
                             </select>
                         </div>
 
@@ -4802,6 +4791,7 @@
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/currencies.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/settings.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/teams-setup.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/team-email-triggers.js?v=' + CACHE_VERSION + '"><\/script>');
