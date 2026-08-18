@@ -359,6 +359,28 @@ function getStoredUser() {
 }
 
 /**
+ * Roles for the current user, preferring the JWT (the authoritative, always-fresh
+ * source that every service validates against) and falling back to the stored user
+ * object. The stored user is a secondary copy written once at login, so it can be
+ * STALE after a role grant or MISSING its roles array — guarding on it fails closed
+ * and locks legitimate admins out until they re-login. Decode the token instead.
+ */
+function getUserRoles() {
+    try {
+        const token = (typeof getAuthToken === 'function') ? getAuthToken() : null;
+        if (token && typeof decodeJwtPayload === 'function') {
+            const p = decodeJwtPayload(token);
+            if (p) {
+                const raw = p['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || p.role;
+                if (raw) return Array.isArray(raw) ? raw : [raw];
+            }
+        }
+    } catch (_) { /* fall through to stored user */ }
+    const u = getStoredUser();
+    return (u && Array.isArray(u.roles)) ? u.roles : [];
+}
+
+/**
  * Remove user data from localStorage (used during logout)
  */
 function removeStoredUser() {

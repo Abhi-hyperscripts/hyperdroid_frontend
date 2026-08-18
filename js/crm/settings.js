@@ -56,9 +56,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Only CRM_ADMIN or SUPERADMIN can access settings
-    const user = api.getUser();
-    const roles = user?.roles || [];
+    // Only CRM_ADMIN or SUPERADMIN can access settings. Read roles from the JWT
+    // (getUserRoles), not the stored user — a just-promoted admin's stored copy
+    // can lag and would wrongly bounce them to dashboard until re-login.
+    const roles = getUserRoles();
     if (!roles.includes('CRM_ADMIN') && !roles.includes('SUPERADMIN')) {
         Toast.error('Access denied — Settings is only available to CRM Admins');
         window.location.href = 'dashboard.html';

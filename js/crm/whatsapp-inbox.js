@@ -167,8 +167,10 @@
         const isCompact = params.get('compact') === '1' && !!params.get('phone');
         pageMode = isCompact ? 'compact' : 'full';
 
-        const user = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
-        const roles = user?.roles || [];
+        // Roles from the JWT (getUserRoles), not the stored user — the stored copy
+        // can be stale/missing and would wrongly bounce a real admin.
+        const roles = (typeof getUserRoles === 'function') ? getUserRoles()
+            : (((typeof api !== 'undefined' && api.getUser && api.getUser()) || {}).roles || []);
         if (!roles.includes('SUPERADMIN') && pageMode === 'full') {
             if (typeof Toast !== 'undefined') Toast.error('WhatsApp Inbox is restricted to administrators.');
             window.location.href = '/pages/crm/dashboard.html';

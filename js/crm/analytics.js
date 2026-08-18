@@ -24,6 +24,17 @@ let _trendMetricDropdown = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (typeof Navigation !== 'undefined') Navigation.init();
+
+    // Analytics is SUPERADMIN-only (every widget endpoint 403s otherwise). The
+    // dashboard already hides the entry points, but a direct URL / bookmark would
+    // load this page and fire requests that 403 into blank charts. Self-defend.
+    const roles = (typeof getUserRoles === 'function') ? getUserRoles() : [];
+    if (!roles.includes('SUPERADMIN')) {
+        if (typeof Toast !== 'undefined') Toast.error('Analytics is available to owners only.');
+        window.location.href = 'dashboard.html';
+        return;
+    }
+
     if (typeof setupGuard !== 'undefined' && setupGuard.run) await setupGuard.run();
 
     await Promise.all([loadSources(), loadTeams()]);

@@ -333,6 +333,10 @@ async function loadAttendanceConfig() {
         audit.textContent = `Couldn't load (${status || 'network error'}). Try again.`;
         pill.textContent = '—';
         if (typeof Toast !== 'undefined') Toast.error('Failed to load attendance settings.');
+        // Re-enable the toggle (per edit permission) so the user can actually retry —
+        // the success branch was the ONLY place it got re-enabled, so an error left
+        // the control permanently greyed out and the "Try again" copy was a lie.
+        toggle.disabled = !canEditAttendanceConfig();
     }
 }
 

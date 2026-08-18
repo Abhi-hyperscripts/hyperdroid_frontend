@@ -1865,7 +1865,13 @@ async function openApplyAdvance(invoiceId, customerId, balanceDue, invoiceNumber
     try {
         const res = await api.request(AccountsCommon.buildUrl(`invoices/advances/${customerId}`), { _skipSpinner: true });
         pool = parseFloat(res.balance) || 0;
-    } catch { }
+    } catch (e) {
+        // Do NOT swallow a failed fetch as "no advance" — that reads identically to
+        // a genuine zero balance and could make a teller re-collect against a
+        // customer who actually has an advance on account (double-payment).
+        Toast.error('Could not check advance balance — please try again.');
+        return;
+    }
     if (pool <= 0) { Toast.info('This customer has no advance on account.'); return; }
     const maxApply = Math.min(pool, balanceDue);
     const overlay = document.createElement('div');

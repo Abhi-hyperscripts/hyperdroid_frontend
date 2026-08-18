@@ -807,18 +807,41 @@ class HRMSRoleUtils {
      * @param {string} options.redirectUrl - URL to redirect to (default: compliance.html)
      * @returns {Promise<boolean>} True if compliance is complete, false if redirecting
      */
+    /**
+     * A setup-status response is only trustworthy if it actually carries the
+     * boolean flags the guards read. A failed probe returns null; a 200 with a
+     * wrapped/renamed shape (e.g. {success, data:{...}}) leaves every flag
+     * `undefined`, and `!undefined === true` would wrongly read as "everything
+     * incomplete" and bounce a fully-configured tenant. Treat both the same:
+     * fail OPEN. (organization.js already guards these with `!== undefined`.)
+     */
+    _isValidSetupStatus(status) {
+        return !!status && typeof status === 'object' &&
+            (typeof status.is_compliance_complete === 'boolean' ||
+             typeof status.is_setup_complete === 'boolean' ||
+             typeof status.has_office === 'boolean');
+    }
+
     async requireComplianceSetup(options = {}) {
         const { showToast = true, redirectUrl = 'compliance.html' } = options;
 
         const status = await this.getSetupStatus();
 
-        if (!status) {
-            // If we can't fetch status, allow access (fail open) but log warning
+        if (!this._isValidSetupStatus(status)) {
+            // Can't fetch, or a malformed/wrapped shape — fail open.
             console.warn('[RBAC] Could not verify setup status, allowing access');
             return true;
         }
 
         if (!status.is_compliance_complete) {
+            // Only route users who can ACTUALLY perform compliance setup to the
+            // compliance page. compliance.html itself bounces non-HR-admins to
+            // dashboard.html, and dashboard funnels basic users to self-service,
+            // which calls this guard again — an infinite ping-pong. A user who
+            // can't fix setup should just see their page, not loop forever.
+            if (!this.isHRAdmin()) {
+                return true;
+            }
             if (showToast && typeof window.showToast === 'function') {
                 window.showToast('Please complete Compliance setup first', 'error');
             }
@@ -851,8 +874,15 @@ class HRMSRoleUtils {
 
         const status = await this.getSetupStatus();
 
-        if (!status) {
+        if (!this._isValidSetupStatus(status)) {
             console.warn('[RBAC] Could not verify setup status, allowing access');
+            return true;
+        }
+
+        // Setup pages (compliance/organization) are HR-admin only. Sending a user
+        // who can't perform setup to one of them just bounces them back into a
+        // redirect loop, so non-HR-admins are allowed through here.
+        if (!this.isHRAdmin()) {
             return true;
         }
 

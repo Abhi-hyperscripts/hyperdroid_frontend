@@ -21,6 +21,11 @@ const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 document.addEventListener('DOMContentLoaded', async () => {
     if (!await AccountsCommon.initPage('budgets', '../')) return;
 
+    // Hide admin-only controls (Add/Bulk/Copy) for non-admins — Budgets is
+    // master data; a read-only ACCOUNTS_AUDITOR / ACCOUNTS_USER should not see
+    // mutating affordances that would just 403. Mirrors sibling accounts pages.
+    accountsRoles.applyRBAC();
+
     const tabNames = { 'budget-list': 'Budget List', 'budget-analysis': 'Budget vs Actual' };
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
     AccountsCommon.setupTabs(tabNames, (tabId) => {
@@ -149,8 +154,10 @@ function renderBudgets() {
             <td style="text-align:right;">${fmt(b.annual_amount || 0)}</td>
             <td style="text-align:right;color:var(--text-secondary);">${fmt(perMonth)}</td>
             <td><div style="display:flex;gap:0.35rem;">
+                ${accountsRoles.isAdmin() ? `
                 <button class="btn-icon" onclick="editBudget('${b.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button class="btn-icon btn-icon-danger" onclick="deleteBudget('${b.id}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                ` : '<span style="color:var(--text-secondary);font-size:0.8rem;">—</span>'}
             </div></td>
         </tr>`;
     }).join('');

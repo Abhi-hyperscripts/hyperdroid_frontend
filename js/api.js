@@ -74,10 +74,19 @@ class API {
 
         if (timeRemaining < threshold && timeRemaining > 0) {
             console.log(`[API] Token expires in ${Math.round(timeRemaining / 60000)} minutes, refreshing proactively...`);
-            await this._refreshTokenIfNeeded();
+            // Best-effort proactive refresh. A transient failure throws — swallow it
+            // and let the next tick (or the request path) retry; never declare death.
+            try { await this._refreshTokenIfNeeded(); } catch (_) { /* transient */ }
         } else if (timeRemaining <= 0) {
             console.log('[API] Token already expired, refreshing...');
-            const success = await this._refreshTokenIfNeeded();
+            let success = false;
+            try {
+                success = await this._refreshTokenIfNeeded();
+            } catch (_) {
+                // Transient (network/5xx/429) — keep the timer running and retry;
+                // do NOT tear down the session on a blip.
+                return;
+            }
             if (!success) {
                 console.log('[API] Background refresh failed, user session expired');
                 this._stopBackgroundRefresh();
@@ -344,7 +353,7 @@ class API {
             return false;
         }
 
-        // If already refreshing, wait for the existing promise
+        // In-context coalescing: one refresh per API instance at a time.
         if (this._isRefreshing) {
             console.log('[API] Already refreshing, waiting...');
             return this._refreshPromise;
@@ -352,7 +361,7 @@ class API {
 
         // Start refresh process
         this._isRefreshing = true;
-        this._refreshPromise = this._doRefresh(refreshToken);
+        this._refreshPromise = this._coordinatedRefresh(refreshToken);
 
         try {
             const result = await this._refreshPromise;
@@ -364,38 +373,90 @@ class API {
     }
 
     /**
-     * Actually perform the token refresh
+     * Cross-CONTEXT refresh coordination. Refresh tokens are single-use / rotated
+     * server-side, but the in-context `_isRefreshing` lock above cannot see a
+     * refresh happening in a SECOND window that shares this origin's localStorage —
+     * the WhatsApp lead-detail iframe (js/crm/lead-journey.js embeds
+     * whatsapp-inbox.html) or another browser tab. Two contexts then POST the same
+     * refresh token; the server rotates on the first and rejects the second, and
+     * the loser used to call logout() — wiping the fresh token the winner just
+     * stored and bouncing everyone to /index.html mid-action.
+     *
+     * Fix: serialize refresh across contexts with a Web Lock, and if another
+     * context already rotated the token while we waited for the lock, ADOPT its
+     * fresh token instead of POSTing a stale one.
+     */
+    async _coordinatedRefresh(rtAtStart) {
+        const run = async () => {
+            const current = getRefreshToken();
+            if (current && current !== rtAtStart) {
+                // Someone else refreshed while we waited. Adopt their tokens.
+                this.token = getAuthToken();
+                console.log('[API] Token already refreshed by another context; adopting it');
+                return true;
+            }
+            return await this._doRefresh(current || rtAtStart);
+        };
+        try {
+            if (typeof navigator !== 'undefined' && navigator.locks && typeof navigator.locks.request === 'function') {
+                return await navigator.locks.request('rz-token-refresh', run);
+            }
+        } catch (_) {
+            // Web Locks unavailable/failed — fall through to an unlocked refresh.
+        }
+        return run();
+    }
+
+    /**
+     * Actually perform the token refresh.
+     * Returns true on success, false only when the refresh token is GENUINELY
+     * rejected (session dead). Throws an error with `.transient = true` for a
+     * network drop / 5xx / 429 — a recoverable blip that must NOT log the user out.
      */
     async _doRefresh(refreshToken) {
+        let response;
         try {
-            const response = await fetch(`${CONFIG.authApiBaseUrl}/auth/refresh`, {
+            response = await fetch(`${CONFIG.authApiBaseUrl}/auth/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refreshToken: refreshToken })
             });
-
-            if (!response.ok) {
-                console.log('[API] Refresh request failed with status:', response.status);
-                return false;
-            }
-
-            const data = await response.json();
-            if (data.success && data.accessToken && data.refreshToken) {
-                // Store new tokens
-                this.token = data.accessToken;
-                storeAuthToken(data.accessToken);
-                storeRefreshToken(data.refreshToken);
-                storeTokenExpiry(data.accessTokenExpiresIn, data.refreshTokenExpiresIn);
-                console.log('[API] Token refreshed successfully');
-                return true;
-            }
-
-            console.log('[API] Refresh response missing tokens');
-            return false;
         } catch (error) {
-            console.error('[API] Error during token refresh:', error);
+            // Network drop / offline / timeout / DNS — the SESSION is fine, the
+            // network isn't. Surface a retriable error so callers don't log out.
+            console.warn('[API] Token refresh network error (transient):', error && error.message);
+            const e = new Error('Token refresh temporarily unavailable. Please retry.');
+            e.transient = true;
+            throw e;
+        }
+
+        if (!response.ok) {
+            // 5xx / 429 = auth service hiccup or rate limit → transient, recoverable.
+            if (response.status >= 500 || response.status === 429) {
+                console.warn('[API] Refresh transient failure, status:', response.status);
+                const e = new Error('Token refresh temporarily unavailable. Please retry.');
+                e.transient = true;
+                throw e;
+            }
+            // 400 / 401 / 403 = the refresh token is genuinely rejected → session dead.
+            console.log('[API] Refresh rejected, status:', response.status);
             return false;
         }
+
+        let data = {};
+        try { data = await response.json(); } catch { /* treat as missing tokens */ }
+        if (data.success && data.accessToken && data.refreshToken) {
+            // Store new tokens
+            this.token = data.accessToken;
+            storeAuthToken(data.accessToken);
+            storeRefreshToken(data.refreshToken);
+            storeTokenExpiry(data.accessTokenExpiresIn, data.refreshTokenExpiresIn);
+            console.log('[API] Token refreshed successfully');
+            return true;
+        }
+
+        console.log('[API] Refresh response missing tokens');
+        return false;
     }
 
     // Auth
