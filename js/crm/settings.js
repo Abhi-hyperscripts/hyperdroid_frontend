@@ -4286,7 +4286,17 @@ async function previewWipeLeadsByRange() {
             previewEl.innerHTML = `<span style="color:var(--text-secondary);">No leads created between <strong>${startDate}</strong> and <strong>${endDate}</strong> — nothing to wipe.</span>`;
             return;
         }
-        previewEl.innerHTML = `Will delete <strong>${res.leads_count} leads</strong>, ${res.activities_count} activities, ${res.followups_count} follow-ups, ${res.email_sends_count} email sends, and ${res.other_child_rows_count} other child rows (tasks, notes, transfer/help requests, assignment history). <strong>Total: ${res.total_rows_count} rows.</strong> Companies, contacts, and deals are not deleted.`;
+        // The parenthetical used to read "(tasks, notes, transfer/help
+        // requests, assignment history)". That list was written when the
+        // backend counted five other tables; it counts twelve now, and the
+        // omitted ones are the alarming ones — call recordings, transcripts
+        // and quality scores. An admin reading the old label would conclude
+        // their call history survived this wipe. It does not.
+        //
+        // Naming the destructive categories explicitly and ending with "and
+        // other lead-scoped records" keeps it accurate without pinning the
+        // copy to a table list that will drift again.
+        previewEl.innerHTML = `Will delete <strong>${res.leads_count} leads</strong>, ${res.activities_count} activities, ${res.followups_count} follow-ups, ${res.email_sends_count} email sends, and ${res.other_child_rows_count} other child rows — including <strong>call records, recordings, transcripts and call scores</strong>, sequence enrolments, WhatsApp campaign recipients, tasks, notes and assignment history. <strong>Total: ${res.total_rows_count} rows.</strong> Companies, contacts, and deals are not deleted.`;
     } catch (e) {
         console.error('Preview wipe failed:', e);
         // Use the canonical escapeHtml (defined at top of file) instead of
