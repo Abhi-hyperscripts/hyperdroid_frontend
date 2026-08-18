@@ -83,6 +83,35 @@
     font-weight: 500;
 }
 
+/* The breadcrumbs added to the CRM hero pages sit at the content column's left
+   edge, which is flush against the 78px fixed pulse-rail — no breathing room.
+   Give those (and only those — the wrapper-based ones on companies/settings
+   already clear it) a small left gutter so they don't hug the rail. Scoped by
+   hero parent so pre-existing breadcrumbs aren't shifted. */
+.ldk-hero > .breadcrumb-nav,
+.rlx-hero > .breadcrumb-nav,
+.rlx-header > .breadcrumb-nav,
+.dfl-hero > .breadcrumb-nav,
+.cid-hero > .breadcrumb-nav,
+.sqx-hero > .breadcrumb-nav,
+.anx-hero > .breadcrumb-nav,
+.mdp-hero > .breadcrumb-nav {
+    padding-left: 24px;
+}
+@media (max-width: 768px) {
+    /* Rail is hidden on mobile (body padding-left:0), so drop the gutter too. */
+    .ldk-hero > .breadcrumb-nav,
+    .rlx-hero > .breadcrumb-nav,
+    .rlx-header > .breadcrumb-nav,
+    .dfl-hero > .breadcrumb-nav,
+    .cid-hero > .breadcrumb-nav,
+    .sqx-hero > .breadcrumb-nav,
+    .anx-hero > .breadcrumb-nav,
+    .mdp-hero > .breadcrumb-nav {
+        padding-left: 0;
+    }
+}
+
 /* Override Bootstrap primary button */
 .crm-container .btn-primary {
     background-color: var(--brand-primary);
