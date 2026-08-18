@@ -271,19 +271,27 @@ class API {
                             }
                             return { message: await retryResponse.text() };
                         }
-                        // The retry (with a fresh, valid token) came back with a real error. Only a REPEAT 401
-                        // means the session is genuinely dead — a 403/404/500 is a legitimate app error on the
-                        // retried call and must surface as itself, not a misleading "Session expired" logout.
-                        if (retryResponse.status !== 401) {
-                            let retryData = {};
-                            try { retryData = await retryResponse.json(); }
-                            catch { try { retryData = { message: await retryResponse.text() }; } catch { /* ignore */ } }
-                            const retryErr = new Error(retryData.message || retryData.error || retryData.title || `Request failed (${retryResponse.status})`);
-                            retryErr.status = retryResponse.status;
-                            throw retryErr;
-                        }
+                        // A SUCCESSFUL refresh proves the session is alive at the auth
+                        // service. So whatever the retry returns now — 401, 403, 404, 500 —
+                        // is an ENDPOINT-level failure, NOT session death, and must surface as
+                        // itself rather than a misleading "Session expired" logout.
+                        //
+                        // This matters because services are inconsistent about 401 vs 403:
+                        // several answer an authorization / scope failure with 401 (e.g.
+                        // opening a WhatsApp thread or acting on a lead outside your scope).
+                        // The old code treated a repeat 401 as a dead session and logged the
+                        // user out mid-action — the "clicking WhatsApp logs me out" bug. The
+                        // ONLY genuine session-death signal is a FAILED refresh (handled below).
+                        let retryData = {};
+                        try { retryData = await retryResponse.json(); }
+                        catch { try { retryData = { message: await retryResponse.text() }; } catch { /* ignore */ } }
+                        const retryErr = new Error(retryData.message || retryData.error || retryData.title || `Request failed (${retryResponse.status})`);
+                        retryErr.status = retryResponse.status;
+                        retryErr.data = retryData;
+                        throw retryErr;
                     }
-                    // Refresh failed, or the retry still returned 401 → the session is genuinely dead.
+                    // Refresh FAILED → the session is genuinely dead. This is the only path
+                    // that logs the user out.
                     this.logout();
                     throw new Error('Session expired. Please log in again.');
                 }
