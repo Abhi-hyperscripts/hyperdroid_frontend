@@ -35,10 +35,20 @@
 
     let _sequences = [];
     let _editingId = null;      // null = create mode, uuid = edit mode
+    // Create/edit/activate/pause are CRM_ADMIN-only (see endpoint list at top of
+    // file). Viewing the list is open to any CRM user, so we don't guard the page —
+    // we just hide the mutating affordances so a rep can't fill the whole builder
+    // and lose it to a 403 on save.
+    let _seqAdmin = false;
 
     // ── Page lifecycle ───────────────────────────────────────────────────────
 
     document.addEventListener('DOMContentLoaded', async () => {
+        const roles = (typeof getUserRoles === 'function') ? getUserRoles() : [];
+        _seqAdmin = roles.includes('CRM_ADMIN') || roles.includes('SUPERADMIN');
+        if (!_seqAdmin) {
+            document.querySelectorAll('[onclick="openSequenceBuilder()"]').forEach(b => { b.style.display = 'none'; });
+        }
         try {
             await loadList();
         } catch (e) {
@@ -130,11 +140,12 @@
                 <div class="sqx-foot">
                     <span class="sqx-steps-n">${hasSteps ? seq.steps.length + (seq.steps.length === 1 ? ' step' : ' steps') : ''}</span>
                     <div class="sqx-actions">
+                        ${_seqAdmin ? `
                         <button class="btn" onclick="editSequence('${escJsAttr(seq.id)}')" title="Edit sequence">Edit</button>
                         ${seq.is_active
                             ? `<button class="btn warn" onclick="toggleActive('${escJsAttr(seq.id)}', false)" title="Pause — new enrolments blocked, in-flight ones pause">Pause</button>`
                             : `<button class="btn ok" onclick="toggleActive('${escJsAttr(seq.id)}', true)" title="Activate — sequence accepts new enrolments again">Activate</button>`
-                        }
+                        }` : ''}
                     </div>
                 </div>
             </div>

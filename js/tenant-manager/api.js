@@ -36,7 +36,11 @@ class TenantManagerAPI {
             });
 
             if (!response.ok) {
-                this.logout();
+                // Only a 401 means the token is dead. A 403/404/5xx is a
+                // recoverable route/outage error — don't discard a valid session.
+                if (response.status === 401) {
+                    this.logout();
+                }
                 return null;
             }
 

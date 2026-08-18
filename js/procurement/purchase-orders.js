@@ -753,7 +753,16 @@ async function loadVendorPerformanceData() {
             api.request(`/procurement/vendor-performance/vendor/${currentPo.vendor_id}/summary`, { _skipSpinner: true })
         ]);
 
-        const records = perfData.status === 'fulfilled' ? (perfData.value.data || perfData.value || []) : [];
+        // A REJECTED performance fetch is not the same as a vendor with no history.
+        // Rendering zero-metric cards from an empty `records` would present a load
+        // failure as genuine zero on-time / quality performance.
+        if (perfData.status === 'rejected') {
+            const c = document.getElementById('perfSummaryCards');
+            if (c) c.innerHTML = '<div style="color:var(--text-secondary);padding:12px;">Performance data couldn\'t be loaded — please try again.</div>';
+            return;
+        }
+
+        const records = perfData.value.data || perfData.value || [];
         const summary = summaryData.status === 'fulfilled' ? (summaryData.value.data || summaryData.value || null) : null;
 
         renderPerfSummaryCards(summary, records);

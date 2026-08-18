@@ -32,6 +32,16 @@
     let _editingId = null;   // null = create, uuid = edit
 
     document.addEventListener('DOMContentLoaded', async () => {
+        // Creating/editing a sequence is CRM_ADMIN-only (the save 403s otherwise).
+        // Bounce a non-admin back to the list before they fill out the builder and
+        // lose the work to a 403.
+        const roles = (typeof getUserRoles === 'function') ? getUserRoles() : [];
+        if (!roles.includes('CRM_ADMIN') && !roles.includes('SUPERADMIN')) {
+            if (typeof Toast !== 'undefined') Toast.error('Only CRM Admins can create or edit sequences.');
+            window.location = 'sequences.html';
+            return;
+        }
+
         const params = new URLSearchParams(window.location.search);
         const id = params.get('id');
 

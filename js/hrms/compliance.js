@@ -501,9 +501,14 @@ function countStates(config) {
 
 async function refreshCountryConfigs() {
     showLoading();
-    await loadCountryConfigs();
-    hideLoading();
-    showToast('Configurations refreshed', 'success');
+    try {
+        await loadCountryConfigs();
+        showToast('Configurations refreshed', 'success');
+    } finally {
+        // Ensure the loading overlay always clears — if loadCountryConfigs ever
+        // rethrows, the old code skipped hideLoading() and stranded the overlay.
+        hideLoading();
+    }
 }
 
 // ==================== Config Upload Modal ====================

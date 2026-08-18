@@ -746,7 +746,11 @@ async function initPosCustomerPicker() {
     try {
         const r = await api.request(AccountsCommon.buildUrl('customers', { limit: 500 }), { _skipSpinner: true });
         custs = (Array.isArray(r) ? r : (r?.data || r?.items || [])).filter(c => c.is_active !== false && c.name !== 'Walk-in Customer');
-    } catch { }
+    } catch {
+        // Walk-in still works, but flag the load failure so an empty customer list
+        // isn't misread as "no customers on file".
+        if (typeof Toast !== 'undefined') Toast.error('Could not load customers — walk-in only for now.');
+    }
     host.innerHTML = '';
     posCustomerDD = new SearchableDropdown(host, {
         id: 'posCustomerDD',
@@ -1285,6 +1289,7 @@ async function promptSerials(invoices, soldDate) {
         overlay.querySelector('#posSerialSkip').onclick = () => { overlay.remove(); resolve(); };
         overlay.querySelector('#posSerialSave').onclick = async () => {
             const sels = overlay.querySelectorAll('.pos-serial');
+            let anyFailed = false, anyOk = false;
             for (const sel of sels) {
                 if (!sel.value) continue;
                 try {
@@ -1293,9 +1298,17 @@ async function promptSerials(invoices, soldDate) {
                         body: JSON.stringify({ invoice_id: sel.dataset.inv, sold_date: soldDate }),
                         _skipSpinner: true
                     });
-                } catch (err) { Toast.error(`${sel.value}: ${err.message}`); }
+                    anyOk = true;
+                } catch (err) { anyFailed = true; Toast.error(`${sel.value}: ${err.message}`); }
             }
-            Toast.success('Serials recorded — warranties started');
+            // Only claim success if nothing failed — a blanket green toast after
+            // per-serial error toasts told the user every warranty started when
+            // some (or all) did not.
+            if (!anyFailed && anyOk) {
+                Toast.success('Serials recorded — warranties started');
+            } else if (anyFailed && anyOk) {
+                Toast.error('Some serials could not be recorded — see errors above.');
+            }
             overlay.remove(); resolve();
         };
     });

@@ -31,8 +31,14 @@ window.CrmSetupGuard = (function () {
                 api.request('/crm/functional-areas'),
                 api.request('/crm/teams'),
             ]);
-            const fgArr = Array.isArray(fgs) ? fgs : (fgs && fgs.items) || [];
-            const teamArr = Array.isArray(teams) ? teams : (teams && teams.items) || [];
+            // Normalize across every envelope these endpoints are known to use in
+            // this codebase (bare array, .items, .data, .teams). Recognizing only
+            // a bare array or .items would read a wrapped 200 as "empty" and bounce
+            // a fully-configured tenant off leads.html.
+            const asArr = (r, named) => Array.isArray(r) ? r
+                : (r && (r.items || r.data || (named && r[named]))) || [];
+            const fgArr = asArr(fgs);
+            const teamArr = asArr(teams, 'teams');
             return {
                 hasFunctionalGroups: fgArr.length > 0,
                 hasTeams: teamArr.length > 0,

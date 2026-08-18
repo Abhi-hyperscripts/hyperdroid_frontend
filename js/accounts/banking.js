@@ -1771,13 +1771,22 @@ function renderPdcTable() {
 // ── Register modal ──────────────────────────────────────────────────────────
 
 async function ensurePdcParties() {
+    let failed = false;
     if (!pdcCustomers.length) {
-        try { pdcCustomers = await api.request(AccountsCommon.buildUrl('customers'), { _skipSpinner: true }); } catch { pdcCustomers = []; }
+        try { pdcCustomers = await api.request(AccountsCommon.buildUrl('customers'), { _skipSpinner: true }); }
+        catch { pdcCustomers = []; failed = true; }
         pdcCustomers = Array.isArray(pdcCustomers) ? pdcCustomers : (pdcCustomers?.data || []);
     }
     if (!pdcVendors.length) {
-        try { pdcVendors = await api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }); } catch { pdcVendors = []; }
+        try { pdcVendors = await api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }); }
+        catch { pdcVendors = []; failed = true; }
         pdcVendors = Array.isArray(pdcVendors) ? pdcVendors : (pdcVendors?.data || []);
+    }
+    // Surface a load failure so an empty party dropdown isn't misread as "no
+    // customers/vendors exist". The empty arrays aren't cached (the `.length`
+    // guards above re-fetch next open), so a retry can succeed.
+    if (failed && typeof Toast !== 'undefined') {
+        Toast.error('Could not load parties — please reopen to retry.');
     }
 }
 

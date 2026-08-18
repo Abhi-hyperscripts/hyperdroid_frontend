@@ -42,14 +42,22 @@
         try {
             const resp = await api.request('/email-templates');
             templates = (resp && resp.items) || [];
-        } catch (e) { templates = []; }
+        } catch (e) {
+            templates = [];
+            // Don't let a failed load look like "no templates exist" — the compose
+            // validation would then demand a template the user can't pick.
+            if (typeof Toast !== 'undefined') Toast.error('Could not load templates — please retry.');
+        }
     }
 
     async function loadMailboxesForPicker() {
         try {
             const resp = await api.request('/mailboxes');
             mailboxes = ((resp && resp.mailboxes) || []).filter(m => m.isActive);
-        } catch (e) { mailboxes = []; }
+        } catch (e) {
+            mailboxes = [];
+            if (typeof Toast !== 'undefined') Toast.error('Could not load mailboxes — please retry.');
+        }
     }
 
     function renderCampaigns() {

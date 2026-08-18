@@ -746,7 +746,12 @@ async function refreshOwnerFilter() {
             try {
                 const team = await api.request(`/crm/teams/${t.team_id}`);
                 _teamMembersCache[t.team_id] = (team?.members || team?.Members || []).filter(m => m.is_active !== false);
-            } catch { _teamMembersCache[t.team_id] = []; }
+            } catch {
+                // Don't cache [] on failure — caching an empty array would hide this
+                // team's members for the rest of the session and read as "empty team".
+                // Skip it this pass so a later open can retry the fetch.
+                continue;
+            }
         }
         for (const m of _teamMembersCache[t.team_id]) {
             if (m.user_id && !memberMap.has(m.user_id)) {

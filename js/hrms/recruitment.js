@@ -8,6 +8,10 @@
 
     // ─── State ─────────────────────────────────────────────────────────────
     let postings = [];                  // current page of postings
+    // Managing job postings (create/edit/delete/regen/bulk-status) is HR-admin
+    // only; a plain HRMS_USER gets a 403. Mirror announcements.js and hide the
+    // affordances rather than let them click into a raw error.
+    let isRecAdmin = false;
     let editingPostingId = null;
     let activeFieldCard = null;
     let activeApplicationId = null;
@@ -71,6 +75,13 @@
     // ─── Init ──────────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
         if (typeof Navigation !== 'undefined' && Navigation.init) Navigation.init();
+        const adminRoles = ['SUPERADMIN', 'HRMS_ADMIN', 'HRMS_HR_ADMIN', 'HRMS_MANAGER', 'HRMS_HR_MANAGER'];
+        const roles = (typeof getUserRoles === 'function') ? getUserRoles()
+            : (((typeof getStoredUser === 'function' && getStoredUser()) || {}).roles || []);
+        isRecAdmin = roles.some(r => adminRoles.includes(r));
+        if (!isRecAdmin) {
+            document.querySelectorAll('[onclick="openNewPostingModal()"]').forEach(b => { b.style.display = 'none'; });
+        }
         setupSidebar();
         wireSearchInputs();
         initSearchableDropdowns();
@@ -319,7 +330,7 @@
         return `
             <tr data-id="${escapeAttr(p.id)}" class="${selectedIds.has(p.id) ? 'selected' : ''}" onclick="openPostingDetail('${escapeAttr(p.id)}')">
                 <td onclick="event.stopPropagation();">
-                    <input type="checkbox" data-row-check="${escapeAttr(p.id)}" ${checked} onchange="toggleRowSelection('${escapeAttr(p.id)}', this.checked)">
+                    ${isRecAdmin ? `<input type="checkbox" data-row-check="${escapeAttr(p.id)}" ${checked} onchange="toggleRowSelection('${escapeAttr(p.id)}', this.checked)">` : ''}
                 </td>
                 <td>
                     <div class="rec-row-title">${escapeHtml(p.title || 'Untitled')}${subtitle ? `<small>${escapeHtml(subtitle)}</small>` : ''}</div>
@@ -691,11 +702,12 @@
                         <button class="rec-btn rec-btn-sm" onclick="window.open('${escapeAttr(ogImageUrl)}', '_blank')" title="Preview the OG image that scrapers will see">View OG image</button>
                     </div>
                 </div>
+                ${isRecAdmin ? `
                 <div class="rec-posting-actions">
                     <button class="rec-btn rec-btn-sm" onclick="editPosting('${escapeAttr(p.id)}')">Edit</button>
                     <button class="rec-btn rec-btn-sm" onclick="regenerateKey('${escapeAttr(p.id)}')" title="Invalidate the public link and mint a fresh one">Regen link</button>
                     <button class="rec-btn rec-btn-sm rec-btn-danger" onclick="deletePosting('${escapeAttr(p.id)}')">Delete</button>
-                </div>
+                </div>` : ''}
             </div>
         `;
     }
