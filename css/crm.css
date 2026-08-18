@@ -6793,3 +6793,8 @@ body.crm-leads-page .lp-toolbar .crm-filter-group--no-label { flex-shrink: 0; di
   background: transparent;
   border-color: var(--border-color);
 }
+
+/* New-Lead form field-visibility picker (cog in the modal header) */
+.lead-fieldprefs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+.lead-fieldpref-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; padding: 4px 2px; color: var(--text-primary); }
+.lead-fieldpref-item input { width: 16px; height: 16px; cursor: pointer; flex: none; }

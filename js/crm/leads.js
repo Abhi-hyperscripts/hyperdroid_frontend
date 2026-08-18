@@ -2765,6 +2765,7 @@ function openNewLeadModal() {
     });
     clearCustomFieldRows();
     clearCapturedData();
+    applyLeadFormFieldPrefs();
     openModal('leadModal');
 }
 
@@ -2791,6 +2792,74 @@ function closeModal(modalId) {
 function closeLeadModal() {
     closeModal('leadModal');
     currentEditLeadId = null;
+}
+
+// ==================== New-Lead form field visibility ====================
+// Optional (non-mandatory) fields the user may hide from the New Lead form.
+// First/Last/Email (required) and the Custom Fields section always show.
+const LEAD_FORM_OPTIONAL_FIELDS = [
+    { id: 'leadPhone', label: 'Phone' },
+    { id: 'leadCompany', label: 'Company' },
+    { id: 'leadJobTitle', label: 'Job Title' },
+    { id: 'leadSource', label: 'Lead Source' },
+    { id: 'leadStatus', label: 'Status' },
+    { id: 'leadCity', label: 'City' },
+    { id: 'leadState', label: 'State' },
+    { id: 'leadCountry', label: 'Country' },
+    { id: 'leadPincode', label: 'Pincode' },
+    { id: 'leadAddress', label: 'Address' },
+    { id: 'leadAltPhone', label: 'Alt. Phone' },
+    { id: 'leadWebsite', label: 'Website' },
+    { id: 'leadCampaign', label: 'Campaign' },
+    { id: 'leadProductInterest', label: 'Product Interest' },
+    { id: 'leadEstimatedValue', label: 'Estimated Value' },
+    { id: 'leadNotes', label: 'Notes' },
+];
+const LEAD_FORM_PREFS_KEY = 'crm_leadform_hidden_fields';
+
+function getLeadFormHiddenFields() {
+    try { return new Set(JSON.parse(localStorage.getItem(LEAD_FORM_PREFS_KEY) || '[]')); }
+    catch { return new Set(); }
+}
+
+// Show/hide each optional field's column per saved prefs. Hidden fields stay in
+// the DOM (display:none on their column) so their values are still submitted in
+// EDIT mode — hiding is purely visual, never data-destroying.
+function applyLeadFormFieldPrefs() {
+    const hidden = getLeadFormHiddenFields();
+    LEAD_FORM_OPTIONAL_FIELDS.forEach(f => {
+        const el = document.getElementById(f.id);
+        const col = el ? el.closest('.col-md-3, .col-md-4, .col-md-6') : null;
+        if (col) col.style.display = hidden.has(f.id) ? 'none' : '';
+    });
+}
+
+// The cog opens the picker: checkbox CHECKED = the field is shown.
+function openLeadFieldPrefs() {
+    const hidden = getLeadFormHiddenFields();
+    const list = document.getElementById('leadFieldPrefsList');
+    if (!list) return;
+    list.innerHTML = LEAD_FORM_OPTIONAL_FIELDS.map(f => `
+        <label class="lead-fieldpref-item">
+            <input type="checkbox" data-field="${f.id}" ${hidden.has(f.id) ? '' : 'checked'}>
+            <span>${f.label}</span>
+        </label>`).join('');
+    openModal('leadFieldPrefsModal');
+}
+
+function saveLeadFieldPrefs() {
+    const hidden = [];
+    document.querySelectorAll('#leadFieldPrefsList input[data-field]').forEach(cb => {
+        if (!cb.checked) hidden.push(cb.getAttribute('data-field'));
+    });
+    localStorage.setItem(LEAD_FORM_PREFS_KEY, JSON.stringify(hidden));
+    applyLeadFormFieldPrefs();
+    closeModal('leadFieldPrefsModal');
+    if (typeof Toast !== 'undefined') Toast.success('Field preferences saved');
+}
+
+function closeLeadFieldPrefs() {
+    closeModal('leadFieldPrefsModal');
 }
 
 // ==================== CRUD Operations ====================
@@ -2892,6 +2961,7 @@ async function editLead(leadId) {
         // Populate captured data from source_raw_data
         populateCapturedData(lead.source_raw_data);
 
+        applyLeadFormFieldPrefs();
         openModal('leadModal');
     } catch (error) {
         console.error('Failed to load lead:', error);
