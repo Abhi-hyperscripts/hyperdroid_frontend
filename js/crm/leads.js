@@ -3058,6 +3058,10 @@ async function confirmConvertLead() {
         });
 
         Toast.success('Lead converted successfully');
+        // The detail panel stays open on the (now converted) lead — hide the
+        // Convert button immediately so it can't be clicked again.
+        const _cb = document.getElementById('leadDetailConvertBtn');
+        if (_cb) _cb.style.display = 'none';
         closeConvertModal();
         loadLeads();
         loadLeadStats();

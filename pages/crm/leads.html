@@ -477,6 +477,9 @@
 
             <!-- Quick actions -->
             <div class="lead-detail-actions" id="leadDetailActions">
+                <button class="btn btn-sm btn-outline-success" onclick="openConvertModal(window._leadDetailId)" id="leadDetailConvertBtn" title="Create a deal in the pipeline and a contact from this lead">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M20 6 9 17l-5-5"/></svg>Convert to Deal
+                </button>
                 <button class="btn btn-sm btn-outline-primary" onclick="openStatusChangeModal(window._leadDetailId)">Change Status</button>
                 <button class="btn btn-sm btn-outline-primary" onclick="openLogActivityModal(window._leadDetailId)">Log Activity</button>
                 <button class="btn btn-sm btn-outline-primary" onclick="openScheduleFollowupModal(window._leadDetailId)">Schedule Follow-up</button>

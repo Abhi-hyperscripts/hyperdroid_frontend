@@ -392,6 +392,11 @@
                 ? `<div class="ld-sect">${title}</div><div class="lead-detail-grid">${rows.join('')}</div>`
                 : '';
 
+            // Convert-to-deal action: hide it once the lead is already converted
+            // (there's nothing left to convert). Shown for every other status.
+            const _convBtn = document.getElementById('leadDetailConvertBtn');
+            if (_convBtn) _convBtn.style.display = (lead.status === 'converted') ? 'none' : '';
+
             document.getElementById('leadDetailInfo').innerHTML = `
                 <div class="ld-hero">
                     <span class="lead-avatar ld-avatar" style="background:${avBg}">${esc(avTxt)}</span>
@@ -407,13 +412,6 @@
                             ${lead.email ? `<span class="ld-contact-chip">${esc(lead.email)}${emailBtn}</span>` : ''}
                             ${[lead.city, lead.state].filter(Boolean).length ? `<span class="ld-contact-chip ld-muted">${esc([lead.city, lead.state].filter(Boolean).join(', '))}</span>` : ''}
                             ${lead.owner_name ? `<span class="ld-contact-chip ld-muted">Owner · ${esc(lead.owner_name)}</span>` : ''}
-                        </div>
-                        <div class="ld-hero-actions" style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                            ${lead.status !== 'converted'
-                                ? `<button type="button" class="btn btn-primary" onclick="openConvertModal('${lead.id}')" data-tooltip="Create a deal in the pipeline and a contact from this lead">
-                                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M20 6 9 17l-5-5"/></svg>Convert to Deal + Contact
-                                   </button>`
-                                : `<span class="ld-converted-note" style="color:var(--color-success);font-size:0.85rem;font-weight:500;">✓ Converted${lead.won_deal_value ? ' · ₹' + Number(lead.won_deal_value).toLocaleString('en-IN') : ''}</span>`}
                         </div>
                     </div>
                 </div>
