@@ -693,6 +693,7 @@
                 <div class="modal-body">
                     <form id="leadForm" onsubmit="handleLeadSubmit(event)">
                         <input type="hidden" id="leadId" value="">
+                        <div class="lead-form-grid">
                         <div class="row mb-3">
                             <div class="col-md-3">
                                 <label for="leadFirstName" class="form-label">First Name <span class="text-danger">*</span></label>
@@ -797,6 +798,7 @@
                                 <textarea class="form-control" id="leadNotes" name="notes" rows="1"></textarea>
                             </div>
                         </div>
+                        </div><!-- /lead-form-grid -->
                         <div class="mb-3" id="customFieldsSection">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                 <label class="form-label" style="margin: 0;">Custom Fields</label>
