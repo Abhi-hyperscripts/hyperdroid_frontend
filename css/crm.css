@@ -87,7 +87,13 @@
    edge, which is flush against the 78px fixed pulse-rail — no breathing room.
    Give those (and only those — the wrapper-based ones on companies/settings
    already clear it) a small left gutter so they don't hug the rail. Scoped by
-   hero parent so pre-existing breadcrumbs aren't shifted. */
+   hero parent so pre-existing breadcrumbs aren't shifted.
+
+   These heroes also carry an absolutely-positioned "capture wave" chart whose
+   hover tooltip (z-index up to 6) would otherwise sit ON TOP of the breadcrumb
+   and swallow its hover/clicks (the chart layer stacks above a static element).
+   Lift the breadcrumb above the chart/tooltip so it stays hoverable & clickable
+   and hovering it no longer triggers the chart tooltip. */
 .ldk-hero > .breadcrumb-nav,
 .rlx-hero > .breadcrumb-nav,
 .rlx-header > .breadcrumb-nav,
@@ -97,6 +103,32 @@
 .anx-hero > .breadcrumb-nav,
 .mdp-hero > .breadcrumb-nav {
     padding-left: 24px;
+    position: relative;
+    z-index: 10;
+}
+/* Only the actual links should capture the pointer — the empty stretch of the
+   breadcrumb bar to the right stays transparent to the chart underneath, so the
+   wave tooltip still works everywhere except right on the crumb text. */
+.ldk-hero > .breadcrumb-nav,
+.rlx-hero > .breadcrumb-nav,
+.rlx-header > .breadcrumb-nav,
+.dfl-hero > .breadcrumb-nav,
+.cid-hero > .breadcrumb-nav,
+.sqx-hero > .breadcrumb-nav,
+.anx-hero > .breadcrumb-nav,
+.mdp-hero > .breadcrumb-nav {
+    pointer-events: none;
+    width: fit-content;
+}
+.ldk-hero > .breadcrumb-nav > *,
+.rlx-hero > .breadcrumb-nav > *,
+.rlx-header > .breadcrumb-nav > *,
+.dfl-hero > .breadcrumb-nav > *,
+.cid-hero > .breadcrumb-nav > *,
+.sqx-hero > .breadcrumb-nav > *,
+.anx-hero > .breadcrumb-nav > *,
+.mdp-hero > .breadcrumb-nav > * {
+    pointer-events: auto;
 }
 @media (max-width: 768px) {
     /* Rail is hidden on mobile (body padding-left:0), so drop the gutter too. */
