@@ -4251,7 +4251,21 @@ function openWipeModal(mode) {
         }
         _pendingWipeRange = { startDate, endDate };
         titleEl.textContent = 'Wipe Leads by Date Range';
-        descEl.innerHTML = `This will delete <strong>leads created between ${startDate} and ${endDate}</strong> (inclusive on both ends), plus all their lead-scoped child rows: activities, follow-ups, email sends (and their events/replies), tasks, notes, transfer/help requests, assignment history. <strong>Companies, contacts, and deals are NOT deleted</strong> — they can belong to leads outside this range.`;
+        // This list is the one that MATTERS: the preview is optional and
+        // rendered further up the page, while this is the final dialog the
+        // admin types CONFIRM into before an irreversible delete. It used to
+        // enumerate only the safe-sounding half — "activities, follow-ups,
+        // email sends, tasks, notes, transfer/help requests, assignment
+        // history" — and omit call records, recordings, transcripts, call
+        // scores, sequence enrolments and WhatsApp campaign recipients. An
+        // admin reading it would conclude their call history survived.
+        //
+        // The earlier fix rewrote the PREVIEW copy and left this one, so the
+        // optional label became accurate and the load-bearing one stayed
+        // wrong. Kept in step with previewEl above, and ending on the same
+        // open-ended phrase so neither pins itself to a table list that will
+        // drift again.
+        descEl.innerHTML = `This will delete <strong>leads created between ${startDate} and ${endDate}</strong> (inclusive on both ends), plus all their lead-scoped child rows — including <strong>call records, recordings, transcripts and call scores</strong>, sequence enrolments, WhatsApp campaign recipients, activities, follow-ups, email sends (and their events/replies), tasks, notes, transfer/help requests, assignment history and other lead-scoped records. <strong>Companies, contacts, and deals are NOT deleted</strong> — they can belong to leads outside this range.`;
     } else {
         titleEl.textContent = 'Wipe All CRM Data';
         descEl.innerHTML = 'This will delete <strong>EVERYTHING</strong> for this tenant — including teams, members, functional areas, deal stages, lead sources, integrations, and CRM settings. Use only when seeding a fresh tenant.';
