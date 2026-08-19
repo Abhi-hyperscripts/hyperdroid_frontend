@@ -55,7 +55,10 @@
    up here automatically rather than needing this page edited. */
 .tut-guides {
     display: grid; grid-template-columns: 1fr; gap: 1.1rem;
-    max-width: 900px; margin: 0 auto; padding: 0 1rem 3rem;
+    max-width: 900px; margin: 0 auto;
+    /* 44px top matches the padding .lg-layout gives the app-guide pages. Without it the cards butt
+       straight against the border-bottom on .lg-head and the divider looks stuck to them. */
+    padding: 44px 1rem 5rem;
 }
 @media (min-width: 760px) { .tut-guides { grid-template-columns: 1fr 1fr; } }
 
