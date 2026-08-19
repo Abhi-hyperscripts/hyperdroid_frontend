@@ -283,12 +283,29 @@
                     totalLabel.title = 'This range holds more calls than the counts scan. '
                                      + 'Narrow the date range for exact figures.';
                 } else {
-                    totalLabel.textContent = _scope === 'today' ? 'Today' : 'In range';
+                    // The scope enum is four values, not two — 'all' renders
+                    // "All time" in the dropdown, so labelling its counts
+                    // "In range" contradicted the control right above them.
+                    totalLabel.textContent =
+                        _scope === 'today' ? 'Today' :
+                        _scope === 'all'   ? 'All time' : 'In range';
                     totalLabel.removeAttribute('title');
                 }
             }
         } catch (e) {
             console.warn('[calls-inbox] stats failed', e);
+            // A failed refresh must not leave the PREVIOUS load's truncation
+            // notice on screen. After one capped load, a later failure kept
+            // "5000+ / Showing first 5,000" up while describing a range the
+            // user had already narrowed away from.
+            const staleLabel = document.querySelector('#ciStatTotal')
+                ?.closest('.crm-stat-text')?.querySelector('.crm-stat-label');
+            if (staleLabel) {
+                staleLabel.textContent =
+                    _scope === 'today' ? 'Today' :
+                    _scope === 'all'   ? 'All time' : 'In range';
+                staleLabel.removeAttribute('title');
+            }
         }
     }
 
