@@ -268,6 +268,25 @@
             $('ciStatOutbound').textContent = s.outbound ?? 0;
             $('ciStatMissed').textContent = s.missed ?? 0;
             $('ciStatUnmatched').textContent = s.unmatched ?? 0;
+
+            // The server caps a scoped caller's scan at 5,000 rows and reports
+            // `truncated` when it hit the cap. Nothing read it, so a capped
+            // strip was pixel-identical to a complete one — which is the whole
+            // defect the flag was added for: a rep on a 90-day range reading
+            // "5000 calls" with no way to know it means "at least".
+            const totalLabel = document.querySelector('#ciStatTotal')
+                ?.closest('.crm-stat-text')?.querySelector('.crm-stat-label');
+            if (totalLabel) {
+                if (s.truncated) {
+                    $('ciStatTotal').textContent = `${s.total ?? 0}+`;
+                    totalLabel.textContent = 'Showing first 5,000';
+                    totalLabel.title = 'This range holds more calls than the counts scan. '
+                                     + 'Narrow the date range for exact figures.';
+                } else {
+                    totalLabel.textContent = _scope === 'today' ? 'Today' : 'In range';
+                    totalLabel.removeAttribute('title');
+                }
+            }
         } catch (e) {
             console.warn('[calls-inbox] stats failed', e);
         }
