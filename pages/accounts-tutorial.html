@@ -59,18 +59,18 @@
         <ol><li><a href="#dashboard">Dashboard <span class="tut-n">1</span></a></li><li><a href="#parties">Customers &amp; Suppliers <span class="tut-n">4</span></a></li><li><a href="#inventory">Inventory <span class="tut-n">13</span></a></li><li><a href="#pos">Point of Sale <span class="tut-n">1</span></a></li><li><a href="#receivables">Receivables — money in <span class="tut-n">9</span></a></li><li><a href="#payables">Payables — money out <span class="tut-n">5</span></a></li><li><a href="#banking">Banking <span class="tut-n">6</span></a></li><li><a href="#ledger">General Ledger <span class="tut-n">3</span></a></li><li><a href="#taxation">GST &amp; Tax <span class="tut-n">9</span></a></li><li><a href="#reports">Financial Reports <span class="tut-n">9</span></a></li><li><a href="#setup">Setup <span class="tut-n">9</span></a></li><li><a href="#admin">Administration <span class="tut-n">10</span></a></li><li><a href="#assets">Fixed Assets <span class="tut-n">3</span></a></li><li><a href="#expenses">Expenses <span class="tut-n">3</span></a></li><li><a href="#loans">Loans <span class="tut-n">1</span></a></li><li><a href="#budgets">Budgets <span class="tut-n">2</span></a></li><li><a href="#cost-centres">Cost Centres <span class="tut-n">2</span></a></li><li><a href="#projects">Projects <span class="tut-n">2</span></a></li><li><a href="#purchase-orders">Purchase Orders <span class="tut-n">1</span></a></li><li><a href="#recurring">Recurring <span class="tut-n">1</span></a></li><li><a href="#proforma-invoices">Proforma <span class="tut-n">1</span></a></li><li><a href="#storefront">Online Store <span class="tut-n">5</span></a></li><li><a href="#billing">Subscription Billing <span class="tut-n">4</span></a></li><li><a href="#scanner">Phone Scanner <span class="tut-n">1</span></a></li></ol>
       </nav>
       <article class="lg-doc"><div class="legal-section" id="dashboard"><h2>Dashboard</h2><p class="tut-lede">Where the day starts.</p><div class="tut-item" id="dashboard-dashboard">
-        <h3>The dashboard</h3>
-        <p>The state of the business at a glance — cash, receivables, payables and what needs attention. The place to start the day before opening any individual module.</p>
+        <h3>The dashboard — where the day starts</h3>
+        <p>Money in, money out, what is owed to you and what you owe, on one screen. It is not a report; it is the thirty seconds each morning that tells you whether today needs anything different from yesterday.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/dashboard/dashboard.jpg"
-               aria-label="The dashboard">
+               aria-label="The dashboard — where the day starts">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/dashboard/dashboard.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/dashboard/dashboard.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/dashboard/dashboard.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="parties"><h2>Customers &amp; Suppliers</h2><p class="tut-lede">Who you buy from and sell to. Set these up before anything else — every document points back to them.</p><div class="tut-item" id="parties-vendor-list">
         <h3>Vendors — who you buy from</h3>
-        <p>Every supplier you purchase from, with the GST details that decide the tax treatment on each bill you enter against them. The GSTIN matters more than it looks: its first two digits are the state code, and that is what decides IGST versus CGST+SGST on everything you ever buy from them. Payment terms here are what make a supplier show as overdue in AP Ageing rather than something you track by hand.</p>
+        <p>Every supplier you purchase from. Their GST details here decide the tax treatment on every bill you ever enter against them.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/parties/vendor-list.jpg"
                aria-label="Vendors — who you buy from">
@@ -80,7 +80,7 @@
         </video>
       </div><div class="tut-item" id="parties-pending-vendors">
         <h3>Pending vendors — the approval queue</h3>
-        <p>New suppliers wait here until somebody authorised signs them off. Whoever raises a bill should not also be able to invent the supplier it gets paid to. An empty queue is the healthy state; items in it are a prompt for the owner, not a problem.</p>
+        <p>When vendor approval is switched on, a new supplier waits here until somebody authorised signs it off. It is the smallest control in the product and it closes the largest hole a small business has.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/parties/pending-vendors.jpg"
                aria-label="Pending vendors — the approval queue">
@@ -90,7 +90,7 @@
         </video>
       </div><div class="tut-item" id="parties-customer-list">
         <h3>Customers — who you sell to</h3>
-        <p>A kirana sells mostly to walk-in cash customers, but credit customers — offices, canteens, societies — need a record. A credit limit here is a control rather than a note: set it and the system can stop a sale that would push the customer past what you are willing to carry. Payment terms drive the ageing buckets.</p>
+        <p>A kirana sells mostly to walk-in cash customers, but credit customers — offices, canteens, societies — need a record.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/parties/customer-list.jpg"
                aria-label="Customers — who you sell to">
@@ -100,7 +100,7 @@
         </video>
       </div><div class="tut-item" id="parties-pending-customers">
         <h3>Pending customers — the same guard, on the sales side</h3>
-        <p>New credit customers can be held for approval before anyone sells to them on terms. Credit is the risk. Selling on 15-day terms to a customer nobody checked is how a small shop quietly loses money, so the decision sits with the owner.</p>
+        <p>New credit customers can be held for approval before anybody sells to them on terms. On the buying side the risk is money going out; here it is goods going out and never being paid for.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/parties/pending-customers.jpg"
                aria-label="Pending customers — the same guard, on the sales side">
@@ -239,11 +239,11 @@
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/inventory/bulk-import.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="pos"><h2>Point of Sale</h2><p class="tut-lede">Billing at the counter.</p><div class="tut-item" id="pos-counter">
-        <h3>The billing counter</h3>
-        <p>Where a walk-in sale happens: scan, take payment, print. Stock and the ledger move as you go. Built for speed and for an unreliable connection — it keeps billing and syncs when the network returns.</p>
+        <h3>The counter — ringing up a walk-in sale</h3>
+        <p>Most of a grocery’s trade is cash at the counter, and none of it should require paperwork. Scan or tap the items, take the money, and one button does the invoice, the GST, the stock and the receipt together.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/pos/counter.jpg"
-               aria-label="The billing counter">
+               aria-label="The counter — ringing up a walk-in sale">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/pos/counter.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/pos/counter.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/pos/counter.mp4">Download it instead</a>.
@@ -449,661 +449,661 @@
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/banking/reconciliation.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="ledger"><h2>General Ledger</h2><p class="tut-lede">The bottom of the stack: every posting the system makes.</p><div class="tut-item" id="ledger-gl-entries">
-        <h3>The general ledger</h3>
-        <p>Every posting the system has made, whatever created it. This is the bottom of the stack. Every invoice, receipt and adjustment lands here as balanced debits and credits.</p>
+        <h3>The general ledger — every posting the system has made</h3>
+        <p>Each invoice, bill, payment and adjustment you have recorded ends up here as a balanced pair of entries. It is the full history of the business in one list, and it is what an auditor will actually read.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/gl-entries.jpg"
-               aria-label="The general ledger">
+               aria-label="The general ledger — every posting the system has made">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/gl-entries.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/gl-entries.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/gl-entries.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="ledger-create-entry">
-        <h3>Manual journal entry</h3>
-        <p>For the things no document covers — a correction, an accrual, the owner putting money in. Debits must equal credits before it will save. Use it sparingly: documents are better than journals.</p>
+        <h3>Posting a manual journal entry</h3>
+        <p>The one place you write directly into the ledger. Most days you never touch it — but moving cash from the till to the bank, or correcting a misposting, has no document of its own, and this is how it gets recorded.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/create-entry.jpg"
-               aria-label="Manual journal entry">
+               aria-label="Posting a manual journal entry">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/create-entry.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/create-entry.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/create-entry.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="ledger-journal-entries">
-        <h3>Journals</h3>
-        <p>Manual entries grouped by their type, so adjustments are easy to review later. Your accountant will read this first at year end.</p>
+        <h3>Journal entries — the ledger grouped by what caused it</h3>
+        <p>The same postings as the GL, gathered into the journals they came from: sales, purchase, bank, adjustment. It is the view that answers &quot;what kind of activity is driving my books&quot; rather than &quot;what happened on Tuesday&quot;.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/journal-entries.jpg"
-               aria-label="Journals">
+               aria-label="Journal entries — the ledger grouped by what caused it">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/journal-entries.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/journal-entries.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/ledger/journal-entries.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="taxation"><h2>GST &amp; Tax</h2><p class="tut-lede">Returns built from your documents rather than typed in.</p><div class="tut-item" id="taxation-tax-configs">
-        <h3>GST slabs</h3>
-        <p>The tax rates your business actually uses, each mapped to the ledger accounts it posts to. Every item points at one of these; without them an item import rejects every row.</p>
+        <h3>Tax configurations — the GST slabs your prices hang off</h3>
+        <p>Five slabs, created with the chart of accounts. Every item points at one of them, every invoice line inherits it from the item, and every return is built from what those lines add up to.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-configs.jpg"
-               aria-label="GST slabs">
+               aria-label="Tax configurations — the GST slabs your prices hang off">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-configs.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-configs.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-configs.mp4">Download it instead</a>.
         </video>
-      </div><div class="tut-item" id="taxation-tax-rates">
-        <h3>Rate history</h3>
-        <p>What each slab was on any given date. GST rates change, and old documents must keep the old rate. This is why re-printing last year's invoice still shows last year's tax.</p>
-        <video controls preload="none" playsinline
-               poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-rates.jpg"
-               aria-label="Rate history">
-          <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-rates.mp4" type="video/mp4">
-          <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-rates.srt" srclang="en" label="English">
-          Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-rates.mp4">Download it instead</a>.
-        </video>
       </div><div class="tut-item" id="taxation-hsn-sac-codes">
-        <h3>HSN and SAC codes</h3>
-        <p>The classification codes the GST portal expects on every line you file. Four digits is enough below the turnover threshold — but a wrong code is worse than a missing one.</p>
+        <h3>HSN codes — the classification your return is filed on</h3>
+        <p>Every product has a code that says what kind of thing it is, and GSTR-1 is summarised by it. Getting it wrong is not a formatting error — it files your shampoo as cereal, and the return is still accepted.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/hsn-sac-codes.jpg"
-               aria-label="HSN and SAC codes">
+               aria-label="HSN codes — the classification your return is filed on">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/hsn-sac-codes.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/hsn-sac-codes.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/hsn-sac-codes.mp4">Download it instead</a>.
         </video>
+      </div><div class="tut-item" id="taxation-tax-rates">
+        <h3>Tax rates — splitting a slab into its components</h3>
+        <p>A five per cent GST slab is really two and a half per cent CGST plus two and a half per cent SGST, each posting to its own ledger account. This is where that split is defined for the slabs that need it.</p>
+        <video controls preload="none" playsinline
+               poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-rates.jpg"
+               aria-label="Tax rates — splitting a slab into its components">
+          <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-rates.mp4" type="video/mp4">
+          <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-rates.srt" srclang="en" label="English">
+          Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-rates.mp4">Download it instead</a>.
+        </video>
       </div><div class="tut-item" id="taxation-gstr-1">
-        <h3>GSTR-1 — your sales return</h3>
-        <p>Everything you sold in the period, in the shape the portal wants, built from your invoices. Because it comes from documents rather than typed figures, it agrees with your books by construction.</p>
+        <h3>GSTR-1 — your outward supplies, built not typed</h3>
+        <p>The return of everything you sold. It is assembled from the invoices already in the system, which means the only way to file a wrong GSTR-1 is to have entered a wrong invoice.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-1.jpg"
-               aria-label="GSTR-1 — your sales return">
+               aria-label="GSTR-1 — your outward supplies, built not typed">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-1.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-1.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-1.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="taxation-gstr-3b">
-        <h3>GSTR-3B — the summary return</h3>
-        <p>Output tax on sales, input credit on purchases, and what you actually have to pay. Check the input credit against GSTR-2B before filing — that is where money is usually lost.</p>
+        <h3>GSTR-3B — what you actually owe this month</h3>
+        <p>The summary return, and the one that decides how much cash leaves your bank. Output tax on what you sold, minus input credit on what you bought, equals the payment.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-3b.jpg"
-               aria-label="GSTR-3B — the summary return">
+               aria-label="GSTR-3B — what you actually owe this month">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-3b.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-3b.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-3b.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="taxation-gstr-2b-match">
-        <h3>Matching supplier credit</h3>
-        <p>Compare what your suppliers declared against the bills you entered. Anything unmatched is credit at risk. A supplier who did not file means you cannot claim — better to find that now than at assessment.</p>
+        <h3>GSTR-2B matching — checking your suppliers actually filed</h3>
+        <p>The portal builds 2B from what your suppliers declared. Matching it against the bills you entered is how you find the credit you are claiming but cannot keep — because the supplier never filed it.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-2b-match.jpg"
-               aria-label="Matching supplier credit">
+               aria-label="GSTR-2B matching — checking your suppliers actually filed">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-2b-match.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-2b-match.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/gstr-2b-match.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="taxation-tds-return">
-        <h3>TDS</h3>
-        <p>Tax you withheld when paying certain suppliers, ready to deposit and report. Miss it and the expense itself can be disallowed — this is not optional bookkeeping.</p>
+        <h3>TDS return — tax withheld, in filing shape</h3>
+        <p>The other tax a business handles: amounts deducted at source, either from you by customers or by you from contractors. This assembles them into what a return needs.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tds-return.jpg"
-               aria-label="TDS">
+               aria-label="TDS return — tax withheld, in filing shape">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tds-return.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tds-return.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tds-return.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="taxation-tax-calculator">
-        <h3>Tax calculator</h3>
-        <p>Work a figure backwards or forwards through a GST rate without opening a document. Useful at the counter when a customer asks what the pre-tax price was.</p>
+        <h3>The tax calculator — CGST plus SGST, or IGST?</h3>
+        <p>The single most common GST question a shop has, answered in one screen: whether a sale splits into central and state tax or is charged as one integrated tax. The answer is decided entirely by two state codes.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-calculator.jpg"
-               aria-label="Tax calculator">
+               aria-label="The tax calculator — CGST plus SGST, or IGST?">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-calculator.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-calculator.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-calculator.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="taxation-tax-ledger">
-        <h3>The tax ledger</h3>
-        <p>Every rupee of GST charged and claimed, as ledger entries you can trace to their document. When a return and the books disagree, this is where you find the reason.</p>
+        <h3>The tax ledger — every rupee of GST that moved</h3>
+        <p>Output tax charged against input credit claimed, month by month, with the postings behind them. It is where you look when a return disagrees with your accounts.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-ledger.jpg"
-               aria-label="The tax ledger">
+               aria-label="The tax ledger — every rupee of GST that moved">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-ledger.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-ledger.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/taxation/tax-ledger.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="reports"><h2>Financial Reports</h2><p class="tut-lede">Did the shop make money, and is it holding together.</p><div class="tut-item" id="reports-trial-balance">
-        <h3>Trial balance</h3>
-        <p>Every account with its closing balance. Debits must equal credits — it is the first check that the books hold together. If this does not balance, nothing built on top of it means anything.</p>
+        <h3>Trial balance — the check that everything adds up</h3>
+        <p>Every account and its balance, debits in one column and credits in the other. If the two totals are equal, your books are internally consistent. It is the first report an accountant asks for and the fastest sanity check you have.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/trial-balance.jpg"
-               aria-label="Trial balance">
+               aria-label="Trial balance — the check that everything adds up">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/trial-balance.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/trial-balance.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/trial-balance.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="reports-profit-loss">
-        <h3>Profit and loss</h3>
-        <p>Income less cost of goods and expenses, for whatever period you choose. Did the shop make money. Gross margin is the line to watch in retail — it tells you if your pricing is working.</p>
+        <h3>Profit and loss — did the shop make money</h3>
+        <p>Income less cost of goods less running costs. It is the report everybody asks for, and the one most often misread — because a grocery’s profit hides inside a very small percentage of a very large turnover.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/profit-loss.jpg"
-               aria-label="Profit and loss">
+               aria-label="Profit and loss — did the shop make money">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/profit-loss.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/profit-loss.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/profit-loss.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="reports-balance-sheet">
-        <h3>Balance sheet</h3>
-        <p>What the business owns and owes on a given date. Stock, debtors, bank, creditors and what is left over. The inventory figure here should agree with your stock report — if not, something is wrong in one of them.</p>
+        <h3>Balance sheet — what the business owns and owes</h3>
+        <p>A photograph of one day: assets on one side, liabilities and equity on the other, always equal. Where the P&amp;L says how the period went, this says what condition the business is actually in.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/balance-sheet.jpg"
-               aria-label="Balance sheet">
+               aria-label="Balance sheet — what the business owns and owes">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/balance-sheet.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/balance-sheet.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/balance-sheet.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="reports-cash-flow">
-        <h3>Cash flow</h3>
-        <p>Where cash actually came from and went. Profit and cash are not the same thing, and this is the difference. A profitable shop can still run out of money — usually stock and credit customers are the reason.</p>
+        <h3>Cash flow — profit is not the same as money</h3>
+        <p>Where cash actually came from and went. A shop can show a profit and still be unable to pay its suppliers, and this is the report that explains how.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/cash-flow.jpg"
-               aria-label="Cash flow">
+               aria-label="Cash flow — profit is not the same as money">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/cash-flow.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/cash-flow.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/cash-flow.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="reports-account-ledger">
-        <h3>Account ledger</h3>
-        <p>Every entry in a single account, in order, with a running balance. The drill-down you use when a figure in a report looks wrong.</p>
+        <h3>Account ledger — one account, every movement</h3>
+        <p>Pick an account and see every posting that touched it with a running balance. It is the report you use to answer &quot;why is this number what it is&quot; without reading the whole general ledger.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/account-ledger.jpg"
-               aria-label="Account ledger">
+               aria-label="Account ledger — one account, every movement">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/account-ledger.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/account-ledger.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/account-ledger.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="reports-day-book">
-        <h3>Day book</h3>
-        <p>Everything that happened on a chosen day, across every account. The quickest way to answer &quot;what did we do yesterday&quot;.</p>
+        <h3>Day book — everything that happened today</h3>
+        <p>Every transaction of a single day in the order it occurred. It is the oldest report in book-keeping and still the fastest way to check a day’s trading against what the till and the bank say.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/day-book.jpg"
-               aria-label="Day book">
+               aria-label="Day book — everything that happened today">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/day-book.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/day-book.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/day-book.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="reports-cash-book">
-        <h3>Cash book</h3>
-        <p>Cash and bank movements only — receipts, payments and the running balance. Reconcile the cash column against the physical drawer at closing.</p>
+        <h3>Cash book — one bank account, in and out</h3>
+        <p>Receipts and payments for a single account with a running balance. It is the shape a bank statement comes in, which is exactly what makes it the right report to reconcile against one.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/cash-book.jpg"
-               aria-label="Cash book">
+               aria-label="Cash book — one bank account, in and out">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/cash-book.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/cash-book.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/cash-book.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="reports-ar-aging">
-        <h3>Receivables ageing</h3>
-        <p>The same ageing view as Receivables, printable for a review meeting. Export it before you sit down to chase payments.</p>
+        <h3>AR ageing — the same question, from the reports desk</h3>
+        <p>Who owes you and for how long, presented for printing and sending rather than for working through on screen. It is the version that goes to an accountant or a bank.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/ar-aging.jpg"
-               aria-label="Receivables ageing">
+               aria-label="AR ageing — the same question, from the reports desk">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/ar-aging.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/ar-aging.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/ar-aging.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="reports-ap-aging">
-        <h3>Payables ageing</h3>
-        <p>What you owe by age, so nothing falls past its terms unnoticed. Pair it with the cash book before deciding who gets paid this week.</p>
+        <h3>AP ageing — what you owe, in reporting shape</h3>
+        <p>Everything outstanding to suppliers, bucketed by age. Read alongside AR ageing it answers the only cash-flow question that matters: is money arriving faster than it has to leave?</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/ap-aging.jpg"
-               aria-label="Payables ageing">
+               aria-label="AP ageing — what you owe, in reporting shape">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/ap-aging.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/ap-aging.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/reports/ap-aging.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="setup"><h2>Setup</h2><p class="tut-lede">The structure everything else is built on.</p><div class="tut-item" id="setup-account-types">
-        <h3>Account types</h3>
-        <p>The five kinds of account every ledger is built from — asset, liability, equity, income, expense. These decide whether a balance is a debit or a credit, so they are fixed rather than a preference.</p>
+        <h3>Account types — the five buckets everything falls into</h3>
+        <p>Assets, liabilities, equity, income and expenses. Every account you will ever create is one of these five, and the type is what decides which side of the ledger it increases on.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-types.jpg"
-               aria-label="Account types">
+               aria-label="Account types — the five buckets everything falls into">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-types.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-types.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-types.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="setup-account-groups">
-        <h3>Account groups</h3>
-        <p>The headings your accounts sit under, which is what gives the balance sheet and P&amp;L their shape. Change the grouping and every financial statement re-organises with it.</p>
+        <h3>Account groups — how the chart stays readable</h3>
+        <p>Groups are the shelves your accounts sit on: Bank Accounts, Current Assets, Direct Expenses. They are what turns a flat list of sixty-four accounts into a balance sheet somebody can actually read.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-groups.jpg"
-               aria-label="Account groups">
+               aria-label="Account groups — how the chart stays readable">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-groups.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-groups.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-groups.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="setup-accounts">
-        <h3>The chart of accounts</h3>
-        <p>Every ledger account in the business. The grocery template starts you with 62 of them. Only leaf accounts can be posted to — the headers exist to total, not to receive entries.</p>
+        <h3>The chart of accounts — adding a ledger account</h3>
+        <p>Sixty-four accounts covering a grocery, created from a template rather than typed. This is where you add the one it did not think of — and where the code, type and group you choose decide where it lands on every report from then on.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/accounts.jpg"
-               aria-label="The chart of accounts">
+               aria-label="The chart of accounts — adding a ledger account">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/accounts.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/accounts.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/accounts.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="setup-account-tree">
-        <h3>The chart, as a tree</h3>
-        <p>The same accounts shown in their hierarchy, which is easier to reason about than a flat list. Use this to check nothing is filed under the wrong heading before you close a year.</p>
+        <h3>The account tree — the chart with its money in it</h3>
+        <p>The same accounts as the list, drawn as the hierarchy they actually form, with the balance on each. It is the fastest way to see both the shape of your chart and where the money is sitting.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-tree.jpg"
-               aria-label="The chart, as a tree">
+               aria-label="The account tree — the chart with its money in it">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-tree.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-tree.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/account-tree.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="setup-opening-balances">
-        <h3>Opening balances</h3>
-        <p>What each account was carrying on the day you started using the system. Get these in before you trade, or every report is missing its starting point.</p>
+        <h3>Opening balances — the day you switch over</h3>
+        <p>Every business that moves onto new books arrives with money already in the bank, stock on the shelf and suppliers owed. This screen is where that starting position goes in, and it is the single most important thing to get right at onboarding.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/opening-balances.jpg"
-               aria-label="Opening balances">
+               aria-label="Opening balances — the day you switch over">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/opening-balances.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/opening-balances.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/opening-balances.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="setup-fiscal-years">
-        <h3>Financial years</h3>
-        <p>Your accounting year — in India, April to March. Every document is filed inside one. A document dated outside any open year cannot post, which is a feature, not a fault.</p>
+        <h3>Fiscal years — the boundary your accounts are cut on</h3>
+        <p>In India the books run April to March. The fiscal year is what tells the product where one year’s profit stops and the next begins, and it is what makes a year-end close possible at all.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/fiscal-years.jpg"
-               aria-label="Financial years">
+               aria-label="Fiscal years — the boundary your accounts are cut on">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/fiscal-years.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/fiscal-years.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/fiscal-years.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="setup-fiscal-periods">
-        <h3>Periods and locking</h3>
-        <p>The months inside the year. Closing one stops anybody back-dating into a period you already reported. Lock each month once its return is filed and your history stops moving under you.</p>
+        <h3>Fiscal periods — locking a month once it is done</h3>
+        <p>Each fiscal year is split into twelve months, and each can be locked. Locking is how you stop somebody back-dating an entry into a month you have already filed a return for.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/fiscal-periods.jpg"
-               aria-label="Periods and locking">
+               aria-label="Fiscal periods — locking a month once it is done">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/fiscal-periods.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/fiscal-periods.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/fiscal-periods.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="setup-journal-types">
-        <h3>Journal types</h3>
-        <p>The categories entries are filed under — sales, purchase, payment, adjustment. They are what make the day book readable instead of one undifferentiated list.</p>
+        <h3>Journal types — labelling where an entry came from</h3>
+        <p>Every posting the system makes carries a journal type: sales, purchase, bank, cash, adjustment. It is what lets you filter the general ledger down to one kind of activity instead of reading everything.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/journal-types.jpg"
-               aria-label="Journal types">
+               aria-label="Journal types — labelling where an entry came from">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/journal-types.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/journal-types.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/journal-types.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="setup-coa-templates">
-        <h3>Industry templates</h3>
-        <p>Fourteen ready-made charts of accounts. Pick your trade and the whole ledger structure is built for you. Set up business also creates the financial year, its periods and the GST slabs in the same step.</p>
+        <h3>Chart of accounts templates — where this all came from</h3>
+        <p>Fourteen ready-made charts, one per industry. This shop was set up from the grocery template in a single click, which is why it had sixty-four sensible accounts before anybody typed anything.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/coa-templates.jpg"
-               aria-label="Industry templates">
+               aria-label="Chart of accounts templates — where this all came from">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/coa-templates.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/coa-templates.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/setup/coa-templates.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="admin"><h2>Administration</h2><p class="tut-lede">Settings, audit and the controls you hope never to need.</p><div class="tut-item" id="admin-tenant-settings">
-        <h3>Business settings</h3>
-        <p>Your legal name, GSTIN, state and currency. These print on documents and drive tax behaviour. The state code decides inter-state versus intra-state GST on everything you raise.</p>
+        <h3>Tenant settings — the handful of choices everything inherits</h3>
+        <p>Your GST home state, your base currency, your document numbering. Half a dozen fields that quietly decide how every invoice, return and report in the product behaves.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/tenant-settings.jpg"
-               aria-label="Business settings">
+               aria-label="Tenant settings — the handful of choices everything inherits">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/tenant-settings.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/tenant-settings.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/tenant-settings.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="admin-custom-fields">
-        <h3>Custom fields</h3>
-        <p>Add fields the software did not ship with — a route number on a customer, a licence on a supplier. They appear on the form and in exports, so they survive into your reporting.</p>
+        <h3>Custom fields — the one thing your business tracks that we did not think of</h3>
+        <p>Every trade has a field nobody else needs. Rather than forcing it into the notes box where nothing can filter or report on it, add it properly to the document type it belongs on.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/custom-fields.jpg"
-               aria-label="Custom fields">
+               aria-label="Custom fields — the one thing your business tracks that we did not think of">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/custom-fields.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/custom-fields.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/custom-fields.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="admin-email-sending">
-        <h3>Sending email</h3>
-        <p>Connect the mailbox invoices and statements are sent from, so they arrive as you rather than as a robot. Until this is set, documents can be downloaded but not emailed.</p>
+        <h3>Sending invoices from your own address</h3>
+        <p>Invoices and reminders can go out from your domain instead of ours. Customers recognise the sender, the mail is far less likely to be filtered, and replies come back to you.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/email-sending.jpg"
-               aria-label="Sending email">
+               aria-label="Sending invoices from your own address">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/email-sending.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/email-sending.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/email-sending.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="admin-audit-logs">
-        <h3>Audit log</h3>
-        <p>Who changed what, and when. It cannot be switched off, and it survives even a full data wipe. That permanence is the point — an edit log you can erase proves nothing.</p>
+        <h3>Audit logs — who did what, and when</h3>
+        <p>Every create, edit and delete in the system, with the user and the timestamp. It is not there to catch people; it is there so that when a figure changes, the question &quot;who changed it&quot; has an answer instead of an argument.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/audit-logs.jpg"
-               aria-label="Audit log">
+               aria-label="Audit logs — who did what, and when">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/audit-logs.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/audit-logs.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/audit-logs.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="admin-pending-approvals">
-        <h3>Approvals waiting on you</h3>
-        <p>Anything held for sign-off — a new supplier, a payment, an expense claim. The queue is what keeps one person from both creating and approving the same spend.</p>
+        <h3>Pending approvals — the queue that enforces two pairs of eyes</h3>
+        <p>When approval is switched on for a document type, it waits here for somebody other than its author. It is the smallest control that prevents the largest category of small-business loss.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/pending-approvals.jpg"
-               aria-label="Approvals waiting on you">
+               aria-label="Pending approvals — the queue that enforces two pairs of eyes">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/pending-approvals.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/pending-approvals.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/pending-approvals.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="admin-integrity-check">
-        <h3>Integrity check</h3>
-        <p>Runs the internal consistency tests: does stock agree with the ledger, do the control accounts tie to their subledgers. Run it before closing a period. It finds the problems reports quietly hide.</p>
+        <h3>Integrity check — proving the books have not drifted</h3>
+        <p>A read-only sweep that confirms every journal entry balances and every account balance matches the postings behind it. It changes nothing; it just tells you whether you can trust what you are reading.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/integrity-check.jpg"
-               aria-label="Integrity check">
+               aria-label="Integrity check — proving the books have not drifted">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/integrity-check.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/integrity-check.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/integrity-check.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="admin-job-log">
-        <h3>Background jobs</h3>
-        <p>Scheduled work — recurring invoices, reminders, depreciation — and whether it actually ran. If a recurring invoice did not appear, this is the first place to look.</p>
+        <h3>Job log — what the system did on its own</h3>
+        <p>Recurring invoices generated, depreciation posted, payments voided. Anything that happened without a person clicking at that moment is recorded here, so automation is never a black box.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/job-log.jpg"
-               aria-label="Background jobs">
+               aria-label="Job log — what the system did on its own">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/job-log.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/job-log.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/job-log.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="admin-closing-checklists">
-        <h3>Month-end checklist</h3>
-        <p>The steps to close a period, tracked so nothing is skipped in a hurry. Reconcile, count stock, check the returns, then lock — in that order.</p>
+        <h3>Closing checklists — month end without the panic</h3>
+        <p>The same dozen jobs every month end: reconcile the banks, run depreciation, file the return, lock the period. A checklist turns that from something one person remembers into something anybody can finish.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/closing-checklists.jpg"
-               aria-label="Month-end checklist">
+               aria-label="Closing checklists — month end without the panic">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/closing-checklists.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/closing-checklists.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/closing-checklists.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="admin-year-end-closing">
-        <h3>Year-end</h3>
-        <p>Roll the year: close the P&amp;L into retained earnings and carry the balance sheet forward. Once closed, the year is sealed. Do the checks first.</p>
+        <h3>Year-end closing — what happens when a year is shut</h3>
+        <p>Closing a fiscal year locks every period in it and carries the balances forward. It is the right thing to do once, at the right moment, and it cannot be undone by clicking again.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/year-end-closing.jpg"
-               aria-label="Year-end">
+               aria-label="Year-end closing — what happens when a year is shut">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/year-end-closing.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/year-end-closing.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/year-end-closing.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="admin-danger-zone">
-        <h3>Danger zone</h3>
-        <p>A full reset of this workspace's accounting data — used for demos and for handing a tenant back. It touches only your own workspace, and the audit log still survives it.</p>
+        <h3>The danger zone — and why it exists at all</h3>
+        <p>One button that permanently deletes every accounting record this tenant holds. It is here for exactly one legitimate purpose, and knowing what that is matters more than knowing where the button is.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/danger-zone.jpg"
-               aria-label="Danger zone">
+               aria-label="The danger zone — and why it exists at all">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/danger-zone.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/danger-zone.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/admin/danger-zone.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="assets"><h2>Fixed Assets</h2><p class="tut-lede">The long-lived things the shop owns.</p><div class="tut-item" id="assets-asset-categories">
-        <h3>Asset categories</h3>
-        <p>Groups of fixed asset — refrigeration, shop fittings, vehicles — each with its depreciation rate and method. Set the rate once here and every asset in the group depreciates correctly.</p>
+        <h3>Asset categories — the depreciation rules, set once</h3>
+        <p>A freezer and a laptop wear out at different speeds and get written down differently. The category holds the method, the useful life and the three accounts the arithmetic posts to — so registering an asset later is four fields, not a conversation with your accountant.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/asset-categories.jpg"
-               aria-label="Asset categories">
+               aria-label="Asset categories — the depreciation rules, set once">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/asset-categories.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/asset-categories.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/asset-categories.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="assets-asset-register">
-        <h3>The asset register</h3>
-        <p>Every long-lived thing the shop owns: the chiller, the billing counter, the delivery scooter. These are not expenses. They sit on the balance sheet and lose value gradually.</p>
+        <h3>Registering an asset</h3>
+        <p>The list of the long-lived things the business owns, what they cost, and what they are worth today. It is where an auditor starts, and it is what stops a ₹3 lakh freezer being written off as a shop expense in the month it was bought.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/asset-register.jpg"
-               aria-label="The asset register">
+               aria-label="Registering an asset">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/asset-register.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/asset-register.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/asset-register.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="assets-depreciation">
-        <h3>Depreciation</h3>
-        <p>Post the periodic charge that writes assets down as they age. Skip it and your profit is overstated and your balance sheet shows equipment at a price nobody would pay.</p>
+        <h3>Running depreciation</h3>
+        <p>The monthly job that moves a slice of every asset’s cost into the profit and loss. It is one click, it posts to the ledger, and skipping it is the most common reason a small business overstates its profit.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/depreciation.jpg"
-               aria-label="Depreciation">
+               aria-label="Running depreciation">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/depreciation.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/depreciation.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/assets/depreciation.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="expenses"><h2>Expenses</h2><p class="tut-lede">Running costs and staff claims.</p><div class="tut-item" id="expenses-categories">
-        <h3>Expense categories</h3>
-        <p>The kinds of spend you want to see separately — electricity, rent, packing, fuel. This is what makes the P&amp;L answer questions instead of showing one big &quot;expenses&quot; line.</p>
+        <h3>Expense categories — what staff are allowed to claim for</h3>
+        <p>The list a claim form offers. Each category points at the ledger account its claims land in, so a reimbursement books itself to the right place without anyone choosing an account.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/categories.jpg"
-               aria-label="Expense categories">
+               aria-label="Expense categories — what staff are allowed to claim for">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/categories.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/categories.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/categories.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="expenses-policies">
-        <h3>Expense policies</h3>
-        <p>Limits and rules on what staff may claim, and what needs approval. Set the limits before the claims start, not after the first argument.</p>
+        <h3>Expense policies — the limits, written down once</h3>
+        <p>A cap per claim and a receipt threshold, per category. It turns &quot;use your judgement&quot; into a rule the system applies, which is fairer to staff and easier for whoever approves.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/policies.jpg"
-               aria-label="Expense policies">
+               aria-label="Expense policies — the limits, written down once">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/policies.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/policies.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/policies.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="expenses-expense-claims">
-        <h3>Expense claims</h3>
-        <p>Staff spending from their own pocket, submitted for approval and reimbursement. Approval is deliberately someone else's job — you cannot approve your own claim.</p>
+        <h3>Expense claims — staff money out and back</h3>
+        <p>Somebody paid for something out of their own pocket. The claim records what, under which category, and carries it through submitted, approved and reimbursed — so the money owed to your own staff is a tracked liability, not a note in a drawer.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/expense-claims.jpg"
-               aria-label="Expense claims">
+               aria-label="Expense claims — staff money out and back">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/expense-claims.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/expense-claims.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/expenses/expense-claims.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="loans"><h2>Loans</h2><p class="tut-lede">Borrowings and their repayment schedules.</p><div class="tut-item" id="loans-loan-list">
-        <h3>Loans</h3>
-        <p>Money borrowed or lent, with the repayment schedule and interest split out. Each EMI is part principal and part interest — only the interest is an expense, and this keeps them apart.</p>
+        <h3>Recording a business loan and its EMIs</h3>
+        <p>A loan is not income and an EMI is not an expense — part of it repays what you borrowed and part is interest. Recording the loan properly is what makes every EMI split itself correctly for the next three years.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/loans/loan-list.jpg"
-               aria-label="Loans">
+               aria-label="Recording a business loan and its EMIs">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/loans/loan-list.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/loans/loan-list.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/loans/loan-list.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="budgets"><h2>Budgets</h2><p class="tut-lede">What you planned, against what happened.</p><div class="tut-item" id="budgets-budget-list">
-        <h3>Budgets</h3>
-        <p>What you planned to spend or earn per account, per period. A budget nobody set means variance reporting has nothing to compare against.</p>
+        <h3>Setting a budget for an account</h3>
+        <p>A budget is a number you commit to before the year starts, per account, split across twelve months. Without one, every cost looks reasonable in isolation and the year is over before anybody notices the total.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/budgets/budget-list.jpg"
-               aria-label="Budgets">
+               aria-label="Setting a budget for an account">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/budgets/budget-list.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/budgets/budget-list.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/budgets/budget-list.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="budgets-budget-vs-actual">
-        <h3>Budget versus actual</h3>
-        <p>Plan against reality, with the variance made obvious. Read it monthly while there is still time to react.</p>
+        <h3>Budget against actual — the only budget screen that matters</h3>
+        <p>Setting a budget takes ten minutes and does nothing on its own. This is the screen that makes it worth having: what you planned, what you have actually spent, and the gap, per account and per month.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/budgets/budget-vs-actual.jpg"
-               aria-label="Budget versus actual">
+               aria-label="Budget against actual — the only budget screen that matters">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/budgets/budget-vs-actual.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/budgets/budget-vs-actual.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/budgets/budget-vs-actual.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="cost-centres"><h2>Cost Centres</h2><p class="tut-lede">Which part of the business is making the money.</p><div class="tut-item" id="cost-centres-cost-centres">
-        <h3>Cost centres</h3>
-        <p>Split results by part of the business — the main shop, the delivery arm, a second branch. It answers which part of the business is actually making the money.</p>
+        <h3>Cost centres — which part of the shop earns its keep</h3>
+        <p>Fresh and dairy needs refrigeration, wastage and daily deliveries. Packaged grocery needs none of that. Tag spending to a cost centre and you can finally see which counter is carrying which costs.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/cost-centres/cost-centres.jpg"
-               aria-label="Cost centres">
+               aria-label="Cost centres — which part of the shop earns its keep">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/cost-centres/cost-centres.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/cost-centres/cost-centres.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/cost-centres/cost-centres.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="cost-centres-spend-report">
-        <h3>Spend by cost centre</h3>
-        <p>Costs grouped by the centre that incurred them. This is how a second branch stops hiding inside the first one's numbers.</p>
+        <h3>Cost centre spend — where the money went</h3>
+        <p>Spend per centre for a date range, split between the net cost and the GST you can claim back. It is the report that turns a vague sense that &quot;fresh is expensive&quot; into a figure.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/cost-centres/spend-report.jpg"
-               aria-label="Spend by cost centre">
+               aria-label="Cost centre spend — where the money went">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/cost-centres/spend-report.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/cost-centres/spend-report.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/cost-centres/spend-report.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="projects"><h2>Projects</h2><p class="tut-lede">Income and cost against a defined piece of work.</p><div class="tut-item" id="projects-projects">
-        <h3>Projects</h3>
-        <p>Track income and cost against a defined piece of work — a bulk festival supply, a catering contract. Anything with its own budget and its own answer to &quot;did we make money on it&quot;.</p>
+        <h3>Projects — ring-fencing one job’s money</h3>
+        <p>A shop that also takes on a contract — a canteen supply, an event, a new branch fit-out — needs to know whether that job made money on its own. Tag the invoices and bills to a project and the answer becomes a report instead of an argument.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/projects/projects.jpg"
-               aria-label="Projects">
+               aria-label="Projects — ring-fencing one job’s money">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/projects/projects.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/projects/projects.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/projects/projects.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="projects-project-statement">
-        <h3>Project statement</h3>
-        <p>Everything booked to one project, with its profitability. The honest answer on whether that contract was worth taking.</p>
+        <h3>Project statement — did this job actually pay?</h3>
+        <p>Billed, collected and still due, per project, for one customer. It is the answer to the question every contract eventually raises: we did all that work, where did the money go?</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/projects/project-statement.jpg"
-               aria-label="Project statement">
+               aria-label="Project statement — did this job actually pay?">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/projects/project-statement.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/projects/project-statement.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/projects/project-statement.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="purchase-orders"><h2>Purchase Orders</h2><p class="tut-lede">What you have ordered but not yet received.</p><div class="tut-item" id="purchase-orders-purchase-orders">
-        <h3>Purchase orders</h3>
-        <p>What you have ordered from a supplier but not yet received. The PO becomes the bill when the goods arrive, so nothing has to be typed twice.</p>
+        <h3>Purchase orders — committing to a purchase before it arrives</h3>
+        <p>A PO is what you send the supplier, and what you check the delivery against when it turns up. Nothing has been bought and nothing is owed yet — but the commitment is on the record, so two people cannot order the same thing twice.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/purchase-orders/purchase-orders.jpg"
-               aria-label="Purchase orders">
+               aria-label="Purchase orders — committing to a purchase before it arrives">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/purchase-orders/purchase-orders.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/purchase-orders/purchase-orders.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/purchase-orders/purchase-orders.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="recurring"><h2>Recurring</h2><p class="tut-lede">Documents that repeat on a schedule.</p><div class="tut-item" id="recurring-recurring-list">
-        <h3>Recurring documents</h3>
-        <p>Invoices and bills that repeat — a monthly society supply, the rent. Set it once and it generates on schedule. Check the job log if one does not appear.</p>
+        <h3>Recurring documents — the invoice that raises itself</h3>
+        <p>Rent, a monthly supply contract, a maintenance charge — anything that happens on the same day every month should not need a person to remember it. A recurring rule raises the document on schedule and tells you it did.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/recurring/recurring-list.jpg"
-               aria-label="Recurring documents">
+               aria-label="Recurring documents — the invoice that raises itself">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/recurring/recurring-list.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/recurring/recurring-list.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/recurring/recurring-list.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="proforma-invoices"><h2>Proforma</h2><p class="tut-lede">Quotes and advance requests.</p><div class="tut-item" id="proforma-invoices-proforma-invoices">
-        <h3>Proforma invoices</h3>
-        <p>A quote or advance request. It looks like an invoice but creates no receivable and no GST liability. It becomes a real invoice only when the customer commits.</p>
+        <h3>Proforma invoices — quoting before you commit</h3>
+        <p>A proforma looks like an invoice and behaves like nothing. No receivable, no GST, no stock movement — just a priced offer with an expiry date, which converts into a real invoice the moment the customer says yes.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/proforma-invoices/proforma-invoices.jpg"
-               aria-label="Proforma invoices">
+               aria-label="Proforma invoices — quoting before you commit">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/proforma-invoices/proforma-invoices.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/proforma-invoices/proforma-invoices.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/proforma-invoices/proforma-invoices.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="storefront"><h2>Online Store</h2><p class="tut-lede">Selling the same catalogue online.</p><div class="tut-item" id="storefront-api-keys">
-        <h3>Storefront keys</h3>
-        <p>The credential your online shop uses to read your catalogue and send orders back. Shown once when created. Treat it like a password — anyone holding it can read your catalogue.</p>
+        <h3>The storefront key — connecting a shop front to these books</h3>
+        <p>One key lets your online store read this catalogue, its prices and its live stock, and place real orders against it. Every sale the store makes lands here as an invoice, so the website and the accounts are never two separate truths.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/api-keys.jpg"
-               aria-label="Storefront keys">
+               aria-label="The storefront key — connecting a shop front to these books">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/api-keys.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/api-keys.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/api-keys.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="storefront-coupons">
-        <h3>Coupon codes</h3>
-        <p>Discount codes with limits — minimum spend, maximum discount, how many times each shopper may use it. The limits are what stop a code being screenshotted and shared into a loss.</p>
+        <h3>Coupons — a code the shopper types</h3>
+        <p>The discount a customer has to know about. Every redemption is validated against the rules you set here and booked on the invoice, so a promotion never quietly becomes an unrecorded margin cut.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/coupons.jpg"
-               aria-label="Coupon codes">
+               aria-label="Coupons — a code the shopper types">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/coupons.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/coupons.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/coupons.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="storefront-discounts">
-        <h3>Automatic discounts</h3>
-        <p>Discounts that apply themselves when the basket qualifies, without a code. Better for &quot;10% off over ₹999&quot; than making the customer remember anything.</p>
+        <h3>Automatic discounts — no code required</h3>
+        <p>A discount the store applies by itself when the basket qualifies. Nobody has to have heard of it, which makes it the right tool for &quot;spend more, save more&quot; and for free delivery thresholds.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/discounts.jpg"
-               aria-label="Automatic discounts">
+               aria-label="Automatic discounts — no code required">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/discounts.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/discounts.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/discounts.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="storefront-bxgy">
-        <h3>Buy X get Y</h3>
-        <p>Buy-two-get-one offers, run properly so the free unit still leaves stock and cost correct. The give-away is a real stock movement, not a discount on paper.</p>
+        <h3>Buy-X-get-Y offers on the shop front</h3>
+        <p>The online twin of the counter scheme: buy two, get one free, applied at checkout without anybody typing anything. The free unit still comes off your stock, which is what keeps the margin honest.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/bxgy.jpg"
-               aria-label="Buy X get Y">
+               aria-label="Buy-X-get-Y offers on the shop front">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/bxgy.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/bxgy.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/bxgy.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="storefront-gift-cards">
-        <h3>Gift cards</h3>
-        <p>Issued value a customer can spend later. It is a liability until they redeem it. Treating it as income on sale overstates your profit — the system keeps it as money you owe.</p>
+        <h3>Gift cards — money taken before anything is sold</h3>
+        <p>A prepaid card is not a sale. It is cash in hand and a promise to supply later, which makes it a liability on your books until it is redeemed — and this screen books that correctly without anybody thinking about it.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/gift-cards.jpg"
-               aria-label="Gift cards">
+               aria-label="Gift cards — money taken before anything is sold">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/gift-cards.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/gift-cards.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/storefront/gift-cards.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="billing"><h2>Subscription Billing</h2><p class="tut-lede">For businesses that bill on a recurring plan.</p><div class="tut-item" id="billing-billing-plans">
-        <h3>Billing plans</h3>
-        <p>Subscription plans for businesses that bill customers on a recurring basis. Relevant if you sell a service on subscription rather than goods over a counter.</p>
+        <h3>Billing plans — a price that repeats</h3>
+        <p>A plan is a named recurring charge: what it costs and how often. Define it once and every customer put on it is billed the same way, so a price change is one edit rather than forty invoices.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/billing-plans.jpg"
-               aria-label="Billing plans">
+               aria-label="Billing plans — a price that repeats">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/billing-plans.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/billing-plans.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/billing-plans.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="billing-subscriptions">
-        <h3>Subscriptions</h3>
-        <p>Customers on a recurring plan, and where each one is in its cycle. Renewals and invoices are generated from here automatically.</p>
+        <h3>Subscriptions — putting a customer on a plan</h3>
+        <p>The link between a customer and a recurring price, with a start date. From here the invoices generate themselves on schedule, which is the whole reason to model it as a subscription rather than remembering to bill somebody every month.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/subscriptions.jpg"
-               aria-label="Subscriptions">
+               aria-label="Subscriptions — putting a customer on a plan">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/subscriptions.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/subscriptions.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/subscriptions.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="billing-usage-meters">
-        <h3>Usage meters</h3>
-        <p>For plans billed by consumption rather than a flat fee. The meter reading is what the invoice is built from, so it must be captured before billing.</p>
+        <h3>Usage meters — charging for what was actually used</h3>
+        <p>A flat plan does not fit everything. A meter charges per unit — per delivery beyond the included ones, per crate, per kilometre — and the usage you record against it becomes a line on the next invoice.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/usage-meters.jpg"
-               aria-label="Usage meters">
+               aria-label="Usage meters — charging for what was actually used">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/usage-meters.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/usage-meters.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/usage-meters.mp4">Download it instead</a>.
         </video>
       </div><div class="tut-item" id="billing-tokens">
-        <h3>Token balances</h3>
-        <p>Pre-paid credit a customer draws down against. Like a gift card, it is a liability until it is consumed.</p>
+        <h3>Tokens — a prepaid balance a customer draws down</h3>
+        <p>Money taken up front against future supply. Like a gift card, it is a liability until it is used — and unlike a gift card, it belongs to a named account customer whose balance you can look up at the counter.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/tokens.jpg"
-               aria-label="Token balances">
+               aria-label="Tokens — a prepaid balance a customer draws down">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/tokens.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/tokens.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/billing/tokens.mp4">Download it instead</a>.
         </video>
       </div></div><div class="legal-section" id="scanner"><h2>Phone Scanner</h2><p class="tut-lede">Turning a phone into the barcode scanner.</p><div class="tut-item" id="scanner-scanner">
-        <h3>Phone as a barcode scanner</h3>
-        <p>Pair a phone to the till and it becomes the scanner, with no extra hardware to buy. For a small shop this removes the main hardware cost of going digital.</p>
+        <h3>Turning a phone into the counter’s barcode scanner</h3>
+        <p>A shop does not need to buy scanner hardware to scan. Pair a staff phone with the billing counter and its camera becomes the scanner — the same barcodes, the same items, no cable and no purchase.</p>
         <video controls preload="none" playsinline
                poster="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/scanner/scanner.jpg"
-               aria-label="Phone as a barcode scanner">
+               aria-label="Turning a phone into the counter’s barcode scanner">
           <source src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/scanner/scanner.mp4" type="video/mp4">
           <track kind="captions" src="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/scanner/scanner.srt" srclang="en" label="English">
           Your browser cannot play this video. <a href="https://pub-07ca69b002054d93ab7b5ce114937053.r2.dev/tutorials/accounts/scanner/scanner.mp4">Download it instead</a>.
