@@ -594,7 +594,14 @@
                 const fields = r.mapped_fields || {};
                 const badgeClass = r.status === 'new' ? 'badge-new' : r.status === 'duplicate' ? 'badge-duplicate' : 'badge-error';
                 const statusLabel = r.status === 'new' ? 'New' : r.status === 'duplicate' ? 'Dupe' : 'Error';
-                const title = r.duplicate_reason || '';
+                // ⭐ SHOW WHY. The preview computes an ImportRowError per bad row
+                // — "'negotiation' is not a lead status. Use one of: …" — and
+                // nothing rendered it, so the user saw "Errors: 1000" and rows
+                // badged Error with an empty tooltip. Guessing which of eight
+                // statuses are legal from a badge is not possible; the row's own
+                // reason is the only actionable thing on the screen.
+                const rowError = (result.errors || []).find(e => e.row_number === r.row_number);
+                const title = r.duplicate_reason || (rowError ? rowError.message : '');
                 const cellsHtml = cols.map(c => `<td>${esc(fields[c.key] || '—')}</td>`).join('');
                 return `<tr class="row-${r.status}">
                     <td>${r.row_number}</td>
