@@ -49,3 +49,31 @@
     .tutorials-page .tut-item { margin: 1.5rem 0 2rem; }
     .tutorials-page .tut-item video { border-radius: 9px; }
 }
+
+/* ── Guides index ─────────────────────────────────────────────────────────────
+   One card per app. Built by scanning tutorials/<app>/, so a new app guide shows
+   up here automatically rather than needing this page edited. */
+.tut-guides {
+    display: grid; grid-template-columns: 1fr; gap: 1.1rem;
+    max-width: 900px; margin: 0 auto; padding: 0 1rem 3rem;
+}
+@media (min-width: 760px) { .tut-guides { grid-template-columns: 1fr 1fr; } }
+
+.tut-guidecard {
+    display: block; text-decoration: none; color: inherit;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary); border-radius: 14px;
+    overflow: hidden; transition: border-color .15s, transform .15s;
+}
+.tut-guidecard:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
+.tut-guidecard img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.tut-guidebody { padding: 1.1rem 1.2rem 1.3rem; }
+.tut-guidebody h2 {
+    display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap;
+    font-size: 1.2rem; margin: 0 0 .4rem; color: var(--text-primary);
+}
+.tut-guidebody h2 span {
+    font-size: .74rem; font-weight: 600; color: var(--text-secondary);
+    border: 1px solid var(--border-primary); border-radius: 999px; padding: .1rem .55rem;
+}
+.tut-guidebody p { margin: 0; color: var(--text-secondary); font-size: .92rem; line-height: 1.6; }
