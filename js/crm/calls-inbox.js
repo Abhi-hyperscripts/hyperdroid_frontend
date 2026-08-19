@@ -294,10 +294,17 @@
             }
         } catch (e) {
             console.warn('[calls-inbox] stats failed', e);
-            // A failed refresh must not leave the PREVIOUS load's truncation
-            // notice on screen. After one capped load, a later failure kept
-            // "5000+ / Showing first 5,000" up while describing a range the
-            // user had already narrowed away from.
+            // A failed refresh must not leave the PREVIOUS load's numbers OR its
+            // truncation notice on screen.
+            //
+            // The first version of this cleared only the caption — so after a
+            // capped load, switching scope and failing left "5000+" under the
+            // NEW scope's label: the number and its cap marker still described
+            // the range the user had navigated away from, which is exactly the
+            // failure this block was added to close. Clear both.
+            ['ciStatTotal', 'ciStatInbound', 'ciStatOutbound', 'ciStatMissed', 'ciStatUnmatched']
+                .forEach(id => { const el = $(id); if (el) el.textContent = '—'; });
+
             const staleLabel = document.querySelector('#ciStatTotal')
                 ?.closest('.crm-stat-text')?.querySelector('.crm-stat-label');
             if (staleLabel) {
