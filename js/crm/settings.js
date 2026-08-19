@@ -1660,11 +1660,25 @@ async function validateFacebookSystemUserToken() {
         // Success: flip to stage 2 with page picker
         const info = result;
         const subtitle = `Signed in as ${escapeHtml(info.fb_user_name || 'Facebook user')}`;
-        document.getElementById('fbSuTokenInfo').innerHTML = ` ${subtitle}. Granted: <code>${(info.granted_scopes || []).join(', ') || '—'}</code>`;
+        document.getElementById('fbSuTokenInfo').innerHTML = ` ${subtitle}. Granted: <code>${(info.granted_scopes || []).join(', ') || (info.scopes_known === false ? 'not reported by Facebook' : '—')}</code>`;
 
-        // Warn if leads_retrieval missing
+        // Warn if leads_retrieval missing.
+        //
+        // Only when Facebook actually TOLD us the permission list. When the
+        // me/permissions edge blips, the token is valid and granted_scopes comes
+        // back empty — which reads identically to "the scope is missing" unless
+        // scopes_known is consulted. Re-deriving the verdict from the empty list
+        // sent admins to regenerate a token that was already correct, and the
+        // setup guide walks them through six permissions to do it. The backend
+        // knows the difference and says so in `error`; that field is not read on
+        // the success path, so it went nowhere.
         const scopeWarning = document.getElementById('fbSuScopeWarning');
-        if (!(info.granted_scopes || []).some(s => s.toLowerCase() === 'leads_retrieval')) {
+        const scopesKnown = info.scopes_known !== false;
+        if (!scopesKnown) {
+            scopeWarning.textContent = result.error
+                || 'Facebook did not return this token\'s permission list, so we could not confirm leads_retrieval. Try again in a minute.';
+            scopeWarning.style.display = 'block';
+        } else if (!(info.granted_scopes || []).some(s => s.toLowerCase() === 'leads_retrieval')) {
             scopeWarning.textContent = 'This token does not include leads_retrieval. Leads will not pull until you regenerate the token with that scope selected.';
             scopeWarning.style.display = 'block';
         }
