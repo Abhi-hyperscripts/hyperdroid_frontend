@@ -653,11 +653,15 @@ async function loadBillIntoModal(id, mode) {
     }
 }
 
-// After an approved bill's stock is received, record WHICH lot arrived for each batch-tracked item line
-// (links the batch/expiry to the bill line for traceability). Only shown on approved bills with batch items.
+// Record the batch/lot for each batch-tracked item line while the bill is still a DRAFT.
+// The backend REQUIRES a lot on every batch line to approve (approval receives stock into that
+// named batch), and SetVendorBillLineBatch only accepts DRAFT bills — so this must be shown on
+// drafts, before approval. It was previously gated to non-draft bills, which combined with the
+// backend's draft-only setter made batch-tracked goods (milk/cheese/butter — 221 catalogue items)
+// impossible to bill at all: you couldn't set a lot until approved, and couldn't approve without one.
 function renderBillBatchCapture(bill) {
     document.getElementById('billBatchSection')?.remove();
-    if ((bill.status || 'draft') === 'draft') return;
+    if ((bill.status || 'draft') !== 'draft') return;
     const lines = bill.lines || bill.line_items || [];
     const batchLines = lines.filter(l => {
         const it = inventoryItems.find(i => i.id === l.item_id);
@@ -678,8 +682,8 @@ function renderBillBatchCapture(bill) {
     section.id = 'billBatchSection';
     section.style.cssText = 'margin-top:16px;';
     section.innerHTML = `
-        <h4 style="font-size:.95rem;margin:0 0 6px;">Received lots (batch-tracked items)</h4>
-        <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 8px;">Record the lot/expiry that physically arrived against each batch item on this bill.</p>
+        <h4 style="font-size:.95rem;margin:0 0 6px;">Batch / lot numbers <span style="color:var(--color-warning);">(required before approval)</span></h4>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 8px;">Batch-tracked items need the lot/expiry that physically arrived recorded on each line before this bill can be approved.</p>
         <div class="data-table-container"><table class="data-table">
             <thead><tr><th>SKU</th><th>Item</th><th style="text-align:right;">Qty</th><th>Lot</th><th></th></tr></thead>
             <tbody>${rows}</tbody>
@@ -789,7 +793,19 @@ function addBillLine(data) {
     const row = document.createElement('tr');
     row.dataset.lineIdx = idx;
     if (data && data.item_id) row.dataset.itemId = data.item_id;
-    if (data && data.id) row.dataset.lineId = data.id;   // persisted line id — used for lot capture on approved bills
+    if (data && data.id) row.dataset.lineId = data.id;   // persisted line id — used for lot capture on the draft
+    // Retain any batch/lot already recorded on this line (set via the batch section, which posts to
+    // SetVendorBillLineBatch). UpdateVendorBill deletes+reinserts every line from the save payload, so
+    // unless we re-send these a plain edit would WIPE the lot the user just recorded. Carried through in
+    // the save payload below.
+    if (data && (data.batch_number || data.mfg_date || data.expiry_date || data.mrp != null)) {
+        row._lineBatch = {
+            batch_number: data.batch_number || null,
+            mfg_date: data.mfg_date || null,
+            expiry_date: data.expiry_date || null,
+            mrp: data.mrp != null ? data.mrp : null
+        };
+    }
 
     const d = billLines[idx];
     const accountOpts = '<option value="">Select...</option>' +
@@ -1153,7 +1169,13 @@ async function saveBill(approve = false) {
             tax_rate: tax_rate || 0,
             cost_centre_id,
             // Selected line unit; the backend normalizes an explicit base unit to null.
-            uom: row._lineUomDropdown?.getValue?.() || null
+            uom: row._lineUomDropdown?.getValue?.() || null,
+            // Preserve any batch/lot already recorded on this line (see addBillLine): UpdateVendorBill
+            // rebuilds all lines from this payload, so omitting these would wipe the lot on a plain edit.
+            batch_number: row._lineBatch?.batch_number || null,
+            mfg_date: row._lineBatch?.mfg_date || null,
+            expiry_date: row._lineBatch?.expiry_date || null,
+            mrp: row._lineBatch?.mrp != null ? row._lineBatch.mrp : null
         });
     });
 
@@ -1231,8 +1253,23 @@ async function saveBill(approve = false) {
             try { await AccountsCommon.saveCustomFieldValues('vendor_bill', savedBill.id, billCfController?.getValues?.() || {}); }
             catch (e) { Toast.error(e.message || 'Some custom fields were not saved'); }
         }
-        AccountsCommon.hideFormPage('vendorBillModal');
-        await loadVendorBills();
+        // A batch-tracked bill can only be approved once every batch line has a lot, and a lot can only
+        // be set while the bill is a DRAFT. If this saved bill is still a draft with batch lines missing
+        // their lot, reopen it on the batch section so the user can record them, instead of closing —
+        // otherwise the batch section (only shown on drafts, in the modal) is never surfaced.
+        const savedIsDraft = (savedBill?.status || 'draft') === 'draft';
+        const hasUnlottedBatchLine = savedIsDraft && lines.some(l => {
+            const it = inventoryItems.find(i => i.id === l.item_id);
+            return it && it.tracking_mode === 'batch' && !l.batch_number;
+        });
+        if (hasUnlottedBatchLine && savedBill?.id) {
+            await loadVendorBills();
+            await loadBillIntoModal(savedBill.id, 'view');   // reopen; renderBillBatchCapture shows the lot capture
+            Toast.info('Record the batch/lot for each batch-tracked item, then approve the bill.');
+        } else {
+            AccountsCommon.hideFormPage('vendorBillModal');
+            await loadVendorBills();
+        }
     } finally {
         saveBtns.forEach(b => b.disabled = false);
     }
