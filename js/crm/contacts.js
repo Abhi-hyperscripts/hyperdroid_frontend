@@ -349,16 +349,12 @@ function filterContacts() {
 
 // ─── Modal: Create ──────────────────────────────────────────────────────────
 
+// Direct contact creation is disabled backend-side (POST /crm/contacts → 403): a contact must come from
+// converting a lead so ownership/team_id are set deterministically. There is no live "Add Contact" button;
+// this legacy entry point now routes to the real flow instead of opening a form that can never save.
 function openCreateContactModal() {
-    editingContactId = null;
-    document.getElementById('contactModalTitle').textContent = 'New Contact';
-    document.getElementById('contactSubmitBtn').textContent = 'Create Contact';
-    document.getElementById('contactForm').reset();
-    document.getElementById('contactId').value = '';
-    if (contactSourceDropdown) contactSourceDropdown.setValue('');
-    document.getElementById('contactCompanyName').value = '';
-    document.getElementById('contactCompanyId').value = '';
-    openModal('contactModal');
+    Toast.info('Contacts are created by converting a lead. Opening Leads…');
+    window.location.href = 'leads.html';
 }
 
 // ─── Modal: Edit ────────────────────────────────────────────────────────────
@@ -457,19 +453,20 @@ async function handleContactSubmit(event) {
             contact_source: (contactSourceDropdown ? contactSourceDropdown.getValue() : document.getElementById('contactSource').value) || null
         };
 
-        if (editingContactId) {
-            await api.request(`/crm/contacts/${editingContactId}`, {
-                method: 'PUT',
-                body: JSON.stringify(payload)
-            });
-            Toast.success('Contact updated successfully');
-        } else {
-            await api.request('/crm/contacts', {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-            Toast.success('Contact created successfully');
+        // Contacts can only be EDITED here. Direct creation is disabled backend-side (POST /crm/contacts
+        // always 403s) — a contact must originate from converting a lead, so ownership/team_id are set
+        // deterministically. Guard against ever attempting the 403 POST from the UI.
+        if (!editingContactId) {
+            Toast.info('Contacts are created by converting a lead. Opening Leads…');
+            closeContactModal();
+            window.location.href = 'leads.html';
+            return;
         }
+        await api.request(`/crm/contacts/${editingContactId}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        });
+        Toast.success('Contact updated successfully');
 
         closeContactModal();
         await loadContacts();

@@ -8,6 +8,8 @@ let categories = [];
 let itemDD = null, typeDD = null, catDD = null, adjItemDD = null, snItemDD = null, moveFilterDD = null;
 let brandDD = null;
 let brands = [];   // tenant brands, cached for the item form's picker
+let taxConfigs = [];   // tenant GST/tax configurations, for the item form's tax picker
+let taxConfigDD = null;
 // The brand the open item actually holds, and whether the picker managed to offer it as an option. Both are
 // needed before "No brand" may be read as a REMOVAL: if the brand list failed to load, every item would look
 // unbranded and every save would quietly strip its brand.
@@ -39,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.getElementById('serialLookup')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); lookupSerial(); } });
     await loadCategories();
     await loadBrands();
+    await loadTaxConfigs();
     await loadItems();
 });
 
@@ -80,6 +83,17 @@ async function loadBrands() {
     // brand it renders "No brand" for an item that has one — and then saving would submit clear_brand and
     // silently un-brand it. The editor must be able to represent whatever the item actually holds.
     try { brands = await api.request(AccountsCommon.buildUrl('inventory/brands', { includeInactive: true }), { _skipSpinner: true }); } catch { brands = []; }
+}
+
+// Tenant GST/tax configurations for the item form. Non-fatal — a failure leaves the picker with only the
+// "No tax" option rather than breaking the whole items page. An item's tax_config_id is what every PO,
+// vendor-bill and invoice line keys on; a hand-created item without one can't share a PO with a catalogue
+// item (the all-or-none tax rule rejects a tagged+untagged mix), so this picker closes that gap.
+async function loadTaxConfigs() {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('tax/configurations'), { _skipSpinner: true });
+        taxConfigs = Array.isArray(res) ? res : (res?.data || res?.items || []);
+    } catch { taxConfigs = []; }
 }
 
 // "Touched" tracking for the two attribute inputs. ABSENT must mean LEAVE ALONE and BLANK must mean
@@ -141,7 +155,7 @@ function renderItems() {
 
 // The trailing arguments used to be read off `arguments[2..4]`, which is why the brand slot silently never
 // arrived — every call site passes five values, so `arguments[5]` was permanently undefined. Named now.
-function initItemModalDropdowns(selectedCat, selectedType, selectedTracking, selectedValuation, selectedSchedule, selectedBrand) {
+function initItemModalDropdowns(selectedCat, selectedType, selectedTracking, selectedValuation, selectedSchedule, selectedBrand, selectedTaxConfig) {
     const catOpts = [{ value: '', label: 'No category' }, ...categories.map(c => ({ value: c.id, label: c.name }))];
     // Brand picker. Offers the tenant's existing brands; a name the merchant types that is not in the list
     // is offered as "Create «name»" and sent as brand_name for the backend to resolve-or-create, so they
@@ -162,6 +176,13 @@ function initItemModalDropdowns(selectedCat, selectedType, selectedTracking, sel
     trackDD = new SearchableDropdown(document.getElementById('itTracking'), { id: 'itTrackingDD', options: TRACK_OPTS, value: selectedTracking || 'none', compact: true });
     valDD = new SearchableDropdown(document.getElementById('itValuation'), { id: 'itValuationDD', options: VAL_OPTS, value: selectedValuation || 'weighted_avg', compact: true });
     schedDD = new SearchableDropdown(document.getElementById('itSchedule'), { id: 'itScheduleDD', options: SCHED_OPTS, value: selectedSchedule || 'none', compact: true });
+    // GST / tax config picker. Value is a tax_config_id (the same FK every PO/bill/invoice line uses); the
+    // blank option means "No tax" (services / exempt). Options come from GET tax/configurations.
+    const taxOpts = [{ value: '', label: 'No tax' }, ...taxConfigs.map(t => ({ value: t.id, label: t.name }))];
+    taxConfigDD = new SearchableDropdown(document.getElementById('itTaxConfig'), {
+        id: 'itTaxConfigDD', options: taxOpts, value: selectedTaxConfig || '', placeholder: 'No tax',
+        searchPlaceholder: 'Search tax configs…', compact: true
+    });
 }
 
 // Storefront images: parse the textarea (one URL per line) into a clean array of http(s) links (capped).
@@ -200,8 +221,8 @@ function showItemModal() {
     document.getElementById('itTrack').checked = true;
     document.getElementById('itSellable').checked = true;
     document.getElementById('itPurchasable').checked = true;
-    ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule', 'itBrand'].forEach(id => document.getElementById(id).innerHTML = '');
-    initItemModalDropdowns(null, 'goods', 'none', 'weighted_avg', 'none');
+    ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule', 'itBrand', 'itTaxConfig'].forEach(id => document.getElementById(id).innerHTML = '');
+    initItemModalDropdowns(null, 'goods', 'none', 'weighted_avg', 'none', '', '');
     initItemSaltRows([]);
     AccountsCommon.showFormPage('itemModal');
 }
@@ -241,8 +262,8 @@ function editItem(id) {
     document.getElementById('itDescription').value = i.description || '';
     document.getElementById('itImageUrls').value = (Array.isArray(i.image_urls) ? i.image_urls : []).join('\n');
     renderItemImagePreview();
-    ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule', 'itBrand'].forEach(id => document.getElementById(id).innerHTML = '');
-    initItemModalDropdowns(i.category_id, i.item_type, i.tracking_mode || 'none', i.valuation_method || 'weighted_avg', i.drug_schedule || 'none', i.brand_id || '');
+    ['itCategory', 'itType', 'itTracking', 'itValuation', 'itSchedule', 'itBrand', 'itTaxConfig'].forEach(id => document.getElementById(id).innerHTML = '');
+    initItemModalDropdowns(i.category_id, i.item_type, i.tracking_mode || 'none', i.valuation_method || 'weighted_avg', i.drug_schedule || 'none', i.brand_id || '', i.tax_config_id || '');
     initItemSaltRows(null, i.id);   // async-loads the item's saved composition
     AccountsCommon.showFormPage('itemModal');
 }
@@ -257,6 +278,11 @@ async function saveItem() {
         sale_price: parseFloat(document.getElementById('itSalePrice').value) || 0,
         purchase_price: parseFloat(document.getElementById('itPurchasePrice').value) || null,
         hsn_sac: document.getElementById('itHsn').value.trim() || null,
+        // The item's GST/tax config — same tax_config_id FK every PO/bill/invoice line keys on. Sending it
+        // lets a hand-created item match a catalogue item's tax shape so both can share a purchase order.
+        // (Backend UpdateItem COALESCEs this, so a blank "No tax" cannot clear an existing config on edit —
+        // acceptable: the defect is a missing config, not an un-clearable one.)
+        tax_config_id: taxConfigDD?.getValue?.() || null,
         // Merchandising. A dropdown VALUE is an existing brand id; a PENDING CREATE is a name the backend
         // resolves-or-creates. Only ever one of the two, because sending both is ambiguous.
         //

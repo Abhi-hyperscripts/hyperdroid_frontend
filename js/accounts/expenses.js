@@ -650,14 +650,49 @@ function addClaimItem() {
             <option value="">Select...</option>${catOptions}
         </select></td>
         <td><input type="text" class="form-control claim-item-desc" data-idx="${idx}" placeholder="Description"></td>
-        <td><input type="number" class="form-control claim-item-amount" data-idx="${idx}" min="0" step="0.01" placeholder="0.00" onchange="calculateClaimTotal()" oninput="calculateClaimTotal()"></td>
+        <td><input type="number" class="form-control claim-item-amount" data-idx="${idx}" min="0" step="0.01" placeholder="0.00" onchange="calculateClaimTotal();updateClaimReceiptRequirement(this)" oninput="calculateClaimTotal();updateClaimReceiptRequirement(this)"></td>
         <td><input type="text" class="form-control claim-item-date" data-idx="${idx}" value="${AccountsCommon.todayLocal()}" placeholder="Select date"></td>
+        <td><input type="text" class="form-control claim-item-receipt" data-idx="${idx}" placeholder="Receipt ref"><div class="claim-item-receipt-hint" style="font-size:.72rem;color:var(--text-secondary);margin-top:2px;"></div></td>
         <td><button type="button" class="btn-icon" onclick="removeClaimItem(${idx})" data-tooltip="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
     // Dynamic row — attach flatpickr directly (the shared init only handles static ids)
     if (typeof flatpickr === 'function') {
         flatpickr(row.querySelector('.claim-item-date'), { dateFormat: 'Y-m-d', allowInput: true });
     }
+    // Reflect the receipt-required state when the category changes too (threshold is per-category policy).
+    row.querySelector('.claim-item-category')?.addEventListener('change', () => updateClaimReceiptRequirement(row.querySelector('.claim-item-amount')));
+}
+
+/** The active policy whose receipt threshold applies to a given expense category — mirrors the backend
+ *  GetExpensePolicy: prefer the category-specific active policy, else the global (null category) one. */
+function claimPolicyForCategory(catId) {
+    return expensePolicies.find(p => p.is_active !== false && p.expense_category_id === catId)
+        || expensePolicies.find(p => p.is_active !== false && p.expense_category_id == null)
+        || null;
+}
+
+/** The receipt-required threshold for a category (0 / absent = rule off), matching the backend guard. */
+function claimReceiptThreshold(catId) {
+    const pol = claimPolicyForCategory(catId);
+    const thr = pol ? Number(pol.requires_receipt_above) : 0;
+    return thr > 0 ? thr : 0;
+}
+
+/** Show, on the row, whether a receipt reference is now required (amount > the category's policy threshold),
+ *  so the user learns the rule before Save instead of hitting the backend refusal. Takes the amount input. */
+function updateClaimReceiptRequirement(amountEl) {
+    const row = amountEl?.closest?.('tr');
+    if (!row) return;
+    const catId = row.querySelector('.claim-item-category')?.value || null;
+    const amount = parseFloat(row.querySelector('.claim-item-amount')?.value) || 0;
+    const receiptEl = row.querySelector('.claim-item-receipt');
+    const hintEl = row.querySelector('.claim-item-receipt-hint');
+    if (!receiptEl) return;
+    const thr = claimReceiptThreshold(catId);
+    const required = thr > 0 && amount > thr;
+    receiptEl.style.borderColor = (required && !receiptEl.value.trim()) ? 'var(--color-warning)' : '';
+    receiptEl.placeholder = required ? 'Receipt ref (required)' : 'Receipt ref';
+    if (hintEl) hintEl.textContent = required ? `Required above ${AccountsCommon.formatCurrency(thr)}` : '';
 }
 
 function removeClaimItem(idx) {
@@ -696,11 +731,21 @@ async function saveExpenseClaim() {
         const desc = row.querySelector('.claim-item-desc')?.value?.trim() || '';
         const amount = parseFloat(row.querySelector('.claim-item-amount')?.value) || 0;
         const date = row.querySelector('.claim-item-date')?.value || claimDate;
+        const receipt = row.querySelector('.claim-item-receipt')?.value?.trim() || '';
 
         if (amount <= 0) { Toast.error(`Item ${rowNum}: amount must be greater than 0`); return; }
         // Backend expense_category_id is a non-nullable Guid — null → 400
         if (!cat) { Toast.error(`Item ${rowNum}: please select an expense category`); return; }
-        items.push({ expense_category_id: cat, description: desc, amount, expense_date: date });
+        // Mirror SubmitExpenseClaim's per-item guard: a receipt reference is required once the amount
+        // exceeds the category policy's requires_receipt_above (strict >, 0/absent = off). Without this the
+        // claim would POST and the backend would reject it with no way to satisfy the rule from the UI.
+        const thr = claimReceiptThreshold(cat);
+        if (thr > 0 && amount > thr && !receipt) {
+            Toast.error(`Item ${rowNum}: amount exceeds ${AccountsCommon.formatCurrency(thr)} — a receipt reference is required`);
+            row.querySelector('.claim-item-receipt')?.focus();
+            return;
+        }
+        items.push({ expense_category_id: cat, description: desc, amount, expense_date: date, receipt_reference: receipt || null });
     }
 
     const payload = { claim_date: claimDate, description, items };

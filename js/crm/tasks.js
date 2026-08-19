@@ -383,8 +383,13 @@ function populateAssigneeOptions(selected) {
 
 function closeTaskModal() { closeModal('taskModal'); _editingId = null; }
 
+let _taskSaveInFlight = false;
 async function handleTaskSubmit(event) {
     event.preventDefault();
+    // Re-entrancy guard on the FUNCTION, not just the button: a disabled button blocks a second real
+    // click, but this also stops any other double-entry path (Enter+click race, programmatic re-call)
+    // from firing a second POST and creating a duplicate task.
+    if (_taskSaveInFlight) return;
     const title = document.getElementById('taskTitle').value.trim();
     if (!title) { Toast.error('Give the task a title'); return; }
 
@@ -398,6 +403,12 @@ async function handleTaskSubmit(event) {
     };
     if (_editingId) body.status = document.getElementById('taskStatus').value;
 
+    // Disable Save while the request is in flight — without this a double-click fired two POSTs and
+    // created duplicate tasks (the sibling deal/company/lead-field handlers all guard this way).
+    const submitBtn = document.getElementById('taskSubmitBtn');
+    const originalText = submitBtn ? submitBtn.textContent : '';
+    _taskSaveInFlight = true;
+    if (submitBtn) submitBtn.disabled = true;
     try {
         if (_editingId) {
             await api.request(`/crm/crm-tasks/${encodeURIComponent(_editingId)}`, {
@@ -415,10 +426,13 @@ async function handleTaskSubmit(event) {
             Toast.success('Task created');
         }
         closeTaskModal();
-        loadTasks();
+        await loadTasks();
     } catch (e) {
         console.error('Failed to save task:', e);
         Toast.error(e.message || 'Could not save the task');
+    } finally {
+        _taskSaveInFlight = false;
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
     }
 }
 
