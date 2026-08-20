@@ -312,6 +312,20 @@ class API {
                         errorMessage = Object.values(data.errors).flat().join('. ');
                     }
                 }
+                // A 403 carries the SERVER's reason, which is written for a developer:
+                // AccountsService answers `Permission denied: APPROVE_INVOICE`, naming the
+                // internal permission constant. That string used to be unreachable — the
+                // service answered permission failures with 401, so it went down the refresh
+                // path instead — and now that those are correctly 403 it would land in a toast
+                // in front of a user who cannot act on it.
+                //
+                // Replace it with something the user can act on, and keep the original on
+                // .data for callers that log or branch on it. Only the machine-shaped form is
+                // replaced: a service that already answers 403 with a human sentence keeps it.
+                if (response.status === 403 && /^permission denied\b/i.test(errorMessage || '')) {
+                    errorMessage = "You don't have permission to do this. Ask an administrator if you need access.";
+                }
+
                 // Carry the HTTP status code on the thrown error so callers
                 // can branch on 403/404/etc instead of string-matching the
                 // message. Existing catch-blocks that only read .message
