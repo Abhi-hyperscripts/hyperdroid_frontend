@@ -3070,16 +3070,12 @@ a.dv-tile:hover { transform: translateY(-2px);
 .pos-pay small { display: block; margin-top: 10px; font-size: 0.72rem; line-height: 1.45; color: var(--text-secondary); }
 @media (max-width: 1000px) { .pos-layout { grid-template-columns: 1fr; } .pos-cart { position: static; max-height: none; } }
 
-/* Single horizontally-scrollable row — a POS has ~60 categories; wrapping them buried the item grid
-   below the fold. One scrolling strip keeps the products the teller actually taps near the top. */
-.pos-chips { display: flex; flex-wrap: nowrap; gap: 8px; margin-bottom: 12px; overflow-x: auto;
-    overflow-y: hidden; scrollbar-width: thin; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scroll-behavior: smooth; }
-.pos-chips::-webkit-scrollbar { height: 6px; }
-.pos-chips::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 999px; }
-.pos-chip { flex: 0 0 auto; white-space: nowrap; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border-color);
-    background: var(--bg-card); color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; cursor: pointer; }
-.pos-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
-.pos-chip.on { background: var(--brand-primary); border-color: var(--brand-primary); color: var(--text-inverse, #fff); }
+/* Category filter — a compact searchable dropdown (not a chip wall). Category is a secondary filter on
+   this scan/search-first POS and there can be ~60 of them, so a dropdown scales and keeps the item grid
+   near the top where the teller taps. */
+.pos-cat-filter { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.pos-cat-filter-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+.pos-cat-filter .searchable-dropdown-container { flex: 0 0 auto; width: 280px; max-width: 60%; }
 
 /* POS results — dense, keyboard-first table (replaces the card grid) */
 .pos-table-wrap { border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; background: var(--bg-card); }

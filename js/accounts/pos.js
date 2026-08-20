@@ -6,7 +6,7 @@
 
 let posItems = [], taxConfigs = [], bankAccounts = [], incomeAccounts = [];
 let cart = [];   // {item, qty}
-let posBankDD = null, posMethodDD = null;
+let posBankDD = null, posMethodDD = null, posCategoryDD = null;
 
 const money = v => AccountsCommon.formatCurrency(v);
 const esc = s => AccountsCommon.escapeHtml(s ?? '');
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     taxConfigs = Array.isArray(taxRes) ? taxRes : (taxRes?.data || []);
     bankAccounts = (Array.isArray(bankRes) ? bankRes : []).filter(b => b.is_active !== false);
     incomeAccounts = AccountsCommon.postableAccounts(Array.isArray(coaRes) ? coaRes : (coaRes?.data || []), 'income');
-    renderCategoryChips();
+    renderCategoryFilter();
     renderGrid();
     renderCart();
     posBankDD = new SearchableDropdown(document.getElementById('posBank'), {
@@ -106,7 +106,7 @@ async function refreshPosItems(silent = true) {
         // so those lines keep their MRP price instead of silently falling back to the catalog price
         // (ensureLotMrp re-renders each line as its fetch lands).
         cart.forEach(c => ensureLotMrp(c.item));
-        renderCategoryChips();
+        renderCategoryFilter();
         renderGrid(true);
         renderCart();
         if (capped) Toast.error('Stock changed at another counter — cart quantities adjusted.');
@@ -904,21 +904,31 @@ function filteredItems() {
         (!q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q) || (i.barcode || '').toLowerCase().includes(q)));
 }
 
-function renderCategoryChips() {
+// Category is a SECONDARY filter on a scan/search-first POS, and there can be ~60 of them — a searchable
+// dropdown scales to that and reclaims the whole row for the item grid, where a wrapping chip wall buried it.
+function renderCategoryFilter() {
     const host = document.getElementById('posCats');
     if (!host) return;
+    const wrap = host.closest('.pos-cat-filter');
     const cats = [...new Set(posItems.map(i => i.category_name).filter(Boolean))].sort();
-    if (!cats.length) { host.style.display = 'none'; return; }
-    host.style.display = '';
-    host.innerHTML = [`<button class="pos-chip ${!posCategory ? 'on' : ''}" onclick="setPosCategory('')">All</button>`]
-        .concat(cats.map(c => `<button class="pos-chip ${posCategory === c ? 'on' : ''}" onclick="setPosCategory('${esc(AccountsCommon.escJs(c))}')">${esc(c)}</button>`))
-        .join('');
-    // The chips now live in a single scrolling strip — keep the active one visible so a deep category
-    // isn't selected-but-hidden off the right edge.
-    host.querySelector('.pos-chip.on')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    if (!cats.length) { if (wrap) wrap.style.display = 'none'; return; }
+    if (wrap) wrap.style.display = '';
+    const opts = [{ value: '', label: 'All categories' }, ...cats.map(c => ({ value: c, label: c }))];
+    if (posCategoryDD) {
+        posCategoryDD.setOptions(opts, true);   // preserve the current pick if it's still stocked
+        // A category that sold out its last unit can vanish from the list — fall back to All so the grid
+        // doesn't stay filtered to nothing.
+        if (posCategory && !cats.includes(posCategory)) { posCategory = ''; posCategoryDD.setValue('', false); renderGrid(); }
+        return;
+    }
+    posCategoryDD = new SearchableDropdown(host, {
+        id: 'posCatDD', options: opts, value: posCategory || '',
+        placeholder: 'All categories', searchPlaceholder: 'Search categories…',
+        onChange: (v) => setPosCategory(v || '')
+    });
 }
 
-function setPosCategory(c) { posCategory = c; renderCategoryChips(); renderGrid(); }
+function setPosCategory(c) { posCategory = c; renderGrid(); }
 
 /** Watch the sentinel under the table; append the next batch when it scrolls into view. */
 function armPosScroll() {
@@ -1221,7 +1231,7 @@ async function completeSale() {
         renderCart();
         // refresh stock counts on the grid
         posItems = (await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true })).filter(i => i.is_active);
-        renderCategoryChips();
+        renderCategoryFilter();
         renderGrid();
     } catch (err) {
         console.error('[POS] completeSale', err);
