@@ -1137,14 +1137,36 @@ function initDropdowns() {
     if (transferDate && !transferDate.value) AccountsCommon.setDateField(transferDate, AccountsCommon.todayLocal());
 }
 
+// ⭐ A PICKER THAT POSTS MUST NOT OFFER AN INACTIVE BANK; A PICKER THAT ONLY FILTERS STILL SHOULD.
+//
+// bankAccountsList carries INACTIVE accounts whenever "Show Inactive" is ticked on the Bank Accounts tab,
+// and this function used to map it straight into all five pickers. It is reachable in two steps: tick the
+// box (loadBankAccounts refetches with includeInactive=true), then create or edit any bank account —
+// saveBankAccount() awaits loadBankAccounts() and then calls this, so every dropdown is rebuilt from a
+// list that now includes deactivated accounts.
+//
+// Each posting path refuses them, one layer later and after the user has done the work:
+//   import       -> "Bank account is inactive"                              (after upload + column mapping)
+//   transfer     -> "Source/Destination bank account is inactive"
+//   reconcile    -> "Cannot start reconciliation on an inactive bank account"
+// Same defect class as the counter-account picker: the screen offers what the backend will refuse, and the
+// user only finds out at the end.
+//
+// The transaction FILTER is deliberately left alone — it reads history rather than posting, and the
+// history of a closed account is exactly what someone would open that filter to see. Applying one blanket
+// rule to all five would have been wrong in that one place.
 function refreshBankDropdowns() {
-    const bankOpts = bankAccountsList.map(a => ({ value: a.id, label: a.account_name || a.name }));
-    const bankOptsWithAll = [{ value: '', label: 'Select Bank Account' }, ...bankOpts];
-    txnBankFilterDropdown?.setOptions?.(bankOptsWithAll);
-    transferFromDropdown?.setOptions?.([{ value: '', label: 'Select Account' }, ...bankOpts]);
-    transferToDropdown?.setOptions?.([{ value: '', label: 'Select Account' }, ...bankOpts]);
-    reconBankDropdown?.setOptions?.(bankOptsWithAll);
-    importBankDropdown?.setOptions?.(bankOptsWithAll);
+    const isPostable = a => a.is_active !== false;
+    // Everything, for reading.
+    const allOpts = bankAccountsList.map(a => ({ value: a.id, label: a.account_name || a.name }));
+    // Only accounts the backend will actually accept a posting against.
+    const postableOpts = bankAccountsList.filter(isPostable).map(a => ({ value: a.id, label: a.account_name || a.name }));
+
+    txnBankFilterDropdown?.setOptions?.([{ value: '', label: 'Select Bank Account' }, ...allOpts]);
+    transferFromDropdown?.setOptions?.([{ value: '', label: 'Select Account' }, ...postableOpts]);
+    transferToDropdown?.setOptions?.([{ value: '', label: 'Select Account' }, ...postableOpts]);
+    reconBankDropdown?.setOptions?.([{ value: '', label: 'Select Bank Account' }, ...postableOpts]);
+    importBankDropdown?.setOptions?.([{ value: '', label: 'Select Bank Account' }, ...postableOpts]);
 }
 
 // refreshImportCounterDropdown() DELIBERATELY NO LONGER EXISTS.
