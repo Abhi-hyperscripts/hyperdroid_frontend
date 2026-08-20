@@ -80,3 +80,87 @@
     border: 1px solid var(--border-primary); border-radius: 999px; padding: .1rem .55rem;
 }
 .tut-guidebody p { margin: 0; color: var(--text-secondary); font-size: .92rem; line-height: 1.6; }
+
+/* ── Curriculum structure ─────────────────────────────────────────────────────
+   The guide is ordered as an onboarding path rather than as the app's menu, so
+   it needs two things the flat list did not: part dividers, and a numbered
+   first-day path that links across sections. */
+.tut-part {
+    margin: 3.25rem 0 1.25rem;
+    padding: 1.15rem 1.35rem;
+    border-left: 3px solid var(--brand-primary);
+    background: var(--bg-secondary);
+    border-radius: 0 10px 10px 0;
+}
+.tut-part:first-of-type { margin-top: 2rem; }
+.tut-part-h {
+    margin: 0 0 .4rem;
+    font-size: 1.18rem;
+    letter-spacing: .01em;
+    color: var(--text-primary);
+}
+.tut-part-b {
+    margin: 0;
+    max-width: 62ch;
+    color: var(--text-secondary);
+    font-size: .93rem;
+    line-height: 1.62;
+}
+
+.tut-start { border: 1px solid var(--border-primary); background: var(--bg-secondary); }
+.tut-path { list-style: none; margin: 1.1rem 0 0; padding: 0; counter-reset: step; }
+.tut-path li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .1rem .8rem;
+    padding: .7rem 0;
+    border-top: 1px solid var(--border-primary);
+}
+.tut-path li:first-child { border-top: 0; }
+.tut-path a {
+    display: contents;
+    text-decoration: none;
+    color: var(--text-primary);
+}
+.tut-path a:hover .tut-step-t { color: var(--brand-primary); text-decoration: underline; }
+.tut-step {
+    grid-row: span 2;
+    align-self: start;
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    font-size: .82rem;
+    font-weight: 700;
+}
+.tut-step-t { font-weight: 600; font-size: .96rem; line-height: 1.4; }
+.tut-step-w {
+    grid-column: 2;
+    color: var(--text-secondary);
+    font-size: .87rem;
+    line-height: 1.5;
+}
+
+/* Part rows are HEADINGS in the contents list, not entries. legal-desk.css numbers every <li>
+   via a counter, which made a part read as a peer of the modules beneath it — so stop the counter
+   on part rows and drop their number. */
+body.legal-desk .lg-toc li.tut-toc-part { counter-increment: none; margin-top: 1rem; }
+body.legal-desk .lg-toc li.tut-toc-part:first-child { margin-top: 0; }
+body.legal-desk .lg-toc li.tut-toc-part a {
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: .01em;
+}
+body.legal-desk .lg-toc li.tut-toc-part a::before {
+    content: '';
+    margin: 0;
+    width: 0;
+}
+
+@media (max-width: 640px) {
+    .tut-part { margin: 2.25rem 0 1rem; padding: 1rem 1.1rem; }
+    .tut-path li { gap: .1rem .6rem; }
+}
