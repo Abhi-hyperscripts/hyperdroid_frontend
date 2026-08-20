@@ -1105,21 +1105,29 @@ function initDropdowns() {
             id: 'importBank',
             options: bankOptsWithAll,
             placeholder: 'Search bank account...',
-            compact: true
+            compact: true,
+            onChange: v => loadCounterAccountsFor(v)
         });
     }
 
     // Import counter account dropdown
-    const counterOpts = [{ value: '', label: 'Select Counter Account' },
-        ...coaAccounts
-            .filter(a => a.allow_direct_posting)
-            .map(a => ({ value: a.id, label: `${a.account_code} - ${a.account_name}` }))
-    ];
+    // ⭐⭐ THE COUNTER LIST DEPENDS ON WHICH BANK IS CHOSEN, AND IT COMES FROM THE SERVER.
+    //
+    // It used to be built here from every directly-postable account, which offered three things the import
+    // then REFUSED: the bank's own GL account, every other bank's GL, and the subledger control accounts
+    // (AR/AP/inventory/WIP). A user picked one, uploaded a statement, mapped its columns, reviewed the
+    // preview and pressed Confirm before finding out — and reported it as "why is it asking me to choose
+    // the bank account again?", which is what an unanswerable question looks like from the outside.
+    //
+    // The filter is NOT reproduced here on purpose. Two of the three exclusions are unknowable to a client:
+    // the control codes come from the tenant's own account configuration, and the set of bank GLs changes
+    // as banks are added. A copy in JavaScript would be right today and quietly wrong later — drifting back
+    // into offering refused accounts, which is the bug.
     const importCounterContainer = document.getElementById('importCounterContainer');
     if (importCounterContainer) {
         importCounterDropdown = new SearchableDropdown(importCounterContainer, {
             id: 'importCounter',
-            options: counterOpts,
+            options: [{ value: '', label: 'Choose a bank account first' }],
             placeholder: 'Search GL account...',
             compact: true
         });
@@ -1156,10 +1164,46 @@ function refreshImportCounterDropdown() {
 
 let importTabInitialized = false;
 
+/**
+ * Entering the Import Statement tab.
+ *
+ * ⭐⭐ TWO DIFFERENT JOBS, AND CONFLATING THEM HID EVERY CONTROL ON THE SCREEN.
+ *
+ * The one-time SETUP (drag-and-drop listeners) must run once. The VIEW STATE must be checked on EVERY
+ * entry — and it was not: the whole function returned early on the second visit, so the tab reappeared in
+ * whatever inner step it was left in.
+ *
+ * Leave the tab mid-import — to look up an account, or after a save — and come back, and step 1 was still
+ * display:none from earlier. Step 1 holds the bank-account picker, the counter-account picker, Download
+ * Template AND the drop zone, so the entire screen came back with nothing on it and no way to start over.
+ * Measured while testing the mapping wizard: the drop zone was present in the DOM at zero height, which is
+ * why it read as "the page is broken" rather than "you are on step 2".
+ *
+ * The rule below preserves work rather than blindly resetting: a parsed preview or a results screen is
+ * something the user is in the middle of, and both carry their own way out (Cancel / Import Another). It is
+ * only the state with NOTHING to show that is forced back to step 1.
+ */
 function initImportTab() {
-    if (importTabInitialized) return;
-    importTabInitialized = true;
+    if (!importTabInitialized) {
+        importTabInitialized = true;
+        wireStatementDropZone();
+    }
 
+    // EVERY entry: never leave the user on a step with no controls.
+    const step1 = document.getElementById('importStep1');
+    const step2 = document.getElementById('importStep2');
+    const step3 = document.getElementById('importStep3');
+    if (!step1 || !step2 || !step3) return;
+
+    const showing = el => getComputedStyle(el).display !== 'none';
+    const midFlight = (showing(step2) && parsedStatementRows.length > 0) || showing(step3);
+
+    // Covers both the stale-step case and the "somehow nothing is visible" case, which is unreachable by
+    // design and was reachable in practice.
+    if (!midFlight) resetStatementImport();
+}
+
+function wireStatementDropZone() {
     // Setup drag-and-drop
     const dropZone = document.getElementById('statementDropZone');
     if (dropZone) {
@@ -2498,4 +2542,33 @@ function buildRowsFromMapping(rows, headerIdx, map) {
                    debit, credit, balance, reference: refVal, status, error });
     }
     return out;
+}
+
+
+/**
+ * Load the accounts THIS bank's statement import may post the other side to.
+ *
+ * Server-side because the rule is server-side: the endpoint runs the same exclusions the import enforces,
+ * so the picker cannot offer something Confirm would reject. Called whenever the bank selection changes,
+ * since the answer differs per bank — the bank's own GL is excluded, and so is every other bank's.
+ */
+async function loadCounterAccountsFor(bankId) {
+    if (!importCounterDropdown) return;
+    if (!bankId) {
+        importCounterDropdown.setOptions([{ value: '', label: 'Choose a bank account first' }]);
+        return;
+    }
+    try {
+        const list = await api.request(AccountsCommon.buildUrl(`bank/accounts/${bankId}/counter-accounts`), { _skipSpinner: true });
+        importCounterDropdown.setOptions([
+            { value: '', label: 'Select Counter Account' },
+            ...(list || []).map(a => ({ value: a.id, label: `${a.account_code} - ${a.account_name}` }))
+        ]);
+    } catch (err) {
+        console.warn('[Import] Could not load counter accounts:', err);
+        // Leave the picker empty rather than falling back to "every postable account" — that fallback is
+        // the original bug, and an empty picker with a visible error is the honest failure.
+        importCounterDropdown.setOptions([{ value: '', label: 'Could not load accounts — retry' }]);
+        Toast.error('Could not load the list of counter accounts');
+    }
 }

@@ -523,8 +523,13 @@
                                         <div class="searchable-dropdown-container" id="importBankContainer"></div>
                                     </div>
                                     <div class="form-group">
-                                        <label>Default Counter Account *</label>
+                                        <!-- "Default Counter Account" read as a second bank picker: a user
+                                             who had already mapped this bank to GL 1121 asked why they were
+                                             being made to choose it again. It is the OTHER side of the
+                                             entry, not the bank side — so the label now says so. -->
+                                        <label>Post the other side to <span class="req">*</span></label>
                                         <div class="searchable-dropdown-container" id="importCounterContainer"></div>
+                                        <small class="field-hint">Every line moves money between this bank and somewhere else. This is the somewhere else — the bank side is already known from the account above. You can recategorise individual rows afterwards.</small>
                                     </div>
                                 </div>
 
@@ -548,7 +553,7 @@
                                     <input type="file" id="statementFileInput" accept=".xlsx,.csv" onchange="handleStatementFileSelect(event)" style="display:none;">
                                 </div>
 
-                                <div id="statementSelectedFile" style="display:none;margin-top:1rem;padding:0.75rem 1rem;background:var(--bg-tertiary);border-radius:8px;display:none;align-items:center;justify-content:space-between;">
+                                <div id="statementSelectedFile" style="display:none;margin-top:1rem;padding:0.75rem 1rem;background:var(--bg-tertiary);border-radius:8px;align-items:center;justify-content:space-between;">
                                     <span id="statementFileName" style="font-weight:500;"></span>
                                     <button class="btn btn-outline btn-sm" onclick="clearStatementFile()" style="padding:0.25rem 0.75rem;">Remove</button>
                                 </div>
