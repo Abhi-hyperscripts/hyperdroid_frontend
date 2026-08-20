@@ -30,7 +30,8 @@
 
 .tutorials-page .tut-item video {
     width: 100%;
-    max-width: 780px;
+    max-width: 1180px;   /* source is 1440x810 — never upscale past that */
+    box-sizing: border-box;   /* else the 1px border pushes it past its column */
     aspect-ratio: 16 / 9;
     display: block;
     margin-top: .9rem;
@@ -163,4 +164,44 @@ body.legal-desk .lg-toc li.tut-toc-part a::before {
 @media (max-width: 640px) {
     .tut-part { margin: 2.25rem 0 1rem; padding: 1rem 1.1rem; }
     .tut-path li { gap: .1rem .6rem; }
+}
+
+/* ── Width and breathing room ─────────────────────────────────────────────────
+   The legal-desk shell is tuned for PROSE: a 760px document inside an 1172px
+   slot, which is right for Terms but wastes ~124px on a page whose main content
+   is a 1440px-wide video. Widen the shell for tutorials only, let the document
+   fill its column, and keep the paragraphs at a readable measure so the text
+   does not stretch to match the players. */
+body.tutorials-page .dk-wrap { max-width: 1400px; }
+body.legal-desk.tutorials-page .lg-doc { max-width: none; }
+body.legal-desk.tutorials-page .lg-lede { max-width: 760px; }
+
+/* Prose stays readable even though its container is now much wider. */
+.tutorials-page .tut-item p,
+.tutorials-page .tut-lede,
+.tutorials-page .tut-part-b,
+.tutorials-page .tut-start > .tut-lede { max-width: 82ch; }
+
+/* The start-here panel has a border, so it needs padding — without it the heading and every row
+   sat hard against the left edge. NOTE the selector weight: `body.legal-desk .legal-section` sets
+   `padding: 0 0 40px` and out-specifies a plain `.tutorials-page .tut-start`, so the first attempt
+   at this computed to zero padding and looked unchanged. */
+body.legal-desk.tutorials-page .tut-start {
+    padding: 1.6rem 1.75rem 1.5rem;
+    border-radius: 12px;
+}
+body.legal-desk.tutorials-page .tut-start > h2 { margin-top: 0; }
+body.legal-desk.tutorials-page .tut-path { margin-top: 1.25rem; padding-left: 0; }
+.tutorials-page .tut-path li { padding: .8rem 0; }
+
+/* Give the contents rail a little clearance from its own divider line. */
+body.legal-desk.tutorials-page .lg-toc { padding-left: 12px; }
+
+@media (max-width: 1240px) {
+    body.tutorials-page .dk-wrap { max-width: 1260px; }
+}
+@media (max-width: 640px) {
+    /* Matches the weight of the desktop rule above, which is itself raised to beat
+       `body.legal-desk .legal-section` — a plain `.tutorials-page` selector loses to both. */
+    body.legal-desk.tutorials-page .tut-start { padding: 1.15rem 1.15rem 1rem; }
 }
