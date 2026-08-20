@@ -1229,10 +1229,10 @@ async function processStatementFile(file) {
 
     try {
         if (isCsv) {
-            parseRowsAndPreview(parseCsvStatement(await file.text()));
+            await parseRowsAndPreview(parseCsvStatement(await file.text()));
         } else {
             const data = await file.arrayBuffer();
-            parseExcelAndPreview(data);
+            await parseExcelAndPreview(data);
         }
     } catch (err) {
         console.error('[Import] File read error:', err);
@@ -1268,7 +1268,7 @@ function parseCsvStatement(text) {
     return rows;
 }
 
-function parseExcelAndPreview(arrayBuffer) {
+async function parseExcelAndPreview(arrayBuffer) {
     // Use SheetJS if available, otherwise parse via backend
     // Since we're using OpenXML on backend, let's parse client-side with a lightweight approach
     // We'll use the XLSX library (SheetJS) which is commonly available
@@ -1281,16 +1281,67 @@ function parseExcelAndPreview(arrayBuffer) {
         const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
-        parseRowsAndPreview(rows);
+        // AWAITED: parseRowsAndPreview now fetches this account's saved layout, so a failure inside it
+        // must reach the catch below rather than becoming a silent unhandled rejection.
+        await parseRowsAndPreview(rows);
     } catch (err) {
         console.error('[Import] Parse error:', err);
         Toast.error('Failed to parse Excel file: ' + err.message);
     }
 }
 
-/** Shared for xlsx + csv: cell matrix → validated parsedStatementRows → preview. */
-function parseRowsAndPreview(rows) {
+/**
+ * Shared for xlsx + csv: cell matrix → validated parsedStatementRows → preview.
+ *
+ * ⭐ THE SAVED LAYOUT IS TRIED FIRST. An account that has been mapped before goes straight to the
+ * preview; one that has not gets the wizard, and mapping is MANDATORY that first time — guessing a
+ * bank's columns silently is how money lands under the wrong heading.
+ *
+ * The old fixed-column path below is kept as the fallback for OUR downloaded template, which is what a
+ * user who exports from this system and re-imports it will have.
+ */
+async function parseRowsAndPreview(rows) {
     showMatchCol = false;   // fresh file → matches from a previous file no longer apply
+
+    const bankId = importBankDropdown?.getValue?.();
+    if (bankId) {
+        const saved = await loadSavedStatementFormat(bankId);
+        if (saved) {
+            const applied = applySavedStatementFormat(rows, saved);
+            if (applied) {
+                parsedStatementRows = buildRowsFromMapping(rows, applied.headerIdx, applied.map);
+                if (parsedStatementRows.length === 0) {
+                    Toast.error('No data rows found using this account\'s saved layout');
+                    return;
+                }
+                // ⭐ The bank's own running balance audits the saved mapping on every upload. A layout
+                // that has quietly stopped fitting shows up here rather than as wrong money later.
+                const check = validateBalanceContinuity(parsedStatementRows);
+                if (check.checked && !check.ok) {
+                    openStatementMappingModal(rows, bankId,
+                        'This account has a saved layout, but the running balance no longer adds up — the bank may have changed its export. Please confirm the columns.');
+                    return;
+                }
+                renderImportPreview();
+                return;
+            }
+            // Saved layout no longer fits the file: re-map rather than import on a stale mapping.
+            openStatementMappingModal(rows, bankId,
+                "This bank's export looks different from the layout saved for this account. Please confirm the columns — the saved one will be replaced.");
+            return;
+        }
+    }
+
+    // No saved layout. If this is OUR template the fixed-column path below handles it; otherwise the
+    // wizard opens, which is the mandatory first-time mapping.
+    const looksLikeOurTemplate = rows.slice(0, 5).some(r =>
+        (r || []).some(c => typeof c === 'string' && c.toLowerCase().trim() === 'date'));
+    if (!looksLikeOurTemplate) {
+        if (!bankId) { Toast.error('Choose the bank account first — the column layout is saved against it'); return; }
+        openStatementMappingModal(rows, bankId, null);
+        return;
+    }
+
     try {
         if (rows.length < 2) {
             Toast.error('File has no data rows (only header found)');
@@ -2088,4 +2139,331 @@ function printPdcCheque(id) {
     <script>window.onload = () => window.print();<\/script>
 </body></html>`);
     w.document.close();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// SAVED STATEMENT LAYOUTS — map a bank's columns ONCE per account, then never again.
+//
+// ⭐ WHY THIS EXISTS. Every bank exports a different spreadsheet. Before this, the importer accepted
+// only OUR downloaded template: it looked for a cell reading exactly "date" in the first FIVE rows,
+// then matched headers by exact name. A real ICICI export has fourteen rows of account preamble and
+// calls its columns "Transaction Date" / "Withdrawal Amt (INR)", so it failed twice over and the user
+// had to reshape the file by hand every single month.
+//
+// ⚠️ COLUMNS ARE MATCHED BY HEADER TEXT, NEVER BY POSITION. A bank that inserts one column would shift
+// a positional map by one and post every amount under the wrong heading — silently, because the rows
+// still parse. Text matching FAILS instead, which is what we want.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+let stmtMapState = null;          // { rows, bankId, headerIdx, headers }
+let stmtMapHeaderRowDD = null;
+const STMT_MAP_SCAN_ROWS = 25;    // how far down we offer as a possible header row
+
+/** The saved layout for an account, or null when it has never been mapped (the API answers 204). */
+async function loadSavedStatementFormat(bankId) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`bank/accounts/${bankId}/statement-format`), { _skipSpinner: true });
+        // 204 comes back as an empty body; treat anything without a date column as "not mapped".
+        return (res && res.date_column) ? res : null;
+    } catch (err) {
+        if (err?.status === 404) return null;
+        console.warn('[Import] Could not read saved layout:', err);
+        return null;      // never block an import on this — the wizard is the fallback
+    }
+}
+
+/** The header row joined, which is how we detect a bank quietly changing its export. */
+function statementHeaderSignature(headers) {
+    return (headers || []).map(h => (h ?? '').toString().trim()).filter(Boolean).join('|');
+}
+
+/**
+ * Apply a saved layout to a freshly-read file.
+ * Returns null when it no longer fits, which sends the user back to the wizard rather than importing
+ * on a stale map — the one failure mode that makes saving a layout dangerous.
+ */
+function applySavedStatementFormat(rows, fmt) {
+    const idx = fmt.header_row ?? 0;
+    if (idx >= rows.length) return null;
+
+    const headers = (rows[idx] || []).map(h => (h ?? '').toString().trim());
+    if (fmt.header_signature && statementHeaderSignature(headers) !== fmt.header_signature) return null;
+
+    const col = name => {
+        if (!name) return -1;
+        return headers.findIndex(h => h.toLowerCase() === name.toString().trim().toLowerCase());
+    };
+    const map = {
+        date: col(fmt.date_column), description: col(fmt.description_column),
+        debit: col(fmt.debit_column), credit: col(fmt.credit_column),
+        amount: col(fmt.amount_column), indicator: col(fmt.indicator_column),
+        balance: col(fmt.balance_column), reference: col(fmt.reference_column),
+        style: (fmt.amount_style || 'separate').toLowerCase(),
+        debitIndicator: fmt.debit_indicator || 'dr'
+    };
+    // A mapped column that is no longer present means the layout has moved on.
+    if (map.date < 0 || map.description < 0) return null;
+    if (map.style === 'separate' && map.debit < 0 && map.credit < 0) return null;
+    if (map.style !== 'separate' && map.amount < 0) return null;
+    if (map.style === 'indicator' && map.indicator < 0) return null;
+
+    return { headerIdx: idx, map };
+}
+
+/** Best guess at which row holds the headings — the wizard pre-selects it, the user confirms. */
+function guessHeaderRow(rows) {
+    const wanted = ['date', 'description', 'narration', 'particulars', 'remarks', 'withdrawal', 'deposit', 'debit', 'credit', 'amount', 'balance'];
+    let best = 0, bestScore = 0;
+    for (let i = 0; i < Math.min(STMT_MAP_SCAN_ROWS, rows.length); i++) {
+        const cells = (rows[i] || []).map(c => (c ?? '').toString().toLowerCase());
+        const score = cells.filter(c => wanted.some(w => c.includes(w))).length;
+        if (score > bestScore) { bestScore = score; best = i; }
+    }
+    return bestScore >= 2 ? best : 0;
+}
+
+/** Open the wizard. Mandatory the first time an account imports, and whenever a layout stops fitting. */
+function openStatementMappingModal(rows, bankId, reason) {
+    stmtMapState = { rows, bankId, headerIdx: guessHeaderRow(rows), headers: [] };
+    document.getElementById('stmtMapIntro').textContent = reason ||
+        "Tell us which of this bank's columns hold which figures. We only keep six — everything else in the file is ignored. You will not be asked again for this account.";
+
+    const opts = [];
+    for (let i = 0; i < Math.min(STMT_MAP_SCAN_ROWS, rows.length); i++) {
+        const preview = (rows[i] || []).map(c => (c ?? '').toString().trim()).filter(Boolean).slice(0, 5).join(' | ');
+        opts.push({ value: String(i), label: `Row ${i + 1}${preview ? ' — ' + preview.slice(0, 70) : ' (empty)'}` });
+    }
+    stmtMapHeaderRowDD = AccountsCommon.createSearchableDropdown('stmtMapHeaderRowDD', {
+        options: opts, value: String(stmtMapState.headerIdx), placeholder: 'Select the header row',
+        onChange: v => { stmtMapState.headerIdx = parseInt(v, 10) || 0; renderStatementMappingFields(); }
+    });
+
+    renderStatementMappingFields();
+    AccountsCommon.openModal('stmtMapModal');
+}
+
+/** Our six fields on the left, this bank's headers in a dropdown on the right. */
+function renderStatementMappingFields() {
+    if (!stmtMapState) return;
+    const rows = stmtMapState.rows;
+    const headers = (rows[stmtMapState.headerIdx] || []).map(h => (h ?? '').toString().trim());
+    stmtMapState.headers = headers;
+
+    const style = document.querySelector('input[name="stmtAmountStyle"]:checked')?.value || 'separate';
+    const optionsHtml = ['<option value="">— not in this file —</option>']
+        .concat(headers.map((h, i) => h ? `<option value="${AccountsCommon.escapeHtml(h)}">${AccountsCommon.escapeHtml(h)}</option>` : null).filter(Boolean))
+        .join('');
+
+    // Guess by name so the common case is one click, not six.
+    const guess = (...words) => headers.find(h => words.some(w => h.toLowerCase().includes(w))) || '';
+
+    const fields = [
+        ['date', 'Date *', guess('date')],
+        ['description', 'Description *', guess('remark', 'narration', 'particular', 'description')],
+    ];
+    if (style === 'separate') {
+        fields.push(['debit', 'Withdrawal / money out', guess('withdraw', 'debit')]);
+        fields.push(['credit', 'Deposit / money in', guess('deposit', 'credit')]);
+    } else {
+        fields.push(['amount', 'Amount *', guess('amount')]);
+        if (style === 'indicator') fields.push(['indicator', 'Dr / Cr column *', guess('dr', 'type', 'indicator')]);
+    }
+    fields.push(['balance', 'Running balance', guess('balance')]);
+    fields.push(['reference', 'Reference', guess('ref', 'tran. id', 'cheque')]);
+
+    document.getElementById('stmtMapFields').innerHTML = fields.map(([key, label, pre]) => `
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+            <div style="flex:0 0 190px;font-size:0.9rem;">${label}</div>
+            <select class="form-control" id="stmtMapCol_${key}" onchange="renderStatementMappingPreview()"
+                    style="flex:1;">${optionsHtml.replace(`value="${AccountsCommon.escapeHtml(pre)}"`, `value="${AccountsCommon.escapeHtml(pre)}" selected`)}</select>
+        </div>`).join('')
+        + (style === 'indicator' ? `
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.5rem;">
+            <div style="flex:0 0 190px;font-size:0.9rem;">Value meaning "money out" *</div>
+            <input class="form-control" id="stmtMapDebitIndicator" value="Dr" style="flex:1;" onchange="renderStatementMappingPreview()">
+        </div>` : '');
+
+    renderStatementMappingPreview();
+}
+
+/** Read the dropdowns into the same shape applySavedStatementFormat produces. */
+function currentStatementMapping() {
+    const style = document.querySelector('input[name="stmtAmountStyle"]:checked')?.value || 'separate';
+    const headers = stmtMapState.headers;
+    const idxOf = key => {
+        const v = document.getElementById(`stmtMapCol_${key}`)?.value || '';
+        return v ? headers.findIndex(h => h === v) : -1;
+    };
+    return {
+        headerIdx: stmtMapState.headerIdx,
+        map: {
+            date: idxOf('date'), description: idxOf('description'),
+            debit: idxOf('debit'), credit: idxOf('credit'),
+            amount: idxOf('amount'), indicator: idxOf('indicator'),
+            balance: idxOf('balance'), reference: idxOf('reference'),
+            style,
+            debitIndicator: (document.getElementById('stmtMapDebitIndicator')?.value || 'Dr')
+        }
+    };
+}
+
+function renderStatementMappingPreview() {
+    if (!stmtMapState) return;
+    const { headerIdx, map } = currentStatementMapping();
+    const parsed = buildRowsFromMapping(stmtMapState.rows, headerIdx, map).slice(0, 6);
+
+    document.getElementById('stmtMapPreviewBody').innerHTML = parsed.length
+        ? parsed.map(r => `<tr>
+            <td>${r.date ? AccountsCommon.formatDate(r.date) : '<span style="color:var(--color-error)">—</span>'}</td>
+            <td>${AccountsCommon.escapeHtml((r.description || '').slice(0, 40))}</td>
+            <td>${r.debit != null ? AccountsCommon.formatCurrency(r.debit) : ''}</td>
+            <td>${r.credit != null ? AccountsCommon.formatCurrency(r.credit) : ''}</td>
+            <td>${r.balance != null ? AccountsCommon.formatCurrency(r.balance) : ''}</td>
+            <td>${AccountsCommon.escapeHtml((r.reference || '').slice(0, 18))}</td></tr>`).join('')
+        : '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);">Nothing readable with this mapping yet</td></tr>';
+
+    const all = buildRowsFromMapping(stmtMapState.rows, headerIdx, map);
+    document.getElementById('stmtMapPreviewNote').textContent = all.length ? `— ${all.length} rows found` : '';
+
+    // ⭐ THE SAFETY NET. If the file carries a running balance, it audits our mapping for us: opening
+    // ± each movement must equal that row's own balance. A mapping that grabbed the wrong column stops
+    // tying immediately. This is what makes it safe to stop asking on later uploads.
+    const warn = document.getElementById('stmtMapWarning');
+    const check = validateBalanceContinuity(all);
+    if (check.checked && !check.ok) {
+        warn.style.display = 'block';
+        warn.innerHTML = `<strong>The running balance does not add up.</strong> Row ${check.firstBadRow} shows
+            ${AccountsCommon.formatCurrency(check.expected)} but the file says ${AccountsCommon.formatCurrency(check.actual)}.
+            That usually means the withdrawal and deposit columns are the wrong way round, or the wrong column is mapped.`;
+    } else if (check.checked && check.ok) {
+        warn.style.display = 'block';
+        warn.style.borderLeftColor = 'var(--color-success)';
+        warn.innerHTML = `<strong>Balance checks out</strong> across all ${check.rows} rows — this mapping reproduces the bank's own running balance exactly.`;
+    } else {
+        warn.style.display = 'none';
+    }
+}
+
+/**
+ * ⭐⭐ THE BANK'S OWN BALANCE COLUMN AUDITS OUR MAPPING.
+ *
+ * opening ± each row's movement must equal that row's stated balance. If it ties across the whole file,
+ * the columns are right and nothing is missing; if it breaks, something is mapped wrong — most often the
+ * debit and credit columns swapped, which is invisible any other way because the rows still parse.
+ * Returns { checked:false } when the file has no balance column, which is legitimate.
+ */
+function validateBalanceContinuity(rows) {
+    const usable = rows.filter(r => r.balance != null && (r.debit != null || r.credit != null));
+    if (usable.length < 2) return { checked: false };
+
+    let running = usable[0].balance;
+    for (let i = 1; i < usable.length; i++) {
+        const r = usable[i];
+        const expected = running - (r.debit || 0) + (r.credit || 0);
+        if (Math.abs(expected - r.balance) > 0.01) {
+            return { checked: true, ok: false, firstBadRow: i + 1, expected, actual: r.balance, rows: usable.length };
+        }
+        running = r.balance;
+    }
+    return { checked: true, ok: true, rows: usable.length };
+}
+
+async function saveStatementMapping() {
+    const { headerIdx, map } = currentStatementMapping();
+    const h = stmtMapState.headers;
+    const nameAt = i => (i >= 0 && i < h.length) ? h[i] : null;
+
+    const payload = {
+        header_row: headerIdx,
+        date_column: nameAt(map.date),
+        description_column: nameAt(map.description),
+        balance_column: nameAt(map.balance),
+        reference_column: nameAt(map.reference),
+        amount_style: map.style,
+        debit_column: map.style === 'separate' ? nameAt(map.debit) : null,
+        credit_column: map.style === 'separate' ? nameAt(map.credit) : null,
+        amount_column: map.style !== 'separate' ? nameAt(map.amount) : null,
+        indicator_column: map.style === 'indicator' ? nameAt(map.indicator) : null,
+        debit_indicator: map.style === 'indicator' ? map.debitIndicator : null,
+        header_signature: statementHeaderSignature(h)
+    };
+
+    const btn = document.getElementById('stmtMapSaveBtn');
+    try {
+        btn.disabled = true;
+        await api.request(AccountsCommon.buildUrl(`bank/accounts/${stmtMapState.bankId}/statement-format`),
+            { method: 'PUT', body: JSON.stringify(payload) });
+        Toast.success('Layout saved — future imports for this account will skip this step');
+        AccountsCommon.closeModal('stmtMapModal');
+        parsedStatementRows = buildRowsFromMapping(stmtMapState.rows, headerIdx, map);
+        stmtMapState = null;
+        renderImportPreview();
+    } catch (err) {
+        // The backend refuses an incoherent mapping (same column twice, missing amount column). Surface
+        // its reason rather than a generic failure — it names the field to fix.
+        Toast.error(err?.message || 'Could not save the layout');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function cancelStatementMapping() {
+    AccountsCommon.closeModal('stmtMapModal');
+    stmtMapState = null;
+    clearStatementFile();
+}
+
+/**
+ * Raw cell matrix + a mapping → the same parsedStatementRows shape the old fixed-column parser produced,
+ * so everything downstream (preview, match suggestions, import) is untouched.
+ *
+ * ⚠️ THE THREE AMOUNT CONVENTIONS ARE HANDLED HERE, and getting one wrong INVERTS the statement rather
+ * than breaking it — receipts become payments while every row still parses. That is why the style is an
+ * explicit choice in the wizard and never inferred from the data.
+ */
+function buildRowsFromMapping(rows, headerIdx, map) {
+    const out = [];
+    const cell = (row, i) => (i >= 0 && row[i] != null) ? row[i].toString().trim() : '';
+
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0) continue;
+
+        const dateVal = cell(row, map.date);
+        const desc = cell(row, map.description);
+        if (!dateVal && !desc) continue;                 // spacer / footer row
+
+        let debit = null, credit = null;
+        if (map.style === 'separate') {
+            debit = parseAmount(cell(row, map.debit));
+            credit = parseAmount(cell(row, map.credit));
+        } else {
+            const amt = parseAmount(cell(row, map.amount));
+            if (amt !== null) {
+                if (map.style === 'signed') {
+                    // A negative is money out. Store the MAGNITUDE — the payload's debit/credit split
+                    // already carries the direction, and a negative debit would double-negate downstream.
+                    if (amt < 0) debit = Math.abs(amt); else credit = amt;
+                } else {
+                    const ind = cell(row, map.indicator).toLowerCase();
+                    const wantDebit = ind === (map.debitIndicator || 'dr').toLowerCase().trim();
+                    if (wantDebit) debit = Math.abs(amt); else credit = Math.abs(amt);
+                }
+            }
+        }
+
+        const balance = parseAmount(cell(row, map.balance));
+        const refVal = cell(row, map.reference);
+        const parsedDate = parseFlexibleDate(dateVal);
+
+        let status = 'valid', error = '';
+        if (!parsedDate) { status = 'error'; error = 'Invalid date'; }
+        else if (debit === null && credit === null) { status = 'error'; error = 'No amount'; }
+        else if (debit !== null && credit !== null && debit > 0 && credit > 0) { status = 'error'; error = 'Both debit & credit filled'; }
+        else if (!desc) { status = 'error'; error = 'No description'; }
+
+        out.push({ row_number: i + 1, date: parsedDate, date_str: dateVal, description: desc,
+                   debit, credit, balance, reference: refVal, status, error });
+    }
+    return out;
 }
