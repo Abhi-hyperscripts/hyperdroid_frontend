@@ -3013,7 +3013,7 @@ a.dv-tile:hover { transform: translateY(-2px);
 /* ── Cash Sale (POS) — counter ergonomics: big targets, giant total ── */
 /* Cart panel sized for teller readability: full item names, per-unit price, unit toggle and
    line amount all visible without truncation (was 360px — too congested with multi-UoM lines). */
-.pos-layout { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 18px; align-items: start; }
+.pos-layout { display: grid; grid-template-columns: minmax(0, 1fr) 500px; gap: 18px; align-items: start; }
 .pos-left { min-width: 0; }
 .pos-search-wrap { position: relative; margin-bottom: 14px; }
 .pos-search-wrap svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);
@@ -3042,8 +3042,10 @@ a.dv-tile:hover { transform: translateY(-2px);
 /* The lines viewport grows with the screen (big baskets scroll here while totals + Charge stay
    pinned): at least ~3 cards, up to whatever the sticky panel's height allows. The old fixed
    320px cap crammed a 20-line basket into ~2.5 visible cards. */
-.pos-cart-lines { flex: 1; overflow-y: auto; min-height: 120px; max-height: max(320px, calc(100vh - 540px)); }
-.pos-cart-lines table { width: 100%; border-collapse: collapse; }
+.pos-cart-lines { flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 120px; max-height: max(320px, calc(100vh - 540px)); }
+/* table-layout:fixed pins the table to 100% of the panel so a long item name ellipsizes inside its row
+   (the auto layout grew the table to the longest name, which caused the cart's horizontal scroll). */
+.pos-cart-lines table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .pos-cart-lines td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); vertical-align: middle; font-size: 0.88rem; }
 /* No width cap — the card layout gives the name its own full row (legacy 140px cap truncated names). */
 .pos-line-name { max-width: none; }
@@ -3112,12 +3114,15 @@ a.dv-tile:hover { transform: translateY(-2px);
     background: rgba(8, 12, 22, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     display: flex; align-items: center; justify-content: center; padding: 24px; }
 .pos-img-lightbox-inner { position: relative; border-radius: 18px; padding: 18px;
-    max-width: min(92vw, 560px); max-height: 90vh; overflow: auto; text-align: center;
+    max-width: min(92vw, 560px);
+    /* Cap the card so that, centred in the viewport, it always leaves ~60px clear of the top navbar and the
+       bottom edge; taller content scrolls INSIDE the card instead of pushing it under the navbar. */
+    max-height: calc(100vh - 120px); overflow-y: auto; overflow-x: hidden; text-align: center;
     background: color-mix(in srgb, var(--bg-card) 68%, transparent);
     backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
     border: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent); }
-.pos-img-lightbox-main { max-width: 100%; max-height: 62vh; object-fit: contain; border-radius: 10px; background: var(--bg-tertiary); }
+.pos-img-lightbox-main { max-width: 100%; max-height: 52vh; object-fit: contain; border-radius: 10px; background: var(--bg-tertiary); }
 .pos-img-lightbox-cap { margin-top: 12px; }
 .pos-img-lightbox-cap strong { display: block; font-size: 1rem; color: var(--text-primary); }
 .pos-img-lightbox-cap p { margin: 6px 0 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
