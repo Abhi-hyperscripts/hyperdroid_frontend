@@ -707,65 +707,84 @@
     <!-- ================================================================== -->
 
     <!-- Bank Account Modal -->
-    <!-- ⭐ Statement column mapping — every bank exports a different spreadsheet, so the layout is mapped
-         ONCE per bank account and reused. Opens automatically the first time an account imports. -->
-    <div id="stmtMapModal" class="modal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Map this bank's statement columns</h5>
-                    <button class="close-btn" onclick="cancelStatementMapping()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted" style="margin-top:0;font-size:0.9rem;" id="stmtMapIntro">
-                        Tell us which of this bank's columns hold which figures. We only keep six —
-                        everything else in the file is ignored. You will not be asked again for this account.
-                    </p>
+    <!-- ⭐ Statement column mapping — a FULL PAGE, not a modal. Every bank exports a different
+         spreadsheet, so the layout is mapped once per bank account and reused. This needs room: a header
+         picker, a direction choice, six field mappings and a live preview table do not fit a dialog. -->
+    <div id="stmtMapPage" class="acc-form-page acc-form-page--wide" style="display:none;">
+        <div class="acc-form-page__inner">
+            <div class="acc-form-page__head">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <a href="#" onclick="cancelStatementMapping(); return false;">Banking</a>
+                    <span class="separator">/</span>
+                    <span>Statement layout</span>
+                </nav>
+                <h1 class="acc-form-page__title">Map this bank's statement columns</h1>
+                <p class="acc-form-page__subtitle" id="stmtMapIntro">
+                    Tell us which of this bank's columns hold which figures. We keep six — everything else
+                    in the file is ignored. You will not be asked again for this account.
+                </p>
+            </div>
 
-                    <div class="form-group">
-                        <label>1 — Which row holds the column headings?</label>
-                        <div class="searchable-dropdown-container" id="stmtMapHeaderRowDD"></div>
-                        <small class="text-muted">Banks put account details above the table — ICICI uses fourteen rows.</small>
+            <div class="acc-form">
+                <div class="form-section">
+                    <div class="section-head">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 9v12"/></svg>
+                        1 &nbsp;Where the table starts
                     </div>
-
-                    <div class="form-group">
-                        <label>2 — How does this bank show money in and out?</label>
-                        <div id="stmtMapStyle" style="display:flex;flex-direction:column;gap:0.4rem;">
-                            <label style="display:flex;align-items:center;gap:0.5rem;font-weight:400;">
-                                <input type="radio" name="stmtAmountStyle" value="separate" checked onchange="renderStatementMappingFields()">
-                                Two columns — one for withdrawals, one for deposits
-                            </label>
-                            <label style="display:flex;align-items:center;gap:0.5rem;font-weight:400;">
-                                <input type="radio" name="stmtAmountStyle" value="signed" onchange="renderStatementMappingFields()">
-                                One amount column — negative values are withdrawals
-                            </label>
-                            <label style="display:flex;align-items:center;gap:0.5rem;font-weight:400;">
-                                <input type="radio" name="stmtAmountStyle" value="indicator" onchange="renderStatementMappingFields()">
-                                One amount column plus a Dr/Cr column
-                            </label>
+                    <div class="pgrid">
+                        <div class="form-group">
+                            <label>Row holding the column headings <span class="req">*</span></label>
+                            <div class="searchable-dropdown-container" id="stmtMapHeaderRowDD"></div>
+                            <small class="field-hint">Banks put account details above the table — ICICI uses sixteen rows.</small>
                         </div>
-                        <small class="text-muted">Choosing wrong reverses every transaction, so we ask rather than guess.</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label>3 — Match our fields to this bank's columns</label>
-                        <div id="stmtMapFields"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Preview <span class="text-muted" id="stmtMapPreviewNote"></span></label>
-                        <div style="overflow-x:auto;max-height:220px;overflow-y:auto;">
-                            <table class="data-table" style="font-size:0.85rem;">
-                                <thead><tr><th>Date</th><th>Description</th><th>Withdrawal</th><th>Deposit</th><th>Balance</th><th>Reference</th></tr></thead>
-                                <tbody id="stmtMapPreviewBody"></tbody>
-                            </table>
-                        </div>
-                        <div id="stmtMapWarning" style="display:none;margin-top:0.6rem;padding:0.6rem 0.8rem;border-radius:6px;background:var(--bg-tertiary);border-left:3px solid var(--color-warning);font-size:0.85rem;"></div>
                     </div>
                 </div>
-                <div class="modal-footer">
+
+                <div class="form-section">
+                    <div class="section-head">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        2 &nbsp;How this bank shows money in and out
+                    </div>
+                    <div id="stmtMapStyle" style="display:flex;flex-direction:column;gap:0.55rem;">
+                        <label class="stmt-radio"><input type="radio" name="stmtAmountStyle" value="separate" checked onchange="renderStatementMappingFields()">
+                            <span><strong>Two columns</strong> — one for withdrawals, one for deposits</span></label>
+                        <label class="stmt-radio"><input type="radio" name="stmtAmountStyle" value="signed" onchange="renderStatementMappingFields()">
+                            <span><strong>One amount column</strong> — negative values are withdrawals</span></label>
+                        <label class="stmt-radio"><input type="radio" name="stmtAmountStyle" value="indicator" onchange="renderStatementMappingFields()">
+                            <span><strong>One amount column plus a Dr/Cr column</strong></span></label>
+                    </div>
+                    <small class="field-hint">Choosing wrong reverses every transaction, so we ask rather than guess.</small>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-head">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        3 &nbsp;Match our fields to this bank's columns
+                    </div>
+                    <div id="stmtMapFields" class="pgrid"></div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-head">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Preview <span class="text-muted" id="stmtMapPreviewNote" style="font-weight:400;"></span>
+                    </div>
+                    <div id="stmtMapWarning" style="display:none;margin-bottom:0.9rem;padding:0.7rem 0.9rem;border-radius:8px;background:var(--bg-tertiary);border-left:3px solid var(--color-warning);font-size:0.9rem;"></div>
+                    <div class="table-wrap" style="overflow-x:auto;max-height:420px;overflow-y:auto;">
+                        <table class="data-table">
+                            <thead><tr><th>Date</th><th>Description</th><th class="text-right">Withdrawal</th><th class="text-right">Deposit</th><th class="text-right">Balance</th><th>Reference</th></tr></thead>
+                            <tbody id="stmtMapPreviewBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="acc-form-page__actions">
+                <div class="acc-form-page__actions-inner">
                     <button class="btn btn-outline" onclick="cancelStatementMapping()">Cancel</button>
-                    <button class="btn btn-primary" id="stmtMapSaveBtn" onclick="saveStatementMapping()">Save mapping &amp; continue</button>
+                    <button class="btn btn-primary" id="stmtMapSaveBtn" onclick="saveStatementMapping()">Save layout &amp; continue</button>
                 </div>
             </div>
         </div>

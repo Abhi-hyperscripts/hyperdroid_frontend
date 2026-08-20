@@ -2327,6 +2327,26 @@ textarea.form-control {
 .acc-form-page__title {
     font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; color: var(--text-primary);
 }
+/* Subtitle under a form-page title — one sentence of orientation, not a paragraph of help. */
+.acc-form-page__subtitle {
+    margin: 0.4rem 0 0; max-width: 68ch;
+    font-size: 0.92rem; line-height: 1.5; color: var(--text-secondary);
+}
+
+/* A radio choice that reads as a row rather than a bare bullet: used where picking WRONG is costly and
+   the option deserves a sentence (the statement-import direction choice inverts a whole statement). */
+.stmt-radio {
+    display: flex; align-items: flex-start; gap: 0.6rem;
+    padding: 0.65rem 0.8rem; border: 1px solid var(--border-primary);
+    border-radius: 8px; cursor: pointer; font-weight: 400;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.stmt-radio:hover { border-color: var(--border-focus); background: var(--bg-tertiary); }
+.stmt-radio input { margin-top: 0.15rem; flex: 0 0 auto; }
+.stmt-radio span { color: var(--text-secondary); }
+.stmt-radio strong { color: var(--text-primary); font-weight: 600; }
+.stmt-radio:has(input:checked) { border-color: var(--brand-primary); background: var(--bg-tertiary); }
+
 .acc-form-page__actions {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
     background: var(--bg-card, #fff);

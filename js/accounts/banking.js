@@ -2233,13 +2233,22 @@ function openStatementMappingModal(rows, bankId, reason) {
         const preview = (rows[i] || []).map(c => (c ?? '').toString().trim()).filter(Boolean).slice(0, 5).join(' | ');
         opts.push({ value: String(i), label: `Row ${i + 1}${preview ? ' — ' + preview.slice(0, 70) : ' (empty)'}` });
     }
-    stmtMapHeaderRowDD = AccountsCommon.createSearchableDropdown('stmtMapHeaderRowDD', {
-        options: opts, value: String(stmtMapState.headerIdx), placeholder: 'Select the header row',
+    // The component is constructed directly, exactly as the other dropdowns on this page are — there is
+    // no AccountsCommon factory. (An invented one crashed the wizard on first open; a Node-level test of
+    // the parsing could never have caught it, only loading the page could.)
+    const headerRowContainer = document.getElementById('stmtMapHeaderRowDD');
+    headerRowContainer.innerHTML = '';
+    stmtMapHeaderRowDD = new SearchableDropdown(headerRowContainer, {
+        id: 'stmtMapHeaderRow',
+        options: opts,
+        placeholder: 'Select the header row',
+        compact: true,
         onChange: v => { stmtMapState.headerIdx = parseInt(v, 10) || 0; renderStatementMappingFields(); }
     });
+    stmtMapHeaderRowDD.setValue?.(String(stmtMapState.headerIdx));
 
     renderStatementMappingFields();
-    AccountsCommon.openModal('stmtMapModal');
+    AccountsCommon.showFormPage('stmtMapPage');
 }
 
 /** Our six fields on the left, this bank's headers in a dropdown on the right. */
@@ -2254,11 +2263,24 @@ function renderStatementMappingFields() {
         .concat(headers.map((h, i) => h ? `<option value="${AccountsCommon.escapeHtml(h)}">${AccountsCommon.escapeHtml(h)}</option>` : null).filter(Boolean))
         .join('');
 
-    // Guess by name so the common case is one click, not six.
-    const guess = (...words) => headers.find(h => words.some(w => h.toLowerCase().includes(w))) || '';
+    // Guess by name so the common case is one click, not six. Words are tried IN ORDER and the first
+    // that matches any header wins — priority matters, it is not a bag of synonyms.
+    const guess = (...words) => {
+        for (const w of words) {
+            const hit = headers.find(h => h.toLowerCase().includes(w));
+            if (hit) return hit;
+        }
+        return '';
+    };
 
+    // ⚠️ "TRANSACTION DATE" BEFORE "VALUE DATE", DELIBERATELY. ICICI ships both, and a plain search for
+    // "date" returns Value Date first because it sits one column earlier. They are different things: the
+    // transaction date is when it happened, the value date is when the bank applied it for interest. They
+    // agree on most rows, which is what makes this dangerous — on a statement crossing a month end they
+    // diverge and entries land in the wrong PERIOD. The balance check cannot catch it either, since both
+    // columns reproduce the same running balance.
     const fields = [
-        ['date', 'Date *', guess('date')],
+        ['date', 'Date *', guess('transaction date', 'txn date', 'date')],
         ['description', 'Description *', guess('remark', 'narration', 'particular', 'description')],
     ];
     if (style === 'separate') {
@@ -2272,15 +2294,17 @@ function renderStatementMappingFields() {
     fields.push(['reference', 'Reference', guess('ref', 'tran. id', 'cheque')]);
 
     document.getElementById('stmtMapFields').innerHTML = fields.map(([key, label, pre]) => `
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-            <div style="flex:0 0 190px;font-size:0.9rem;">${label}</div>
-            <select class="form-control" id="stmtMapCol_${key}" onchange="renderStatementMappingPreview()"
-                    style="flex:1;">${optionsHtml.replace(`value="${AccountsCommon.escapeHtml(pre)}"`, `value="${AccountsCommon.escapeHtml(pre)}" selected`)}</select>
+        <div class="form-group">
+            <label for="stmtMapCol_${key}">${label}</label>
+            <select class="form-control" id="stmtMapCol_${key}" onchange="renderStatementMappingPreview()">${
+                optionsHtml.replace(`value="${AccountsCommon.escapeHtml(pre)}"`, `value="${AccountsCommon.escapeHtml(pre)}" selected`)
+            }</select>
         </div>`).join('')
         + (style === 'indicator' ? `
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.5rem;">
-            <div style="flex:0 0 190px;font-size:0.9rem;">Value meaning "money out" *</div>
-            <input class="form-control" id="stmtMapDebitIndicator" value="Dr" style="flex:1;" onchange="renderStatementMappingPreview()">
+        <div class="form-group">
+            <label for="stmtMapDebitIndicator">Value meaning "money out" <span class="req">*</span></label>
+            <input class="form-control" id="stmtMapDebitIndicator" value="Dr" onchange="renderStatementMappingPreview()">
+            <small class="field-hint">Whatever this bank prints for a withdrawal — usually Dr.</small>
         </div>` : '');
 
     renderStatementMappingPreview();
@@ -2310,15 +2334,15 @@ function currentStatementMapping() {
 function renderStatementMappingPreview() {
     if (!stmtMapState) return;
     const { headerIdx, map } = currentStatementMapping();
-    const parsed = buildRowsFromMapping(stmtMapState.rows, headerIdx, map).slice(0, 6);
+    const parsed = buildRowsFromMapping(stmtMapState.rows, headerIdx, map).slice(0, 25);
 
     document.getElementById('stmtMapPreviewBody').innerHTML = parsed.length
         ? parsed.map(r => `<tr>
             <td>${r.date ? AccountsCommon.formatDate(r.date) : '<span style="color:var(--color-error)">—</span>'}</td>
             <td>${AccountsCommon.escapeHtml((r.description || '').slice(0, 40))}</td>
-            <td>${r.debit != null ? AccountsCommon.formatCurrency(r.debit) : ''}</td>
-            <td>${r.credit != null ? AccountsCommon.formatCurrency(r.credit) : ''}</td>
-            <td>${r.balance != null ? AccountsCommon.formatCurrency(r.balance) : ''}</td>
+            <td class="text-right">${r.debit != null ? AccountsCommon.formatCurrency(r.debit) : ''}</td>
+            <td class="text-right">${r.credit != null ? AccountsCommon.formatCurrency(r.credit) : ''}</td>
+            <td class="text-right">${r.balance != null ? AccountsCommon.formatCurrency(r.balance) : ''}</td>
             <td>${AccountsCommon.escapeHtml((r.reference || '').slice(0, 18))}</td></tr>`).join('')
         : '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);">Nothing readable with this mapping yet</td></tr>';
 
@@ -2394,7 +2418,7 @@ async function saveStatementMapping() {
         await api.request(AccountsCommon.buildUrl(`bank/accounts/${stmtMapState.bankId}/statement-format`),
             { method: 'PUT', body: JSON.stringify(payload) });
         Toast.success('Layout saved — future imports for this account will skip this step');
-        AccountsCommon.closeModal('stmtMapModal');
+        AccountsCommon.hideFormPage('stmtMapPage');
         parsedStatementRows = buildRowsFromMapping(stmtMapState.rows, headerIdx, map);
         stmtMapState = null;
         renderImportPreview();
@@ -2408,7 +2432,7 @@ async function saveStatementMapping() {
 }
 
 function cancelStatementMapping() {
-    AccountsCommon.closeModal('stmtMapModal');
+    AccountsCommon.hideFormPage('stmtMapPage');
     stmtMapState = null;
     clearStatementFile();
 }
