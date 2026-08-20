@@ -1355,9 +1355,26 @@ const AccountsCommon = {
      * Uses the app's themed Confirm modal (repo rule: never the native window.confirm).
      */
     async confirm(message, title = 'Confirm') {
-        // Prefer the shared themed Confirm modal used across the app.
-        if (window.Confirm && typeof window.Confirm.show === 'function') {
-            return window.Confirm.show({ title, message });
+        // ⭐ BOTH FEATURE-DETECTS USED TO MISS COMPONENTS THAT ARE ACTUALLY PRESENT, so this helper always
+        // reached the native window.confirm it documents itself as avoiding.
+        //
+        //   window.Confirm      -> undefined. toast.js declares `const Confirm = (function(){…})()` at script
+        //                          top level, and const/let create a LEXICAL global, never a property on
+        //                          window. The component is there; `window.Confirm` is not how you reach it.
+        //   showConfirmDialog   -> undefined. The function toast.js exposes is named `showConfirm`.
+        //
+        // Measured live before fixing: window.Confirm "undefined", typeof Confirm "object",
+        // showConfirmDialog "undefined", window.showConfirm "function", branch taken "NATIVE window.confirm".
+        // It went unnoticed because nothing called this helper until now — a dead fallback stays green.
+        //
+        // typeof-guard the bare identifier: referencing an undeclared `Confirm` directly throws ReferenceError
+        // rather than yielding undefined, which would turn a missing component into a broken page.
+        const themed = (typeof Confirm !== 'undefined' && Confirm) || window.Confirm;
+        if (themed && typeof themed.show === 'function') {
+            return themed.show({ title, message });
+        }
+        if (typeof window.showConfirm === 'function') {
+            return window.showConfirm(message, title);
         }
         if (typeof showConfirmDialog === 'function') {
             return showConfirmDialog(message, title);

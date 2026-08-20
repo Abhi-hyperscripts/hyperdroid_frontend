@@ -1024,9 +1024,12 @@ function updateOpeningBalanceTotals() {
             statusEl.textContent = `Balanced: debits and credits both equal ${AccountsCommon.formatCurrency(totalDebit)}. Ready to save.`;
             statusEl.style.color = 'var(--color-success)';
         } else {
+            // Not an error — see the note in saveAllOpeningBalances. The difference IS the opening equity,
+            // and the backend derives it. Say where it will go instead of colouring a normal state red.
             const diff = totalDebit - totalCredit;
-            statusEl.textContent = `Unbalanced: ${diff > 0 ? 'debits exceed credits' : 'credits exceed debits'} by ${AccountsCommon.formatCurrency(Math.abs(diff))}.`;
-            statusEl.style.color = 'var(--color-danger)';
+            statusEl.textContent = `${diff > 0 ? 'Debits exceed credits' : 'Credits exceed debits'} by `
+                + `${AccountsCommon.formatCurrency(Math.abs(diff))} — this difference will post to retained earnings as opening equity.`;
+            statusEl.style.color = 'var(--color-warning)';
         }
     }
 }
@@ -1073,9 +1076,33 @@ async function saveAllOpeningBalances() {
         if (e.balance_type === 'debit') totalDebit += e.amount;
         else if (e.balance_type === 'credit') totalCredit += e.amount;
     });
-    if (Math.abs(totalDebit - totalCredit) >= 0.01) {
-        Toast.error(`Unbalanced: debits ${AccountsCommon.formatCurrency(totalDebit)} ≠ credits ${AccountsCommon.formatCurrency(totalCredit)}. Adjust the amounts before saving.`);
-        return;
+    // ⭐⭐ AN UNBALANCED SET IS THE NORMAL CASE, NOT AN ERROR — THE DIFFERENCE IS THE OPENING EQUITY.
+    //
+    // This used to refuse outright, and the refusal made the screen unable to do the thing the backend
+    // documents. Each opening balance posts its OWN contra to the retained-earnings account, and
+    // SetOpeningBalance BLOCKS retained earnings as a direct entry, telling the user in as many words to
+    // "set opening equity via the balancing side of the other opening balances". You cannot do that here if
+    // the rows are required to balance: the equity side is derived, so by construction the entered rows do
+    // not add up unless the user invents an equity line to satisfy a check the backend never asked for.
+    //
+    // Measured on the live tenant: entering a single opening bank balance produced
+    // "Unbalanced: debits exceed credits by ₹10,35,017.36" and sent NO request at all — the only way through
+    // was to hand-enter a matching credit to Capital.
+    //
+    // So the imbalance is now SHOWN and CONFIRMED rather than rejected. Dropping the check entirely would
+    // have been wrong in the other direction: for a real migration the trial balance is a checksum, and a
+    // mistyped figure would land silently in equity. Naming the amount and where it goes keeps the checksum
+    // visible while letting the intended flow through.
+    const obDiff = totalDebit - totalCredit;
+    if (Math.abs(obDiff) >= 0.01) {
+        const ok = await AccountsCommon.confirm(
+            `Debits ${AccountsCommon.formatCurrency(totalDebit)} and credits ${AccountsCommon.formatCurrency(totalCredit)} `
+            + `differ by ${AccountsCommon.formatCurrency(Math.abs(obDiff))}.\n\n`
+            + `That difference will be posted to your retained-earnings account as opening equity. `
+            + `If your trial balance was meant to balance, cancel and check the figures first.`,
+            'Post the difference to opening equity?'
+        );
+        if (!ok) return;
     }
 
     // Find the fiscal year start date — backend requires as_of_date.
