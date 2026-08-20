@@ -2291,7 +2291,15 @@ function renderStatementMappingFields() {
         if (style === 'indicator') fields.push(['indicator', 'Dr / Cr column *', guess('dr', 'type', 'indicator')]);
     }
     fields.push(['balance', 'Running balance', guess('balance')]);
-    fields.push(['reference', 'Reference', guess('ref', 'tran. id', 'cheque')]);
+    // ⚠️ THE BANK'S TRANSACTION ID BEFORE ANY "REF" COLUMN. ICICI ships both "Tran. Id" (populated on
+    // EVERY row, unique) and "Cheque. No./Ref. No." (blank on everything that is not a cheque — measured:
+    // empty on all 25 preview rows of a real statement). Searching for "ref" first picks the empty one,
+    // because "Ref" is a substring of the cheque heading.
+    //
+    // This is not cosmetic. The importer sends skip_duplicates, and the reference is the natural dedup
+    // key — so a blank reference means re-importing an overlapping statement cannot recognise rows it has
+    // already taken, and the same transactions post twice.
+    fields.push(['reference', 'Reference', guess('tran. id', 'transaction id', 'txn id', 'utr', 'ref', 'cheque')]);
 
     document.getElementById('stmtMapFields').innerHTML = fields.map(([key, label, pre]) => `
         <div class="form-group">
