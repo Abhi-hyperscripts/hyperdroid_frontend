@@ -913,6 +913,9 @@ function renderCategoryChips() {
     host.innerHTML = [`<button class="pos-chip ${!posCategory ? 'on' : ''}" onclick="setPosCategory('')">All</button>`]
         .concat(cats.map(c => `<button class="pos-chip ${posCategory === c ? 'on' : ''}" onclick="setPosCategory('${esc(AccountsCommon.escJs(c))}')">${esc(c)}</button>`))
         .join('');
+    // The chips now live in a single scrolling strip — keep the active one visible so a deep category
+    // isn't selected-but-hidden off the right edge.
+    host.querySelector('.pos-chip.on')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
 }
 
 function setPosCategory(c) { posCategory = c; renderCategoryChips(); renderGrid(); }
@@ -1072,11 +1075,21 @@ function setLineDisc(idx, val) {
     document.getElementById('posSub').textContent = money(sub);
     document.getElementById('posTax').textContent = money(tax);
     document.getElementById('posTotal').textContent = money(sub + tax);
-    const btn = document.getElementById('posPayBtn');
-    if (btn && !btn.disabled) btn.textContent = cart.length ? `Charge ${money(sub + tax)}` : 'Charge ₹0.00';
+    updatePayButton(sub, tax);
     // refresh the line's net amount cell
     const rows = document.querySelectorAll('#posCart tr');
     cart.forEach((c, i) => { const cell = rows[i]?.querySelector('.pos-line-amt'); if (cell) { const g = r2(linePrice(c) * c.qty); cell.textContent = money(g - r2(g * (c.disc || 0) / 100)); } });
+}
+
+/** Single source of truth for the Charge button. Disabled when the cart is empty (no zero-value
+ *  "sale" — invoice + payment + receipt fire on Charge) and left alone while a sale is posting
+ *  (the processing flag), so no caller can re-enable it mid-post or clobber "Processing…". */
+function updatePayButton(sub, tax) {
+    const btn = document.getElementById('posPayBtn');
+    if (!btn || btn.dataset.processing === '1') return;
+    const has = cart.length > 0;
+    btn.disabled = !has;
+    btn.textContent = has ? `Charge ${money(sub + tax)}` : 'Charge ₹0.00';
 }
 
 function renderCart() {
@@ -1143,8 +1156,7 @@ function renderCart() {
     document.getElementById('posTotal').textContent = money(sub + tax);
     const countEl = document.getElementById('posCartCount');
     if (countEl) countEl.textContent = `${count} item${count === 1 ? '' : 's'}`;
-    const btn = document.getElementById('posPayBtn');
-    if (btn && !btn.disabled) btn.textContent = cart.length ? `Charge ${money(sub + tax)}` : 'Charge ₹0.00';
+    updatePayButton(sub, tax);
 }
 
 async function ensureWalkInCustomer() {
@@ -1177,7 +1189,7 @@ async function completeSale() {
     if (!bankId) { Toast.error('Pick the account the money went into'); return; }
     if (!incomeAccounts.length) { Toast.error('No postable Income account found — set up your chart of accounts first.'); return; }
     const btn = document.getElementById('posPayBtn');
-    btn.disabled = true; btn.textContent = 'Processing…';
+    btn.dataset.processing = '1'; btn.disabled = true; btn.textContent = 'Processing…';
     // Snapshot the sale up front: the same object either posts live or gets queued,
     // and any invoices already created before a mid-sale network drop ride along in
     // sale.progress so the replay never double-creates them.
@@ -1241,7 +1253,7 @@ async function completeSale() {
             Toast.error(err.message || 'Sale failed — check Receivables for a stranded draft/approved invoice.');
         }
     } finally {
-        btn.disabled = false; renderCart();
+        delete btn.dataset.processing; btn.disabled = false; renderCart();   // renderCart re-disables if the cart is now empty
     }
 }
 
