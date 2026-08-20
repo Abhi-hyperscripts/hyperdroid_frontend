@@ -3070,12 +3070,35 @@ a.dv-tile:hover { transform: translateY(-2px);
 .pos-pay small { display: block; margin-top: 10px; font-size: 0.72rem; line-height: 1.45; color: var(--text-secondary); }
 @media (max-width: 1000px) { .pos-layout { grid-template-columns: 1fr; } .pos-cart { position: static; max-height: none; } }
 
+/* Search + category on ONE row: the search box takes the room, the category filter sits beside it. */
+.pos-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.pos-topbar .pos-search-wrap { flex: 1 1 auto; min-width: 0; margin-bottom: 0; }
+.pos-topbar .pos-cat-filter { flex: 0 0 auto; margin-bottom: 0; }
+
 /* Category filter — a compact searchable dropdown (not a chip wall). Category is a secondary filter on
    this scan/search-first POS and there can be ~60 of them, so a dropdown scales and keeps the item grid
    near the top where the teller taps. */
 .pos-cat-filter { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .pos-cat-filter-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
-.pos-cat-filter .searchable-dropdown-container { flex: 0 0 auto; width: 280px; max-width: 60%; }
+.pos-cat-filter .searchable-dropdown-container { flex: 0 0 auto; width: 240px; max-width: 40vw; }
+
+/* On a narrow screen the two stack, category full-width under the search box. */
+@media (max-width: 680px) {
+    .pos-topbar { flex-wrap: wrap; }
+    .pos-topbar .pos-search-wrap { flex: 1 1 100%; }
+    .pos-topbar .pos-cat-filter { width: 100%; }
+    .pos-topbar .pos-cat-filter .searchable-dropdown-container { flex: 1 1 auto; width: auto; max-width: none; }
+}
+
+/* Item thumbnail in the grid — small, lazy-loaded product image with a letter fallback when a catalogue
+   item has no image (or its URL 404s). Speeds tap-to-add / disambiguates similar names without bloating
+   the dense scan-first table. */
+.pos-nm-cell { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.pos-thumb { flex: 0 0 auto; position: relative; width: 34px; height: 34px; border-radius: 7px; overflow: hidden;
+    display: inline-flex; align-items: center; justify-content: center; background: var(--bg-tertiary);
+    border: 1px solid var(--border-color); font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); }
+.pos-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pos-thumb-letter { line-height: 1; }
 
 /* POS results — dense, keyboard-first table (replaces the card grid) */
 .pos-table-wrap { border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; background: var(--bg-card); }

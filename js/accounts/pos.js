@@ -950,6 +950,20 @@ function armPosScroll() {
     posScrollObserver.observe(sentinel);
 }
 
+/** Small product thumbnail for a grid row. Uses the item's first image (the storefront main image);
+ *  falls back to a letter badge when the item has no image or the URL fails to load. Lazy-loaded so a
+ *  7,000-item catalogue only fetches what's on screen. */
+function posThumb(i) {
+    let urls = i.image_urls;
+    if (typeof urls === 'string') { try { urls = JSON.parse(urls); } catch { urls = []; } }
+    urls = Array.isArray(urls) ? urls : [];
+    const url = urls.find(u => typeof u === 'string' && /^https?:\/\//i.test(u));
+    const letter = esc((String(i.name || '?').trim()[0] || '?').toUpperCase());
+    if (!url) return `<span class="pos-thumb">${letter}</span>`;
+    // Letter shows behind; the image covers it once loaded, and re-shows if the URL 404s (onerror removes it).
+    return `<span class="pos-thumb"><span class="pos-thumb-letter">${letter}</span><img src="${esc(url)}" alt="" loading="lazy" onerror="this.remove()"></span>`;
+}
+
 function renderGrid(keepCount) {
     if (!keepCount) posVisible = POS_PAGE;   // search/category change restarts the window
     const grid = document.getElementById('posGrid');
@@ -964,8 +978,8 @@ function renderGrid(keepCount) {
     grid.innerHTML = `<div class="pos-table-wrap"><table class="pos-table">
         <thead><tr><th>Item</th><th>SKU</th><th>Category</th><th class="r">Price</th><th class="r">Stock</th><th></th></tr></thead>
         <tbody>${rows.map((i, idx) => { const sell = posSellable(i); return `
-            <tr class="${idx === 0 ? 'first' : ''}${i.track_inventory && sell <= 0 ? ' pos-oos' : ''}" onclick="addToCart('${i.id}')">
-                <td class="nm">${esc(i.name)}${i.rack ? ` <span style="font-size:.72rem;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:4px;padding:0 4px;white-space:nowrap;">📍 ${esc(i.rack)}</span>` : ''}</td>
+            <tr class="${idx === 0 ? 'first' : ''}${i.track_inventory && sell <= 0 ? ' pos-oos' : ''}"${i.description ? ` title="${esc(i.description)}"` : ''} onclick="addToCart('${i.id}')">
+                <td class="nm"><div class="pos-nm-cell">${posThumb(i)}<span>${esc(i.name)}${i.rack ? ` <span style="font-size:.72rem;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:4px;padding:0 4px;white-space:nowrap;">📍 ${esc(i.rack)}</span>` : ''}</span></div></td>
                 <td class="sku">${esc(i.sku)}</td>
                 <td class="cat">${esc(i.category_name || '—')}</td>
                 <td class="r pr">${money(i.sale_price)}</td>
