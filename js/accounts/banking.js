@@ -68,7 +68,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
     // Ensure dropdowns are populated after data + dropdown init are both complete
     refreshBankDropdowns();
-    refreshImportCounterDropdown();
     setupSearchListeners();
     AccountsCommon.initDatePickers([
         { id: 'txnFromDate', onChange: () => { currentTxnPage = 1; loadBankTransactions(); } },
@@ -1148,15 +1147,18 @@ function refreshBankDropdowns() {
     importBankDropdown?.setOptions?.(bankOptsWithAll);
 }
 
-function refreshImportCounterDropdown() {
-    if (!importCounterDropdown) return;
-    const counterOpts = [{ value: '', label: 'Select Counter Account' },
-        ...coaAccounts
-            .filter(a => a.allow_direct_posting)
-            .map(a => ({ value: a.id, label: `${a.account_code} - ${a.account_name}` }))
-    ];
-    importCounterDropdown.setOptions(counterOpts);
-}
+// refreshImportCounterDropdown() DELIBERATELY NO LONGER EXISTS.
+//
+// It wrote every directly-postable account into the import counter picker on page load, which silently
+// UNDID the server-side filter installed at the picker's construction site — the picker was built with
+// "Choose a bank account first", and this function immediately overwrote it with the unfiltered list
+// including the bank's own GL and the AR/AP control accounts. The fix shipped INERT and the reported
+// bug ("why am I choosing the bank account again?") survived it untouched, because a fix at one writer
+// proves nothing when a second writer targets the same control.
+//
+// The ONLY writer to importCounterDropdown's option list is now loadCounterAccountsFor(bankId), which
+// asks the server. If a counter list is needed at some new moment, call that — do not reintroduce a
+// client-side list here.
 
 // ============================================================================
 // 5. STATEMENT IMPORT

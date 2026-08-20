@@ -467,6 +467,19 @@ const SearchableDropdown = (function() {
             });
 
             // Close any open flatpickr custom month/year dropdowns
+            // A TRIGGER WITH NO LAYOUT BOX IS NOT ON SCREEN, AND ANCHORING TO IT LANDS IN THE CORNER.
+            //
+            // positionMenu() anchors the menu to triggerEl.getBoundingClientRect(). Inside a
+            // `display: none` ancestor that rect is all zeros, so the escape path portals the menu into
+            // <body> at `top: 4px; left: 0` — a full-width list pinned to the top-left corner of the
+            // screen, over whatever page is actually showing. It was reported exactly that way.
+            //
+            // Zero rect means the trigger is not laid out, so no user can have clicked it; the open came
+            // from code (a restored tab, a programmatic open, a race with a container being shown).
+            // Refusing is therefore always right: there is nothing to anchor to and nobody watching.
+            const triggerRect = this.triggerEl.getBoundingClientRect();
+            if (triggerRect.width === 0 && triggerRect.height === 0) return;
+
             document.dispatchEvent(new CustomEvent('dropdownOpened'));
 
             this.isOpen = true;
