@@ -15,6 +15,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (!await AccountsCommon.initPage('pos', '../')) return;
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', { 'pos-counter': 'Counter' });
     AccountsCommon.setupTabs({ 'pos-counter': 'Counter' });
+    // POS runs full-width by default — the counter wants the whole screen. setupSidebar opens the nav on
+    // desktop; override that here so this page loads with it HIDDEN. The hamburger still reveals it on demand.
+    document.getElementById('sidebarToggle')?.classList.remove('active');
+    document.getElementById('accountsSidebar')?.classList.remove('open');
+    document.querySelector('.accounts-container')?.classList.remove('sidebar-open');
+    document.getElementById('sidebarOverlay')?.classList.remove('active');
     accountsRoles.applyRBAC();
     const [itemsRes, taxRes, bankRes, coaRes] = await Promise.all([
         api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true }).catch(() => []),

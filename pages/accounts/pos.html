@@ -75,10 +75,16 @@
         <div class="organization-layout">
             <aside class="sidebar-nav-panel" id="accountsSidebar">
                 <div class="sidebar-header"><h3>Cash Sale</h3></div>
-                <nav class="sidebar-nav"><div class="nav-group" data-group="pos">
-                    <div class="nav-group-header"><span class="nav-group-title">POS</span><span class="chevron">&#9660;</span></div>
-                    <div class="nav-group-items"><button class="sidebar-btn active" data-tab="pos-counter"><span class="nav-number">1</span><span class="nav-label">Counter</span></button></div>
-                </div></nav>
+                <nav class="sidebar-nav">
+                    <div class="nav-group" data-group="pos">
+                        <div class="nav-group-header"><span class="nav-group-title">POS</span><span class="chevron">&#9660;</span></div>
+                        <div class="nav-group-items"><button class="sidebar-btn active" data-tab="pos-counter"><span class="nav-number">1</span><span class="nav-label">Counter</span></button></div>
+                    </div>
+                    <div class="nav-group" data-group="pos-tools">
+                        <div class="nav-group-header"><span class="nav-group-title">Tools</span><span class="chevron">&#9660;</span></div>
+                        <div class="nav-group-items"><button class="sidebar-btn" type="button" onclick="pairPhoneScanner(); document.getElementById('sidebarToggle')?.click();"><span class="nav-label">📱 Pair phone scanner</span></button></div>
+                    </div>
+                </nav>
             </aside>
             <main class="organization-content">
                 <div class="tab-content active" id="pos-counter">
@@ -122,7 +128,6 @@
                                     <div><label>Method</label><div class="searchable-dropdown-container" id="posMethod"></div></div>
                                 </div>
                                 <button class="pos-charge" id="posPayBtn" onclick="completeSale()">Charge ₹0.00</button>
-                                <button type="button" class="btn btn-outline" style="width:100%;margin-top:8px;" onclick="pairPhoneScanner()">📱 Pair phone scanner</button>
                                 <small id="posHint">One tap = invoice + GST + stock + payment + receipt, against the Walk-in Customer. Mixed GST slabs split automatically.</small>
                             </div>
                         </aside>
