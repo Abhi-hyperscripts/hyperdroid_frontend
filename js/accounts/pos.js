@@ -979,7 +979,9 @@ function openPosImagePreview(itemId) {
     document.getElementById('posImgLightbox')?.remove();
     const ov = document.createElement('div');
     ov.id = 'posImgLightbox';
-    ov.className = 'pos-img-lightbox';
+    // glassmorphic-modal keeps position:fixed working: a global rule forces every body-level child that
+    // ISN'T a whitelisted overlay class to position:relative (which flowed this lightbox to the page bottom).
+    ov.className = 'pos-img-lightbox glassmorphic-modal';
     const close = () => { ov.remove(); document.removeEventListener('keydown', onKey); };
     const onKey = (e) => { if (e.key === 'Escape') close(); };
     document.addEventListener('keydown', onKey);
