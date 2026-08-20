@@ -31,6 +31,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-notes.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-documents.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/sequences.css?v=' + CACHE_VERSION + '">');</script>
     <!-- TinyMCE 7 community (replaces Quill) — used by the shared email
@@ -521,6 +522,10 @@
                     </div>
                 </div>
                 <div id="leadTimeline" class="lead-timeline"></div>
+            </div>
+
+            <div class="panel-section">
+                <div id="leadDocumentsPanel"></div>
             </div>
 
             <div class="panel-section">
@@ -1557,6 +1562,7 @@
         document.write('<script src="../../js/crm/lead-discovery.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-import.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/notes-panel.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/documents-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/activities-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-history-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-journey.js?v=' + CACHE_VERSION + '"><\/script>');

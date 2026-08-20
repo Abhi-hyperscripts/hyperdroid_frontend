@@ -2395,6 +2395,52 @@ function provisionFromTemplate(templateCode) {
     document.body.appendChild(overlay);
     document.getElementById('pvName')?.focus();
     overlay.addEventListener('keydown', e => { if (e.key === 'Escape') overlay.remove(); });
+    prefillProvisionFromTenant();
+}
+
+// ⭐ THE FORM ASKED AGAIN FOR THINGS THE TENANT HAD ALREADY ANSWERED.
+//
+// Re-running a template is the SUPPORTED way to pick up accounts added to a template after a tenant was
+// created (the insert is ON CONFLICT DO NOTHING, so it adds only what is missing). But the form opened
+// blank every time, so the only way to re-run was to retype the business name, GSTIN and state code that
+// were captured at onboarding — or to leave them empty and hope.
+//
+// The empty-and-hope path is in fact safe: the backend runs every field through Blank() and skips the
+// nulls, precisely so a re-run cannot erase a GSTIN somebody typed in later. The DISPLAY was the problem.
+// The greyed text reads as data but is a placeholder, and the placeholder state code is 27 (Maharashtra)
+// while this tenant's is 09 — so the screen showed a plausible WRONG value for a field the user was being
+// asked to confirm. Nothing would have broken; someone would simply have believed it.
+//
+// Populating from the stored settings makes the form show what is actually on file, so re-running is a
+// confirmation rather than a re-entry. Fields with nothing stored keep their placeholders.
+async function prefillProvisionFromTenant() {
+    try {
+        const [settings, years] = await Promise.all([
+            // 'settings', NOT 'tenant-settings' — the latter 404s, and the .catch below would have
+            // swallowed it into a silently blank form: the exact bug this function exists to fix.
+            api.request(AccountsCommon.buildUrl('settings'), { _skipSpinner: true }).catch(() => null),
+            api.request(AccountsCommon.buildUrl('fiscal/years'), { _skipSpinner: true }).catch(() => null)
+        ]);
+        const st = settings?.data || settings;
+        if (st) {
+            const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+            set('pvName', st.org_legal_name);
+            set('pvGstin', st.org_gstin);
+            set('pvState', st.state_code);
+        }
+        // The financial year the tenant actually runs beats a date computed from today's month: a tenant
+        // set up on a non-standard year would otherwise be shown 01 April and silently corrected back.
+        const list = Array.isArray(years) ? years : (years?.data || []);
+        const active = list.find(y => y.is_active) || list[0];
+        if (active?.start_date) {
+            const d = String(active.start_date).slice(0, 10);
+            const el = document.getElementById('pvFyStart');
+            if (el && /^\d{4}-\d{2}-\d{2}$/.test(d)) el.value = d;
+        }
+    } catch (err) {
+        // A prefill failure must never block the form — it still works exactly as it did before.
+        console.warn('[Setup] Could not prefill provision form:', err);
+    }
 }
 
 async function runProvision(templateCode) {

@@ -1616,6 +1616,14 @@ async function openDealDetailPanel(dealId) {
     // listed them. Mount the panel that does.
     if (typeof NotesPanel !== 'undefined') {
         NotesPanel.mount(document.getElementById('dealNotesPanel'), 'deal', dealId);
+        // Documents against the DEAL — the signed application, the sanction
+        // letter, the policy document. Separate from the lead's KYC because a
+        // deal outlives the lead it came from.
+        if (typeof DocumentsPanel !== 'undefined') {
+            DocumentsPanel.mount(
+                document.getElementById('dealDocumentsPanel'), 'deal', dealId,
+                { canReview: !isMember() });
+        }
     }
     // Activities could be logged and read but never corrected, completed or
     // removed — the timeline projection carries no activity id to act on.

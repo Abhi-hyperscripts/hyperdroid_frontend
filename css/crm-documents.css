@@ -1,0 +1,268 @@
+/* ============================================================================
+   CRM — Documents panel
+   ----------------------------------------------------------------------------
+   KYC and supporting files attached to a lead or a deal. Mounted inside the
+   lead and deal detail slide-panels, so it is sized for a ~520-640px column
+   like the notes panel beside it rather than for a full page.
+
+   Colours come from theme variables only, so the panel resolves in both themes.
+   The status colours in particular are the semantic ones — a hard-coded green
+   for "verified" reads as a bright smear on the dark theme.
+   ============================================================================ */
+
+.docp {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.docp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.docp-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.docp-title svg { width: 15px; height: 15px; color: var(--brand-primary); }
+.docp-count {
+  font-family: var(--font-family-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* ── Checklist ───────────────────────────────────────────────────────── */
+.docp-checklist {
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+.docp-cl-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.84rem;
+  color: var(--text-primary);
+}
+.docp-cl-done {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-success);
+}
+.docp-cl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.docp-cl-item {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.docp-cl-mark {
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--text-muted);
+}
+.docp-cl-item.is-done .docp-cl-mark { color: var(--color-success); }
+.docp-cl-item.is-done .docp-cl-label { color: var(--text-primary); }
+.docp-cl-state {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── Upload row ──────────────────────────────────────────────────────── */
+.docp-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+.docp-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.docp-type { flex: 1 1 180px; min-width: 0; }
+.docp-type-fallback {
+  width: 100%;
+  /* Matches the height every other CRM control uses in a panel — a bare input
+     here sits two pixels shorter than the dropdown beside it. */
+  height: 36px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.84rem;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.docp-type-fallback:focus {
+  outline: none;
+  /* --border-focus is NOT defined in theme.css — the fallback is what actually
+     paints. Same form the notes and contacts panels use, kept rather than
+     "fixed" so this file does not depend on a variable that does not exist. */
+  border-color: var(--border-color-focus, var(--brand-primary));
+}
+.docp-file {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  max-width: 220px;
+  padding: 0 12px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.docp-file span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.docp-file:hover {
+  border-color: var(--brand-primary);
+  color: var(--text-primary);
+}
+.docp-hint {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+/* ── List ────────────────────────────────────────────────────────────── */
+.docp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.docp-empty {
+  margin: 0;
+  padding: 14px 12px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+}
+
+.docp-item {
+  position: relative;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  /* The status stripe. A colour on the left edge reads at a glance in a list
+     of eight documents; a badge alone does not. */
+  border-left: 3px solid var(--border-color);
+  border-radius: 10px;
+}
+.docp-item.is-verified { border-left-color: var(--color-success); }
+.docp-item.is-rejected { border-left-color: var(--color-error); }
+.docp-item.is-received { border-left-color: var(--color-warning); }
+
+.docp-item-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.docp-item-name {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.docp-item-type {
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+.docp-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: 5px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+.docp-status {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.docp-status-verified { color: var(--color-success); }
+.docp-status-rejected { color: var(--color-error); }
+.docp-status-received { color: var(--color-warning); }
+
+.docp-item-note {
+  margin: 7px 0 0;
+  padding: 7px 9px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border-radius: 7px;
+}
+
+.docp-item-actions {
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+.docp-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.docp-act svg { width: 14px; height: 14px; }
+.docp-act:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.docp-act-ok:hover { color: var(--color-success); }
+.docp-act-warn:hover { color: var(--color-warning); }
+.docp-act-danger:hover { color: var(--color-error); }
+
+/* ── Narrow panels ───────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .docp-upload-row { flex-direction: column; align-items: stretch; }
+  .docp-file { max-width: none; justify-content: center; }
+  .docp-cl-item { grid-template-columns: 16px 1fr; }
+  .docp-cl-state { grid-column: 2; font-size: 0.72rem; }
+}

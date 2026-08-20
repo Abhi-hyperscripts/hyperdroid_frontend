@@ -319,6 +319,15 @@
         // sessionStorage key after loadLeads() and re-opens the panel.
         try { sessionStorage.setItem('crm_openLeadId', encodeURIComponent(leadId)); } catch (_) {}
 
+        // KYC / supporting documents. canReview is presentation only — the API
+        // refuses a plain member's verify or reject regardless, because a
+        // control the server does not enforce is not a control.
+        if (typeof DocumentsPanel !== 'undefined') {
+            DocumentsPanel.mount(
+                document.getElementById('leadDocumentsPanel'), 'lead', leadId,
+                { canReview: ['admin', 'manager', 'teamlead'].includes(window.myTeamRole) });
+        }
+
         // Notes on a lead had no UI at all — the API listed, edited, pinned and
         // deleted them and nothing called it.
         if (typeof NotesPanel !== 'undefined') {

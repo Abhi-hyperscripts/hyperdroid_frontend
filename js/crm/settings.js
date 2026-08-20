@@ -346,6 +346,7 @@ const settingsTabNames = {
     'lead-sources': 'Lead Sources',
     'functional-groups': 'Functional Groups',
     'teams': 'Teams Setup',
+    'documents': 'Documents',
     'crm-users': 'CRM Users'
 };
 
@@ -500,6 +501,8 @@ function switchSettingsTab(tabName) {
         loadCampaignsTab();
     } else if (tabName === 'crm-users' && typeof loadCrmUsersTab === 'function') {
         loadCrmUsersTab();
+    } else if (tabName === 'documents' && typeof loadRequiredDocumentsTab === 'function') {
+        loadRequiredDocumentsTab();
     }
 }
 

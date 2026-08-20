@@ -627,6 +627,13 @@
                         </svg>
                         <span class="nav-label">Lead Fields</span>
                     </button>
+                    <button class="sidebar-btn" data-tab="documents" onclick="switchSettingsTab('documents')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <span class="nav-label">Documents</span>
+                    </button>
                     <button class="sidebar-btn" data-tab="functional-groups" onclick="switchSettingsTab('functional-groups')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -1042,6 +1049,41 @@
                 </div>
 
                 <!-- ─── Integrations Tab ──────────────────────────────────────────── -->
+                <!-- ─── Documents Tab ────────────────────────────────────────────── -->
+                <div class="crm-tab-content" id="tab-documents">
+                    <div class="section-header">
+                        <h3 class="section-title">Required Documents</h3>
+                    </div>
+
+                    <details class="crm-help">
+                        <summary>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            What is this? — Required Documents
+                        </summary>
+                        <div class="crm-help-body">
+                            <p>Tick the documents a lead or deal must have before its file counts as
+                               complete. Every record then shows a checklist of what is still missing,
+                               and a record is only complete once each ticked document has been
+                               <strong>verified</strong> — a rejected one does not count.</p>
+                            <p><em>Leave everything unticked if you do not collect documents. The
+                               checklist then disappears from the record entirely rather than showing
+                               an empty strip.</em></p>
+                        </div>
+                    </details>
+
+                    <div id="requiredDocsLoading" class="crm-loading">
+                        <div class="crm-loading-spinner"></div>
+                    </div>
+
+                    <div id="requiredDocsBox" style="display:none;">
+                        <div id="requiredDocsGrid" class="reqdoc-grid"></div>
+                        <div class="reqdoc-actions">
+                            <span class="reqdoc-summary" id="requiredDocsSummary"></span>
+                            <button type="button" class="btn btn-primary" id="requiredDocsSave">Save checklist</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="crm-tab-content" id="tab-integrations">
                     <div class="section-header">
                         <h3 class="section-title">Connected Integrations</h3>
