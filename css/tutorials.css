@@ -102,7 +102,7 @@
 }
 .tut-part-b {
     margin: 0;
-    max-width: 62ch;
+    max-width: 1180px;
     color: var(--text-secondary);
     font-size: .93rem;
     line-height: 1.62;
@@ -176,11 +176,16 @@ body.tutorials-page .dk-wrap { max-width: 1400px; }
 body.legal-desk.tutorials-page .lg-doc { max-width: none; }
 body.legal-desk.tutorials-page .lg-lede { max-width: 760px; }
 
-/* Prose stays readable even though its container is now much wider. */
+/* ⭐ Prose shares the VIDEO's width, not a reading measure.
+   These paragraphs are one to three lines introducing the player directly beneath them, not
+   long-form reading — so the usual 60-80 character measure is the wrong rule here. Capping them
+   short made the text wrap at ~740px while the player ran to ~1165px, which reads as a bug rather
+   than as typography. Same cap as the video keeps their left AND right edges aligned at every
+   viewport. */
 .tutorials-page .tut-item p,
 .tutorials-page .tut-lede,
 .tutorials-page .tut-part-b,
-.tutorials-page .tut-start > .tut-lede { max-width: 82ch; }
+.tutorials-page .tut-start > .tut-lede { max-width: 1180px; }
 
 /* The start-here panel has a border, so it needs padding — without it the heading and every row
    sat hard against the left edge. NOTE the selector weight: `body.legal-desk .legal-section` sets
