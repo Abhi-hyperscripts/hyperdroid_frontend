@@ -1505,3 +1505,35 @@ body.lms-dashboard .section-header .section-title {
     color: var(--text-secondary);
     font-size: 0.82rem;
 }
+
+/* ── A panel body must not set the height of its row ─────────────────────── */
+
+/* .lms-two-col is a 1fr 1fr grid, so both panels stretch to the taller one and
+   the deadlines list is filled straight from the enrolment array with no
+   bound. Measured on this page: two panels at 164px became two at 875px once
+   the list filled, leaving Announcements with ~700px of empty space beside a
+   list nobody asked to be that long.
+
+   Scoped to the grid rather than to either panel's id — both sides have the
+   same problem and a third panel added here would inherit it. Same defect and
+   the same fix as the CRM, HRMS, Vision, PMS and Accounts dashboards. */
+.lms-two-col .lms-panel > div {
+    max-height: 292px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-primary) transparent;
+}
+
+.lms-two-col .lms-panel > div::-webkit-scrollbar { width: 6px; }
+.lms-two-col .lms-panel > div::-webkit-scrollbar-track { background: transparent; }
+.lms-two-col .lms-panel > div::-webkit-scrollbar-thumb {
+    background: var(--border-primary);
+    border-radius: 3px;
+}
+
+/* 768px, matching where .lms-two-col actually collapses to one column (line
+   ~1347). Guessing 900 would have lifted the cap while the grid was still two
+   columns, putting the defect back in the 769-900 band only. */
+@media (max-width: 768px) {
+    .lms-two-col .lms-panel > div { max-height: none; overflow-y: visible; }
+}
