@@ -101,9 +101,22 @@
     }
 
     // ── Currency / number helpers ─────────────────────────────────────────
-    // CRM currency is per-deal (no tenant default yet). We render the
-    // tenant's home-currency from the first non-empty deal currency we
-    // find on the response; fall back to a generic locale-aware number.
+    //
+    // ⚠ THIS COMMENT USED TO DESCRIBE A MECHANISM THAT DOES NOT EXIST.
+    // It claimed the tenant's home currency was taken "from the first non-empty
+    // deal currency we find on the response". Nothing here has ever read a
+    // currency, and nothing could: ForecastPayload, ForecastKpis and every row
+    // type in CRM/Models/CrmModels.cs carry amounts with NO currency field.
+    //
+    // ⚠ OPEN, LARGER PROBLEM — NOT FIXED HERE.
+    // The forecast SUMS deal_value across every deal in the window regardless of
+    // its currency, so in a workspace holding both USD and INR deals the totals
+    // are a mixed-currency sum, and rendering it as ₹ labels that sum with one
+    // of the currencies that went into it. Fixing it properly needs the API to
+    // either return a currency or group by one — a backend change on the
+    // analytics surface, deliberately out of scope for the deal-money work that
+    // uncovered it. INR is kept as the label rather than silently dropped so the
+    // figure does not start looking trustworthy while it is still wrong.
     function fmtCurrency(n) {
         const v = Number(n) || 0;
         try {

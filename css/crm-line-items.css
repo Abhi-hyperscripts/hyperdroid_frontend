@@ -1,0 +1,363 @@
+/* ============================================================================
+   CRM — Line items panel + instalment plan panel
+   ----------------------------------------------------------------------------
+   Both mount inside the deal detail slide-panel, beside commission and renewal.
+
+   Theme variables only. The two share a table shape on purpose: one lists what
+   the deal is made of, the other lists when it gets paid for, and a rep reads
+   them one after the other.
+
+   Numbers are mono and right-aligned throughout. A column of money that is not
+   aligned on its decimal point is a column nobody can scan, and both of these
+   tables exist to be scanned.
+   ============================================================================ */
+
+.lip, .ppp { display: flex; flex-direction: column; gap: 12px; }
+
+.lip-head, .ppp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lip-title, .ppp-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.lip-title svg, .ppp-title svg { width: 15px; height: 15px; color: var(--brand-primary); }
+
+.lip-total, .ppp-outstanding {
+  font-family: var(--font-family-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ppp-outstanding { font-size: 0.82rem; color: var(--text-secondary); }
+
+.lip-loading, .ppp-loading { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+.lip-hint, .ppp-hint { font-size: 0.74rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
+
+/* ── "This deal is priced by its lines" ──────────────────────────────── */
+.lip-authority {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 11px;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--brand-primary);
+  border-radius: 9px;
+}
+.lip-authority svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; color: var(--brand-primary); }
+
+/* ── Tables ──────────────────────────────────────────────────────────── */
+/* Both wrappers scroll horizontally rather than letting the slide-panel do it:
+   a panel that scrolls sideways moves every other section too. */
+.lip-table-wrap, .ppp-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+.lip-table, .ppp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.79rem;
+  min-width: 420px;
+}
+.lip-table th, .ppp-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+.lip-table td, .ppp-table td {
+  padding: 6px 10px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+.lip-table tr:last-child td, .ppp-table tr:last-child td { border-bottom: none; }
+
+/* The line-items empty state is NOT a table row. Rendered inside the table it
+   sat behind the wrapper's horizontal scroll, so on a 438px slide-panel the
+   sentence explaining what to do was cut off mid-word — the one message a first
+   time user actually needs to read. */
+.lip-none {
+  margin: 0;
+  padding: 12px 13px;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+/* .lip-empty was removed with the empty table row it styled — the line-items
+   empty state is a paragraph now (see .lip-none). .ppp-empty survives: the
+   instalment table still shows a row for a milestone plan with no instalments
+   generated yet. */
+.ppp-empty td {
+  padding: 14px 12px;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Money and counts: mono, right-aligned, aligned on the decimal point. */
+.lip-col-qty, .lip-col-price, .lip-col-total,
+.ppp-col-amt, .ppp-col-paid, .ppp-col-no {
+  text-align: right;
+  font-family: var(--font-family-mono);
+  white-space: nowrap;
+}
+.lip-table th.lip-col-qty, .lip-table th.lip-col-price, .lip-table th.lip-col-total,
+.ppp-table th.ppp-col-amt, .ppp-table th.ppp-col-paid, .ppp-table th.ppp-col-no {
+  text-align: right;
+}
+.lip-col-total { font-weight: 600; }
+
+/* ⭐ EVERY EDITABLE COLUMN NEEDS ITS OWN FLOOR.
+   Only description and account carried one, so the browser gave quantity
+   whatever was left — 41px of cell holding a 21px input. The typed value was
+   there and simply could not be READ, on the column that decides the line
+   total. A quantity box has to fit "1000.125" and a price box a real amount. */
+.lip-col-desc { min-width: 150px; }
+.lip-col-qty { min-width: 74px; }
+.lip-col-price { min-width: 96px; }
+.lip-col-total { min-width: 92px; }
+.lip-col-acct { min-width: 78px; }
+.lip-col-x { width: 30px; }
+.ppp-col-no { width: 34px; }
+
+/* Inputs sit flush inside their cell so the table still reads as a table. */
+.lip-table input {
+  width: 100%;
+  min-width: 0;
+  padding: 5px 7px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+.lip-table input:focus {
+  outline: none;
+  border-color: var(--border-color-focus, var(--brand-primary));
+  box-shadow: 0 0 0 2px var(--brand-alpha-10);
+}
+.lip-table input[type="number"] { text-align: right; font-family: var(--font-family-mono); }
+
+/* Spinner arrows cost ~16px of an input that is already tight, and nobody
+   steps a price by 0.01 with a mouse. */
+.lip-table input[type="number"]::-webkit-outer-spin-button,
+.lip-table input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.lip-table input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+/* The table scrolls sideways on a narrow slide-panel by design. The default
+   scrollbar renders as a bright bar across a dark panel, which reads as a UI
+   artefact rather than a control. */
+.lip-table-wrap::-webkit-scrollbar, .ppp-table-wrap::-webkit-scrollbar { height: 8px; }
+.lip-table-wrap::-webkit-scrollbar-track, .ppp-table-wrap::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 0 0 10px 10px;
+}
+.lip-table-wrap::-webkit-scrollbar-thumb, .ppp-table-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 999px;
+}
+.lip-table-wrap::-webkit-scrollbar-thumb:hover, .ppp-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+.lip-table-wrap, .ppp-table-wrap {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) var(--bg-tertiary);
+}
+
+.lip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.lip-x:hover { color: var(--color-error); background: var(--bg-tertiary); border-color: var(--border-color); }
+.lip-x:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 1px; }
+
+/* ── Actions ─────────────────────────────────────────────────────────── */
+.lip-actions, .ppp-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.lip-spacer { flex: 1 1 auto; }
+.ppp-actions { justify-content: flex-end; }
+
+/* ── Quotation ───────────────────────────────────────────────────────── */
+.lip-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+.lip-quote .btn { align-self: flex-start; }
+.lip-quote-done {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.79rem;
+  color: var(--color-success);
+}
+.lip-quote-done svg { width: 14px; height: 14px; flex-shrink: 0; }
+.lip-quote-done strong { font-family: var(--font-family-mono); color: var(--text-primary); }
+
+.lip-readonly, .ppp-readonly, .ppp-blocked, .ppp-error {
+  margin: 0;
+  font-size: 0.79rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.ppp-blocked, .ppp-error {
+  padding: 9px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-warning);
+  border-radius: 9px;
+}
+/* A load failure is not a blocked state — it is a page that does not know, and
+   it has to look different from one that does. */
+.ppp-error { border-left-color: var(--color-error); color: var(--color-error); }
+
+/* ── Instalment plan form ────────────────────────────────────────────── */
+.ppp-form { display: flex; flex-direction: column; gap: 10px; }
+.ppp-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 10px;
+}
+.ppp-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.ppp-fields input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 9px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+}
+.ppp-fields input:focus {
+  outline: none;
+  border-color: var(--border-color-focus, var(--brand-primary));
+  box-shadow: 0 0 0 2px var(--brand-alpha-10);
+}
+.ppp-input-wrap { display: flex; align-items: center; gap: 6px; }
+.ppp-input-wrap input { flex: 0 1 62px; text-align: right; font-family: var(--font-family-mono); }
+.ppp-suffix { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
+
+.ppp-preview {
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Schedule summary ────────────────────────────────────────────────── */
+.ppp-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
+}
+.ppp-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  font-family: var(--font-family-mono);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ppp-stat-label {
+  font-family: var(--font-family);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Instalment status ───────────────────────────────────────────────── */
+.ppp-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+}
+.ppp-badge.is-paid { color: var(--color-success); border-color: var(--color-success); }
+.ppp-badge.is-partial { color: var(--color-warning); border-color: var(--color-warning); }
+/* Overdue is the row that most needs noticing, in either theme. */
+.ppp-badge.is-overdue { color: var(--color-error); border-color: var(--color-error); }
+.ppp-badge.is-cancelled, .ppp-badge.is-waived { color: var(--text-muted); }
+
+.ppp-row.is-overdue td { background: var(--bg-tertiary); }
+.ppp-row.is-paid .ppp-col-amt { color: var(--text-muted); }
+
+/* ── Narrow screens ──────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .lip-table, .ppp-table { min-width: 400px; }
+  .lip-col-acct { display: none; }
+  .lip-table th.lip-col-acct { display: none; }
+}

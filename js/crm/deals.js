@@ -1605,6 +1605,22 @@ function escapeHtml(text) {
 
 // ==================== Deal Detail Slide Panel ====================
 
+/**
+ * A deal amount in the deal's OWN currency.
+ *
+ * Intl throws on a currency code it does not know and a deal can carry any
+ * three letters somebody typed, so the fallback is the code beside the number
+ * rather than an exception that blanks the whole panel.
+ */
+// Delegates to the ONE implementation in currencies.js — see formatMoney there
+// for why the locale has to follow the currency. Returns null for a non-number
+// so the caller can decide whether to render the row at all.
+function formatDealMoney(amount, currencyCode) {
+    const n = Number(amount);
+    if (!isFinite(n)) return null;
+    return formatMoney(n, currencyCode);
+}
+
 async function openDealDetailPanel(dealId) {
     document.getElementById('dealDetailOverlay').classList.add('active');
     document.getElementById('dealDetailPanel').classList.add('active');
@@ -1616,14 +1632,18 @@ async function openDealDetailPanel(dealId) {
     // listed them. Mount the panel that does.
     if (typeof NotesPanel !== 'undefined') {
         NotesPanel.mount(document.getElementById('dealNotesPanel'), 'deal', dealId);
-        // Documents against the DEAL — the signed application, the sanction
-        // letter, the policy document. Separate from the lead's KYC because a
-        // deal outlives the lead it came from.
-        if (typeof DocumentsPanel !== 'undefined') {
-            DocumentsPanel.mount(
-                document.getElementById('dealDocumentsPanel'), 'deal', dealId,
-                { canReview: !isMember() });
-        }
+    }
+    // Documents against the DEAL — the signed application, the sanction letter,
+    // the policy document. Separate from the lead's KYC because a deal outlives
+    // the lead it came from.
+    //
+    // Its own guard, NOT nested inside the notes one: a build where notes-panel
+    // failed to load would otherwise silently take the documents panel with it,
+    // and the two have nothing to do with each other.
+    if (typeof DocumentsPanel !== 'undefined') {
+        DocumentsPanel.mount(
+            document.getElementById('dealDocumentsPanel'), 'deal', dealId,
+            { canReview: !isMember() });
     }
     // Activities could be logged and read but never corrected, completed or
     // removed — the timeline projection carries no activity id to act on.
@@ -1637,7 +1657,26 @@ async function openDealDetailPanel(dealId) {
 
         const esc = escapeHtml;
         const field = (label, value, html) => value ? `<div class="lead-detail-item"><span class="lead-detail-label">${label}</span><span>${html || esc(String(value))}</span></div>` : '';
-        const currency = deal.value ? `₹${Number(deal.value).toLocaleString()}` : null;
+        // ⭐ deal.value DOES NOT EXIST. The API answers snake_case
+        // (deal_value), so this was undefined on every deal and the Value row
+        // silently never rendered — the deal name two lines below survived the
+        // same mistake only because somebody added a `|| deal.deal_name`
+        // fallback beside it.
+        //
+        // The symbol was hard-coded to ₹ as well, on a column that is per-deal:
+        // deals.currency is a row value and this workspace holds USD deals, so
+        // a $400,000 deal would have read ₹400,000 had the row rendered at all.
+        const dealValueNum = Number(deal.deal_value ?? deal.value);
+        // ⭐ ZERO IS A VALUE, AND THE ROW HAS TO EXIST TO BE UPDATED.
+        //
+        // This hid the row whenever the value was 0, which is exactly the state
+        // a deal is in before anybody prices it. Adding line items then moved
+        // deals.deal_value on the server while the page still had no Value row
+        // to put the new figure in, so the total appeared only in the panel and
+        // the summary above it stayed blank until a reload.
+        const currency = isFinite(dealValueNum)
+            ? formatDealMoney(dealValueNum, deal.currency)
+            : null;
         const dealName = deal.name || deal.deal_name || 'Untitled Deal';
         document.getElementById('dealDetailName').textContent = dealName;
 
@@ -1667,7 +1706,7 @@ async function openDealDetailPanel(dealId) {
             <div class="lead-detail-grid">
                 ${field('Lead ID', lead?.lead_number, lead?.lead_number ? `<span class="crm-lead-number">${esc(lead.lead_number)}</span>` : null)}
                 ${field('Deal Name', dealName)}
-                ${field('Value', currency)}
+                ${field('Value', currency, currency ? `<span data-deal-value>${esc(currency)}</span>` : null)}
                 ${field('Stage', deal.stage_name, stageHtml)}
                 ${field('Contact', deal.contact_name || (lead ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim() : null))}
                 ${field('Company', deal.company_name || lead?.company_name)}
@@ -1686,6 +1725,55 @@ async function openDealDetailPanel(dealId) {
                 <div class="lead-detail-item"><span class="lead-detail-label">Created</span><span>${new Date(deal.created_at).toLocaleString()}</span></div>
             </div>
         `;
+
+        // Commission needs the DEAL, not just its id — the panel renders the
+        // frozen amount or a live preview from the current value, and both come
+        // off this object. Mounted after the fetch for that reason, unlike the
+        // panels above which fetch their own data.
+        if (typeof CommissionPanel !== 'undefined') {
+            CommissionPanel.mount(
+                document.getElementById('dealCommissionPanel'), deal, { canEdit: !isMember() });
+        }
+
+        // Renewal needs the deal too — the panel renders the countdown and the
+        // close-out state from it. Unlike commission there is NO role gate: a
+        // renewal date is not a financial field, and the rep who sold the policy
+        // is the person who knows when it expires.
+        if (typeof RenewalPanel !== 'undefined') {
+            RenewalPanel.mount(document.getElementById('dealRenewalPanel'), deal);
+        }
+
+        // Line items price the deal, so the same role gate as commission: the
+        // server refuses a member's edit here for exactly the reason it refuses
+        // one on the deal value, and a panel that let them type would only
+        // deliver that refusal later and less clearly.
+        if (typeof LineItemsPanel !== 'undefined') {
+            LineItemsPanel.mount(
+                document.getElementById('dealLineItemsPanel'), deal, { canEdit: !isMember() });
+        }
+
+        // An instalment plan commits the customer to an automated dunning
+        // cadence, so it carries the financial gate too.
+        if (typeof PaymentPlanPanel !== 'undefined') {
+            PaymentPlanPanel.mount(
+                document.getElementById('dealPaymentPlanPanel'), deal, { canEdit: !isMember() });
+        }
+
+        // Appointments carry NO role gate, deliberately: booking a site visit is
+        // not a financial act, and the rep who owns the deal is the person who
+        // arranges it. The server still refuses a member booking into somebody
+        // else's diary — that rule is about whose time it is, not about rank.
+        // The unit this deal is buying. No role gate: holding a flat for your own
+        // customer is a rep doing their job, and the server checks the DEAL —
+        // reserving inventory against a deal you cannot see is what it refuses.
+        if (typeof PropertyClaimPanel !== 'undefined') {
+            PropertyClaimPanel.mount(document.getElementById('dealPropertyPanel'), deal);
+        }
+
+        if (typeof AppointmentsPanel !== 'undefined') {
+            AppointmentsPanel.mount(
+                document.getElementById('dealAppointmentsPanel'), 'deal', dealId);
+        }
 
         // Load timeline
         const timeline = await api.request(`/crm/deals/${dealId}/timeline`);
@@ -1817,3 +1905,28 @@ function renderDealTimeline(entries) {
         `;
     }).join('');
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Deal value follows the line items
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// ⭐ A DISPATCH WITH NO LISTENER IS DEAD MACHINERY, and this one guards a real
+// disagreement: saving line items recomputes deals.deal_value on the server, so
+// without this the Value row above the panel keeps showing the OLD figure right
+// beside the panel's new total. Two numbers for one fact, on screen at the same
+// time, is how people stop trusting either.
+//
+// Bound at module scope so it survives panel re-renders and is attached exactly
+// once — a per-render binding would update the cell N times per save.
+document.addEventListener('crm:deal-value-changed', (e) => {
+    const cell = document.querySelector('[data-deal-value]');
+    if (!cell) return;
+
+    const detail = e.detail || {};
+    const value = Number(detail.dealValue);
+    if (!isFinite(value)) return;
+
+    // formatDealMoney is the exact formatter the row was rendered with, so the
+    // updated figure cannot differ in shape from the one it replaces.
+    cell.textContent = formatDealMoney(value, detail.currency);
+});

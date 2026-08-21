@@ -1,0 +1,176 @@
+/* ============================================================================
+   CRM — Appointments panel
+   ----------------------------------------------------------------------------
+   Mounts on both the lead detail and the deal detail slide-panels.
+
+   The clash block is the one piece of chrome that matters: a refused booking
+   answers 409 with WHICH appointment is in the way, and this renders it in
+   place rather than as a toast — a toast is gone before the receptionist has
+   finished reading it, and the whole point is to offer the next slot.
+   ============================================================================ */
+
+.apt { display: flex; flex-direction: column; gap: 12px; }
+
+.apt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.apt-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.apt-title svg { width: 15px; height: 15px; color: var(--brand-primary); }
+.apt-next { font-size: 0.76rem; color: var(--text-secondary); }
+.apt-loading, .apt-none { margin: 0; font-size: 0.78rem; color: var(--text-muted); }
+
+/* ── The clash ───────────────────────────────────────────────────────── */
+.apt-clash {
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-warning);
+  border-radius: 10px;
+}
+.apt-clash-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0 0 6px;
+  font-size: 0.79rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+.apt-clash-head svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; color: var(--color-warning); }
+.apt-clash-list { margin: 0; padding-left: 22px; }
+.apt-clash-list li { font-size: 0.76rem; color: var(--text-secondary); line-height: 1.6; }
+.apt-clash-list strong { color: var(--text-primary); }
+
+/* ── Booking form ────────────────────────────────────────────────────── */
+.apt-form { display: flex; flex-direction: column; gap: 10px; }
+.apt-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(122px, 1fr));
+  gap: 10px;
+}
+.apt-form label, .apt-full {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.apt-form input[type="text"], .apt-form input[type="date"], .apt-form input[type="time"] {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 9px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+}
+.apt-form input:focus {
+  outline: none;
+  border-color: var(--border-color-focus, var(--brand-primary));
+  box-shadow: 0 0 0 2px var(--brand-alpha-10);
+}
+.apt-self { font-size: 0.82rem; color: var(--text-primary); padding: 7px 0; }
+
+.apt-durations { display: flex; gap: 4px; flex-wrap: wrap; }
+.apt-dur {
+  padding: 6px 9px;
+  font-size: 0.74rem;
+  font-family: var(--font-family-mono);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.apt-dur:hover { color: var(--text-primary); border-color: var(--border-color-focus, var(--brand-primary)); }
+.apt-dur.is-on {
+  color: var(--text-inverse);
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+.apt-actions { display: flex; justify-content: flex-end; }
+
+/* ── The list ────────────────────────────────────────────────────────── */
+.apt-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.apt-item {
+  padding: 9px 11px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--border-color);
+  border-radius: 10px;
+}
+.apt-item.is-confirmed { border-left-color: var(--color-success); }
+.apt-item.is-completed { border-left-color: var(--brand-primary); }
+.apt-item.is-cancelled, .apt-item.is-no_show { border-left-color: var(--text-muted); opacity: 0.72; }
+.apt-item.is-scheduled { border-left-color: var(--color-warning); }
+
+.apt-item-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.apt-item-title { font-size: 0.84rem; font-weight: 600; color: var(--text-primary); }
+.apt-item-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+.apt-item-reason, .apt-item-notes {
+  margin: 6px 0 0;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.apt-item-freed { margin: 6px 0 0; font-size: 0.72rem; color: var(--color-success); }
+
+.apt-badge {
+  padding: 2px 7px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+}
+.apt-badge.is-confirmed { color: var(--color-success); border-color: var(--color-success); }
+.apt-badge.is-completed { color: var(--brand-primary); border-color: var(--brand-primary); }
+.apt-badge.is-scheduled { color: var(--color-warning); border-color: var(--color-warning); }
+.apt-badge.is-cancelled, .apt-badge.is-no_show { color: var(--text-muted); }
+
+.apt-item-actions { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.apt-step {
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.apt-step:hover { color: var(--text-primary); border-color: var(--border-color-focus, var(--brand-primary)); }
+/* Releasing a slot is a different kind of act from confirming one, and reads
+   that way rather than sitting in the row as an equal option. */
+.apt-step.is-off:hover { color: var(--color-error); border-color: var(--color-error); }

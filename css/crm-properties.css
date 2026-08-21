@@ -1,0 +1,375 @@
+/* ============================================================================
+   CRM — Property listings
+   ----------------------------------------------------------------------------
+   Theme variables only.
+
+   The status colours carry real meaning and must survive both themes: an agent
+   scanning a tower needs "sold" and "available" to be distinguishable at a
+   glance, because getting it wrong means either double-selling a flat or
+   turning a buyer away from one that is free.
+
+   ⭐ "On hold" is deliberately the WARNING colour rather than an error one. A
+   hold is temporary and expires; treating it as a hard stop is exactly the
+   misreading that leaves lapsed units unsold.
+   ============================================================================ */
+
+/* ── Filters ─────────────────────────────────────────────────────────── */
+.prp-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+.prp-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.prp-filter input {
+  padding: 7px 9px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  max-width: 110px;
+}
+.prp-filter input:focus {
+  outline: none;
+  border-color: var(--border-color-focus, var(--brand-primary));
+  box-shadow: 0 0 0 2px var(--brand-alpha-10);
+}
+.prp-range { display: flex; align-items: center; gap: 6px; }
+.prp-range span { font-size: 0.74rem; color: var(--text-muted); }
+
+.prp-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.prp-chip {
+  padding: 6px 10px;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.prp-chip:hover { color: var(--text-primary); border-color: var(--border-color-focus, var(--brand-primary)); }
+.prp-chip.is-on {
+  color: var(--text-inverse);
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+.prp-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.prp-toggle input { width: 15px; height: 15px; accent-color: var(--brand-primary); cursor: pointer; }
+
+.prp-none {
+  padding: 28px 20px;
+  text-align: center;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+/* ── The grid ────────────────────────────────────────────────────────── */
+.prp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.prp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 15px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-top: 3px solid var(--border-color);
+  border-radius: 12px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.prp-card:hover { transform: translateY(-1px); border-color: var(--border-color-focus, var(--brand-primary)); }
+.prp-card.is-available { border-top-color: var(--color-success); }
+.prp-card.is-held { border-top-color: var(--color-warning); }
+.prp-card.is-booked { border-top-color: var(--brand-primary); }
+.prp-card.is-sold { border-top-color: var(--text-muted); opacity: 0.78; }
+
+.prp-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.prp-card-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.prp-card-project {
+  margin: 2px 0 0;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.prp-card-price {
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.prp-card-specs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.prp-card-specs li {
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border-radius: 999px;
+}
+
+.prp-card-hold {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--color-warning);
+}
+/* A lapsed hold reads as GOOD NEWS — the unit is sellable again — so it must
+   not keep the warning colour that says "somebody has this". */
+.prp-card-hold.is-lapsed { color: var(--color-success); }
+
+.prp-card-notes {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.prp-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.prp-badge {
+  padding: 3px 9px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+}
+.prp-badge.is-available { color: var(--color-success); border-color: var(--color-success); }
+.prp-badge.is-held { color: var(--color-warning); border-color: var(--color-warning); }
+.prp-badge.is-booked { color: var(--brand-primary); border-color: var(--brand-primary); }
+.prp-badge.is-sold { color: var(--text-muted); }
+
+/* ── The editor ──────────────────────────────────────────────────────── */
+.prf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.prf-full { grid-column: 1 / -1; }
+.prf-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.prf-grid input, .prf-grid textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  font-size: 0.86rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  resize: vertical;
+}
+.prf-grid input:focus, .prf-grid textarea:focus {
+  outline: none;
+  border-color: var(--border-color-focus, var(--brand-primary));
+  box-shadow: 0 0 0 2px var(--brand-alpha-10);
+}
+
+@media (max-width: 560px) {
+  .prp-filters { gap: 10px; }
+  .prp-filter input { max-width: 100%; }
+}
+
+/* ============================================================================
+   CRM — Property claim panel (on the deal detail)
+   ----------------------------------------------------------------------------
+   ⭐ A LAPSED HOLD MUST NOT LOOK LIKE A LIVE ONE. It is the state where the rep
+   is most likely to be wrong about what they have: the deal still points at the
+   unit, but anybody can take it. It reads as a warning, not as a reassurance.
+   ============================================================================ */
+
+.pcp { display: flex; flex-direction: column; gap: 12px; }
+.pcp-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pcp-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.pcp-title svg { width: 15px; height: 15px; color: var(--brand-primary); }
+.pcp-loading, .pcp-none { margin: 0; font-size: 0.78rem; color: var(--text-muted); line-height: 1.6; }
+.pcp-hint { font-size: 0.72rem; color: var(--text-muted); }
+
+.pcp-error {
+  margin: 0;
+  padding: 9px 12px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-warning);
+  border-radius: 9px;
+}
+
+.pcp-held {
+  padding: 11px 13px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-warning);
+  border-radius: 10px;
+}
+.pcp-held.is-booked { border-left-color: var(--brand-primary); }
+.pcp-held.is-sold { border-left-color: var(--color-success); }
+
+.pcp-held-name { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+.pcp-held-project {
+  margin: 3px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.pcp-held-note { margin: 7px 0 0; font-size: 0.75rem; line-height: 1.5; color: var(--color-warning); }
+/* A lapsed hold is the one state a rep is most likely to misread as safe. */
+.pcp-held-note.is-lapsed { color: var(--color-error); font-weight: 500; }
+.pcp-held-note.is-committed { color: var(--brand-primary); }
+
+.pcp-picker { display: flex; flex-direction: column; gap: 10px; }
+.pcp-full {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.pcp-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+}
+.pcp-holds { display: flex; gap: 4px; flex-wrap: wrap; }
+.pcp-hold {
+  padding: 5px 9px;
+  font-size: 0.72rem;
+  font-family: var(--font-family-mono);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.pcp-hold:hover { color: var(--text-primary); border-color: var(--border-color-focus, var(--brand-primary)); }
+.pcp-hold.is-on {
+  color: var(--text-inverse);
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+/* ============================================================================
+   The CRM rail on this page
+   ----------------------------------------------------------------------------
+   ⚠ THE RAIL IS STYLED PER PAGE, AND THAT IS PRE-EXISTING, NOT A CHOICE MADE
+   HERE. Every CRM page carries its own copy of this block scoped to its own
+   body class — crm-deals.css, crm-contacts.css, crm-tasks.css and a dozen more
+   all define `nav.pulse-rail` again. There is no shared rail stylesheet, so a
+   new page with rail MARKUP but no rail CSS renders the icons at their natural
+   SVG size and fills the viewport with a single orange glyph. That is exactly
+   how this page first looked.
+
+   Copied rather than shared because unifying fifteen page skins is a much
+   larger change than adding a page, and doing it halfway — a shared rule plus
+   fifteen overrides — would be worse than either end state.
+   ============================================================================ */
+
+body.crm-properties-page nav.pulse-rail {
+  position: fixed !important;
+  left: 0; top: 52px; bottom: 0;
+  width: 78px;
+  border-right: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+body.crm-properties-page .rail-item {
+  width: 60px; padding: 8px 0 6px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; color: var(--text-muted); text-align: center;
+}
+body.crm-properties-page .rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+body.crm-properties-page .rail-item .ric svg { width: 18px; height: 18px; }
+body.crm-properties-page .rail-item span { font-size: 9px; letter-spacing: 0.02em; }
+body.crm-properties-page .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+body.crm-properties-page .rail-item.active { background: color-mix(in srgb, #34D399 13%, transparent); color: #34D399; }
+
+/* The page content clears the fixed rail. */
+body.crm-properties-page .crm-container { padding-left: 96px; }
+
+@media (max-width: 900px) {
+  body.crm-properties-page nav.pulse-rail { display: none; }
+  body.crm-properties-page .crm-container { padding-left: 16px; }
+}

@@ -1,0 +1,330 @@
+/* ============================================================================
+   CRM — Commission panel
+   ----------------------------------------------------------------------------
+   Mounted inside the deal detail slide-panel, beside the documents and notes
+   panels, so it is sized for a ~520px column rather than a full page.
+
+   Theme variables only. The "earned" amount in particular uses the semantic
+   success colour rather than a literal green, which on the dark theme reads as
+   a smear.
+   ============================================================================ */
+
+.cmp {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.cmp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cmp-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.cmp-title svg { width: 15px; height: 15px; color: var(--brand-primary); }
+.cmp-amount {
+  font-family: var(--font-family-mono);
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+/* Frozen at Won — this is money earned, not a forecast. */
+.cmp-amount.is-final { color: var(--color-success); }
+
+/* ── Terms form ──────────────────────────────────────────────────────── */
+.cmp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.cmp-types {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cmp-type {
+  flex: 1 1 auto;
+  min-width: 88px;
+  height: 32px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.cmp-type:hover { border-color: var(--brand-primary); color: var(--text-primary); }
+.cmp-type.is-on {
+  border-color: var(--brand-primary);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.cmp-row label,
+.cmp-notes-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.cmp-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.cmp-input-wrap:focus-within { border-color: var(--border-color-focus, var(--brand-primary)); }
+.cmp-input-wrap input {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 36px matches every other control in a CRM panel; a bare input sits two
+     pixels shorter than the buttons beside it. */
+  height: 36px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+.cmp-prefix,
+.cmp-suffix {
+  flex: 0 0 auto;
+  padding: 0 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.cmp-notes-label textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 44px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.cmp-notes-label textarea:focus {
+  outline: none;
+  border-color: var(--border-color-focus, var(--brand-primary));
+}
+
+.cmp-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cmp-hint {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+.cmp-readonly {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+/* ── Earned (frozen) ─────────────────────────────────────────────────── */
+.cmp-final {
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-success);
+  border-radius: 10px;
+}
+.cmp-final-line {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+}
+.cmp-final-line strong { color: var(--color-success); }
+.cmp-final-notes {
+  margin: 7px 0 0;
+  padding: 7px 9px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border-radius: 7px;
+}
+
+/* ── Payout track ────────────────────────────────────────────────────── */
+.cmp-track {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.cmp-step {
+  flex: 1 1 auto;
+  min-width: 92px;
+  height: 30px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.cmp-step:hover:not(:disabled) { border-color: var(--brand-primary); color: var(--text-primary); }
+.cmp-step.is-on {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  font-weight: 600;
+  cursor: default;
+}
+/* Written off is a real outcome, not a success — it must not read like one. */
+.cmp-step.is-off:hover:not(:disabled) { border-color: var(--color-error); color: var(--color-error); }
+.cmp-step.is-off.is-on { border-color: var(--color-error); color: var(--color-error); }
+.cmp-step:disabled { opacity: 1; }
+
+/* ── Narrow panels ───────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .cmp-types { flex-direction: column; }
+  .cmp-step { min-width: 0; flex-basis: calc(50% - 3px); }
+}
+
+/* ============================================================================
+   Commission report (slide panel on the deals page)
+   ============================================================================ */
+
+.cmr-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 12px 0 16px;
+  flex-wrap: wrap;
+}
+.cmr-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.cmr-month {
+  height: 36px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.cmr-month:focus { outline: none; border-color: var(--border-color-focus, var(--brand-primary)); }
+
+.cmr-body { display: flex; flex-direction: column; gap: 18px; }
+
+.cmr-empty {
+  margin: 0;
+  padding: 16px 14px;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+}
+
+.cmr-group {
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+.cmr-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.cmr-group-head h4 {
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.cmr-earned {
+  font-family: var(--font-family-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-success);
+}
+.cmr-totals {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.cmr-totals em { font-style: normal; font-weight: 600; color: var(--text-primary); }
+.cmr-totals .is-off em { color: var(--color-error); }
+
+/* The table can be wider than a 560px panel — it scrolls inside its own box
+   rather than pushing the panel body sideways. */
+.cmr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  display: block;
+  overflow-x: auto;
+}
+.cmr-table th,
+.cmr-table td {
+  padding: 6px 8px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-color);
+}
+.cmr-table th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.cmr-table td { color: var(--text-secondary); }
+.cmr-table td:first-child { color: var(--text-primary); }
+.cmr-table tbody tr:last-child td { border-bottom: none; }

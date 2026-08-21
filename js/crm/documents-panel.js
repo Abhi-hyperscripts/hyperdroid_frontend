@@ -33,6 +33,9 @@ const DocumentsPanel = (() => {
     // Filled once per page from GET /types, so the picker and the labels come
     // from the server's vocabulary rather than a copy that can drift from it.
     let typeCache = null;
+    // The tenant's REQUIRED types. Separate from the vocabulary on purpose —
+    // see buildTypePicker for why the picker offers more than the checklist.
+    let requiredCache = null;
 
     const STATUS_LABEL = { received: 'Awaiting review', verified: 'Verified', rejected: 'Rejected' };
 
@@ -74,6 +77,19 @@ const DocumentsPanel = (() => {
             typeCache = [];
         }
         return typeCache;
+    }
+
+    async function loadRequired() {
+        if (requiredCache) return requiredCache;
+        try {
+            const res = await api.request('/crm/entity-documents/required');
+            requiredCache = (res && res.required) || [];
+        } catch (e) {
+            // Not fatal — without it the picker is simply unsorted.
+            console.error('Failed to load required document types:', e);
+            requiredCache = [];
+        }
+        return requiredCache;
     }
 
     function shell(state) {
@@ -240,6 +256,19 @@ const DocumentsPanel = (() => {
             await api.request('/crm/entity-documents/upload', { method: 'POST', body: form });
             input.value = '';
             container.querySelector('[data-docp="fileLabel"]').textContent = 'Choose a file…';
+
+            // ⭐ CLEAR THE TYPE TOO, not just the file.
+            //
+            // Leaving the previous type selected is how an Aadhaar gets filed
+            // as a PAN card: the rep picks the next file, the picker still says
+            // "PAN card" from the last upload, and nothing asks. The checklist
+            // then reports PAN collected twice and Aadhaar missing, which is
+            // worse than no checklist because it is confidently wrong.
+            st.docType = null;
+            if (st.typeDropdown && typeof st.typeDropdown.setValue === 'function') {
+                st.typeDropdown.setValue(null, false);
+            }
+
             Toast.success('Document attached');
             await load(container);
         } catch (e) {
@@ -329,11 +358,31 @@ const DocumentsPanel = (() => {
         }
     }
 
+    /**
+     * ⭐ THE PICKER OFFERS MORE TYPES THAN THE CHECKLIST REQUIRES, ON PURPOSE.
+     *
+     * They answer two different questions. The checklist is what a file MUST
+     * have before it counts as complete; the vocabulary is what a document can
+     * be TAGGED as. A rep handed a passport on a file that only requires PAN
+     * and a bank statement still has to be able to file it as a passport —
+     * restricting the picker to the required list would force them to tag it
+     * "Other", and "Other" is where a document goes to become unfindable.
+     *
+     * What was genuinely wrong was the ORDER: eighteen undifferentiated options
+     * when the tenant cares about two. Required types now come first and say
+     * so, and the rest stay reachable underneath.
+     */
     async function buildTypePicker(container) {
         const st = mounted.get(container);
         const host = container.querySelector('[data-docp="typePicker"]');
-        const types = await loadTypes();
+        const [types, required] = await Promise.all([loadTypes(), loadRequired()]);
         if (!host) return;
+
+        const req = new Set(required);
+        const ordered = [
+            ...types.filter(t => req.has(t.code)),
+            ...types.filter(t => !req.has(t.code)),
+        ];
 
         // Never a native <select> (codebase convention).
         // SearchableDropdown IS the Dropdown class (see the bottom of
@@ -343,7 +392,14 @@ const DocumentsPanel = (() => {
         // purpose: this picker's options come from the server.
         if (typeof SearchableDropdown === 'function' && types.length) {
             st.typeDropdown = new SearchableDropdown(host, {
-                options: types.map(t => ({ value: t.code, label: t.label })),
+                options: ordered.map(t => ({
+                    value: t.code,
+                    label: t.label,
+                    // The dropdown renders this under the label, so the split
+                    // between "on this tenant's checklist" and "everything
+                    // else" is visible without a second control.
+                    description: req.has(t.code) ? 'Required on every record' : ''
+                })),
                 placeholder: 'What is this document?',
                 searchPlaceholder: 'Search document types…',
                 compact: true,
@@ -369,7 +425,29 @@ const DocumentsPanel = (() => {
      */
     function mount(container, entityType, entityId, opts) {
         if (!container) return;
+        // Re-read the checklist config on every mount: an admin can change it
+        // in another tab, and a picker ordered by a stale list is worse than an
+        // unordered one because it looks authoritative.
+        requiredCache = null;
         const prev = mounted.get(container);
+
+        // ⭐ TEAR DOWN THE PREVIOUS DROPDOWN BEFORE REPLACING THE CONTAINER.
+        //
+        // SearchableDropdown PORTALS its open menu to <body> to escape
+        // transformed ancestors, and puts it back on close(). Blowing away the
+        // container while a menu is portaled orphans that menu in the body: it
+        // is no longer reachable from the panel, nothing will ever close it,
+        // and the next open adds another. Measured on the third open of the
+        // lead panel — two live menus for one picker, and a click resolved to
+        // both.
+        //
+        // destroy() also un-registers the document click handler and the
+        // reposition listeners, which otherwise accumulate one set per open.
+        if (prev && prev.typeDropdown) {
+            try { prev.typeDropdown.close(); prev.typeDropdown.destroy(); }
+            catch (e) { console.error('Failed to tear down the document type picker:', e); }
+        }
+
         mounted.set(container, {
             entityType, entityId,
             docs: [], checklist: null, docType: null,

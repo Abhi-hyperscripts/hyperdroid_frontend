@@ -1,0 +1,250 @@
+/* ============================================================================
+   CRM — Renewal panel + renewals-due queue
+   ----------------------------------------------------------------------------
+   Mounted inside the deal detail slide-panel, beside commission and documents.
+
+   Theme variables only. OVERDUE uses the semantic error colour rather than a
+   literal red: an overdue renewal is the row that most needs noticing, and it
+   has to read that way in both themes.
+   ============================================================================ */
+
+.rnp { display: flex; flex-direction: column; gap: 12px; }
+
+.rnp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rnp-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.rnp-title svg { width: 15px; height: 15px; color: var(--brand-primary); }
+.rnp-when {
+  font-family: var(--font-family-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.rnp-when.is-overdue { color: var(--color-error); font-weight: 600; }
+
+/* ── Status ──────────────────────────────────────────────────────────── */
+.rnp-status {
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--border-color);
+  border-radius: 10px;
+}
+.rnp-status.is-renewed { border-left-color: var(--color-success); }
+.rnp-status.is-lapsed { border-left-color: var(--color-error); }
+.rnp-status.is-not_renewing { border-left-color: var(--text-muted); }
+.rnp-status.is-pending { border-left-color: var(--color-warning); }
+
+.rnp-status-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rnp-status-badge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.rnp-status.is-renewed .rnp-status-badge { color: var(--color-success); }
+.rnp-status.is-lapsed .rnp-status-badge { color: var(--color-error); }
+.rnp-status.is-pending .rnp-status-badge { color: var(--color-warning); }
+.rnp-hint { font-size: 0.74rem; color: var(--text-muted); }
+.rnp-status .rnp-hint { display: block; margin-top: 5px; line-height: 1.5; }
+
+.rnp-track { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+.rnp-step {
+  flex: 1 1 auto;
+  min-width: 92px;
+  height: 30px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.rnp-step:hover:not(:disabled) { border-color: var(--brand-primary); color: var(--text-primary); }
+.rnp-step.is-on {
+  border-color: var(--brand-primary);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: default;
+}
+.rnp-step:disabled { opacity: 1; }
+
+/* ── Form ────────────────────────────────────────────────────────────── */
+.rnp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+.rnp-date-label,
+.rnp-notes-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.rnp-date-label input,
+.rnp-notes-label textarea {
+  width: 100%;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+/* 36px matches every other control in a CRM panel. */
+.rnp-date-label input { height: 36px; }
+.rnp-notes-label textarea {
+  min-height: 44px;
+  padding: 8px 10px;
+  resize: vertical;
+  line-height: 1.5;
+  font-size: 0.84rem;
+}
+.rnp-date-label input:focus,
+.rnp-notes-label textarea:focus {
+  outline: none;
+  border-color: var(--border-color-focus, var(--brand-primary));
+}
+
+.rnp-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.rnp-presets-label,
+.rnp-presets-suffix { font-size: 0.76rem; color: var(--text-muted); }
+.rnp-preset {
+  height: 28px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.rnp-preset:hover { border-color: var(--brand-primary); color: var(--text-primary); }
+.rnp-preset.is-on { border-color: var(--brand-primary); color: var(--text-primary); font-weight: 600; }
+
+.rnp-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Renewals-due queue ──────────────────────────────────────────────── */
+.rnd-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 12px 0 16px;
+  flex-wrap: wrap;
+}
+.rnd-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.rnd-within {
+  height: 36px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.rnd-count { margin: 0 0 10px; font-size: 0.8rem; color: var(--text-muted); }
+.rnd-empty {
+  margin: 0;
+  padding: 16px 14px;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+}
+.rnd-list { display: flex; flex-direction: column; gap: 8px; }
+.rnd-item {
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-warning);
+  border-radius: 10px;
+}
+.rnd-item.is-overdue { border-left-color: var(--color-error); }
+.rnd-item-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.rnd-item-name {
+  padding: 0;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.rnd-item-name:hover { color: var(--brand-primary); text-decoration: underline; }
+.rnd-item-value {
+  flex: 0 0 auto;
+  font-family: var(--font-family-mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.rnd-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 5px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+.rnd-item-when { font-weight: 600; color: var(--color-warning); }
+.rnd-item-when.is-overdue { color: var(--color-error); }
+
+@media (max-width: 560px) {
+  .rnp-step { min-width: 0; flex-basis: calc(50% - 3px); }
+}

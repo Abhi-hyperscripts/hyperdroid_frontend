@@ -285,6 +285,78 @@
             align-items: center;
         }
     </style>
+    <style>
+        /* Settings → Documents. Theme variables only, so it resolves in both themes. */
+        .reqdoc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .reqdoc-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 12px;
+            font-size: 0.86rem;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 9px;
+            cursor: pointer;
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+        .reqdoc-item:hover { border-color: var(--brand-primary); }
+        .reqdoc-item.is-on { border-color: var(--brand-primary); color: var(--text-primary); }
+        .reqdoc-item input { accent-color: var(--brand-primary); }
+        .reqdoc-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+        .reqdoc-summary { font-size: 0.82rem; color: var(--text-muted); }
+
+        /* Pipeline templates. Theme variables only. */
+        .pltp { margin: 4px 0 18px; }
+        .pltp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .pltp-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+        }
+        .pltp-card h4 { margin: 0; font-size: 0.9rem; color: var(--text-primary); }
+        .pltp-desc { margin: 0; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary); }
+        .pltp-stages { display: flex; flex-wrap: wrap; gap: 4px; }
+        .pltp-stage {
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            background: var(--bg-tertiary);
+            border-radius: 999px;
+        }
+        .pltp-stage.is-won { color: var(--color-success); }
+        .pltp-stage.is-lost { color: var(--color-error); }
+        .pltp-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .pltp-exists { font-size: 0.72rem; color: var(--text-muted); }
+    </style>
 </head>
 <body class="dashboard crm-page crm-settings-page">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -972,6 +1044,15 @@
                     <div class="section-header">
                         <h3 class="section-title">Deal Stages</h3>
                         <div class="header-actions">
+                            <button class="btn btn-outline" onclick="openPipelineTemplates()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                                </svg>
+                                Start from a template
+                            </button>
                             <button class="btn btn-outline" onclick="seedDefaultStages()">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
                                     <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
@@ -991,6 +1072,23 @@
                     <!-- Loading State -->
                     <div class="crm-loading" id="pipelineLoading">
                         <div class="crm-loading-spinner"></div>
+                    </div>
+
+                    <!-- Template picker (hidden until "Start from a template") -->
+                    <div id="pipelineTemplatesBox" class="pltp" style="display:none;">
+                        <details class="crm-help crm-help-sm" open>
+                            <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>What is this? — Pipeline templates</summary>
+                            <div class="crm-help-body">
+                                <p>A ready-made set of stages for how your business actually works — a loan
+                                   application moving through underwriting to disbursal, an insurance policy
+                                   through to issue, a card through to activation.</p>
+                                <p><em>Each template becomes its own pipeline, so a firm doing both loans and
+                                   insurance can run the two side by side. A template can only be applied to a
+                                   NEW pipeline — adding one on top of an existing pipeline would give it two
+                                   closing stages.</em></p>
+                            </div>
+                        </details>
+                        <div id="pipelineTemplatesGrid" class="pltp-grid"></div>
                     </div>
 
                     <!-- Pipeline Stages List -->
@@ -4845,6 +4943,8 @@
         document.write('<script src="../../js/crm/email-campaigns.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/whatsapp-settings.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/team-kb.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/documents-settings.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/pipeline-templates.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/ai-assistant.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-fields-settings.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/settings-fb-capi.js?v=' + CACHE_VERSION + '"><\/script>');

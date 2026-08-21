@@ -333,6 +333,13 @@
         if (typeof NotesPanel !== 'undefined') {
             NotesPanel.mount(document.getElementById('leadNotesPanel'), 'lead', leadId);
         }
+
+        // Appointments against the lead — the consultation or site visit that
+        // has been arranged, as opposed to the calls that have happened.
+        if (typeof AppointmentsPanel !== 'undefined') {
+            AppointmentsPanel.mount(
+                document.getElementById('leadAppointmentsPanel'), 'lead', leadId);
+        }
         // Activities could be logged and read but never corrected, completed or
         // removed — the timeline projection carries no activity id to act on.
         if (typeof ActivitiesPanel !== 'undefined') {

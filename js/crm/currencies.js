@@ -88,6 +88,46 @@
         if (keep && CRM_CURRENCIES.some(function (c) { return c[0] === keep; })) el.value = keep;
     }
 
+    /**
+     * Format money for display — ONE implementation for the whole CRM UI.
+     *
+     * ⭐ THE LOCALE MUST FOLLOW THE CURRENCY, NOT THE OTHER WAY ROUND.
+     *
+     * Four separate copies of this helper had 'en-IN' hard-coded, so every
+     * amount in every currency was grouped Indian-style: a $400,000 deal in a
+     * USD workspace rendered as "$4,00,000.00". That is not a near-miss — lakh
+     * grouping reads as a different NUMBER to anybody outside South Asia, and
+     * the figure appears on deal values, commission, quotations and instalment
+     * schedules.
+     *
+     * Indian grouping is correct for INR and wrong for everything else, so the
+     * rule is exactly that. Other currencies use en-US grouping, which is
+     * pinned rather than left to the browser so two people looking at the same
+     * deal see the same string.
+     *
+     * @param {number|string} amount
+     * @param {string} [code] ISO currency code; defaults to INR
+     * @returns {string} formatted amount, or an em dash when there is no number
+     */
+    function formatMoney(amount, code) {
+        if (amount === null || amount === undefined || amount === '') return '\u2014';
+        const n = Number(amount);
+        if (!isFinite(n)) return '\u2014';
+
+        const currency = code || 'INR';
+        const locale = currency === 'INR' ? 'en-IN' : 'en-US';
+        try {
+            return new Intl.NumberFormat(locale, {
+                style: 'currency', currency: currency, maximumFractionDigits: 2,
+            }).format(n);
+        } catch (_) {
+            // An unrecognised ISO code makes Intl THROW rather than degrade, and
+            // a deal can carry any three letters somebody typed.
+            return (currency + ' ' + n.toFixed(2)).trim();
+        }
+    }
+
     global.CRM_CURRENCIES = CRM_CURRENCIES;
     global.populateCurrencySelect = populateCurrencySelect;
+    global.formatMoney = formatMoney;
 })(window);
