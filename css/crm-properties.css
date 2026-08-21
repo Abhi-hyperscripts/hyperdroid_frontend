@@ -1,326 +1,397 @@
 /* ============================================================================
-   CRM — Property listings
+   CRM — Property Desk
    ----------------------------------------------------------------------------
+   The page IS the Lead Desk, with property in place of people: the same hero,
+   view tabs, filter popover, chips, flow line and split list/detail. The shell
+   comes from crm-leaddesk.css so the two pages cannot drift apart by one of
+   them being restyled.
+
+   ⭐ THE DESK LAYOUT IS DRIVEN BY BODY-SCOPED TOKENS, so a page that only
+   copies the MARKUP gets an unsized split pane and colourless pills. Leads
+   defines --ldk-* and its status tints on body.crm-leads-page; this file
+   defines the same contract for body.crm-properties-page, with tints that mean
+   something for inventory rather than for a pipeline.
+
    Theme variables only.
-
-   The status colours carry real meaning and must survive both themes: an agent
-   scanning a tower needs "sold" and "available" to be distinguishable at a
-   glance, because getting it wrong means either double-selling a flat or
-   turning a buyer away from one that is free.
-
-   ⭐ "On hold" is deliberately the WARNING colour rather than an error one. A
-   hold is temporary and expires; treating it as a hard stop is exactly the
-   misreading that leaves lapsed units unsold.
    ============================================================================ */
 
-/* ── Filters ─────────────────────────────────────────────────────────── */
-.prp-filters {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-}
-.prp-filter {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 0.74rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-.prp-filter input {
-  padding: 7px 9px;
-  font-size: 0.82rem;
-  font-family: inherit;
-  color: var(--text-primary);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 7px;
-  max-width: 110px;
-}
-.prp-filter input:focus {
-  outline: none;
-  border-color: var(--border-color-focus, var(--brand-primary));
-  box-shadow: 0 0 0 2px var(--brand-alpha-10);
-}
-.prp-range { display: flex; align-items: center; gap: 6px; }
-.prp-range span { font-size: 0.74rem; color: var(--text-muted); }
+body.crm-properties-page {
+  /* The pane-footer glass, same values Leads declares — they are body-scoped
+     there, so a page that only borrows the classes gets no surface at all. */
+  --lp-glass: rgba(255, 255, 255, 0.55);
+  --lp-glass-line: rgba(0, 0, 0, 0.08);
 
-.prp-chips { display: flex; gap: 4px; flex-wrap: wrap; }
-.prp-chip {
-  padding: 6px 10px;
-  font-size: 0.74rem;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  /* ⭐ ONE HEIGHT FOR BOTH PANE FOOTERS.
+     They were 45px and 48px — bottoms flush but the hairline TOP borders 3px
+     apart, which reads as a broken seam straight down the middle of the desk.
+     Two bars that are meant to look like one bar cannot each size themselves
+     from their own contents (a 26px select on one side, a 28px button on the
+     other); the height has to be the shared fact. */
+  --prp-foot-h: 48px;
+
+  --ldk-line: var(--border-color);
+  --ldk-hover: color-mix(in srgb, var(--text-primary) 3%, transparent);
+  --ldk-sel: color-mix(in srgb, var(--brand-primary) 9%, transparent);
+
+  /* Inventory status tints. Available reads as GO, sold as done-and-closed,
+     and on-hold as the temporary state it is — not as an error, because a hold
+     expires and the unit comes back. */
+  --st-avail-bg: #dcfce7;   --st-avail-fg: #15803d;
+  --st-held-bg:  #fef3c7;   --st-held-fg:  #b45309;
+  --st-book-bg:  #dbeafe;   --st-book-fg:  #1d4ed8;
+  --st-sold-bg:  #e5e7eb;   --st-sold-fg:  #4b5563;
 }
-.prp-chip:hover { color: var(--text-primary); border-color: var(--border-color-focus, var(--brand-primary)); }
-.prp-chip.is-on {
-  color: var(--text-inverse);
-  background: var(--brand-primary);
-  border-color: var(--brand-primary);
+[data-theme="dark"] body.crm-properties-page {
+  --lp-glass: rgba(21, 27, 41, 0.55);
+  --lp-glass-line: rgba(255, 255, 255, 0.09);
+
+  --st-avail-bg: rgba(34, 197, 94, 0.15);  --st-avail-fg: #5fd78b;
+  --st-held-bg:  rgba(234, 179, 8, 0.14);  --st-held-fg:  #e4c153;
+  --st-book-bg:  rgba(59, 130, 246, 0.16); --st-book-fg:  #7db2f8;
+  --st-sold-bg:  rgba(156, 163, 175, 0.14);--st-sold-fg:  #a7adb8;
 }
 
-.prp-toggle {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.prp-toggle input { width: 15px; height: 15px; accent-color: var(--brand-primary); cursor: pointer; }
+/* The desk fills the viewport and scrolls INSIDE its panes — the same contract
+   Leads has. Without this the split pane has no height to divide. */
+/* Clear the fixed site navbar. It is position:fixed and therefore OUT of flow,
+   so a 100vh flex body starts underneath it and the breadcrumb disappears —
+   which is exactly how this page first rendered. Leads carries the same 52px. */
+/* ⚠⚠ THE RAIL OFFSET BELONGS ON THE BODY, NOT INSIDE THE CONTAINER.
+   The fixed rail sits at left:0 and the body's PADDING is the only space no
+   in-flow child covers. This page instead put `padding-left` on .crm-container
+   — padding is INSIDE the element's box, so the container's box still began at
+   x=0 and its padding area lay straight over the rail. Both carry z-index:1 and
+   the container comes later in the DOM, so it won every hit test: measured with
+   elementFromPoint at each icon's centre, all ten returned .crm-container, and
+   NOTHING on the rail was clickable. It looked fine, which is why only a person
+   trying to click it found out.
+   Leads carries `padding: 52px 0 0 78px` on the body for exactly this reason. */
+body.crm-properties-page { padding-top: 52px; padding-left: 78px; }
 
-.prp-none {
-  padding: 28px 20px;
-  text-align: center;
-  font-size: 0.86rem;
-  color: var(--text-muted);
-}
-
-/* ── The grid ────────────────────────────────────────────────────────── */
-.prp-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
-}
-
-.prp-card {
+body.crm-properties-page { overflow: hidden; height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; }
+body.crm-properties-page .crm-container {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px 15px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-top: 3px solid var(--border-color);
-  border-radius: 12px;
-  transition: border-color 0.15s ease, transform 0.15s ease;
-}
-.prp-card:hover { transform: translateY(-1px); border-color: var(--border-color-focus, var(--brand-primary)); }
-.prp-card.is-available { border-top-color: var(--color-success); }
-.prp-card.is-held { border-top-color: var(--color-warning); }
-.prp-card.is-booked { border-top-color: var(--brand-primary); }
-.prp-card.is-sold { border-top-color: var(--text-muted); opacity: 0.78; }
-
-.prp-card-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-.prp-card-title {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.prp-card-project {
-  margin: 2px 0 0;
-  font-size: 0.74rem;
-  color: var(--text-muted);
-}
-
-.prp-card-price {
-  margin: 0;
-  font-family: var(--font-family-mono);
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.prp-card-specs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  list-style: none;
-  margin: 0;
+  max-width: none;
+  /* No left inset here — see the body rule above. */
   padding: 0;
 }
-.prp-card-specs li {
-  padding: 2px 8px;
-  font-size: 0.72rem;
-  color: var(--text-secondary);
+
+/*
+   ⭐ THE SEARCH ICON GOES IN THE SPACE THE INPUT ALREADY RESERVES.
+   .crm-search-input carries 38px of left padding for the control Leads pins
+   there (its scope toggle). This page has no scope toggle, so without pinning
+   something into that space the icon floats above the box and the padding reads
+   as an empty indent.
+*/
+body.crm-properties-page .crm-search-wrap { position: relative; }
+body.crm-properties-page .crm-search-wrap .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.prp-toggle { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 0.79rem;
+              white-space: nowrap; color: var(--text-secondary); cursor: pointer; }
+.prp-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--brand-primary); cursor: pointer; }
+
+/* ── The filter popover ──────────────────────────────────────────────── */
+/*
+   ⭐ THE PANEL IS A POPOVER, AND EVERY RULE THAT MAKES IT ONE IS BODY-SCOPED.
+   crm.css defines .lp-filter-panel's absolute positioning, width, card chrome
+   and 3-column grid under body.crm-leads-page. Copying only the MARKUP left it
+   `position: static` — so opening it pushed a scrambled block of unstyled
+   labels across the tabs and over the detail pane. The panel is not a layout
+   element; it is a floating card, and that is entirely a CSS fact.
+*/
+body.crm-properties-page .ldk-viewsrow { position: relative; }
+
+body.crm-properties-page .lp-filter-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 300;
+  width: min(760px, calc(100vw - 110px));
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: var(--shadow-2xl);
+  padding: 16px 18px 14px;
+}
+body.crm-properties-page .lp-filter-panel.open { display: block; }
+
+body.crm-properties-page .lp-filter-panel .crm-filter-bar {
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+}
+body.crm-properties-page .lp-filter-panel .crm-filter-bar--dimensions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 14px;
+}
+body.crm-properties-page .lp-filter-panel .crm-filter-group { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+body.crm-properties-page .lp-filter-panel .crm-filter-group label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+body.crm-properties-page .lp-filter-panel .crm-filter-group--no-label { justify-content: flex-end; }
+body.crm-properties-page .lp-filter-panel .crm-filter-group--no-label { flex-direction: row; align-items: center; gap: 8px; }
+
+/* ── The flow line: the inventory mix ────────────────────────────────── */
+.ldk-flowline .prp-flow-seg { display: block; min-width: 2px; transition: opacity 0.16s ease; }
+.ldk-flowline .prp-flow-seg.s-available { background: var(--color-success); }
+.ldk-flowline .prp-flow-seg.s-held      { background: var(--color-warning); }
+.ldk-flowline .prp-flow-seg.s-booked    { background: var(--brand-primary); }
+.ldk-flowline .prp-flow-seg.s-sold      { background: var(--text-muted); }
+.ldk-flowline.has-active .prp-flow-seg:not(.active) { opacity: 0.2; }
+
+/* ── A unit row ──────────────────────────────────────────────────────── */
+/*
+   ⭐ A THUMBNAIL WHERE LEADS PUTS INITIALS. A person is identified by a name;
+   a flat is identified by how it LOOKS, so the photograph is the avatar. A unit
+   nobody has photographed gets an explicit placeholder rather than a blank —
+   "not photographed yet" is itself a thing the agent has to act on.
+*/
+.prp-thumb {
+  width: 54px; height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
   background: var(--bg-tertiary);
-  border-radius: 999px;
+  flex-shrink: 0;
+  display: block;
 }
-
-.prp-card-hold {
-  margin: 0;
-  font-size: 0.74rem;
-  color: var(--color-warning);
+.prp-thumb-none {
+  width: 54px; height: 42px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border-color);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
 }
-/* A lapsed hold reads as GOOD NEWS — the unit is sellable again — so it must
-   not keep the warning colour that says "somebody has this". */
-.prp-card-hold.is-lapsed { color: var(--color-success); }
-
-.prp-card-notes {
-  margin: 0;
-  font-size: 0.74rem;
-  line-height: 1.5;
+.prp-thumb-none svg { width: 16px; height: 16px; }
+.prp-shots {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
   color: var(--text-muted);
 }
 
-.prp-card-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: auto;
-  padding-top: 4px;
-}
+.ldk-pill.p-available { background: var(--st-avail-bg); color: var(--st-avail-fg); }
+.ldk-pill.p-held      { background: var(--st-held-bg);  color: var(--st-held-fg); }
+.ldk-pill.p-booked    { background: var(--st-book-bg);  color: var(--st-book-fg); }
+.ldk-pill.p-sold      { background: var(--st-sold-bg);  color: var(--st-sold-fg); }
 
-.prp-badge {
-  padding: 3px 9px;
-  font-size: 0.68rem;
+.ldk-row .lprice {
+  font-family: var(--font-family-mono);
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  border-radius: 999px;
-  white-space: nowrap;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
-.prp-badge.is-available { color: var(--color-success); border-color: var(--color-success); }
-.prp-badge.is-held { color: var(--color-warning); border-color: var(--color-warning); }
-.prp-badge.is-booked { color: var(--brand-primary); border-color: var(--brand-primary); }
-.prp-badge.is-sold { color: var(--text-muted); }
 
-/* ── The editor ──────────────────────────────────────────────────────── */
-.prf-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-.prf-full { grid-column: 1 / -1; }
-.prf-grid label {
+.ldk-empty {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-size: 0.76rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-.prf-grid input, .prf-grid textarea {
-  width: 100%;
-  min-width: 0;
-  padding: 8px 10px;
-  font-size: 0.86rem;
-  font-family: inherit;
-  color: var(--text-primary);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  resize: vertical;
-}
-.prf-grid input:focus, .prf-grid textarea:focus {
-  outline: none;
-  border-color: var(--border-color-focus, var(--brand-primary));
-  box-shadow: 0 0 0 2px var(--brand-alpha-10);
-}
-
-@media (max-width: 560px) {
-  .prp-filters { gap: 10px; }
-  .prp-filter input { max-width: 100%; }
-}
-
-/* ============================================================================
-   CRM — Property claim panel (on the deal detail)
-   ----------------------------------------------------------------------------
-   ⭐ A LAPSED HOLD MUST NOT LOOK LIKE A LIVE ONE. It is the state where the rep
-   is most likely to be wrong about what they have: the deal still points at the
-   unit, but anybody can take it. It reads as a warning, not as a reassurance.
-   ============================================================================ */
-
-.pcp { display: flex; flex-direction: column; gap: 12px; }
-.pcp-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.pcp-title {
-  display: flex;
   align-items: center;
-  gap: 7px;
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  justify-content: center;
+  gap: 12px;
+  padding: 54px 24px;
+  text-align: center;
+  color: var(--text-muted);
 }
-.pcp-title svg { width: 15px; height: 15px; color: var(--brand-primary); }
-.pcp-loading, .pcp-none { margin: 0; font-size: 0.78rem; color: var(--text-muted); line-height: 1.6; }
-.pcp-hint { font-size: 0.72rem; color: var(--text-muted); }
+.ldk-empty p { margin: 0; font-size: 0.84rem; line-height: 1.6; max-width: 320px; }
 
-.pcp-error {
-  margin: 0;
-  padding: 9px 12px;
-  font-size: 0.78rem;
-  line-height: 1.5;
-  color: var(--text-primary);
+/* ── The detail pane ─────────────────────────────────────────────────── */
+.prd {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.prd-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  text-align: center;
+  padding: 30px;
+}
+.prd-placeholder svg { width: 40px; height: 40px; opacity: 0.55; }
+
+/* The gallery leads, because that is what a buyer is shown first. */
+.prd-cover {
+  position: relative;
+  width: 100%;
+  /* ⚠ THE RATIO AND THE CAP USED TO CONTRADICT EACH OTHER.
+     It read `aspect-ratio: 16/9` with `max-height: 340px`, and above ~604px of
+     pane width the cap ALWAYS won — so the declared 1.78 was never the box.
+     Measured on a 1920 viewport: 1369x340, a ratio of 4.03. object-fit:cover
+     then threw away well over half of a 4:3 photograph, which is why a living
+     room rendered as a close-up of whatever happened to sit at its vertical
+     centre.
+     Now the ratio is one a listing photo survives, and the cap is a guard for
+     very wide panes rather than the thing that decides every layout: at 12/5 it
+     only binds past ~1100px, and below that the declared ratio is the truth. */
+  aspect-ratio: 12 / 5;
+  /* The cap is VIEWPORT-AWARE, which the old flat 340px was not. A cover is
+     worth height only while the specification, the price and the hold banner
+     still fit under it; on a 900px-tall screen a fixed 460px cover pushes all
+     three below the fold, so the reader gains a bigger photograph and loses the
+     facts they opened the unit for. */
+  max-height: min(440px, 42vh);
   background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-left: 3px solid var(--color-warning);
+  border-bottom: 1px solid var(--ldk-line);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.prd-cover-img {
+  width: 100%; height: 100%; display: block;
+  object-fit: cover;
+  /* Interiors put the informative part — windows, ceiling height, the far wall
+     — above the midline, and floors below it. Biasing the crop upward keeps the
+     room and discards the carpet. */
+  object-position: center 42%;
+}
+.prd-cover.is-empty .prd-cover-img { display: none; }
+.prd-cover-none {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 9px; font-size: 0.8rem; color: var(--text-muted);
+}
+.prd-cover-none svg { width: 32px; height: 32px; opacity: 0.7; }
+.prd-cover:not(.is-empty) .prd-cover-none { display: none; }
+/* The store did not answer — distinct from "this unit has no photographs".
+   Same placeholder frame, different sentence, because an agent who reads
+   "no photographs" stops looking and one who reads "temporarily" reloads. */
+.prd-cover-unavail {
+  position: absolute; inset: 0;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  gap: 9px; font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 0 16px;
+}
+.prd-cover-unavail svg { width: 32px; height: 32px; opacity: 0.7; }
+.prd-cover.is-unavailable .prd-cover-unavail { display: flex; }
+.prd-cover.is-unavailable .prd-cover-img,
+.prd-cover.is-unavailable .prd-cover-none { display: none; }
+/*
+   ⭐ A STATUS PILL ON A PHOTOGRAPH NEEDS ITS OWN BACKDROP.
+   The pill tints are 14-16% alpha — designed to sit on a solid pane, where they
+   read fine. Over an image they vanish into whatever happens to be behind them,
+   and "ON HOLD" is exactly the fact an agent must not miss. A blurred dark
+   plate under it makes the tint legible on any photograph.
+*/
+.prd-cover .ldk-pill {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  background: color-mix(in srgb, var(--bg-primary) 78%, transparent);
+  backdrop-filter: blur(8px) saturate(1.2);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.prd-strip {
+  display: flex;
+  gap: 8px;
+  padding: 10px 18px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ldk-line);
+  flex-shrink: 0;
+  scrollbar-width: thin;
+}
+.prd-shot {
+  width: 74px; height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--bg-tertiary);
+  border: 2px solid transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.prd-shot.is-cover { border-color: var(--brand-primary); }
+.prd-addshot {
+  width: 74px; height: 56px;
+  border-radius: 8px;
+  border: 1px dashed var(--border-color);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  line-height: 1;
+}
+.prd-addshot:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+.prd-body { padding: 18px 20px 26px; display: flex; flex-direction: column; gap: 16px; }
+.prd-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.prd-title { margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); }
+.prd-project { margin: 3px 0 0; font-size: 0.8rem; color: var(--text-muted); }
+.prd-price { font-family: var(--font-family-mono); font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
+
+.prd-specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+.prd-spec {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 9px 11px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--ldk-line);
   border-radius: 9px;
 }
+.prd-spec-label {
+  font-size: 0.66rem; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.prd-spec-value { font-size: 0.86rem; color: var(--text-primary); }
 
-.pcp-held {
+.prd-hold {
   padding: 11px 13px;
   background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--ldk-line);
   border-left: 3px solid var(--color-warning);
   border-radius: 10px;
-}
-.pcp-held.is-booked { border-left-color: var(--brand-primary); }
-.pcp-held.is-sold { border-left-color: var(--color-success); }
-
-.pcp-held-name { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
-.pcp-held-project {
-  margin: 3px 0 0;
-  font-family: var(--font-family-mono);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
   color: var(--text-secondary);
 }
-.pcp-held-note { margin: 7px 0 0; font-size: 0.75rem; line-height: 1.5; color: var(--color-warning); }
-/* A lapsed hold is the one state a rep is most likely to misread as safe. */
-.pcp-held-note.is-lapsed { color: var(--color-error); font-weight: 500; }
-.pcp-held-note.is-committed { color: var(--brand-primary); }
+.prd-hold.is-lapsed { border-left-color: var(--color-success); }
+.prd-hold.is-free { border-left-color: var(--color-success); }
+.prd-hold strong { color: var(--text-primary); }
 
-.pcp-picker { display: flex; flex-direction: column; gap: 10px; }
-.pcp-full {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.74rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
+.prd-notes { margin: 0; font-size: 0.82rem; line-height: 1.6; color: var(--text-secondary); }
+.prd-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-.pcp-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 9px;
-  flex-wrap: wrap;
-  margin-top: 9px;
-}
-.pcp-holds { display: flex; gap: 4px; flex-wrap: wrap; }
-.pcp-hold {
-  padding: 5px 9px;
-  font-size: 0.72rem;
-  font-family: var(--font-family-mono);
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 7px;
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-}
-.pcp-hold:hover { color: var(--text-primary); border-color: var(--border-color-focus, var(--brand-primary)); }
-.pcp-hold.is-on {
-  color: var(--text-inverse);
-  background: var(--brand-primary);
-  border-color: var(--brand-primary);
+@media (max-width: 900px) {
+  body.crm-properties-page { overflow: auto; height: auto; display: block; }
+  body.crm-properties-page .crm-container { padding-left: 16px; }
+  .ldk-split { display: block; }
+  .ldk-list { width: 100%; min-width: 0; border-right: none; }
+  .ldk-rows { overflow: visible; }
+  .prd-cover { max-height: 240px; }
 }
 
 /* ============================================================================
@@ -366,10 +437,397 @@ body.crm-properties-page .rail-item span { font-size: 9px; letter-spacing: 0.02e
 body.crm-properties-page .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
 body.crm-properties-page .rail-item.active { background: color-mix(in srgb, #34D399 13%, transparent); color: #34D399; }
 
-/* The page content clears the fixed rail. */
-body.crm-properties-page .crm-container { padding-left: 96px; }
+/* NOTHING here. The rail is cleared by the body's padding-left, and Leads
+   carries `padding: 0` on its container for the same reason — the desk's list
+   pane is meant to sit flush against the rail. An inset here reads as a gap
+   down the left edge that the page next door does not have. */
+body.crm-properties-page .crm-container { padding-left: 0; }
 
 @media (max-width: 900px) {
   body.crm-properties-page nav.pulse-rail { display: none; }
+  /* Rail gone, so its reservation goes with it. */
+  body.crm-properties-page { padding-left: 0; }
   body.crm-properties-page .crm-container { padding-left: 16px; }
+}
+
+
+/* ── The gallery modal ───────────────────────────────────────────────── */
+.prg-none { margin: 0; padding: 22px 4px; font-size: 0.82rem; line-height: 1.6; color: var(--text-muted); text-align: center; }
+.prg-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.prg-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+.prg-thumb {
+  width: 92px;
+  height: 69px;              /* the same 4:3 the card cover uses */
+  object-fit: cover;
+  border-radius: 7px;
+  background: var(--bg-tertiary);
+  flex-shrink: 0;
+}
+.prg-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.prg-name {
+  font-size: 0.79rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prg-cover-tag {
+  align-self: flex-start;
+  padding: 2px 8px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--brand-primary);
+  border: 1px solid var(--brand-primary);
+  border-radius: 999px;
+}
+.prg-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+
+@media (max-width: 520px) {
+  .prg-item { flex-wrap: wrap; }
+  .prg-actions { width: 100%; justify-content: flex-start; }
+}
+
+
+/* ── Pane footers ────────────────────────────────────────────────────── */
+/*
+   ⭐ BOTH PANES END IN A FLUSH BAR, and that symmetry is the point.
+   On Leads the list ends in a pagination bar and the workspace ends in an
+   actions bar — square corners, hairline top, the same glass — so the two panes
+   read as one desk. This page had neither: the list just stopped, and the unit
+   actions floated inline in the scrolling body where they moved around as the
+   specification grew.
+*/
+.ldk-list { position: relative; }
+
+.prp-listfoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  height: var(--prp-foot-h);
+  box-sizing: border-box;
+  padding: 0 14px;
+  border-top: 1px solid var(--lp-glass-line);
+  background: var(--lp-glass);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.prp-rows-per {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.prp-rows-per select {
+  height: 26px;
+  padding: 0 6px;
+  font-size: 11.5px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+.prp-pager { display: flex; align-items: center; gap: 4px; }
+.prp-page {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 7px;
+  font-size: 11.5px;
+  font-family: var(--font-family-mono);
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.prp-page:hover:not(:disabled) { color: var(--text-primary); border-color: var(--brand-primary); }
+.prp-page.is-on { color: var(--text-inverse); background: var(--brand-primary); border-color: var(--brand-primary); }
+.prp-page:disabled { opacity: 0.4; cursor: default; }
+
+/* The detail pane's actions become a pinned footer rather than inline content,
+   so they sit still while the specification scrolls behind them. */
+.prd { position: relative; }
+.prd-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+.prd-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  height: var(--prp-foot-h);
+  box-sizing: border-box;
+  padding: 0 16px;
+  border-top: 1px solid var(--lp-glass-line);
+  background: var(--lp-glass);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  /* No wrap: a footer that grows a second row breaks the shared height the
+     seam depends on. On a narrow pane the bar scrolls instead. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.prd-foot::-webkit-scrollbar { display: none; }
+.prd-foot .btn { white-space: nowrap; flex-shrink: 0; }
+
+/* ── Edit-unit / List-a-unit form ────────────────────────────────────────
+   ⚠ THESE CLASSES WERE EMITTED BY THE MARKUP AND DEFINED NOWHERE.
+   .prf-grid computed to `display: block`, so every label flowed inline at
+   whatever width its content happened to want — measured at 232, 213, 206,
+   270, 104 and 102px down one form — and the Category and Type captions
+   drifted onto the rows above their own controls. It read as a broken
+   dialog because it WAS one: markup written against a stylesheet contract
+   that did not exist.
+
+   Two equal columns, labels stacked over their field, and .prf-full for the
+   rows that should span both. */
+.prf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+  align-items: start;
+}
+.prf-grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* Matches .gm-body .form-label, so this dialog reads like every other
+     modal in the product rather than like a page of its own. */
+  font-size: 11.5px;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  /* Without this a long value in a grid child refuses to shrink and pushes
+     the column past its track. */
+  min-width: 0;
+}
+.prf-grid > .prf-full { grid-column: 1 / -1; }
+
+.prf-grid input,
+.prf-grid textarea {
+  width: 100%;
+  box-sizing: border-box;
+  height: var(--input-height-md);
+  padding: 0 10px;
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+}
+.prf-grid input:focus,
+.prf-grid textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+.prf-grid textarea {
+  height: auto;
+  min-height: 76px;
+  padding: 8px 10px;
+  resize: vertical;
+  line-height: 1.45;
+}
+/* The two pickers are components, not inputs — they need the same track
+   width and the same height as the fields they sit beside, or the row they
+   share with Bedrooms goes ragged. */
+.prf-grid [data-prf="category-host"],
+.prf-grid [data-prf="type-host"] { display: block; width: 100%; }
+.prf-grid .searchable-dropdown-trigger {
+  min-width: 0;
+  height: var(--input-height-md);
+  /* The label is uppercase and the trigger is INSIDE it, so without this the
+     chosen value renders as RESIDENTIAL / APARTMENT — shouting a value the
+     rest of the form writes in sentence case. */
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 560px) {
+  .prf-grid { grid-template-columns: 1fr; }
+  .prf-grid > .prf-full { grid-column: 1; }
+}
+
+/* ── Active-filter chips ─────────────────────────────────────────────────
+   ⚠ .lp-chip IS BODY-SCOPED TO THE LEADS PAGE in crm.css, and this page
+   reuses the markup. Unscoped, the chips rendered as bare text with a raw
+   square button beside them — the third time this exact trap has bitten this
+   page, after .lp-filter-panel and .prf-grid. Copying MARKUP from Leads
+   copies none of the styling that makes it a component.
+
+   Mirrored rather than widened: the Leads rules are correct for Leads, and
+   changing a selector two pages share to fix one of them is how a change to
+   this page silently reaches the other. */
+body.crm-properties-page .lp-chips {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  min-width: 0;
+  /* Sits INLINE in the app bar, so it must yield rather than shove the Filters
+     and List-a-unit buttons off the end — the same shape Leads gives its
+     toolbar chips. */
+  flex: 0 1 auto;
+  max-width: 46%;   /* the value Leads uses */
+  overflow: hidden;
+}
+/* No filters, no gap. Without this the empty container still occupies the flex
+   slot and the search box sits visibly off-centre. */
+body.crm-properties-page .lp-chips:empty { display: none; }
+body.crm-properties-page .lp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--brand-primary) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 28%, transparent);
+  border-radius: 16px;
+  padding: 4px 6px 4px 11px;
+  white-space: nowrap;
+}
+body.crm-properties-page .lp-chip-x {
+  width: 17px; height: 17px;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+body.crm-properties-page .lp-chip-x:hover { background: var(--color-danger); color: #fff; }
+
+/* ── Viewing history ─────────────────────────────────────────────────────
+   ⚠ THIS WHOLE BLOCK SHIPPED WITH NO CSS AT ALL. Every class the markup
+   emits — .prd-visits, -head, -n, -list, -none, .prd-visit and its three
+   spans — was written against a stylesheet contract that did not exist, so
+   the section rendered as a bare <h3> and a paragraph of body text with no
+   card, no rows and no separation from the specification above it. The
+   fourth time this exact mistake has been made on this page, after
+   .prf-grid, .lp-chip and the filter popover: markup copied or invented
+   without the rules that make it a component. */
+.prd-visits {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ldk-line);
+}
+.prd-visits-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+/* The count is a quiet badge, not part of the heading text — a unit shown
+   eleven times is the number an agent scans for. */
+.prd-visits-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--ldk-line);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text-primary);
+}
+.prd-visits-none {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px dashed var(--border-color);
+  border-radius: 9px;
+  background: var(--bg-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.prd-visits-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.prd-visit {
+  display: grid;
+  /* when · title · who · status — the title takes the slack so a long one
+     truncates instead of pushing the pill off the row. */
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--ldk-line);
+  border-radius: 9px;
+  font-size: 0.82rem;
+}
+.prd-visit-when {
+  font-family: var(--font-family-mono);
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.prd-visit-title {
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prd-visit-by {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+/* A cancelled or missed viewing still happened and still counts, but it
+   should not read as strongly as one that was attended. */
+.prd-visit.is-cancelled,
+.prd-visit.is-no_show { opacity: 0.62; }
+
+/* The status pills. These had no colours either, so every viewing read as
+   the same neutral chip whatever became of it. */
+.ldk-pill.p-visit-scheduled { background: var(--st-held-bg);  color: var(--st-held-fg); }
+.ldk-pill.p-visit-confirmed { background: var(--st-book-bg);  color: var(--st-book-fg); }
+.ldk-pill.p-visit-completed { background: var(--st-avail-bg); color: var(--st-avail-fg); }
+.ldk-pill.p-visit-no_show,
+.ldk-pill.p-visit-cancelled {
+  background: color-mix(in srgb, var(--color-error) 14%, transparent);
+  color: var(--color-error);
+}
+
+@media (max-width: 720px) {
+  .prd-visit {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 4px;
+  }
+  .prd-visit-when { grid-column: 1 / -1; }
 }

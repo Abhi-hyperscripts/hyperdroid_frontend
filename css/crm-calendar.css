@@ -1,0 +1,284 @@
+/* ── Glass tokens ────────────────────────────────────────────────────────
+   ⚠ --lp-glass* ARE BODY-SCOPED TO THE LEADS PAGE in crm.css, and every glass
+   rule in crm-leaddesk.css reads them. A page that borrows .ldk-appbar without
+   redeclaring them gets `background: var(--lp-glass)` resolving to nothing —
+   the rules all apply and produce a completely flat surface, which is why this
+   page looked unlike every other desk in the suite. Properties hit the same
+   thing and carries the same block. */
+body.crm-calendar-page {
+  --lp-glass: rgba(255, 255, 255, 0.55);
+  --lp-glass-line: rgba(0, 0, 0, 0.08);
+  --lp-glass-hi: rgba(255, 255, 255, 0.75);
+}
+[data-theme="dark"] body.crm-calendar-page {
+  --lp-glass: rgba(21, 27, 41, 0.55);
+  --lp-glass-line: rgba(255, 255, 255, 0.09);
+  --lp-glass-hi: rgba(255, 255, 255, 0.07);
+}
+
+/* ── CRM calendar ────────────────────────────────────────────────────────────
+   The week diary for GET /crm/appointments/calendar.
+
+   Layout follows the Lead Desk shell (fixed navbar + fixed rail), so the rail
+   offset lives on the BODY — padding inside .crm-container would leave the
+   container's box over the rail and make every rail icon unclickable, which is
+   exactly what happened on the Properties page. */
+body.crm-calendar-page {
+  padding-top: 52px;
+  padding-left: 78px;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+body.crm-calendar-page .crm-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  padding: 0;
+}
+
+.cal-nav { display: inline-flex; gap: 6px; }
+.cal-whose {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.cal-whose .searchable-dropdown-wrapper { min-width: 170px; }
+/* The label is uppercase and the trigger sits inside it. */
+.cal-whose .searchable-dropdown-trigger {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.875rem;
+}
+
+/* Seven equal columns that SCROLL as one, so a busy Tuesday cannot make the
+   whole week as tall as its longest day. */
+.cal-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--border-color);
+  border-top: 1px solid var(--border-color);
+  overflow: auto;
+}
+
+.cal-day {
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 10px 8px 14px;
+}
+.cal-day.is-today { background: color-mix(in srgb, var(--brand-primary) 5%, var(--bg-primary)); }
+
+.cal-day-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+.cal-day-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.cal-day-num { font-size: 0.72rem; color: var(--text-muted); }
+.cal-day.is-today .cal-day-name { color: var(--brand-primary); }
+.cal-day-n {
+  margin-left: auto;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 9px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  font-size: 0.68rem; color: var(--text-primary);
+}
+
+.cal-day-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cal-day-empty { margin: 0; font-size: 0.74rem; color: var(--text-muted); }
+
+.cal-appt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--brand-primary);
+  font-size: 0.76rem;
+  min-width: 0;
+}
+/* Cancelled and no-show still happened and still belong in the history, but
+   must not read as strongly as a booking that stands. */
+.cal-appt.is-released { opacity: 0.55; border-left-color: var(--text-muted); }
+.cal-appt.is-completed { border-left-color: var(--color-success); }
+
+.cal-appt-time { font-family: var(--font-family-mono); font-size: 0.7rem; color: var(--text-secondary); }
+.cal-appt-title {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 0.74rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cal-appt-who, .cal-appt-status { font-size: 0.68rem; color: var(--text-muted); }
+.cal-appt-unit {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 26%, transparent);
+  color: var(--text-primary);
+  font-size: 0.68rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Below the rail's breakpoint the week becomes a scrolling list of days —
+   seven columns on a phone is seven unreadable columns. */
+@media (max-width: 900px) {
+  body.crm-calendar-page nav.pulse-rail { display: none; }
+  body.crm-calendar-page { padding-left: 0; }
+  .cal-grid { grid-template-columns: 1fr; }
+}
+
+/* ── The left rail ───────────────────────────────────────────────────────
+   ⚠ THERE IS NO SHARED RAIL STYLESHEET. Every CRM page redefines
+   nav.pulse-rail for itself, so a new page that ships the rail MARKUP without
+   these rules renders an unstyled <nav> whose icon SVGs have no box to sit in
+   — measured here as a single orange calendar glyph filling the entire
+   viewport. Same class of defect as .prf-grid and .prd-visits: markup written
+   against a contract that does not exist on this page.
+   Mirrored from the Properties block rather than widened, because changing a
+   shared selector to fix one page is how a fix reaches pages nobody tested. */
+body.crm-calendar-page nav.pulse-rail {
+  position: fixed !important;
+  left: 0; top: 52px; bottom: 0;
+  width: 78px;
+  border-right: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+body.crm-calendar-page .rail-item {
+  width: 60px; padding: 8px 0 6px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; color: var(--text-muted); text-align: center;
+}
+body.crm-calendar-page .rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+body.crm-calendar-page .rail-item .ric svg { width: 18px; height: 18px; }
+body.crm-calendar-page .rail-item span { font-size: 9px; letter-spacing: 0.02em; }
+body.crm-calendar-page .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+body.crm-calendar-page .rail-item.active { background: color-mix(in srgb, #38BDF8 15%, transparent); color: #38BDF8; }
+
+/* ── Glass, to match the rest of the suite ───────────────────────────────── */
+body.crm-calendar-page .ldk-hero {
+  background: var(--lp-glass);
+  backdrop-filter: blur(16px) saturate(1.12);
+  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  border-bottom: 1px solid var(--lp-glass-line);
+}
+
+/* Each day is a pane, not a table cell — same treatment the Lead Desk gives
+   its list, including the top sheen that makes it read as a surface. */
+body.crm-calendar-page .cal-grid { background: var(--lp-glass-line); }
+body.crm-calendar-page .cal-day {
+  background: var(--lp-glass);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  position: relative;
+}
+body.crm-calendar-page .cal-day::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--lp-glass-hi, rgba(255,255,255,0.06)), transparent 22%);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+body.crm-calendar-page .cal-day > * { position: relative; z-index: 1; }
+
+/* ── Card hierarchy: WHO reads first ─────────────────────────────────────
+   The customer's name is the largest thing on the card and the title sits
+   under it in a quieter weight — the opposite of how it started, where the
+   agent's own words were the headline and the person coming was absent. */
+.cal-appt-with {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cal-appt-noone { font-style: italic; font-weight: 400; color: var(--text-muted); }
+.cal-appt-where {
+  font-size: 0.7rem; color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cal-appt-foot {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+/* The link is the one thing on a card somebody clicks in a hurry, so it is a
+   button rather than a line of text. */
+.cal-appt-join {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 3px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 42%, transparent);
+  color: var(--brand-primary);
+  font-size: 0.7rem; font-weight: 600; text-decoration: none;
+}
+.cal-appt-join:hover { background: var(--brand-primary); color: var(--text-inverse); }
+.cal-appt-join svg { width: 12px; height: 12px; }
+/* An online meeting is marked on the spine too, so a week of calls is
+   readable without focusing on any one card. */
+.cal-appt.is-online { border-left-color: #38BDF8; }
+body.crm-calendar-page .cal-day.is-today {
+  background: color-mix(in srgb, var(--brand-primary) 7%, var(--lp-glass));
+}
+body.crm-calendar-page .cal-day-head { border-bottom-color: var(--lp-glass-line); }
+
+/* The cards sit ON the glass, so they need a little more lift than a flat
+   surface would give them. */
+body.crm-calendar-page .cal-appt {
+  background: color-mix(in srgb, var(--bg-card) 62%, transparent);
+  backdrop-filter: blur(8px) saturate(1.2);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  border-color: var(--lp-glass-line);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
+}
+body.crm-calendar-page .cal-appt:hover {
+  background: color-mix(in srgb, var(--bg-card) 82%, transparent);
+}
+body.crm-calendar-page .cal-day-n {
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+  border-color: var(--lp-glass-line);
+}

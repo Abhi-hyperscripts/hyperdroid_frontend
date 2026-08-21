@@ -488,16 +488,27 @@ body.crm-leads-page {
 /* ── filters popover internal layout ──────────────────────────────────────────
    Reorder the grid: dropdown filters first (2 rows), then the date pair
    side-by-side, "Form answers" last. Keeps the date-mode select inline with
-   its "from" label instead of stretching and wrapping. */
-.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(1) { order: 1; } /* Source */
-.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(5) { order: 2; } /* Status */
-.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(6) { order: 3; } /* Team */
-.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(7) { order: 4; } /* Owner */
-.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(8) { order: 5; } /* Email engagement */
-.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(9) { order: 6; } /* Campaign */
-.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(3) { order: 7; } /* Date from */
-.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(4) { order: 8; } /* Date to */
-.lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(2) { order: 9; align-self: end; } /* Form answers */
+   its "from" label instead of stretching and wrapping.
+
+   ⚠ SCOPED TO THE LEADS PAGE, AND IT MUST STAY THAT WAY. These rules address
+   filters BY CHILD POSITION and the comments name LEADS fields, so they are
+   meaningful only against Leads' exact markup. They were unscoped, and
+   properties.html reuses .lp-filter-panel — so the Properties filter panel was
+   silently laid out in Leads' field order, putting Bedrooms last. Adding two
+   filters to Properties made it unmissable: Apply landed in the middle of the
+   grid and Category in the final cell.
+
+   Anything keyed on :nth-child is coupled to one page's markup by definition.
+   Adding a filter to Leads still means renumbering every line below. */
+body.crm-leads-page .lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(1) { order: 1; } /* Source */
+body.crm-leads-page .lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(5) { order: 2; } /* Status */
+body.crm-leads-page .lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(6) { order: 3; } /* Team */
+body.crm-leads-page .lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(7) { order: 4; } /* Owner */
+body.crm-leads-page .lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(8) { order: 5; } /* Email engagement */
+body.crm-leads-page .lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(9) { order: 6; } /* Campaign */
+body.crm-leads-page .lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(3) { order: 7; } /* Date from */
+body.crm-leads-page .lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(4) { order: 8; } /* Date to */
+body.crm-leads-page .lp-filter-panel .crm-filter-bar--dimensions > .crm-filter-group:nth-child(2) { order: 9; align-self: end; } /* Form answers */
 
 .lp-filter-panel .crm-filter-group > label {
   display: flex;

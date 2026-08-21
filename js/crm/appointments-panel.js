@@ -183,13 +183,35 @@ const AppointmentsPanel = (() => {
                     <span data-apt="assignee-host"></span>
                 </label>
 
+                <!-- ⭐ THE FIELD THAT MAKES AN APPOINTMENT A SITE VISIT.
+                     property_id has been accepted, validated and stored by the
+                     server since the feature shipped, and the unit's Viewings
+                     history reads from it — but nothing in the UI ever sent it,
+                     so that history could only ever be empty while the property
+                     page told the user to "book a site visit from a lead or a
+                     deal". Hidden entirely for tenants with no units listed, so
+                     a clinic booking a consultation never sees it. -->
+                ${state.properties.length ? `
+                <label class="apt-full">Unit <span class="apt-optional">(makes this a site visit)</span>
+                    <span data-apt="property-host"></span>
+                </label>` : ''}
+
+                <label class="apt-full">Meeting link <span class="apt-optional">(for a video call)</span>
+                    <input type="url" data-apt="meetingUrl" maxlength="500" inputmode="url"
+                           value="${esc(state.draft.meetingUrl)}" placeholder="https://meet.google.com/…">
+                </label>
+
                 <label class="apt-full">Location
                     <input type="text" data-apt="location" maxlength="300"
                            value="${esc(state.draft.location)}" placeholder="e.g. Clinic — Room 2, or a video link">
                 </label>
 
                 <div class="apt-actions">
-                    <button type="button" class="btn btn-sm btn-primary" data-apt="book">Book appointment</button>
+                    <button type="button" class="btn btn-sm btn-primary" data-apt="book">
+                        ${state.editingId ? 'Save changes' : 'Book appointment'}</button>
+                    ${state.editingId ? `
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-apt="cancel-edit">Cancel</button>
+                        <span class="apt-editing-note">Editing an existing appointment</span>` : ''}
                 </div>
             </div>`;
     }
@@ -205,7 +227,11 @@ const AppointmentsPanel = (() => {
             <div class="apt-item-meta">
                 <span>${esc(when(a.starts_at))} · ${esc(a.duration_minutes)} min</span>
                 ${a.assigned_user_name ? `<span>with ${esc(a.assigned_user_name)}</span>` : ''}
+                ${a.property_name ? `<span class="apt-item-unit">${esc(a.property_name)}</span>` : ''}
                 ${a.location ? `<span>${esc(a.location)}</span>` : ''}
+                ${a.meeting_url && /^https?:\/\//i.test(a.meeting_url)
+                    ? `<a class="apt-item-join" href="${esc(a.meeting_url)}" target="_blank" rel="noopener noreferrer">Join call</a>`
+                    : ''}
             </div>
             ${a.cancelled_reason ? `<p class="apt-item-reason">${esc(a.cancelled_reason)}</p>` : ''}
             ${a.notes ? `<p class="apt-item-notes">${esc(a.notes)}</p>` : ''}
@@ -214,6 +240,9 @@ const AppointmentsPanel = (() => {
                 ${SETTABLE.filter(s => s !== a.status).map(s => `
                     <button type="button" class="apt-step${RELEASING.includes(s) ? ' is-off' : ''}"
                             data-apt-status="${s}">${esc(STATUS_LABEL[s])}</button>`).join('')}
+                <span class="apt-item-sep" aria-hidden="true"></span>
+                <button type="button" class="apt-step apt-step--edit" data-apt-edit>Reschedule</button>
+                <button type="button" class="apt-step apt-step--danger" data-apt-remove>Delete</button>
             </div>` : ''}
             ${released ? '<p class="apt-item-freed">This slot is free again.</p>' : ''}
         </li>`;
@@ -228,8 +257,20 @@ const AppointmentsPanel = (() => {
             date: container.querySelector('[data-apt="date"]')?.value ?? '',
             time: container.querySelector('[data-apt="time"]')?.value ?? '',
             location: container.querySelector('[data-apt="location"]')?.value ?? '',
+            meetingUrl: container.querySelector('[data-apt="meetingUrl"]')?.value ?? '',
             duration: st.draft.duration,
+            // ⚠ THE PICKERS ARE NOT INPUTS. Everything above is read back out of
+            // the DOM; these three live only in st.draft because a
+            // SearchableDropdown has no .value to read. Omitting one here does
+            // not fail — book() reads THIS object, so the field silently never
+            // reaches the request. That is exactly what happened to `property`:
+            // the picker was added, the unit was chosen, the panel showed it,
+            // and the POST body went out without a property_id, so the site
+            // visit was recorded as an ordinary appointment and the unit's
+            // Viewings stayed empty. Caught by asserting the REQUEST, not the
+            // screen.
             assignee: st.draft.assignee,
+            property: st.draft.property,
         };
     }
 
@@ -263,15 +304,28 @@ const AppointmentsPanel = (() => {
                 starts_at: starts.toISOString(),
                 ends_at: ends.toISOString(),
                 location: draft.location.trim() || null,
+                meeting_url: draft.meetingUrl.trim() || null,
             };
             body[st.entityType === 'lead' ? 'lead_id' : 'deal_id'] = st.entityId;
             if (draft.assignee) body.assigned_user_id = draft.assignee;
+            if (draft.property) body.property_id = draft.property;
 
-            await api.request('/crm/appointments', { method: 'POST', body: JSON.stringify(body) });
+            // ⭐ ONE PATH, TWO VERBS. A reschedule PUTs the same body to the
+            // same shape, so the clash handling below covers both — a moved
+            // appointment can collide precisely as a new one can.
+            if (st.editingId) {
+                await api.request(`/crm/appointments/${encodeURIComponent(st.editingId)}`,
+                    { method: 'PUT', body: JSON.stringify(body) });
+            } else {
+                await api.request('/crm/appointments', { method: 'POST', body: JSON.stringify(body) });
+            }
 
             // Keep the assignee and duration — a receptionist books several in a
             // row for the same consultant — and clear what changes per booking.
-            st.draft = { ...st.draft, title: '', location: '' };
+            // The unit clears with the rest: leaving it set would silently
+            // attach the next appointment to the flat somebody was just shown.
+            st.draft = { ...st.draft, title: '', location: '', meetingUrl: '', property: null };
+            st.editingId = null;
             st.clashes = null;
             st.clashMessage = null;
             Toast.success('Appointment booked');
@@ -280,6 +334,76 @@ const AppointmentsPanel = (() => {
             showClash(container, e);
         } finally {
             if (btn) btn.disabled = false;
+        }
+    }
+
+    /**
+     * Load an existing appointment into the booking form.
+     *
+     * The SAME form does both jobs on purpose: a reschedule is a booking with a
+     * different slot, and it has to run through the identical clash reporting —
+     * moving an appointment can collide exactly as making one can. A separate
+     * edit dialog would be a second place for that logic to drift.
+     */
+    function startEdit(container, id) {
+        const st = mounted.get(container);
+        const a = (st.appointments || []).find(x => String(x.id) === String(id));
+        if (!a) { Toast.error('That appointment is no longer here'); return reload(container); }
+
+        const starts = new Date(a.starts_at);
+        st.editingId = a.id;
+        st.draft = {
+            title: a.title || '',
+            date: localDate(starts),
+            time: `${String(starts.getHours()).padStart(2, '0')}:${String(starts.getMinutes()).padStart(2, '0')}`,
+            duration: a.duration_minutes || 30,
+            location: a.location || '',
+            meetingUrl: a.meeting_url || '',
+            assignee: a.assigned_user_id || null,
+            property: a.property_id || null,
+        };
+        render(container);
+        container.querySelector('[data-apt="title"]')?.focus();
+    }
+
+    function cancelEdit(container) {
+        const st = mounted.get(container);
+        st.editingId = null;
+        st.draft = { ...st.draft, title: '', location: '', meetingUrl: '', property: null };
+        render(container);
+    }
+
+    async function remove(container, id) {
+        const st = mounted.get(container);
+        const a = (st.appointments || []).find(x => String(x.id) === String(id));
+
+        // Confirm.show, never the native dialog — house convention, and the
+        // native one cannot say WHICH appointment is about to go.
+        //
+        // ⚠ NOT showConfirm(): that wrapper takes POSITIONAL arguments
+        // (message, title, type), so handing it an options object puts
+        // "[object Object]" in front of the user where the question should be.
+        // Confirm.show is the overload that accepts one.
+        const ok = await Confirm.show({
+            title: 'Delete this appointment?',
+            message: a
+                ? `\u201C${a.title}\u201D on ${when(a.starts_at)} will be removed from the record. `
+                  + 'Cancelling it instead keeps the history and still frees the slot.'
+                : 'This appointment will be removed from the record.',
+            type: 'danger',
+            confirmText: 'Delete',
+        });
+        if (!ok) return;
+
+        try {
+            await api.request(`/crm/appointments/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            Toast.success('Appointment deleted');
+            // If the row being edited is the row just deleted, the form must not
+            // stay in a save-changes state pointing at nothing.
+            if (String(st.editingId) === String(id)) st.editingId = null;
+            await reload(container);
+        } catch (e) {
+            Toast.error((e && e.message) || 'Could not delete the appointment');
         }
     }
 
@@ -332,12 +456,16 @@ const AppointmentsPanel = (() => {
         Toast.error((error && error.message) || 'Could not save the appointment');
     }
 
+    /** Distinguishes concurrently mounted panels so their dropdown ids cannot collide. */
+    let mountSeq = 0;
+
     // ─── Mounting ───────────────────────────────────────────────────────────
 
     function render(container) {
         const st = mounted.get(container);
         container.innerHTML = shell(st);
         mountAssigneePicker(container);
+        mountPropertyPicker(container);
     }
 
     function mountAssigneePicker(container) {
@@ -346,16 +474,33 @@ const AppointmentsPanel = (() => {
         if (!host) return;
 
         // A portaled menu outlives its host element, so the previous instance is
-        // closed AND destroyed before a new one is built. Three panel opens
-        // otherwise leave three live menus behind — a defect this codebase has
-        // already shipped once, in the documents panel.
+        // CLOSED before a new one is built. Three panel opens otherwise leave
+        // three live menus behind — a defect this codebase has already shipped
+        // once, in the documents panel.
+        //
+        // ⭐⭐ BUT NOT DESTROYED. destroy() is true disposal and removes its
+        // container from the DOM. This function runs TWICE per open — once from
+        // render() and again when the roster finishes loading — and the second
+        // call finds the same live host. On a re-open, where the instance from
+        // the previous open is still in st, that second call would delete
+        // <span data-apt="assignee-host"> and mount the replacement into a
+        // detached node, so the assignee picker would vanish a moment after the
+        // panel appeared. The identical mistake was live on two other pickers.
+        //
+        // The id is fixed PER CONTAINER, not globally: two appointment panels
+        // can be mounted at once, and a shared id would make each one tear down
+        // the other's listeners.
+        st.assigneeDropdownId = st.assigneeDropdownId
+            || `apt-assignee-${(mountSeq += 1)}`;
+
         if (st.assigneeDropdown) {
-            try { st.assigneeDropdown.close?.(); st.assigneeDropdown.destroy?.(); } catch (_) { /* already gone */ }
+            try { st.assigneeDropdown.close?.(); } catch (_) { /* already gone */ }
             st.assigneeDropdown = null;
         }
 
         if (typeof SearchableDropdown === 'function' && st.users.length) {
             st.assigneeDropdown = new SearchableDropdown(host, {
+                id: st.assigneeDropdownId,
                 options: st.users.map(u => ({ value: u.user_id, label: u.display_name || u.email })),
                 placeholder: 'Whose diary?',
                 searchPlaceholder: 'Search people…',
@@ -398,6 +543,62 @@ const AppointmentsPanel = (() => {
         mountAssigneePicker(container);
     }
 
+    /**
+     * The units a visit can be booked against.
+     *
+     * availableOnly is deliberately NOT set: an agent shows a held unit to a
+     * second buyer all the time, and the server refuses only a DE-LISTED one.
+     * A picker narrower than the rule behind it hides bookings that would
+     * succeed.
+     */
+    async function loadProperties(container) {
+        const st = mounted.get(container);
+        try {
+            const rows = await api.request('/crm/properties');
+            st.properties = Array.isArray(rows) ? rows : (rows?.data || []);
+        } catch (_) {
+            // A tenant without the Properties module 404s or 403s here, and a
+            // site-visit picker is meaningless for them anyway.
+            st.properties = [];
+        }
+        render(container);
+    }
+
+    function mountPropertyPicker(container) {
+        const st = mounted.get(container);
+        const host = container.querySelector('[data-apt="property-host"]');
+        if (!host || !st.properties.length) return;
+
+        // Fixed id per container, and close() rather than destroy(): destroy()
+        // removes its host from the DOM, and this remounts on every render.
+        st.propertyDropdownId = st.propertyDropdownId || `apt-property-${(mountSeq += 1)}`;
+        if (st.propertyDropdown) {
+            try { st.propertyDropdown.close?.(); } catch (_) { /* gone */ }
+            st.propertyDropdown = null;
+        }
+
+        if (typeof SearchableDropdown !== 'function') return;
+        st.propertyDropdown = new SearchableDropdown(host, {
+            id: st.propertyDropdownId,
+            options: [{ value: '', label: 'Not a site visit' }].concat(
+                st.properties.map(p => ({
+                    value: p.id,
+                    label: `${p.project} — ${p.display_name}`,
+                    description: p.effective_status === 'available' ? 'Available' : STATUS_WORD[p.effective_status] || '',
+                }))),
+            placeholder: 'Which unit is being shown?',
+            searchPlaceholder: 'Search units…',
+            compact: true,
+            value: st.draft.property || '',
+            onChange: (value) => { st.draft.property = value || null; },
+        });
+    }
+
+    /** How a unit's state reads in the picker's description line. */
+    const STATUS_WORD = {
+        available: 'Available', held: 'On hold', booked: 'Booked', sold: 'Sold',
+    };
+
     function mount(container, entityType, entityId, opts = {}) {
         if (!container || !entityId) return;
         const prev = mounted.get(container);
@@ -417,13 +618,20 @@ const AppointmentsPanel = (() => {
                 time: nextHalfHour(),
                 duration: 30,
                 location: '',
+                meetingUrl: '',
                 assignee: null,
+                property: null,
             },
+            properties: prev ? prev.properties : [],
+            /** The appointment being rescheduled, or null while booking a new one. */
+            editingId: null,
             bound: prev ? prev.bound : false,
         });
 
         container.innerHTML = '<p class="apt-loading">Loading appointments…</p>';
-        reload(container).then(() => loadUsers(container));
+        reload(container)
+            .then(() => loadUsers(container))
+            .then(() => loadProperties(container));
 
         if (mounted.get(container).bound) return;
         mounted.get(container).bound = true;
@@ -446,6 +654,17 @@ const AppointmentsPanel = (() => {
                 const id = status.closest('[data-apt-id]')?.getAttribute('data-apt-id');
                 if (id) return setStatus(container, id, status.getAttribute('data-apt-status'));
             }
+            const edit = e.target.closest('[data-apt-edit]');
+            if (edit) {
+                const id = edit.closest('[data-apt-id]')?.getAttribute('data-apt-id');
+                if (id) return startEdit(container, id);
+            }
+            const del = e.target.closest('[data-apt-remove]');
+            if (del) {
+                const id = del.closest('[data-apt-id]')?.getAttribute('data-apt-id');
+                if (id) return remove(container, id);
+            }
+            if (e.target.closest('[data-apt="cancel-edit"]')) return cancelEdit(container);
             if (e.target.closest('[data-apt="book"]')) return book(container);
         });
     }

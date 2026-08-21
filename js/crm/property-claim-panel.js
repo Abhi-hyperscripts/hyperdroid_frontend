@@ -209,9 +209,12 @@ const PropertyClaimPanel = (() => {
             const all = await api.request('/crm/properties');
             const rows = Array.isArray(all) ? all : [];
             st.held = rows.find(p => p.held_by_deal_id === st.dealId) || null;
-            st.available = rows.filter(p =>
-                p.status !== 'sold' && p.status !== 'booked'
-                && (!p.held_by_deal_id || holdHasExpired(p)));
+            // ⭐ THE SERVER SAYS WHAT IS CLAIMABLE. This was a third copy of the
+            // rule — the SQL claim predicate, Property.IsClaimable and this —
+            // and a filter that disagrees with the predicate offers the user a
+            // unit the next click refuses. is_claimable comes from the same
+            // property the claim path keys on.
+            st.available = rows.filter(p => p.is_claimable);
             st.selected = null;
         } catch (e) {
             console.error('Failed to load the property claim:', e);
