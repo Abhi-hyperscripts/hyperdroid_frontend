@@ -350,12 +350,67 @@ body.crm-leads-page .crm-container {
 
 /* mobile: the panel keeps its native overlay behaviour; the list is the page */
 @media (max-width: 1023px) {
-  body.crm-leads-page { overflow: auto; height: auto; display: block; }
+
+  /* ⚠⚠ THE NAVBAR IS NOT FIXED BELOW 768px.
+     styles.css sets `.navbar { position: relative }` there, so it sits IN FLOW
+     — but this page still reserved 52px of body padding for a fixed one. The
+     reservation had nothing to hold: it rendered as an empty dark band across
+     the top of the phone with the navbar pushed underneath it.
+     And the hero must stick to 0, not 52: with the navbar in flow it scrolls
+     away, so pinning below where it used to be leaves a 52px hole. */
+  body.crm-leads-page { overflow: auto; height: auto; display: block; padding-top: 0; }
+  /* ⚠ AND THE CONTAINER MUST STOP BEING A SCROLLPORT.
+     It carries `overflow: hidden auto` for the desktop split. On mobile the
+     DOCUMENT scrolls, but that overflow still makes the container the nearest
+     scrolling ancestor — so a sticky hero sticks to a box that never moves and
+     scrolls away regardless. Measured: position computed as `sticky` and the
+     bar still left the screen. */
+  body.crm-leads-page .crm-container { overflow: visible; height: auto; }
   .ldk-split { display: block; }
   .ldk-list { width: 100%; min-width: 0; border-right: none; }
   .ldk-rows { overflow: visible; }
   .ldk-appbar { flex-wrap: wrap; }
   .ldk-omni { order: 3; max-width: none; flex-basis: 100%; }
+
+  /* ⭐⭐ THE COMMAND BAR HAS TO STAY REACHABLE.
+     "The list is the page" is the right mobile pattern, but it made the whole
+     desk one document scroll — and the hero went with it. Measured on a 390px
+     viewport: the body ran to 3,592px and the hero sat at -2,016px, so search,
+     Filters, the tab strip and the New button were all somewhere above the
+     screen. Reaching a filter meant scrolling a hundred rows back to the top,
+     and the taller the list the worse it got — the page was least usable
+     exactly when it had the most in it.
+
+     Sticky, not fixed: it participates in the flow, so nothing has to reserve
+     space for it, and it parks under the 52px site navbar. */
+  /* ⚠ body-qualified ON PURPOSE. `.ldk-hero { position: relative }` is declared
+     LATER in this file at equal specificity, so an unqualified rule here loses
+     the cascade to it — measured: position computed as `relative` and the bar
+     scrolled away exactly as before, with the stylesheet looking correct. */
+  body .ldk-hero {
+    position: sticky;
+    top: 0;
+    z-index: 220;
+    /* Opaque, or the rows scroll visibly through the bar. The hero's children
+       deliberately run transparent so the wave chart shows through them, which
+       means the surface has to live here. */
+    background: var(--bg-body);
+    border-bottom: 1px solid var(--ldk-line);
+  }
+  /* The wave chart is decoration and costs height the small screen has not
+     got — the numbers above it say the same thing. */
+  body .ldk-hero .ldk-wavebg, body .ldk-hero .ldk-wavelegend { display: none; }
+
+  /* ⭐ A STICKY BAR IS A TAX ON EVERY SCREENFUL. Measured at 182px on an 844px
+     phone — 22% of the display, permanently, before a single row of data. The
+     breadcrumb is the first thing to go: it reads "CRM / Properties" directly
+     above a heading that says "Properties", so it costs a line to repeat the
+     line under it. */
+  body .ldk-hero .breadcrumb-nav { display: none; }
+  body .ldk-hero .ldk-appbar { padding-top: 8px; padding-bottom: 8px; row-gap: 8px; }
+  body .ldk-hero .ldk-viewsrow { padding-top: 0; padding-bottom: 4px; }
+  /* Nothing inside a sticky bar may swallow taps. */
+  body .ldk-hero .ldk-appbar, body .ldk-hero .ldk-viewsrow { pointer-events: auto; }
 }
 
 /* clear the fixed site navbar */

@@ -1570,6 +1570,9 @@
         document.write('<script src="../../js/crm/setup-guard.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/form-answers-filter.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/phone-link.js?v=' + CACHE_VERSION + '"><\/script>');
+        // BEFORE leads.js and lead-journey.js: both render money through
+        // tenantMoney, which lives here so the locale rule exists once.
+        document.write('<script src="../../js/crm/currencies.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/leads.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-fields-runtime.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-discovery.js?v=' + CACHE_VERSION + '"><\/script>');

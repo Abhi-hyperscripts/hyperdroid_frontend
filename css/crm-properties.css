@@ -317,8 +317,15 @@ body.crm-properties-page .lp-filter-panel .crm-filter-group--no-label { flex-dir
   overflow-x: auto;
   border-bottom: 1px solid var(--ldk-line);
   flex-shrink: 0;
-  scrollbar-width: thin;
+  /* No visible track. A thin scrollbar is fine on a desktop pane; on a phone
+     it renders as a hard white bar under the thumbnails and reads as a broken
+     divider rather than a control — every other scrolling strip on this desk
+     (.ldk-tabs, .lhp-tabs, .prd-foot) already hides its own. Touch scrolling
+     needs no visible track. */
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.prd-strip::-webkit-scrollbar { display: none; }
 .prd-shot {
   width: 74px; height: 56px;
   border-radius: 8px;
@@ -385,14 +392,6 @@ body.crm-properties-page .lp-filter-panel .crm-filter-group--no-label { flex-dir
 .prd-notes { margin: 0; font-size: 0.82rem; line-height: 1.6; color: var(--text-secondary); }
 .prd-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-@media (max-width: 900px) {
-  body.crm-properties-page { overflow: auto; height: auto; display: block; }
-  body.crm-properties-page .crm-container { padding-left: 16px; }
-  .ldk-split { display: block; }
-  .ldk-list { width: 100%; min-width: 0; border-right: none; }
-  .ldk-rows { overflow: visible; }
-  .prd-cover { max-height: 240px; }
-}
 
 /* ============================================================================
    The CRM rail on this page
@@ -448,6 +447,70 @@ body.crm-properties-page .crm-container { padding-left: 0; }
   /* Rail gone, so its reservation goes with it. */
   body.crm-properties-page { padding-left: 0; }
   body.crm-properties-page .crm-container { padding-left: 16px; }
+
+  /* ⭐ THE DESK BECOMES A PAGE, AND THE COMMAND BAR STAYS PUT.
+     The desktop shell pins the body at 100vh and scrolls the panes inside it.
+     That does not work on a phone — two independently scrolling panes stacked
+     in 844px of screen leaves neither usable — so the document scrolls instead
+     and the list becomes the page, the same pattern Leads uses.
+     .crm-container must give up `overflow: hidden auto` with it: while it
+     holds that, IT is the nearest scrolling ancestor, and a sticky hero sticks
+     to a box that never moves. */
+  /* ⚠ THE NAVBAR IS NOT FIXED BELOW 768px — styles.css sets it `relative`, so
+     it sits in flow. The 52px this page reserved for a fixed one had nothing
+     to hold and rendered as an empty dark band across the top of the phone,
+     with the navbar pushed down underneath it. */
+  body.crm-properties-page { overflow: auto; height: auto; display: block; padding-top: 0; }
+  body.crm-properties-page .crm-container { overflow: visible; height: auto; }
+  /* A cover worth 240px, not 42vh: on a phone the specification matters more
+     than the photograph, and the strip below it carries the rest. */
+  body.crm-properties-page .prd-cover { max-height: 240px; }
+
+  /* ⚠ THE COPILOT BUTTON FLOATS OVER THE BOTTOM-RIGHT CORNER, which is exactly
+     where this bar's last action sits. "Remove unit" was underneath it and
+     unclickable. The bar scrolls horizontally, so the room has to be made
+     INSIDE it — a margin would just move the whole bar. */
+  body.crm-properties-page .prd-foot { padding-right: 72px; }
+
+  /* ⚠ THREE COLUMNS DO NOT FIT A PHONE. The panel keeps its desktop
+     `repeat(3, 1fr)` grid, so at 390px each filter got ~85px — the Project,
+     Category and Type dropdowns rendered as "All…", "A…" and "A…", and
+     "Only what I can sell" was cut mid-word. A filter you cannot read is a
+     filter you cannot use.
+     One column, and the card spans the screen instead of hanging off the
+     right edge of a 78px-narrower viewport. */
+  body.crm-properties-page .lp-filter-panel {
+    /* ⚠ NOT 100vw. vw INCLUDES THE SCROLLBAR — measured 390 against a 375px
+       layout, so a `calc(100vw - 24px)` card started at 12 and ended at 378,
+       putting "Only what I can sell" and Clear past the right edge. Anchoring
+       BOTH sides lets the box work it out and it cannot be wrong. */
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  /* The controls fill the card rather than running past it. */
+  body.crm-properties-page .lp-filter-panel .crm-filter-group > input,
+  body.crm-properties-page .lp-filter-panel .crm-filter-group .searchable-dropdown-wrapper {
+    width: 100%;
+    min-width: 0;
+  }
+  /* A checkbox row reads left-to-right like the fields above it. */
+  body.crm-properties-page .lp-filter-panel .crm-filter-group--no-label {
+    justify-content: flex-start;
+  }
+  body.crm-properties-page .lp-filter-panel .crm-filter-bar--dimensions {
+    grid-template-columns: 1fr;
+  }
+  /* Apply and Clear side by side at the end, not stacked one per row. */
+  body.crm-properties-page .lp-filter-panel .crm-filter-group--no-label {
+    flex-direction: row;
+    align-items: center;
+  }
+  body.crm-properties-page .ldk-split { display: block; }
+  body.crm-properties-page .ldk-list { width: 100%; min-width: 0; border-right: none; }
+  body.crm-properties-page .ldk-rows { overflow: visible; }
 }
 
 

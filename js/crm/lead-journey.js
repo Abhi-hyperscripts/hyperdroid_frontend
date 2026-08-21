@@ -444,8 +444,11 @@
                 ])}
                 ${section('Deal', [
                     item('Interest', lead.product_interest ? esc(lead.product_interest) : ''),
-                    item('Est. value', lead.estimated_value ? '₹' + Number(lead.estimated_value).toLocaleString() : ''),
-                    item('Deal value', lead.won_deal_value ? '₹' + Number(lead.won_deal_value).toLocaleString() : ''),
+                    // A lead carries no currency of its own, so these render in
+                    // the TENANT's currency rather than a rupee sign typed into
+                    // the template — which is what a USD-base tenant was shown.
+                    item('Est. value', lead.estimated_value ? esc(tenantMoney(lead.estimated_value)) : ''),
+                    item('Deal value', lead.won_deal_value ? esc(tenantMoney(lead.won_deal_value)) : ''),
                     item('Expected close', dateOnly(lead.expected_closure_date)),
                     item('Lost reason', lead.lost_reason ? `<span style="color:var(--color-error);">${esc(lead.lost_reason)}</span>` : ''),
                 ])}

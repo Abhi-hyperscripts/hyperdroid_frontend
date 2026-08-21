@@ -127,7 +127,54 @@
         }
     }
 
+    /**
+     * The tenant's own currency, fetched once and remembered.
+     *
+     * ⭐ A LEAD HAS NO CURRENCY COLUMN. estimated_value and won_deal_value are
+     * bare decimals, so every screen showing them was left to guess — and three
+     * of them guessed by writing a rupee sign into the template. A USD-base
+     * tenant read "₹4,00,000" against a deal stored as USD 400,000, on the card
+     * a rep opens to recall what was agreed.
+     *
+     * The tenant setting is the honest answer for a value with no currency of
+     * its own, and it already existed: deals.js and dashboard.js each fetched
+     * it separately. One cached promise means one request per page instead of
+     * one per caller, and one place to change when leads gain a currency of
+     * their own.
+     */
+    let tenantCurrencyPromise = null;
+    let tenantCurrency = null;
+
+    function loadTenantCurrency() {
+        if (tenantCurrencyPromise) return tenantCurrencyPromise;
+        tenantCurrencyPromise = (async () => {
+            try {
+                const res = await api.request('/crm/crm-settings/default_currency');
+                if (res && res.value) tenantCurrency = String(res.value).toUpperCase();
+            } catch (_) {
+                // Not configured, or the caller lacks the settings scope. The
+                // formatter's own default applies; a missing setting must not
+                // stop a page rendering its numbers.
+            }
+            return tenantCurrency;
+        })();
+        return tenantCurrencyPromise;
+    }
+
+    /**
+     * Synchronous, for use inside a render.
+     *
+     * Returns null until loadTenantCurrency() has resolved, and formatMoney
+     * falls back to its own default for null — so a first paint is never
+     * blocked on a settings request.
+     */
+    function tenantMoney(amount) {
+        return formatMoney(amount, tenantCurrency);
+    }
+
     global.CRM_CURRENCIES = CRM_CURRENCIES;
     global.populateCurrencySelect = populateCurrencySelect;
     global.formatMoney = formatMoney;
+    global.loadTenantCurrency = loadTenantCurrency;
+    global.tenantMoney = tenantMoney;
 })(window);

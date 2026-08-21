@@ -448,7 +448,21 @@
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: 9px;
+  /* ⚠ THREE TABS DO NOT FIT A PHONE. Measured at 390px: 325px of tabs in a
+     279px box, so "Ownership" was cut off mid-word with no way to reach it —
+     the segment was not merely ugly, it was UNCLICKABLE. inline-flex on a
+     fixed-width parent clips rather than wraps.
+     Scrolls instead, which is what .ldk-tabs one file over already does for
+     the same problem; max-width keeps it inside its container so the overflow
+     lands here rather than pushing the whole panel wide. */
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.lhp-tabs::-webkit-scrollbar { display: none; }
+/* Tabs must not shrink into unreadable slivers when the strip scrolls. */
+.lhp-tabs > * { flex: 0 0 auto; }
 .lhp-tab {
   appearance: none;
   border: 0;

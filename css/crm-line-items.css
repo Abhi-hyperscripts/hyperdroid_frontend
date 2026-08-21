@@ -147,6 +147,14 @@
 .lip-col-acct { min-width: 78px; }
 .lip-col-x { width: 30px; }
 .ppp-col-no { width: 34px; }
+/* ⚠ THE OTHER TWO COLUMNS OF THE SAME TABLE. #, Amount and Paid each got a
+   treatment and Due and Status got none, so an instalment table sized those two
+   from whatever text happened to be in them — a row reading "Overdue" made the
+   status column jump wider than the row above it, and the dates wrapped on a
+   narrow panel. Three of five is the shape that produces this. */
+.ppp-col-due { white-space: nowrap; min-width: 96px; }
+.ppp-col-st { width: 96px; text-align: right; }
+.ppp-table th.ppp-col-st { text-align: right; }
 
 /* Inputs sit flush inside their cell so the table still reads as a table. */
 .lip-table input {

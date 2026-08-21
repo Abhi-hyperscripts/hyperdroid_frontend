@@ -458,6 +458,9 @@ function _wireLeadFieldsReadyRestore() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     Navigation.init('crm', '../');
+    // Fire-and-forget: the first paint uses the formatter's default and
+    // re-renders correctly once this lands, rather than blocking on a setting.
+    if (typeof loadTenantCurrency === 'function') loadTenantCurrency();
     // Nothing on this page works without functional groups + teams
     // configured for the tenant. Probe first; if the tenant isn't ready,
     // the guard redirects to Settings and we bail out of init so we don't
@@ -1807,7 +1810,7 @@ function ldkStory(lead) {
         if ((lead.status || 'new') === 'new') {
             bits.push(`New from ${escapeHtml(formatSource(lead.lead_source))} · never contacted`);
         } else if (lead.status === 'converted') {
-            bits.push(`Converted${lead.won_deal_value ? ' · ₹' + Number(lead.won_deal_value).toLocaleString('en-IN') : ''}`);
+            bits.push(`Converted${lead.won_deal_value ? ' · ' + tenantMoney(lead.won_deal_value) : ''}`);
         } else if (lead.owner_name || lead.ownerName) {
             const owner = lead.owner_name || lead.ownerName;
             const touch = lead.last_interaction_at ? `touched ${leadTimeAgo(lead.last_interaction_at)}` : `untouched since ${leadTimeAgo(lead.created_at)}`;

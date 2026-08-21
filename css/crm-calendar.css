@@ -155,8 +155,28 @@ body.crm-calendar-page .crm-container {
    seven columns on a phone is seven unreadable columns. */
 @media (max-width: 900px) {
   body.crm-calendar-page nav.pulse-rail { display: none; }
-  body.crm-calendar-page { padding-left: 0; }
+  /* padding-top too: below 768px the navbar is in flow (styles.css), so space
+     reserved for a fixed one is just an empty band above it. */
+  body.crm-calendar-page { padding-left: 0; padding-top: 0; overflow: auto; height: auto; }
   .cal-grid { grid-template-columns: 1fr; }
+
+  /* ⚠ A QUIET WEEK SHOULD NOT COST SEVEN SCREENS. Stacked, each day kept its
+     column padding, so seven "Nothing booked" days filled the entire phone and
+     the first real appointment could be a full scroll away. An empty day needs
+     to say only that it is empty. */
+  .cal-day { padding: 8px 12px 10px; }
+  /* ⚠ THE GLASS SHEEN IS A COLUMN EFFECT. It paints the top 22% of a pane, which
+     reads as depth down a tall desktop column and as a stray 14px highlight
+     across a 63px stacked row — a bright band sitting just above the day name,
+     looking for all the world like a half-clipped element behind the card. */
+  .cal-day::before { display: none; }
+  .cal-day-head { padding-bottom: 5px; margin-bottom: 5px; }
+  .cal-day-empty { font-size: 0.72rem; opacity: 0.75; }
+  /* The header and the "nothing" line sit on one row for an empty day. */
+  .cal-day:not(:has(.cal-day-list)) { display: flex; flex-direction: row; align-items: baseline; gap: 10px; }
+  .cal-day:not(:has(.cal-day-list)) .cal-day-head {
+    border-bottom: 0; padding-bottom: 0; margin-bottom: 0; flex: 0 0 auto;
+  }
 }
 
 /* ── The left rail ───────────────────────────────────────────────────────
