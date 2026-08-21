@@ -496,6 +496,7 @@ function renderBankTransactionsTable() {
     const esc = AccountsCommon.escapeHtml, fmt = AccountsCommon.formatCurrency, fmtD = AccountsCommon.formatDate;
     const isAdmin = accountsRoles.isAdmin();
     const delSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    const tagSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
 
     // Note: the old "Balance" column was removed — it was a per-page running
     // total starting at 0 (the backend provides no opening balance for the
@@ -513,8 +514,25 @@ function renderBankTransactionsTable() {
         const reconBadge = t.is_reconciled
             ? '<span class="status-badge active" style="font-size:0.7rem;">Yes</span>'
             : '<span class="status-badge" style="font-size:0.7rem;">No</span>';
-        const actions = isAdmin && !t.is_reconciled
-            ? `<button class="btn-icon danger" onclick="deleteBankTransaction('${t.id}')" data-tooltip="Delete">${delSvg}</button>`
+        // Recategorise is offered on RECONCILED rows too, unlike delete. It posts a reclassification and
+        // never touches the bank leg, so nothing a reconciliation looked at changes — and the older,
+        // already-ticked-off rows are exactly the ones most likely to still need sorting.
+        const isTransferLeg = t.transaction_type === 'transfer_in' || t.transaction_type === 'transfer_out';
+        const acts = [];
+        if (isAdmin && !isTransferLeg) {
+            acts.push(`<button class="btn-icon" onclick="showRecategoriseModal('${t.id}')" data-tooltip="Change category">${tagSvg}</button>`);
+        }
+        if (isAdmin && !t.is_reconciled) {
+            acts.push(`<button class="btn-icon danger" onclick="deleteBankTransaction('${t.id}')" data-tooltip="Delete">${delSvg}</button>`);
+        }
+        const actions = acts.length ? acts.join('') : '<span class="text-secondary">-</span>';
+
+        // The account the other side of this movement sits in. The backend resolves it even for rows that
+        // have never been moved, so this is populated for a whole freshly imported statement — which is the
+        // only state in which anyone needs to read it.
+        const counter = t.counter_account_id ? coaAccounts.find(a => a.id === t.counter_account_id) : null;
+        const categoryCell = counter
+            ? `<span class="text-secondary" style="font-size:.8rem;">${esc(counter.account_code)}</span> ${esc(counter.account_name)}`
             : '<span class="text-secondary">-</span>';
         return `<tr>
             <td>${fmtD(t.transaction_date || t.date)}</td>
@@ -522,10 +540,127 @@ function renderBankTransactionsTable() {
             <td>${esc((t.transaction_type || t.type || '').charAt(0).toUpperCase() + (t.transaction_type || t.type || '').slice(1))}</td>
             <td class="text-right">${debit}</td>
             <td class="text-right">${credit}</td>
+            <td>${categoryCell}</td>
             <td>${reconBadge}</td>
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
+}
+
+// ============================================================================
+// RECATEGORISE — move a posted transaction to a different counter account
+// ============================================================================
+
+let recatDropdown = null;
+
+/**
+ * ⭐ THE OPTIONS COME FROM THE SERVER, for the same reason the import picker's do.
+ *
+ * Two of the three exclusions cannot be computed here — the subledger control codes come from the tenant's
+ * own account configuration, and the set of bank GL accounts changes as banks are added. A list filtered in
+ * JavaScript would be right the day it shipped and quietly wrong afterwards, drifting back into offering
+ * accounts the API refuses. That drift is the original defect this whole area exists to fix.
+ */
+async function showRecategoriseModal(txnId) {
+    const bankId = txnBankFilterDropdown?.getValue?.();
+    const txn = bankTransactions.find(t => t.id === txnId);
+    if (!txn) { Toast.error('Transaction not found'); return; }
+    if (!bankId) { Toast.error('Select a bank account first'); return; }
+
+    const current = txn.counter_account_id ? coaAccounts.find(a => a.id === txn.counter_account_id) : null;
+    const amount = AccountsCommon.formatCurrency(txn.amount);
+    const inflow = ['deposit', 'transfer_in', 'interest'].includes(txn.transaction_type);
+
+    document.getElementById('recatModal')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal active';
+    overlay.id = 'recatModal';
+    overlay.innerHTML = `<div class="modal-content" style="max-width:520px;">
+        <div class="modal-header">
+            <h3>Change category</h3>
+            <button class="close-btn" onclick="closeRecategoriseModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:.85rem;color:var(--text-secondary);margin:0 0 14px;">
+                ${AccountsCommon.escapeHtml(txn.description || 'Transaction')}<br>
+                <strong>${amount}</strong> ${inflow ? 'received' : 'paid'} on ${AccountsCommon.formatDate(txn.transaction_date)}
+            </p>
+            <div class="form-group">
+                <label>Currently in</label>
+                <input type="text" class="form-control" disabled value="${AccountsCommon.escapeHtml(current ? current.account_code + ' - ' + current.account_name : 'Unknown')}">
+            </div>
+            <div class="form-group">
+                <label>Move it to *</label>
+                <div id="recatContainer" class="searchable-dropdown-container"></div>
+                <small class="field-hint">
+                    The bank side does not change — only which account the other half of this movement sits in.
+                    A balanced correction is posted, so the original entry and any reconciliation stay intact.
+                </small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeRecategoriseModal()">Cancel</button>
+            <button class="btn btn-primary" id="recatGo" onclick="submitRecategorise('${txnId}')">Move it</button>
+        </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('keydown', e => { if (e.key === 'Escape') closeRecategoriseModal(); });
+
+    const container = document.getElementById('recatContainer');
+    recatDropdown = new SearchableDropdown(container, {
+        id: 'recatAccount',
+        options: [{ value: '', label: 'Loading accounts…' }],
+        placeholder: 'Search GL account...',
+        compact: true
+    });
+
+    try {
+        const list = await api.request(AccountsCommon.buildUrl(`bank/accounts/${bankId}/counter-accounts`), { _skipSpinner: true });
+        recatDropdown.setOptions([
+            { value: '', label: 'Select an account' },
+            // The account it is already in is filtered out — the API refuses it, and offering a choice that
+            // is always rejected is the same defect in miniature.
+            ...(list || [])
+                .filter(a => a.id !== txn.counter_account_id)
+                .map(a => ({ value: a.id, label: `${a.account_code} - ${a.account_name}` }))
+        ]);
+    } catch (err) {
+        console.warn('[Banking] Could not load counter accounts:', err);
+        recatDropdown.setOptions([{ value: '', label: 'Could not load accounts — close and retry' }]);
+        Toast.error('Could not load the list of accounts');
+    }
+}
+
+function closeRecategoriseModal() {
+    document.getElementById('recatModal')?.remove();
+    recatDropdown = null;
+}
+
+async function submitRecategorise(txnId) {
+    const bankId = txnBankFilterDropdown?.getValue?.();
+    const accountId = recatDropdown?.getValue?.();
+    if (!accountId) { Toast.error('Choose an account to move it to'); return; }
+
+    // Disable rather than ButtonSpinner: that helper is a PAGE overlay (show/hide), not a per-button
+    // spinner, and a double-submit here is exactly the race the backend's row lock exists to catch.
+    const btn = document.getElementById('recatGo');
+    if (btn) { btn.disabled = true; btn.textContent = 'Moving…'; }
+    try {
+        await api.request(AccountsCommon.buildUrl(`bank/accounts/${bankId}/transactions/${txnId}/counter-account`), {
+            method: 'PUT',
+            body: JSON.stringify({ counter_account_id: accountId })
+        });
+        Toast.success('Category changed');
+        closeRecategoriseModal();
+        await loadBankTransactions();
+    } catch (err) {
+        console.error('[Banking] recategorise error:', err);
+        // Leave the modal OPEN on failure so the chosen account is still there to correct — every refusal
+        // from this endpoint names a reason the user can act on.
+        Toast.error(err.message || 'Could not change the category');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Move it'; }
+    }
 }
 
 // ============================================================================
