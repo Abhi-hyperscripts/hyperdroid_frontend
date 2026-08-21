@@ -290,6 +290,23 @@ const PropertiesPage = (() => {
      * The sub-line carries the specification an agent quotes out loud —
      * bedrooms, area, facing — because that is what a buyer asks next.
      */
+    /**
+     * "4 photos · 1 video" — counted separately because they are not the same
+     * thing to somebody scanning a list. Calling a walkthrough a photograph
+     * made the count a small lie, and the whole point of the column is telling
+     * an agent at a glance which units have been properly shot.
+     */
+    function mediaCount(p) {
+        const total = p.image_count || 0;
+        if (!total) return 'no photos';
+        const videos = p.video_count || 0;
+        const photos = total - videos;
+        const bits = [];
+        if (photos > 0) bits.push(`${photos} photo${photos === 1 ? '' : 's'}`);
+        if (videos > 0) bits.push(`${videos} video${videos === 1 ? '' : 's'}`);
+        return bits.join(' · ');
+    }
+
     function rowMarkup(p) {
         const status = effectiveStatus(p);
         const sel = state.selectedId === p.id ? ' sel' : '';
@@ -304,7 +321,17 @@ const PropertiesPage = (() => {
         return `
         <div class="ldk-row${sel}" data-prp-id="${esc(p.id)}">
             ${cover
-                ? `<img class="prp-thumb" alt="" data-prp-image="${esc(cover.id)}" loading="lazy">`
+                ? (cover.is_video
+                    // ⚠ THE COVER IS NOT ALWAYS A PHOTOGRAPH. A row rendering
+                    // <img> against a video src shows an empty box — measured:
+                    // the one unit with a walkthrough as its cover was the one
+                    // unit in the list with no thumbnail at all.
+                    ? `<span class="prp-thumbwrap" title="Walkthrough video">
+                         <video class="prp-thumb" data-prp-image="${esc(cover.id)}"
+                                preload="metadata" muted playsinline></video>
+                         <span class="prp-thumb-play" aria-hidden="true">▶</span>
+                       </span>`
+                    : `<img class="prp-thumb" alt="" data-prp-image="${esc(cover.id)}" loading="lazy">`)
                 : `<span class="prp-thumb-none" title="No photographs yet">
                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                    </span>`}
@@ -316,7 +343,7 @@ const PropertiesPage = (() => {
                 <span class="ldk-pill p-${esc(status)}">${esc(STATUS_LABEL[status] || status)}</span>
                 <span class="lprice">${esc(money(p.price, p.currency))}</span>
                 <span class="prp-shots">
-                    ${p.image_count ? `${esc(p.image_count)} photo${p.image_count === 1 ? '' : 's'}` : 'no photos'}
+                    ${esc(mediaCount(p))}
                     ${p.visit_count ? ` · ${esc(p.visit_count)} viewing${p.visit_count === 1 ? '' : 's'}` : ''}
                 </span>
             </div>
@@ -466,7 +493,10 @@ const PropertiesPage = (() => {
         <div class="prd">
           <div class="prd-scroll">
             <div class="prd-cover${cover ? '' : ' is-empty'}">
-                ${cover ? `<img class="prd-cover-img" alt="${esc(p.display_name)}" data-prp-image="${esc(cover.id)}">` : ''}
+                ${cover ? (cover.is_video
+                    ? `<video class="prd-cover-img" data-prp-image="${esc(cover.id)}" controls playsinline
+                              preload="metadata" aria-label="${esc(p.display_name)}"></video>`
+                    : `<img class="prd-cover-img" alt="${esc(p.display_name)}" data-prp-image="${esc(cover.id)}">`) : ''}
                 <span class="prd-cover-none">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     No photographs yet
@@ -479,8 +509,14 @@ const PropertiesPage = (() => {
             </div>
 
             <div class="prd-strip">
-                ${images.map((im, i) => `
-                    <img class="prd-shot${i === 0 ? ' is-cover' : ''}" alt="${esc(im.file_name)}"
+                ${images.map((im, i) => im.is_video
+                    ? `<span class="prd-shotwrap${i === 0 ? ' is-cover' : ''}" data-prd-shot="${esc(im.id)}"
+                             title="${i === 0 ? 'Cover' : 'Click to make this the cover'}">
+                         <video class="prd-shot" data-prp-image="${esc(im.id)}" preload="metadata"
+                                muted playsinline aria-label="${esc(im.file_name)}"></video>
+                         <span class="prd-shot-play" aria-hidden="true">▶</span>
+                       </span>`
+                    : `<img class="prd-shot${i === 0 ? ' is-cover' : ''}" alt="${esc(im.file_name)}"
                          data-prp-image="${esc(im.id)}" data-prd-shot="${esc(im.id)}"
                          title="${i === 0 ? 'Cover' : 'Click to make this the cover'}">`).join('')}
                 <button type="button" class="prd-addshot" data-prd="add" title="Add photographs">+</button>
@@ -506,6 +542,7 @@ const PropertiesPage = (() => {
                 </div>
 
                 ${holdMarkup(p)}
+                ${locationMarkup(p)}
                 ${p.notes ? `<p class="prd-notes">${esc(p.notes)}</p>` : ''}
                 ${visitsMarkup(p)}
             </div>
@@ -575,6 +612,37 @@ const PropertiesPage = (() => {
             { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
     }
 
+    /**
+     * Where the unit is, and a way to go there.
+     *
+     * The address and the coordinates are INDEPENDENT: a listing can have a
+     * written address with nobody having pinned it yet, or a pin dropped on
+     * site before anyone typed the address. Rendering only when both exist
+     * would hide half the data that was entered.
+     *
+     * The map link is the server's maps_url, not one built here — one
+     * definition of where we are sending people, formatted invariantly, so a
+     * comma-decimal locale cannot turn one coordinate into two.
+     */
+    function locationMarkup(p) {
+        if (!p.address && !p.has_coordinates) return '';
+        return `
+            <div class="prd-loc">
+                <svg class="prd-loc-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                <div class="prd-loc-text">
+                    ${p.address ? `<p class="prd-loc-addr">${esc(p.address)}</p>` : ''}
+                    ${p.has_coordinates
+                        ? `<p class="prd-loc-co">${esc(Number(p.latitude).toFixed(6))}, ${esc(Number(p.longitude).toFixed(6))}</p>`
+                        : '<p class="prd-loc-co is-missing">Not pinned on a map yet</p>'}
+                </div>
+                ${p.maps_url
+                    ? `<a class="prd-loc-open" href="${esc(p.maps_url)}" target="_blank" rel="noopener noreferrer">Open in Maps</a>`
+                    : ''}
+            </div>`;
+    }
+
     function holdMarkup(p) {
         if (!p.held_by_deal_id) {
             return `<p class="prd-hold is-free">This unit is <strong>free to sell</strong>. Reserve it against a deal from the deal itself.</p>`;
@@ -603,6 +671,10 @@ const PropertiesPage = (() => {
      * times is three round trips for one file.
      */
     async function hydrateImages() {
+        // ⚠ img AND video. The selector used to be the attribute alone and the
+        // filter `!i.src`, which is true for both — but only <img> was ever
+        // considered, so a video cover silently stayed blank. Both take a src,
+        // so the same presigned URL serves both elements.
         const pending = [...document.querySelectorAll('[data-prp-image]')].filter(i => !i.src);
         await Promise.all(pending.map(async (img) => {
             const id = img.getAttribute('data-prp-image');
@@ -919,6 +991,9 @@ const PropertiesPage = (() => {
         set('areaSqft', p.area_sqft);
         set('price', p.price);
         set('facing', p.facing);
+        set('address', p.address);
+        set('latitude', p.latitude);
+        set('longitude', p.longitude);
         set('notes', p.notes);
 
         // Only the OVERLAY carries `active` — the CSS hides the modal through
@@ -1037,6 +1112,9 @@ const PropertiesPage = (() => {
             area_sqft: num('areaSqft'),
             price: num('price'),
             facing: get('facing') || null,
+            address: get('address') || null,
+            latitude: num('latitude'),
+            longitude: num('longitude'),
             notes: get('notes') || null,
         };
 
@@ -1044,6 +1122,14 @@ const PropertiesPage = (() => {
         // these too — this is the courtesy in front of the gate.
         if (!body.project) { Toast.error('The unit needs a project'); return; }
         if (!body.unit_number) { Toast.error('The unit needs a number'); return; }
+        // Half a coordinate is not a place — said here so the message lands
+        // beside the field rather than arriving as a refusal after the save.
+        if ((body.latitude === null) !== (body.longitude === null)) {
+            Toast.error(body.latitude === null
+                ? 'A longitude needs a latitude with it'
+                : 'A latitude needs a longitude with it');
+            return;
+        }
 
         const btn = modal.querySelector('[data-prf="save"]');
         if (btn) btn.disabled = true;

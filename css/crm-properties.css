@@ -336,6 +336,11 @@ body.crm-properties-page .lp-filter-panel .crm-filter-group--no-label { flex-dir
   flex-shrink: 0;
 }
 .prd-shot.is-cover { border-color: var(--brand-primary); }
+/* ⚠ FOR A VIDEO THE MARKER SITS ON THE WRAPPER, not on the media element —
+   the wrapper is what holds the play badge. Styling only .prd-shot.is-cover
+   would leave a video cover with no ring, so the one thumbnail that IS the
+   cover would be the only one not marked as it. */
+.prd-shotwrap.is-cover > .prd-shot { border-color: var(--brand-primary); }
 .prd-addshot {
   width: 74px; height: 56px;
   border-radius: 8px;
@@ -678,6 +683,8 @@ body.crm-properties-page .crm-container { padding-left: 0; }
   min-width: 0;
 }
 .prf-grid > .prf-full { grid-column: 1 / -1; }
+/* "(with longitude)" — an explanation, not a second label. */
+.prf-opt { font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--text-muted); }
 
 .prf-grid input,
 .prf-grid textarea {
@@ -992,4 +999,87 @@ body.crm-properties-page .lp-chip-x:hover { background: var(--color-danger); col
   .pcp-actions { flex-direction: column; align-items: stretch; }
   .pcp-holds { justify-content: space-between; }
   .pcp-hold { flex: 1; text-align: center; }
+}
+
+/* ── Where the unit is ───────────────────────────────────────────────────
+   Written alongside the markup that emits it — six blocks in this feature
+   have shipped against styling that did not exist, and every one rendered as
+   browser defaults rather than failing. */
+.prd-loc {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--ldk-line);
+}
+.prd-loc-pin { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; color: var(--brand-primary); }
+.prd-loc-text { flex: 1; min-width: 0; }
+.prd-loc-addr { margin: 0; font-size: 0.84rem; line-height: 1.5; color: var(--text-primary); }
+.prd-loc-co {
+  margin: 2px 0 0;
+  font-family: var(--font-family-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+/* An address with no pin is incomplete, not broken — said quietly. */
+.prd-loc-co.is-missing { font-family: inherit; font-style: italic; }
+.prd-loc-open {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 40%, transparent);
+  color: var(--brand-primary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.prd-loc-open:hover { background: var(--brand-primary); color: var(--text-inverse); }
+
+/* ── Video in the gallery ────────────────────────────────────────────────
+   A walkthrough uses the same slot a photograph does, so it takes the same
+   box; only the element differs. */
+video.prd-cover-img { object-fit: cover; background: #000; }
+.prd-shotwrap {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+video.prd-shot { background: #000; object-fit: cover; }
+/* A still frame is indistinguishable from a photograph until you press it —
+   the badge is what says "this one moves". */
+.prd-shot-play {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+@media (max-width: 560px) {
+  /* The link drops under the address rather than squeezing it. */
+  .prd-loc { flex-wrap: wrap; }
+  .prd-loc-open { align-self: flex-start; margin-left: 28px; }
+}
+
+
+/* A video cover in the list row: same box as a photograph, with the badge
+   that says it moves. */
+.prp-thumbwrap { position: relative; display: inline-block; flex: 0 0 auto; line-height: 0; }
+video.prp-thumb { background: #000; object-fit: cover; }
+.prp-thumb-play {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-size: 12px; color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
+  pointer-events: none;
 }
