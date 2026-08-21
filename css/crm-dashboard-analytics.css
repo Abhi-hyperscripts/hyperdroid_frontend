@@ -778,3 +778,187 @@ a.ra-row:focus-visible { outline: 2px solid var(--brand-primary); outline-offset
 @media (max-width: 768px) {
     .pulse-below.pulse-below-3 { grid-template-columns: 1fr; }
 }
+
+/* ── Needs your attention: the card must not set the row's height ────────── */
+
+/* THE ELONGATION. .pulse-hero stretches every card to the tallest, and this
+   list has no ceiling — five three-line rows made the pipeline and sources
+   cards grow a few hundred pixels of empty space each to match. Capping the
+   list and scrolling inside it means the content decides how much room it
+   gets, not how much room everything else gets. */
+/* EVERY inbox list, not just the notifications one. Keying this to a single
+   id was the same mistake one level down: "Recent activity" holds twelve rows
+   and stretched the Deal pipeline card beside it exactly as the attention card
+   had stretched its own row. There are three of these lists and the rule is
+   the same for all of them. */
+.pulse-inbox {
+    max-height: 292px;
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-primary) transparent;
+}
+
+.pulse-inbox::-webkit-scrollbar { width: 6px; }
+.pulse-inbox::-webkit-scrollbar-track { background: transparent; }
+.pulse-inbox::-webkit-scrollbar-thumb {
+    background: var(--border-primary);
+    border-radius: 3px;
+}
+
+.notif-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 11px 9px 13px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+/* Urgency reads from the edge of the row, so the eye sorts the list before it
+   reads a single word of it. */
+.notif-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--border-primary);
+}
+
+.notif-row.is-overdue::before { background: var(--color-error); }
+.notif-row.is-due::before     { background: var(--color-warning); }
+.notif-row.is-info::before    { background: var(--brand-primary); }
+
+.notif-row:hover {
+    transform: translateX(2px);
+    border-color: var(--border-focus);
+    background: var(--bg-tertiary);
+}
+
+.notif-avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.notif-body { flex: 1; min-width: 0; }
+
+.notif-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notif-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The chip is pushed to the right edge and never shrinks — "3d late" is the
+   field being triaged on. */
+.notif-chip { margin-left: auto; flex-shrink: 0; }
+
+.notif-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Mark done sits quiet until the row is hovered, so five of them do not
+   compete with the five names for attention. On touch there is no hover, so
+   it stays visible there. */
+.notif-row .pulse-acts {
+    flex-shrink: 0;
+    opacity: 0.55;
+    transition: opacity 140ms ease;
+}
+
+.notif-row:hover .pulse-acts { opacity: 1; }
+
+@media (hover: none) {
+    .notif-row .pulse-acts { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .pulse-inbox { max-height: none; overflow-y: visible; }
+}
+
+/* ── Hero cards fill their row deliberately ──────────────────────────────── */
+
+/* The grid stretches all three to the tallest, so the two shorter ones ended
+   with a block of dead space under their last bar. Letting the bar list own
+   the leftover room distributes it BETWEEN the bars instead of pooling it at
+   the bottom, which reads as a chart that was meant to be that size. */
+.pulse-hero .pulse-card,
+.pulse-below .pulse-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.pulse-hero .pulse-bars,
+.pulse-below .pulse-bars {
+    flex: 1;
+    justify-content: space-evenly;
+    /* A ceiling on the spread: with two bars and a tall neighbour, evenly
+       distributing 300px would leave them floating far apart. */
+    gap: clamp(8px, 2vh, 22px);
+}
+
+.pulse-hero .pulse-footer,
+.pulse-below .pulse-footer { margin-top: auto; }
+
+/* On a phone the Mark done button takes ~100px of a 390px row, and the meta
+   line ellipsed to "Due 18 Aug…" — cutting off the TIME, which is the whole
+   thing this card was fixed to show. Wrap instead of truncating: an extra
+   line is cheap, a missing due-time is the original complaint. */
+@media (max-width: 768px) {
+    .notif-meta {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    .notif-name { white-space: normal; }
+}
+
+/* ── Quick-action icons ──────────────────────────────────────────────────── */
+
+/* Each card's icon takes the accent its PAGE uses in the rail, so the colour a
+   destination has in the sidebar is the colour it has here. Four cards had no
+   icon background at all, which read as unfinished next to the four that did.
+   Keyed by id — the existing rules in crm.css are too, so inserting a card
+   cannot shuffle anybody else's colour. */
+#cardTasks .action-icon      { background: linear-gradient(135deg, #A78BFA, #7C5CE6); }
+#cardCalendar .action-icon   { background: linear-gradient(135deg, #38BDF8, #0C8FCB); }
+#cardProperties .action-icon { background: linear-gradient(135deg, #34D399, #0E9F6E); }
+#cardMyDay .action-icon      { background: linear-gradient(135deg, #4CC9F0, #2196C4); }
+#cardCallsInbox .action-icon { background: linear-gradient(135deg, #F59E0B, #C77800); }
+#cardSequences .action-icon  { background: linear-gradient(135deg, #F472B6, #C63C86); }
+#cardAnalytics .action-icon  { background: linear-gradient(135deg, #6366F1, #4338CA); }
+
+#cardTasks .action-icon svg,
+#cardCalendar .action-icon svg,
+#cardProperties .action-icon svg,
+#cardMyDay .action-icon svg,
+#cardCallsInbox .action-icon svg,
+#cardSequences .action-icon svg,
+#cardAnalytics .action-icon svg {
+    color: #fff;
+}

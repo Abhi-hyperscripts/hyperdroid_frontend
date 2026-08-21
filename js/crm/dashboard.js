@@ -1095,6 +1095,44 @@ function attentionWhen(n) {
     }
     return `Due ${day}, ${clock}`;
 }
+
+// Initials for the avatar chip. Two letters at most, and never an empty
+// circle: a lead with only a company name still has to look like something.
+function initialsOf(name) {
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+// A stable colour per name, so the same customer keeps the same chip between
+// renders. Derived from the name rather than the row index, which would
+// reshuffle every time an item is marked done.
+function avatarTint(name) {
+    let hash = 0;
+    const s = String(name || '');
+    for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+    const hue = hash % 360;
+    return `background: hsl(${hue} 62% 22%); color: hsl(${hue} 85% 76%);`;
+}
+
+// The type, minus the status word the chip already carries. "Overdue: call
+// follow-up" becomes "call follow-up" — repeating OVERDUE beside an OVERDUE
+// badge spends the widest part of the row saying nothing.
+function shortenNotificationTitle(title) {
+    return String(title || '').replace(/^(Overdue|Due today|Pending)\s*:\s*/i, '');
+}
+
+// The chip text: how late, not what kind. "3d overdue" in the corner is the
+// thing a rep triages on, and it fits where a repeated OVERDUE did not.
+function shortUrgency(n, whenText) {
+    const m = /(\d+)\s*days? overdue/.exec(whenText || '');
+    if (m) return m[1] + 'd late';
+    if (/overdue/i.test(whenText || '')) return 'late';
+    if (n.when_kind === 'requested') return 'pending';
+    return 'due';
+}
+
 async function loadNotifications() {
     try {
         const data = await api.request('/crm/dashboard/notifications');
@@ -1121,21 +1159,29 @@ async function loadNotifications() {
                 ? `<div class="pulse-acts"><button type="button" class="pulse-mini yes notif-mark-done" data-followup-id="${escapeHtml(n.followup_id)}" title="Mark this follow-up complete">Mark done</button></div>`
                 : '';
             const onClickAttr = n.entity_id ? `data-lead-id="${escapeHtml(n.entity_id)}"` : '';
-            // WHO first. The type ("Overdue: call follow-up") is the same
-            // string on every row of its kind, so leading with it made five
-            // rows read as one row repeated. The customer name is what tells
-            // them apart, and it is what the rep is actually scanning for.
-            const who = n.entity_name ? escapeHtml(n.entity_name) : escapeHtml(n.title);
-            const what = n.entity_name ? escapeHtml(n.title) : '';
-            const note = n.description ? escapeHtml(n.description).substring(0, 40) : '';
-            const detail = [what, note].filter(Boolean).join(' \u00b7 ');
-            return `<div class="pulse-task notif-item" ${onClickAttr}>
-                <div class="trow">
-                    <div class="meta">
-                        <div class="t1">${who}</div>
-                        <div class="t2">${detail ? detail + '<br>' : ''}<span class="notif-when">${escapeHtml(time)}</span></div>
+            // ── the row ────────────────────────────────────────────────
+            // Two lines, not three. Leading with the customer and folding the
+            // due-time onto the meta line keeps the card short enough that it
+            // stops dictating the height of the whole row of cards.
+            const name = n.entity_name || n.title || "";
+            const who = escapeHtml(name);
+            const kind = n.entity_name ? escapeHtml(shortenNotificationTitle(n.title)) : "";
+            // The chip already says how late it is, so the meta line drops the
+            // trailing "· 3 days overdue". Saying it twice on one row spends
+            // the widest column repeating the narrowest one.
+            const whenShort = String(time).replace(/\s*\u00b7\s*\d+\s*days? overdue$/, '')
+                                          .replace(/\s*\u00b7\s*1 day overdue$/, '');
+            const meta = [kind, escapeHtml(whenShort)].filter(Boolean).join(' \u00b7 ');
+            const urgency = n.type && n.type.includes('overdue') ? 'is-overdue'
+                : n.type && n.type.includes('due') ? 'is-due' : 'is-info';
+            return `<div class="pulse-task notif-item notif-row ${urgency}" ${onClickAttr}>
+                <span class="notif-avatar" style="${avatarTint(name)}">${escapeHtml(initialsOf(name))}</span>
+                <div class="notif-body">
+                    <div class="notif-top">
+                        <span class="notif-name">${who}</span>
+                        <span class="pulse-tag ${tag[0]} notif-chip">${escapeHtml(shortUrgency(n, time))}</span>
                     </div>
-                    <span class="pulse-tag ${tag[0]}">${tag[1]}</span>
+                    <div class="notif-meta">${meta}</div>
                 </div>
                 ${markDoneBtn}
             </div>`;
