@@ -18,6 +18,7 @@
     const _dropdowns = new Map();
 
     document.addEventListener('DOMContentLoaded', async () => {
+        if (typeof Navigation !== 'undefined') Navigation.init('crm', '../');
         await loadQueue();
     });
 

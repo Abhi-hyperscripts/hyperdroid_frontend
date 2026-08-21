@@ -44,6 +44,7 @@
     // ── Page lifecycle ───────────────────────────────────────────────────────
 
     document.addEventListener('DOMContentLoaded', async () => {
+        if (typeof Navigation !== 'undefined') Navigation.init('crm', '../');
         const roles = (typeof getUserRoles === 'function') ? getUserRoles() : [];
         _seqAdmin = roles.includes('CRM_ADMIN') || roles.includes('SUPERADMIN');
         if (!_seqAdmin) {

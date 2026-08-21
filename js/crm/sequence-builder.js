@@ -32,6 +32,7 @@
     let _editingId = null;   // null = create, uuid = edit
 
     document.addEventListener('DOMContentLoaded', async () => {
+        if (typeof Navigation !== 'undefined') Navigation.init('crm', '../');
         // Creating/editing a sequence is CRM_ADMIN-only (the save 403s otherwise).
         // Bounce a non-admin back to the list before they fill out the builder and
         // lose the work to a 403.

@@ -158,6 +158,16 @@ body.crm-calendar-page .crm-container {
   /* padding-top too: below 768px the navbar is in flow (styles.css), so space
      reserved for a fixed one is just an empty band above it. */
   body.crm-calendar-page { padding-left: 0; padding-top: 0; overflow: auto; height: auto; }
+  /* ⚠⚠ AND THE CONTAINER MUST STOP BEING A SCROLLPORT — the third page, and
+     the one this rule was applied to LAST. While .crm-container holds
+     `overflow: hidden auto` it is the nearest scrolling ancestor, so a sticky
+     hero sticks to a box that never moves while the DOCUMENT does the
+     scrolling. Measured on a busy week at 390px: the document scrolled 348px,
+     the hero ended at -295px, and the week navigation went with it — no way
+     to reach ‹ Today › without scrolling all the way back.
+     Leads and Properties got this fix; the calendar did not, which is the
+     same two-of-three shape as the media slots. */
+  body.crm-calendar-page .crm-container { overflow: visible; height: auto; }
   .cal-grid { grid-template-columns: 1fr; }
 
   /* ⚠ A QUIET WEEK SHOULD NOT COST SEVEN SCREENS. Stacked, each day kept its

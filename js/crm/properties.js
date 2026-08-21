@@ -495,7 +495,12 @@ const PropertiesPage = (() => {
             <div class="prd-cover${cover ? '' : ' is-empty'}">
                 ${cover ? (cover.is_video
                     ? `<video class="prd-cover-img" data-prp-image="${esc(cover.id)}" controls playsinline
-                              preload="metadata" aria-label="${esc(p.display_name)}"></video>`
+                              preload="metadata" aria-label="${esc(p.display_name)}"></video>
+                       <span class="prd-cover-noplay" hidden>
+                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                         <span>This browser cannot play ${esc(cover.file_name.split('.').pop().toUpperCase())} video</span>
+                         <a class="prd-cover-dl" data-prd-download="${esc(cover.id)}" href="#">Open the file</a>
+                       </span>`
                     : `<img class="prd-cover-img" alt="${esc(p.display_name)}" data-prp-image="${esc(cover.id)}">`) : ''}
                 <span class="prd-cover-none">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -624,6 +629,31 @@ const PropertiesPage = (() => {
      * definition of where we are sending people, formatted invariantly, so a
      * comma-decimal locale cannot turn one coordinate into two.
      */
+    /**
+     * Reveal the "cannot play" card only when the player ACTUALLY fails.
+     *
+     * ⚠⚠ canPlayType IS THE WRONG ORACLE, and I used it first. It answers about
+     * the CONTAINER TYPE, not the file: Chrome returns "" for video/quicktime —
+     * a flat refusal — and then renders a frame from that very same .mov,
+     * because what is inside it is ordinary H.264. Trusting that answer put a
+     * "cannot play" card over a video that plays. Measured side by side: the
+     * cover showed the fallback while the row thumbnail, which never consulted
+     * canPlayType, showed the picture.
+     *
+     * The element's own `error` event is the only signal meaning the file
+     * genuinely did not decode, so the player is always rendered and the card
+     * waits behind it. Being wrong in this direction costs nothing: a video
+     * that works is simply shown.
+     */
+    function armVideoFallback(video) {
+        if (!video || video.dataset.fallbackArmed) return;
+        video.dataset.fallbackArmed = '1';
+        video.addEventListener('error', () => {
+            const card = video.parentElement?.querySelector('.prd-cover-noplay');
+            if (card) { card.hidden = false; video.style.display = 'none'; }
+        }, { once: true });
+    }
+
     function locationMarkup(p) {
         if (!p.address && !p.has_coordinates) return '';
         return `
@@ -685,7 +715,10 @@ const PropertiesPage = (() => {
                     state.urlCache.set(id, url || null);
                 }
                 const url = state.urlCache.get(id);
-                if (url) img.src = url;
+                if (url) {
+                    if (img.tagName === 'VIDEO') armVideoFallback(img);
+                    img.src = url;
+                }
                 else cover?.classList.add('is-empty');
             } catch (e) {
                 // ⭐ A STORE THAT DID NOT ANSWER IS NOT A DELETED PHOTOGRAPH.
@@ -1189,6 +1222,14 @@ const PropertiesPage = (() => {
         // ── The detail pane ─────────────────────────────────────────────────
         const detail = document.getElementById('prpDetailHost');
         detail.addEventListener('click', (e) => {
+            // Before the thumbnail handler: the download link sits INSIDE the
+            // cover, and letting the click fall through would re-cover a unit
+            // when the user meant to open a file.
+            const dl = e.target.closest('[data-prd-download]');
+            if (dl) {
+                e.preventDefault();
+                return openMedia(dl.getAttribute('data-prd-download'));
+            }
             const shot = e.target.closest('[data-prd-shot]');
             if (shot) return makeCover(shot.getAttribute('data-prd-shot'));
             if (e.target.closest('[data-prd="add"]')) return document.getElementById('prpFileInput')?.click();
