@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadDriveContents();
     initializeSignalR();
     renderStorageQuotaBar();
+    showStorageBannerIfUnconfigured();
 });
 
 // Handle browser back/forward navigation
@@ -296,6 +297,33 @@ function setupEventListeners() {
 }
 
 // Load drive contents with race condition protection
+// Storage is mandatory and there is no fallback bucket, so an organisation
+// that has not connected one cannot write anything. Saying so once, up front,
+// beats letting every upload and every folder fail one at a time with a toast
+// that vanishes after four seconds.
+async function showStorageBannerIfUnconfigured() {
+    let status;
+    try {
+        status = await api.request('/drive/storage');
+    } catch {
+        return;   // never let a status probe break the page
+    }
+    if (!status || status.configured) return;
+
+    const host = document.querySelector('.drive-content');
+    if (!host || document.getElementById('storageBanner')) return;
+
+    const el = document.createElement('div');
+    el.id = 'storageBanner';
+    el.className = 'drive-storage-banner';
+    el.innerHTML =
+        '<div><strong>Connect your storage to start uploading</strong>' +
+        '<p>Ragenaizer keeps your files in object storage you own. Until a bucket is connected, ' +
+        'uploads and new folders are refused.</p></div>' +
+        '<a class="btn btn-primary" href="storage-settings.html">Set up storage</a>';
+    host.insertBefore(el, host.firstChild);
+}
+
 async function loadDriveContents() {
     // If already loading, mark that we need to reload after current finishes
     if (isLoadingContents) {

@@ -42,16 +42,20 @@
             <h1>Storage</h1>
             <p class="storage-lede">
                 Ragenaizer stores your files in object storage that you own and control.
-                Connect a bucket from any S3-compatible provider — Amazon S3, Cloudflare R2,
-                DigitalOcean Spaces, Backblaze B2, or your own MinIO. Your files never leave it,
+                Pick your provider and paste an access key &mdash; we do the rest, including
+                creating the bucket. Works with Amazon S3, Cloudflare R2, DigitalOcean Spaces,
+                Backblaze B2, Wasabi or your own MinIO. Your files never leave your account,
                 and you can revoke our access at any time from your provider.
             </p>
         </header>
 
+        <div class="storage-layout">
+        <div class="storage-main">
+
         <section id="storageStatus" aria-live="polite"></section>
 
         <section class="storage-card">
-            <h2>Connect a bucket</h2>
+            <h2>Connect your storage</h2>
 
             <div class="storage-field provider-picker">
                 <label id="providerLabel" for="providerTrigger">Provider</label>
@@ -61,32 +65,27 @@
                 <p class="storage-hint" id="providerNote" hidden></p>
             </div>
 
+            <!-- One locating field, swapped per provider, then credentials.
+                 Endpoint, region, path-style, bucket and key prefix used to
+                 be asked for here; all five are now derived or created by
+                 StorageProvisioning, because they were our homework. -->
             <div class="storage-grid">
-                <div class="storage-field">
-                    <label for="endpoint">Endpoint URL</label>
-                    <input type="url" id="endpoint" autocomplete="off" spellcheck="false">
-                    <p class="storage-hint">Must be reachable over HTTPS from the public internet.</p>
-                </div>
-
-                <div class="storage-field">
+                <div class="storage-field" id="regionField" hidden>
                     <label for="region">Region</label>
-                    <input type="text" id="region" autocomplete="off" spellcheck="false">
-                    <p class="storage-hint">Cloudflare R2 always uses <code>auto</code>.</p>
+                    <input type="text" id="region" autocomplete="off" spellcheck="false" placeholder="eu-central-1">
+                    <p class="storage-hint" id="regionHint">The region your storage lives in.</p>
                 </div>
 
-                <div class="storage-field">
-                    <label for="bucket">Bucket name</label>
-                    <input type="text" id="bucket" autocomplete="off" spellcheck="false">
-                    <p class="storage-hint">The bucket must already exist. We will not create it.</p>
+                <div class="storage-field" id="accountField" hidden>
+                    <label for="accountId">Account ID</label>
+                    <input type="text" id="accountId" autocomplete="off" spellcheck="false" placeholder="abc123def456">
+                    <p class="storage-hint">From your R2 dashboard. Pasting the whole URL is fine.</p>
                 </div>
 
-                <div class="storage-field">
-                    <label for="keyPrefix">Folder inside the bucket</label>
-                    <input type="text" id="keyPrefix" value="ragenaizer/" autocomplete="off" spellcheck="false">
-                    <p class="storage-hint">
-                        Everything we store lives under this folder. We never read, list or delete
-                        anything outside it, so the bucket is safe to share with your own files.
-                    </p>
+                <div class="storage-field" id="endpointField" hidden>
+                    <label for="endpoint">Endpoint URL</label>
+                    <input type="url" id="endpoint" autocomplete="off" spellcheck="false" placeholder="https://minio.example.com:9000">
+                    <p class="storage-hint">Must be reachable over HTTPS from the public internet.</p>
                 </div>
 
                 <div class="storage-field">
@@ -101,15 +100,18 @@
                 </div>
             </div>
 
-            <div class="storage-field storage-field--inline">
-                <label class="storage-checkbox">
-                    <input type="checkbox" id="forcePathStyle">
-                    <span>Use path-style addressing</span>
-                </label>
-                <p class="storage-hint">
-                    Required by MinIO, Wasabi and most self-hosted endpoints. Leave off for Amazon S3.
-                </p>
-            </div>
+            <details class="storage-advanced">
+                <summary>Use a bucket I already have</summary>
+                <div class="storage-field">
+                    <label for="bucket">Bucket name</label>
+                    <input type="text" id="bucket" autocomplete="off" spellcheck="false">
+                    <p class="storage-hint">
+                        Leave this empty and we will create a bucket for you. Name one here
+                        instead if you would rather we used an existing bucket; we only ever
+                        touch the <code>ragenaizer/</code> folder inside it.
+                    </p>
+                </div>
+            </details>
 
             <div class="storage-actions">
                 <button type="button" id="testBtn" class="btn btn-secondary">Test connection</button>
@@ -132,6 +134,36 @@
             <pre class="storage-code"><code id="corsJson"></code></pre>
             <button type="button" id="copyCorsBtn" class="btn btn-secondary">Copy policy</button>
         </section>
+
+        </div><!-- /.storage-main -->
+
+        <aside class="storage-aside">
+            <div class="storage-aside__panel">
+                <h3>All you need</h3>
+                <ol>
+                    <li>An account with any S3-compatible provider.</li>
+                    <li>An access key with read, write, delete and create-bucket.</li>
+                </ol>
+                <p class="storage-hint">
+                    We create the bucket, work out the endpoint and pick the addressing
+                    style. If your key cannot create buckets, make one yourself and name
+                    it under &ldquo;Use a bucket I already have&rdquo;.
+                </p>
+            </div>
+
+            <div class="storage-aside__panel">
+                <h3>What we can reach</h3>
+                <ul>
+                    <li>Only the <code>ragenaizer/</code> folder, never anything else in the bucket.</li>
+                    <li>The endpoint must be public HTTPS. Private and internal addresses are refused.</li>
+                    <li>Your secret is encrypted before storage and never shown again.</li>
+                </ul>
+            </div>
+
+            <a class="storage-back" href="drive.html">&larr; Back to Drive</a>
+        </aside>
+
+        </div><!-- /.storage-layout -->
     </main>
 
     <script>

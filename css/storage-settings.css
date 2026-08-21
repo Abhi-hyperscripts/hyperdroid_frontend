@@ -3,13 +3,85 @@
    renders in both themes and a literal would only be right in one of them. */
 
 .storage-page {
-    max-width: 56rem;
+    /* 100px top matches .dashboard-content: the navbar is position:fixed at
+       52px, so anything less puts the h1 underneath it. 1400px is the same
+       ceiling every other page in the product uses. */
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 2rem 1.25rem 5rem;
+    padding: 100px 32px 64px;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.75rem;
 }
+
+/* Form on the left, guidance on the right. A single centred column left most
+   of a wide screen empty while squeezing six fields into three cramped
+   columns, so the hints wrapped to three lines each. */
+.storage-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+    align-items: start;
+}
+
+@media (min-width: 1080px) {
+    .storage-layout {
+        grid-template-columns: minmax(0, 1fr) 21rem;
+        gap: 2rem;
+    }
+}
+
+.storage-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    min-width: 0;
+}
+
+.storage-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: sticky;
+    top: 84px;
+}
+
+.storage-aside h3 {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 .6rem;
+}
+
+.storage-aside ol,
+.storage-aside ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: var(--text-secondary);
+    font-size: .88rem;
+    line-height: 1.65;
+}
+
+.storage-aside li + li { margin-top: .45rem; }
+
+.storage-aside__panel {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    padding: 1.15rem 1.25rem;
+}
+
+.storage-back {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: .88rem;
+    font-weight: 600;
+}
+
+.storage-back:hover { color: var(--brand-primary); }
 
 .storage-head h1 {
     font-family: 'Bricolage Grotesque', system-ui, sans-serif;
@@ -20,9 +92,9 @@
 
 .storage-lede {
     color: var(--text-secondary);
-    max-width: 60ch;
+    max-width: 68ch;
     margin: 0;
-    line-height: 1.6;
+    line-height: 1.65;
 }
 
 /* ── Status banner ─────────────────────────────────────────────────── */
@@ -64,7 +136,7 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1.75rem 2rem;
 }
 
 .storage-card h2 {
@@ -82,8 +154,11 @@
 
 .storage-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-    gap: 1.1rem;
+    /* 22rem, not 16rem. At 16rem this packed three columns into the card and
+       every hint underneath wrapped to three lines; two roomy columns read
+       far better and leave the long "folder inside the bucket" note on one. */
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+    gap: 1.5rem 2rem;
 }
 
 .storage-field { display: flex; flex-direction: column; gap: .4rem; }
@@ -270,4 +345,58 @@
     .storage-page { padding: 1.25rem .9rem 4rem; }
     .storage-card { padding: 1.15rem; }
     .storage-actions .btn { flex: 1 1 auto; }
+}
+
+
+/* "Use a bucket I already have" — folded away because the answer is normally
+   "no, make one for me", and an always-visible field would put the thing we
+   removed straight back on screen. */
+.storage-advanced {
+    margin-top: 1.25rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1.25rem;
+}
+
+.storage-advanced > summary {
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: .88rem;
+    font-weight: 600;
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.storage-advanced > summary::-webkit-details-marker { display: none; }
+
+.storage-advanced > summary::before {
+    content: '+';
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--text-secondary);
+}
+
+.storage-advanced[open] > summary::before { content: '\2212'; }
+
+.storage-advanced > summary:hover { color: var(--brand-primary); }
+
+.storage-advanced .storage-field { margin-top: 1rem; max-width: 34rem; }
+
+.storage-aside__panel .storage-hint { margin-top: .75rem; }
+
+.probe-bucket {
+    margin: -.5rem 0 1rem;
+    color: var(--text-secondary);
+    font-size: .88rem;
+}
+
+/* Phones. 32px of side padding is a lot of a 390px screen, and the aside
+   stops being a sidebar once it stacks — sticking it to the top just makes it
+   hover over the form it is meant to sit beside. */
+@media (max-width: 640px) {
+    .storage-page { padding: 84px 16px 48px; }
+    .storage-card { padding: 1.25rem; }
+    .storage-aside { position: static; }
+    .storage-actions { flex-wrap: wrap; }
 }

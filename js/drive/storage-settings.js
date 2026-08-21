@@ -19,75 +19,33 @@
  *      own outcome.
  */
 
-const PROVIDERS = [
-    {
-        id: 'aws',
-        name: 'Amazon S3',
-        endpointHint: 'https://s3.eu-central-1.amazonaws.com',
-        regionHint: 'eu-central-1',
-        // Path-style addressing is deprecated for new AWS buckets.
-        forcePathStyle: false,
-        note: 'Use an IAM user with read, write and delete on the bucket.'
-    },
-    {
-        id: 'r2',
-        name: 'Cloudflare R2',
-        endpointHint: 'https://<account-id>.r2.cloudflarestorage.com',
-        regionHint: 'auto',
-        forcePathStyle: true,
-        note: 'R2 always uses the region "auto". Create an R2 API token with Object Read & Write.'
-    },
-    {
-        id: 'spaces',
-        name: 'DigitalOcean Spaces',
-        endpointHint: 'https://blr1.digitaloceanspaces.com',
-        regionHint: 'blr1',
-        forcePathStyle: true,
-        note: 'Use a Spaces access key, not a DigitalOcean API token.'
-    },
-    {
-        id: 'backblazeb2',
-        name: 'Backblaze B2',
-        endpointHint: 'https://s3.us-west-004.backblazeb2.com',
-        regionHint: 'us-west-004',
-        forcePathStyle: true,
-        note: 'Use an application key scoped to this bucket.'
-    },
-    {
-        id: 'wasabi',
-        name: 'Wasabi',
-        endpointHint: 'https://s3.ap-southeast-1.wasabisys.com',
-        regionHint: 'ap-southeast-1',
-        forcePathStyle: true,
-        note: ''
-    },
-    {
-        id: 'minio',
-        name: 'MinIO (self-hosted)',
-        endpointHint: 'https://minio.example.com',
-        regionHint: 'us-east-1',
-        forcePathStyle: true,
-        note: 'The endpoint must be reachable from the internet and use HTTPS.'
-    },
-    {
-        id: 'generic',
-        name: 'Other S3-compatible',
-        endpointHint: 'https://storage.example.com',
-        regionHint: 'us-east-1',
-        forcePathStyle: true,
-        note: ''
-    }
-];
-
-let selectedProvider = PROVIDERS[0];
+/* The provider list is FETCHED, not restated.
+   It used to be duplicated here — the endpoint templates, the fixed regions
+   and the path-style flags all existed in this file and again in the backend.
+   Two lists of the same set drift, and this one decides where a customer's
+   files physically land. The backend derives the connection from these facts,
+   so the backend is the one that publishes them. */
+let PROVIDERS = [];
+let selectedProvider = null;
 let lastProbe = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    await loadProviders();
     buildProviderOptions();
-    applyProvider(PROVIDERS[0]);
+    if (PROVIDERS.length) applyProvider(PROVIDERS[0]);
     wireEvents();
     await loadStatus();
 });
+
+async function loadProviders() {
+    try {
+        const res = await api.request('/drive/storage/providers');
+        PROVIDERS = (res && res.providers) || [];
+    } catch (err) {
+        PROVIDERS = [];
+        Toast.error('Could not load the list of storage providers. Reload to try again.');
+    }
+}
 
 /* ── Status ─────────────────────────────────────────────────────────── */
 
@@ -131,7 +89,7 @@ function buildProviderOptions() {
     const list = document.getElementById('providerOptions');
     list.innerHTML = PROVIDERS.map(p => `
         <button type="button" class="provider-option" data-provider="${p.id}" role="option" aria-selected="false">
-            ${escapeHtml(p.name)}
+            ${escapeHtml(p.label)}
         </button>`).join('');
 
     list.querySelectorAll('.provider-option').forEach(btn => {
@@ -143,25 +101,34 @@ function buildProviderOptions() {
 }
 
 function applyProvider(provider) {
+    if (!provider) return;
     selectedProvider = provider;
-    document.getElementById('providerTrigger').textContent = provider.name;
+    document.getElementById('providerTrigger').textContent = provider.label;
     document.getElementById('providerOptions')
         .querySelectorAll('.provider-option')
         .forEach(b => b.setAttribute('aria-selected', String(b.dataset.provider === provider.id)));
 
-    // Prefill rather than overwrite: an admin who has already typed an
-    // endpoint should not lose it by browsing the provider list.
-    const endpoint = document.getElementById('endpoint');
-    const region = document.getElementById('region');
-    endpoint.placeholder = provider.endpointHint;
-    region.placeholder = provider.regionHint;
-    if (!endpoint.value) endpoint.value = '';
-    if (!region.value || PROVIDERS.some(p => p.regionHint === region.value)) region.value = provider.regionHint;
+    // Exactly one locating field is shown, chosen by what the backend says
+    // this provider needs. Everything else — endpoint, path-style, bucket,
+    // key prefix — is derived there and never asked for.
+    const fields = { region: 'regionField', accountid: 'accountField', endpoint: 'endpointField' };
+    Object.values(fields).forEach(id => { document.getElementById(id).hidden = true; });
+    const show = fields[(provider.needs || '').toLowerCase()];
+    if (show) document.getElementById(show).hidden = false;
 
-    document.getElementById('forcePathStyle').checked = provider.forcePathStyle;
+    // A fixed region is the provider's, not the customer's, so it is filled
+    // in and the field stays hidden.
+    const region = document.getElementById('region');
+    if (provider.fixed_region) {
+        region.value = provider.fixed_region;
+    } else if (provider.needs === 'region') {
+        // Clear a value carried over from a provider whose region it was.
+        if (PROVIDERS.some(p => p.fixed_region && p.fixed_region === region.value)) region.value = '';
+    }
+
     const note = document.getElementById('providerNote');
-    note.textContent = provider.note || '';
-    note.hidden = !provider.note;
+    note.textContent = provider.hint || '';
+    note.hidden = !provider.hint;
 }
 
 function openProviderMenu() {
@@ -199,15 +166,16 @@ function wireEvents() {
 }
 
 function readForm() {
+    // The lean shape. Anything not here is the backend's to decide, which is
+    // the whole point of the screen no longer asking for it.
     return {
-        endpoint: document.getElementById('endpoint').value.trim(),
+        provider: selectedProvider ? selectedProvider.id : '',
         region: document.getElementById('region').value.trim(),
-        bucket: document.getElementById('bucket').value.trim(),
+        account_id: document.getElementById('accountId').value.trim(),
+        endpoint: document.getElementById('endpoint').value.trim(),
+        bucket: document.getElementById('bucket').value.trim(),   // empty = make one for us
         access_key_id: document.getElementById('accessKeyId').value.trim(),
-        secret_access_key: document.getElementById('secretAccessKey').value,
-        force_path_style: document.getElementById('forcePathStyle').checked,
-        key_prefix: document.getElementById('keyPrefix').value.trim() || 'ragenaizer/',
-        flavour: selectedProvider.id
+        secret_access_key: document.getElementById('secretAccessKey').value
     };
 }
 
@@ -224,11 +192,17 @@ async function submit(endpoint, method, isSave) {
         });
 
         lastProbe = res;
-        renderSteps(res.steps);
+        renderSteps(res.steps, res);
         renderCors(res);
 
         if (res.success) {
-            Toast.success(isSave ? 'Storage connected' : 'All checks passed');
+            // The bucket is ours to name and create, so the customer never
+            // typed it. Say which one it is, or they have no idea what
+            // appeared in their account.
+            Toast.success(
+                res.bucket_created ? `Storage connected — created ${res.bucket}`
+                : isSave ? 'Storage connected'
+                : 'All checks passed');
             if (isSave) await loadStatus();
         } else {
             Toast.error(isSave ? 'Not saved — see the checks below' : 'Some checks failed');
@@ -238,7 +212,7 @@ async function submit(endpoint, method, isSave) {
         // rather than collapsing everything into the exception message.
         const payload = err.data || err.response || null;
         if (payload && payload.steps) {
-            renderSteps(payload.steps);
+            renderSteps(payload.steps, payload);
             renderCors(payload);
         }
         Toast.error(payload?.message || err.message || 'Storage check failed');
@@ -250,13 +224,21 @@ async function submit(endpoint, method, isSave) {
 
 /* ── Rendering ──────────────────────────────────────────────────────── */
 
-function renderSteps(steps) {
+function renderSteps(steps, res) {
     const el = document.getElementById('probeResults');
     if (!steps || !steps.length) { el.hidden = true; return; }
+
+    // Which bucket these checks ran against. We chose the name, so showing it
+    // is the only way the customer can find it in their own console.
+    const bucketLine = res && res.bucket
+        ? `<p class="probe-bucket">${res.bucket_created ? 'Created and checked' : 'Checked'}
+             <code>${escapeHtml(res.bucket)}</code></p>`
+        : '';
 
     el.hidden = false;
     el.innerHTML = `
         <h3 class="probe-heading">Connection checks</h3>
+        ${bucketLine}
         <ul class="probe-list">
             ${steps.map(s => `
                 <li class="probe-step probe-step--${s.passed ? 'pass' : (s.fatal ? 'fail' : 'warn')}">

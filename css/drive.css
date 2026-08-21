@@ -938,3 +938,29 @@
         font-size: 13px;
     }
 }
+
+/* Storage-not-connected banner. Storage is mandatory under bring-your-own
+   buckets, so this is the one thing standing between a new organisation and
+   a Drive that refuses every write. */
+.drive-storage-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--color-warning);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+}
+
+.drive-storage-banner strong { color: var(--text-primary); }
+
+.drive-storage-banner p {
+    margin: .25rem 0 0;
+    color: var(--text-secondary);
+    font-size: .88rem;
+    max-width: 70ch;
+}
