@@ -1407,3 +1407,35 @@ body.hrms-dashboard::after {
 .home-chart-tip b { font-weight: 600; }
 
 
+
+/* ── An inbox list must not set the height of its whole row ──────────────── */
+
+/* .pulse-hero / .pulse-below stretch every card to the tallest one, and this
+   list had no ceiling — so a card holding a dozen rows grew its neighbours to
+   match and left them with a block of dead space under their last line.
+   Measured on this page: three cards at 260px became three at 890px once the
+   list filled.
+
+   Capped on the CLASS, not on one list's id: these dashboards each carry one
+   or two of them and the rule is the same for every one. Same fix as
+   crm-dashboard-analytics.css, which is where it was found. */
+.pulse-inbox {
+    max-height: 292px;
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-primary) transparent;
+}
+
+.pulse-inbox::-webkit-scrollbar { width: 6px; }
+.pulse-inbox::-webkit-scrollbar-track { background: transparent; }
+.pulse-inbox::-webkit-scrollbar-thumb {
+    background: var(--border-primary);
+    border-radius: 3px;
+}
+
+/* On a phone the cards are stacked one per row, so nothing is being stretched
+   and an inner scrollbar would just be a second scroll to fight. */
+@media (max-width: 768px) {
+    .pulse-inbox { max-height: none; overflow-y: visible; }
+}
