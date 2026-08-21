@@ -68,7 +68,16 @@
   font-weight: 500;
   color: var(--text-secondary);
 }
-.apt-form input[type="text"], .apt-form input[type="date"], .apt-form input[type="time"] {
+/* ⚠⚠ SELECT WHAT THEY ARE, NOT A LIST OF TYPES.
+   This enumerated text/date/time. Adding a fourth field — the meeting link,
+   type="url" — matched none of them, so it rendered as a RAW BROWSER INPUT:
+   black box, square corners, no padding, sitting directly above a Location
+   field that looked like the rest of the product. Nothing failed; the field
+   simply was not in the list.
+   A rule that names its members has to be edited every time the family grows,
+   and the edit is invisible when forgotten. Checkbox and radio are excluded
+   because their native appearance IS the control. */
+.apt-form input:not([type="checkbox"]):not([type="radio"]) {
   width: 100%;
   min-width: 0;
   padding: 7px 9px;

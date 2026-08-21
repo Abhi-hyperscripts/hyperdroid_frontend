@@ -198,7 +198,7 @@ const AppointmentsPanel = (() => {
 
                 <label class="apt-full">Meeting link <span class="apt-optional">(for a video call)</span>
                     <input type="url" data-apt="meetingUrl" maxlength="500" inputmode="url"
-                           value="${esc(state.draft.meetingUrl)}" placeholder="https://meet.google.com/…">
+                           value="${esc(state.draft.meetingUrl)}" placeholder="Paste a meeting link">
                 </label>
 
                 <label class="apt-full">Location

@@ -604,8 +604,11 @@ body.crm-tasks-page {
    the first column. Title and Details are full-width fields. */
 #taskModal .crm-form-row--full { grid-template-columns: 1fr; }
 #taskModal .crm-form-group { min-width: 0; }
-#taskModal input[type="text"],
-#taskModal input[type="date"],
+/* Selects what they ARE rather than listing types — the same trap the
+   appointments form fell into, where a fourth field type matched none of the
+   three named and rendered as a raw browser input. Only width here, so
+   checkbox and radio are excluded to leave their native sizing alone. */
+#taskModal input:not([type="checkbox"]):not([type="radio"]),
 #taskModal textarea { width: 100%; }
 #taskModal textarea {
   width: 100%;

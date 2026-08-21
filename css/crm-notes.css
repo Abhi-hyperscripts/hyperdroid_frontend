@@ -463,6 +463,16 @@
 .lhp-tabs::-webkit-scrollbar { display: none; }
 /* Tabs must not shrink into unreadable slivers when the strip scrolls. */
 .lhp-tabs > * { flex: 0 0 auto; }
+
+@media (max-width: 560px) {
+  /* ⚠ SCROLLABLE IS NOT THE SAME AS USABLE. Making the strip scroll stopped it
+     overflowing its parent, and a reader still just sees "Owne" cut off at the
+     edge with no sign there is anything past it — a hidden tab is a tab nobody
+     presses. Three short labels fit a phone if they are allowed to WRAP, so the
+     strip becomes two lines instead of one clipped one. */
+  .lhp-tabs { flex-wrap: wrap; overflow-x: visible; }
+  .lhp-tabs > * { flex: 1 1 auto; text-align: center; }
+}
 .lhp-tab {
   appearance: none;
   border: 0;
