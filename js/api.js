@@ -1372,16 +1372,23 @@ class API {
         });
     }
 
-    async updateShareLink(shareId, accessType = null, expiryHours = 0, password = null, removePassword = false, maxDownloads = 0) {
+    // expiryHours / maxDownloads are NULL by default and null is meaningful:
+    // omitting the field leaves the current setting alone, while sending 0
+    // removes the limit ("never expires" / "unlimited"). They used to default
+    // to 0, which the backend read as "unchanged" — so a caller trying to lift
+    // a limit silently kept it.
+    async updateShareLink(shareId, accessType = null, expiryHours = null, password = null, removePassword = false, maxDownloads = null) {
+        const body = {
+            access_type: accessType,
+            password: password,
+            remove_password: removePassword
+        };
+        if (expiryHours !== null && expiryHours !== undefined) body.expiry_hours = expiryHours;
+        if (maxDownloads !== null && maxDownloads !== undefined) body.max_downloads = maxDownloads;
+
         return this.request(`/drive/share/${shareId}`, {
             method: 'PUT',
-            body: JSON.stringify({
-                access_type: accessType,
-                expiry_hours: expiryHours,
-                password: password,
-                remove_password: removePassword,
-                max_downloads: maxDownloads
-            })
+            body: JSON.stringify(body)
         });
     }
 

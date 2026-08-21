@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Storage - Ragenaizer Drive</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>
+        document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/drive.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/storage-settings.css?v=' + CACHE_VERSION + '">');
+        document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</head>
+<body class="dashboard drive-page">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+    </nav>
+
+    <main class="storage-page">
+        <header class="storage-head">
+            <h1>Storage</h1>
+            <p class="storage-lede">
+                Ragenaizer stores your files in object storage that you own and control.
+                Connect a bucket from any S3-compatible provider — Amazon S3, Cloudflare R2,
+                DigitalOcean Spaces, Backblaze B2, or your own MinIO. Your files never leave it,
+                and you can revoke our access at any time from your provider.
+            </p>
+        </header>
+
+        <section id="storageStatus" aria-live="polite"></section>
+
+        <section class="storage-card">
+            <h2>Connect a bucket</h2>
+
+            <div class="storage-field provider-picker">
+                <label id="providerLabel" for="providerTrigger">Provider</label>
+                <button type="button" id="providerTrigger" class="provider-trigger"
+                        aria-haspopup="listbox" aria-expanded="false" aria-labelledby="providerLabel"></button>
+                <div id="providerOptions" class="provider-options" role="listbox" hidden></div>
+                <p class="storage-hint" id="providerNote" hidden></p>
+            </div>
+
+            <div class="storage-grid">
+                <div class="storage-field">
+                    <label for="endpoint">Endpoint URL</label>
+                    <input type="url" id="endpoint" autocomplete="off" spellcheck="false">
+                    <p class="storage-hint">Must be reachable over HTTPS from the public internet.</p>
+                </div>
+
+                <div class="storage-field">
+                    <label for="region">Region</label>
+                    <input type="text" id="region" autocomplete="off" spellcheck="false">
+                    <p class="storage-hint">Cloudflare R2 always uses <code>auto</code>.</p>
+                </div>
+
+                <div class="storage-field">
+                    <label for="bucket">Bucket name</label>
+                    <input type="text" id="bucket" autocomplete="off" spellcheck="false">
+                    <p class="storage-hint">The bucket must already exist. We will not create it.</p>
+                </div>
+
+                <div class="storage-field">
+                    <label for="keyPrefix">Folder inside the bucket</label>
+                    <input type="text" id="keyPrefix" value="ragenaizer/" autocomplete="off" spellcheck="false">
+                    <p class="storage-hint">
+                        Everything we store lives under this folder. We never read, list or delete
+                        anything outside it, so the bucket is safe to share with your own files.
+                    </p>
+                </div>
+
+                <div class="storage-field">
+                    <label for="accessKeyId">Access key ID</label>
+                    <input type="text" id="accessKeyId" autocomplete="off" spellcheck="false">
+                </div>
+
+                <div class="storage-field">
+                    <label for="secretAccessKey">Secret access key</label>
+                    <input type="password" id="secretAccessKey" autocomplete="new-password" spellcheck="false">
+                    <p class="storage-hint">Encrypted before it is stored. It is never shown again after saving.</p>
+                </div>
+            </div>
+
+            <div class="storage-field storage-field--inline">
+                <label class="storage-checkbox">
+                    <input type="checkbox" id="forcePathStyle">
+                    <span>Use path-style addressing</span>
+                </label>
+                <p class="storage-hint">
+                    Required by MinIO, Wasabi and most self-hosted endpoints. Leave off for Amazon S3.
+                </p>
+            </div>
+
+            <div class="storage-actions">
+                <button type="button" id="testBtn" class="btn btn-secondary">Test connection</button>
+                <button type="button" id="saveBtn" class="btn btn-primary">Save and connect</button>
+            </div>
+            <p class="storage-hint storage-hint--strong">
+                Settings are only saved if every check passes.
+            </p>
+        </section>
+
+        <section id="probeResults" class="storage-card" hidden aria-live="polite"></section>
+
+        <section id="corsBox" class="storage-card" hidden>
+            <h2>Allow uploads from your browser</h2>
+            <p>
+                We could not set this automatically, so uploads will pass through Ragenaizer instead
+                of going straight to your bucket. That works, but it is slower. To enable direct
+                uploads, add this CORS policy to your bucket:
+            </p>
+            <pre class="storage-code"><code id="corsJson"></code></pre>
+            <button type="button" id="copyCorsBtn" class="btn btn-secondary">Copy policy</button>
+        </section>
+    </main>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/drive/storage-settings.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

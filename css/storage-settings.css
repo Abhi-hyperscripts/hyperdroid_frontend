@@ -1,0 +1,273 @@
+/* ── Drive → Storage settings ───────────────────────────────────────────
+   Every colour comes from css/theme.css. No hex values here: this screen
+   renders in both themes and a literal would only be right in one of them. */
+
+.storage-page {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.storage-head h1 {
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 .5rem;
+}
+
+.storage-lede {
+    color: var(--text-secondary);
+    max-width: 60ch;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ── Status banner ─────────────────────────────────────────────────── */
+
+.storage-status {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+}
+
+.storage-status p {
+    margin: .25rem 0 0;
+    color: var(--text-secondary);
+    font-size: .92rem;
+}
+
+.storage-status strong { color: var(--text-primary); }
+
+.storage-status__dot {
+    width: .6rem;
+    height: .6rem;
+    border-radius: 50%;
+    margin-top: .45rem;
+    flex: 0 0 auto;
+    background: var(--text-secondary);
+}
+
+.storage-status--ok .storage-status__dot { background: var(--color-success); }
+.storage-status--warn .storage-status__dot { background: var(--color-warning); }
+.storage-status--pending { color: var(--text-secondary); }
+
+/* ── Cards + fields ────────────────────────────────────────────────── */
+
+.storage-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.storage-card h2 {
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+    font-size: 1.15rem;
+    color: var(--text-primary);
+    margin: 0 0 1.15rem;
+}
+
+.storage-card > p {
+    color: var(--text-secondary);
+    max-width: 62ch;
+    line-height: 1.6;
+}
+
+.storage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 1.1rem;
+}
+
+.storage-field { display: flex; flex-direction: column; gap: .4rem; }
+
+.storage-field label {
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.storage-field input[type="text"],
+.storage-field input[type="url"],
+.storage-field input[type="password"] {
+    /* Matches the modal input height convention used elsewhere. */
+    height: 42px;
+    padding: 0 .8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: .95rem;
+}
+
+.storage-field input:focus {
+    outline: none;
+    border-color: var(--border-color-focus);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), .18);
+}
+
+.storage-hint {
+    margin: 0;
+    font-size: .8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.storage-hint--strong { color: var(--text-primary); margin-top: .75rem; }
+
+.storage-hint code,
+.storage-status code {
+    background: var(--bg-tertiary);
+    padding: .05em .35em;
+    border-radius: 4px;
+    font-size: .9em;
+}
+
+.storage-field--inline { margin-top: 1.1rem; }
+
+.storage-checkbox {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+/* ── Provider picker (custom listbox — the project never uses a native
+   select, which cannot be themed consistently across platforms) ─────── */
+
+.provider-picker { position: relative; margin-bottom: 1.25rem; }
+
+.provider-trigger {
+    height: 42px;
+    text-align: left;
+    padding: 0 .8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: .95rem;
+    cursor: pointer;
+    width: 100%;
+}
+
+.provider-trigger:focus-visible {
+    outline: 2px solid var(--border-color-focus);
+    outline-offset: 1px;
+}
+
+.provider-options {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + .3rem);
+    left: 0;
+    right: 0;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .18);
+    overflow: hidden;
+    max-height: 17rem;
+    overflow-y: auto;
+}
+
+.provider-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: .6rem .8rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: .93rem;
+    cursor: pointer;
+}
+
+.provider-option:hover,
+.provider-option:focus-visible { background: var(--bg-tertiary); }
+.provider-option[aria-selected="true"] { background: var(--bg-tertiary); font-weight: 600; }
+
+/* ── Actions ───────────────────────────────────────────────────────── */
+
+.storage-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-top: 1.5rem;
+}
+
+/* ── Probe results ─────────────────────────────────────────────────── */
+
+.probe-heading {
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+    margin: 0 0 1rem;
+}
+
+.probe-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
+
+.probe-step {
+    display: flex;
+    gap: .75rem;
+    align-items: flex-start;
+    padding: .75rem .9rem;
+    border-radius: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+}
+
+.probe-step strong { color: var(--text-primary); font-size: .92rem; }
+.probe-step p { margin: .2rem 0 0; color: var(--text-secondary); font-size: .85rem; line-height: 1.5; }
+.probe-step__note { font-style: italic; }
+
+.probe-step__icon {
+    flex: 0 0 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--text-inverse);
+    margin-top: .1rem;
+}
+
+.probe-step--pass .probe-step__icon { background: var(--color-success); }
+.probe-step--fail .probe-step__icon { background: var(--color-error); }
+.probe-step--warn .probe-step__icon { background: var(--color-warning); }
+
+/* ── Code block ────────────────────────────────────────────────────── */
+
+.storage-code {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    /* Wide content scrolls inside its own container so the page body
+       never scrolls sideways. */
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.storage-code code {
+    color: var(--text-primary);
+    font-size: .82rem;
+    line-height: 1.55;
+    white-space: pre;
+}
+
+@media (max-width: 640px) {
+    .storage-page { padding: 1.25rem .9rem 4rem; }
+    .storage-card { padding: 1.15rem; }
+    .storage-actions .btn { flex: 1 1 auto; }
+}
