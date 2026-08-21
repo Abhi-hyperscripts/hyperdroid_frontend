@@ -192,7 +192,10 @@ async function loadDashboard() {
             loadNotifications(),
             loadRecentLeads(),
             loadLeadsWave(),
-            loadRecentActivity()
+            loadRecentActivity(),
+            loadTodaySchedule(),
+            loadInventory(),
+            loadMoneyPanel()
         ]);
     } catch (error) {
         console.error('Error loading dashboard:', error);
@@ -827,6 +830,169 @@ function renderDispositionsChart(breakdown) {
     )).join('');
 }
 
+
+// ═══ Tier 1-3 modules on the dashboard ═══
+//
+// Appointments, property inventory, commission and renewals all shipped with
+// their own pages and NO presence here, so the dashboard still described a
+// business that only had leads. Each of these reads an endpoint that was
+// already live.
+
+async function loadTodaySchedule() {
+    const list = document.getElementById('todayScheduleList');
+    const note = document.getElementById('scheduleNote');
+    if (!list) return;
+    try {
+        // Local midnight to local midnight, sent as instants. The server
+        // compares timestamptz, so the RANGE must be absolute — building it
+        // from the reader's own day is what makes 'today' mean their today.
+        const from = new Date(); from.setHours(0, 0, 0, 0);
+        const to = new Date(from); to.setDate(to.getDate() + 1);
+        const rows = await api.request(
+            `/crm/appointments/calendar?from=${encodeURIComponent(from.toISOString())}`
+            + `&to=${encodeURIComponent(to.toISOString())}`);
+
+        const live = (rows || []).filter(a => a.status !== 'cancelled');
+        if (!live.length) {
+            list.innerHTML = '<div class="pulse-empty">Nothing booked today.</div>';
+            if (note) note.textContent = '';
+            return;
+        }
+        if (note) note.textContent = live.length + (live.length > 1 ? ' meetings' : ' meeting');
+
+        list.innerHTML = live.slice(0, 6).map(a => {
+            const start = new Date(a.starts_at);
+            const clock = start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+            const who = a.customer_name ? escapeHtml(a.customer_name) : escapeHtml(a.title || 'Meeting');
+            const what = a.customer_name ? escapeHtml(a.title || '') : '';
+            // Only ever an http(s) link, and only as an anchor. The server
+            // allow-lists the scheme on write; this is the second gate, because
+            // a javascript: URL that reached storage must still not become a
+            // clickable button on the dashboard.
+            const url = typeof a.meeting_url === 'string' ? a.meeting_url : '';
+            const joinable = /^https?:\/\//i.test(url);
+            const right = joinable
+                ? `<a class="pulse-mini yes" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Join</a>`
+                : (a.location ? `<span class="pulse-tag info">${escapeHtml(a.location).substring(0, 24)}</span>` : '');
+            return `<div class="pulse-task">
+                <div class="trow">
+                    <div class="meta">
+                        <div class="t1">${clock} \u00b7 ${who}</div>
+                        <div class="t2">${what}</div>
+                    </div>
+                    ${right}
+                </div>
+            </div>`;
+        }).join('') + (live.length > 6
+            ? `<a href="calendar.html" style="color:var(--brand-primary);font-size:12px;text-align:center;display:block;padding:4px;">+${live.length - 6} more in Calendar</a>`
+            : '');
+    } catch (e) {
+        console.error('Failed to load today\u2019s schedule:', e);
+        list.innerHTML = '<div class="pulse-empty">Could not load today\u2019s schedule.</div>';
+    }
+}
+
+async function loadInventory() {
+    const panel = document.getElementById('inventoryPanel');
+    const note = document.getElementById('inventoryNote');
+    if (!panel) return;
+    try {
+        const s = await api.request('/crm/properties/summary');
+        if (!s || !s.total) {
+            panel.innerHTML = '<div class="pulse-empty">No units listed yet.</div>';
+            if (note) note.textContent = '';
+            return;
+        }
+        if (note) note.textContent = s.total + (s.total > 1 ? ' units' : ' unit');
+
+        const cells = [
+            ['Available', s.available, 'status-available'],
+            ['Held', s.held, 'status-held'],
+            ['Booked', s.booked, 'status-booked'],
+            ['Sold', s.sold, 'status-sold'],
+        ].map(([label, n, cls]) =>
+            `<div class="inv-cell ${cls}"><b>${Number(n || 0)}</b><span>${label}</span></div>`).join('');
+
+        // The value is stated WITH its currency and flagged when the book
+        // spans several, because a single figure summed across currencies is
+        // a wrong number that looks right.
+        const value = s.available_value
+            ? `<div class="inv-value">${escapeHtml(formatCurrency(s.available_value, s.currency))} available`
+              + (s.mixed_currency ? ' <span class="inv-partial">(' + escapeHtml(s.currency || '') + ' only)</span>' : '')
+              + '</div>'
+            : '';
+        const expired = s.expired_holds
+            ? `<div class="inv-warn">${s.expired_holds} hold${s.expired_holds > 1 ? 's have' : ' has'} expired</div>`
+            : '';
+        panel.innerHTML = `<div class="inv-grid">${cells}</div>${value}${expired}`;
+    } catch (e) {
+        console.error('Failed to load inventory:', e);
+        panel.innerHTML = '<div class="pulse-empty">Could not load inventory.</div>';
+    }
+}
+
+async function loadMoneyPanel() {
+    const panel = document.getElementById('moneyPanel');
+    const note = document.getElementById('moneyNote');
+    if (!panel) return;
+    try {
+        // Independently settled: a tenant without renewals should still see
+        // its commission, and one endpoint failing must not blank the card.
+        const [commissionRes, renewalsRes] = await Promise.allSettled([
+            api.request('/crm/deals/commission-summary'),
+            api.request('/crm/deals/renewals-due?within_days=60&limit=100')
+        ]);
+
+        const parts = [];
+        if (commissionRes.status === 'fulfilled' && commissionRes.value) {
+            const rows = commissionRes.value.rows || [];
+            // ⭐ SUM WITHIN ONE CURRENCY, NEVER ACROSS.
+            //
+            // The rows are per owner PER CURRENCY, so reducing over all of
+            // them adds rupees to dollars and prints the result under whichever
+            // symbol happened to come first — a number wrong by roughly ninety
+            // times that looks entirely ordinary on a card.
+            const cur = (commissionRes.value.currencies || [])[0] || (rows[0] && rows[0].currency);
+            const mine = rows.filter(r => !cur || r.currency === cur);
+            const outstanding = mine.reduce((sum, r) => sum + Number(r.outstanding || 0), 0);
+            const earned = mine.reduce((sum, r) => sum + Number(r.earned || 0), 0);
+            const mixed = new Set(rows.map(r => r.currency).filter(Boolean)).size > 1;
+            if (earned || outstanding) {
+                parts.push(`<div class="money-row"><span>Commission earned</span>
+                    <b>${escapeHtml(formatCurrency(earned, cur))}</b></div>`);
+                parts.push(`<div class="money-row"><span>Still outstanding</span>
+                    <b class="money-warn">${escapeHtml(formatCurrency(outstanding, cur))}</b></div>`);
+                if (mixed) parts.push('<div class="inv-partial">Several currencies in play — shown in ' + escapeHtml(cur || '') + '.</div>');
+            }
+        }
+
+        if (renewalsRes.status === 'fulfilled' && Array.isArray(renewalsRes.value)) {
+            const due = renewalsRes.value;
+            const overdue = due.filter(r => Number(r.days_until_renewal) < 0).length;
+            if (due.length) {
+                parts.push(`<div class="money-row"><span>Renewals in 60 days</span><b>${due.length}</b></div>`);
+                if (overdue) parts.push(`<div class="inv-warn">${overdue} already past its renewal date</div>`);
+                const next = due.slice().sort((a, b) => Number(a.days_until_renewal) - Number(b.days_until_renewal))[0];
+                if (next) {
+                    const d = new Date(next.renewal_date);
+                    const when = d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+                    parts.push(`<div class="money-next">Next: ${escapeHtml(next.deal_name || '')} \u00b7 ${when}</div>`);
+                }
+            }
+        }
+
+        if (!parts.length) {
+            panel.innerHTML = '<div class="pulse-empty">No commission or renewals recorded.</div>';
+            if (note) note.textContent = '';
+            return;
+        }
+        if (note) note.textContent = 'this month';
+        panel.innerHTML = parts.join('');
+    } catch (e) {
+        console.error('Failed to load commission/renewals:', e);
+        panel.innerHTML = '<div class="pulse-empty">Could not load commission or renewals.</div>';
+    }
+}
 // ═══ Notifications ═══
 
 // Single delegated listener for the notifications card. Set once after the
@@ -870,12 +1036,65 @@ function bindNotificationsHandlers() {
         }
         const navRow = ev.target.closest('.notif-item[data-lead-id]');
         if (navRow) {
-            navigateTo('leads.html');
+            // TO THE LEAD, not to the list. This row names one customer and
+            // the rep clicked it to open that customer; dropping them on the
+            // full leads table made them search for the name they had just
+            // been shown. The deep link is the same one the activity feed
+            // below already uses.
+            const lid = navRow.getAttribute('data-lead-id');
+            navigateTo(lid ? `leads.html?lead=${encodeURIComponent(lid)}` : 'leads.html');
         }
     });
     _notificationsHandlersBound = true;
 }
 
+// Whole calendar days between two instants, in the READER'S timezone.
+//
+// Differencing the raw milliseconds and dividing answers a different
+// question — 23:30 last night is '0 days ago' by that maths and 'yesterday'
+// to the person reading it. Comparing midnights is what makes 'overdue by 3
+// days' agree with the calendar on the wall.
+function calendarDaysBetween(from, to) {
+    const a = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    const b = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+    return Math.round((b - a) / 86400000);
+}
+
+// The one line that says WHEN, and what that when MEANS.
+//
+// ⭐⭐ THIS CARD USED TO PRINT A BARE DATE — '18 Aug' — for two different
+// facts. On a follow-up it was the moment the work is DUE; on a pending
+// transfer it was the moment somebody REQUESTED it. Same slot, no label, no
+// time of day, on work that is scheduled to the minute. Clients read it as
+// 'the time doesn't match', and they were right that it was unreadable even
+// though the instant itself was correct.
+function attentionWhen(n) {
+    const at = new Date(n.timestamp);
+    if (isNaN(at.getTime())) return '';
+
+    const now = new Date();
+    const days = calendarDaysBetween(at, now);   // >0 = in the past
+    // hour12 EXPLICITLY. Left to the locale this rendered a bare "9:51",
+    // which is the ambiguity being complained about: a rep cannot tell a
+    // 9:51 morning call from a 21:51 evening one, and half the follow-ups on
+    // this card are evening call-backs.
+    const clock = at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+    const day = days === 0 ? 'today'
+        : days === 1 ? 'yesterday'
+        : days === -1 ? 'tomorrow'
+        : at.toLocaleDateString([], { day: 'numeric', month: 'short' });
+
+    // A transfer was RAISED at its timestamp; nothing is due at it.
+    if (n.when_kind === 'requested') {
+        return `Requested ${day}, ${clock}`;
+    }
+
+    if (days > 0) {
+        const overdue = days === 1 ? '1 day overdue' : `${days} days overdue`;
+        return `Due ${day}, ${clock} \u00b7 ${overdue}`;
+    }
+    return `Due ${day}, ${clock}`;
+}
 async function loadNotifications() {
     try {
         const data = await api.request('/crm/dashboard/notifications');
@@ -894,7 +1113,7 @@ async function loadNotifications() {
             const tag = n.type.includes('overdue') ? ['overdue', 'OVERDUE']
                 : n.type.includes('due') ? ['due', 'DUE TODAY']
                 : ['info', 'PENDING'];
-            const time = new Date(n.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+            const time = attentionWhen(n);
             // Mark Done only for follow-up notifications (n.followup_id present).
             // Wired via delegation in bindNotificationsHandlers so optimistic
             // removal works without re-rendering the list.
@@ -902,11 +1121,19 @@ async function loadNotifications() {
                 ? `<div class="pulse-acts"><button type="button" class="pulse-mini yes notif-mark-done" data-followup-id="${escapeHtml(n.followup_id)}" title="Mark this follow-up complete">Mark done</button></div>`
                 : '';
             const onClickAttr = n.entity_id ? `data-lead-id="${escapeHtml(n.entity_id)}"` : '';
+            // WHO first. The type ("Overdue: call follow-up") is the same
+            // string on every row of its kind, so leading with it made five
+            // rows read as one row repeated. The customer name is what tells
+            // them apart, and it is what the rep is actually scanning for.
+            const who = n.entity_name ? escapeHtml(n.entity_name) : escapeHtml(n.title);
+            const what = n.entity_name ? escapeHtml(n.title) : '';
+            const note = n.description ? escapeHtml(n.description).substring(0, 40) : '';
+            const detail = [what, note].filter(Boolean).join(' \u00b7 ');
             return `<div class="pulse-task notif-item" ${onClickAttr}>
                 <div class="trow">
                     <div class="meta">
-                        <div class="t1">${escapeHtml(n.title)}</div>
-                        <div class="t2">${n.description ? escapeHtml(n.description).substring(0, 60) + ' · ' : ''}${time}</div>
+                        <div class="t1">${who}</div>
+                        <div class="t2">${detail ? detail + '<br>' : ''}<span class="notif-when">${escapeHtml(time)}</span></div>
                     </div>
                     <span class="pulse-tag ${tag[0]}">${tag[1]}</span>
                 </div>

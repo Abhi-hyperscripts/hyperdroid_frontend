@@ -179,6 +179,35 @@
             <span class="pulse-chip" id="avgCloseChip" style="display:none"><b id="avgCloseVal">–</b> avg days to close</span>
         </div>
 
+        <!-- The modules added in Tiers 1-3 had no presence on this page at
+             all: a team could book viewings, hold units and record commission
+             all week and the dashboard would still describe only leads. These
+             three read from endpoints that were already live. -->
+        <div class="pulse-sect">Today &amp; inventory</div>
+        <div class="pulse-below pulse-below-3">
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Today's schedule</h2>
+                    <span class="pulse-card-note" id="scheduleNote"></span>
+                </div>
+                <div class="pulse-inbox" id="todayScheduleList"><div class="pulse-empty">Loading…</div></div>
+            </div>
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Inventory</h2>
+                    <span class="pulse-card-note" id="inventoryNote"></span>
+                </div>
+                <div id="inventoryPanel"><div class="pulse-empty">Loading…</div></div>
+            </div>
+            <div class="pulse-card">
+                <div class="pulse-card-head">
+                    <h2>Commission &amp; renewals</h2>
+                    <span class="pulse-card-note" id="moneyNote"></span>
+                </div>
+                <div id="moneyPanel"><div class="pulse-empty">Loading…</div></div>
+            </div>
+        </div>
+
         <!-- Team + outcomes -->
         <div class="pulse-below">
             <div class="pulse-card">
