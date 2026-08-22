@@ -639,3 +639,65 @@ body.drive-page .dv-tag {
 body.drive-page .drive-item { align-items: stretch; }
 body.drive-page .dv-tile,
 body.drive-page .dv-body { width: 100%; }
+
+/* ── Shared-by-me table ───────────────────────────────────────────────────
+   The rows used to carry their own inline styles pointing at
+   var(--border-primary), which was never defined, so the table rendered with
+   no borders at all. It now uses .drive-table-wrap/.data-table above; these
+   rules cover only what is specific to shares. */
+body.drive-page .share-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+body.drive-page .share-icon { margin-right: 6px; }
+body.drive-page .share-type { text-transform: capitalize; }
+body.drive-page .share-created { color: var(--text-muted); }
+
+body.drive-page .share-access {
+  font-weight: 600;
+  font-size: 12px;
+}
+body.drive-page .share-access--download { color: var(--color-success); }
+body.drive-page .share-access--view { color: var(--color-info); }
+
+body.drive-page .share-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* Small action buttons for inside table rows. */
+body.drive-page .btn-xs {
+  padding: 4px 10px !important;
+  height: auto !important;
+  font-size: 11.5px !important;
+  border-radius: 6px !important;
+  line-height: 1.4;
+}
+
+/* Back control in the crumb. The way out of a folder used to be the word
+   "My Drive" in a 19px grey subtitle - technically clickable, but it read as
+   a caption, so people could not find it. */
+body.drive-page .dv-crumb .crumb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px 3px 6px;
+  border-radius: 7px;
+  border: 1px solid var(--dv-line);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+body.drive-page .dv-crumb .crumb-back:hover {
+  color: var(--dv-accent);
+  border-color: color-mix(in srgb, var(--dv-accent) 38%, transparent);
+  background: color-mix(in srgb, var(--dv-accent) 12%, transparent);
+}
+body.drive-page .dv-crumb .crumb-back:focus-visible {
+  outline: 2px solid var(--dv-accent);
+  outline-offset: 2px;
+}

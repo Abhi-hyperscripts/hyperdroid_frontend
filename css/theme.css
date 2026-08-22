@@ -137,6 +137,18 @@
   --border-color-light: rgba(0, 0, 0, 0.06);
   --border-color-strong: rgba(0, 0, 0, 0.15);
   --border-color-focus: var(--brand-primary);
+
+  /* ALIASES. `--border-primary` and `--border-focus` are the names CLAUDE.md
+     documents, and the names 485 usages across HRMS, Research, Procurement,
+     News, Tenant Manager and the blog actually reference. They were never
+     defined, so every one of those borders resolved to nothing and silently
+     did not render - which is why the Drive "shared by me" table looked
+     unstyled. Defining them is strictly additive: an undefined variable draws
+     no border, so this can only restore the border that was always intended.
+     They point at --border-color, so they track the theme automatically and
+     need no counterpart in the dark block. */
+  --border-primary: var(--border-color);
+  --border-focus: var(--border-color-focus);
   --border-radius-xs: 4px;
   --border-radius-sm: 6px;
   --border-radius-md: 8px;

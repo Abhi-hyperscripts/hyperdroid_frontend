@@ -15,22 +15,44 @@ function switchDriveTab(tab) {
     const tabMyDrive = document.getElementById('tabMyDrive');
     const tabShared = document.getElementById('tabSharedByMe');
 
-    if (tab === 'shared') {
-        myDrive.style.display = 'none';
-        shared.style.display = 'block';
-        tabMyDrive.style.borderBottomColor = 'transparent';
-        tabMyDrive.style.color = 'var(--text-secondary)';
-        tabShared.style.borderBottomColor = 'var(--brand-primary)';
-        tabShared.style.color = 'var(--brand-primary)';
-        loadSharedByMe();
-    } else {
-        myDrive.style.display = 'block';
-        shared.style.display = 'none';
-        tabMyDrive.style.borderBottomColor = 'var(--brand-primary)';
-        tabMyDrive.style.color = 'var(--brand-primary)';
-        tabShared.style.borderBottomColor = 'transparent';
-        tabShared.style.color = 'var(--text-secondary)';
+    const showShared = tab === 'shared';
+
+    myDrive.style.display = showShared ? 'none' : 'block';
+    shared.style.display = showShared ? 'block' : 'none';
+
+    // Move the `active` CLASS. This used to set inline colours instead, which
+    // did nothing visible: drive-pulse.css draws the selected pill from
+    // `.drive-tab.active` and marks its colour `!important`, so the inline
+    // value lost every time. The class itself was hard-coded on the My Files
+    // button in the markup and never moved, so clicking "Shared by me"
+    // switched the content while the highlight stayed put.
+    tabMyDrive.classList.toggle('active', !showShared);
+    tabShared.classList.toggle('active', showShared);
+
+    // Clear the inline leftovers so the stylesheet is the only thing styling
+    // these; a stale inline colour would outrank every non-important rule.
+    [tabMyDrive, tabShared].forEach(t => {
+        t.style.removeProperty('color');
+        t.style.removeProperty('border-bottom-color');
+    });
+
+    tabMyDrive.setAttribute('aria-selected', String(!showShared));
+    tabShared.setAttribute('aria-selected', String(showShared));
+
+    if (showShared) loadSharedByMe();
+}
+
+let sharedByMeCache = [];
+
+function copyShareUrl(shareId) {
+    const share = sharedByMeCache.find(s => s.shareId === shareId);
+    if (!share || !share.shareUrl) {
+        Toast.error('That share link is no longer available. Reload and try again.');
+        return;
     }
+    navigator.clipboard.writeText(share.shareUrl)
+        .then(() => Toast.success('Link copied'))
+        .catch(() => Toast.error('Could not copy the link'));
 }
 
 async function loadSharedByMe() {
@@ -39,6 +61,12 @@ async function loadSharedByMe() {
     try {
         const resp = await api.request('/drive/shared');
         const shares = (resp?.shares || []).filter(s => s.isActive);
+
+        // Held so Copy can look the URL up by id. It used to be interpolated
+        // straight into an onclick attribute - and escapeHtml here escapes no
+        // quotes, so a single apostrophe in a URL would break out of the
+        // handler. Keeping the value in JS keeps it out of the markup.
+        sharedByMeCache = shares;
 
         if (shares.length === 0) {
             container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-secondary);">
@@ -52,45 +80,52 @@ async function loadSharedByMe() {
             return;
         }
 
-        let html = `<table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+        // Uses the Pulse table styling that drive-pulse.css already defines for
+        // `.drive-table-wrap .data-table`. This was previously a bare <table>
+        // carrying its own inline styles, most of which pointed at
+        // `var(--border-primary)` - a variable that did not exist - so every
+        // header and row border resolved to nothing and the table rendered flat.
+        let html = `<div class="drive-table-wrap"><table class="data-table">
             <thead>
-                <tr style="border-bottom:2px solid var(--border-primary);text-align:left;">
-                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Name</th>
-                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Type</th>
-                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Access</th>
-                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Downloads</th>
-                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Expires</th>
-                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Created</th>
-                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Actions</th>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Access</th>
+                    <th>Downloads</th>
+                    <th>Expires</th>
+                    <th>Created</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>`;
 
         shares.forEach(s => {
-            const access = s.accessType === 'download' ? '<span style="color:var(--color-success);font-weight:600;">Download</span>' : '<span style="color:var(--color-info);font-weight:600;">View only</span>';
+            const access = s.accessType === 'download'
+                ? '<span class="share-access share-access--download">Download</span>'
+                : '<span class="share-access share-access--view">View only</span>';
             const typeIcon = s.itemType === 'folder' ? '&#128193;' : '&#128196;';
             const expiry = s.expiresAt ? new Date(s.expiresAt).toLocaleDateString() : 'Never';
             const created = new Date(s.createdAt).toLocaleDateString();
             const downloads = `${s.downloadCount}/${s.maxDownloads || '&infin;'}`;
-            const hasPassword = s.hasPassword ? '<span title="Password protected" style="margin-left:4px;">&#128274;</span>' : '';
+            const hasPassword = s.hasPassword ? '<span title="Password protected">&#128274;</span>' : '';
 
-            html += `<tr style="border-bottom:1px solid var(--border-primary);cursor:default;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='transparent'">
-                <td style="padding:10px 12px;"><span style="margin-right:6px;">${typeIcon}</span>${escapeHtml(s.itemName || 'Unknown')}${hasPassword}</td>
-                <td style="padding:10px 12px;text-transform:capitalize;">${s.itemType}</td>
-                <td style="padding:10px 12px;">${access}</td>
-                <td style="padding:10px 12px;">${downloads}</td>
-                <td style="padding:10px 12px;">${expiry}</td>
-                <td style="padding:10px 12px;color:var(--text-secondary);">${created}</td>
-                <td style="padding:10px 12px;">
-                    <div style="display:flex;gap:6px;">
-                        <button onclick="navigator.clipboard.writeText('${s.shareUrl}');Toast.success('Link copied!')" style="padding:4px 10px;font-size:0.75rem;background:var(--brand-primary);color:var(--text-inverse);border:none;border-radius:4px;cursor:pointer;">Copy</button>
-                        <button onclick="revokeShareById('${s.shareId}')" style="padding:4px 10px;font-size:0.75rem;background:var(--color-danger);color:var(--text-inverse);border:none;border-radius:4px;cursor:pointer;">Revoke</button>
+            html += `<tr>
+                <td class="share-name"><span class="share-icon">${typeIcon}</span>${escapeHtml(s.itemName || 'Unknown')}${hasPassword}</td>
+                <td class="share-type">${escapeHtml(s.itemType || '')}</td>
+                <td>${access}</td>
+                <td>${downloads}</td>
+                <td>${expiry}</td>
+                <td class="share-created">${created}</td>
+                <td>
+                    <div class="share-actions">
+                        <button type="button" class="btn btn-secondary btn-xs" onclick="copyShareUrl('${s.shareId}')">Copy</button>
+                        <button type="button" class="btn btn-danger btn-xs" onclick="revokeShareById('${s.shareId}')">Revoke</button>
                     </div>
                 </td>
             </tr>`;
         });
 
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
         container.innerHTML = html;
     } catch (e) {
         console.error('[Drive] Failed to load shared links:', e);
@@ -338,6 +373,14 @@ async function loadDriveContents() {
         const result = await api.browseDrive(currentFolderId);
 
         if (result.success) {
+            // We asked for a specific folder and the server came back without
+            // one: it has been deleted. Say so and go home, rather than
+            // rendering an empty folder that no longer exists.
+            if (currentFolderId && !result.current_folder) {
+                handleMissingFolder();
+                return;
+            }
+
             renderDriveContents(result.folders, result.files);
             updateStorageInfo(result.total_size);
             updateBreadcrumb(result.current_folder);
@@ -932,14 +975,44 @@ function navigateBack() {
 function updateBreadcrumb(currentFolder) {
     const breadcrumb = document.getElementById('breadcrumb');
 
-    let html = '<span class="breadcrumb-item" onclick="navigateToFolder(null)">My Drive</span>';
-
-    if (currentFolder) {
-        html += '<span class="breadcrumb-separator">/</span>';
-        html += `<span class="breadcrumb-item active">${currentFolder.folderName}</span>`;
+    // At the root there is nowhere to go up to, so the crumb is just a label.
+    if (!currentFolder) {
+        breadcrumb.innerHTML = '<span class="cur">My Drive</span>';
+        return;
     }
 
-    breadcrumb.innerHTML = html;
+    // Inside a folder, lead with an explicit BACK control rather than relying
+    // on the reader spotting that the first crumb is clickable. This sat as a
+    // 19px grey subtitle under the page title and read as a caption, so the
+    // way out of a folder was effectively invisible.
+    breadcrumb.innerHTML =
+        '<button type="button" class="crumb-back" onclick="navigateToFolder(null)" title="Back to My Drive">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<polyline points="15 18 9 12 15 6"></polyline>' +
+          '</svg>My Drive' +
+        '</button>' +
+        '<span class="sep">/</span>' +
+        '<span class="cur">' + escapeHtml(currentFolder.folderName) + '</span>';
+}
+
+// The folder you are standing in can disappear underneath you - someone else
+// deletes it, or you delete it from another tab. The browse call then returns
+// no current_folder, which used to render as an ordinary empty folder with a
+// root breadcrumb: no files, no explanation, and no obvious way back.
+function handleMissingFolder() {
+    const wasIn = currentFolderId;
+    currentFolderId = null;
+    folderStack = [];
+    history.replaceState({ folderId: null, folderStack: [] }, '', window.location.pathname);
+    Toast.warning('That folder no longer exists. Showing My Drive.');
+    console.warn('[Drive] folder', wasIn, 'is gone; returned to root');
+
+    // Ask for the reload through the pending flag rather than calling
+    // loadDriveContents() directly. We are still INSIDE that function here, so
+    // isLoadingContents is true and a direct call would be turned into a
+    // pending request anyway - working, but only by accident. Setting the flag
+    // says what we mean: reload once the current pass finishes unwinding.
+    pendingLoadRequest = true;
 }
 
 // Context Menu
