@@ -1106,7 +1106,7 @@ function addInvoiceLine(data = {}) {
     row.innerHTML = `
         <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
-        <td><input type="text" class="form-control line-hsn" value="${AccountsCommon.escapeHtml(data.hsn_sac || '')}" placeholder="HSN/SAC"></td>
+        <td><input type="text" class="form-control line-hsn" value="${AccountsCommon.escapeHtml(data.hsn_sac || '')}" placeholder="HSN/SAC" oninput="refreshHsnWarning()"></td>
         <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculateInvoiceTotals()"><div class="searchable-dropdown-container line-uom-sd" style="margin-top:2px;"></div></td>
         <td><input type="number" class="form-control line-rate" value="${data.rate || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateInvoiceTotals()"></td>
         <td><input type="number" class="form-control line-disc" value="${data.discount_percent || ''}" min="0" max="100" step="0.01" placeholder="0" oninput="calculateInvoiceTotals()"></td>
@@ -1328,6 +1328,45 @@ function onInvoiceCustomerChange() {
     } else {
         banner.style.display = 'none';
     }
+    refreshHsnWarning();
+}
+
+/**
+ * Warn — BEFORE approval — when a B2B invoice has taxable lines carrying no HSN/SAC.
+ *
+ * ⭐ WHY HERE AND NOT ON APPROVAL. Approval is what makes an invoice immutable. A warning returned
+ * WITH the approval response arrives after the only moment it could have been acted on: the code
+ * can no longer be added without cancelling and reissuing. So the warning has to live on the form,
+ * while the biller can still type it.
+ *
+ * ⭐ AND WHY IT WARNS RATHER THAN REFUSES. Rule 46(g) requires HSN/SAC per line, but the threshold
+ * is conditional — 4 digits for B2B below Rs 5cr turnover, 6 above, and B2C/exempt/export differ.
+ * A hard block would refuse invoices that are legitimately fine and would strand every existing
+ * draft that predates this, which is the escape-hatch problem a new refusal always has. Registered
+ * buyer + taxable line is the case where it is unambiguously required, so that is what it names.
+ */
+function refreshHsnWarning() {
+    const el = document.getElementById('invoiceHsnWarning');
+    if (!el) return;
+
+    const custId = document.getElementById('invoiceCustomerId')?.value;
+    const cust = customers.find(c => c.id === custId);
+    // Registered buyer only: B2C and overseas are outside the obligation this warns about.
+    const isB2B = (cust?.gst_treatment || 'registered') === 'registered' && !!(cust?.tax_id || '').trim();
+
+    const rows = [...document.querySelectorAll('#invoiceLines tr')];
+    const missing = rows.filter(r => {
+        const taxed = !!r._lineTaxDropdown?.getValue?.();          // untaxed lines carry no HSN obligation here
+        const hsn = (r.querySelector('.line-hsn')?.value || '').trim();
+        const described = (r.querySelector('.line-desc')?.value || '').trim().length > 0;
+        return taxed && described && hsn.length === 0;
+    }).length;
+
+    if (!isB2B || missing === 0) { el.style.display = 'none'; return; }
+    el.style.display = '';
+    el.innerHTML = `⚠️ <strong>${missing} taxable ${missing === 1 ? 'line has' : 'lines have'} no HSN/SAC.</strong> `
+        + `A GST invoice to a registered buyer needs one per line (Rule 46(g)) — and it cannot be added `
+        + `once this is approved. Set a default on the revenue account to have it filled in automatically.`;
 }
 
 /** Re-scope the invoice's Project dropdown when the customer changes (projects are per-customer). */

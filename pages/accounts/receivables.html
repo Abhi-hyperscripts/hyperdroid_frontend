@@ -808,6 +808,9 @@
                             <input type="text" id="invoiceNotes" class="form-control" placeholder="Optional notes">
                         </div>
                         <div class="pf-wide" id="invoiceTreatmentBanner" style="display:none;padding:10px 14px;border-radius:8px;background:var(--bg-tertiary,rgba(59,130,246,0.08));border:1px solid var(--border-color);color:var(--text-secondary);font-size:0.85rem;"></div>
+                        <!-- Advisory, not a blocker: see refreshHsnWarning() for why this warns
+                             rather than refuses, and why it lives on the FORM rather than on approval. -->
+                        <div class="pf-wide" id="invoiceHsnWarning" style="display:none;padding:10px 14px;border-radius:8px;background:rgba(234,179,8,0.10);border:1px solid var(--color-warning,#eab308);color:var(--text-secondary);font-size:0.85rem;"></div>
                     </div>
                 </div>
 

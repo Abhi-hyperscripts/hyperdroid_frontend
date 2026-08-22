@@ -1127,6 +1127,14 @@
                         </div>
                         <div class="form-row two-col">
                             <div class="form-group">
+                                <label for="accountDefaultHsn">Default HSN/SAC <span class="opt">(optional)</span></label>
+                                <input type="text" id="accountDefaultHsn" class="form-control" maxlength="8" placeholder="e.g., 998313">
+                                <small class="form-hint">Stamped on any invoice or bill line posted here that has no code of its own — a line stating its own always wins. Set it once for the revenue account you bill most (998313 = IT services, 996331 = catering). Must be 4, 6 or 8 digits.</small>
+                            </div>
+                            <div class="form-group"></div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
                                 <label for="accountParent">Parent Account</label>
                                 <select id="accountParent" class="form-control">
                                     <option value="">None (Top Level)</option>

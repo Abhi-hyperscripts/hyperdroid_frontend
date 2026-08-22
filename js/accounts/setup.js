@@ -493,6 +493,7 @@ async function editAccount(id) {
     document.getElementById('accountDescription').value = acct.description || '';
     document.getElementById('accountNormalBalance').value = acct.normal_balance || '';
     document.getElementById('accountAllowDirectPosting').checked = acct.allow_direct_posting !== false;
+    document.getElementById('accountDefaultHsn').value = acct.default_hsn_sac || '';
 
     populateAccountTypeSelect(acct.account_type_id);
     populateAccountGroupSelect(acct.account_group_id, acct.account_type_id);
@@ -538,6 +539,7 @@ async function saveAccount() {
         normal_balance: normalBalance,
         description,
         allow_direct_posting: allowDirectPosting,
+        default_hsn_sac: (document.getElementById('accountDefaultHsn')?.value || '').trim(),
         // On EDIT, opt in to re-parenting so the backend applies parent_account_id (create uses it directly).
         // Without this flag a partial update that omits the parent would be read as "move to top level".
         ...(id ? { reparent: true } : {})
