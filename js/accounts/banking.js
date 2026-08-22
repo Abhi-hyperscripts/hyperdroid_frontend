@@ -632,6 +632,14 @@ async function showRecategoriseModal(txnId) {
 }
 
 function closeRecategoriseModal() {
+    // ⭐⭐ CLOSE THE DROPDOWN FIRST. Its menu is PORTALED to <body> while open (the component moves it there
+    // to escape overflow and stacking ancestors), so it is no longer a child of this modal — removing the
+    // modal leaves the menu behind, floating over the page with nothing to belong to. Reported exactly that
+    // way: a list of GL accounts hovering over the chart with no modal in sight.
+    //
+    // close() restores the menu to its original parent, so after this the modal owns it again and takes it
+    // with it.
+    recatDropdown?.close?.();
     document.getElementById('recatModal')?.remove();
     recatDropdown = null;
 }

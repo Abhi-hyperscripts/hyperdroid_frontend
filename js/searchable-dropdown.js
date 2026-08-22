@@ -467,6 +467,23 @@ const SearchableDropdown = (function() {
             });
 
             // Close any open flatpickr custom month/year dropdowns
+            // ⭐⭐ SWEEP ORPHANED MENUS BEFORE OPENING ANOTHER.
+            //
+            // While open, a menu is PORTALED to <body> to escape overflow and stacking ancestors. If the
+            // thing that owned it — a dynamically created modal, a re-rendered table row — is removed from
+            // the DOM without close() being called first, the menu stays in <body> forever: visible,
+            // positioned, and belonging to nothing. It was reported as a list of GL accounts floating over
+            // the page with no modal in sight.
+            //
+            // Every call site remembering to close first is the fragile fix; this is the one that holds. The
+            // check is by OWNERSHIP, not by age or count: a portaled menu is orphaned exactly when its own
+            // dropdown element is no longer in the document, which is cheap to ask and impossible to get
+            // wrong. Menus belonging to live dropdowns are untouched.
+            document.querySelectorAll('body > .searchable-dropdown-menu--portaled').forEach(m => {
+                const owner = m._sdOwner;
+                if (!owner || !document.contains(owner)) m.remove();
+            });
+
             // A TRIGGER WITH NO LAYOUT BOX IS NOT ON SCREEN, AND ANCHORING TO IT LANDS IN THE CORNER.
             //
             // positionMenu() anchors the menu to triggerEl.getBoundingClientRect(). Inside a
@@ -628,6 +645,9 @@ const SearchableDropdown = (function() {
                 // Tag the portaled menu so it can be styled/selected even
                 // outside its original parent's stacking context.
                 this.menuEl.classList.add('searchable-dropdown-menu--portaled');
+                // Who this menu belongs to, so an orphan is identifiable once its owner is gone. A DOM
+                // reference, not an id: ids are not unique across dynamically created modals.
+                this.menuEl._sdOwner = this.dropdownEl;
                 this.menuEl.style.position = 'fixed';
                 this.menuEl.style.top = `${top}px`;
                 this.menuEl.style.left = `${rect.left}px`;
