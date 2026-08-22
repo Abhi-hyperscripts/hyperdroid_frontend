@@ -1106,7 +1106,7 @@ function addInvoiceLine(data = {}) {
     row.innerHTML = `
         <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
-        <td><input type="text" class="form-control line-hsn" value="${AccountsCommon.escapeHtml(data.hsn_sac || '')}" placeholder="HSN/SAC" oninput="refreshHsnWarning()"></td>
+        <td><input type="text" class="form-control line-hsn" value="${AccountsCommon.escapeHtml(data.hsn_sac || '')}" placeholder="HSN/SAC" oninput="markHsnAsUserEdited(this); refreshHsnWarning()"></td>
         <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculateInvoiceTotals()"><div class="searchable-dropdown-container line-uom-sd" style="margin-top:2px;"></div></td>
         <td><input type="number" class="form-control line-rate" value="${data.rate || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateInvoiceTotals()"></td>
         <td><input type="number" class="form-control line-disc" value="${data.discount_percent || ''}" min="0" max="100" step="0.01" placeholder="0" oninput="calculateInvoiceTotals()"></td>
@@ -1384,17 +1384,43 @@ function refreshHsnWarning() {
  * So the form fills it on selection and the server-side pass becomes a BACKSTOP for anything that
  * reaches the API another way — an import, the Copilot, a direct call.
  *
- * Only ever fills a BLANK. Re-pointing a line whose code was typed deliberately must not silently
- * replace it, and HSN drives the GSTR-1 Table 12 buckets, so an overwrite would move quantity into
- * the wrong row of a filed return.
+ * ⭐⭐ AND IT TRACKS WHERE THE VALUE CAME FROM, which "fill only if blank" cannot.
+ *
+ * Fill-if-blank alone is wrong the moment someone corrects a mis-picked account. Choose Software
+ * (fills 998313), realise it is research work, switch to Research & Polling — the box is no longer
+ * blank, so the code STAYS 998313 while the account says otherwise. Silently wrong, on the field
+ * that decides the GSTR-1 Table 12 bucket, at the exact moment the biller was being careful.
+ *
+ * So a value WE filled follows the account, and a value the BILLER typed is never touched. The flag
+ * is cleared on any real keystroke, so the moment they edit it the line becomes theirs for good.
  */
 function applyAccountDefaultHsn(row, accountId) {
     const input = row?.querySelector('.line-hsn');
-    if (!input || (input.value || '').trim().length > 0) return;
+    if (!input) return;
+
+    const current = (input.value || '').trim();
+    const isOurs = input.dataset.hsnAutofilled === '1';
+    // Typed by the biller — leave it alone, whatever the account now says.
+    if (current.length > 0 && !isOurs) return;
+
     const def = (accounts.find(a => a.id === accountId)?.default_hsn_sac || '').trim();
-    if (!def) return;
+    if (!def) {
+        // The new account states none. Clear ONLY what we put there, never their typing.
+        if (isOurs) { input.value = ''; delete input.dataset.hsnAutofilled; refreshHsnWarning(); }
+        return;
+    }
+    if (def === current) return;
+
     input.value = def;
-    input.dispatchEvent(new Event('input', { bubbles: true }));   // re-evaluates the HSN warning
+    input.dataset.hsnAutofilled = '1';
+    // NOT a synthetic 'input' event: that means "the user typed", which fires markHsnAsUserEdited
+    // and wipes the flag we just set — the whole mechanism would be inert. Recalculate directly.
+    refreshHsnWarning();
+}
+
+/** Any keystroke in the HSN box makes that value the biller's — we never overwrite it again. */
+function markHsnAsUserEdited(input) {
+    if (input) delete input.dataset.hsnAutofilled;
 }
 
 /** Re-scope the invoice's Project dropdown when the customer changes (projects are per-customer). */
