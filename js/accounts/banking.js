@@ -663,9 +663,26 @@ async function submitRecategorise(txnId) {
         await loadBankTransactions();
     } catch (err) {
         console.error('[Banking] recategorise error:', err);
-        // Leave the modal OPEN on failure so the chosen account is still there to correct — every refusal
-        // from this endpoint names a reason the user can act on.
-        Toast.error(err.message || 'Could not change the category');
+        const msg = err.message || '';
+
+        // ⭐⭐ "ALREADY POSTED TO THAT ACCOUNT" IS THE DESIRED STATE, NOT A FAILURE.
+        //
+        // It means the row is already where the user asked to put it — someone else moved it, another tab
+        // did, or their own view is simply behind. Reporting that as an error tells them their intent
+        // failed when it is satisfied, and leaves them staring at a modal offering the same choice.
+        if (/already posted to that account/i.test(msg)) {
+            Toast.info('That transaction is already in that account — refreshing.');
+            closeRecategoriseModal();
+            await loadBankTransactions();
+            return;
+        }
+
+        // ⭐ ANY refusal means the view and the server disagree, so REFRESH before the user tries again.
+        // Without this the modal keeps the stale row it was opened from and offers the same rejected
+        // choice, so the only thing a second attempt can do is fail identically. Reported exactly that way:
+        // a category change that errored, then errored again.
+        Toast.error(msg || 'Could not change the category');
+        await loadBankTransactions();
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = 'Move it'; }
     }
