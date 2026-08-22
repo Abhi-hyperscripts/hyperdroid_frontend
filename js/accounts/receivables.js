@@ -1177,7 +1177,11 @@ function addInvoiceLine(data = {}) {
         searchPlaceholder: 'Search accounts…',
         compact: true,
         quickAdd: { title: 'Create new account', onClick: (instance) => openInvoiceQuickAddAccount(instance, buildAccountOptions) },
-        onChange: (v) => { select.value = v; select.dispatchEvent(new Event('change', { bubbles: true })); }
+        onChange: (v) => {
+            select.value = v;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            applyAccountDefaultHsn(row, v);
+        }
     });
     row._lineAccountDropdown = accDd;
 
@@ -1367,6 +1371,30 @@ function refreshHsnWarning() {
     el.innerHTML = `⚠️ <strong>${missing} taxable ${missing === 1 ? 'line has' : 'lines have'} no HSN/SAC.</strong> `
         + `A GST invoice to a registered buyer needs one per line (Rule 46(g)) — and it cannot be added `
         + `once this is approved. Set a default on the revenue account to have it filled in automatically.`;
+}
+
+/**
+ * Fill a line's HSN/SAC from the account it was just pointed at — VISIBLY, and still editable.
+ *
+ * ⭐ THE BACKEND ALREADY DOES THIS, AND THAT IS NOT ENOUGH. CreateCustomerInvoice stamps a blank
+ * line's HSN from the account default at save time. Correct, but invisible: the biller sees an empty
+ * box while typing, cannot tell what will be filed, and cannot override it before it happens. A
+ * value that appears only after saving is not something a user can check.
+ *
+ * So the form fills it on selection and the server-side pass becomes a BACKSTOP for anything that
+ * reaches the API another way — an import, the Copilot, a direct call.
+ *
+ * Only ever fills a BLANK. Re-pointing a line whose code was typed deliberately must not silently
+ * replace it, and HSN drives the GSTR-1 Table 12 buckets, so an overwrite would move quantity into
+ * the wrong row of a filed return.
+ */
+function applyAccountDefaultHsn(row, accountId) {
+    const input = row?.querySelector('.line-hsn');
+    if (!input || (input.value || '').trim().length > 0) return;
+    const def = (accounts.find(a => a.id === accountId)?.default_hsn_sac || '').trim();
+    if (!def) return;
+    input.value = def;
+    input.dispatchEvent(new Event('input', { bubbles: true }));   // re-evaluates the HSN warning
 }
 
 /** Re-scope the invoice's Project dropdown when the customer changes (projects are per-customer). */
