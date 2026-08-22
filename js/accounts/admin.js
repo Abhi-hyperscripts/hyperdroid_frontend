@@ -292,6 +292,9 @@ function initDropdowns() {
         options: MONTHS
     });
 
+    // The other half of the race: if the settings landed before these existed, fill them in now.
+    applyTenantSettingsToDropdowns();
+
     cfEntityDropdown = new SearchableDropdown('cfEntityContainer', {
         placeholder: 'Select document type...',
         options: CF_ENTITY_TYPES,
@@ -473,12 +476,35 @@ const MONTHS = [
 // 0. TENANT SETTINGS
 // ============================================================================
 
+/// The most recent settings payload, kept so the dropdowns can be filled whenever they appear.
+let _lastTenantSettings = null;
+
+/// Applies the stashed settings to the dropdowns. Safe to call repeatedly and from either side of the race.
+function applyTenantSettingsToDropdowns() {
+    const s = _lastTenantSettings;
+    if (!s) return;
+    if (homeStateDropdown?.setValue && s.state_code) homeStateDropdown.setValue(s.state_code);
+    if (fyStartDropdown?.setValue) fyStartDropdown.setValue(s.financial_year_start_month || 4);
+}
+
 async function loadTenantSettings() {
     try {
         const res = await api.request(AccountsCommon.buildUrl('settings'), { _skipSpinner: true });
         const s = res?.data || res || {};
-        homeStateDropdown?.setValue?.(s.state_code || '');
-        fyStartDropdown?.setValue?.(s.financial_year_start_month || 4);
+        // ⭐⭐ REMEMBERED, because this can arrive BEFORE the dropdowns exist.
+        //
+        // initSearchableDropdownsWithRetry builds them asynchronously while this loads over the network, so
+        // whichever finishes first wins. When settings won, `homeStateDropdown?.setValue?.(...)` did
+        // nothing — optional chaining made a lost value look like a completed call — and the page then
+        // showed "Select your GST home state..." for a tenant whose state was set all along.
+        //
+        // The visible symptom was worse than a cosmetic blank: saveTenantSettings refuses without a home
+        // state, so NOTHING on this page could be saved. A user correcting their address was told the GST
+        // home state was required while it sat correctly in the database.
+        //
+        // Stashing the payload and applying from BOTH sides makes the order irrelevant.
+        _lastTenantSettings = s;
+        applyTenantSettingsToDropdowns();
         const cur = document.getElementById('settingsBaseCurrency');
         const cc = document.getElementById('settingsCountryCode');
         if (cur) cur.value = s.base_currency || 'INR';
@@ -1934,7 +1960,9 @@ const NUMBER_SERIES_LABELS = {
     SALES_ORDER: 'Sales Order',
     DELIVERY_CHALLAN: 'Delivery Challan',
     EXPENSE_CLAIM: 'Expense Claim',
-    GL_ENTRY: 'Journal Entry'
+    GL_ENTRY: 'Journal Entry',
+    STOCK_COUNT: 'Stock Count',
+    WORK_ORDER: 'Work Order'
 };
 
 function renderNumberSeries() {
