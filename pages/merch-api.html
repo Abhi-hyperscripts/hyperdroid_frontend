@@ -217,14 +217,17 @@ python3 -m http.server 5610</pre>
 
         <div class="mk-flow">
           <div class="mk-flowhead"><span class="mk-flownum">B</span> What you do on the client</div>
-          <p>These are <em>not</em> query parameters and there is no endpoint for them. Derive them from the product objects you already have:</p>
+          <p>These are <em>not</em> query parameters and there is no endpoint for them &mdash; but every product already carries the data, so you build them from the list you just fetched:</p>
           <ul class="mk-steps">
-            <li><strong>Brand, colour, size</strong> &mdash; read the product&#x27;s attributes and group by value.</li>
+            <li><strong>Brand</strong> &mdash; group by <code>brandSlug</code> and label with <code>brandName</code>. A live grocery tenant yields 639 distinct brands this way.</li>
+            <li><strong>Size, colour, and anything else</strong> &mdash; <code>attributes</code> is a free-form list of <code>{key, value}</code>. Group by <code>key</code> to discover which facets a catalogue even has, then by <code>value</code> for the options. Deliberately not fixed columns: a pharmacy&#x27;s <em>strength</em> matters as much as an apparel store&#x27;s <em>size</em>, and both arrive the same way.</li>
+            <li><strong>Nested categories and breadcrumbs</strong> &mdash; <code>categoryPath</code> is root&rarr;leaf including the leaf; <code>categorySlug</code> is the leaf on its own. The flat <code>category</code> string cannot express a hierarchy, which is why both exist.</li>
             <li><strong>On offer</strong> &mdash; compare <code>price</code> against <code>mrp</code>.</li>
-            <li><strong>Rating</strong> &mdash; from <code>GET /api/products/{itemId}/reviews</code>, whose summary carries the average and count.</li>
-            <li><strong>Facet counts</strong> &mdash; count the products in your current result set. Because the server has already applied its filters, counting client-side stays consistent with what the shopper sees.</li>
+            <li><strong>Facet counts</strong> &mdash; count within your current result set. The server has already applied its filters, so counting client-side stays consistent with what the shopper sees.</li>
           </ul>
+          <p class="mk-note"><strong>Every one of these is nullable.</strong> A merchant who has not filled in their item master sends <code>null</code>, and the honest rendering of that is no facet at all &mdash; never a blank or placeholder option.</p>
           <p class="mk-note">A catalogue large enough for this to hurt is worth telling us about &mdash; the endpoint returns the full filtered set, so paging is client-side today.</p>
+          <p class="mk-note"><strong>Rating is the exception, and it is not cheap yet.</strong> Ratings live on <code>GET /api/products/{itemId}/reviews</code>, one product at a time &mdash; there is no bulk source, so a rating filter over a listing means one call per product. Use it on the product page, and tell us if you need it as a facet; a batch endpoint is the fix and we would rather add it than have you fan out.</p>
         </div>
       </div>
 
@@ -339,7 +342,18 @@ python3 -m http.server 5610</pre>
   &quot;featured&quot;: false,
   &quot;variantGroupId&quot;: &quot;string&quot;,
   &quot;variantCount&quot;: 0,
-  &quot;isDigital&quot;: false
+  &quot;isDigital&quot;: false,
+  &quot;brandId&quot;: &quot;string&quot;,
+  &quot;brandName&quot;: &quot;24 Mantra&quot;,
+  &quot;brandSlug&quot;: &quot;24-mantra&quot;,
+  &quot;categoryId&quot;: &quot;string&quot;,
+  &quot;categorySlug&quot;: &quot;edible-oils&quot;,
+  &quot;categoryPath&quot;: [
+    { &quot;id&quot;: &quot;string&quot;, &quot;name&quot;: &quot;Edible Oils&quot;, &quot;slug&quot;: &quot;edible-oils&quot; }
+  ],
+  &quot;attributes&quot;: [
+    { &quot;key&quot;: &quot;size&quot;, &quot;value&quot;: &quot;1 ltr&quot; }
+  ]
 }</pre>
             </div>
           </details>
@@ -410,7 +424,20 @@ python3 -m http.server 5610</pre>
       &quot;featured&quot;: false,
       &quot;variantGroupId&quot;: &quot;string&quot;,
       &quot;variantCount&quot;: 0,
-      &quot;isDigital&quot;: false
+      &quot;isDigital&quot;: false,
+      &quot;brandId&quot;: &quot;string&quot;,
+      &quot;brandName&quot;: &quot;24 Mantra&quot;,
+      &quot;brandSlug&quot;: &quot;24-mantra&quot;,
+      &quot;categoryId&quot;: &quot;string&quot;,
+      &quot;categorySlug&quot;: &quot;edible-oils&quot;,
+      &quot;categoryPath&quot;: [
+        { &quot;id&quot;: &quot;string&quot;, &quot;name&quot;: &quot;Masalas, Oils &amp; Dry Fruits&quot;, &quot;slug&quot;: &quot;masalas-oils-dry-fruits&quot; },
+        { &quot;id&quot;: &quot;string&quot;, &quot;name&quot;: &quot;Edible Oils&quot;, &quot;slug&quot;: &quot;edible-oils&quot; }
+      ],
+      &quot;attributes&quot;: [
+        { &quot;key&quot;: &quot;size&quot;, &quot;value&quot;: &quot;1 ltr&quot; },
+        { &quot;key&quot;: &quot;color&quot;, &quot;value&quot;: &quot;Amber&quot; }
+      ]
     }
   ]
 }</pre>
