@@ -1353,6 +1353,18 @@ body.desk-landing .mk-flowhead{display:flex;align-items:center;gap:10px;font-wei
 body.desk-landing .mk-flownum{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
   background:var(--dk-accent);color:#fff;font-size:13px;font-weight:750}
 body.desk-landing .mk-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px}
+/* Parameter tables in the API reference (added with the categories/filtering section). Matches .mk-flow's
+   border + radius language so a table inside a flow card does not read as a different component. Scrolls
+   inside its own container rather than widening the page: the parameter column can hold long code spans and
+   the page must not gain a horizontal scrollbar on a narrow screen. */
+body.desk-landing .mk-table{width:100%;border-collapse:collapse;margin:14px 0 0;display:block;overflow-x:auto}
+body.desk-landing .mk-table th,body.desk-landing .mk-table td{
+  text-align:left;padding:8px 12px;border-bottom:1px solid var(--dk-line);font-size:13.5px;line-height:1.55;vertical-align:top}
+body.desk-landing .mk-table th{color:var(--dk-ink);font-weight:600;white-space:nowrap}
+body.desk-landing .mk-table td{color:var(--dk-mute)}
+body.desk-landing .mk-table tr:last-child td{border-bottom:0}
+body.desk-landing .mk-table code{font-size:12.5px;background:rgb(255 255 255 / 0.06);padding:1px 5px;border-radius:5px}
+body.desk-landing .mk-table strong{color:var(--dk-ink)}
 body.desk-landing .mk-steps li{font-size:14px;line-height:1.6;color:var(--dk-mute)}
 body.desk-landing .mk-steps code,body.desk-landing .mk-flownote code{font-size:12.5px;background:rgb(255 255 255 / 0.06);
   border:1px solid var(--dk-line);border-radius:5px;padding:1px 5px;color:var(--dk-ink)}

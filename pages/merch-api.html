@@ -76,7 +76,7 @@
            spelling (26 uses to 10 of "e-commerce"). -->
       <h1 class="dk-h1">Build your own<br>ecommerce.</h1>
       <p class="dk-sub">Merch ships with thirty-two designs, and if none of them is what you want, the front end is replaceable. The shop that ships with it is just one consumer of this HTTP API and holds no privileged access &mdash; so anything it does, your own front end can do, in React, Vue, Svelte, Flutter or a native app, while the invoices, the FIFO stock and the books stay exactly as they are.</p>
-      <p class="dk-replaces"><b>Forty-three endpoints, on your own domain.</b> Your store serves its own OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>. This page is the same surface, so you can read it before installing anything.</p>
+      <p class="dk-replaces"><b>Forty-six endpoints, on your own domain.</b> Your store serves its own OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>. This page is the same surface, so you can read it before installing anything.</p>
       <div class="dk-actions">
         <a class="dk-btn1" href="https://github.com/Abhi-hyperscripts/merch-reference-storefront">Get the starter storefront &rarr;</a>
         <a class="dk-btn2" href="merch.html">About Merch</a>
@@ -194,6 +194,51 @@ python3 -m http.server 5610</pre>
       </div>
     </section>
 
+    <section class="dk-section dk-reveal" id="filtering">
+      <div class="dk-kicker">Categories, search and filters</div>
+      <h2 class="dk-h2">The server filters five things. Everything else is yours.</h2>
+      <p class="dk-lede">Browsing is one endpoint &mdash; <code>GET /api/catalog</code> &mdash; and it takes query parameters. Knowing exactly where the line falls saves you hunting for a brand-filter endpoint that does not exist: <strong>the server narrows the catalogue by category, price, stock, text and order; every other facet you have seen on a shop &mdash; brand, colour, size, rating, on-offer &mdash; is derived on the client from the products it returns.</strong> That is how the bundled storefront does it too, so it is a supported pattern, not a workaround.</p>
+
+      <div class="mk-flows">
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">A</span> What the server does</div>
+          <table class="mk-table">
+            <tr><th>Parameter</th><th>Type</th><th>Notes</th></tr>
+            <tr><td><code>search</code></td><td>string</td><td>Matches name, description <em>and</em> category, so a category tile can link to <code>?search=Coffee</code> and still find things.</td></tr>
+            <tr><td><code>category</code></td><td>string</td><td>One category name, as returned by <code>GET /api/categories</code>.</td></tr>
+            <tr><td><code>minPrice</code> / <code>maxPrice</code></td><td>decimal</td><td>Inclusive bounds, in the store&#x27;s base currency.</td></tr>
+            <tr><td><code>inStock</code></td><td>boolean</td><td><code>true</code> drops anything not currently sellable.</td></tr>
+            <tr><td><code>sort</code></td><td>string</td><td><code>price_asc</code>, <code>price_desc</code> or <code>name</code>. Anything else &mdash; including omitting it &mdash; keeps the natural order.</td></tr>
+            <tr><td><code>locale</code></td><td>string</td><td>Returns translated name and description where the merchant has supplied them.</td></tr>
+            <tr><td><code>ids</code></td><td>string</td><td>Comma-separated ids. <strong>Use this to refresh a cart</strong> &mdash; see the note below; it behaves differently from the browse filters on purpose.</td></tr>
+          </table>
+          <p class="mk-note">All parameters are optional and combine. <code>GET /api/catalog</code> with none of them is the whole sellable catalogue.</p>
+        </div>
+
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">B</span> What you do on the client</div>
+          <p>These are <em>not</em> query parameters and there is no endpoint for them. Derive them from the product objects you already have:</p>
+          <ul class="mk-steps">
+            <li><strong>Brand, colour, size</strong> &mdash; read the product&#x27;s attributes and group by value.</li>
+            <li><strong>On offer</strong> &mdash; compare <code>price</code> against <code>mrp</code>.</li>
+            <li><strong>Rating</strong> &mdash; from <code>GET /api/products/{itemId}/reviews</code>, whose summary carries the average and count.</li>
+            <li><strong>Facet counts</strong> &mdash; count the products in your current result set. Because the server has already applied its filters, counting client-side stays consistent with what the shopper sees.</li>
+          </ul>
+          <p class="mk-note">A catalogue large enough for this to hurt is worth telling us about &mdash; the endpoint returns the full filtered set, so paging is client-side today.</p>
+        </div>
+      </div>
+
+      <div class="dk-list">
+        <div class="dk-lrow" style="--mod:#F59E0B">
+          <span class="dk-lmid"><span class="dk-lname">The one trap: <code>ids</code> ignores the browse filters, deliberately</span><span class="dk-ldesc">When you pass <code>ids</code>, the browse facets (search, category, price, stock) are <strong>not</strong> applied, and variants are returned individually rather than folded to one representative per group. That is what makes it safe for refreshing a cart: a line the shopper already chose must not vanish because a filter happens to be in the URL, and a specific variant must come back as itself. A product that has genuinely been removed, hidden or unpriced is still absent &mdash; which is exactly the signal you want when reconciling a stale cart.</span></span>
+        </div>
+
+        <div class="dk-lrow" style="--mod:#94A3B8">
+          <span class="dk-lmid"><span class="dk-lname">Categories and collections are different things</span><span class="dk-ldesc"><code>GET /api/categories</code> returns the category names present in the catalogue &mdash; a flat list of strings, derived from the products themselves, for building a nav or filter rail. <code>GET /api/collections</code> returns merchandising groups the merchant curates by hand or by rule; a smart collection is resolved at request time, so it stays current without anyone re-saving it. Use categories for navigation, collections for campaigns.</span></span>
+        </div>
+      </div>
+    </section>
+
     <section class="dk-section dk-reveal" id="checkout">
       <div class="dk-kicker">The one flow you cannot guess</div>
       <h2 class="dk-h2">There are two ways to place an order. Pick one.</h2>
@@ -222,7 +267,7 @@ python3 -m http.server 5610</pre>
 
     <section class="dk-section dk-reveal" id="endpoints">
       <div class="dk-kicker">The surface</div>
-      <h2 class="dk-h2">Forty-three endpoints, all documented.</h2>
+      <h2 class="dk-h2">Forty-six endpoints, all documented.</h2>
       <p class="dk-lede">Grouped the way a front end consumes them. Open any one for a runnable curl, what it does, its parameters, and the JSON going in and out. The shapes are illustrative &mdash; field names and types are real, the values are placeholders.</p>
       <div class="mk-eps">
         <section class="mk-group">
@@ -708,6 +753,49 @@ python3 -m http.server 5610</pre>
 }</pre>
             </div>
           </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/storefront/register</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">A themed storefront announces its identity and theme catalogue here, on boot and periodically. It lets the admin panel render its theme picker from the connected storefront&#x27;s own themes, and lets the shop tell an official storefront apart from a custom headless front end. <strong>The bundled storefront image calls this for you — a custom front end does not need it</strong>, and ignoring it costs you nothing but the admin theme picker.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/storefront/register \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;storefront&quot;:&quot;my-frontend&quot;,&quot;version&quot;:&quot;1.0.0&quot;,&quot;themes&quot;:[]}&#x27;</pre>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;storefront&quot;: &quot;string&quot;,
+  &quot;version&quot;: &quot;string&quot;,
+  &quot;themes&quot;: [
+    {
+      &quot;key&quot;: &quot;string&quot;,
+      &quot;name&quot;: &quot;string&quot;,
+      &quot;vertical&quot;: &quot;string&quot;,
+      &quot;emoji&quot;: &quot;string&quot;,
+      &quot;blurb&quot;: &quot;string&quot;,
+      &quot;archetype&quot;: &quot;string&quot;,
+      &quot;colors&quot;: {
+        &quot;primary&quot;: &quot;string&quot;,
+        &quot;primaryHover&quot;: &quot;string&quot;,
+        &quot;accent&quot;: &quot;string&quot;,
+        &quot;bg&quot;: &quot;string&quot;,
+        &quot;surface&quot;: &quot;string&quot;,
+        &quot;text&quot;: &quot;string&quot;,
+        &quot;muted&quot;: &quot;string&quot;,
+        &quot;border&quot;: &quot;string&quot;
+      },
+      &quot;radius&quot;: &quot;string&quot;,
+      &quot;fontHeading&quot;: &quot;string&quot;,
+      &quot;fontBody&quot;: &quot;string&quot;,
+      &quot;dark&quot;: false
+    }
+  ]
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: true
+}</pre>
+            </div>
+          </details>
         </section>
         <section class="mk-group">
           <h3 class="mk-gname">Cart and checkout <span>4 endpoints</span></h3>
@@ -853,6 +941,26 @@ python3 -m http.server 5610</pre>
       &quot;url&quot;: &quot;string&quot;
     }
   ]
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/orders/{id}/cancel</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Let a signed-in shopper cancel their own order while it is still unfulfilled. Reverses the invoice with a credit note and emails a confirmation. A shipped order cannot be cancelled — it must be returned instead — and only the order&#x27;s owner may cancel it.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/orders/3fa85f64-5717-4562-b3fc-2c963f66afa6/cancel \
+  -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;reason&quot;:&quot;Ordered the wrong size&quot;}&#x27;</pre>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>. Returns <code>409</code> if the order has already shipped, and <code>404</code> if it is not yours.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;reason&quot;: &quot;string&quot;
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: true
 }</pre>
             </div>
           </details>
@@ -1206,6 +1314,24 @@ python3 -m http.server 5610</pre>
   &quot;invoicePdfUrl&quot;: &quot;string&quot;,
   &quot;giftCardApplied&quot;: 0.0,
   &quot;amountDue&quot;: 0.0
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/payment/abandon</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Tell the shop the payment window was closed or failed, so any gift-card balance reserved for that attempt is handed straight back instead of staying locked until the reservation lapses. Moves no money and is safe to call more than once — call it whenever the Razorpay modal is dismissed.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/payment/abandon \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;razorpayOrderId&quot;:&quot;order_QxYz123&quot;}&#x27;</pre>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  &quot;razorpayOrderId&quot;: &quot;string&quot;
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  &quot;ok&quot;: true
 }</pre>
             </div>
           </details>
