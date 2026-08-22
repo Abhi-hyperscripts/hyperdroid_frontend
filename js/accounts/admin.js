@@ -227,7 +227,7 @@ function escapeHtml(s) {
 
 function onTabSwitch(tabId) {
     switch (tabId) {
-        case 'tenant-settings':     loadTenantSettings(); break;
+        case 'tenant-settings':     loadTenantSettings(); loadNumberSeries(); break;
         case 'audit-logs':          loadAuditLogs(); break;
         case 'pending-approvals':   loadPendingApprovals(); break;
         case 'integrity-check':     break;
@@ -1888,3 +1888,204 @@ document.addEventListener('change', async (e) => {
         loadEmailSending();
     }
 });
+
+
+// ============================================================================
+// DOCUMENT NUMBERING
+// ============================================================================
+
+let _numberSeries = [];
+let _numberSeriesDefaults = { configurable: [], defaultFormat: '{prefix}-{year}-{seq:5}' };
+
+/**
+ * ⭐ The series a tenant can shape, and where each has reached.
+ *
+ * The case this exists for is a business arriving mid-year: their invoices already run to 345 and they are
+ * not going to re-key 345 historical documents to make a counter agree. Without this the system starts at 1
+ * in its own shape and the numbers in the books stop matching the invoices their customers hold.
+ */
+async function loadNumberSeries() {
+    const host = document.getElementById('numberSeriesList');
+    if (!host) return;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('settings/number-sequences'), { _skipSpinner: true });
+        _numberSeries = res?.sequences || [];
+        _numberSeriesDefaults = {
+            configurable: res?.configurable_types || [],
+            defaultFormat: res?.default_format || '{prefix}-{year}-{seq:5}'
+        };
+        renderNumberSeries();
+    } catch (err) {
+        console.error('[Admin] loadNumberSeries error:', err);
+        host.innerHTML = `<p class="field-hint">Could not load document numbering.</p>`;
+    }
+}
+
+/** The document types worth surfacing first — the ones a business actually numbers by hand. */
+const NUMBER_SERIES_LABELS = {
+    CUSTOMER_INVOICE: 'Sales Invoice',
+    CREDIT_NOTE: 'Credit Note',
+    DEBIT_NOTE: 'Debit Note',
+    PROFORMA_INVOICE: 'Proforma Invoice',
+    CUSTOMER_PAYMENT: 'Receipt',
+    VENDOR_BILL: 'Purchase Bill',
+    VENDOR_PAYMENT: 'Payment',
+    PURCHASE_ORDER: 'Purchase Order',
+    SALES_ORDER: 'Sales Order',
+    DELIVERY_CHALLAN: 'Delivery Challan',
+    EXPENSE_CLAIM: 'Expense Claim',
+    GL_ENTRY: 'Journal Entry'
+};
+
+function renderNumberSeries() {
+    const host = document.getElementById('numberSeriesList');
+    if (!host) return;
+    const esc = AccountsCommon.escapeHtml;
+    const order = Object.keys(NUMBER_SERIES_LABELS);
+    const types = (_numberSeriesDefaults.configurable || []).slice()
+        .sort((a, b) => {
+            const ia = order.indexOf(a), ib = order.indexOf(b);
+            return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b);
+        });
+
+    host.innerHTML = types.map(t => {
+        const cur = _numberSeries.find(s => s.sequence_type === t);
+        // An unconfigured series is shown with what it WOULD produce, not blank: "no row yet" is not the
+        // same as "no numbering", and a blank cell reads as broken.
+        const prefix = cur?.prefix || defaultPrefixFor(t);
+        const format = cur?.format || _numberSeriesDefaults.defaultFormat;
+        const next = (cur?.current_value ?? 0) + 1;
+        return `
+        <div class="form-group">
+            <label>${esc(NUMBER_SERIES_LABELS[t] || t)}</label>
+            <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                <code style="font-size:.85rem;color:var(--text-secondary);">${esc(previewNumber(format, prefix, next))}</code>
+                <button class="btn btn-sm btn-outline" onclick="openNumberSeriesModal('${esc(t)}')" data-admin-only>Change</button>
+            </div>
+        </div>`;
+    }).join('');
+    if (window.accountsRoles?.applyRBAC) window.accountsRoles.applyRBAC();
+}
+
+function defaultPrefixFor(type) {
+    const map = { CUSTOMER_INVOICE: 'INV', CREDIT_NOTE: 'CN', DEBIT_NOTE: 'DN', PROFORMA_INVOICE: 'PI',
+        CUSTOMER_PAYMENT: 'REC', VENDOR_BILL: 'BILL', VENDOR_PAYMENT: 'PAY', PURCHASE_ORDER: 'PO',
+        SALES_ORDER: 'SO', DELIVERY_CHALLAN: 'DC', EXPENSE_CLAIM: 'EXP', GL_ENTRY: 'GL' };
+    return map[type] || type.substring(0, 8);
+}
+
+/**
+ * A local preview of what the next number will look like. Mirrors the server's renderer for the tokens a
+ * user can type — the point is that someone editing a format sees the RESULT before saving, rather than
+ * discovering the shape on their next real invoice.
+ */
+function previewNumber(format, prefix, seq) {
+    const now = new Date();
+    const fyStart = now.getMonth() + 1 >= 4 ? now.getFullYear() : now.getFullYear() - 1;
+    const yy = String(fyStart % 100).padStart(2, '0');
+    const nextYy = String((fyStart + 1) % 100).padStart(2, '0');
+    return String(format || '').replace(/\{([a-zA-Z]+)(?::\s*(\d+))?\s*\}/g, (m, name, pad) => {
+        switch (name.toLowerCase()) {
+            case 'prefix': return prefix;
+            case 'year':   return String(fyStart);
+            case 'yy':     return yy;
+            case 'fy':     return `${yy}-${nextYy}`;
+            case 'fyyyy':  return `${fyStart}-${nextYy}`;
+            case 'seq':    return pad ? String(seq).padStart(Number(pad), '0') : String(seq);
+            default:       return m;
+        }
+    });
+}
+
+function openNumberSeriesModal(type) {
+    const cur = _numberSeries.find(s => s.sequence_type === type);
+    const prefix = cur?.prefix || defaultPrefixFor(type);
+    const format = cur?.format || _numberSeriesDefaults.defaultFormat;
+    const next = (cur?.current_value ?? 0) + 1;
+    const esc = AccountsCommon.escapeHtml;
+
+    document.getElementById('numberSeriesModal')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal active';
+    overlay.id = 'numberSeriesModal';
+    overlay.innerHTML = `<div class="modal-content" style="max-width:560px;">
+        <div class="modal-header">
+            <h3>${esc(NUMBER_SERIES_LABELS[type] || type)} numbering</h3>
+            <button class="close-btn" onclick="closeNumberSeriesModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Prefix *</label>
+                <input type="text" id="nsPrefix" class="form-control" maxlength="20" value="${esc(prefix)}">
+            </div>
+            <div class="form-group">
+                <label>Format *</label>
+                <input type="text" id="nsFormat" class="form-control" maxlength="50" value="${esc(format)}">
+                <small class="field-hint">
+                    Use <code>{prefix}</code> <code>{fy}</code> <code>{fyyyy}</code> <code>{yy}</code>
+                    <code>{year}</code> and <code>{seq:3}</code>. Must include <code>{seq}</code>, otherwise
+                    every document would get the same number.
+                </small>
+            </div>
+            <div class="form-group">
+                <label>Next number *</label>
+                <input type="number" id="nsNext" class="form-control" min="1" value="${next}">
+                <small class="field-hint">
+                    The number the NEXT document gets. Already at 345 elsewhere? Enter 346. This can only move
+                    forward — going back would re-use numbers already printed on documents you have issued.
+                </small>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Preview</label>
+                <div id="nsPreview" style="font-size:1.05rem;font-weight:600;color:var(--brand-primary);"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeNumberSeriesModal()">Cancel</button>
+            <button class="btn btn-primary" id="nsGo" onclick="saveNumberSeries('${esc(type)}')">Save</button>
+        </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('keydown', e => { if (e.key === 'Escape') closeNumberSeriesModal(); });
+
+    const refresh = () => {
+        const p = document.getElementById('nsPrefix').value.trim() || defaultPrefixFor(type);
+        const f = document.getElementById('nsFormat').value.trim();
+        const n = parseInt(document.getElementById('nsNext').value, 10) || 1;
+        const el = document.getElementById('nsPreview');
+        el.textContent = /\{\s*seq/i.test(f) ? previewNumber(f, p, n) : 'Add {seq} — every document would otherwise get the same number';
+        el.style.color = /\{\s*seq/i.test(f) ? 'var(--brand-primary)' : 'var(--color-warning)';
+    };
+    ['nsPrefix', 'nsFormat', 'nsNext'].forEach(id => document.getElementById(id).addEventListener('input', refresh));
+    refresh();
+}
+
+function closeNumberSeriesModal() {
+    document.getElementById('numberSeriesModal')?.remove();
+}
+
+async function saveNumberSeries(type) {
+    const prefix = document.getElementById('nsPrefix').value.trim();
+    const format = document.getElementById('nsFormat').value.trim();
+    const next = parseInt(document.getElementById('nsNext').value, 10);
+    if (!prefix) { Toast.error('Prefix is required'); return; }
+
+    const btn = document.getElementById('nsGo');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    try {
+        await api.request(AccountsCommon.buildUrl(`settings/number-sequences/${encodeURIComponent(type)}`), {
+            method: 'PUT',
+            body: JSON.stringify({ prefix, format, next_number: Number.isFinite(next) ? next : null })
+        });
+        Toast.success('Numbering updated');
+        closeNumberSeriesModal();
+        await loadNumberSeries();
+    } catch (err) {
+        console.error('[Admin] saveNumberSeries error:', err);
+        // Modal stays OPEN: every refusal from this endpoint names what to do instead (which token is
+        // missing, or the lowest number still allowed), so the user can correct it in place.
+        Toast.error(err.message || 'Could not update numbering');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+    }
+}
