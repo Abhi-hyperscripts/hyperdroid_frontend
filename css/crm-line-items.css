@@ -369,3 +369,166 @@
   .lip-col-acct { display: none; }
   .lip-table th.lip-col-acct { display: none; }
 }
+
+/* ── Catalogue lines and the product picker ─────────────────────────────── */
+
+/* A line that sells a real product reads differently from one somebody typed,
+   because its price is not the rep's to change. */
+.lip-catalogue .lip-col-price input[readonly] {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+.lip-sku {
+    display: block;
+    margin-top: 3px;
+    font-size: 10.5px;
+    font-family: var(--font-family-mono);
+    color: var(--text-muted);
+}
+
+/* A product whose packaging nobody recorded can be quoted but not reserved.
+   Said on the line, while the rep can still pick a different one. */
+.lip-sku-warn { color: var(--color-warning); }
+
+.lip-pick {
+    margin-top: 4px;
+    padding: 2px 8px;
+    font-size: 10.5px;
+    border-radius: 999px;
+    border: 1px solid var(--border-primary);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.lip-pick:hover {
+    border-color: var(--border-focus);
+    color: var(--text-primary);
+}
+
+/* ⭐ THE SPECIFICITY HERE IS LOAD-BEARING, NOT DECORATION.
+ *
+ * styles.css carries
+ *     body.dashboard > :not(.navbar):not(.employee-panel-overlay)… { position: relative }
+ * with a TWENTY-TWO entry exclusion chain, so every overlay appended to the
+ * body has to remember to register itself there or it is quietly forced back to
+ * position: relative — which drops the dialog into the page flow at whatever
+ * scroll offset it happened to be created at. Measured: the picker rendered
+ * 478px down a 846px viewport instead of centred.
+ *
+ * Matching `body.dashboard > .lip-picker-overlay` outranks that rule without
+ * editing it. Deliberate: growing a shared 22-item selector is a conflict with
+ * anyone else in this file, and the next overlay would still have to remember.
+ * The real fix is for that rule to opt IN rather than exclude, which is a
+ * change to styles.css and not this feature's to make. */
+.lip-picker-overlay {
+    /* !important, and it is the honest tool here rather than laziness.
+     *
+     * That blanket rule's specificity is about (0,25,1): EACH :not(.class)
+     * contributes a whole class, and there are roughly two dozen of them. No
+     * sane selector I can write in this file outranks it —
+     * `body.dashboard > .lip-picker-overlay` is (0,2,1) and loses.
+     *
+     * The alternatives were worse. Adding .lip-picker-overlay to that chain is
+     * the mechanism the rule intends, but it means editing a shared selector
+     * another agent is working in, and it leaves the same trap armed for the
+     * next overlay anyone writes. */
+    position: fixed !important;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, #000 55%, transparent);
+    backdrop-filter: blur(2px);
+}
+
+.lip-picker-overlay.active { display: flex; }
+
+.lip-picker {
+    width: min(520px, calc(100vw - 32px));
+    max-height: min(70vh, 560px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-lg, 0 20px 50px rgba(0, 0, 0, 0.35));
+}
+
+.lip-picker-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lip-picker-head h3 {
+    margin: 0;
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.lip-picker-close {
+    background: transparent;
+    border: 0;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+}
+
+.lip-picker-q {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 9px;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* The list scrolls inside the dialog rather than growing it — a catalogue can
+   hold thousands of items, and the results are paged. */
+.lip-picker-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    scrollbar-width: thin;
+}
+
+.lip-picker-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 11px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: var(--bg-secondary);
+    text-align: left;
+    cursor: pointer;
+}
+
+.lip-picker-row:hover {
+    border-color: var(--border-focus);
+    background: var(--bg-tertiary);
+}
+
+.lip-picker-name { font-size: 13px; color: var(--text-primary); }
+
+.lip-picker-meta {
+    font-size: 11px;
+    font-family: var(--font-family-mono);
+    color: var(--text-muted);
+}
+
+.lip-picker-empty {
+    padding: 18px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}

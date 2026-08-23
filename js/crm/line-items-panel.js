@@ -172,12 +172,24 @@ const LineItemsPanel = (() => {
                 <td class="lip-col-total">${esc(money(lineTotal(line.quantity, line.unit_price), currency))}</td>
             </tr>`;
         }
+        // ⭐ THE ITEM ID LIVES ON THE ROW, NOT IN A STATE OBJECT.
+        //
+        // readLines() rebuilds the payload from the DOM on every save, so a
+        // catalogue reference held only in JavaScript state would be dropped
+        // silently the moment the rep pressed Save — the line would post as
+        // free text at whatever price was on screen. This service has already
+        // shipped that exact bug once, on a different panel.
+        const isCatalogue = !!line.item_id;
         return `
-        <tr data-lip-row="${index}">
+        <tr data-lip-row="${index}"${isCatalogue ? ` data-lip-item="${esc(line.item_id)}"` : ''} class="${isCatalogue ? 'lip-catalogue' : ''}">
             <td class="lip-col-desc">
                 <input type="text" data-lip-field="description" maxlength="${MAX_DESCRIPTION}"
                        value="${esc(line.description)}" placeholder="e.g. Onboarding &amp; setup"
                        aria-label="Line ${index + 1} description">
+                ${isCatalogue ? `<span class="lip-sku" title="${esc(line.uom ? 'Sold in ' + line.uom : '')}">${esc(line.sku || '')}${line.uom ? ' · ' + esc(line.uom) : ''}</span>` : ''}
+                <button type="button" class="lip-pick" data-lip="${isCatalogue ? 'unpick' : 'pick'}" hidden
+                        title="${isCatalogue ? 'Remove the product from this line' : 'Choose a product from the catalogue'}">${
+                            isCatalogue ? 'Remove product' : 'Choose product'}</button>
             </td>
             <td class="lip-col-qty">
                 <input type="number" data-lip-field="quantity" step="0.001" min="0.001"
@@ -185,7 +197,8 @@ const LineItemsPanel = (() => {
             </td>
             <td class="lip-col-price">
                 <input type="number" data-lip-field="unit_price" step="0.01" min="0"
-                       value="${esc(line.unit_price)}" aria-label="Line ${index + 1} unit price">
+                       value="${esc(line.unit_price)}" aria-label="Line ${index + 1} unit price"
+                       ${isCatalogue ? 'readonly title="This price comes from the product catalogue"' : ''}>
             </td>
             <td class="lip-col-acct">
                 <input type="text" data-lip-field="account_code" maxlength="40"
@@ -199,6 +212,189 @@ const LineItemsPanel = (() => {
                 </button>
             </td>
         </tr>`;
+    }
+
+    // ─── The product picker ─────────────────────────────────────────────────
+
+    /**
+     * Whether this workspace has a catalogue at all.
+     *
+     * Asked ONCE and remembered. Most tenants sell services and have no
+     * catalogue; asking per keystroke would be a round trip per character to
+     * learn the same "no" every time.
+     */
+    let catalogueAvailable = null;
+
+    async function catalogueIsAvailable() {
+        if (catalogueAvailable !== null) return catalogueAvailable;
+        try {
+            const res = await api.request('/crm/deals/catalogue/search?q=&limit=1');
+            catalogueAvailable = !!res.available;
+        } catch (e) {
+            // An outage is not an absence — but for the purpose of "should the
+            // button be here", both mean "not right now". Left unlatched so a
+            // later attempt can succeed.
+            return false;
+        }
+        return catalogueAvailable;
+    }
+
+    async function searchCatalogue(query) {
+        try {
+            const res = await api.request(
+                `/crm/deals/catalogue/search?q=${encodeURIComponent(query || '')}&limit=20`);
+            return res.available ? (res.items || []) : [];
+        } catch (e) {
+            Toast.error(e.message || 'The catalogue did not answer — nothing has been changed.');
+            return [];
+        }
+    }
+
+    /**
+     * Attach a product to a row.
+     *
+     * The price is deliberately NOT set from the item's list price here. The
+     * server prices the line against this customer's price list and returns the
+     * real figure on save; writing the list price now would show a number that
+     * changes under the rep the moment they save, for a contracted account.
+     */
+    function attachItem(tr, item) {
+        tr.setAttribute('data-lip-item', item.id);
+        tr.classList.add('lip-catalogue');
+
+        const desc = tr.querySelector('[data-lip-field="description"]');
+        if (desc && !desc.value.trim()) desc.value = item.name || '';
+
+        const price = tr.querySelector('[data-lip-field="unit_price"]');
+        if (price) {
+            price.readOnly = true;
+            price.title = 'This price comes from the product catalogue';
+            price.placeholder = 'priced on save';
+        }
+
+        let sku = tr.querySelector('.lip-sku');
+        if (!sku) {
+            sku = document.createElement('span');
+            sku.className = 'lip-sku';
+            tr.querySelector('.lip-col-desc')?.appendChild(sku);
+        }
+        sku.textContent = [item.sku, item.sale_unit].filter(Boolean).join(' \u00b7 ');
+
+        if (item.tracks_stock && !item.can_be_reserved) {
+            sku.textContent += ' \u00b7 no unit size';
+            sku.classList.add('lip-sku-warn');
+        }
+
+        // The control has to become its own opposite. Setting the row's
+        // attributes without flipping the button left the rep able to attach a
+        // product and with no way to take it off again until the next render —
+        // and re-rendering only happens on save, which is exactly when a wrong
+        // product becomes a wrong quote.
+        const control = tr.querySelector('.lip-pick');
+        if (control) {
+            control.setAttribute('data-lip', 'unpick');
+            control.textContent = 'Remove product';
+            control.title = 'Remove the product from this line';
+        }
+    }
+
+    function detachItem(tr) {
+        tr.removeAttribute('data-lip-item');
+        tr.classList.remove('lip-catalogue');
+        const price = tr.querySelector('[data-lip-field="unit_price"]');
+        if (price) { price.readOnly = false; price.title = ''; price.placeholder = ''; }
+        tr.querySelector('.lip-sku')?.remove();
+
+        // Flipped HERE rather than by the click handler, so attach and detach
+        // are exact inverses and neither caller has to remember half the job.
+        const control = tr.querySelector('.lip-pick');
+        if (control) {
+            control.setAttribute('data-lip', 'pick');
+            control.textContent = 'Choose product';
+            control.title = 'Choose a product from the catalogue';
+        }
+    }
+
+    /**
+     * A self-contained chooser.
+     *
+     * Built and destroyed here rather than driven by a shared Modal helper —
+     * there isn't one. This codebase's convention is an overlay plus a panel
+     * toggled with `.active`, and this panel already renders all of its own
+     * markup, so the picker owns its element and removes it on close.
+     */
+    async function openPicker(container, tr) {
+        const items = await searchCatalogue('');
+
+        const overlay = document.createElement('div');
+        overlay.className = 'lip-picker-overlay active';
+        overlay.innerHTML = `
+            <div class="lip-picker" role="dialog" aria-modal="true" aria-label="Choose a product">
+                <div class="lip-picker-head">
+                    <h3>Choose a product</h3>
+                    <button type="button" class="lip-picker-close" aria-label="Close">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <input type="search" class="lip-picker-q" placeholder="Search by name or SKU" aria-label="Search products">
+                <div class="lip-picker-list"></div>
+            </div>`;
+        document.body.appendChild(overlay);
+
+        const list = overlay.querySelector('.lip-picker-list');
+        let found = items.slice();
+
+        const draw = (rows) => {
+            list.innerHTML = rows.length
+                ? rows.map(i => `
+                    <button type="button" class="lip-picker-row" data-pick="${esc(i.id)}">
+                        <span class="lip-picker-name">${esc(i.name)}</span>
+                        <span class="lip-picker-meta">${esc(i.sku || '')}${i.sale_unit ? ' \u00b7 ' + esc(i.sale_unit) : ''}${
+                            i.tracks_stock && !i.can_be_reserved ? ' \u00b7 no unit size' : ''}</span>
+                    </button>`).join('')
+                : '<div class="lip-picker-empty">Nothing matches that.</div>';
+        };
+        draw(found);
+
+        const close = () => {
+            document.removeEventListener('keydown', onKey);
+            overlay.remove();
+        };
+        const onKey = (ev) => { if (ev.key === 'Escape') close(); };
+        document.addEventListener('keydown', onKey);
+
+        overlay.querySelector('.lip-picker-close').addEventListener('click', close);
+        // Backdrop only — a click inside the dialog must not dismiss it.
+        overlay.addEventListener('click', (ev) => { if (ev.target === overlay) close(); });
+
+        let timer = null;
+        overlay.querySelector('.lip-picker-q').addEventListener('input', (ev) => {
+            // Debounced: a lookup per keystroke is a round trip per keystroke.
+            clearTimeout(timer);
+            const q = ev.target.value;
+            timer = setTimeout(async () => { found = await searchCatalogue(q); draw(found); }, 250);
+        });
+
+        list.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-pick]');
+            if (!btn) return;
+            const item = found.find(i => String(i.id) === btn.getAttribute('data-pick'));
+            if (item) { attachItem(tr, item); refreshTotals(container); }
+            close();
+        });
+
+        overlay.querySelector('.lip-picker-q').focus();
+    }
+
+    /**
+     * Show the product buttons only where a catalogue exists.
+     *
+     * Re-run after every render, because the panel rebuilds its rows on save
+     * and on add/remove and new rows come back hidden.
+     */
+    async function revealPickersIfAvailable(container) {
+        if (!(await catalogueIsAvailable())) return;
+        container.querySelectorAll('.lip-pick').forEach(b => { b.hidden = false; });
     }
 
     // ─── Reading the form back ──────────────────────────────────────────────
@@ -218,6 +414,9 @@ const LineItemsPanel = (() => {
             quantity: tr.querySelector('[data-lip-field="quantity"]')?.value ?? '',
             unit_price: tr.querySelector('[data-lip-field="unit_price"]')?.value ?? '',
             account_code: tr.querySelector('[data-lip-field="account_code"]')?.value ?? '',
+            // Read back off the ROW. Without this the catalogue link is lost on
+            // save and the line silently becomes free text.
+            item_id: tr.getAttribute('data-lip-item') || null,
         }));
     }
 
@@ -275,7 +474,10 @@ const LineItemsPanel = (() => {
         // is the courtesy in front of the gate, not the gate.
         for (let i = 0; i < typed.length; i++) {
             const l = typed[i];
-            if (!String(l.description).trim()) { Toast.error(`Line ${i + 1} needs a description`); return; }
+            // A line that names a product already has words — the catalogue
+            // supplies them. Demanding a typed description here rejected the
+            // ordinary case of picking a product and typing nothing.
+            if (!l.item_id && !String(l.description).trim()) { Toast.error(`Line ${i + 1} needs a description`); return; }
             const q = Number(l.quantity);
             if (!isFinite(q) || q <= 0) { Toast.error(`Line ${i + 1}: quantity must be more than zero`); return; }
             const p = Number(l.unit_price);
@@ -295,6 +497,10 @@ const LineItemsPanel = (() => {
                             quantity: Number(l.quantity),
                             unit_price: Number(l.unit_price),
                             account_code: String(l.account_code || '').trim() || null,
+                            // The server RE-PRICES a line that carries this and
+                            // ignores the unit_price above, so the number on
+                            // screen can never become the number quoted.
+                            item_id: l.item_id || null,
                         })),
                     }),
                 });
@@ -356,6 +562,11 @@ const LineItemsPanel = (() => {
 
     function render(container) {
         container.innerHTML = shell(mounted.get(container));
+        // Every render rebuilds the rows, and a fresh row's product button
+        // comes back hidden. Revealing only from mount() would mean the button
+        // vanished the first time a rep added a line — the exact moment they
+        // wanted it.
+        revealPickersIfAvailable(container);
     }
 
     async function load(container) {
@@ -399,7 +610,17 @@ const LineItemsPanel = (() => {
             if (rm) return removeLine(container, rm.closest('[data-lip-row]'));
             if (e.target.closest('[data-lip="save"]')) return save(container);
             if (e.target.closest('[data-lip="quote"]')) return raiseQuotation(container);
+
+            const pick = e.target.closest('[data-lip="pick"]');
+            if (pick) return openPicker(container, pick.closest('[data-lip-row]'));
+
+            const unpick = e.target.closest('[data-lip="unpick"]');
+            if (unpick) {
+                detachItem(unpick.closest('[data-lip-row]'));
+                return refreshTotals(container);
+            }
         });
+
 
         container.addEventListener('input', (e) => {
             if (e.target.matches('[data-lip-field="quantity"], [data-lip-field="unit_price"]')) {
