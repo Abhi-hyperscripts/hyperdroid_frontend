@@ -653,9 +653,19 @@ const LineItemsPanel = (() => {
             // ⭐ "ALREADY RAISED" IS A DIFFERENT FACT FROM "RAISED".
             // Reporting both as success would imply a second quotation just went
             // out to the customer, and somebody would go looking for it.
+            // ⭐ SAY WHAT IT IS FOR, NOT JUST THAT IT EXISTS.
+            //
+            // The rep was told a document number and nothing about the figure on
+            // it — and the figure is the thing they repeat to the customer. The
+            // amount comes from the PROFORMA (what Accounts computed), not from
+            // the deal, so it cannot drift away from the document being named
+            // beside it.
+            const raisedFor = Number.isFinite(Number(result.total_amount))
+                ? ` for ${money(result.total_amount, result.currency || st.currency)}`
+                : '';
             Toast.success(result.already_existed
-                ? `Quotation ${result.proforma_number || ''} already exists for this deal`.trim()
-                : `Quotation ${result.proforma_number || ''} raised`.trim());
+                ? `Quotation ${result.proforma_number || ''}${raisedFor} already exists for this deal`.trim()
+                : `Quotation ${result.proforma_number || ''}${raisedFor} raised`.trim());
         } catch (e) {
             console.error('Failed to raise the quotation:', e);
             Toast.error(e.message || 'Could not raise the quotation');
