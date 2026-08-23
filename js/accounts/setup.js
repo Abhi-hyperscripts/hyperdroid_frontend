@@ -1126,41 +1126,37 @@ async function saveAllOpeningBalances() {
         return;
     }
 
-    const codeOf = (accountId) => {
-        const ob = openingBalances.find(o => (o.account_id || o.id) === accountId);
-        return ob?.account_code || accountId;
-    };
-
-    // No atomic batch endpoint exists — each account is a separate POST, so a mid-loop
-    // failure commits a prefix. Disable the button while the loop runs, and on failure
-    // report exactly which accounts saved vs not (never claim success).
+    // ONE atomic call — the whole set posts inside a single backend transaction, or none of it does.
+    // This used to be a per-account POST in a loop, which committed a PREFIX when a row was refused
+    // partway through: measured on a real first run as one account written, the next refused with a 409,
+    // and its contra left stranded in retained earnings. Opening balances only balance as a SET, and a
+    // "partial save" warning does not undo a half-written ledger. The backend also validates every row
+    // BEFORE posting any of them, so one round-trip reports all the bad rows rather than only the first.
     const saveBtn = document.getElementById('saveAllOpeningBalancesBtn');
     if (saveBtn) saveBtn.disabled = true;
-    const savedCodes = [];
     try {
-        for (const e of toPost) {
-            try {
-                await api.request(AccountsCommon.buildUrl('coa/opening-balances'), {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        account_id: e.accountId,
-                        amount: e.amount,
-                        balance_type: e.balance_type,
-                        as_of_date: typeof asOfDate === 'string' ? asOfDate.slice(0, 10) : AccountsCommon.toDateInput(asOfDate)
-                    })
-                });
-                savedCodes.push(codeOf(e.accountId));
-            } catch (err) {
-                console.error('[Setup] saveAllOpeningBalances error:', err);
-                const notSaved = toPost.slice(toPost.indexOf(e)).map(x => codeOf(x.accountId));
-                Toast.error(savedCodes.length
-                    ? `PARTIAL SAVE — books may be unbalanced. Saved: ${savedCodes.join(', ')}. NOT saved: ${notSaved.join(', ')} (failed at ${codeOf(e.accountId)}: ${err.message || 'unknown error'}). Fix the issue and click Save All Balances again — already-saved accounts are skipped on retry.`
-                    : `Failed at ${codeOf(e.accountId)}: ${err.message || 'unknown error'} — nothing was saved.`);
-                await loadOpeningBalances();
-                return;
-            }
-        }
-        Toast.success(`Saved ${savedCodes.length} opening balance${savedCodes.length === 1 ? '' : 's'} (debits ${AccountsCommon.formatCurrency(totalDebit)}, credits ${AccountsCommon.formatCurrency(totalCredit)})`);
+        const asOf = typeof asOfDate === 'string' ? asOfDate.slice(0, 10) : AccountsCommon.toDateInput(asOfDate);
+        await api.request(AccountsCommon.buildUrl('coa/opening-balances/bulk'), {
+            method: 'POST',
+            body: JSON.stringify({
+                balances: toPost.map(e => ({
+                    account_id: e.accountId,
+                    amount: e.amount,
+                    balance_type: e.balance_type,
+                    as_of_date: asOf
+                }))
+            })
+        });
+        Toast.success(`Saved ${toPost.length} opening balance${toPost.length === 1 ? '' : 's'} (debits ${AccountsCommon.formatCurrency(totalDebit)}, credits ${AccountsCommon.formatCurrency(totalCredit)})`);
+        await loadOpeningBalances();
+    } catch (err) {
+        console.error('[Setup] saveAllOpeningBalances error:', err);
+        // Nothing was written — the backend rolls the whole set back — so say so plainly rather than
+        // leaving the user to wonder which accounts landed. The message already names every bad row, and
+        // already leads with "NOTHING was saved" whenever the refusal came from the backend; only prefix it
+        // when it did not (a network drop, a 500) so the sentence is never doubled.
+        const msg = err.message || 'unknown error';
+        Toast.error(msg.includes('NOTHING was saved') ? msg : `NOTHING was saved — ${msg}`);
         await loadOpeningBalances();
     } finally {
         if (saveBtn) saveBtn.disabled = false;
