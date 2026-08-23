@@ -205,6 +205,10 @@
         const detail = e.detail || {};
         if (!deal || detail.dealId !== deal.id) return;
 
+        // Absent means "the lines no longer price this deal", which is NOT
+        // the same as "the deal is now worth nothing". Checked before the
+        // coercion because Number(null) is 0 — a real number, and the wrong one.
+        if (detail.dealValue === undefined || detail.dealValue === null) return;
         const value = Number(detail.dealValue);
         if (!isFinite(value)) return;
 

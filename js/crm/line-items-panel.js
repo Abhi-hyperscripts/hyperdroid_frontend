@@ -625,7 +625,25 @@ const LineItemsPanel = (() => {
             document.dispatchEvent(new CustomEvent('crm:deal-value-changed', {
                 detail: {
                     dealId: st.dealId,
-                    dealValue: result.total,
+                    // ⭐⭐ NO LINES MEANS THE VALUE DID NOT MOVE — DO NOT CLAIM IT DID.
+                    //
+                    // Removing every line hands pricing back to the deal's own
+                    // value, and the server deliberately LEAVES deal_value alone
+                    // in that case ("removing the lines must not zero a deal
+                    // somebody priced by hand"). This announced result.total
+                    // regardless, which is 0 for an empty set — so the screen
+                    // showed a £0 deal while the database still held £300,000,
+                    // and the real figure came back on the next reload.
+                    //
+                    // Measured live: chip $300,000.00 -> $0.00, server 300000.
+                    // The toast beside it said "this deal is priced by its value
+                    // again", which is exactly the value being wiped from view.
+                    //
+                    // Undefined rather than null: every listener coerces with
+                    // Number(), and Number(null) is 0 — which is the wrong
+                    // number, silently. Number(undefined) is NaN, which they
+                    // already reject.
+                    dealValue: result.priced_by_lines ? result.total : undefined,
                     currency: st.currency,
                     pricedByLines: result.priced_by_lines,
                 },

@@ -1014,7 +1014,7 @@ body.desk-landing .mk-desc {
   font-size: 14px;
   line-height: 1.6;
   color: var(--dk-ink);
-  max-width: 78ch;
+  max-width: 82ch;      /* the measure the rest of this page reads at */
 }
 body.desk-landing .mk-note {
   margin: 10px 0 0;
@@ -1775,57 +1775,32 @@ body.desk-landing .mk-toc a:hover { color: var(--dk-ink); border-color: rgb(255 
 
    Scoped to .api-docs on purpose: these are shared `dk-` classes used by 12-17
    marketing pages each, where a narrow centred column is the intended design. */
-/* ── endpoint cards: pair the description with its curl example ───────────────
-   Reported as "text wraps midway when there is a lot of space left in the card".
-   Measured: .mk-desc renders 689px inside a 1258px card — a 569px gap with
-   NOTHING painted beside it (an earlier, sloppier probe of mine called this
-   element "mixed"; a targeted check says beside: 0).
+/* ── endpoint cards are sized to their contents ───────────────────────────────
+   Reported three times as text "wrapping midway with space left in the card".
+   Measured: the description renders 689px inside a 1258px card, with NOTHING
+   painted beside it.
 
-   Widening the prose is the wrong fix here. 78 characters is already a good
-   measure, and filling the card would give ~142 characters per line. The space
-   is empty because the layout is a single column, not because the text is narrow.
+   Two fixes were wrong before this one, and both are worth recording.
+   Widening the prose: 78 characters is already a good measure, and filling the
+   card gives ~142 per line, which is harder to read than the complaint.
+   Pairing the description with its curl example in two columns: that fixed the
+   horizontal gap and replaced it with an L-shaped one, because the description
+   is roughly twice the height of the example, so the bottom of the right-hand
+   column was empty instead of the right of the card.
 
-   So use it: every one of the 46 cards begins desc → "Try it" → curl, and the
-   curl lines are short (~46 characters), so the example sits beside the prose
-   instead of below it. Everything after — parameters, request and response JSON —
-   still spans the full width, because those DO need it: a product description or
-   an image URL in a response sample wraps badly in half a card.
-
-   Only above 1180px. Below that the card is not wide enough for two readable
-   columns and the grid collapses back to the normal stacked order. */
-@media (min-width: 1180px) {
-  body.desk-landing.api-docs .mk-epbody {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: 34px;
-    align-items: start;
-  }
-  /* Default every child to the full width, then lift out only the two that pair.
-     Written this way so a card with an unexpected element order still renders
-     sensibly instead of landing in an arbitrary column. */
-  body.desk-landing.api-docs .mk-epbody > * { grid-column: 1 / -1; }
-
-  body.desk-landing.api-docs .mk-epbody > .mk-desc {
-    grid-column: 1;
-    grid-row: 1;
-    max-width: none;      /* the column is the constraint now */
-    margin-top: 0;
-  }
-  /* The copy-button script wraps `pre.mk-curl` — and its "Try it" label — in a
-     generated `div.mk-curlwrap`, so that wrapper is the entire right column and
-     needs no row arithmetic. The bare `.mk-curl` selector covers the moment
-     before that script runs; styling only one of the two leaves the example
-     full-width in whichever state is not covered, which is how this first
-     shipped: the description narrowed and the curl stayed at 1226px. */
-  body.desk-landing.api-docs .mk-epbody > .mk-curl,
-  body.desk-landing.api-docs .mk-epbody > .mk-curlwrap,
-  body.desk-landing.api-docs .mk-epbody > .mk-curlcol {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: start;
-    margin-top: 0;
-  }
-  body.desk-landing.api-docs .mk-epbody > .mk-curlcol > .mk-sub { margin-top: 0; }
+   The card was simply wider than anything in it. Measured the natural unwrapped
+   width of every code block: JSON tops out at 955px with a 90th percentile of
+   707px and a median of 437px. Nothing here wants 1258px. Constraining the list
+   to 830px removes the empty space by removing the surplus, rather than
+   stretching prose or rearranging it — and it puts the reference at the same
+   measure as the rest of the page, which reads at 82ch throughout. */
+body.desk-landing.api-docs .mk-eps {
+  /* 770, not 830: the card's own padding sits inside this, so 830 left the
+     description 104px short of the card edge — the same complaint in miniature.
+     At 770 the 82ch description (724px) meets the padding almost exactly, and
+     the code blocks still clear their 90th-percentile natural width of 707px. */
+  max-width: 770px;
+  margin-inline: auto;
 }
 
 body.desk-landing.api-docs .dk-lede,
