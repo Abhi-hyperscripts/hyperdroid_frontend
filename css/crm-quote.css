@@ -1,0 +1,125 @@
+/* ── The quote page ──────────────────────────────────────────────────────────
+ *
+ * The lines used to live only in the deal drawer, which is 438px wide. Measured
+ * there: the table needed 573px, so Total and Remove were cut off and the
+ * product picker could not be reached at all. A quote carries a description, a
+ * product, a unit, a quantity, a price, an account and a total per line — that
+ * is a document, and a document needs the width of a page.
+ */
+
+.qt-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 6px 0 18px;
+}
+
+.qt-head-main h1 {
+    margin: 0;
+    font-size: 22px;
+    color: var(--text-primary);
+}
+
+.qt-sub {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.qt-head-facts {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.qt-fact {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    min-width: 120px;
+}
+
+.qt-fact-k {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.qt-fact-v {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.qt-card {
+    border-radius: 14px;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-card);
+    padding: 4px 4px 2px;
+    margin-bottom: 16px;
+}
+
+/* On a page the table has room, so it must NOT scroll sideways — that
+   behaviour exists for the drawer and would defeat the point here. */
+.crm-quote-page .lip-table-wrap { overflow-x: visible; }
+.crm-quote-page .lip-table { width: 100%; }
+.crm-quote-page .lip-col-desc { min-width: 280px; }
+
+.qt-banner {
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.qt-banner-ok   { border-color: var(--color-success); }
+.qt-banner-warn { border-color: var(--color-warning); }
+
+.qt-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-card);
+}
+
+.qt-actions-note {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex: 1;
+    min-width: 240px;
+}
+
+/* The link out of the deal drawer, where the cramped panel still lives. */
+.lip-open-full {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--brand-primary);
+    text-decoration: none;
+}
+
+.lip-open-full:hover { text-decoration: underline; }
+
+@media (max-width: 768px) {
+    .qt-head { flex-direction: column; }
+    .qt-head-facts { width: 100%; }
+    .qt-fact { flex: 1; }
+    /* Back to scrolling on a phone: there genuinely is not room. */
+    .crm-quote-page .lip-table-wrap { overflow-x: auto; }
+}

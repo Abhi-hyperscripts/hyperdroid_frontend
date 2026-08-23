@@ -67,6 +67,11 @@ const LineItemsPanel = (() => {
     // ─── Rendering ──────────────────────────────────────────────────────────
 
     function shell(state) {
+        // The HSN/SAC column appears only when a line actually carries one.
+        // A services quote priced in free text has no tax classification to
+        // show, and an always-present column of dashes is noise on a document.
+        const showHsn = (state.lines || []).some(l => l.hsn_sac);
+        state.showHsn = showHsn;
         const { lines, currency, canEdit, hasQuotation, quotationNumber } = state;
         const total = sum(lines);
 
@@ -81,6 +86,11 @@ const LineItemsPanel = (() => {
                     ? `<span class="lip-total" data-lip="total">${esc(money(total, currency))}</span>`
                     : ''}
             </div>
+            ${state.showOpenFull ? `
+            <a class="lip-open-full" href="quote.html?deal=${esc(state.dealId)}">
+                Open the full quote
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+            </a>` : ''}
 
             <details class="crm-help crm-help-sm">
                 <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>What is this? — Line items</summary>
@@ -115,6 +125,7 @@ const LineItemsPanel = (() => {
                     <thead>
                         <tr>
                             <th class="lip-col-desc">Description</th>
+                            ${showHsn ? '<th class="lip-col-hsn">HSN/SAC</th>' : ''}
                             <th class="lip-col-qty">Qty</th>
                             <th class="lip-col-price">Unit price</th>
                             <th class="lip-col-acct">Account</th>
@@ -166,6 +177,7 @@ const LineItemsPanel = (() => {
             return `
             <tr>
                 <td class="lip-col-desc">${esc(line.description)}</td>
+                ${state.showHsn ? `<td class="lip-col-hsn">${esc(line.hsn_sac || '—')}</td>` : ''}
                 <td class="lip-col-qty">${esc(line.quantity)}</td>
                 <td class="lip-col-price">${esc(money(line.unit_price, currency))}</td>
                 <td class="lip-col-acct">${esc(line.account_code || '—')}</td>
@@ -191,6 +203,7 @@ const LineItemsPanel = (() => {
                         title="${isCatalogue ? 'Remove the product from this line' : 'Choose a product from the catalogue'}">${
                             isCatalogue ? 'Remove product' : 'Choose product'}</button>
             </td>
+            ${state.showHsn ? `<td class="lip-col-hsn">${esc(line.hsn_sac || '—')}</td>` : ''}
             <td class="lip-col-qty">
                 <input type="number" data-lip-field="quantity" step="0.001" min="0.001"
                        value="${esc(line.quantity)}" aria-label="Line ${index + 1} quantity">
@@ -512,6 +525,11 @@ const LineItemsPanel = (() => {
                 ? 'Lines removed — this deal is priced by its value again'
                 : 'Lines saved');
 
+            // Tell whoever mounted us that the lines moved. The quote page uses
+            // this to show or hide "Reserve stock", which is only meaningful
+            // once a line actually sells goods.
+            if (st.onSaved) { try { st.onSaved(st.lines); } catch (err) { console.error(err); } }
+
             // The deal value has just moved. Telling the page rather than
             // reloading it keeps the panel's own state, and a stale value on
             // screen beside a new total is exactly the kind of disagreement
@@ -589,6 +607,17 @@ const LineItemsPanel = (() => {
             dealId: deal.id,
             currency: deal.currency || 'INR',
             canEdit: opts.canEdit !== false,
+            // Fired after a successful save. Added for the quote page, which
+            // shows a "Reserve stock" action only once the lines actually sell
+            // goods — without a hook it could not know the lines had changed,
+            // and a callback passed to a mount() that ignored it would have
+            // been silently dead.
+            onSaved: typeof opts.onSaved === 'function' ? opts.onSaved : null,
+            // The drawer is 438px, which is not enough for this table — the
+            // Total and Remove columns fall off the edge and the product picker
+            // is unreachable. So the drawer offers a way OUT to the full page.
+            // The quote page passes false: a link back to itself is furniture.
+            showOpenFull: opts.showOpenFull !== false,
             lines: [],
             hasQuotation: !!deal.has_quotation,
             quotationNumber: deal.accounts_proforma_number || null,
