@@ -194,6 +194,45 @@ python3 -m http.server 5610</pre>
       </div>
     </section>
 
+    <section class="dk-section dk-reveal" id="auth">
+      <div class="dk-kicker">Who the caller is</div>
+      <h2 class="dk-h2">Two identities, and most of the shop needs neither.</h2>
+      <p class="dk-lede">There is one kind of credential on this surface: a <strong>shopper token</strong>, sent as <code>Authorization: Bearer &lt;token&gt;</code>. Everything else is anonymous. Worth reading before you design your sign-in flow, because <strong>a shopper can browse, fill a cart and complete a purchase without ever making an account</strong> &mdash; only the things that belong to a person need a token.</p>
+
+      <div class="mk-flows">
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">1</span> Getting a token</div>
+          <ol class="mk-steps">
+            <li>Read <code>GET /api/auth/config</code> first. It answers <code>{ google: { enabled, clientId } }</code>.</li>
+            <li>If <code>enabled</code> is false the merchant has not set Google up. <strong>Render a guest-only shop</strong> &mdash; do not show a sign-in button that cannot work.</li>
+            <li>If it is true, run Google Sign-In with that <code>clientId</code>, then POST the resulting ID token to <code>/api/shopper/google</code>. You get a shopper token back.</li>
+            <li>Send it as <code>Authorization: Bearer &lt;token&gt;</code> on the calls listed below.</li>
+          </ol>
+          <p class="mk-note"><strong>Google is the only way in.</strong> There is no email/password registration, no OTP and no magic link. If your merchant&#x27;s customers do not use Google, plan a guest-only experience &mdash; every money path still works.</p>
+        </div>
+
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">2</span> What needs one</div>
+          <p>Seventeen of the forty-six. They are exactly the calls that read or change something belonging to a person, and each is marked <code>security: bearer</code> in the OpenAPI document, so a generated client attaches the token for you.</p>
+          <ul class="mk-steps">
+            <li><strong>The shopper&#x27;s own records</strong> &mdash; <code>/api/shopper/me</code>, <code>/orders</code>, <code>/addresses</code> (all four verbs), <code>/wishlist</code>.</li>
+            <li><strong>Their commitments</strong> &mdash; <code>/api/subscriptions</code> (list, create, pause/resume/cancel) and <code>/api/returns</code> (list, create).</li>
+            <li><strong>Acts only an owner may perform</strong> &mdash; <code>POST /api/orders/{id}/cancel</code> and <code>POST /api/products/{itemId}/reviews</code>.</li>
+          </ul>
+          <p class="mk-note">Everything else &mdash; the catalogue, search, collections, blog, reviews (reading), shipping quotes, coupon and gift-card previews, checkout, payment and order lookup &mdash; is anonymous.</p>
+        </div>
+      </div>
+
+      <div class="dk-list">
+        <div class="dk-lrow" style="--mod:#4ADE80">
+          <span class="dk-lmid"><span class="dk-lname">Guest checkout is a first-class path, not a fallback</span><span class="dk-ldesc"><code>POST /api/checkout</code> and the whole payment flow take no token. A guest finds their order afterwards with <code>POST /api/orders/lookup</code> (email + order reference) or by the order&#x27;s own id. Sending a token where one is optional is still useful &mdash; the order is then linked to that shopper and appears in their history &mdash; but nothing refuses you for omitting it.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#F59E0B">
+          <span class="dk-lmid"><span class="dk-lname">Sign-in itself is anonymous, obviously &mdash; and the document says so</span><span class="dk-ldesc"><code>POST /api/shopper/google</code> is where a token comes from, so it does not require one. It is the single exception to the <code>/api/shopper/*</code> rule, and it is marked correctly in the spec: a generated client will call it without credentials.</span></span>
+        </div>
+      </div>
+    </section>
+
     <section class="dk-section dk-reveal" id="filtering">
       <div class="dk-kicker">Categories, search and filters</div>
       <h2 class="dk-h2">The server filters five things. Everything else is yours.</h2>
@@ -274,10 +313,65 @@ python3 -m http.server 5610</pre>
       <a href="#deploy">Deploy</a>
       <a href="#starter">Starter</a>
       <a href="#how">The spec</a>
-      <a href="#checkout">Order flows</a>
+      <a href="#auth">Auth</a>
       <a href="#filtering">Filters</a>
+      <a href="#checkout">Order flows</a>
+      <a href="#errors">Errors</a>
+      <a href="#origins">Origins</a>
       <a href="#endpoints">Endpoints</a>
     </nav>
+
+    <section class="dk-section dk-reveal" id="errors">
+      <div class="dk-kicker">When it does not work</div>
+      <h2 class="dk-h2">Six status codes, and one of them is not a failure.</h2>
+      <p class="dk-lede">Every one of these is documented per-operation in the OpenAPI document, so a generated client can branch on them. The distinction worth internalising: <strong>a 4xx is an answer about your request; a 5xx or a timeout is the absence of an answer.</strong> Rendering the second as though it were the first is the single most common way a storefront lies to a shopper.</p>
+
+      <div class="mk-flow">
+        <table class="mk-table">
+          <tr><th>Status</th><th>Means</th><th>What your front end should do</th></tr>
+          <tr><td><code>400</code></td><td>The request is malformed or the basket is not sellable &mdash; an unpriced item, a bad pincode, an empty cart.</td><td>Show the message. It is written for the shopper, not for you.</td></tr>
+          <tr><td><code>401</code></td><td>No token, or one that has expired.</td><td>Send them back through sign-in and retry. Never treat it as "you have nothing".</td></tr>
+          <tr><td><code>404</code></td><td>Genuinely absent &mdash; no such product, no such order.</td><td>Render an empty state. This <em>is</em> a definite answer.</td></tr>
+          <tr><td><code>409</code></td><td>The state moved under you: an order already shipped, a gift card already spent, a duplicate submission.</td><td>Re-read and show the current state. Do not blindly retry.</td></tr>
+          <tr><td><code>429</code></td><td>Rate limited. Login, checkout and payment are throttled per client.</td><td><strong>Back off and retry.</strong> This is not a failure &mdash; treating it as one turns a slow moment into a lost sale.</td></tr>
+          <tr><td><code>503</code> + <code>storeUnavailable</code></td><td>The shop could not reach its own books &mdash; a lapsed licence, an upstream blip. Nothing is wrong with your request.</td><td>Say the shop is temporarily unavailable and offer a retry. Do not show "no products" or "no orders".</td></tr>
+        </table>
+        <p class="mk-note">There is no <code>Retry-After</code> header today, so choose your own back-off &mdash; a couple of seconds, doubling, is plenty. If you want the header, ask and we will add it.</p>
+      </div>
+
+      <div class="dk-list">
+        <div class="dk-lrow" style="--mod:#F87171">
+          <span class="dk-lmid"><span class="dk-lname">The failure that looks like data</span><span class="dk-ldesc">If a catalogue read times out and you render "this shop has nothing to sell", you have made a claim about the merchant&#x27;s business on the strength of a network blip. The same mistake on <code>/api/shopper/orders</code> tells a customer their orders are gone; on <code>/api/returns</code> it tells them they cannot file one. Keep "we could not load this" and "there is none" as different states in your UI &mdash; it is one boolean, and it is the difference between a retry and a support ticket.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#60A5FA">
+          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved.</span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="dk-section dk-reveal" id="origins">
+      <div class="dk-kicker">Where your code runs</div>
+      <h2 class="dk-h2">Same origin by default, another origin if you want one.</h2>
+      <p class="dk-lede">The store serves your front end and the API from <em>one</em> domain, so the ordinary case involves no CORS at all: you call <code>/api/&hellip;</code> as a relative path and the browser never asks a cross-origin question. That is the shape the bundled storefront uses, and the one we would recommend &mdash; it also means <strong>the merchant&#x27;s Ragenaizer key stays server-side and never touches a browser</strong>.</p>
+
+      <div class="mk-flows">
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">A</span> Replacing the storefront (recommended)</div>
+          <p>Run your own front end on the store&#x27;s domain and call <code>/api/*</code> relatively. Nothing to configure, no preflight, no origin list to maintain. The shipped admin panel keeps working alongside it.</p>
+        </div>
+        <div class="mk-flow">
+          <div class="mk-flowhead"><span class="mk-flownum">B</span> Hosting your front end elsewhere</div>
+          <p>Point it at <code>https://the-store-domain</code> and call the same paths absolutely. CORS is open: the store reflects your origin, and preflight requests for <code>Content-Type: application/json</code> and <code>Authorization</code> are answered correctly, so writes and authenticated reads work from any origin.</p>
+          <p class="mk-note">If you are hitting an <em>older</em> store image and a POST fails while a GET succeeds, that is the symptom of a preflight that was not being forwarded. It is fixed &mdash; update the storefront image.</p>
+        </div>
+      </div>
+
+      <div class="dk-list">
+        <div class="dk-lrow" style="--mod:#94A3B8">
+          <span class="dk-lmid"><span class="dk-lname">Webhooks are not part of your surface</span><span class="dk-ldesc"><code>/api/webhooks/*</code> exists for Ragenaizer and Razorpay to call the store, authenticated by signature. It is deliberately absent from the OpenAPI document, is never called by a browser, and needs nothing from your front end. If you are looking for "how do I know an order was paid", the answer is to read the order, not to receive a webhook.</span></span>
+        </div>
+      </div>
+    </section>
 
     <section class="dk-section dk-reveal" id="endpoints">
       <div class="dk-kicker">The surface</div>
