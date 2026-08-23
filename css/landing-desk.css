@@ -1738,3 +1738,19 @@ body.desk-landing .mk-toc a {
   background: rgb(255 255 255 / 0.02); transition: color .15s ease, border-color .15s ease, background .15s ease;
 }
 body.desk-landing .mk-toc a:hover { color: var(--dk-ink); border-color: rgb(255 255 255 / 0.24); background: rgb(255 255 255 / 0.06); }
+
+/* ── Reading measure on the API reference ──────────────────────────────────────────────────────────────
+   `.dk-lede` is capped at 620px site-wide, which at this font is 61 characters. That is a legitimate
+   measure — and it is a NARROW one, sitting under a heading and above cards that both span the full
+   1260px container. On the marketing pages the gap reads as deliberate whitespace; on this page the
+   ledes carry real explanation and the same gap reads as a layout bug.
+
+   Widened HERE ONLY, via the api-docs hook, because .dk-lede is shared by eighteen pages and re-flowing
+   the whole marketing site is not a side effect this change should have.
+
+   82ch ~= 81 characters: past the 66 ideal but inside the 45-90 band, and it closes most of the visual
+   gap. Deliberately NOT the full 1260px, which would be 125 characters per line — measurably worse to
+   read, and the reason "just make it full width" is the wrong fix rather than the obvious one.
+
+   `ch` rather than px so the measure follows the font size instead of drifting from it. */
+body.desk-landing.api-docs .dk-lede { max-width: 82ch; }
