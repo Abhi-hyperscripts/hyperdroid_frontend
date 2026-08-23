@@ -1803,8 +1803,17 @@ body.desk-landing.api-docs .mk-eps {
      a little over the 45-75 ideal, but this is reference prose sitting beside
      the code it describes, and the alternative is scrolling the code. */
   max-width: 830px;
-  margin-inline: auto;
+  /* Left-aligned, NOT centred. `margin-inline: auto` centred the cards inside the
+     1260px section while the heading, the lede and the filter box all start at the
+     section's left edge, so the cards sat 215px in from everything above them and
+     the section had a ragged left edge. That looked worse than the empty space it
+     was meant to remove. */
+  margin-inline: 0;
 }
+
+/* The filter shares the column, so the whole section is one 830px measure rather
+   than a full-width control sitting over a narrower list. */
+body.desk-landing.api-docs .mk-find { max-width: 830px; }
 
 /* The card is the measure now, so the paragraph cap would only reintroduce the
    gap it was meant to prevent. */
