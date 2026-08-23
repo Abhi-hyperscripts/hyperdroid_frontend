@@ -1775,49 +1775,41 @@ body.desk-landing .mk-toc a:hover { color: var(--dk-ink); border-color: rgb(255 
 
    Scoped to .api-docs on purpose: these are shared `dk-` classes used by 12-17
    marketing pages each, where a narrow centred column is the intended design. */
-/* ── endpoint cards are sized to their contents ───────────────────────────────
-   Reported three times as text "wrapping midway with space left in the card".
-   Measured: the description renders 689px inside a 1258px card, with NOTHING
-   painted beside it.
+/* ── endpoint cards: prose one side, code the other ───────────────────────────
+   Fourth and final shape for this. The history is worth keeping because each
+   attempt failed for a different reason and the reasons are not obvious:
 
-   Two fixes were wrong before this one, and both are worth recording.
-   Widening the prose: 78 characters is already a good measure, and filling the
-   card gives ~142 per line, which is harder to read than the complaint.
-   Pairing the description with its curl example in two columns: that fixed the
-   horizontal gap and replaced it with an L-shaped one, because the description
-   is roughly twice the height of the example, so the bottom of the right-hand
-   column was empty instead of the right of the card.
+     1. Widened the paragraph — 78 characters was already a good measure, so this
+        changed almost nothing.
+     2. Widened it to fill the card — ~142 characters per line, worse to read than
+        the complaint being fixed.
+     3. Paired the description with only its curl example — fixed the horizontal
+        gap and created an L-shaped one, because the description is about twice
+        the height of that one short example.
+     4. Narrowed the whole card to 830px so it matched its contents — the card
+        then looked right on its own, and the PAGE became lopsided: an 830px
+        column of content against 530px of empty viewport.
 
-   The card was simply wider than anything in it. Measured the natural unwrapped
-   width of every code block: JSON tops out at 955px with a 90th percentile of
-   707px and a median of 437px. Nothing here wants 1258px. Constraining the list
-   to 830px removes the empty space by removing the surplus, rather than
-   stretching prose or rearranging it — and it puts the reference at the same
-   measure as the rest of the page, which reads at 82ch throughout. */
-body.desk-landing.api-docs .mk-eps {
-  /* 830 with the description filling it, rather than 770 with an 82ch cap.
-     Both give a flush card; this one is 44px wider, which matters because the
-     code blocks are what suffer from a narrow card. At 770 five JSON samples
-     picked up a horizontal scrollbar (their natural widths run to 955px); at
-     830 with the prose unconstrained the description reads ~89 characters —
-     a little over the 45-75 ideal, but this is reference prose sitting beside
-     the code it describes, and the alternative is scrolling the code. */
-  max-width: 830px;
-  /* Left-aligned, NOT centred. `margin-inline: auto` centred the cards inside the
-     1260px section while the heading, the lede and the filter box all start at the
-     section's left edge, so the cards sat 215px in from everything above them and
-     the section had a ragged left edge. That looked worse than the empty space it
-     was meant to remove. */
-  margin-inline: 0;
+   The space is real and the page should use it, but a card only fills its width
+   honestly if BOTH columns carry weight. So the split is by kind, not by
+   position: every piece of prose (description, notes, the parameter table) goes
+   left, every piece of code (curl, request body, response) goes right. Those two
+   stacks are of comparable height, which is what none of the earlier attempts
+   had. */
+@media (min-width: 1180px) {
+  body.desk-landing.api-docs .mk-epbody {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 36px;
+    align-items: start;
+  }
+  body.desk-landing.api-docs .mk-col-prose { grid-column: 1; min-width: 0; }
+  body.desk-landing.api-docs .mk-col-code  { grid-column: 2; min-width: 0; }
+  /* The column is the measure now; the paragraph cap would only reintroduce a
+     gap inside a column that is already the right width. */
+  body.desk-landing.api-docs .mk-col-prose .mk-desc { max-width: none; }
+  body.desk-landing.api-docs .mk-col > :first-child { margin-top: 0; }
 }
-
-/* The filter shares the column, so the whole section is one 830px measure rather
-   than a full-width control sitting over a narrower list. */
-body.desk-landing.api-docs .mk-find { max-width: 830px; }
-
-/* The card is the measure now, so the paragraph cap would only reintroduce the
-   gap it was meant to prevent. */
-body.desk-landing.api-docs .mk-desc { max-width: none; }
 
 body.desk-landing.api-docs .dk-lede,
 body.desk-landing.api-docs .dk-sub,

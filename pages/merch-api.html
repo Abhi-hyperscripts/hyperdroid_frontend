@@ -1931,6 +1931,38 @@ curl -D - -o /dev/null \
     /* Copy-to-clipboard on each curl command. Injected rather than baked into the
        markup so the page still renders a clean, selectable block without JS. */
     (function () {
+      /* Split each endpoint card into a prose column and a code column.
+         Done here rather than in the markup because the source order — description,
+         "Try it", curl, "Parameters", params, "Response", json — is the order a
+         narrow screen should read in, and only wide screens get the two columns.
+         Classification is computed from the ORIGINAL order before anything moves,
+         because nextElementSibling changes underneath you once you start
+         appending. A label belongs to whatever follows it. */
+      document.querySelectorAll('.mk-epbody').forEach(function (body) {
+        var kids = Array.prototype.slice.call(body.children);
+        if (!kids.length) return;
+
+        function isCode(n) {
+          return n.tagName === 'PRE' || n.classList.contains('mk-curlwrap');
+        }
+        var plan = kids.map(function (n, i) {
+          if (isCode(n)) return 'code';
+          if (n.classList.contains('mk-sub')) {
+            var next = kids[i + 1];
+            return (next && isCode(next)) ? 'code' : 'prose';
+          }
+          return 'prose';
+        });
+
+        var prose = document.createElement('div');
+        prose.className = 'mk-col mk-col-prose';
+        var code = document.createElement('div');
+        code.className = 'mk-col mk-col-code';
+        kids.forEach(function (n, i) { (plan[i] === 'code' ? code : prose).appendChild(n); });
+        body.appendChild(prose);
+        body.appendChild(code);
+      });
+
       var blocks = document.querySelectorAll('pre.mk-curl');
       if (!blocks.length) return;
 
