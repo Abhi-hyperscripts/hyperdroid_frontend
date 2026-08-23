@@ -1775,6 +1775,59 @@ body.desk-landing .mk-toc a:hover { color: var(--dk-ink); border-color: rgb(255 
 
    Scoped to .api-docs on purpose: these are shared `dk-` classes used by 12-17
    marketing pages each, where a narrow centred column is the intended design. */
+/* ── endpoint cards: pair the description with its curl example ───────────────
+   Reported as "text wraps midway when there is a lot of space left in the card".
+   Measured: .mk-desc renders 689px inside a 1258px card — a 569px gap with
+   NOTHING painted beside it (an earlier, sloppier probe of mine called this
+   element "mixed"; a targeted check says beside: 0).
+
+   Widening the prose is the wrong fix here. 78 characters is already a good
+   measure, and filling the card would give ~142 characters per line. The space
+   is empty because the layout is a single column, not because the text is narrow.
+
+   So use it: every one of the 46 cards begins desc → "Try it" → curl, and the
+   curl lines are short (~46 characters), so the example sits beside the prose
+   instead of below it. Everything after — parameters, request and response JSON —
+   still spans the full width, because those DO need it: a product description or
+   an image URL in a response sample wraps badly in half a card.
+
+   Only above 1180px. Below that the card is not wide enough for two readable
+   columns and the grid collapses back to the normal stacked order. */
+@media (min-width: 1180px) {
+  body.desk-landing.api-docs .mk-epbody {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 34px;
+    align-items: start;
+  }
+  /* Default every child to the full width, then lift out only the two that pair.
+     Written this way so a card with an unexpected element order still renders
+     sensibly instead of landing in an arbitrary column. */
+  body.desk-landing.api-docs .mk-epbody > * { grid-column: 1 / -1; }
+
+  body.desk-landing.api-docs .mk-epbody > .mk-desc {
+    grid-column: 1;
+    grid-row: 1;
+    max-width: none;      /* the column is the constraint now */
+    margin-top: 0;
+  }
+  /* The copy-button script wraps `pre.mk-curl` — and its "Try it" label — in a
+     generated `div.mk-curlwrap`, so that wrapper is the entire right column and
+     needs no row arithmetic. The bare `.mk-curl` selector covers the moment
+     before that script runs; styling only one of the two leaves the example
+     full-width in whichever state is not covered, which is how this first
+     shipped: the description narrowed and the curl stayed at 1226px. */
+  body.desk-landing.api-docs .mk-epbody > .mk-curl,
+  body.desk-landing.api-docs .mk-epbody > .mk-curlwrap,
+  body.desk-landing.api-docs .mk-epbody > .mk-curlcol {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    margin-top: 0;
+  }
+  body.desk-landing.api-docs .mk-epbody > .mk-curlcol > .mk-sub { margin-top: 0; }
+}
+
 body.desk-landing.api-docs .dk-lede,
 body.desk-landing.api-docs .dk-sub,
 body.desk-landing.api-docs .dk-replaces,

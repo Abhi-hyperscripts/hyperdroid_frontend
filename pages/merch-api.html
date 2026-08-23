@@ -1959,6 +1959,24 @@ curl -D - -o /dev/null \
         pre.parentNode.insertBefore(wrap, pre);
         wrap.appendChild(pre);
 
+        /* Group the "Try it" label WITH the example in an outer element, so that on
+           wide screens the card's two-column grid sees a single right-hand child.
+           Two separate grid items did not work: a grid row cannot be sized
+           independently of an item spanning it, so the description's height was
+           distributed across both rows and pushed the example ~60px clear of its own
+           heading. The label goes in the OUTER element and not in .mk-curlwrap,
+           because the Copy button is absolutely positioned against that wrapper —
+           putting the label inside it moves the button up onto the label instead of
+           the code. */
+        var label = wrap.previousElementSibling;
+        if (label && label.classList.contains('mk-sub')) {
+          var col = document.createElement('div');
+          col.className = 'mk-curlcol';
+          label.parentNode.insertBefore(col, label);
+          col.appendChild(label);
+          col.appendChild(wrap);
+        }
+
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'mk-copy';
