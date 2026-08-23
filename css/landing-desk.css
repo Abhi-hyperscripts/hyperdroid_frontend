@@ -1753,4 +1753,30 @@ body.desk-landing .mk-toc a:hover { color: var(--dk-ink); border-color: rgb(255 
    read, and the reason "just make it full width" is the wrong fix rather than the obvious one.
 
    `ch` rather than px so the measure follows the font size instead of drifting from it. */
-body.desk-landing.api-docs .dk-lede { max-width: 82ch; }
+/* ── the reading measure on the API reference ────────────────────────────────
+   Reported twice as "text wraps midway with space left on the right".
+
+   MEASURED, not eyeballed, and the first measurement was WRONG: a probe using
+   the `font` shorthand does not always serialize, so it silently fell back to
+   the body font and reported .dk-osnote at 52 characters. Copying the font
+   properties individually gives the true figure of 68 — INSIDE the 45-75 band,
+   i.e. not typographically broken at all.
+
+   The real defect is that this page stacks FOUR different measures in one
+   1260px column: .dk-sub 58 chars, .dk-replaces 64, .dk-osnote 68, .dk-lede 82.
+   Every paragraph therefore wraps at a different point, and that raggedness is
+   what reads as a bug. Unified to one measure rather than widened arbitrarily.
+
+   82ch is the top of the readable band, so it closes most of the gap to the
+   1260px container without the 125-character line that full width would give.
+   Expressed in `ch` so each block lands at the same CHARACTER count despite
+   running at four different font sizes (13.5/14.5/16/17px) — the whole point of
+   the unit, and why a px value cannot do this job.
+
+   Scoped to .api-docs on purpose: these are shared `dk-` classes used by 12-17
+   marketing pages each, where a narrow centred column is the intended design. */
+body.desk-landing.api-docs .dk-lede,
+body.desk-landing.api-docs .dk-sub,
+body.desk-landing.api-docs .dk-replaces,
+body.desk-landing.api-docs .dk-osnote,
+body.desk-landing.api-docs .dk-section > .dk-osnote { max-width: 82ch; }
