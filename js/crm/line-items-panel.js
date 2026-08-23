@@ -123,6 +123,26 @@ const LineItemsPanel = (() => {
         st.grandTotal = result.grand_total ?? null;
         st.taxUnavailable = !!result.tax_unavailable;
         st.taxByLine = result.tax_by_line || null;
+        st.pricedAtListPrice = !!result.priced_at_list_price;
+    }
+
+    /// ⭐ SAY WHEN A PRICE IS THE SHELF PRICE.
+    //
+    // A quote can be priced from the catalogue rather than from anything agreed
+    // with this customer — because they are on no price list, or because
+    // Accounts does not know them yet (a company becomes an Accounts customer
+    // only when a deal is won). Both are honest, and both look identical to a
+    // negotiated figure once they are on the page.
+    //
+    // So it is stated. A rep who knows this is the list price can go and agree a
+    // better one; a rep who assumes it was already agreed cannot.
+    function listPriceNote(state) {
+        if (!state.pricedAtListPrice) return '';
+        return `
+            <div class="lip-note">
+                Priced at catalogue list prices — nothing customer-specific has been agreed for these
+                products yet.
+            </div>`;
     }
 
     function totalsBlock(state, subtotal) {
@@ -230,6 +250,7 @@ const LineItemsPanel = (() => {
                 <button type="button" class="btn btn-sm btn-primary" data-lip="save">Save lines</button>
             </div>` : ''}
 
+            ${listPriceNote(state)}
             ${totalsBlock(state, total)}
 
             <div class="lip-quote">
