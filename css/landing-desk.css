@@ -1795,13 +1795,20 @@ body.desk-landing .mk-toc a:hover { color: var(--dk-ink); border-color: rgb(255 
    stretching prose or rearranging it — and it puts the reference at the same
    measure as the rest of the page, which reads at 82ch throughout. */
 body.desk-landing.api-docs .mk-eps {
-  /* 770, not 830: the card's own padding sits inside this, so 830 left the
-     description 104px short of the card edge — the same complaint in miniature.
-     At 770 the 82ch description (724px) meets the padding almost exactly, and
-     the code blocks still clear their 90th-percentile natural width of 707px. */
-  max-width: 770px;
+  /* 830 with the description filling it, rather than 770 with an 82ch cap.
+     Both give a flush card; this one is 44px wider, which matters because the
+     code blocks are what suffer from a narrow card. At 770 five JSON samples
+     picked up a horizontal scrollbar (their natural widths run to 955px); at
+     830 with the prose unconstrained the description reads ~89 characters —
+     a little over the 45-75 ideal, but this is reference prose sitting beside
+     the code it describes, and the alternative is scrolling the code. */
+  max-width: 830px;
   margin-inline: auto;
 }
+
+/* The card is the measure now, so the paragraph cap would only reintroduce the
+   gap it was meant to prevent. */
+body.desk-landing.api-docs .mk-desc { max-width: none; }
 
 body.desk-landing.api-docs .dk-lede,
 body.desk-landing.api-docs .dk-sub,
