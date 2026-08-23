@@ -1749,14 +1749,28 @@ async function openDealDetailPanel(dealId) {
         // deliver that refusal later and less clearly.
         if (typeof LineItemsPanel !== 'undefined') {
             LineItemsPanel.mount(
-                document.getElementById('dealLineItemsPanel'), deal, { canEdit: !isMember() });
+                document.getElementById('dealLineItemsPanel'), deal,
+                // ⭐ THE FINANCIAL GATE, NOT THE MEMBER GATE.
+                //
+                // The lines SET the deal value, and the server gates them on
+                // exactly the same rule as the value itself — including the
+                // tenant's allow_member_deal_edits toggle. Using !isMember()
+                // here ignored that toggle, so a tenant that had deliberately
+                // switched member editing ON still found its members locked out
+                // of the one panel that prices the deal.
+                { canEdit: canEditDealFinancial() });
         }
 
         // An instalment plan commits the customer to an automated dunning
         // cadence, so it carries the financial gate too.
         if (typeof PaymentPlanPanel !== 'undefined') {
             PaymentPlanPanel.mount(
-                document.getElementById('dealPaymentPlanPanel'), deal, { canEdit: !isMember() });
+                document.getElementById('dealPaymentPlanPanel'), deal,
+                // Same gate, same reason: BusinessLayer_DealPaymentPlans honours
+                // the toggle too. (Commission and review deliberately do NOT —
+                // the server gates those on membership alone — so they keep
+                // !isMember().)
+                { canEdit: canEditDealFinancial() });
         }
 
         // Appointments carry NO role gate, deliberately: booking a site visit is

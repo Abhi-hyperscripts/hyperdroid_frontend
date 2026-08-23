@@ -120,12 +120,28 @@
      * The server is the real gate, but a panel that offers an edit which is
      * then refused is worse than one that never offered it.
      */
-    async function isAtLeastTeamLead() {
+    async function canEditDealFinancial() {
         try {
             const user = api.getUser();
             if (user?.roles?.includes('CRM_ADMIN') || user?.roles?.includes('SUPERADMIN')) return true;
+
             const res = await api.request('/crm/leads/my-role');
-            return ['admin', 'manager', 'teamlead'].includes(res?.role || 'member');
+            const role = res?.role || 'member';
+            if (['admin', 'manager', 'teamlead'].includes(role)) return true;
+
+            // ⭐⭐ THE TENANT'S TOGGLE IS PART OF THE RULE.
+            //
+            // The server gates these lines on the same rule as the deal value,
+            // and that rule includes allow_member_deal_edits. Checking the role
+            // alone made this page STRICTER than the server: on a tenant that
+            // had deliberately switched member editing on, a member could price
+            // a deal in the cramped drawer and not on the page built for it.
+            //
+            // Fails CLOSED, like the role check: an unreadable setting leaves
+            // the quote read-only rather than offering an edit the server will
+            // refuse.
+            const flag = await api.request('/crm/crm-settings/allow_member_deal_edits');
+            return String(flag?.value ?? 'false').toLowerCase() === 'true';
         } catch {
             return false;
         }
@@ -149,16 +165,17 @@
 
         renderHead();
 
-        // canEdit mirrors the deal drawer's gate: the lines set the deal value,
-        // so a member who cannot change the value cannot change the lines. The
-        // server refuses either way; this only stops the panel offering an edit
-        // that is going to be rejected.
+        // canEdit mirrors the deal drawer's gate AND the server's: the lines set
+        // the deal value, so a member who cannot change the value cannot change
+        // the lines — unless the tenant has switched member deal edits on, which
+        // the server honours and this must too. It only stops the panel offering
+        // an edit that is going to be rejected.
         //
         // Resolved HERE rather than borrowed from deals.js. isMember() lives in
         // that file and is not loaded on this page, so `typeof isMember` would
         // be 'undefined' and the fallback would hand every member an editable
         // quote — a permission decided by which script happened to load.
-        const canEdit = await isAtLeastTeamLead();
+        const canEdit = await canEditDealFinancial();
 
         LineItemsPanel.mount(document.getElementById('qtLineItems'), deal, {
             canEdit,
