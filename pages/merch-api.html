@@ -301,7 +301,7 @@ python3 -m http.server 5610</pre>
           <div class="mk-flowhead"><span class="mk-flownum">B</span> Paying now &mdash; card, UPI, net banking</div>
           <ol class="mk-steps">
             <li><code>POST /api/payment/create-order</code> with that same body. Nothing is ordered yet; you get back what the payment widget needs.</li>
-            <li>Open the gateway with the <code>keyId</code>, <code>amount</code> and <code>razorpayOrderId</code> it returned. Note the <code>amount</code> is in <strong>paise</strong>, not rupees.</li>
+            <li>Open the gateway with the <code>keyId</code>, <code>amount</code> and <code>razorpayOrderId</code> it returned. Note the <code>amount</code> is in <strong>paise</strong>, not rupees. The gateway window is Razorpay&rsquo;s own script, not something this API serves &mdash; load <code>https://checkout.razorpay.com/v1/checkout.js</code>, then call <code>new Razorpay(options).open()</code>. Its options and callback are documented by Razorpay; the reference storefront lazy-loads it in <code>js/checkout.js</code> if you want a worked example.</li>
             <li>On success the gateway hands you three values. <code>POST /api/payment/verify</code> with them. <strong>This is the call that creates the order</strong>, and it answers with the same shape <code>/api/checkout</code> would have.</li>
           </ol>
           <p class="mk-flownote"><strong>Never call <code>/api/checkout</code> as well.</strong> It would place a second, unpaid order for the same basket.</p>
