@@ -171,7 +171,7 @@ python3 -m http.server 5610</pre>
 
     <section class="dk-section dk-reveal" id="start">
       <div class="dk-kicker">Before the endpoint list</div>
-      <h2 class="dk-h2">Six things worth knowing first.</h2>
+      <h2 class="dk-h2">Seven things worth knowing first.</h2>
       <div class="dk-list">
         <div class="dk-lrow" style="--mod:#60A5FA">
           <span class="dk-lmid"><span class="dk-lname">The base URL is your own store</span><span class="dk-ldesc">Every path below is served from the shop&rsquo;s own domain &mdash; <code>https://shop.example.com/api/&hellip;</code>. There is no Ragenaizer-hosted API to sign up for and no extra host or port; the store you installed is the API.</span></span>
@@ -188,7 +188,10 @@ python3 -m http.server 5610</pre>
         <div class="dk-lrow" style="--mod:#FB923C">
           <span class="dk-lmid"><span class="dk-lname">Sign-in, checkout and payment are rate limited</span><span class="dk-ldesc">Per client IP, in fixed one-minute windows: 15 for sign-in, 25 for checkout and payment, 90 for cart previews like coupons and gift cards, 120 for product-by-id. Over the line answers <code>429</code> in the usual error shape. The catalogue, collections and blog are not limited, so a browse-heavy front end is not penalised.</span></span>
         </div>
-        <div class="dk-lrow" style="--mod:#94A3B8">
+        <div class="dk-lrow" style="--mod:#2DD4BF">
+              <span class="dk-lmid"><span class="dk-lname">Every timestamp is ISO&nbsp;8601 in UTC</span><span class="dk-ldesc">Dates come back as <code>2026-08-09T00:00:00Z</code> &mdash; always UTC with the trailing <code>Z</code>, never the store&rsquo;s local time, so convert to the shopper&rsquo;s zone in your own front end. <code>new Date(value)</code> parses them directly. The field name is not a reliable signal: alongside <code>createdAt</code>, <code>updatedAt</code>, <code>fulfilledAt</code>, <code>cancelledAt</code> and <code>resolvedAt</code> there are <code>nextRun</code> on a subscription and <code>at</code> on an order event, which carry the same format without the suffix.</span></span>
+            </div>
+            <div class="dk-lrow" style="--mod:#94A3B8">
           <span class="dk-lmid"><span class="dk-lname">What is not here, and will not be</span><span class="dk-ldesc">Administering the shop stays with the bundled admin panel, and the API the store uses to reach your books is internal and never published &mdash; your front end never handles a Ragenaizer key, because the store holds it server-side. This is the shopfront contract, nothing wider.</span></span>
         </div>
       </div>
