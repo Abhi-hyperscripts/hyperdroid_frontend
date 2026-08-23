@@ -268,7 +268,7 @@ python3 -m http.server 5610</pre>
             <li><strong>Facet counts</strong> &mdash; count within your current result set. The server has already applied its filters, so counting client-side stays consistent with what the shopper sees.</li>
           </ul>
           <p class="mk-note"><strong>Every one of these is nullable.</strong> A merchant who has not filled in their item master sends <code>null</code>, and the honest rendering of that is no facet at all &mdash; never a blank or placeholder option.</p>
-          <p class="mk-note">A catalogue large enough for this to hurt is worth telling us about &mdash; the endpoint returns the full filtered set, so paging is client-side today.</p>
+          <p class="mk-note"><strong>Facet counts need the full set; the product grid does not.</strong> Count facets from an unpaged call, then fetch the grid with <code>page</code> and <code>pageSize</code> &mdash; the server applies your filters before it pages, so <code>X-Total-Count</code> is the number of matches, not the number on the page. On a large catalogue that keeps the first paint small without making the counts wrong.</p>
           <p class="mk-note"><strong>Rating is the exception, and it is not cheap yet.</strong> Ratings live on <code>GET /api/products/{itemId}/reviews</code>, one product at a time &mdash; there is no bulk source, so a rating filter over a listing means one call per product. Use it on the product page, and tell us if you need it as a facet; a batch endpoint is the fix and we would rather add it than have you fan out.</p>
         </div>
       </div>
@@ -399,9 +399,15 @@ python3 -m http.server 5610</pre>
           <details class="mk-ep" open>
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/catalog</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The product list, returned as a bare array &mdash; there is no envelope and <strong>no pagination</strong>, so one call gives you the whole visible catalogue and any paging is yours to do client-side. Optional query: <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>locale</code>, and <code>sort</code>, which accepts exactly <code>price_asc</code>, <code>price_desc</code> or <code>name</code> &mdash; any other value is ignored rather than rejected, so a typo silently returns catalogue order. Products that share a variant group fold to one card here; use the variants endpoint to expand it. Prices and stock are live from the merchant&#x27;s books, and hidden products are already excluded.</p>
+              <p class="mk-desc">The product list, returned as a bare array &mdash; there is no envelope, and there is none when you page either. Omit <code>page</code> and <code>pageSize</code> and one call gives you the whole visible catalogue, exactly as it always has. Add them and you get that page, still as a plain array, with the counts in the <code>X-Total-Count</code> and <code>X-Total-Pages</code> response headers &mdash; both CORS-exposed, so a front end on another origin can read them. <code>pageSize</code> defaults to 24 and is capped at 200; a page below 1 is treated as the first, and a page past the end is an empty array rather than the last page, so an infinite scroll stops instead of repeating. Paging is applied after variant folding, so pages never overlap or skip a card. It does <strong>not</strong> apply to the <code>ids</code> form below, which resolves cart lines and would silently drop items if it were sliced. Optional query: <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>locale</code>, and <code>sort</code>, which accepts exactly <code>price_asc</code>, <code>price_desc</code> or <code>name</code> &mdash; any other value is ignored rather than rejected, so a typo silently returns catalogue order. Products that share a variant group fold to one card here; use the variants endpoint to expand it. Prices and stock are live from the merchant&#x27;s books, and hidden products are already excluded.</p>
               <div class="mk-sub">Try it</div>
-              <pre class="mk-curl">curl https://your-shop.example.com/api/catalog</pre>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/catalog
+
+# one page, with the totals in the headers
+curl -D - -o /dev/null \
+     &quot;https://your-shop.example.com/api/catalog?page=2&amp;pageSize=24&quot;
+# → X-Total-Count: 7829
+# → X-Total-Pages: 327</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>search</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
                 <li><code>category</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
@@ -410,6 +416,9 @@ python3 -m http.server 5610</pre>
                 <li><code>inStock</code> <span class="mk-loc">query</span> <span class="mk-ty">boolean</span></li>
                 <li><code>sort</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
                 <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+              
+                <li><code>page</code> <span class="mk-loc">query</span> <span class="mk-ty">integer</span></li>
+                <li><code>pageSize</code> <span class="mk-loc">query</span> <span class="mk-ty">integer</span></li>
               </ul>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">[
