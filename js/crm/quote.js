@@ -170,5 +170,35 @@
         document.getElementById('qtReserve')?.addEventListener('click', reserveStock);
     }
 
+    // ⭐⭐ THE HEADER MUST FOLLOW THE LINES IT PROMISED TO FOLLOW.
+    //
+    // This page says, in its own subtitle, that saving the lines sets the deal
+    // value — and then showed $400,000.00 in the Deal value chip beside a line
+    // total of $415,000.00, because nothing re-rendered the header after a save.
+    // Two numbers disagreeing on one screen is the fastest way to make a rep
+    // stop trusting either of them.
+    //
+    // LineItemsPanel already announces the move on 'crm:deal-value-changed';
+    // the deals drawer listened and this page did not. Listening here rather
+    // than adding a second mechanism means a third surface gets it for free.
+    //
+    // Bound at module scope so it is attached exactly once, matching the
+    // drawer's binding — a per-render binding would fire N times per save.
+    document.addEventListener('crm:deal-value-changed', (e) => {
+        const detail = e.detail || {};
+        if (!deal || detail.dealId !== deal.id) return;
+
+        const value = Number(detail.dealValue);
+        if (!isFinite(value)) return;
+
+        // Mutate the deal we already hold rather than re-reading it: the value
+        // in the event is the one the server just computed and the panel is
+        // already showing, so the chip cannot end up disagreeing with the total
+        // it is meant to mirror.
+        deal.deal_value = value;
+        if (detail.currency) deal.currency = detail.currency;
+        renderHead();
+    });
+
     document.addEventListener('DOMContentLoaded', init);
 })();

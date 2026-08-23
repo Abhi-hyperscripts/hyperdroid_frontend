@@ -542,3 +542,63 @@
     color: var(--text-secondary);
     white-space: nowrap;
 }
+
+/* ── Totals and availability ─────────────────────────────────────────────── */
+
+.lip-totals {
+    margin: 10px 0 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    max-width: 340px;
+    margin-left: auto;
+}
+
+.lip-total-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 3px 0;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+}
+
+.lip-total-row b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+.lip-total-grand {
+    margin-top: 5px;
+    padding-top: 7px;
+    border-top: 1px solid var(--border-primary);
+    font-size: 14px;
+}
+
+.lip-total-grand b { font-size: 15px; }
+
+/* A pre-tax total shown as though it were the price is how a customer gets
+   re-invoiced later. It says so, in the warning colour. */
+.lip-total-warn {
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: var(--color-warning);
+}
+
+.lip-stock {
+    display: inline-block;
+    margin-top: 3px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.lip-stock-ok {
+    background: color-mix(in srgb, var(--color-success) 14%, transparent);
+    color: var(--color-success);
+}
+
+/* Short, not absent — the item exists, there simply is not enough of it. */
+.lip-stock-short {
+    background: color-mix(in srgb, var(--color-warning) 16%, transparent);
+    color: var(--color-warning);
+}

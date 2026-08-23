@@ -66,6 +66,85 @@ const LineItemsPanel = (() => {
 
     // ─── Rendering ──────────────────────────────────────────────────────────
 
+    /**
+     * The money summary.
+     *
+     * ⭐⭐ "TAX COULD NOT BE CALCULATED" IS NOT THE SAME AS "NO TAX".
+     *
+     * A quote whose lines sell catalogue goods but whose tax could not be
+     * fetched must SAY so. Showing the pre-tax figure as though it were the
+     * price is how a customer receives a quote missing 18% and gets re-invoiced
+     * for the difference later.
+     */
+    /**
+     * Copy the server's money figures onto the panel state.
+     *
+     * Read from the response and never recomputed here: the whole point of
+     * asking Accounts is that the quote and the invoice agree, and a total
+     * re-derived in the browser is a second opinion.
+     */
+    /**
+     * Whether this line can actually be supplied.
+     *
+     * ⭐ THREE STATES, NOT TWO. enough_in_stock is null when the item does not
+     * track inventory OR the catalogue could not be asked — and neither of
+     * those is "out of stock". Rendering a red badge for "we do not know" would
+     * have reps chasing stock for made-to-order goods that never had any.
+     */
+    /**
+     * What this line is taxed, as Accounts broke it down.
+     *
+     * The per-line figures were being fetched, stored on the panel state and
+     * never rendered — payload paid for and thrown away. An Indian tax document
+     * shows tax per line, so it belongs on the HSN cell rather than nowhere.
+     */
+    function lineTaxHint(state, line) {
+        const t = state.taxByLine && state.taxByLine[line.id];
+        if (!t) return '';
+        const parts = (t.components || []).map(c => `${c.name} ${c.rate}%: ${money(c.amount, state.currency)}`);
+        return parts.length
+            ? `${parts.join('  ·  ')}  =  ${money(t.total_tax, state.currency)}`
+            : `Tax ${money(t.total_tax, state.currency)}`;
+    }
+
+    function stockBadge(line) {
+        if (!line.item_id || line.enough_in_stock === null || line.enough_in_stock === undefined) return '';
+        if (line.enough_in_stock) {
+            return `<span class="lip-stock lip-stock-ok">in stock</span>`;
+        }
+        const have = line.available_base;
+        return `<span class="lip-stock lip-stock-short">only ${esc(have ?? 0)}${
+            line.stock_uom ? ' ' + esc(line.stock_uom) : ''} available</span>`;
+    }
+
+    function applyTotals(st, result) {
+        st.taxableTotal = result.taxable_total ?? null;
+        st.totalTax = result.total_tax ?? null;
+        st.grandTotal = result.grand_total ?? null;
+        st.taxUnavailable = !!result.tax_unavailable;
+        st.taxByLine = result.tax_by_line || null;
+    }
+
+    function totalsBlock(state, subtotal) {
+        const { currency } = state;
+        if (state.taxUnavailable) {
+            return `
+            <div class="lip-totals">
+                <div class="lip-total-row"><span>Subtotal</span><b>${esc(money(subtotal, currency))}</b></div>
+                <div class="lip-total-warn">
+                    Tax could not be calculated just now, so this is the pre-tax total.
+                </div>
+            </div>`;
+        }
+        if (state.totalTax === null || state.totalTax === undefined) return '';
+        return `
+        <div class="lip-totals">
+            <div class="lip-total-row"><span>Taxable</span><b>${esc(money(state.taxableTotal, currency))}</b></div>
+            <div class="lip-total-row"><span>Tax</span><b>${esc(money(state.totalTax, currency))}</b></div>
+            <div class="lip-total-row lip-total-grand"><span>Total</span><b>${esc(money(state.grandTotal, currency))}</b></div>
+        </div>`;
+    }
+
     function shell(state) {
         // The HSN/SAC column appears only when a line actually carries one.
         // A services quote priced in free text has no tax classification to
@@ -151,6 +230,8 @@ const LineItemsPanel = (() => {
                 <button type="button" class="btn btn-sm btn-primary" data-lip="save">Save lines</button>
             </div>` : ''}
 
+            ${totalsBlock(state, total)}
+
             <div class="lip-quote">
                 ${hasQuotation ? `
                     <p class="lip-quote-done">
@@ -177,7 +258,7 @@ const LineItemsPanel = (() => {
             return `
             <tr>
                 <td class="lip-col-desc">${esc(line.description)}</td>
-                ${state.showHsn ? `<td class="lip-col-hsn">${esc(line.hsn_sac || '—')}</td>` : ''}
+                ${state.showHsn ? `<td class="lip-col-hsn" title="${esc(lineTaxHint(state, line))}">${esc(line.hsn_sac || '—')}</td>` : ''}
                 <td class="lip-col-qty">${esc(line.quantity)}</td>
                 <td class="lip-col-price">${esc(money(line.unit_price, currency))}</td>
                 <td class="lip-col-acct">${esc(line.account_code || '—')}</td>
@@ -199,11 +280,12 @@ const LineItemsPanel = (() => {
                        value="${esc(line.description)}" placeholder="e.g. Onboarding &amp; setup"
                        aria-label="Line ${index + 1} description">
                 ${isCatalogue ? `<span class="lip-sku" title="${esc(line.uom ? 'Sold in ' + line.uom : '')}">${esc(line.sku || '')}${line.uom ? ' · ' + esc(line.uom) : ''}</span>` : ''}
+                ${stockBadge(line)}
                 <button type="button" class="lip-pick" data-lip="${isCatalogue ? 'unpick' : 'pick'}" hidden
                         title="${isCatalogue ? 'Remove the product from this line' : 'Choose a product from the catalogue'}">${
                             isCatalogue ? 'Remove product' : 'Choose product'}</button>
             </td>
-            ${state.showHsn ? `<td class="lip-col-hsn">${esc(line.hsn_sac || '—')}</td>` : ''}
+            ${state.showHsn ? `<td class="lip-col-hsn" title="${esc(lineTaxHint(state, line))}">${esc(line.hsn_sac || '—')}</td>` : ''}
             <td class="lip-col-qty">
                 <input type="number" data-lip-field="quantity" step="0.001" min="0.001"
                        value="${esc(line.quantity)}" aria-label="Line ${index + 1} quantity">
@@ -363,7 +445,12 @@ const LineItemsPanel = (() => {
                     <button type="button" class="lip-picker-row" data-pick="${esc(i.id)}">
                         <span class="lip-picker-name">${esc(i.name)}</span>
                         <span class="lip-picker-meta">${esc(i.sku || '')}${i.sale_unit ? ' \u00b7 ' + esc(i.sale_unit) : ''}${
-                            i.tracks_stock && !i.can_be_reserved ? ' \u00b7 no unit size' : ''}</span>
+                            i.tracks_stock && !i.can_be_reserved ? ' \u00b7 no unit size' : ''}${
+                            // Availability where it is a meaningful question.
+                            // Absent for a non-stocked item rather than "0".
+                            i.available !== null && i.available !== undefined
+                                ? ` \u00b7 ${esc(i.available)}${i.stock_uom ? ' ' + esc(i.stock_uom) : ''} available`
+                                : ''}</span>
                     </button>`).join('')
                 : '<div class="lip-picker-empty">Nothing matches that.</div>';
         };
@@ -520,6 +607,7 @@ const LineItemsPanel = (() => {
 
             st.lines = result.lines || [];
             st.currency = result.currency || st.currency;
+            applyTotals(st, result);
             render(container);
             Toast.success(typed.length === 0
                 ? 'Lines removed — this deal is priced by its value again'
@@ -593,6 +681,7 @@ const LineItemsPanel = (() => {
             const result = await api.request(`/crm/deals/${encodeURIComponent(st.dealId)}/line-items`);
             st.lines = result.lines || [];
             st.currency = result.currency || st.currency;
+            applyTotals(st, result);
         } catch (e) {
             console.error('Failed to load the line items:', e);
             st.lines = [];

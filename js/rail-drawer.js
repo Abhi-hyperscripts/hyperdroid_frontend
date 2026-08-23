@@ -37,6 +37,8 @@
           svg: '<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>' },
         { href: 'contacts.html', title: 'Contacts', color: '#F472B6',
           svg: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>' },
+        { href: 'companies.html', title: 'Companies', color: '#93C5FD',
+          svg: '<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h2M9 13h2M13 9h2M13 13h2M9 17h6"/>' },
         { href: 'properties.html', title: 'Properties', color: '#34D399',
           svg: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' },
         { href: 'calendar.html', title: 'Calendar', color: '#38BDF8',
