@@ -57,7 +57,11 @@
         }
 
         const facts = [
-            ['Customer', deal.company_name || '—'],
+            // company_name_resolved is what the API actually calls it — the
+            // join's alias, not the column. Reading `company_name` printed a
+            // dash for every deal and made a working backend look broken.
+            ['Customer', deal.company_name_resolved || deal.company_name || '—'],
+            ['Contact', deal.contact_name || '—'],
             ['Currency', deal.currency || '—'],
             ['Deal value', money(deal.deal_value, deal.currency)],
         ];
