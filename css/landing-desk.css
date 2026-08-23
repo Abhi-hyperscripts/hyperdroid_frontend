@@ -1690,3 +1690,51 @@ body.desk-landing .fx-detail::-webkit-scrollbar-thumb {
   background: rgb(255 255 255 / 0.12);
   border-radius: 99px;
 }
+
+/* ── Endpoint filter + section nav (merch-api reference) ───────────────────────────────────────────────
+   Added because 39 of the 46 endpoint blocks are collapsed by default, putting ~63% of the page's text
+   inside closed <details>. Chrome's find-in-page reaches into those; Firefox and Safari do not — so the
+   browser's own search cannot see most of this reference for a large share of readers. */
+body.desk-landing .mk-find { margin: 22px 0 6px; }
+body.desk-landing .mk-find-label {
+  display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--dk-dim); margin-bottom: 8px;
+}
+body.desk-landing .mk-find-row { display: flex; align-items: center; gap: 12px; }
+body.desk-landing .mk-find-input {
+  flex: 1; min-width: 0; height: 44px; padding: 0 14px;
+  border: 1px solid var(--dk-line); border-radius: 11px;
+  background: rgb(255 255 255 / 0.04); color: var(--dk-ink);
+  font-size: 14.5px; font-family: inherit; outline: none;
+  transition: border-color .15s ease, background .15s ease;
+}
+body.desk-landing .mk-find-input::placeholder { color: var(--dk-dim); }
+body.desk-landing .mk-find-input:focus { border-color: rgb(255 255 255 / 0.28); background: rgb(255 255 255 / 0.06); }
+/* Tabular figures so "7 of 46" does not jiggle the layout as the reader types. */
+body.desk-landing .mk-find-count {
+  flex: 0 0 auto; font-size: 13px; color: var(--dk-mute); font-variant-numeric: tabular-nums;
+}
+body.desk-landing .mk-find-hint { margin: 9px 0 0; font-size: 12.5px; color: var(--dk-dim); }
+body.desk-landing .mk-find-hint kbd {
+  font-family: inherit; font-size: 11.5px; padding: 1px 6px; border-radius: 5px;
+  border: 1px solid var(--dk-line); background: rgb(255 255 255 / 0.06); color: var(--dk-mute);
+}
+body.desk-landing .mk-find-empty { margin: 12px 0 0; font-size: 13.5px; color: var(--dk-mute); }
+
+/* Section nav. Scrolls rather than wrapping on a narrow screen, so it can never push the page wide. */
+body.desk-landing .mk-toc {
+  display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto;
+  margin: 0 auto 6px; padding: 10px 4px; max-width: var(--dk-maxw, 1100px);
+  scrollbar-width: none;
+}
+body.desk-landing .mk-toc::-webkit-scrollbar { display: none; }
+body.desk-landing .mk-toc-label {
+  flex: 0 0 auto; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--dk-dim);
+  margin-right: 2px;
+}
+body.desk-landing .mk-toc a {
+  flex: 0 0 auto; font-size: 13px; color: var(--dk-mute); text-decoration: none;
+  padding: 6px 12px; border: 1px solid var(--dk-line); border-radius: 999px;
+  background: rgb(255 255 255 / 0.02); transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+body.desk-landing .mk-toc a:hover { color: var(--dk-ink); border-color: rgb(255 255 255 / 0.24); background: rgb(255 255 255 / 0.06); }

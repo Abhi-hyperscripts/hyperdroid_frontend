@@ -268,13 +268,37 @@ python3 -m http.server 5610</pre>
       <p class="dk-osnote">Two things that will save you writing code you do not need. Verifying twice is safe &mdash; a repeated <code>verify</code> returns the order already created, never a second one &mdash; so a retry after a dropped connection needs no guard of your own. And if the shopper pays and closes the tab before your <code>verify</code> fires, the store still receives the gateway&rsquo;s own notification and creates the order anyway, so that basket is not lost.</p>
     </section>
 
+    <nav class="mk-toc" aria-label="On this page">
+      <span class="mk-toc-label">On this page</span>
+      <a href="#start">Start</a>
+      <a href="#deploy">Deploy</a>
+      <a href="#starter">Starter</a>
+      <a href="#how">The spec</a>
+      <a href="#checkout">Order flows</a>
+      <a href="#filtering">Filters</a>
+      <a href="#endpoints">Endpoints</a>
+    </nav>
+
     <section class="dk-section dk-reveal" id="endpoints">
       <div class="dk-kicker">The surface</div>
       <h2 class="dk-h2">Forty-six endpoints, all documented.</h2>
       <p class="dk-lede">Grouped the way a front end consumes them. Open any one for a runnable curl, what it does, its parameters, and the JSON going in and out. The shapes are illustrative &mdash; field names and types are real, the values are placeholders.</p>
+      <!-- Filter. Injected markup is minimal and the control is HIDDEN until the script boots (mk-find
+           gets .is-on), so with JS off the page is exactly what it was: plain, scrollable, complete. -->
+      <div class="mk-find" id="mkFind" hidden>
+        <label class="mk-find-label" for="mkFindInput">Filter endpoints</label>
+        <div class="mk-find-row">
+          <input id="mkFindInput" class="mk-find-input" type="search" autocomplete="off" spellcheck="false"
+                 placeholder="cancel an order, gift card, /api/checkout&hellip;" aria-describedby="mkFindCount">
+          <span class="mk-find-count" id="mkFindCount" role="status" aria-live="polite"></span>
+        </div>
+        <p class="mk-find-hint">Searches the path, the method and the description. Press <kbd>/</kbd> to jump here, <kbd>Esc</kbd> to clear.</p>
+        <p class="mk-find-empty" id="mkFindEmpty" hidden>No endpoint matches that. The full reference is
+          <a href="/api/openapi.json">/api/openapi.json</a> if you would rather search the machine-readable spec.</p>
+      </div>
       <div class="mk-eps">
         <section class="mk-group">
-          <h3 class="mk-gname">Storefront <span>17 endpoints</span></h3>
+          <h3 class="mk-gname">Storefront <span>18 endpoints</span></h3>
           <details class="mk-ep" open>
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/catalog</code></summary>
             <div class="mk-epbody">
@@ -825,7 +849,7 @@ python3 -m http.server 5610</pre>
           </details>
         </section>
         <section class="mk-group">
-          <h3 class="mk-gname">Cart and checkout <span>4 endpoints</span></h3>
+          <h3 class="mk-gname">Cart and checkout <span>5 endpoints</span></h3>
           <details class="mk-ep" open>
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/cart/save</code></summary>
             <div class="mk-epbody">
@@ -1254,7 +1278,7 @@ python3 -m http.server 5610</pre>
           </details>
         </section>
         <section class="mk-group">
-          <h3 class="mk-gname">Payments <span>3 endpoints</span></h3>
+          <h3 class="mk-gname">Payments <span>4 endpoints</span></h3>
           <details class="mk-ep" open>
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/payment/config</code></summary>
             <div class="mk-epbody">
@@ -1659,6 +1683,94 @@ python3 -m http.server 5610</pre>
         });
       }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
       els.forEach(function (el) { io.observe(el); });
+    })();
+
+    /* ── Endpoint filter ────────────────────────────────────────────────────────
+       Why this exists: 39 of the 46 endpoint blocks are COLLAPSED by default, which
+       puts about 63% of this page's text inside closed <details>. Chrome's
+       find-in-page expands those; Firefox and Safari do not — so for a large share
+       of readers the browser's own Ctrl+F cannot reach two-thirds of the reference,
+       including every request and response shape. This is the substitute.
+
+       It reads the DOM that is already on the page rather than a hand-maintained
+       index, so it cannot fall out of step with the endpoints it searches — which
+       is the failure this very page has had twice.
+
+       Progressive enhancement: the control is `hidden` in the markup and only
+       revealed here, so with JS disabled nothing is advertised that does not work. */
+    (function () {
+      var box = document.getElementById('mkFind');
+      var input = document.getElementById('mkFindInput');
+      var countEl = document.getElementById('mkFindCount');
+      var emptyEl = document.getElementById('mkFindEmpty');
+      var eps = Array.prototype.slice.call(document.querySelectorAll('.mk-ep'));
+      var groups = Array.prototype.slice.call(document.querySelectorAll('.mk-group'));
+      if (!box || !input || !eps.length) return;
+
+      /* Index once. Path and method carry the most signal, so they are searched
+         alongside the prose rather than the prose alone — "post checkout" and
+         "/api/checkout" should both land. */
+      var index = eps.map(function (ep) {
+        var path = (ep.querySelector('.mk-path') || {}).textContent || '';
+        var verb = (ep.querySelector('.mk-verb') || {}).textContent || '';
+        var desc = (ep.querySelector('.mk-desc') || {}).textContent || '';
+        return { el: ep, hay: (verb + ' ' + path + ' ' + desc).toLowerCase(), wasOpen: ep.hasAttribute('open') };
+      });
+
+      /* Group counts are DERIVED here, not trusted from the markup. Three of them
+         were wrong the moment endpoints were added by hand; computing them removes
+         that class of staleness for good. */
+      groups.forEach(function (g) {
+        var span = g.querySelector('.mk-gname span');
+        var n = g.querySelectorAll('.mk-ep').length;
+        if (span) span.textContent = n + (n === 1 ? ' endpoint' : ' endpoints');
+      });
+
+      var total = eps.length;
+      function apply(qRaw) {
+        var q = (qRaw || '').trim().toLowerCase();
+        var shown = 0;
+        index.forEach(function (it) {
+          var hit = !q || it.hay.indexOf(q) !== -1;
+          it.el.hidden = !hit;
+          if (hit) shown++;
+          /* Auto-expand a match: a filter that leaves the answer one more click
+             away has only moved the work. On clear, restore the ORIGINAL open
+             state rather than collapsing everything, so the page returns to how
+             its author arranged it instead of to a uniformly closed list. */
+          if (q && hit) it.el.setAttribute('open', '');
+          else if (!q) { if (it.wasOpen) it.el.setAttribute('open', ''); else it.el.removeAttribute('open'); }
+        });
+        /* Hide a group whose every endpoint is filtered out — an empty heading
+           reads as "this group has nothing", which is not what happened. */
+        groups.forEach(function (g) {
+          var any = Array.prototype.some.call(g.querySelectorAll('.mk-ep'), function (e) { return !e.hidden; });
+          g.hidden = !any;
+        });
+        countEl.textContent = q ? (shown + ' of ' + total) : (total + ' endpoints');
+        emptyEl.hidden = !(q && shown === 0);
+      }
+
+      var t;
+      input.addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { apply(input.value); }, 90); });
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { input.value = ''; apply(''); input.blur(); }
+        if (e.key === 'Enter') {
+          var first = index.filter(function (i) { return !i.el.hidden; })[0];
+          if (first) { e.preventDefault(); first.el.scrollIntoView({ behavior: RS_STILL ? 'auto' : 'smooth', block: 'center' }); }
+        }
+      });
+      /* "/" focuses the filter, the convention on docs sites — but never while the
+         reader is typing somewhere else, or it eats the character. */
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+        var t = e.target, tag = (t && t.tagName) || '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || (t && t.isContentEditable)) return;
+        e.preventDefault(); input.focus(); input.select();
+      });
+
+      box.hidden = false;
+      apply('');
     })();
 
     /* Copy-to-clipboard on each curl command. Injected rather than baked into the
