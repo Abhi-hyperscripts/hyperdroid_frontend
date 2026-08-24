@@ -273,6 +273,7 @@ function openEditCompanyModal(id) {
     document.getElementById('companyCity').value = company.city || '';
     document.getElementById('companyState').value = company.state || '';
     document.getElementById('companyCountry').value = company.country || '';
+    document.getElementById('companyGstTreatment').value = company.gst_treatment || '';
 
     openModal('companyModal');
 }
@@ -318,7 +319,10 @@ async function handleCompanySubmit(event) {
             address: document.getElementById('companyAddress').value.trim() || null,
             city: document.getElementById('companyCity').value.trim() || null,
             state: document.getElementById('companyState').value.trim() || null,
-            country: document.getElementById('companyCountry').value.trim() || null
+            country: document.getElementById('companyCountry').value.trim() || null,
+            // Empty means NOT STATED, which is a real answer — it is why a quote
+            // for this company carries no tax rather than a guessed one.
+            gst_treatment: document.getElementById('companyGstTreatment').value || null
         };
 
         if (editingCompanyId) {

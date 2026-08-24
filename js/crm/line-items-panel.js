@@ -124,6 +124,8 @@ const LineItemsPanel = (() => {
         st.taxUnavailable = !!result.tax_unavailable;
         st.taxByLine = result.tax_by_line || null;
         st.pricedAtListPrice = !!result.priced_at_list_price;
+        st.taxIsProvisional = !!result.tax_is_provisional;
+        st.taxNeedsGstTreatment = !!result.tax_needs_gst_treatment;
     }
 
     /// ⭐ SAY WHEN A PRICE IS THE SHELF PRICE.
@@ -148,20 +150,41 @@ const LineItemsPanel = (() => {
     function totalsBlock(state, subtotal) {
         const { currency } = state;
         if (state.taxUnavailable) {
+            // ⭐ TWO DIFFERENT REASONS, TWO DIFFERENT NEXT ACTIONS.
+            //
+            // "Nobody has stated this company's GST treatment" is answerable, by
+            // a person, in about five seconds. "The catalogue did not answer" is
+            // an outage nobody here can fix. Reporting both as "tax could not be
+            // calculated" leaves a rep waiting for a service to come back when
+            // what is actually missing is a field on the company.
+            const why = state.taxNeedsGstTreatment
+                ? `This company's GST treatment has not been set, so the quote cannot show tax.
+                   Set it on the company to decide whether this sale is a zero-rated export.`
+                : 'Tax could not be calculated just now, so this is the pre-tax total.';
             return `
             <div class="lip-totals">
                 <div class="lip-total-row"><span>Subtotal</span><b>${esc(money(subtotal, currency))}</b></div>
-                <div class="lip-total-warn">
-                    Tax could not be calculated just now, so this is the pre-tax total.
-                </div>
+                <div class="lip-total-warn">${esc(why)}</div>
             </div>`;
         }
         if (state.totalTax === null || state.totalTax === undefined) return '';
+        // ⭐ A PROVISIONAL TOTAL SAYS SO.
+        //
+        // It was computed from facts CRM supplied, because Accounts has no
+        // customer record for this company yet. When one exists — after the deal
+        // is won — the invoice will use ITS state and treatment, which may
+        // differ. Saying nothing here is how a rep quotes a figure the invoice
+        // then contradicts.
+        const provisional = state.taxIsProvisional
+            ? `<div class="lip-total-warn">Provisional — recalculated against the customer's own
+                 details once they exist in Accounts, so the final invoice may differ.</div>`
+            : '';
         return `
         <div class="lip-totals">
             <div class="lip-total-row"><span>Taxable</span><b>${esc(money(state.taxableTotal, currency))}</b></div>
             <div class="lip-total-row"><span>Tax</span><b>${esc(money(state.totalTax, currency))}</b></div>
             <div class="lip-total-row lip-total-grand"><span>Total</span><b>${esc(money(state.grandTotal, currency))}</b></div>
+            ${provisional}
         </div>`;
     }
 

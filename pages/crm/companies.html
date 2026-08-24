@@ -201,6 +201,21 @@
                         <label for="companyCountry">Country</label>
                         <input type="text" id="companyCountry">
                     </div>
+                    <div class="crm-form-group">
+                        <label for="companyGstTreatment">GST treatment</label>
+                        <select id="companyGstTreatment">
+                            <option value="">Not stated</option>
+                            <option value="registered">Registered</option>
+                            <option value="unregistered">Unregistered</option>
+                            <option value="composition">Composition</option>
+                            <option value="overseas">Overseas (export)</option>
+                        </select>
+                        <small class="crm-help-text">
+                            Decides whether a sale to this company is a zero-rated export. Quotes cannot show
+                            tax until it is set, because guessing it from the country would tax an export —
+                            or zero-rate a domestic sale.
+                        </small>
+                    </div>
                 </form>
             </div>
             <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
