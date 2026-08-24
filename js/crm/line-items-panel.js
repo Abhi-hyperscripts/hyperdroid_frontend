@@ -371,7 +371,7 @@ const LineItemsPanel = (() => {
         const plain = [line.sku, line.uom, line.hsn_sac ? `HSN ${line.hsn_sac}` : '',
                        line.category_name].filter(Boolean).join(' \u00b7 ');
         const provenance = bits.length
-            ? `<span class="lip-note" title="${esc(plain)}">${
+            ? `<span class="lip-prov" title="${esc(plain)}">${
                    bits.join('<span class="lip-dot">·</span>')}</span>`
             : '';
 
@@ -538,10 +538,10 @@ const LineItemsPanel = (() => {
         // productMeta() emits — attach-then-reload now looks identical.
         const noteLine = tr.querySelector('.lip-note-line');
         if (noteLine) {
-            let note = noteLine.querySelector('.lip-note');
+            let note = noteLine.querySelector('.lip-prov');
             if (!note) {
                 note = document.createElement('span');
-                note.className = 'lip-note';
+                note.className = 'lip-prov';
                 noteLine.insertBefore(note, noteLine.firstChild);
             }
             note.textContent = [item.sku, item.sale_unit]
@@ -581,7 +581,7 @@ const LineItemsPanel = (() => {
         if (price) { price.readOnly = false; price.title = ''; price.placeholder = ''; }
         // Taking the product off takes its provenance with it — the SKU, unit and
         // the reservability caveat all belonged to the product, not to the line.
-        tr.querySelector('.lip-note-line .lip-note')?.remove();
+        tr.querySelector('.lip-note-line .lip-prov')?.remove();
         tr.querySelector('.lip-note-line .lip-flag')?.remove();
 
         // Flipped HERE rather than by the click handler, so attach and detach

@@ -316,7 +316,6 @@
 /* The thumbnail fallback sits UNDER the real image (which carries z-index 1),
    so a product with no picture shows its initials and one with a picture covers
    them. No onerror handler — that attribute could not safely carry data. */
-.lip-prod-thumb .lip-prod-img-fallback { z-index: 0; }
 .lip-op { color: var(--text-muted); font-size: 11px; user-select: none; }
 
 .lip-row .lip-n-total {
@@ -350,7 +349,13 @@
     padding-left: calc(38px + var(--lip-gut) + 8px);   /* under the name, past the thumb */
     min-height: 18px;
 }
-.lip-note { font-size: 10.5px; color: var(--text-muted); }
+/* ⭐⭐ .lip-note WAS ALREADY TAKEN, by an unrelated component.
+   The "priced from the catalogue" callout further down this sheet is a
+   .lip-note: a bordered box with padding, a background and 11.5px text. Naming
+   the provenance footnote the same thing put that box's padding and background
+   on every line item, which is where a one-line footnote got 31px of height.
+   Two unrelated components, one name, in one stylesheet. */
+.lip-prov { font-size: 10.5px; color: var(--text-muted); }
 .lip-dot  { margin: 0 5px; opacity: .5; }
 .lip-mono { font-family: var(--font-family-mono); }
 
@@ -401,50 +406,6 @@
    the total is still the last thing on the line. The description goes: in a
    column this tight it is the least actionable thing present, and it is one
    accessory too many. */
-@container lip (max-width: 560px) {
-    .lip-row input.lip-f-name,
-    .lip-row .lip-f-ro   { order: 1; flex: 1 1 auto; }
-    .lip-prod-thumb,
-    .lip-thumb-gap       { order: 0; }
-    .lip-kill,
-    .lip-kill-gap        { order: 2; }
-
-    /* second line, pushed right */
-    .lip-sum             { order: 3; margin-left: auto; }
-    .lip-row .lip-n-total { order: 4; }
-
-    /* A thumbnail taller than the control height makes line 1 taller than it
-       needs to be, for no gain in a 30px-tall row. */
-    .lip-prod-thumb,
-    .lip-thumb-gap       { width: 30px; height: 30px; margin-top: 0; }
-
-    .lip-note-line       { padding-left: 0; margin-top: 4px; }
-
-    /* ⭐ A FOOTNOTE MUST NOT DECIDE THE ROW HEIGHT.
-       Measured: a 13-digit barcode plus "Rice & Similar Products" wrapped the
-       provenance onto two lines, and the note line alone came to 72px — taller
-       than the calculation it is annotating. Provenance is checked, not read,
-       so it takes exactly one line and truncates; the full text stays reachable
-       as the element's title. */
-    .lip-note {
-        flex: 1 1 100%;
-        min-width: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* The description stays — a product's own words are the thing this surface
-       was asked to start using, and one clamped line costs 15px. */
-    .lip-blurb           { padding-left: 0; }
-}
-@media (max-width: 720px) {
-    .lip-head-row { display: none; }
-    .lip-band { flex-wrap: wrap; }
-    .lip-row input.lip-f-name { flex: 1 0 100%; order: -1; }
-    .lip-note-line, .lip-blurb { padding-left: 0; }
-}
-
 /* ⭐⭐⭐ inset: 0 DOES NOT SIZE A REPLACED ELEMENT.
    
    This box held `.lip-prod-img { position: absolute; inset: 0 }` and nothing
@@ -486,6 +447,7 @@
 /* The fallback is a centred glyph, not a stretched one — object-fit above
    applies to the image; an inline SVG needs to be laid out. */
 .lip-prod-thumb .lip-prod-img-fallback {
+    z-index: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1011,3 +973,65 @@
     background: color-mix(in srgb, var(--color-warning) 16%, transparent);
     color: var(--color-warning);
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BREAKPOINTS LAST.
+   
+   These sat in the middle of the sheet, ABOVE the rules they exist to
+   override. At equal specificity source order decides, so the base
+   `.lip-prod-thumb { width: 38px }` further down simply won and the narrow
+   variant's 30px never applied — while the properties the base rule does NOT
+   set (white-space, text-overflow) applied fine. A half-working breakpoint is
+   harder to spot than a dead one.
+   
+   A breakpoint block belongs after everything it modifies. These are the last
+   two blocks in this file; keep them there.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@container lip (max-width: 560px) {
+    .lip-row input.lip-f-name,
+    .lip-row .lip-f-ro   { order: 1; flex: 1 1 auto; }
+    .lip-prod-thumb,
+    .lip-thumb-gap       { order: 0; }
+    .lip-kill,
+    .lip-kill-gap        { order: 2; }
+
+    /* second line, pushed right */
+    .lip-sum             { order: 3; margin-left: auto; }
+    .lip-row .lip-n-total { order: 4; }
+
+    /* A thumbnail taller than the control height makes line 1 taller than it
+       needs to be, for no gain in a 30px-tall row. */
+    .lip-prod-thumb,
+    .lip-thumb-gap       { width: 30px; height: 30px; margin-top: 0; }
+
+    .lip-note-line       { padding-left: 0; margin-top: 4px; }
+
+    /* ⭐ A FOOTNOTE MUST NOT DECIDE THE ROW HEIGHT.
+       Measured: a 13-digit barcode plus "Rice & Similar Products" wrapped the
+       provenance onto two lines, and the note line alone came to 72px — taller
+       than the calculation it is annotating. Provenance is checked, not read,
+       so it takes exactly one line and truncates; the full text stays reachable
+       as the element's title. */
+    .lip-prov {
+        flex: 1 1 100%;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* The description stays — a product's own words are the thing this surface
+       was asked to start using, and one clamped line costs 15px. */
+    .lip-blurb           { padding-left: 0; }
+}
+
+@media (max-width: 720px) {
+    .lip-head-row { display: none; }
+    .lip-band { flex-wrap: wrap; }
+    .lip-row input.lip-f-name { flex: 1 0 100%; order: -1; }
+    .lip-note-line, .lip-blurb { padding-left: 0; }
+}
+
+
