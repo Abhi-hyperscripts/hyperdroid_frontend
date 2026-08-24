@@ -1100,6 +1100,24 @@
     .lip-pick:hover { color: var(--text-primary); text-decoration-color: currentColor; }
 }
 
+/* ⭐ THE CALCULATION MUST NOT BREAK ACROSS LINES.
+   
+   In a drawer on a phone the container is ~306px. The arithmetic group is
+   188px and the total 104px, so the pair came to 292 against 282 of usable
+   width — twelve pixels over. The total wrapped to a third line and, having
+   wrapped, sat at the far LEFT, so the row read "3 x 68 =" on one line and
+   "₹340.00" on the next at the opposite edge from the = it answers.
+   
+   That is worse than either a narrow number or a scroll: an equals sign with
+   nothing after it reads as an unfinished calculation. The numbers give up
+   the width instead — they are right-aligned mono, so they lose padding
+   rather than digits. */
+@container lip (max-width: 400px) {
+    .lip-lines   { --lip-num: 62px; }
+    .lip-row .lip-n-total { width: 88px; }
+    .lip-sum     { gap: 4px; }
+}
+
 /* The viewport breakpoint that used to live here is gone.
    
    Every declaration in it was already in the @container block above — except
