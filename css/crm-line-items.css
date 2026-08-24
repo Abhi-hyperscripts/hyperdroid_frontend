@@ -412,7 +412,7 @@
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 5px;
-    padding-left: calc(38px + var(--lip-gut) + 8px);   /* under the name, past the thumb */
+    padding-left: calc(var(--lip-thumb) + var(--lip-gut) + 8px);   /* under the name, past the thumb */
     min-height: 18px;
 }
 /* ⭐⭐ .lip-note WAS ALREADY TAKEN, by an unrelated component.
@@ -461,7 +461,7 @@
 /* ── band 3: what the product is ────────────────────────────────────────── */
 .lip-blurb {
     margin: 3px 0 0;
-    padding-left: calc(38px + var(--lip-gut) + 8px);
+    padding-left: calc(var(--lip-thumb) + var(--lip-gut) + 8px);
     font-size: 11px;
     line-height: 1.4;
     color: var(--text-secondary);
@@ -1164,7 +1164,15 @@
        stayed 78px at every width while the block's other two rules (both true
        descendants) applied. Half a fix, reading as a whole one.
        `.lip-row` is a descendant, and --lip-num inherits from there to .lip-n. */
-    .lip-row     { --lip-num: 62px; }
+    /* Both, because --lip-num is consumed by .lip-row .lip-n AND by
+       .lip-head-sum, and .lip-head-row is a SIBLING of .lip-row — not a
+       descendant. Setting it on .lip-row alone left the header sized for 78px
+       while the columns it labels went to 62px. Invisible today only because
+       the 560px block hides the header and 400 is inside 560; one breakpoint
+       edit from a header labelling the wrong columns, which is the defect that
+       block's own comment condemns. */
+    .lip-row,
+    .lip-head-row { --lip-num: 62px; }
     .lip-row .lip-n-total { width: 88px; }
     .lip-sum     { gap: 4px; }
 }

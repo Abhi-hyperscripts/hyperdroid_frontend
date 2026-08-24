@@ -596,6 +596,12 @@ const LineItemsPanel = (() => {
         //    number on screen that can disagree with the one the server returns on
         //    save. Absent is safe; wrong is not.
         //
+        // The photo and the description are NOT on this list, though an earlier
+        // version of it wrongly implied they were by saying "two differences".
+        // They are restored below: the picker carries image_url, image_count and
+        // description, and renders all three itself, so there was never an
+        // argument for leaving them out.
+        //
         // Claiming these away is how the last version of this comment came to say
         // "looks identical" while three things differed.
         const noteLine = tr.querySelector('.lip-note-line');
@@ -668,6 +674,39 @@ const LineItemsPanel = (() => {
             control.setAttribute('data-lip', 'unpick');
             control.textContent = 'Remove product';
             control.title = 'Remove the product from this line';
+        }
+
+        // ⭐⭐⭐ THE PHOTO AND THE DESCRIPTION, WHICH detach TAKES AWAY.
+        //
+        // detachItem swaps the thumbnail for a gap and removes the blurb — both
+        // correct, they belong to the product. attach did not put them back, so
+        // remove-then-choose left a catalogue line with no photo and no
+        // description until the next save and reload.
+        //
+        // The comment above this function listed "two differences, both
+        // deliberate" and named HSN and the stock badge. These two were not on
+        // that list and had no argument behind them: the picker already carries
+        // image_url, image_count and description — it renders all three in its own
+        // rows. Enumerating a set in prose and implementing a subset is exactly
+        // what the ⭐ comment in detachItem was added to stop, and I did it again
+        // one commit later. The set is now the set.
+        const gap = tr.querySelector('.lip-thumb-gap');
+        if (gap) {
+            const holder = document.createElement('span');
+            holder.innerHTML = productThumb({
+                image_url: item.image_url, image_count: item.image_count,
+                description: item.name, sku: item.sku,
+            });
+            const built = holder.firstElementChild;
+            if (built) gap.replaceWith(built);
+        }
+
+        if (item.description && !tr.querySelector('.lip-blurb')) {
+            const blurb = document.createElement('p');
+            blurb.className = 'lip-blurb';
+            blurb.textContent = item.description;
+            blurb.title = item.description;
+            tr.appendChild(blurb);
         }
     }
 
