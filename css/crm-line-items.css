@@ -720,7 +720,21 @@
      * next overlay anyone writes. */
     position: fixed !important;
     inset: 0;
-    z-index: 1200;
+
+    /* ⭐⭐⭐ THE SAME BLANKET RULE SETS TWO PROPERTIES. COUNTER BOTH.
+     *
+     * That rule is `{ position: relative; z-index: 1 }`. The !important above
+     * was added for position and stopped there, so `z-index: 1200` below was
+     * still losing to its `z-index: 1` — and the picker rendered UNDERNEATH the
+     * deal slide-panel's scrim (z-index 1050). It was dimmed, blurred by the
+     * scrim's backdrop-filter, and elementFromPoint at its centre returned the
+     * OVERLAY: every click on a product row hit the scrim, so choosing a product
+     * from inside a deal did nothing at all.
+     *
+     * Nothing errored and the dialog was plainly on screen, which is exactly why
+     * it survived: it looked open. Countering one property of a two-property
+     * rule leaves a defect that is invisible until someone clicks. */
+    z-index: 1200 !important;
     display: none;
     align-items: center;
     justify-content: center;
