@@ -310,7 +310,17 @@ const LineItemsPanel = (() => {
                                  <line x1="12" y1="22.08" x2="12" y2="12"/>
                              </svg>
                          </span>`;
-        if (!line.image_url) return initial;
+        // ⭐ BOTH BRANCHES MUST PRODUCE THE SAME BOX.
+        //
+        // This returned the bare fallback span, unwrapped. Every rule that gives
+        // the fallback a size, a position and a centred glyph is scoped to
+        // `.lip-prod-thumb`, so a product with no image rendered an unsized
+        // inline SVG straight into the flex row while a product WITH one
+        // rendered a 38px tile. Same function, two different shapes, and only
+        // the branch with data was ever looked at.
+        if (!line.image_url) {
+            return `<span class="lip-prod-thumb">${initial}</span>`;
+        }
 
         // ⭐ "AND N MORE" — the count is what stops one image and a gallery of
         // four looking identical. Accounts sends the primary URL only (200 rows

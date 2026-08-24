@@ -383,16 +383,53 @@
     .lip-note-line, .lip-blurb { padding-left: 0; }
 }
 
+/* ⭐⭐⭐ inset: 0 DOES NOT SIZE A REPLACED ELEMENT.
+   
+   This box held `.lip-prod-img { position: absolute; inset: 0 }` and nothing
+   else, on the reasonable-looking theory that all four offsets at zero make a
+   child fill its parent. That is true for a div. It is NOT true for an <img>:
+   for an absolutely positioned REPLACED element with width:auto, CSS resolves
+   width from the image's INTRINSIC size and then ignores `right` as
+   over-constrained. So an 800px product photo rendered at 800px, anchored to
+   the top-left of a 38px box, with no overflow:hidden to contain it — three
+   line items became a column of full-size groceries.
+   
+   It was invisible for as long as it existed because Accounts did not expose
+   image_url, so the branch never ran with a real URL. The first row of real
+   data was the first execution.
+   
+   Fixed at the shared rule, which both consumers — the quote line and the
+   product picker — go through. */
 .lip-prod-thumb {
     position: relative;
     flex: 0 0 auto;
     width: 38px;
     height: 38px;
     margin-top: 2px;
+    overflow: hidden;
+    border-radius: 7px;
+    background: var(--bg-tertiary);
 }
 
-.lip-prod-thumb .lip-prod-img { position: absolute; inset: 0; margin: 0; }
+.lip-prod-thumb .lip-prod-img {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 .lip-prod-thumb .lip-prod-img-real { z-index: 1; }
+
+/* The fallback is a centred glyph, not a stretched one — object-fit above
+   applies to the image; an inline SVG needs to be laid out. */
+.lip-prod-thumb .lip-prod-img-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+.lip-prod-thumb .lip-prod-img-fallback svg { width: 17px; height: 17px; }
 
 /* Chips live on in the product PICKER only. A search result is scanned, and a
    pill is the right weight for a fact you are comparing across rows. On a quote
