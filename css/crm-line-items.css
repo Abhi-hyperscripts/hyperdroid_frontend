@@ -140,7 +140,162 @@
    whatever was left — 41px of cell holding a 21px input. The typed value was
    there and simply could not be READ, on the column that decides the line
    total. A quantity box has to fit "1000.125" and a price box a real amount. */
-.lip-col-desc { min-width: 240px; }
+/* ══ A LINE IS A CARD ══════════════════════════════════════════════════════
+   This was a <table>. A table makes every cell share the row's height, so a
+   four-line product cell left the qty and price inputs vertically centred in
+   empty space — far from the product they belong to, under headers that no
+   longer sat above anything. It read as misaligned because it was: the layout
+   was fighting the content.
+
+   A grid lets the identity grow while the money stays compact, both TOP-aligned.
+   Qty, price and total sit together because they are one thought. */
+.lip-lines { display: flex; flex-direction: column; gap: 8px; }
+
+.lip-lines-head {
+    display: grid;
+    grid-template-columns: 1fr auto 110px 30px;
+    gap: 12px;
+    padding: 0 12px;
+    font-size: 10px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.lip-lines-head-money { text-align: center; }
+.lip-lines-head-total { text-align: right; }
+
+.lip-line {
+    display: grid;
+    grid-template-columns: 1fr auto 110px 30px;
+    grid-template-areas:
+        "id money total tools"
+        "extra extra extra extra";
+    align-items: start;               /* the fix: nothing floats mid-cell */
+    gap: 8px 12px;
+    padding: 11px 12px;
+    border: 1px solid var(--border-color-light);
+    border-radius: 11px;
+    background: var(--bg-secondary);
+    transition: border-color .12s ease;
+}
+
+.lip-line:focus-within { border-color: var(--border-color-focus); }
+
+.lip-line-id { grid-area: id; display: flex; gap: 10px; min-width: 0; }
+.lip-line-idmain { flex: 1; min-width: 0; }
+
+.lip-line-name {
+    width: 100%;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 3px 6px;
+    margin-left: -6px;               /* optically flush with the text below */
+}
+.lip-line-name:hover  { border-color: var(--border-color-light); }
+.lip-line-name:focus  { border-color: var(--border-color-focus); background: var(--bg-primary); outline: none; }
+.lip-line-name-ro     { display: block; padding: 3px 0; }
+
+/* ── the commercial block: one thought, kept together ── */
+.lip-line-money {
+    grid-area: money;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 3px;
+}
+.lip-line-x { color: var(--text-muted); font-size: 11px; }
+
+.lip-line-qty, .lip-line-price {
+    width: 74px;
+    padding: 5px 8px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border-color-light);
+    border-radius: 7px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 12.5px;
+}
+.lip-line-price[readonly] {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: default;
+}
+.lip-line-money-ro { color: var(--text-secondary); font-size: 12.5px; }
+
+.lip-line-total {
+    grid-area: total;
+    padding-top: 8px;
+    text-align: right;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.lip-line-tools { grid-area: tools; padding-top: 6px; text-align: right; }
+
+/* Stock, the product control and the rarely-used account code share one quiet
+   strip beneath, so none of them competes with the product name. */
+.lip-line-extra {
+    grid-area: extra;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-left: 48px;              /* aligned under the text, past the thumb */
+}
+
+.lip-line-acct {
+    flex: 0 1 190px;
+    padding: 3px 8px;
+    font-size: 11px;
+    border: 1px dashed var(--border-color-light);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+}
+.lip-line-acct:focus {
+    border-style: solid;
+    border-color: var(--border-color-focus);
+    background: var(--bg-primary);
+    outline: none;
+}
+
+/* A gallery behind the cover image. */
+.lip-prod-more {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    z-index: 2;
+    padding: 0 4px;
+    border-radius: 5px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--text-inverse);
+    background: var(--brand-primary);
+}
+
+.lip-chip-hsn { font-family: var(--font-family-mono); }
+.lip-chip-acct { font-family: var(--font-family-mono); }
+
+@media (max-width: 720px) {
+    /* The money block drops beneath the identity rather than squeezing it. */
+    .lip-lines-head { display: none; }
+    .lip-line {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "id    tools"
+            "money total"
+            "extra extra";
+    }
+    .lip-line-extra { padding-left: 0; }
+}
+
 
 /* ── The product cell ──────────────────────────────────────────────────────
    A catalogue line is a PRODUCT, not a sentence. It was rendering as a bare
@@ -190,12 +345,12 @@
 .lip-prod-img-fallback svg { width: 18px; height: 18px; }
 
 .lip-prod-desc {
-    margin: 3px 0 0;
+    margin: 2px 0 0;
     font-size: 11.5px;
     line-height: 1.35;
     color: var(--text-secondary);
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -256,11 +411,6 @@
     color: var(--color-warning);
     border-color: color-mix(in srgb, var(--color-warning) 26%, transparent);
 }
-.lip-col-qty { min-width: 74px; }
-.lip-col-price { min-width: 96px; }
-.lip-col-total { min-width: 92px; }
-.lip-col-acct { min-width: 78px; }
-.lip-col-x { width: 30px; }
 .ppp-col-no { width: 34px; }
 /* ⚠ THE OTHER TWO COLUMNS OF THE SAME TABLE. #, Amount and Paid each got a
    treatment and Due and Status got none, so an instalment table sized those two
@@ -488,11 +638,17 @@
 /* ── Catalogue lines and the product picker ─────────────────────────────── */
 
 /* A line that sells a real product reads differently from one somebody typed,
-   because its price is not the rep's to change. */
-.lip-catalogue .lip-col-price input[readonly] {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-    cursor: not-allowed;
+   because its price is not the rep's to change.
+
+   This rule used to hang off .lip-col-price — a table-era class the card layout
+   no longer emits — so it had quietly become dead CSS on a class the markup
+   still sets. The styled-classes guard caught it; nothing on screen would have.
+
+   Now it is a left accent: at a glance, which lines are catalogue products and
+   which are free text a person wrote. */
+.lip-line.lip-catalogue {
+    border-left: 2px solid color-mix(in srgb, var(--brand-primary) 45%, transparent);
+    padding-left: 10px;
 }
 
 .lip-sku {

@@ -189,11 +189,6 @@ const LineItemsPanel = (() => {
     }
 
     function shell(state) {
-        // The HSN/SAC column appears only when a line actually carries one.
-        // A services quote priced in free text has no tax classification to
-        // show, and an always-present column of dashes is noise on a document.
-        const showHsn = (state.lines || []).some(l => l.hsn_sac);
-        state.showHsn = showHsn;
         const { lines, currency, canEdit, hasQuotation, quotationNumber } = state;
         const total = sum(lines);
 
@@ -242,23 +237,15 @@ const LineItemsPanel = (() => {
                 ? 'No lines yet — this deal is priced by the value on it. Add a line to itemise it.'
                 : 'This deal is priced by the value on it, not by line items.'}</p>
             ` : `
-            <div class="lip-table-wrap">
-                <table class="lip-table">
-                    <thead>
-                        <tr>
-                            <th class="lip-col-desc">Description</th>
-                            ${showHsn ? '<th class="lip-col-hsn">HSN/SAC</th>' : ''}
-                            <th class="lip-col-qty">Qty</th>
-                            <th class="lip-col-price">Unit price</th>
-                            <th class="lip-col-acct">Account</th>
-                            <th class="lip-col-total">Total</th>
-                            ${canEdit ? '<th class="lip-col-x"><span class="sr-only">Remove</span></th>' : ''}
-                        </tr>
-                    </thead>
-                    <tbody data-lip="rows">
-                        ${lines.map((l, i) => row(l, i, state)).join('')}
-                    </tbody>
-                </table>
+            <div class="lip-lines">
+                <div class="lip-lines-head" aria-hidden="true">
+                    <span>Item</span>
+                    <span class="lip-lines-head-money">Qty &times; Unit price</span>
+                    <span class="lip-lines-head-total">Total</span>
+                </div>
+                <div data-lip="rows">
+                    ${lines.map((l, i) => row(l, i, state)).join('')}
+                </div>
             </div>
             `}
 
@@ -325,88 +312,132 @@ const LineItemsPanel = (() => {
                          </span>`;
         if (!line.image_url) return initial;
 
+        // ⭐ "AND N MORE" — the count is what stops one image and a gallery of
+        // four looking identical. Accounts sends the primary URL only (200 rows
+        // of every URL is payload nobody reads) and a count beside it, so the
+        // truth stays expressible without the payload.
+        const more = line.image_count > 1
+            ? `<span class="lip-prod-more" title="${esc(line.image_count)} images">+${esc(line.image_count - 1)}</span>`
+            : '';
         return `<span class="lip-prod-thumb">
                     ${initial}
                     <img class="lip-prod-img lip-prod-img-real" src="${esc(line.image_url)}"
                          alt="" loading="lazy" onerror="this.hidden = true">
+                    ${more}
                 </span>`;
     }
 
     /// SKU, unit and category on one line — the facts that tell two similar
     /// products apart. Empty pieces are dropped rather than rendered as dashes.
-    function productMeta(line) {
+    /// SKU, unit, HSN and category on one line — the facts that tell two similar
+    /// products apart. Empty pieces are dropped rather than rendered as dashes.
+    ///
+    /// HSN moved here from its own table column: four digits do not earn a
+    /// column, and it belongs beside the other identifiers rather than floating
+    /// in the middle of the money. It keeps the tax breakdown as its tooltip.
+    function productMeta(line, state) {
         return [
             line.sku ? `<span class="lip-chip lip-chip-sku">${esc(line.sku)}</span>` : '',
             line.uom ? `<span class="lip-chip" title="Sold in ${esc(line.uom)}">${esc(line.uom)}</span>` : '',
+            line.hsn_sac
+                ? `<span class="lip-chip lip-chip-hsn" title="${esc(lineTaxHint(state, line))}">HSN ${esc(line.hsn_sac)}</span>`
+                : '',
             line.category_name ? `<span class="lip-chip lip-chip-cat">${esc(line.category_name)}</span>` : '',
         ].filter(Boolean).join('');
     }
 
     function row(line, index, state) {
         const { canEdit, currency } = state;
-        if (!canEdit) {
-            return `
-            <tr>
-                <td class="lip-col-desc">${esc(line.description)}</td>
-                ${state.showHsn ? `<td class="lip-col-hsn" title="${esc(lineTaxHint(state, line))}">${esc(line.hsn_sac || '—')}</td>` : ''}
-                <td class="lip-col-qty">${esc(line.quantity)}</td>
-                <td class="lip-col-price">${esc(money(line.unit_price, currency))}</td>
-                <td class="lip-col-acct">${esc(line.account_code || '—')}</td>
-                <td class="lip-col-total">${esc(money(lineTotal(line.quantity, line.unit_price), currency))}</td>
-            </tr>`;
-        }
-        // ⭐ THE ITEM ID LIVES ON THE ROW, NOT IN A STATE OBJECT.
-        //
-        // readLines() rebuilds the payload from the DOM on every save, so a
-        // catalogue reference held only in JavaScript state would be dropped
-        // silently the moment the rep pressed Save — the line would post as
-        // free text at whatever price was on screen. This service has already
-        // shipped that exact bug once, on a different panel.
         const isCatalogue = !!line.item_id;
-        return `
-        <tr data-lip-row="${index}"${isCatalogue ? ` data-lip-item="${esc(line.item_id)}"` : ''} class="${isCatalogue ? 'lip-catalogue' : ''}">
-            <td class="lip-col-desc">
-                <div class="lip-prod">
-                    ${isCatalogue ? productThumb(line) : ''}
-                    <div class="lip-prod-main">
-                        <input type="text" data-lip-field="description" maxlength="${MAX_DESCRIPTION}"
-                               value="${esc(line.description)}" placeholder="e.g. Onboarding &amp; setup"
-                               aria-label="Line ${index + 1} description">
-                        ${isCatalogue && line.item_description
-                            ? `<p class="lip-prod-desc" title="${esc(line.item_description)}">${esc(line.item_description)}</p>`
-                            : ''}
-                        ${isCatalogue ? `<div class="lip-prod-meta">${productMeta(line)}</div>` : ''}
-                        <div class="lip-prod-actions">
-                            ${stockBadge(line)}
-                            <button type="button" class="lip-pick" data-lip="${isCatalogue ? 'unpick' : 'pick'}" hidden
-                                    title="${isCatalogue ? 'Remove the product from this line' : 'Choose a product from the catalogue'}">${
-                                        isCatalogue ? 'Remove product' : 'Choose product'}</button>
-                        </div>
-                    </div>
+        const total = money(lineTotal(line.quantity, line.unit_price), currency);
+
+        // ⭐⭐ A LINE IS A CARD, NOT A SPREADSHEET ROW.
+        //
+        // This was a <table>, and a table makes every cell in a row share the
+        // row's height: a four-line product cell (name, description, chips,
+        // badges) left the qty and price inputs vertically centred in empty
+        // space, a long way from the product they belong to, with the header
+        // labels no longer over anything. It read as misaligned because it WAS —
+        // the layout was fighting the content.
+        //
+        // A grid lets the identity be as tall as it needs while the commercial
+        // terms stay a compact block, both TOP-aligned. Qty, price and total sit
+        // together because they are one thought: what this line costs.
+        //
+        // The JS hooks are attribute-based ([data-lip-row], [data-lip-field],
+        // [data-lip-cell]) rather than tag-based, so none of readLines(),
+        // refreshTotals() or the click delegation had to change.
+        //
+        // (This comment said "recalc()" — a function that does not exist in this
+        // file and never has. Prose naming a function nobody can find is how a
+        // reader concludes the comment is stale and stops trusting the rest.)
+        const identity = `
+            <div class="lip-line-id">
+                ${isCatalogue ? productThumb(line) : ''}
+                <div class="lip-line-idmain">
+                    ${canEdit
+                        ? `<input type="text" class="lip-line-name" data-lip-field="description"
+                                  maxlength="${MAX_DESCRIPTION}" value="${esc(line.description)}"
+                                  placeholder="e.g. Onboarding &amp; setup"
+                                  aria-label="Line ${index + 1} description">`
+                        : `<span class="lip-line-name lip-line-name-ro">${esc(line.description)}</span>`}
+                    ${isCatalogue && line.item_description
+                        ? `<p class="lip-prod-desc" title="${esc(line.item_description)}">${esc(line.item_description)}</p>`
+                        : ''}
+                    ${isCatalogue || (!canEdit && line.account_code)
+                        ? `<div class="lip-prod-meta">${productMeta(line, state)}${
+                            // ⚠ READ-ONLY LOST THIS IN THE CARD REWRITE.
+                            //
+                            // The account code lives in the lower strip, and that
+                            // strip is editor-only — so a viewer who could see it
+                            // in the old table stopped seeing it, silently. Found
+                            // by diffing what the old row rendered against what
+                            // the new one does, not by looking at the screen.
+                            !canEdit && line.account_code
+                                ? `<span class="lip-chip lip-chip-acct" title="Account code">${esc(line.account_code)}</span>`
+                                : ''}</div>`
+                        : ''}
                 </div>
-            </td>
-            ${state.showHsn ? `<td class="lip-col-hsn" title="${esc(lineTaxHint(state, line))}">${esc(line.hsn_sac || '—')}</td>` : ''}
-            <td class="lip-col-qty">
-                <input type="number" data-lip-field="quantity" step="0.001" min="0.001"
-                       value="${esc(line.quantity)}" aria-label="Line ${index + 1} quantity">
-            </td>
-            <td class="lip-col-price">
-                <input type="number" data-lip-field="unit_price" step="0.01" min="0"
-                       value="${esc(line.unit_price)}" aria-label="Line ${index + 1} unit price"
-                       ${isCatalogue ? 'readonly title="This price comes from the product catalogue"' : ''}>
-            </td>
-            <td class="lip-col-acct">
-                <input type="text" data-lip-field="account_code" maxlength="40"
-                       value="${esc(line.account_code || '')}" placeholder="optional"
-                       aria-label="Line ${index + 1} account code">
-            </td>
-            <td class="lip-col-total" data-lip-cell="total">${esc(money(lineTotal(line.quantity, line.unit_price), currency))}</td>
-            <td class="lip-col-x">
+            </div>`;
+
+        const money_ = canEdit
+            ? `<div class="lip-line-money">
+                   <input type="number" class="lip-line-qty" data-lip-field="quantity"
+                          step="0.001" min="0.001" value="${esc(line.quantity)}"
+                          aria-label="Line ${index + 1} quantity">
+                   <span class="lip-line-x" aria-hidden="true">&times;</span>
+                   <input type="number" class="lip-line-price" data-lip-field="unit_price"
+                          step="0.01" min="0" value="${esc(line.unit_price)}"
+                          aria-label="Line ${index + 1} unit price"
+                          ${isCatalogue ? 'readonly title="This price comes from the product catalogue"' : ''}>
+               </div>`
+            : `<div class="lip-line-money lip-line-money-ro">
+                   ${esc(line.quantity)} <span class="lip-line-x">&times;</span> ${esc(money(line.unit_price, currency))}
+               </div>`;
+
+        return `
+        <div class="lip-line${isCatalogue ? ' lip-catalogue' : ''}" data-lip-row="${index}"${
+            isCatalogue ? ` data-lip-item="${esc(line.item_id)}"` : ''}>
+            ${identity}
+            ${money_}
+            <div class="lip-line-total" data-lip-cell="total">${esc(total)}</div>
+            ${canEdit ? `
+            <div class="lip-line-tools">
                 <button type="button" class="lip-x" data-lip="remove" aria-label="Remove line ${index + 1}">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
-            </td>
-        </tr>`;
+            </div>` : ''}
+            ${canEdit ? `
+            <div class="lip-line-extra">
+                ${stockBadge(line)}
+                <button type="button" class="lip-pick" data-lip="${isCatalogue ? 'unpick' : 'pick'}" hidden
+                        title="${isCatalogue ? 'Remove the product from this line' : 'Choose a product from the catalogue'}">${
+                            isCatalogue ? 'Remove product' : 'Choose product'}</button>
+                <input type="text" class="lip-line-acct" data-lip-field="account_code" maxlength="40"
+                       value="${esc(line.account_code || '')}" placeholder="account code (optional)"
+                       aria-label="Line ${index + 1} account code">
+            </div>` : ''}
+        </div>`;
     }
 
     // ─── The product picker ─────────────────────────────────────────────────
@@ -547,7 +578,8 @@ const LineItemsPanel = (() => {
             list.innerHTML = rows.length
                 ? rows.map(i => `
                     <button type="button" class="lip-picker-row" data-pick="${esc(i.id)}">
-                        ${productThumb({ image_url: i.image_url, description: i.name, sku: i.sku })}
+                        ${productThumb({ image_url: i.image_url, image_count: i.image_count,
+                                         description: i.name, sku: i.sku })}
                         <span class="lip-picker-body">
                             <span class="lip-picker-name">${esc(i.name)}</span>
                             ${i.description
