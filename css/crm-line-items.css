@@ -180,6 +180,19 @@
 }
 
 /* ── the header states the calculation, because that is what the columns are ── */
+/* ⭐ THE HEADER MUST BE BUILT FROM THE SAME MEASUREMENTS AS THE ROW.
+   
+   These widths were hand-computed and got it wrong: they omitted the 38px
+   thumbnail and the 24px remove button that the row band carries, so at 900px
+   "Line total" sat 35px left of the column it labels and "Item" started 49px
+   before the name input. The narrow variant's own comment condemns exactly
+   this — labels above the wrong things — and it was fixed there while being
+   introduced here.
+   
+   So the header mirrors the band: same gap, a leading spacer the width of the
+   thumbnail, and a trailing spacer the width of the remove button. Every
+   figure is the variable the row uses, not a number that has to be kept in
+   step by hand. */
 .lip-head-row {
     display: flex;
     align-items: center;
@@ -190,9 +203,19 @@
     text-transform: uppercase;
     color: var(--text-muted);
 }
-.lip-head-item  { flex: 1; }
-.lip-head-sum   { width: calc(var(--lip-num) * 2 + 46px); text-align: center; }
-.lip-head-total { width: 104px; text-align: right; }
+.lip-head-row::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 38px;                                   /* the thumbnail column */
+}
+.lip-head-row::after {
+    content: "";
+    flex: 0 0 auto;
+    width: 24px;                                   /* the remove button */
+}
+.lip-head-item  { flex: 1 1 auto; min-width: 132px; }
+.lip-head-sum   { width: calc(var(--lip-num) * 2 + 26px); text-align: center; }
+.lip-head-total { width: 104px; padding-left: 8px; text-align: right; }
 
 /* ── the line ────────────────────────────────────────────────────────────── */
 .lip-row {
@@ -367,6 +390,13 @@
     color: var(--color-warning);
 }
 
+/* A viewer cannot edit the account code, so it is not a field for them — it is
+   one more fact on the provenance line, and it reads like the others. */
+.lip-acct-ro {
+    font-size: 10.5px;
+    font-family: var(--font-family-mono);
+    color: var(--text-muted);
+}
 .lip-row input.lip-acct {
     width: 130px;
     height: 20px;
@@ -1064,11 +1094,17 @@
     .lip-pick:hover { color: var(--text-primary); text-decoration-color: currentColor; }
 }
 
-@media (max-width: 720px) {
-    .lip-head-row { display: none; }
-    .lip-band { flex-wrap: wrap; }
-    .lip-row input.lip-f-name { flex: 1 0 100%; order: -1; }
-    .lip-note-line, .lip-blurb { padding-left: 0; }
-}
-
+/* The viewport breakpoint that used to live here is gone.
+   
+   Every declaration in it was already in the @container block above — except
+   `.lip-row input.lip-f-name { order: -1 }`, which CONTRADICTED the container
+   block's `order: 1` and, sitting later in the file, won. The container block
+   still placed `.lip-kill` at order 2 on the assumption that the name was
+   order 1 beside it, so on a phone the computed order came out name -1, thumb
+   0, KILL 2, sum 3 — and the destructive remove button rendered on the second
+   line immediately before the quantity input.
+   
+   Two breakpoints on the same axis is one too many. The container query
+   already fires at these widths, because a narrow viewport gives a narrow
+   container; the @media block could only ever disagree with it. */
 

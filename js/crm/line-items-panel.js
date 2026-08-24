@@ -465,7 +465,26 @@ const LineItemsPanel = (() => {
                             isCatalogue ? 'Remove product' : 'Choose product'}</button>
                 <input type="text" class="lip-f lip-acct" data-lip-field="account_code" maxlength="40"
                        value="${esc(line.account_code || '')}" placeholder="Account code"
-                       aria-label="Line ${index + 1} account code">` : ''}
+                       aria-label="Line ${index + 1} account code">`
+                : // ⚠⚠ READ-ONLY HAS NOW LOST THIS TWICE. DO NOT MAKE IT THREE.
+                  //
+                  // The account code lives in the editing strip, and that strip is
+                  // editor-only — so a viewer who could see the code in the table
+                  // layout stopped seeing it, silently, in the card rewrite. It was
+                  // restored with a comment saying exactly that, and THIS rewrite
+                  // deleted the render and the comment together.
+                  //
+                  // Both times it was found by diffing what the old row rendered
+                  // against what the new one does. Never by looking at the screen:
+                  // the viewer sees a line that looks complete.
+                  //
+                  // canEdit is false for a team member when the tenant has
+                  // allow_member_deal_edits off (deals.js -> canEditDealFinancial),
+                  // and the API returns account_code regardless. So this is a real
+                  // reader losing a real value, not a hypothetical.
+                  (line.account_code
+                      ? `<span class="lip-acct-ro" title="Account code">${esc(line.account_code)}</span>`
+                      : '')}
             </div>
 
             ${isCatalogue && line.item_description
@@ -523,7 +542,14 @@ const LineItemsPanel = (() => {
         tr.classList.add('is-catalogue');
 
         const desc = tr.querySelector('[data-lip-field="description"]');
-        if (desc && !desc.value.trim()) desc.value = item.name || '';
+        if (desc && !desc.value.trim()) {
+            desc.value = item.name || '';
+            // The renderer puts the full name in the title so a truncated name
+            // stays readable on hover. Setting the value without the title left
+            // that dead on the one path where the name is longest and certain to
+            // be cut — the moment a product is chosen.
+            desc.title = item.name || '';
+        }
 
         const price = tr.querySelector('[data-lip-field="unit_price"]');
         if (price) {
@@ -551,8 +577,24 @@ const LineItemsPanel = (() => {
                 note.className = 'lip-prov';
                 noteLine.insertBefore(note, noteLine.firstChild);
             }
-            note.textContent = [item.sku, item.sale_unit]
-                .filter(Boolean).join(' \u00b7 ');
+            // ⭐ THE SAME STRUCTURE AND THE SAME TITLE AS productMeta().
+            //
+            // This wrote plain textContent with literal middots and no title. Two
+            // consequences, both invisible until you look for them: the SKU lost
+            // its monospacing while an identical line one row down kept it, and —
+            // worse — `.lip-prov` truncates with an ellipsis in a narrow container
+            // on the stated promise that "the full text stays reachable as the
+            // element's title". After a pick there was no title, so a 13-digit
+            // barcode was cut off with nothing behind it.
+            //
+            // The comment below used to claim attach-then-reload looked identical.
+            // It does now.
+            const bits = [
+                item.sku ? `<span class="lip-mono">${esc(item.sku)}</span>` : '',
+                item.sale_unit ? esc(item.sale_unit) : '',
+            ].filter(Boolean);
+            note.innerHTML = bits.join('<span class="lip-dot">\u00b7</span>');
+            note.title = [item.sku, item.sale_unit].filter(Boolean).join(' \u00b7 ');
 
             let flag = noteLine.querySelector('.lip-flag');
             if (item.tracks_stock && !item.can_be_reserved) {
