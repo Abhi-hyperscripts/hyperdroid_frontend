@@ -366,8 +366,13 @@ const LineItemsPanel = (() => {
             line.category_name ? esc(line.category_name) : '',
         ].filter(Boolean);
 
+        // The note truncates in a narrow container, so the full text has to stay
+        // reachable — a fact you cannot read is not a fact you shipped.
+        const plain = [line.sku, line.uom, line.hsn_sac ? `HSN ${line.hsn_sac}` : '',
+                       line.category_name].filter(Boolean).join(' \u00b7 ');
         const provenance = bits.length
-            ? `<span class="lip-note">${bits.join('<span class="lip-dot">·</span>')}</span>`
+            ? `<span class="lip-note" title="${esc(plain)}">${
+                   bits.join('<span class="lip-dot">·</span>')}</span>`
             : '';
 
         const withdrawn = line.no_longer_sellable

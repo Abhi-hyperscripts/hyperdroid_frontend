@@ -413,8 +413,30 @@
     .lip-sum             { order: 3; margin-left: auto; }
     .lip-row .lip-n-total { order: 4; }
 
+    /* A thumbnail taller than the control height makes line 1 taller than it
+       needs to be, for no gain in a 30px-tall row. */
+    .lip-prod-thumb,
+    .lip-thumb-gap       { width: 30px; height: 30px; margin-top: 0; }
+
     .lip-note-line       { padding-left: 0; margin-top: 4px; }
-    .lip-blurb           { display: none; }
+
+    /* ⭐ A FOOTNOTE MUST NOT DECIDE THE ROW HEIGHT.
+       Measured: a 13-digit barcode plus "Rice & Similar Products" wrapped the
+       provenance onto two lines, and the note line alone came to 72px — taller
+       than the calculation it is annotating. Provenance is checked, not read,
+       so it takes exactly one line and truncates; the full text stays reachable
+       as the element's title. */
+    .lip-note {
+        flex: 1 1 100%;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* The description stays — a product's own words are the thing this surface
+       was asked to start using, and one clamped line costs 15px. */
+    .lip-blurb           { padding-left: 0; }
 }
 @media (max-width: 720px) {
     .lip-head-row { display: none; }
