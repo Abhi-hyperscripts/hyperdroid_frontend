@@ -169,8 +169,14 @@
    For an absolutely positioned 600x600 product photo that is the exact defect
    this file already fixed once: full-size groceries, this time in the dialog.
    
-   Measured before shipping: `getComputedStyle(document.body)` returned nothing
-   for --lip-thumb, while the same probe inside .lip-lines returned 30px.
+   Measured before shipping: `getComputedStyle(document.body).getPropertyValue(
+   '--lip-thumb')` returned the empty string — the variable does not resolve at
+   body level, which is where the picker mounts. (An earlier version of this
+   comment said "the same probe inside .lip-lines returned 30px". That figure
+   was real but it was the computed WIDTH of a thumb at a narrow container, not
+   the variable, which has only ever been 38px. The conclusion was right and the
+   number was of something else, which is worth correcting precisely because the
+   whole comment is an appeal to having measured.)
    
    Sharing a figure between two rules is right. Sharing it through a variable
    only one of them can see is not. */
@@ -473,12 +479,6 @@
 
 .lip-thumb-gap { flex: 0 0 auto; width: var(--lip-thumb); }
 
-/* ── NARROW CONTAINER: the same three bands, stacked ─────────────────────
-   In a 438px panel the calculation cannot share a line with the name, so it
-   takes its own and sits hard right — the decimals still form a column, and
-   the total is still the last thing on the line. The description goes: in a
-   column this tight it is the least actionable thing present, and it is one
-   accessory too many. */
 /* ⭐⭐⭐ inset: 0 DOES NOT SIZE A REPLACED ELEMENT.
    
    This box held `.lip-prod-img { position: absolute; inset: 0 }` and nothing
@@ -1173,7 +1173,16 @@
        block's own comment condemns. */
     .lip-row,
     .lip-head-row { --lip-num: 62px; }
-    .lip-row .lip-n-total { width: 88px; }
+    /* ⭐ OVERRIDE THE TOKEN, NOT THE RULE — and it fixes the header for free.
+       This was `.lip-row .lip-n-total { width: 88px }`: a literal where
+       --lip-total is the token, and scoped to the ROW. `.lip-head-total` also
+       reads --lip-total, so the row's total column went to 88px while the label
+       above it stayed 104 — a 16px offset, the identical defect to the
+       --lip-num 78-vs-62 one three lines up, written one line below the fix for
+       it. Both --lip-num consumers were enumerated; the --lip-total pair beside
+       them was not. Setting the token covers both by construction. */
+    .lip-row,
+    .lip-head-row { --lip-total: 88px; }
     .lip-sum     { gap: 4px; }
 }
 

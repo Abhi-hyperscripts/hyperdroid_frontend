@@ -693,9 +693,15 @@ const LineItemsPanel = (() => {
         const gap = tr.querySelector('.lip-thumb-gap');
         if (gap) {
             const holder = document.createElement('span');
+            // productThumb reads image_url and image_count and nothing else —
+            // alt is hardcoded empty. The picker's own call site passes
+            // `description` and `sku` too and they are equally dead there;
+            // passing them here would have copied the noise and, worse, made
+            // the commit message's reasoning ("the picker carries image_url,
+            // image_count and description") look like all three feed the thumb.
+            // They do not: the picker renders the description in its own row.
             holder.innerHTML = productThumb({
                 image_url: item.image_url, image_count: item.image_count,
-                description: item.name, sku: item.sku,
             });
             const built = holder.firstElementChild;
             if (built) gap.replaceWith(built);
@@ -873,16 +879,64 @@ const LineItemsPanel = (() => {
      * values the panel was BUILT with and throw away everything just typed —
      * a save that reports success and changes nothing.
      */
+    /**
+     * ⭐⭐⭐ THE DOM HOLDS WHAT WAS TYPED. IT DOES NOT HOLD WHAT THE SERVER SAID.
+     *
+     * This returned five keys — description, quantity, unit_price, account_code,
+     * item_id — because those are the five things a row lets you EDIT. And
+     * addLine, removeLine and save all do `st.lines = readLines(container)`,
+     * which throws away every fact the row does not have an input for:
+     * image_url, image_count, item_description, sku, uom, hsn_sac,
+     * category_name, no_longer_sellable, enough_in_stock, available_base,
+     * stock_uom.
+     *
+     * `isCatalogue` survives (it keys off item_id), so the re-render kept the
+     * readonly price and the "Remove product" button while the photo fell back
+     * to the grey placeholder, and the SKU, HSN, category, stock badge and
+     * description all silently vanished — from EVERY catalogue row, on the
+     * panel's primary button, until the next save and reload.
+     *
+     * This is the third time the same set has been lost by a third path. The
+     * first two were attachItem and detachItem, and the commit that fixed those
+     * said "the set is now the set" — a claim scoped, without saying so, to the
+     * two paths I happened to be looking at. Enumerating the CALLERS of the
+     * thing that drops the set is what finds the third.
+     *
+     * So the typed values are merged ONTO the line they came from. All three
+     * callers read before they mutate, so row index still maps to st.lines.
+     */
     function readLines(container) {
-        return Array.from(container.querySelectorAll('[data-lip-row]')).map(tr => ({
-            description: tr.querySelector('[data-lip-field="description"]')?.value ?? '',
-            quantity: tr.querySelector('[data-lip-field="quantity"]')?.value ?? '',
-            unit_price: tr.querySelector('[data-lip-field="unit_price"]')?.value ?? '',
-            account_code: tr.querySelector('[data-lip-field="account_code"]')?.value ?? '',
-            // Read back off the ROW. Without this the catalogue link is lost on
-            // save and the line silently becomes free text.
-            item_id: tr.getAttribute('data-lip-item') || null,
-        }));
+        const st = mounted.get(container);
+        const existing = st?.lines || [];
+        return Array.from(container.querySelectorAll('[data-lip-row]')).map((tr, i) => {
+            const idx = Number(tr.getAttribute('data-lip-row'));
+            const from = existing[Number.isFinite(idx) ? idx : i] || {};
+            return {
+                ...from,
+                description: tr.querySelector('[data-lip-field="description"]')?.value ?? '',
+                quantity: tr.querySelector('[data-lip-field="quantity"]')?.value ?? '',
+                unit_price: tr.querySelector('[data-lip-field="unit_price"]')?.value ?? '',
+                account_code: tr.querySelector('[data-lip-field="account_code"]')?.value ?? '',
+                // Read back off the ROW. Without this the catalogue link is lost on
+                // save and the line silently becomes free text.
+                item_id: tr.getAttribute('data-lip-item') || null,
+            };
+        }).map(l => l.item_id ? l : stripProductFacts(l));
+    }
+
+    /**
+     * Everything that belonged to a product, removed when the row no longer
+     * names one. Carrying the facts forward is right for a row that still sells
+     * the same product and wrong for one that has been unpicked — the row would
+     * keep the old SKU, photo and stock while claiming to be free text.
+     */
+    function stripProductFacts(line) {
+        const {
+            image_url, image_count, item_description, sku, uom, hsn_sac,
+            category_name, no_longer_sellable, enough_in_stock, available_base,
+            stock_uom, ...rest
+        } = line;
+        return rest;
     }
 
     function refreshTotals(container) {
