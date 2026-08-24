@@ -576,6 +576,47 @@ const SearchableDropdown = (function() {
             this._detachReposition();
         }
 
+        /**
+         * ⭐⭐⭐ THE HORIZONTAL AXIS, WHICH THIS COMPONENT NEVER HAD.
+         *
+         * positionMenu() handles the VERTICAL axis with real care — it flips to
+         * `open-up` when there is not enough room below, treats a modal footer as
+         * the bottom limit, and closes when the trigger scrolls off. For the
+         * horizontal axis it did `left = rect.left` and nothing else.
+         *
+         * So a trigger near the right edge opened a menu straight off the screen.
+         * Measured on the calendar's "Whose diary" filter: the menu ran 1319→1559
+         * in a 1440px viewport — 119px of it outside — and because body.dashboard
+         * is `overflow: hidden`, it was CLIPPED rather than scrollable. The search
+         * box and every name were cut in half with no way to reach them.
+         *
+         * The component was not wrong about the axis it considered; it was blind
+         * to the perpendicular one.
+         *
+         * Preference order: align left with the trigger (what it always did),
+         * else right-align to the trigger so the menu grows back over its own
+         * control, else clamp into the viewport. Returns a left coordinate.
+         *
+         * This is the ONLY place that decides it. `left` was being assigned in two
+         * places — initial placement and the scroll handler — so fixing one would
+         * have been fixing neither: the menu would jump back off-screen on the
+         * first scroll.
+         */
+        static menuLeftFor(rect, menuWidth, viewportWidth) {
+            const MARGIN = 8;
+            let left = rect.left;
+            if (left + menuWidth > viewportWidth - MARGIN) {
+                left = rect.right - menuWidth;           // right-align to the trigger
+            }
+            if (left < MARGIN) left = MARGIN;            // and never off the other edge
+            return left;
+        }
+
+        /** Width the menu will take, so placement and sizing cannot disagree. */
+        static menuWidthFor(rect) {
+            return Math.max(rect.width, 240);
+        }
+
         positionMenu() {
             const rect = this.triggerEl.getBoundingClientRect();
             const menuHeight = 280; // Approximate max height
@@ -630,6 +671,16 @@ const SearchableDropdown = (function() {
                 }
                 el = el.parentElement;
             }
+            // The non-portaled path is positioned by CSS (`left: 0; right: 0`) and
+            // overflows to the right exactly the same way when the trigger sits
+            // near the viewport edge — the menu has a 240px floor, so a narrow
+            // trigger cannot contain it. Fixing only the portaled path would have
+            // left every dropdown NOT inside an overflow/stacking ancestor broken,
+            // which is most of them.
+            const cssMenuWidth = Dropdown.menuWidthFor(rect);
+            this.dropdownEl.classList.toggle(
+                'align-right', rect.left + cssMenuWidth > window.innerWidth - 8);
+
             if (this._fixedEscapeActive) {
                 const openUp = this.dropdownEl.classList.contains('open-up');
                 const top = openUp ? (rect.top - 4) : (rect.bottom + 4);
@@ -650,13 +701,15 @@ const SearchableDropdown = (function() {
                 this.menuEl._sdOwner = this.dropdownEl;
                 this.menuEl.style.position = 'fixed';
                 this.menuEl.style.top = `${top}px`;
-                this.menuEl.style.left = `${rect.left}px`;
+                const menuWidth = Dropdown.menuWidthFor(rect);
+                this.menuEl.style.left =
+                    `${Dropdown.menuLeftFor(rect, menuWidth, window.innerWidth)}px`;
                 // Match trigger width as the FLOOR (so wide triggers still get a
                 // wide menu) but never narrower than 240 px — same floor as the
                 // CSS rule, kept in sync here so portaled menus don't truncate
                 // labels like "Frontend Developer (2 yrs)" when the trigger is
                 // a compact toolbar pill.
-                this.menuEl.style.width = `${Math.max(rect.width, 240)}px`;
+                this.menuEl.style.width = `${menuWidth}px`;
                 // Must beat every modal z-index in the app. The research custom-table
                 // modal alone uses 1000001; its code-include popover uses 1000010.
                 // Portaled menu has to sit above both so dropdowns inside those modals
@@ -683,7 +736,8 @@ const SearchableDropdown = (function() {
                             return;
                         }
                         this.menuEl.style.top  = `${openUp ? r.top - 4 : r.bottom + 4}px`;
-                        this.menuEl.style.left = `${r.left}px`;
+                        this.menuEl.style.left = `${Dropdown.menuLeftFor(
+                            r, Dropdown.menuWidthFor(r), window.innerWidth)}px`;
                     };
                     window.addEventListener('scroll', this._repositionHandler, true);
                     window.addEventListener('resize', this._repositionHandler);

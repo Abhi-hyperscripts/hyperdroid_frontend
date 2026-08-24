@@ -102,6 +102,20 @@
 }
 
 /* Open upward when near bottom of screen */
+/* ⭐ THE HORIZONTAL TWIN OF .open-up.
+   The menu is normally pinned to both edges of its trigger (left:0; right:0)
+   with a 240px floor, so a NARROW trigger near the right edge pushes the menu
+   off-screen — and on a dashboard page, which is overflow:hidden, off-screen
+   means clipped rather than scrollable. Measured on the calendar's "Whose
+   diary" filter: 1319 to 1559 in a 1440px viewport, with the search box and
+   every name cut in half.
+   This pins the menu to the trigger's RIGHT edge instead, so it grows back
+   across its own control. The class is set by positionMenu(), which is also
+   what decides `open-up` — one method owning both axes. */
+.searchable-dropdown.align-right .searchable-dropdown-menu {
+    left: auto;
+    right: 0;
+}
 .searchable-dropdown.open-up .searchable-dropdown-menu {
     top: auto;
     bottom: calc(100% + 4px);
