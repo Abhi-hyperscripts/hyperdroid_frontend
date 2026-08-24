@@ -1025,6 +1025,29 @@
     /* The description stays — a product's own words are the thing this surface
        was asked to start using, and one clamped line costs 15px. */
     .lip-blurb           { padding-left: 0; }
+
+    /* ⭐ A HEADER THAT DESCRIBES A LAYOUT THAT IS NOT THERE IS WORSE THAN NONE.
+       "ITEM | QTY x UNIT PRICE | LINE TOTAL" are column labels. In this variant
+       the calculation is on its own line below the name, so the labels sat
+       above the wrong things — pointing at a product name and at empty space.
+       Column headers earn their place only where there are columns. */
+    .lip-head-row { display: none; }
+
+    /* The product control is an affordance, not information, and a bordered
+       pill made it the loudest thing on a line whose job is to be quiet. It
+       stays a real button — keyboard reachable, same label — and stops
+       competing with the stock badge beside it. */
+    .lip-pick {
+        margin-top: 0;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        color: var(--text-muted);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        text-decoration-color: var(--border-color);
+    }
+    .lip-pick:hover { color: var(--text-primary); text-decoration-color: currentColor; }
 }
 
 @media (max-width: 720px) {
