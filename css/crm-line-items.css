@@ -184,7 +184,21 @@
 .lip-line-id { grid-area: id; display: flex; gap: 10px; min-width: 0; }
 .lip-line-idmain { flex: 1; min-width: 0; }
 
-.lip-line-name {
+/* ⚠ SPECIFICITY, NOT PREFERENCE.
+   theme.css carries
+
+       [data-theme="dark"] input[type="text"] { border: …; background: var(--bg-input) }
+
+   at (0,2,1). A bare `.lip-line-name` is (0,1,0), so every input styled here
+   rendered as a default form box no matter what this file said — measured on
+   prod: border rgb(51,65,85), background rgb(30,41,59), against the transparent
+   this file asks for. The whole point of the redesign, a title that happens to be
+   editable, was silently defeated.
+
+   `.lip-line input.lip-…` is (0,2,1): it ties, and this sheet loads after
+   theme.css, so it wins on order. Preferred over !important, which would win
+   the same argument while hiding that there was one. */
+.lip-line input.lip-line-name {
     width: 100%;
     font-size: 13px;
     font-weight: 500;
@@ -195,8 +209,8 @@
     padding: 3px 6px;
     margin-left: -6px;               /* optically flush with the text below */
 }
-.lip-line-name:hover  { border-color: var(--border-color-light); }
-.lip-line-name:focus  { border-color: var(--border-color-focus); background: var(--bg-primary); outline: none; }
+.lip-line input.lip-line-name:hover { border-color: var(--border-color-light); }
+.lip-line input.lip-line-name:focus { border-color: var(--border-color-focus); background: var(--bg-primary); outline: none; }
 .lip-line-name-ro     { display: block; padding: 3px 0; }
 
 /* ── the commercial block: one thought, kept together ── */
@@ -209,7 +223,7 @@
 }
 .lip-line-x { color: var(--text-muted); font-size: 11px; }
 
-.lip-line-qty, .lip-line-price {
+.lip-line input.lip-line-qty, .lip-line input.lip-line-price {
     width: 74px;
     padding: 5px 8px;
     text-align: right;
@@ -220,7 +234,7 @@
     color: var(--text-primary);
     font-size: 12.5px;
 }
-.lip-line-price[readonly] {
+.lip-line input.lip-line-price[readonly] {
     background: var(--bg-tertiary);
     color: var(--text-secondary);
     cursor: default;
@@ -250,7 +264,7 @@
     padding-left: 48px;              /* aligned under the text, past the thumb */
 }
 
-.lip-line-acct {
+.lip-line input.lip-line-acct {
     flex: 0 1 190px;
     padding: 3px 8px;
     font-size: 11px;
@@ -259,7 +273,7 @@
     background: transparent;
     color: var(--text-secondary);
 }
-.lip-line-acct:focus {
+.lip-line input.lip-line-acct:focus {
     border-style: solid;
     border-color: var(--border-color-focus);
     background: var(--bg-primary);
