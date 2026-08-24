@@ -581,7 +581,23 @@ const LineItemsPanel = (() => {
         // exactly like one that worked.
         //
         // So it writes into the same band, with the same classes, that
-        // productMeta() emits — attach-then-reload now looks identical.
+        // productMeta() emits. Two differences remain, both deliberate and both
+        // named here rather than glossed:
+        //
+        //  · HSN. The picker item does not carry hsn_sac; it arrives with the
+        //    saved line. So a reloaded row shows one more fact than a just-picked
+        //    one, and there is nothing to be done about that from here.
+        //
+        //  · The stock badge. detachItem removes it, because a stale "only 3 kg
+        //    available" on a line that no longer sells that product is a lie. But
+        //    attach cannot honestly restore it: stockBadge needs enough_in_stock,
+        //    a SERVER judgement comparing availability to this line's quantity in
+        //    a unit basis the picker does not expose. Deriving it here would put a
+        //    number on screen that can disagree with the one the server returns on
+        //    save. Absent is safe; wrong is not.
+        //
+        // Claiming these away is how the last version of this comment came to say
+        // "looks identical" while three things differed.
         const noteLine = tr.querySelector('.lip-note-line');
         if (noteLine) {
             let note = noteLine.querySelector('.lip-prov');
@@ -682,8 +698,13 @@ const LineItemsPanel = (() => {
         }
         tr.querySelector('.lip-blurb')?.remove();
 
-        // Flipped HERE rather than by the click handler, so attach and detach
-        // are exact inverses and neither caller has to remember half the job.
+        // Flipped HERE rather than by the click handler, so neither caller has
+        // to remember half the job.
+        //
+        // NOT "exact inverses" — that claim was made and was false: detach used
+        // to leave the product's photo, its description and a stale stock badge
+        // on a line that no longer sold a product. Photo and description are
+        // handled now; the stock badge is deliberately one-way (see attachItem).
         const control = tr.querySelector('.lip-pick');
         if (control) {
             control.setAttribute('data-lip', 'pick');
