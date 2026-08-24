@@ -296,6 +296,52 @@ const LineItemsPanel = (() => {
         </div>`;
     }
 
+    /// A product thumbnail, or its initial when there is no image yet.
+    //
+    // Accounts holds items.image_urls but does not expose it on ItemGrpc, so
+    // image_url is empty today (Addendum 8). The fallback is not a placeholder
+    // waiting to be replaced — a coloured initial is how the rest of this CRM
+    // renders an entity with no picture, and it reads as deliberate rather than
+    // broken.
+    function productThumb(line) {
+        // ⚠ NO INLINE onerror CARRYING DATA.
+        //
+        // The first version put the fallback initial into an onerror="" via
+        // JSON.stringify — a value inside a JS string inside an HTML attribute,
+        // which needs BOTH escapings and which HTML-escaping alone cannot do
+        // (ai-assistant.js learned this the hard way). Worse, JSON.stringify's
+        // own double quotes would have terminated the attribute on the first
+        // image that ever loaded. It was latent only because Accounts does not
+        // expose image_url yet.
+        //
+        // So the fallback is always PRESENT, underneath, and a failed image
+        // simply hides itself. No data crosses into an attribute that executes.
+        const initial = `<span class="lip-prod-img lip-prod-img-fallback"
+                               aria-hidden="true">${esc(initialOf(line))}</span>`;
+        if (!line.image_url) return initial;
+
+        return `<span class="lip-prod-thumb">
+                    ${initial}
+                    <img class="lip-prod-img lip-prod-img-real" src="${esc(line.image_url)}"
+                         alt="" loading="lazy" onerror="this.hidden = true">
+                </span>`;
+    }
+
+    function initialOf(line) {
+        const src = (line.description || line.sku || '?').trim();
+        return (src[0] || '?').toUpperCase();
+    }
+
+    /// SKU, unit and category on one line — the facts that tell two similar
+    /// products apart. Empty pieces are dropped rather than rendered as dashes.
+    function productMeta(line) {
+        return [
+            line.sku ? `<span class="lip-chip lip-chip-sku">${esc(line.sku)}</span>` : '',
+            line.uom ? `<span class="lip-chip" title="Sold in ${esc(line.uom)}">${esc(line.uom)}</span>` : '',
+            line.category_name ? `<span class="lip-chip lip-chip-cat">${esc(line.category_name)}</span>` : '',
+        ].filter(Boolean).join('');
+    }
+
     function row(line, index, state) {
         const { canEdit, currency } = state;
         if (!canEdit) {
@@ -320,14 +366,24 @@ const LineItemsPanel = (() => {
         return `
         <tr data-lip-row="${index}"${isCatalogue ? ` data-lip-item="${esc(line.item_id)}"` : ''} class="${isCatalogue ? 'lip-catalogue' : ''}">
             <td class="lip-col-desc">
-                <input type="text" data-lip-field="description" maxlength="${MAX_DESCRIPTION}"
-                       value="${esc(line.description)}" placeholder="e.g. Onboarding &amp; setup"
-                       aria-label="Line ${index + 1} description">
-                ${isCatalogue ? `<span class="lip-sku" title="${esc(line.uom ? 'Sold in ' + line.uom : '')}">${esc(line.sku || '')}${line.uom ? ' · ' + esc(line.uom) : ''}</span>` : ''}
-                ${stockBadge(line)}
-                <button type="button" class="lip-pick" data-lip="${isCatalogue ? 'unpick' : 'pick'}" hidden
-                        title="${isCatalogue ? 'Remove the product from this line' : 'Choose a product from the catalogue'}">${
-                            isCatalogue ? 'Remove product' : 'Choose product'}</button>
+                <div class="lip-prod">
+                    ${isCatalogue ? productThumb(line) : ''}
+                    <div class="lip-prod-main">
+                        <input type="text" data-lip-field="description" maxlength="${MAX_DESCRIPTION}"
+                               value="${esc(line.description)}" placeholder="e.g. Onboarding &amp; setup"
+                               aria-label="Line ${index + 1} description">
+                        ${isCatalogue && line.item_description
+                            ? `<p class="lip-prod-desc" title="${esc(line.item_description)}">${esc(line.item_description)}</p>`
+                            : ''}
+                        ${isCatalogue ? `<div class="lip-prod-meta">${productMeta(line)}</div>` : ''}
+                        <div class="lip-prod-actions">
+                            ${stockBadge(line)}
+                            <button type="button" class="lip-pick" data-lip="${isCatalogue ? 'unpick' : 'pick'}" hidden
+                                    title="${isCatalogue ? 'Remove the product from this line' : 'Choose a product from the catalogue'}">${
+                                        isCatalogue ? 'Remove product' : 'Choose product'}</button>
+                        </div>
+                    </div>
+                </div>
             </td>
             ${state.showHsn ? `<td class="lip-col-hsn" title="${esc(lineTaxHint(state, line))}">${esc(line.hsn_sac || '—')}</td>` : ''}
             <td class="lip-col-qty">
@@ -463,6 +519,10 @@ const LineItemsPanel = (() => {
      * markup, so the picker owns its element and removes it on close.
      */
     async function openPicker(container, tr) {
+        // The deal's currency, for showing each product's price in the picker.
+        // The item carries its own (Accounts is single-currency per tenant) and
+        // that wins; this is only the fallback when it sends none.
+        const currency = (mounted.get(container) || {}).currency;
         const items = await searchCatalogue('');
 
         const overlay = document.createElement('div');
@@ -487,14 +547,32 @@ const LineItemsPanel = (() => {
             list.innerHTML = rows.length
                 ? rows.map(i => `
                     <button type="button" class="lip-picker-row" data-pick="${esc(i.id)}">
-                        <span class="lip-picker-name">${esc(i.name)}</span>
-                        <span class="lip-picker-meta">${esc(i.sku || '')}${i.sale_unit ? ' \u00b7 ' + esc(i.sale_unit) : ''}${
-                            i.tracks_stock && !i.can_be_reserved ? ' \u00b7 no unit size' : ''}${
-                            // Availability where it is a meaningful question.
-                            // Absent for a non-stocked item rather than "0".
-                            i.available !== null && i.available !== undefined
-                                ? ` \u00b7 ${esc(i.available)}${i.stock_uom ? ' ' + esc(i.stock_uom) : ''} available`
-                                : ''}</span>
+                        ${productThumb({ image_url: i.image_url, description: i.name, sku: i.sku })}
+                        <span class="lip-picker-body">
+                            <span class="lip-picker-name">${esc(i.name)}</span>
+                            ${i.description
+                                ? `<span class="lip-picker-desc">${esc(i.description)}</span>`
+                                : ''}
+                            <span class="lip-picker-meta">${[
+                                i.sku ? `<span class="lip-chip lip-chip-sku">${esc(i.sku)}</span>` : '',
+                                i.sale_unit ? `<span class="lip-chip">${esc(i.sale_unit)}</span>` : '',
+                                i.category_name ? `<span class="lip-chip lip-chip-cat">${esc(i.category_name)}</span>` : '',
+                                // "Cannot be reserved" is a real caveat at the moment
+                                // of choosing, not after saving.
+                                i.tracks_stock && !i.can_be_reserved
+                                    ? '<span class="lip-chip lip-chip-warn">no unit size</span>' : '',
+                            ].filter(Boolean).join('')}</span>
+                        </span>
+                        <span class="lip-picker-right">
+                            <span class="lip-picker-price">${esc(money(i.list_price, i.currency || currency))}</span>
+                            ${
+                                // Availability where it is a meaningful question.
+                                // Absent for a non-stocked item rather than "0".
+                                i.available !== null && i.available !== undefined
+                                    ? `<span class="lip-picker-stock ${i.available > 0 ? 'ok' : 'none'}">${esc(i.available)}${
+                                        i.stock_uom ? ' ' + esc(i.stock_uom) : ''}</span>`
+                                    : ''}
+                        </span>
                     </button>`).join('')
                 : '<div class="lip-picker-empty">Nothing matches that.</div>';
         };

@@ -140,7 +140,117 @@
    whatever was left — 41px of cell holding a 21px input. The typed value was
    there and simply could not be READ, on the column that decides the line
    total. A quantity box has to fit "1000.125" and a price box a real amount. */
-.lip-col-desc { min-width: 150px; }
+.lip-col-desc { min-width: 240px; }
+
+/* ── The product cell ──────────────────────────────────────────────────────
+   A catalogue line is a PRODUCT, not a sentence. It was rendering as a bare
+   text input with a grey SKU underneath, which reads as free text someone
+   typed — so a rep had to recognise "24 Mantra Organic Broken Rice 1 kg" from
+   the words alone while choosing between seven thousand of them.
+   Thumbnail, name, what it is, and the facts that separate two similar SKUs. */
+.lip-prod {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.lip-prod-main {
+    flex: 1;
+    min-width: 0;               /* lets the description ellipsis actually work */
+}
+
+.lip-prod-img {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    margin-top: 2px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color-light);
+}
+
+/* No picture is a state, not a gap waiting to be filled — so it is drawn
+   deliberately rather than left as a broken-image frame. */
+.lip-prod-img-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--brand-primary) 16%, transparent),
+        var(--bg-tertiary));
+}
+
+.lip-prod-desc {
+    margin: 3px 0 0;
+    font-size: 11.5px;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.lip-prod-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 5px;
+}
+
+.lip-prod-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+}
+
+/* ── Chips ─────────────────────────────────────────────────────────────────
+   One shape for every fact about a product, so SKU, unit and category read as
+   the same KIND of thing rather than as a run-on grey sentence. */
+.lip-chip {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-size: 10px;
+    line-height: 1.6;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color-light);
+    white-space: nowrap;
+}
+
+/* The fallback sits underneath and the image covers it, so an image that fails
+   to load reveals the initial rather than a broken frame — and no data has to
+   travel through an inline handler to make that happen. */
+.lip-prod-thumb {
+    position: relative;
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    margin-top: 2px;
+}
+
+.lip-prod-thumb .lip-prod-img { position: absolute; inset: 0; margin: 0; }
+.lip-prod-thumb .lip-prod-img-real { z-index: 1; }
+
+.lip-chip-sku { font-family: var(--font-family-mono); }
+
+.lip-chip-cat {
+    background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+    color: var(--brand-primary);
+    border-color: color-mix(in srgb, var(--brand-primary) 22%, transparent);
+}
+
+.lip-chip-warn {
+    background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+    color: var(--color-warning);
+    border-color: color-mix(in srgb, var(--color-warning) 26%, transparent);
+}
 .lip-col-qty { min-width: 74px; }
 .lip-col-price { min-width: 96px; }
 .lip-col-total { min-width: 92px; }
@@ -501,16 +611,64 @@
     scrollbar-width: thin;
 }
 
+/* Choosing from seven thousand items is the moment product detail earns its
+   keep: picture, name, what it is, and the price and stock that decide it. */
 .lip-picker-row {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: flex-start;
+    gap: 10px;
     padding: 9px 11px;
     border-radius: 9px;
     border: 1px solid transparent;
     background: var(--bg-secondary);
     text-align: left;
     cursor: pointer;
+}
+
+.lip-picker-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+.lip-picker-desc {
+    font-size: 11.5px;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.lip-picker-right {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    text-align: right;
+}
+
+.lip-picker-price {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.lip-picker-stock {
+    font-size: 10.5px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.lip-picker-stock.ok {
+    background: color-mix(in srgb, var(--color-success) 14%, transparent);
+    color: var(--color-success);
+}
+
+/* Zero is a real answer and must not look like the healthy one. */
+.lip-picker-stock.none {
+    background: color-mix(in srgb, var(--color-error) 14%, transparent);
+    color: var(--color-error);
 }
 
 .lip-picker-row:hover {
@@ -521,9 +679,10 @@
 .lip-picker-name { font-size: 13px; color: var(--text-primary); }
 
 .lip-picker-meta {
-    font-size: 11px;
-    font-family: var(--font-family-mono);
-    color: var(--text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 3px;
 }
 
 .lip-picker-empty {
