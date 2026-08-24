@@ -163,6 +163,20 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+
+    /* ⭐⭐⭐ THIS COMPONENT IS SIZED BY ITS CONTAINER, NOT BY THE VIEWPORT.
+       
+       It renders in a 438px slide-panel AND on the full quote page, inside an
+       1857px viewport in both cases. A @media breakpoint therefore never fires
+       for the panel: the viewport is wide while the column is not. Measured, the
+       consequence was total — thumb 38 + qty/price 188 + total 104 + gaps 40 =
+       394 of 412px, leaving the PRODUCT NAME 18 pixels. The most important thing
+       on the line had been squeezed out by the least, and no amount of aligning
+       the survivors addresses that.
+       
+       So the breakpoint is on the container. */
+    container-type: inline-size;
+    container-name: lip;
 }
 
 /* ── the header states the calculation, because that is what the columns are ── */
@@ -198,7 +212,9 @@
 .lip-band {
     display: flex;
     align-items: center;
-    gap: var(--lip-gut);
+    flex-wrap: wrap;
+    row-gap: 6px;
+    gap: var(--lip-gut) var(--lip-gut);
 }
 
 /* THE shared height. Anything that sits in band 1 wears this. */
@@ -237,8 +253,11 @@
    edit the global rule. Every !important below answers one of those three
    properties; nothing else in this file carries one. */
 .lip-row input.lip-f-name {
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 auto;
+    /* NOT min-width:0. That is what let the name shrink to 18px instead of
+       forcing the arithmetic to wrap to its own line. A subject that cannot be
+       read is worse than a layout that takes two rows. */
+    min-width: 132px;
     padding: 0 8px;
     border: 1px solid transparent;
     border-color: transparent !important;
@@ -253,7 +272,7 @@
     background: var(--bg-primary) !important;
     outline: none;
 }
-.lip-row .lip-f-ro { flex: 1; min-width: 0; padding: 0 8px; color: var(--text-primary); font-weight: 500; }
+.lip-row .lip-f-ro { flex: 1 1 auto; min-width: 132px; padding: 0 8px; color: var(--text-primary); font-weight: 500; }
 
 /* ══ THE SIGNATURE: the arithmetic column ══════════════════════════════════
    qty × price = total, in tabular mono with the operators as muted glyphs.
@@ -376,6 +395,27 @@
 
 .lip-thumb-gap { flex: 0 0 auto; width: 38px; }
 
+/* ── NARROW CONTAINER: the same three bands, stacked ─────────────────────
+   In a 438px panel the calculation cannot share a line with the name, so it
+   takes its own and sits hard right — the decimals still form a column, and
+   the total is still the last thing on the line. The description goes: in a
+   column this tight it is the least actionable thing present, and it is one
+   accessory too many. */
+@container lip (max-width: 560px) {
+    .lip-row input.lip-f-name,
+    .lip-row .lip-f-ro   { order: 1; flex: 1 1 auto; }
+    .lip-prod-thumb,
+    .lip-thumb-gap       { order: 0; }
+    .lip-kill,
+    .lip-kill-gap        { order: 2; }
+
+    /* second line, pushed right */
+    .lip-sum             { order: 3; margin-left: auto; }
+    .lip-row .lip-n-total { order: 4; }
+
+    .lip-note-line       { padding-left: 0; margin-top: 4px; }
+    .lip-blurb           { display: none; }
+}
 @media (max-width: 720px) {
     .lip-head-row { display: none; }
     .lip-band { flex-wrap: wrap; }
