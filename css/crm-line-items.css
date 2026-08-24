@@ -156,13 +156,34 @@
    deliberately quiet.
    ────────────────────────────────────────────────────────────────────────── */
 
+/* ⭐⭐⭐ THESE THREE ARE GLOBAL, AND THE REASON IS NOT STYLE.
+   
+   --lip-h, --lip-num and --lip-gut live on .lip-lines because a container query
+   overrides them per width — they are scoped by design.
+   
+   These three are not. .lip-prod-thumb is rendered by TWO surfaces: the quote
+   line, inside .lip-lines, and the product PICKER, which openPicker() appends to
+   document.body. Declared on .lip-lines, `width: var(--lip-thumb)` resolves in
+   the panel and is UNRESOLVED in the picker — and an unresolved var makes the
+   declaration invalid at computed-value time, so width falls back to `auto`.
+   For an absolutely positioned 600x600 product photo that is the exact defect
+   this file already fixed once: full-size groceries, this time in the dialog.
+   
+   Measured before shipping: `getComputedStyle(document.body)` returned nothing
+   for --lip-thumb, while the same probe inside .lip-lines returned 30px.
+   
+   Sharing a figure between two rules is right. Sharing it through a variable
+   only one of them can see is not. */
+:root {
+    --lip-thumb: 38px;             /* the product tile, and the header's leading spacer */
+    --lip-kill: 24px;              /* the remove button, and the header's trailing spacer */
+    --lip-total: 104px;            /* the line total column */
+}
+
 .lip-lines {
     --lip-h: 30px;                 /* the single control height */
     --lip-num: 78px;               /* every numeric field, so decimals align */
     --lip-gut: 10px;
-    --lip-thumb: 38px;             /* the product tile, and the header's leading spacer */
-    --lip-kill: 24px;              /* the remove button, and the header's trailing spacer */
-    --lip-total: 104px;            /* the line total column */
     display: flex;
     flex-direction: column;
     gap: 2px;
