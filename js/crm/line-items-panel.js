@@ -238,10 +238,10 @@ const LineItemsPanel = (() => {
                 : 'This deal is priced by the value on it, not by line items.'}</p>
             ` : `
             <div class="lip-lines">
-                <div class="lip-lines-head" aria-hidden="true">
-                    <span>Item</span>
-                    <span class="lip-lines-head-money">Qty &times; Unit price</span>
-                    <span class="lip-lines-head-total">Total</span>
+                <div class="lip-head-row" aria-hidden="true">
+                    <span class="lip-head-item">Item</span>
+                    <span class="lip-head-sum">Qty &times; Unit price</span>
+                    <span class="lip-head-total">Line total</span>
                 </div>
                 <div data-lip="rows">
                     ${lines.map((l, i) => row(l, i, state)).join('')}
@@ -336,21 +336,35 @@ const LineItemsPanel = (() => {
     /// column, and it belongs beside the other identifiers rather than floating
     /// in the middle of the money. It keeps the tax breakdown as its tooltip.
     function productMeta(line, state) {
-        return [
-            line.sku ? `<span class="lip-chip lip-chip-sku">${esc(line.sku)}</span>` : '',
-            line.uom ? `<span class="lip-chip" title="Sold in ${esc(line.uom)}">${esc(line.uom)}</span>` : '',
+        // ⭐ ONE QUIET LINE, NOT A ROW OF PILLS.
+        //
+        // These were four chips. Chips give every fact the same visual weight as
+        // a button, so a SKU shouted as loudly as the stock state that a rep
+        // actually has to act on — and stacked under a name, a description and a
+        // thumbnail it was five competing elements in one cell.
+        //
+        // Provenance is a document footnote: it is there to be checked, not
+        // scanned. Middot-separated text, one line, muted. The one thing that IS
+        // actionable — stock — keeps its badge, and so does the exceptional case
+        // of a product the catalogue has withdrawn.
+        const bits = [
+            line.sku ? `<span class="lip-mono">${esc(line.sku)}</span>` : '',
+            line.uom ? esc(line.uom) : '',
             line.hsn_sac
-                ? `<span class="lip-chip lip-chip-hsn" title="${esc(lineTaxHint(state, line))}">HSN ${esc(line.hsn_sac)}</span>`
+                ? `<span title="${esc(lineTaxHint(state, line))}">HSN <span class="lip-mono">${esc(line.hsn_sac)}</span></span>`
                 : '',
-            line.category_name ? `<span class="lip-chip lip-chip-cat">${esc(line.category_name)}</span>` : '',
-            // ⭐ THE CATALOGUE STOPPED SELLING THIS. Checked when the line was
-            // added and never again, so a withdrawn product sat here at its old
-            // price with a stock badge beside it. Loud, because the alternative
-            // is a rep sending it to a customer.
-            line.no_longer_sellable
-                ? '<span class="lip-chip lip-chip-warn" title="The catalogue no longer sells this product">no longer sold</span>'
-                : '',
-        ].filter(Boolean).join('');
+            line.category_name ? esc(line.category_name) : '',
+        ].filter(Boolean);
+
+        const provenance = bits.length
+            ? `<span class="lip-note">${bits.join('<span class="lip-dot">·</span>')}</span>`
+            : '';
+
+        const withdrawn = line.no_longer_sellable
+            ? '<span class="lip-flag" title="The catalogue no longer sells this product">no longer sold</span>'
+            : '';
+
+        return provenance + withdrawn;
     }
 
     function row(line, index, state) {
@@ -358,92 +372,83 @@ const LineItemsPanel = (() => {
         const isCatalogue = !!line.item_id;
         const total = money(lineTotal(line.quantity, line.unit_price), currency);
 
-        // ⭐⭐ A LINE IS A CARD, NOT A SPREADSHEET ROW.
+        // ⭐⭐⭐ ONE CONTROL HEIGHT, ONE BASELINE, NO EXCEPTIONS.
         //
-        // This was a <table>, and a table makes every cell in a row share the
-        // row's height: a four-line product cell (name, description, chips,
-        // badges) left the qty and price inputs vertically centred in empty
-        // space, a long way from the product they belong to, with the header
-        // labels no longer over anything. It read as misaligned because it WAS —
-        // the layout was fighting the content.
+        // The previous version sized every control independently and top-aligned
+        // them: the name ended up ~24px, the numbers ~27px, the total was text
+        // offset by 8px of padding, and the account field ~21px on a band of its
+        // own. Four heights and three baselines on what is supposed to read as a
+        // single row. No amount of padding fixes that — the controls have to
+        // SHARE a height, which is what --lip-h does.
         //
-        // A grid lets the identity be as tall as it needs while the commercial
-        // terms stay a compact block, both TOP-aligned. Qty, price and total sit
-        // together because they are one thought: what this line costs.
+        // A line is a worked calculation with a subject:
         //
-        // The JS hooks are attribute-based ([data-lip-row], [data-lip-field],
-        // [data-lip-cell]) rather than tag-based, so none of readLines(),
-        // refreshTotals() or the click delegation had to change.
+        //   band 1  thumb · name ······················ qty × price = total · ×
+        //   band 2  SKU · unit · HSN · category · stock · account code
         //
-        // (This comment said "recalc()" — a function that does not exist in this
-        // file and never has. Prose naming a function nobody can find is how a
-        // reader concludes the comment is stale and stops trusting the rest.)
-        const identity = `
-            <div class="lip-line-id">
-                ${isCatalogue ? productThumb(line) : ''}
-                <div class="lip-line-idmain">
-                    ${canEdit
-                        ? `<input type="text" class="lip-line-name" data-lip-field="description"
-                                  maxlength="${MAX_DESCRIPTION}" value="${esc(line.description)}"
-                                  placeholder="e.g. Onboarding &amp; setup"
-                                  aria-label="Line ${index + 1} description">`
-                        : `<span class="lip-line-name lip-line-name-ro">${esc(line.description)}</span>`}
-                    ${isCatalogue && line.item_description
-                        ? `<p class="lip-prod-desc" title="${esc(line.item_description)}">${esc(line.item_description)}</p>`
-                        : ''}
-                    ${isCatalogue || (!canEdit && line.account_code)
-                        ? `<div class="lip-prod-meta">${productMeta(line, state)}${
-                            // ⚠ READ-ONLY LOST THIS IN THE CARD REWRITE.
-                            //
-                            // The account code lives in the lower strip, and that
-                            // strip is editor-only — so a viewer who could see it
-                            // in the old table stopped seeing it, silently. Found
-                            // by diffing what the old row rendered against what
-                            // the new one does, not by looking at the screen.
-                            !canEdit && line.account_code
-                                ? `<span class="lip-chip lip-chip-acct" title="Account code">${esc(line.account_code)}</span>`
-                                : ''}</div>`
-                        : ''}
-                </div>
-            </div>`;
+        // Everything interactive lives in band 1 at exactly one height.
+        // Band 2 is provenance — a document footnote, not a second row of
+        // controls competing with the first.
+        const name = canEdit
+            ? `<input type="text" class="lip-f lip-f-name" data-lip-field="description"
+                      maxlength="${MAX_DESCRIPTION}" value="${esc(line.description)}"
+                      placeholder="Describe this line"
+                      aria-label="Line ${index + 1} description">`
+            : `<span class="lip-f lip-f-name lip-f-ro">${esc(line.description)}</span>`;
 
-        const money_ = canEdit
-            ? `<div class="lip-line-money">
-                   <input type="number" class="lip-line-qty" data-lip-field="quantity"
-                          step="0.001" min="0.001" value="${esc(line.quantity)}"
-                          aria-label="Line ${index + 1} quantity">
-                   <span class="lip-line-x" aria-hidden="true">&times;</span>
-                   <input type="number" class="lip-line-price" data-lip-field="unit_price"
-                          step="0.01" min="0" value="${esc(line.unit_price)}"
-                          aria-label="Line ${index + 1} unit price"
-                          ${isCatalogue ? 'readonly title="This price comes from the product catalogue"' : ''}>
-               </div>`
-            : `<div class="lip-line-money lip-line-money-ro">
-                   ${esc(line.quantity)} <span class="lip-line-x">&times;</span> ${esc(money(line.unit_price, currency))}
-               </div>`;
+        // THE ARITHMETIC COLUMN — the one place this design spends boldness.
+        //
+        // qty × price = total, in tabular mono, with the operators as muted
+        // glyphs. Read down a quote and the decimal points form a true vertical
+        // line and the sum visibly builds. It is the artifact's own vernacular —
+        // a quote IS a worked ledger — and it is functional: the column can be
+        // audited by eye, which a row of boxed inputs cannot.
+        const sum = canEdit
+            ? `<input type="number" class="lip-f lip-n lip-n-qty" data-lip-field="quantity"
+                      step="0.001" min="0.001" value="${esc(line.quantity)}"
+                      aria-label="Line ${index + 1} quantity">
+               <span class="lip-op" aria-hidden="true">&times;</span>
+               <input type="number" class="lip-f lip-n lip-n-price" data-lip-field="unit_price"
+                      step="0.01" min="0" value="${esc(line.unit_price)}"
+                      aria-label="Line ${index + 1} unit price"
+                      ${isCatalogue ? 'readonly title="This price comes from the product catalogue"' : ''}>
+               <span class="lip-op" aria-hidden="true">=</span>`
+            : `<span class="lip-f lip-n lip-n-ro">${esc(line.quantity)}</span>
+               <span class="lip-op" aria-hidden="true">&times;</span>
+               <span class="lip-f lip-n lip-n-ro">${esc(money(line.unit_price, currency))}</span>
+               <span class="lip-op" aria-hidden="true">=</span>`;
 
         return `
-        <div class="lip-line${isCatalogue ? ' lip-catalogue' : ''}" data-lip-row="${index}"${
+        <div class="lip-row${isCatalogue ? ' is-catalogue' : ''}" data-lip-row="${index}"${
             isCatalogue ? ` data-lip-item="${esc(line.item_id)}"` : ''}>
-            ${identity}
-            ${money_}
-            <div class="lip-line-total" data-lip-cell="total">${esc(total)}</div>
-            ${canEdit ? `
-            <div class="lip-line-tools">
-                <button type="button" class="lip-x" data-lip="remove" aria-label="Remove line ${index + 1}">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>` : ''}
-            ${canEdit ? `
-            <div class="lip-line-extra">
+
+            <div class="lip-band">
+                ${isCatalogue ? productThumb(line) : '<span class="lip-thumb-gap" aria-hidden="true"></span>'}
+                ${name}
+                <div class="lip-sum">${sum}</div>
+                <div class="lip-f lip-n lip-n-total" data-lip-cell="total">${esc(total)}</div>
+                ${canEdit ? `
+                <button type="button" class="lip-kill" data-lip="remove"
+                        aria-label="Remove line ${index + 1}">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>` : '<span class="lip-kill-gap" aria-hidden="true"></span>'}
+            </div>
+
+            <div class="lip-note-line">
+                ${isCatalogue ? productMeta(line, state) : ''}
                 ${stockBadge(line)}
+                ${canEdit ? `
                 <button type="button" class="lip-pick" data-lip="${isCatalogue ? 'unpick' : 'pick'}" hidden
                         title="${isCatalogue ? 'Remove the product from this line' : 'Choose a product from the catalogue'}">${
                             isCatalogue ? 'Remove product' : 'Choose product'}</button>
-                <input type="text" class="lip-line-acct" data-lip-field="account_code" maxlength="40"
-                       value="${esc(line.account_code || '')}" placeholder="account code (optional)"
-                       aria-label="Line ${index + 1} account code">
-            </div>` : ''}
+                <input type="text" class="lip-f lip-acct" data-lip-field="account_code" maxlength="40"
+                       value="${esc(line.account_code || '')}" placeholder="Account code"
+                       aria-label="Line ${index + 1} account code">` : ''}
+            </div>
+
+            ${isCatalogue && line.item_description
+                ? `<p class="lip-blurb" title="${esc(line.item_description)}">${esc(line.item_description)}</p>`
+                : ''}
         </div>`;
     }
 
@@ -493,7 +498,7 @@ const LineItemsPanel = (() => {
      */
     function attachItem(tr, item) {
         tr.setAttribute('data-lip-item', item.id);
-        tr.classList.add('lip-catalogue');
+        tr.classList.add('is-catalogue');
 
         const desc = tr.querySelector('[data-lip-field="description"]');
         if (desc && !desc.value.trim()) desc.value = item.name || '';
@@ -505,17 +510,40 @@ const LineItemsPanel = (() => {
             price.placeholder = 'priced on save';
         }
 
-        let sku = tr.querySelector('.lip-sku');
-        if (!sku) {
-            sku = document.createElement('span');
-            sku.className = 'lip-sku';
-            tr.querySelector('.lip-col-desc')?.appendChild(sku);
-        }
-        sku.textContent = [item.sku, item.sale_unit].filter(Boolean).join(' \u00b7 ');
+        // ⭐ WRITE THE PROVENANCE WHERE THE RENDERER PUTS IT.
+        //
+        // This used to build its own span and append it to '.lip-col-desc' — a
+        // class from the table layout that the new markup does not emit. The
+        // append silently did nothing, so choosing a product showed no SKU and,
+        // worse, the "no unit size" caveat on a product that CANNOT be reserved
+        // never appeared. An optional-chained append that hits nothing looks
+        // exactly like one that worked.
+        //
+        // So it writes into the same band, with the same classes, that
+        // productMeta() emits — attach-then-reload now looks identical.
+        const noteLine = tr.querySelector('.lip-note-line');
+        if (noteLine) {
+            let note = noteLine.querySelector('.lip-note');
+            if (!note) {
+                note = document.createElement('span');
+                note.className = 'lip-note';
+                noteLine.insertBefore(note, noteLine.firstChild);
+            }
+            note.textContent = [item.sku, item.sale_unit]
+                .filter(Boolean).join(' \u00b7 ');
 
-        if (item.tracks_stock && !item.can_be_reserved) {
-            sku.textContent += ' \u00b7 no unit size';
-            sku.classList.add('lip-sku-warn');
+            let flag = noteLine.querySelector('.lip-flag');
+            if (item.tracks_stock && !item.can_be_reserved) {
+                if (!flag) {
+                    flag = document.createElement('span');
+                    flag.className = 'lip-flag';
+                    noteLine.appendChild(flag);
+                }
+                flag.textContent = 'no unit size';
+                flag.title = 'This product is stocked but has no unit size, so it cannot be reserved';
+            } else if (flag) {
+                flag.remove();
+            }
         }
 
         // The control has to become its own opposite. Setting the row's
@@ -533,10 +561,13 @@ const LineItemsPanel = (() => {
 
     function detachItem(tr) {
         tr.removeAttribute('data-lip-item');
-        tr.classList.remove('lip-catalogue');
+        tr.classList.remove('is-catalogue');
         const price = tr.querySelector('[data-lip-field="unit_price"]');
         if (price) { price.readOnly = false; price.title = ''; price.placeholder = ''; }
-        tr.querySelector('.lip-sku')?.remove();
+        // Taking the product off takes its provenance with it — the SKU, unit and
+        // the reservability caveat all belonged to the product, not to the line.
+        tr.querySelector('.lip-note-line .lip-note')?.remove();
+        tr.querySelector('.lip-note-line .lip-flag')?.remove();
 
         // Flipped HERE rather than by the click handler, so attach and detach
         // are exact inverses and neither caller has to remember half the job.

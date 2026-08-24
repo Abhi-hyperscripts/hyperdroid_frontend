@@ -63,19 +63,19 @@
 /* ── Tables ──────────────────────────────────────────────────────────── */
 /* Both wrappers scroll horizontally rather than letting the slide-panel do it:
    a panel that scrolls sideways moves every other section too. */
-.lip-table-wrap, .ppp-table-wrap {
+.ppp-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border-color);
   border-radius: 10px;
   background: var(--bg-secondary);
 }
-.lip-table, .ppp-table {
+.ppp-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.79rem;
   min-width: 420px;
 }
-.lip-table th, .ppp-table th {
+.ppp-table th {
   text-align: left;
   padding: 8px 10px;
   font-size: 0.7rem;
@@ -87,13 +87,13 @@
   border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
 }
-.lip-table td, .ppp-table td {
+.ppp-table td {
   padding: 6px 10px;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
 }
-.lip-table tr:last-child td, .ppp-table tr:last-child td { border-bottom: none; }
+.ppp-table tr:last-child td { border-bottom: none; }
 
 /* The line-items empty state is NOT a table row. Rendered inside the table it
    sat behind the wrapper's horizontal scroll, so on a 438px slide-panel the
@@ -123,245 +123,250 @@
 }
 
 /* Money and counts: mono, right-aligned, aligned on the decimal point. */
-.lip-col-qty, .lip-col-price, .lip-col-total,
 .ppp-col-amt, .ppp-col-paid, .ppp-col-no {
   text-align: right;
   font-family: var(--font-family-mono);
   white-space: nowrap;
 }
-.lip-table th.lip-col-qty, .lip-table th.lip-col-price, .lip-table th.lip-col-total,
 .ppp-table th.ppp-col-amt, .ppp-table th.ppp-col-paid, .ppp-table th.ppp-col-no {
   text-align: right;
 }
-.lip-col-total { font-weight: 600; }
-
 /* ⭐ EVERY EDITABLE COLUMN NEEDS ITS OWN FLOOR.
    Only description and account carried one, so the browser gave quantity
    whatever was left — 41px of cell holding a 21px input. The typed value was
    there and simply could not be READ, on the column that decides the line
    total. A quantity box has to fit "1000.125" and a price box a real amount. */
-/* ══ A LINE IS A CARD ══════════════════════════════════════════════════════
-   This was a <table>. A table makes every cell share the row's height, so a
-   four-line product cell left the qty and price inputs vertically centred in
-   empty space — far from the product they belong to, under headers that no
-   longer sat above anything. It read as misaligned because it was: the layout
-   was fighting the content.
+/* ══════════════════════════════════════════════════════════════════════════
+   A QUOTE LINE IS A WORKED CALCULATION WITH A SUBJECT
+   ══════════════════════════════════════════════════════════════════════════
+   The previous attempts sized every control independently and aligned them by
+   hand: the name came out ~24px, the numbers ~27px, the total was text nudged
+   by 8px of padding, and the account field sat on a band of its own at ~21px.
+   Four heights, three baselines, on something that has to read as one row.
+   Padding cannot fix that — the controls have to SHARE a height.
 
-   A grid lets the identity grow while the money stays compact, both TOP-aligned.
-   Qty, price and total sit together because they are one thought. */
-.lip-lines { display: flex; flex-direction: column; gap: 8px; }
+   So there is exactly one: --lip-h. Every interactive thing in the top band is
+   that tall, and alignment stops being something to tune.
 
-.lip-lines-head {
-    display: grid;
-    grid-template-columns: 1fr auto 110px 30px;
-    gap: 12px;
-    padding: 0 12px;
+     band 1   thumb · name ···················· qty × price = total · remove
+     band 2   SKU · unit · HSN · category · stock · account code
+     band 3   what the product is (muted, optional)
+
+   Boldness is spent in ONE place: the arithmetic column. Everything else is
+   deliberately quiet.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.lip-lines {
+    --lip-h: 30px;                 /* the single control height */
+    --lip-num: 78px;               /* every numeric field, so decimals align */
+    --lip-gut: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* ── the header states the calculation, because that is what the columns are ── */
+.lip-head-row {
+    display: flex;
+    align-items: center;
+    gap: var(--lip-gut);
+    padding: 0 12px 6px;
     font-size: 10px;
-    letter-spacing: .06em;
+    letter-spacing: .07em;
     text-transform: uppercase;
     color: var(--text-muted);
 }
-.lip-lines-head-money { text-align: center; }
-.lip-lines-head-total { text-align: right; }
+.lip-head-item  { flex: 1; }
+.lip-head-sum   { width: calc(var(--lip-num) * 2 + 46px); text-align: center; }
+.lip-head-total { width: 104px; text-align: right; }
 
-.lip-line {
-    display: grid;
-    grid-template-columns: 1fr auto 110px 30px;
-    grid-template-areas:
-        "id money total tools"
-        "extra extra extra extra";
-    align-items: start;               /* the fix: nothing floats mid-cell */
-    gap: 8px 12px;
-    padding: 11px 12px;
-    border: 1px solid var(--border-color-light);
-    border-radius: 11px;
-    background: var(--bg-secondary);
-    transition: border-color .12s ease;
-}
-
-.lip-line:focus-within { border-color: var(--border-color-focus); }
-
-.lip-line-id { grid-area: id; display: flex; gap: 10px; min-width: 0; }
-.lip-line-idmain { flex: 1; min-width: 0; }
-
-/* ⚠ SPECIFICITY, NOT PREFERENCE.
-   theme.css carries
-
-       [data-theme="dark"] input[type="text"] { border: …; background: var(--bg-input) }
-
-   at (0,2,1). A bare `.lip-line-name` is (0,1,0), so every input styled here
-   rendered as a default form box no matter what this file said — measured on
-   prod: border rgb(51,65,85), background rgb(30,41,59), against the transparent
-   this file asks for. The whole point of the redesign, a title that happens to be
-   editable, was silently defeated.
-
-   `.lip-line input.lip-…` is (0,2,1): it ties, and this sheet loads after
-   theme.css, so it wins on order. Preferred over !important, which would win
-   the same argument while hiding that there was one. */
-.lip-line input.lip-line-name {
-    width: 100%;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-primary);
-    background: transparent;
+/* ── the line ────────────────────────────────────────────────────────────── */
+.lip-row {
+    padding: 9px 12px 10px;
+    border-radius: 10px;
     border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 3px 6px;
-    margin-left: -6px;               /* optically flush with the text below */
+    border-bottom-color: var(--border-color-light);
 }
-.lip-line input.lip-line-name:hover { border-color: var(--border-color-light); }
-.lip-line input.lip-line-name:focus { border-color: var(--border-color-focus); background: var(--bg-primary); outline: none; }
-.lip-line-name-ro     { display: block; padding: 3px 0; }
+.lip-row:hover        { background: var(--bg-secondary); }
+.lip-row:focus-within { background: var(--bg-secondary); border-color: var(--border-color-focus); }
 
-/* ── the commercial block: one thought, kept together ── */
-.lip-line-money {
-    grid-area: money;
+/* A line that sells a real product, distinguished from free text somebody
+   typed — one hairline, not a badge. */
+.lip-row.is-catalogue { box-shadow: inset 2px 0 0 color-mix(in srgb, var(--brand-primary) 42%, transparent); }
+
+/* ── band 1: everything interactive, one height ─────────────────────────── */
+.lip-band {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding-top: 3px;
+    gap: var(--lip-gut);
 }
-.lip-line-x { color: var(--text-muted); font-size: 11px; }
 
-.lip-line input.lip-line-qty, .lip-line input.lip-line-price {
-    width: 74px;
-    padding: 5px 8px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    border: 1px solid var(--border-color-light);
+/* THE shared height. Anything that sits in band 1 wears this. */
+.lip-row .lip-f {
+    height: var(--lip-h);
+    line-height: calc(var(--lip-h) - 2px);
+    box-sizing: border-box;
+    font-size: 13px;
+}
+
+/* The name reads as a title and reveals that it is editable on approach —
+   a quote is a document first and a form second. */
+/* ⭐⭐⭐ WHY !important APPEARS BELOW, AND ONLY BELOW.
+
+   theme.css sets, on EVERY dark-mode input:
+
+     [data-theme="dark"] input[type="text"], … input[type="number"], … {
+       background-color: var(--bg-input) !important;
+       color:            var(--text-primary) !important;
+       border-color:     var(--border-color) !important;
+     }
+
+   !important beats specificity, so no amount of qualifying the selector
+   reaches it — an earlier version of this panel was written at (0,1,0),
+   raised to (0,2,1) to win a tie, and STILL lost every background and border
+   in dark mode. Nothing looked broken; the design simply never applied.
+
+   Three declarations here are load-bearing and are exactly the three that
+   block overrides:
+     · the name reads as a document title until you approach it (transparent)
+     · a catalogue price reads FLAT, because it is not the rep's to change
+     · the account code is a dashed hint, not a form field
+
+   So they are re-asserted at the same weight. This is the pattern already
+   used for Vision against the same stylesheet — scope the counter, never
+   edit the global rule. Every !important below answers one of those three
+   properties; nothing else in this file carries one. */
+.lip-row input.lip-f-name {
+    flex: 1;
+    min-width: 0;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-color: transparent !important;
     border-radius: 7px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    background: transparent !important;
+    color: var(--text-primary) !important;
+    font-weight: 500;
+}
+.lip-row input.lip-f-name:hover { border-color: var(--border-color-light) !important; }
+.lip-row input.lip-f-name:focus {
+    border-color: var(--border-color-focus) !important;
+    background: var(--bg-primary) !important;
+    outline: none;
+}
+.lip-row .lip-f-ro { flex: 1; min-width: 0; padding: 0 8px; color: var(--text-primary); font-weight: 500; }
+
+/* ══ THE SIGNATURE: the arithmetic column ══════════════════════════════════
+   qty × price = total, in tabular mono with the operators as muted glyphs.
+   Read down a quote and the decimals form a true vertical line and the sum
+   visibly builds. It is the artifact's own vernacular — a quote IS a worked
+   ledger — and it is functional: a column like this can be audited by eye,
+   which a scatter of boxed inputs cannot. */
+.lip-sum { display: flex; align-items: center; gap: 6px; }
+
+.lip-row .lip-n {
+    width: var(--lip-num);
+    padding: 0 8px;
+    text-align: right;
+    font-family: var(--font-family-mono);
+    font-variant-numeric: tabular-nums;
     font-size: 12.5px;
 }
-.lip-line input.lip-line-price[readonly] {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
+.lip-row input.lip-n {
+    border: 1px solid var(--border-color-light);
+    border-color: var(--border-color-light) !important;
+    border-radius: 7px;
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+.lip-row input.lip-n:focus { border-color: var(--border-color-focus) !important; outline: none; }
+
+/* A catalogue price is not the rep's to change, and says so by being flat
+   rather than by being disabled-looking. */
+.lip-row input.lip-n-price[readonly] {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: var(--text-secondary) !important;
     cursor: default;
 }
-.lip-line-money-ro { color: var(--text-secondary); font-size: 12.5px; }
+.lip-row input.lip-n-price[readonly]:hover { border-color: var(--border-color-light) !important; }
 
-.lip-line-total {
-    grid-area: total;
-    padding-top: 8px;
-    text-align: right;
+/* Quantity is the one number in the band the rep types, so it is the one that
+   reads as an input rather than as a figure. */
+.lip-row input.lip-n-qty { color: var(--text-primary) !important; }
+
+/* The thumbnail fallback sits UNDER the real image (which carries z-index 1),
+   so a product with no picture shows its initials and one with a picture covers
+   them. No onerror handler — that attribute could not safely carry data. */
+.lip-prod-thumb .lip-prod-img-fallback { z-index: 0; }
+.lip-op { color: var(--text-muted); font-size: 11px; user-select: none; }
+
+.lip-row .lip-n-total {
+    width: 104px;
+    padding: 0 0 0 8px;
     font-size: 13.5px;
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
     color: var(--text-primary);
 }
+.lip-row .lip-n-ro { color: var(--text-secondary); }
 
-.lip-line-tools { grid-area: tools; padding-top: 6px; text-align: right; }
+.lip-kill, .lip-kill-gap {
+    flex: 0 0 auto;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.lip-kill:hover { background: color-mix(in srgb, var(--color-error) 14%, transparent); color: var(--color-error); }
+.lip-kill-gap   { cursor: default; }
 
-/* Stock, the product control and the rarely-used account code share one quiet
-   strip beneath, so none of them competes with the product name. */
-.lip-line-extra {
-    grid-area: extra;
+/* ── band 2: provenance, a document footnote ────────────────────────────── */
+.lip-note-line {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-    padding-left: 48px;              /* aligned under the text, past the thumb */
+    margin-top: 5px;
+    padding-left: calc(38px + var(--lip-gut) + 8px);   /* under the name, past the thumb */
+    min-height: 18px;
+}
+.lip-note { font-size: 10.5px; color: var(--text-muted); }
+.lip-dot  { margin: 0 5px; opacity: .5; }
+.lip-mono { font-family: var(--font-family-mono); }
+
+.lip-flag {
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-size: 10px;
+    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    color: var(--color-warning);
 }
 
-.lip-line input.lip-line-acct {
-    flex: 0 1 190px;
-    padding: 3px 8px;
-    font-size: 11px;
+.lip-row input.lip-acct {
+    width: 130px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 10.5px;
     border: 1px dashed var(--border-color-light);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text-secondary);
+    border-color: var(--border-color-light) !important;
+    border-radius: 5px;
+    background: transparent !important;
+    color: var(--text-secondary) !important;
 }
-.lip-line input.lip-line-acct:focus {
+.lip-row input.lip-acct:focus {
     border-style: solid;
-    border-color: var(--border-color-focus);
-    background: var(--bg-primary);
+    border-color: var(--border-color-focus) !important;
+    background: var(--bg-primary) !important;
     outline: none;
 }
 
-/* A gallery behind the cover image. */
-.lip-prod-more {
-    position: absolute;
-    right: -3px;
-    bottom: -3px;
-    z-index: 2;
-    padding: 0 4px;
-    border-radius: 5px;
-    font-size: 9.5px;
-    font-weight: 600;
-    color: var(--text-inverse);
-    background: var(--brand-primary);
-}
-
-.lip-chip-hsn { font-family: var(--font-family-mono); }
-.lip-chip-acct { font-family: var(--font-family-mono); }
-
-@media (max-width: 720px) {
-    /* The money block drops beneath the identity rather than squeezing it. */
-    .lip-lines-head { display: none; }
-    .lip-line {
-        grid-template-columns: 1fr auto;
-        grid-template-areas:
-            "id    tools"
-            "money total"
-            "extra extra";
-    }
-    .lip-line-extra { padding-left: 0; }
-}
-
-
-/* ── The product cell ──────────────────────────────────────────────────────
-   A catalogue line is a PRODUCT, not a sentence. It was rendering as a bare
-   text input with a grey SKU underneath, which reads as free text someone
-   typed — so a rep had to recognise "24 Mantra Organic Broken Rice 1 kg" from
-   the words alone while choosing between seven thousand of them.
-   Thumbnail, name, what it is, and the facts that separate two similar SKUs. */
-.lip-prod {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.lip-prod-main {
-    flex: 1;
-    min-width: 0;               /* lets the description ellipsis actually work */
-}
-
-.lip-prod-img {
-    flex: 0 0 auto;
-    width: 38px;
-    height: 38px;
-    margin-top: 2px;
-    border-radius: 8px;
-    object-fit: cover;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color-light);
-}
-
-/* No picture is a state, not a gap waiting to be filled — so it is drawn
-   deliberately rather than left as a broken-image frame. */
-/* A PACKAGE, not an initial.
-   The first version used the first character of the product name, which for a
-   catalogue like "24 Mantra Organic Broken Rice 1 kg" renders a large "2" —
-   indistinguishable from a quantity badge sitting beside a quantity column.
-   An icon says "product, no picture yet" and can never be misread as a number. */
-.lip-prod-img-fallback {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    background: linear-gradient(135deg,
-        color-mix(in srgb, var(--brand-primary) 14%, transparent),
-        var(--bg-tertiary));
-}
-
-.lip-prod-img-fallback svg { width: 18px; height: 18px; }
-
-.lip-prod-desc {
-    margin: 2px 0 0;
-    font-size: 11.5px;
-    line-height: 1.35;
+/* ── band 3: what the product is ────────────────────────────────────────── */
+.lip-blurb {
+    margin: 3px 0 0;
+    padding-left: calc(38px + var(--lip-gut) + 8px);
+    font-size: 11px;
+    line-height: 1.4;
     color: var(--text-secondary);
     display: -webkit-box;
     -webkit-line-clamp: 1;
@@ -369,38 +374,15 @@
     overflow: hidden;
 }
 
-.lip-prod-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 5px;
+.lip-thumb-gap { flex: 0 0 auto; width: 38px; }
+
+@media (max-width: 720px) {
+    .lip-head-row { display: none; }
+    .lip-band { flex-wrap: wrap; }
+    .lip-row input.lip-f-name { flex: 1 0 100%; order: -1; }
+    .lip-note-line, .lip-blurb { padding-left: 0; }
 }
 
-.lip-prod-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 5px;
-}
-
-/* ── Chips ─────────────────────────────────────────────────────────────────
-   One shape for every fact about a product, so SKU, unit and category read as
-   the same KIND of thing rather than as a run-on grey sentence. */
-.lip-chip {
-    display: inline-block;
-    padding: 1px 6px;
-    border-radius: 5px;
-    font-size: 10px;
-    line-height: 1.6;
-    background: var(--bg-tertiary);
-    color: var(--text-muted);
-    border: 1px solid var(--border-color-light);
-    white-space: nowrap;
-}
-
-/* The fallback sits underneath and the image covers it, so an image that fails
-   to load reveals the initial rather than a broken frame — and no data has to
-   travel through an inline handler to make that happen. */
 .lip-prod-thumb {
     position: relative;
     flex: 0 0 auto;
@@ -412,6 +394,20 @@
 .lip-prod-thumb .lip-prod-img { position: absolute; inset: 0; margin: 0; }
 .lip-prod-thumb .lip-prod-img-real { z-index: 1; }
 
+/* Chips live on in the product PICKER only. A search result is scanned, and a
+   pill is the right weight for a fact you are comparing across rows. On a quote
+   LINE the same chips gave a SKU the visual weight of a button, which is why
+   band 2 is middot text instead. */
+.lip-chip {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    border-radius: 5px;
+    white-space: nowrap;
+}
 .lip-chip-sku { font-family: var(--font-family-mono); }
 
 .lip-chip-cat {
@@ -436,69 +432,27 @@
 .ppp-table th.ppp-col-st { text-align: right; }
 
 /* Inputs sit flush inside their cell so the table still reads as a table. */
-.lip-table input {
-  width: 100%;
-  min-width: 0;
-  padding: 5px 7px;
-  font-size: 0.78rem;
-  font-family: inherit;
-  color: var(--text-primary);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-}
-.lip-table input:focus {
-  outline: none;
-  border-color: var(--border-color-focus, var(--brand-primary));
-  box-shadow: 0 0 0 2px var(--brand-alpha-10);
-}
-.lip-table input[type="number"] { text-align: right; font-family: var(--font-family-mono); }
-
 /* Spinner arrows cost ~16px of an input that is already tight, and nobody
    steps a price by 0.01 with a mouse. */
-.lip-table input[type="number"]::-webkit-outer-spin-button,
-.lip-table input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-.lip-table input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
-
 /* The table scrolls sideways on a narrow slide-panel by design. The default
    scrollbar renders as a bright bar across a dark panel, which reads as a UI
    artefact rather than a control. */
-.lip-table-wrap::-webkit-scrollbar, .ppp-table-wrap::-webkit-scrollbar { height: 8px; }
-.lip-table-wrap::-webkit-scrollbar-track, .ppp-table-wrap::-webkit-scrollbar-track {
+.ppp-table-wrap::-webkit-scrollbar { height: 8px; }
+.ppp-table-wrap::-webkit-scrollbar-track {
   background: var(--bg-tertiary);
   border-radius: 0 0 10px 10px;
 }
-.lip-table-wrap::-webkit-scrollbar-thumb, .ppp-table-wrap::-webkit-scrollbar-thumb {
+.ppp-table-wrap::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 999px;
 }
-.lip-table-wrap::-webkit-scrollbar-thumb:hover, .ppp-table-wrap::-webkit-scrollbar-thumb:hover {
+.ppp-table-wrap::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
-.lip-table-wrap, .ppp-table-wrap {
+.ppp-table-wrap {
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) var(--bg-tertiary);
 }
-
-.lip-x {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  color: var(--text-muted);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-}
-.lip-x:hover { color: var(--color-error); background: var(--bg-tertiary); border-color: var(--border-color); }
-.lip-x:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 1px; }
 
 /* ── Actions ─────────────────────────────────────────────────────────── */
 .lip-actions, .ppp-actions {
@@ -644,10 +598,8 @@
 
 /* ── Narrow screens ──────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .lip-table, .ppp-table { min-width: 400px; }
-  .lip-col-acct { display: none; }
-  .lip-table th.lip-col-acct { display: none; }
-}
+  .ppp-table { min-width: 400px; }
+    }
 
 /* ── Catalogue lines and the product picker ─────────────────────────────── */
 
@@ -660,23 +612,8 @@
 
    Now it is a left accent: at a glance, which lines are catalogue products and
    which are free text a person wrote. */
-.lip-line.lip-catalogue {
-    border-left: 2px solid color-mix(in srgb, var(--brand-primary) 45%, transparent);
-    padding-left: 10px;
-}
-
-.lip-sku {
-    display: block;
-    margin-top: 3px;
-    font-size: 10.5px;
-    font-family: var(--font-family-mono);
-    color: var(--text-muted);
-}
-
 /* A product whose packaging nobody recorded can be quoted but not reserved.
    Said on the line, while the rep can still pick a different one. */
-.lip-sku-warn { color: var(--color-warning); }
-
 .lip-pick {
     margin-top: 4px;
     padding: 2px 8px;
@@ -765,14 +702,20 @@
     padding: 4px;
 }
 
+/* The catalogue search box. !important for the same reason as the line inputs:
+   theme.css claims background-color, border-color and color on every dark-mode
+   input. This rule predates that guard and had been losing all three since it
+   was written — a search box on a dark dialog rendering with the theme's
+   default field chrome instead of the dialog's. Nothing errored. */
 .lip-picker-q {
     width: 100%;
     height: 38px;
     padding: 0 12px;
     border-radius: 9px;
     border: 1px solid var(--border-primary);
-    background: var(--bg-secondary);
-    color: var(--text-primary);
+    border-color: var(--border-primary) !important;
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
 }
 
 /* The list scrolls inside the dialog rather than growing it — a catalogue can
@@ -870,13 +813,32 @@
 /* The tax classification, shown only when a line carries one. Monospaced
    because these are codes that get compared digit by digit against an
    invoice, not words. */
-.lip-col-hsn {
-    font-family: var(--font-family-mono);
-    font-size: 11.5px;
-    color: var(--text-secondary);
-    white-space: nowrap;
+/* A count badge on the corner of a thumbnail: this product has more pictures
+   than the one shown. Small, because it answers a question nobody asked yet. */
+.lip-prod-more {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    z-index: 2;
+    padding: 0 3px;
+    border-radius: 4px;
+    font-size: 8.5px;
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--text-inverse);
+    background: color-mix(in srgb, var(--text-primary) 72%, transparent);
 }
 
+/* The way out of the slide-panel and into the full quote. A link, not a
+   button: it navigates, and saying so is the whole job. */
+.lip-open-full {
+    font-size: 11.5px;
+    color: var(--brand-primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+}
+.lip-open-full:hover { border-bottom-color: currentColor; }
+.lip-open-full:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
 /* ── Totals and availability ─────────────────────────────────────────────── */
 
 .lip-totals {
