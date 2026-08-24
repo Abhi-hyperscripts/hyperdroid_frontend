@@ -716,6 +716,43 @@ const LineItemsPanel = (() => {
         }
     }
 
+    /**
+     * Writes the picked product's facts onto the line the model holds, so a
+     * re-render reproduces what attachItem painted.
+     *
+     * The field names are the ones row() reads — deliberately the same set the
+     * server sends, so a picked line and a loaded line are indistinguishable to
+     * the renderer. enough_in_stock is NOT among them: that is a server
+     * judgement about this line's quantity (see attachItem), and guessing it
+     * would put a number on screen the server can contradict.
+     */
+    function rememberItemOnLine(container, tr, item) {
+        const st = mounted.get(container);
+        if (!st) return;
+        const idx = Number(tr.getAttribute('data-lip-row'));
+        if (!Number.isFinite(idx) || !st.lines[idx]) return;
+
+        Object.assign(st.lines[idx], {
+            item_id: item.id,
+            image_url: item.image_url ?? null,
+            image_count: item.image_count ?? 0,
+            item_description: item.description ?? null,
+            sku: item.sku ?? null,
+            uom: item.sale_unit ?? null,
+            category_name: item.category_name ?? null,
+            no_longer_sellable: item.is_sellable === false,
+        });
+    }
+
+    /** Clears them again when the line stops naming a product. */
+    function forgetItemOnLine(container, tr) {
+        const st = mounted.get(container);
+        if (!st) return;
+        const idx = Number(tr.getAttribute('data-lip-row'));
+        if (!Number.isFinite(idx) || !st.lines[idx]) return;
+        st.lines[idx] = stripProductFacts({ ...st.lines[idx], item_id: null });
+    }
+
     function detachItem(tr) {
         tr.removeAttribute('data-lip-item');
         tr.classList.remove('is-catalogue');
@@ -850,7 +887,24 @@ const LineItemsPanel = (() => {
             const btn = ev.target.closest('[data-pick]');
             if (!btn) return;
             const item = found.find(i => String(i.id) === btn.getAttribute('data-pick'));
-            if (item) { attachItem(tr, item); refreshTotals(container); }
+            if (item) {
+                attachItem(tr, item);
+                // ⭐⭐⭐ TELL THE MODEL, NOT JUST THE DOM.
+                //
+                // attachItem paints the row. It does not touch st.lines, so the
+                // next re-render — Add line, remove a row, anything — rebuilt
+                // from a model that had never heard of this product, and every
+                // fact attach had just painted disappeared. Fixing readLines to
+                // carry facts FORWARD does nothing here: there was nothing to
+                // carry, because the writer never wrote.
+                //
+                // Measured on the deployed build: pick a product, click Add
+                // line, and the photo, provenance and description all vanish
+                // while the readonly price and the catalogue accent stay — the
+                // same half-alive row as the three earlier instances.
+                rememberItemOnLine(container, tr, item);
+                refreshTotals(container);
+            }
             close();
         });
 
@@ -1181,7 +1235,12 @@ const LineItemsPanel = (() => {
 
             const unpick = e.target.closest('[data-lip="unpick"]');
             if (unpick) {
-                detachItem(unpick.closest('[data-lip-row]'));
+                const row = unpick.closest('[data-lip-row]');
+                detachItem(row);
+                // The inverse of the attach path: the DOM stops showing the
+                // product, and the MODEL has to stop believing in it, or the
+                // next re-render paints it back.
+                forgetItemOnLine(container, row);
                 return refreshTotals(container);
             }
         });
