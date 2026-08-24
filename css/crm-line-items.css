@@ -172,17 +172,22 @@
 
 /* No picture is a state, not a gap waiting to be filled — so it is drawn
    deliberately rather than left as a broken-image frame. */
+/* A PACKAGE, not an initial.
+   The first version used the first character of the product name, which for a
+   catalogue like "24 Mantra Organic Broken Rice 1 kg" renders a large "2" —
+   indistinguishable from a quantity badge sitting beside a quantity column.
+   An icon says "product, no picture yet" and can never be misread as a number. */
 .lip-prod-img-fallback {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     background: linear-gradient(135deg,
-        color-mix(in srgb, var(--brand-primary) 16%, transparent),
+        color-mix(in srgb, var(--brand-primary) 14%, transparent),
         var(--bg-tertiary));
 }
+
+.lip-prod-img-fallback svg { width: 18px; height: 18px; }
 
 .lip-prod-desc {
     margin: 3px 0 0;

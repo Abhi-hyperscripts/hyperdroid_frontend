@@ -316,8 +316,13 @@ const LineItemsPanel = (() => {
         //
         // So the fallback is always PRESENT, underneath, and a failed image
         // simply hides itself. No data crosses into an attribute that executes.
-        const initial = `<span class="lip-prod-img lip-prod-img-fallback"
-                               aria-hidden="true">${esc(initialOf(line))}</span>`;
+        const initial = `<span class="lip-prod-img lip-prod-img-fallback" aria-hidden="true">
+                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                 <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                 <line x1="12" y1="22.08" x2="12" y2="12"/>
+                             </svg>
+                         </span>`;
         if (!line.image_url) return initial;
 
         return `<span class="lip-prod-thumb">
@@ -325,11 +330,6 @@ const LineItemsPanel = (() => {
                     <img class="lip-prod-img lip-prod-img-real" src="${esc(line.image_url)}"
                          alt="" loading="lazy" onerror="this.hidden = true">
                 </span>`;
-    }
-
-    function initialOf(line) {
-        const src = (line.description || line.sku || '?').trim();
-        return (src[0] || '?').toUpperCase();
     }
 
     /// SKU, unit and category on one line — the facts that tell two similar
