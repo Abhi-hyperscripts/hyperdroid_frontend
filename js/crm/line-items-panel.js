@@ -405,11 +405,18 @@ const LineItemsPanel = (() => {
         // Band 2 is provenance — a document footnote, not a second row of
         // controls competing with the first.
         const name = canEdit
+            // The name is the longest thing on the line and the first to be cut:
+            // "…Shampoo 1000 ml" renders as "…Shampoo 1000 m", and a size that
+            // reads as a different size is worse than one that is absent. The
+            // input scrolls, but only if you already know to look — so the whole
+            // value stays readable on hover.
             ? `<input type="text" class="lip-f lip-f-name" data-lip-field="description"
                       maxlength="${MAX_DESCRIPTION}" value="${esc(line.description)}"
+                      title="${esc(line.description)}"
                       placeholder="Describe this line"
                       aria-label="Line ${index + 1} description">`
-            : `<span class="lip-f lip-f-name lip-f-ro">${esc(line.description)}</span>`;
+            : `<span class="lip-f lip-f-name lip-f-ro"
+                     title="${esc(line.description)}">${esc(line.description)}</span>`;
 
         // THE ARITHMETIC COLUMN — the one place this design spends boldness.
         //
