@@ -343,6 +343,13 @@ const LineItemsPanel = (() => {
                 ? `<span class="lip-chip lip-chip-hsn" title="${esc(lineTaxHint(state, line))}">HSN ${esc(line.hsn_sac)}</span>`
                 : '',
             line.category_name ? `<span class="lip-chip lip-chip-cat">${esc(line.category_name)}</span>` : '',
+            // ⭐ THE CATALOGUE STOPPED SELLING THIS. Checked when the line was
+            // added and never again, so a withdrawn product sat here at its old
+            // price with a stock badge beside it. Loud, because the alternative
+            // is a rep sending it to a customer.
+            line.no_longer_sellable
+                ? '<span class="lip-chip lip-chip-warn" title="The catalogue no longer sells this product">no longer sold</span>'
+                : '',
         ].filter(Boolean).join('');
     }
 
