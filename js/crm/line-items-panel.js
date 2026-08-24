@@ -462,7 +462,13 @@ const LineItemsPanel = (() => {
             // pick control and no account code — nothing at all — so the strip was
             // 23px of dead space on every such line. Emit it only when it has
             // something to hold.
-            (isCatalogue || stockBadge(line) || canEdit || line.account_code) ? `
+            // isCatalogue is not the same question as "productMeta will render
+            // something". A catalogue line with no sku, uom, HSN or category —
+            // a non-stocked service item is the ordinary case — passed the
+            // condition and then rendered an empty strip, which is exactly the
+            // 23px of dead space this condition was added to remove. Ask the
+            // renderer instead of a proxy for it.
+            (productMeta(line, state) || stockBadge(line) || canEdit || line.account_code) ? `
             <div class="lip-note-line">
                 ${isCatalogue ? productMeta(line, state) : ''}
                 ${stockBadge(line)}
@@ -596,19 +602,38 @@ const LineItemsPanel = (() => {
             //
             // The comment below used to claim attach-then-reload looked identical.
             // It does now.
+            // The picker carries sku, sale_unit and category_name. It does NOT
+            // carry hsn_sac — that arrives with the saved line — so the render
+            // after a reload legitimately has one more fact than this does.
+            const plain = [item.sku, item.sale_unit, item.category_name].filter(Boolean);
             const bits = [
                 item.sku ? `<span class="lip-mono">${esc(item.sku)}</span>` : '',
                 item.sale_unit ? esc(item.sale_unit) : '',
+                item.category_name ? esc(item.category_name) : '',
             ].filter(Boolean);
-            note.innerHTML = bits.join('<span class="lip-dot">\u00b7</span>');
-            note.title = [item.sku, item.sale_unit].filter(Boolean).join(' \u00b7 ');
+
+            // productMeta emits NOTHING when there is nothing to say. Writing an
+            // empty span instead leaves a zero-width flex child, and the strip
+            // has an 8px gap — so "no provenance" rendered as a phantom indent.
+            if (!bits.length) {
+                note.remove();
+                note = null;
+            } else {
+                note.innerHTML = bits.join('<span class="lip-dot">\u00b7</span>');
+                note.title = plain.join(' \u00b7 ');
+            }
 
             let flag = noteLine.querySelector('.lip-flag');
             if (item.tracks_stock && !item.can_be_reserved) {
                 if (!flag) {
                     flag = document.createElement('span');
                     flag.className = 'lip-flag';
-                    noteLine.appendChild(flag);
+                    // ⭐ WHERE, not just whether. productMeta returns
+                    // `provenance + withdrawn`, so the flag is the second child —
+                    // right after the provenance. appendChild put it LAST, after
+                    // the stock badge, the pick control and the account input, so
+                    // the same line looked different before and after a reload.
+                    noteLine.insertBefore(flag, note ? note.nextSibling : noteLine.firstChild);
                 }
                 flag.textContent = 'no unit size';
                 flag.title = 'This product is stocked but has no unit size, so it cannot be reserved';
@@ -639,6 +664,23 @@ const LineItemsPanel = (() => {
         // the reservability caveat all belonged to the product, not to the line.
         tr.querySelector('.lip-note-line .lip-prov')?.remove();
         tr.querySelector('.lip-note-line .lip-flag')?.remove();
+        // The stock badge belongs to the product as much as the SKU does. Leaving
+        // it behind left a free-text line still claiming "only 3 kg available".
+        tr.querySelector('.lip-note-line .lip-stock')?.remove();
+
+        // ⭐ THE WHOLE SET, NOT THE PART I HAPPENED TO LIST.
+        // The comment above used to enumerate "SKU, unit and the reservability
+        // caveat" and stop there, while the product's PHOTO and its DESCRIPTION
+        // stayed on a line that no longer sells a product. Enumerating a set in
+        // prose and implementing a subset is how the set gets trusted.
+        const thumb = tr.querySelector('.lip-prod-thumb');
+        if (thumb) {
+            const gap = document.createElement('span');
+            gap.className = 'lip-thumb-gap';
+            gap.setAttribute('aria-hidden', 'true');
+            thumb.replaceWith(gap);
+        }
+        tr.querySelector('.lip-blurb')?.remove();
 
         // Flipped HERE rather than by the click handler, so attach and detach
         // are exact inverses and neither caller has to remember half the job.

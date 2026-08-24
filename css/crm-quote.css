@@ -66,8 +66,6 @@
     margin-bottom: 16px;
 }
 
-/* On a page the table has room, so it must NOT scroll sideways — that
-   behaviour exists for the drawer and would defeat the point here. */
 
 .qt-banner {
     padding: 11px 14px;
@@ -102,20 +100,17 @@
 }
 
 /* The link out of the deal drawer, where the cramped panel still lives. */
-.lip-open-full {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: var(--brand-primary);
-    text-decoration: none;
-}
-
-.lip-open-full:hover { text-decoration: underline; }
+/* .lip-open-full was styled here too, with a different hover treatment from the
+   one in crm-line-items.css — a cross-file collision on a single class, resolved
+   by whichever sheet happened to load later.
+   
+   It is also unreachable: the link is emitted only when `showOpenFull` is true,
+   and quote.js passes false ("this IS the full quote"). So this page can never
+   render the element it was styling. Removed rather than reconciled — the
+   conflict and the dead code were the same three rules. */
 
 @media (max-width: 768px) {
     .qt-head { flex-direction: column; }
     .qt-head-facts { width: 100%; }
     .qt-fact { flex: 1; }
-    /* Back to scrolling on a phone: there genuinely is not room. */
 }

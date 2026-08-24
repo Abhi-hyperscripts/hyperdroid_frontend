@@ -597,10 +597,17 @@ const SearchableDropdown = (function() {
          * else right-align to the trigger so the menu grows back over its own
          * control, else clamp into the viewport. Returns a left coordinate.
          *
-         * This is the ONLY place that decides it. `left` was being assigned in two
-         * places — initial placement and the scroll handler — so fixing one would
-         * have been fixing neither: the menu would jump back off-screen on the
-         * first scroll.
+         * This is the only place THIS FILE decides it, which is the part that was
+         * broken: `left` was being assigned at two sites — initial placement and
+         * the scroll handler — so fixing one would have been fixing neither, and
+         * the menu would jump back off-screen on the first scroll.
+         *
+         * It is NOT the only thing in the app that positions a menu. Page
+         * stylesheets override it deliberately — crm-analytics.css sets
+         * `right: auto; width: max-content` on its toolbar dropdowns, and one of
+         * its rules is an ID selector that outranks anything written here. Those
+         * are choices, not accidents; the point of this helper is that the
+         * DEFAULT is correct, not that nothing may override it.
          */
         static menuLeftFor(rect, menuWidth, viewportWidth) {
             const MARGIN = 8;
@@ -735,9 +742,21 @@ const SearchableDropdown = (function() {
                             this.close();
                             return;
                         }
+                        // ⭐ RE-APPLY THE WIDTH, NOT JUST THE LEFT.
+                        //
+                        // This recomputed `left` from menuWidthFor(r) on every
+                        // scroll and resize but never wrote the width back, so the
+                        // two disagreed the moment the trigger reflowed. Concrete:
+                        // open on a 400px-wide trigger (menu 400px), then narrow
+                        // the window until the trigger becomes 200px — the handler
+                        // places left for a 240px menu while the element is still
+                        // 400px, putting 160px back off the right edge. The bug
+                        // this fix exists for, re-opened by the fix's own handler,
+                        // on an event it is bound to.
+                        const w = Dropdown.menuWidthFor(r);
+                        this.menuEl.style.width = `${w}px`;
                         this.menuEl.style.top  = `${openUp ? r.top - 4 : r.bottom + 4}px`;
-                        this.menuEl.style.left = `${Dropdown.menuLeftFor(
-                            r, Dropdown.menuWidthFor(r), window.innerWidth)}px`;
+                        this.menuEl.style.left = `${Dropdown.menuLeftFor(r, w, window.innerWidth)}px`;
                     };
                     window.addEventListener('scroll', this._repositionHandler, true);
                     window.addEventListener('resize', this._repositionHandler);

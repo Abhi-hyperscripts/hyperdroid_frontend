@@ -160,6 +160,9 @@
     --lip-h: 30px;                 /* the single control height */
     --lip-num: 78px;               /* every numeric field, so decimals align */
     --lip-gut: 10px;
+    --lip-thumb: 38px;             /* the product tile, and the header's leading spacer */
+    --lip-kill: 24px;              /* the remove button, and the header's trailing spacer */
+    --lip-total: 104px;            /* the line total column */
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -206,16 +209,16 @@
 .lip-head-row::before {
     content: "";
     flex: 0 0 auto;
-    width: 38px;                                   /* the thumbnail column */
+    width: var(--lip-thumb);
 }
 .lip-head-row::after {
     content: "";
     flex: 0 0 auto;
-    width: 24px;                                   /* the remove button */
+    width: var(--lip-kill);
 }
 .lip-head-item  { flex: 1 1 auto; min-width: 132px; }
 .lip-head-sum   { width: calc(var(--lip-num) * 2 + 26px); text-align: center; }
-.lip-head-total { width: 104px; padding-left: 8px; text-align: right; }
+.lip-head-total { width: var(--lip-total); padding-left: 8px; text-align: right; }
 
 /* ── the line ────────────────────────────────────────────────────────────── */
 .lip-row {
@@ -236,8 +239,12 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    row-gap: 6px;
-    gap: var(--lip-gut) var(--lip-gut);
+    /* One declaration, not two. `row-gap: 6px` followed by the `gap` shorthand
+       is a rule overriding itself: the shorthand resets row-gap, so the 6px was
+       dead and wrapped bands sat 10px apart. A shorthand after its own longhand
+       is a third way a stylesheet contradicts itself, and unlike the other two
+       it happens inside a single rule. */
+    gap: 6px var(--lip-gut);
 }
 
 /* THE shared height. Anything that sits in band 1 wears this. */
@@ -314,6 +321,11 @@
     font-size: 12.5px;
 }
 .lip-row input.lip-n {
+    /* Folded in rather than declared a second time: two standalone rules for one
+       selector is the self-override shape the guard on this sheet exists for,
+       and it caught this one. */
+    -moz-appearance: textfield;
+    appearance: textfield;
     border: 1px solid var(--border-color-light);
     border-color: var(--border-color-light) !important;
     border-radius: 7px;
@@ -336,13 +348,23 @@
    reads as an input rather than as a figure. */
 .lip-row input.lip-n-qty { color: var(--text-primary) !important; }
 
-/* The thumbnail fallback sits UNDER the real image (which carries z-index 1),
-   so a product with no picture shows its initials and one with a picture covers
-   them. No onerror handler — that attribute could not safely carry data. */
+/* ⭐ SPINNERS EAT THE COLUMN THIS DESIGN IS BUILT ON.
+   The old suppression was scoped to `.lip-table` and went with it; nothing
+   replaced it. Chrome paints spin buttons over the right edge of a 78px
+   right-aligned mono number on hover and focus — destroying exactly the
+   vertical decimal alignment that is the point of the arithmetic column. The
+   only global fallback is scoped to .modal, and this panel is a slide-panel.
+   Nobody steps a price by 0.01 with a mouse. */
+.lip-row input.lip-n::-webkit-outer-spin-button,
+.lip-row input.lip-n::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .lip-op { color: var(--text-muted); font-size: 11px; user-select: none; }
 
 .lip-row .lip-n-total {
-    width: 104px;
+    width: var(--lip-total);
     padding: 0 0 0 8px;
     font-size: 13.5px;
     font-weight: 600;
@@ -352,7 +374,7 @@
 
 .lip-kill, .lip-kill-gap {
     flex: 0 0 auto;
-    width: 24px; height: 24px;
+    width: var(--lip-kill); height: var(--lip-kill);
     display: flex; align-items: center; justify-content: center;
     border: none; border-radius: 6px;
     background: transparent;
@@ -428,7 +450,7 @@
     overflow: hidden;
 }
 
-.lip-thumb-gap { flex: 0 0 auto; width: 38px; }
+.lip-thumb-gap { flex: 0 0 auto; width: var(--lip-thumb); }
 
 /* ── NARROW CONTAINER: the same three bands, stacked ─────────────────────
    In a 438px panel the calculation cannot share a line with the name, so it
@@ -456,8 +478,8 @@
 .lip-prod-thumb {
     position: relative;
     flex: 0 0 auto;
-    width: 38px;
-    height: 38px;
+    width: var(--lip-thumb);
+    height: var(--lip-thumb);
     margin-top: 2px;
     overflow: hidden;
     border-radius: 7px;
@@ -474,8 +496,11 @@
 }
 .lip-prod-thumb .lip-prod-img-real { z-index: 1; }
 
-/* The fallback is a centred glyph, not a stretched one — object-fit above
-   applies to the image; an inline SVG needs to be laid out. */
+/* The fallback sits UNDER the real image (which carries z-index 1), so a product
+   with no picture shows the placeholder glyph and one with a picture covers it.
+   No onerror handler — that attribute could not safely carry data. And it is a
+   centred glyph, not a stretched one: object-fit applies to the image; an inline
+   SVG has to be laid out. */
 .lip-prod-thumb .lip-prod-img-fallback {
     z-index: 0;
     display: flex;
@@ -528,9 +553,6 @@
 .ppp-col-st { width: 96px; text-align: right; }
 .ppp-table th.ppp-col-st { text-align: right; }
 
-/* Inputs sit flush inside their cell so the table still reads as a table. */
-/* Spinner arrows cost ~16px of an input that is already tight, and nobody
-   steps a price by 0.01 with a mouse. */
 /* The table scrolls sideways on a narrow slide-panel by design. The default
    scrollbar renders as a bright bar across a dark panel, which reads as a UI
    artefact rather than a control. */
@@ -1113,7 +1135,15 @@
    the width instead — they are right-aligned mono, so they lose padding
    rather than digits. */
 @container lip (max-width: 400px) {
-    .lip-lines   { --lip-num: 62px; }
+    /* ⭐⭐⭐ ON .lip-row, NOT ON .lip-lines.
+       A container query is evaluated against an element's ANCESTORS — an element
+       is never its own query container. `.lip-lines` is the element that declares
+       container-type, so `.lip-lines { --lip-num: 62px }` inside this block could
+       never match, and the override was dead: measured in the browser, --lip-num
+       stayed 78px at every width while the block's other two rules (both true
+       descendants) applied. Half a fix, reading as a whole one.
+       `.lip-row` is a descendant, and --lip-num inherits from there to .lip-n. */
+    .lip-row     { --lip-num: 62px; }
     .lip-row .lip-n-total { width: 88px; }
     .lip-sum     { gap: 4px; }
 }
