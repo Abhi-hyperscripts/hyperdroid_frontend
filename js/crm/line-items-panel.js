@@ -456,6 +456,13 @@ const LineItemsPanel = (() => {
                 </button>` : '<span class="lip-kill-gap" aria-hidden="true"></span>'}
             </div>
 
+            ${
+            // An empty band still costs its min-height plus its margin. For a
+            // read-only free-text line there is no provenance, no stock badge, no
+            // pick control and no account code — nothing at all — so the strip was
+            // 23px of dead space on every such line. Emit it only when it has
+            // something to hold.
+            (isCatalogue || stockBadge(line) || canEdit || line.account_code) ? `
             <div class="lip-note-line">
                 ${isCatalogue ? productMeta(line, state) : ''}
                 ${stockBadge(line)}
@@ -485,7 +492,7 @@ const LineItemsPanel = (() => {
                   (line.account_code
                       ? `<span class="lip-acct-ro" title="Account code">${esc(line.account_code)}</span>`
                       : '')}
-            </div>
+            </div>` : ''}
 
             ${isCatalogue && line.item_description
                 ? `<p class="lip-blurb" title="${esc(line.item_description)}">${esc(line.item_description)}</p>`

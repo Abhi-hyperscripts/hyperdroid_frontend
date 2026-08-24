@@ -493,9 +493,15 @@
     display: inline-block;
     padding: 1px 6px;
     font-size: 10px;
-    line-height: 1.5;
+    line-height: 1.6;
     color: var(--text-muted);
     background: var(--bg-tertiary);
+    /* The border is not decoration: .lip-chip-cat and .lip-chip-warn below both
+       set border-COLOR and nothing else, so re-adding this rule without a border
+       left those two declarations styling a border that did not exist. The
+       category and "no unit size" chips lost their coloured outline and went
+       background-only, while the CSS still read as though they had one. */
+    border: 1px solid var(--border-color-light);
     border-radius: 5px;
     white-space: nowrap;
 }

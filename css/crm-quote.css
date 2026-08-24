@@ -68,9 +68,6 @@
 
 /* On a page the table has room, so it must NOT scroll sideways — that
    behaviour exists for the drawer and would defeat the point here. */
-.crm-quote-page .lip-table-wrap { overflow-x: visible; }
-.crm-quote-page .lip-table { width: 100%; }
-.crm-quote-page .lip-col-desc { min-width: 280px; }
 
 .qt-banner {
     padding: 11px 14px;
@@ -121,5 +118,4 @@
     .qt-head-facts { width: 100%; }
     .qt-fact { flex: 1; }
     /* Back to scrolling on a phone: there genuinely is not room. */
-    .crm-quote-page .lip-table-wrap { overflow-x: auto; }
 }
