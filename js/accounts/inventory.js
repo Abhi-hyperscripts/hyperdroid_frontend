@@ -1031,11 +1031,36 @@ async function buildAssembly() {
     const btn = document.getElementById('buildBtn'); btn.disabled = true;
     try {
         await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/bom`), { method: 'PUT', body: JSON.stringify({ lines: collectBomLines() }) });
-        const res = await api.request(AccountsCommon.buildUrl('inventory/builds'), {
+        const post = allowShortfall => api.request(AccountsCommon.buildUrl('inventory/builds'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(_buildIdemKey && { 'Idempotency-Key': _buildIdemKey }) },
-            body: JSON.stringify({ finished_item_id: itemId, quantity: qty, build_date: document.getElementById('buildDate').value })
+            body: JSON.stringify({
+                finished_item_id: itemId, quantity: qty,
+                build_date: document.getElementById('buildDate').value,
+                ...(allowShortfall && { allow_shortfall: true })
+            })
         });
+        let res;
+        try {
+            res = await post(false);
+        } catch (err) {
+            // A build now REFUSES a short component by default — you cannot assemble a thing from parts
+            // that are not there, and a shortfall build silently under-values the output because the
+            // missing component contributes zero cost. But stock records lag reality: goods can be on the
+            // shelf while the receipt is still on someone's desk, so offer the override rather than making
+            // the shop floor wait for paperwork. The backend message already names the component and the
+            // remedy; show it verbatim rather than paraphrasing it.
+            if (!(err.message || '').includes('INSUFFICIENT_STOCK')) throw err;
+            const proceed = await Confirm.show({
+                title: 'Not enough stock',
+                message: `${err.message}\n\nBuilding anyway will take that component's stock negative, and the finished item will be costed only from what was actually there.`,
+                type: 'danger',
+                confirmText: 'Build anyway',
+                cancelText: 'Cancel'
+            });
+            if (!proceed) { btn.disabled = false; return; }
+            res = await post(true);
+        }
         Toast.success(`Built ${qty} @ ${AccountsCommon.formatCurrency(res.unit_cost)} each`);
         AccountsCommon.hideFormPage('bomPage');
         await loadItems();
@@ -1283,7 +1308,25 @@ const _woIssuing = new Set();
 async function issueWorkOrder(id) {
     if (_woIssuing.has(id)) return;   // rapid double-click would otherwise double-issue materials to WIP
     _woIssuing.add(id);
-    try { await api.request(AccountsCommon.buildUrl(`work-orders/${id}/issue`), { method: 'POST' }); Toast.success('Materials issued to WIP'); await loadWorkOrders(); }
+    // Same rule as the quick build: issuing material to production is a physical act, so a short component
+    // is refused by default. There is no cascade here — a work order names its materials explicitly — so the
+    // only remedies are receive the stock, or assert it is already on the floor.
+    const issue = allowShortfall => api.request(
+        AccountsCommon.buildUrl(`work-orders/${id}/issue`, allowShortfall ? { allowShortfall: true } : {}), { method: 'POST' });
+    try {
+        try {
+            await issue(false);
+        } catch (err) {
+            if (!(err.message || '').includes('INSUFFICIENT_STOCK')) throw err;
+            const proceed = await Confirm.show({
+                title: 'Not enough stock',
+                message: `${err.message}\n\nIssuing anyway will take that component's stock negative.`,
+                type: 'danger', confirmText: 'Issue anyway', cancelText: 'Cancel'
+            });
+            if (!proceed) return;
+            await issue(true);
+        }
+        Toast.success('Materials issued to WIP'); await loadWorkOrders(); }
     catch (e) { Toast.error(e.message || 'Issue failed'); }
     finally { _woIssuing.delete(id); }
 }
