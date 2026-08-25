@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     accountsRoles.applyRBAC();
     AccountsCommon.initDatePickers(['adjDate', 'registerAsOf', 'xfDate', 'woDate', 'woExpiry', 'scDate', 'impAsOf', 'impBalAsOf']);
     AccountsCommon.setDateField('registerAsOf', AccountsCommon.todayLocal());
-    document.getElementById('itemSearch')?.addEventListener('input', () => renderItems());
+    document.getElementById('itemSearch')?.addEventListener('input', () => { resetItemWindow(); renderItems(); });
     document.getElementById('itemShowInactive')?.addEventListener('change', () => loadItems());
     document.getElementById('serialLookup')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); lookupSerial(); } });
     // The item list is by far the heaviest call on this page, and NOTHING it needs comes from the other
@@ -114,6 +114,7 @@ async function loadItems() {
         // that was a 16.7 MB response, half of it `description` and `image_urls` — neither of which this grid
         // renders. editItem() re-reads the item by id, so the form still sees every field.
         items = await api.request(AccountsCommon.buildUrl('inventory/items', inc ? { includeInactive: true, view: 'grid' } : { view: 'grid' }), { _skipSpinner: true });
+        resetItemWindow();
         renderItems();
     } catch (err) { console.error('[Inventory] loadItems', err); Toast.error('Failed to load items'); }
 }
@@ -122,6 +123,7 @@ let itemVisFilter = '';   // '' | sellable | notsold | purchasable | notbought
 function setItemVisFilter(v) {
     itemVisFilter = v;
     document.querySelectorAll('#itemVisChips .vis-chip').forEach(b => b.classList.toggle('on', b.dataset.vis === v));
+    resetItemWindow();   // a chip changes the result set exactly as a search does
     renderItems();
 }
 function matchesVis(i) {
@@ -134,17 +136,35 @@ function matchesVis(i) {
     }
 }
 
+// ── Windowed rendering ────────────────────────────────────────────────────────────────────────────
+// A 7,800-item catalogue rendered 7,834 <tr> in one go: 237,000 DOM nodes and ~920ms of layout. Worse,
+// renderItems() runs on EVERY KEYSTROKE in the search box, so each character cost that same ~920ms —
+// which is what makes the page feel broken rather than merely slow.
+//
+// So render a window and extend it as the user scrolls. Nothing is hidden: the filter still runs over the
+// WHOLE array (search finds an item on row 6,000 immediately, and the count below says how many matched),
+// only the DOM is bounded. Scrolling to the end walks the rest a page at a time.
+const ITEM_PAGE = 150;
+let itemRenderLimit = ITEM_PAGE;
+
+/// Reset the window whenever the RESULT SET changes — otherwise a search typed after scrolling deep would
+/// render thousands of rows for its handful of matches, which is the bug this exists to avoid.
+function resetItemWindow() { itemRenderLimit = ITEM_PAGE; }
+
 function renderItems() {
     const tb = document.getElementById('itemsTable');
     if (!tb) return;
     const q = (document.getElementById('itemSearch')?.value || '').toLowerCase();
     const rows = items.filter(i => (!q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)) && matchesVis(i));
     if (!rows.length) {
-        tb.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-secondary);">No items yet. Click "+ New Item" to create your product catalog.</td></tr>';
+        tb.innerHTML = q
+            ? `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-secondary);">No item matches “${esc(q)}”.</td></tr>`
+            : '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-secondary);">No items yet. Click "+ New Item" to create your product catalog.</td></tr>';
         return;
     }
+    const shown = rows.slice(0, itemRenderLimit);
     const isAdmin = accountsRoles.isAdmin();
-    tb.innerHTML = rows.map(i => `<tr>
+    tb.innerHTML = shown.map(i => `<tr>
         <td><code>${esc(i.sku)}</code></td>
         <td>${esc(i.name)}${i.is_sellable === false ? ' <span class="status-badge" style="background:var(--bg-tertiary);color:var(--text-secondary);font-size:.68rem;">Not sold</span>' : ''}${i.is_purchasable === false ? ' <span class="status-badge" style="background:var(--bg-tertiary);color:var(--text-secondary);font-size:.68rem;">Not bought</span>' : ''}</td>
         <td>${esc(i.category_name || '-')}</td>
@@ -157,6 +177,35 @@ function renderItems() {
         <td class="actions-cell"><button class="btn-icon" onclick="showLabelModal('${i.id}')" data-tooltip="Print barcode labels"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v14"/><path d="M7 5v14"/><path d="M11 5v14"/><path d="M15 5v14"/><path d="M19 5v14"/><path d="M21 5v14" stroke-width="1"/></svg></button>${isAdmin ? `${i.item_type === 'goods' && i.track_inventory ? `<button class="btn-icon" onclick="openBom('${i.id}')" data-tooltip="BOM / Build">⚙</button>` : ''}<button class="btn-icon" onclick="editItem('${i.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
             <button class="btn-icon ${i.is_active ? 'danger' : ''}" onclick="toggleItem('${i.id}', ${!i.is_active})" data-tooltip="${i.is_active ? 'Deactivate' : 'Reactivate'}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></button>` : ''}</td>
     </tr>`).join('');
+
+    // Tell the truth about what is on screen, and give the rest a way in. The button is the accessible
+    // path; the observer below just saves the click when someone simply scrolls.
+    if (rows.length > shown.length) {
+        const more = document.createElement('tr');
+        more.id = 'itemsMoreRow';
+        more.innerHTML = `<td colspan="10" style="text-align:center;padding:1rem;color:var(--text-secondary);">`
+            + `Showing ${shown.length.toLocaleString()} of ${rows.length.toLocaleString()} `
+            + `<button type="button" class="btn btn-sm" onclick="showMoreItems()" style="margin-left:.6rem;">Show more</button></td>`;
+        tb.appendChild(more);
+        observeItemsSentinel(more);
+    }
+}
+
+function showMoreItems() {
+    itemRenderLimit += ITEM_PAGE;
+    renderItems();
+}
+
+/// Extend the window when the "show more" row scrolls into view. Guarded: if IntersectionObserver is
+/// unavailable the button above still works, so this is an enhancement and never the only way through.
+let _itemsObs = null;
+function observeItemsSentinel(el) {
+    if (typeof IntersectionObserver === 'undefined') return;
+    _itemsObs?.disconnect();
+    _itemsObs = new IntersectionObserver(entries => {
+        if (entries.some(e => e.isIntersecting)) { _itemsObs.disconnect(); showMoreItems(); }
+    }, { rootMargin: '400px' });
+    _itemsObs.observe(el);
 }
 
 // The trailing arguments used to be read off `arguments[2..4]`, which is why the brand slot silently never
