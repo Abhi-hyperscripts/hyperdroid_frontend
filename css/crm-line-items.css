@@ -957,6 +957,30 @@
     margin-top: 3px;
 }
 
+/* A product this deal cannot carry. Dimmed rather than hidden: the rep asked
+   for the catalogue and should see that the product exists — the problem is
+   the deal, not the search. */
+.lip-picker-row.is-unavailable {
+    opacity: .45;
+    cursor: not-allowed;
+}
+.lip-picker-row.is-unavailable:hover {
+    border-color: var(--border-color);
+    background: transparent;
+}
+
+/* The missing sentence, when every row is unchoosable. */
+.lip-picker-blocked {
+    margin: 0 0 8px;
+    padding: 9px 11px;
+    border-radius: 8px;
+    border-left: 2px solid var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    line-height: 1.5;
+}
+.lip-picker-blocked strong { display: block; color: var(--text-primary); font-weight: 600; }
 .lip-picker-empty {
     padding: 18px;
     text-align: center;

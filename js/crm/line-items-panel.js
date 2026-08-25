@@ -828,10 +828,27 @@ const LineItemsPanel = (() => {
         const list = overlay.querySelector('.lip-picker-list');
         let found = items.slice();
 
+        /**
+         * A product this deal cannot carry: the catalogue prices it in one
+         * currency and the deal is denominated in another.
+         *
+         * Deliberately false when either side is unknown — an item with no
+         * currency is refused by the server for a DIFFERENT and better-stated
+         * reason ("came back with no currency"), and pre-empting it here would
+         * put the wrong explanation in front of the rep.
+         */
+        const wrongCurrency = (i) =>
+            !!i.currency && !!currency &&
+            String(i.currency).toUpperCase() !== String(currency).toUpperCase();
+
         const draw = (rows) => {
             list.innerHTML = rows.length
                 ? rows.map(i => `
-                    <button type="button" class="lip-picker-row" data-pick="${esc(i.id)}">
+                    <button type="button" class="lip-picker-row${
+                            wrongCurrency(i) ? ' is-unavailable' : ''}" data-pick="${esc(i.id)}"${
+                            wrongCurrency(i)
+                                ? ` disabled aria-disabled="true" title="Priced in ${esc(i.currency)}; this deal is in ${esc(currency)}"`
+                                : ''}>
                         ${productThumb({ image_url: i.image_url, image_count: i.image_count,
                                          description: i.name, sku: i.sku })}
                         <span class="lip-picker-body">
@@ -847,6 +864,16 @@ const LineItemsPanel = (() => {
                                 // of choosing, not after saving.
                                 i.tracks_stock && !i.can_be_reserved
                                     ? '<span class="lip-chip lip-chip-warn">no unit size</span>' : '',
+                                // ⭐ A CAVEAT AT THE MOMENT OF CHOOSING, like the
+                                // one above it. The server refuses a product
+                                // priced in another currency, correctly — but it
+                                // refused on SAVE, so the rep picked a product,
+                                // typed a quantity, pressed Save and only then
+                                // got a red toast. The fact was knowable here all
+                                // along: the item carries its currency and the
+                                // panel knows the deal's.
+                                wrongCurrency(i)
+                                    ? `<span class="lip-chip lip-chip-warn">priced in ${esc(i.currency)}</span>` : '',
                             ].filter(Boolean).join('')}</span>
                         </span>
                         <span class="lip-picker-right">
@@ -861,6 +888,26 @@ const LineItemsPanel = (() => {
                         </span>
                     </button>`).join('')
                 : '<div class="lip-picker-empty">Nothing matches that.</div>';
+
+            // ⭐⭐⭐ WHEN NOTHING HERE CAN BE CHOSEN, SAY WHY, AND SAY WHAT TO DO.
+            //
+            // A tenant whose catalogue is in one currency and whose deals are in
+            // another gets a picker where every row is disabled. Twenty greyed
+            // rows and no explanation is worse than the red toast it replaced.
+            // Measured on the demo tenant: all 29 deals in USD, catalogue in INR
+            // — the feature was unreachable from any deal and nothing said so.
+            //
+            // The banner states the two facts and the one action. It is not a
+            // refusal the rep can argue with; it is the missing sentence.
+            const blocked = rows.length > 0 && rows.every(wrongCurrency);
+            if (blocked) {
+                const ccy = rows[0].currency;
+                list.insertAdjacentHTML('afterbegin', `
+                    <div class="lip-picker-blocked">
+                        <strong>This deal is in ${esc(currency)}; the catalogue is priced in ${esc(ccy)}.</strong>
+                        Change the deal's currency to ${esc(ccy)} to add products to it.
+                    </div>`);
+            }
         };
         draw(found);
 
@@ -887,6 +934,11 @@ const LineItemsPanel = (() => {
             const btn = ev.target.closest('[data-pick]');
             if (!btn) return;
             const item = found.find(i => String(i.id) === btn.getAttribute('data-pick'));
+            // A disabled <button> swallows clicks in every browser we support,
+            // so this is belt and braces — but the row is also reachable by
+            // keyboard in some assistive tooling, and attaching a product the
+            // server will refuse is exactly the outcome this change removes.
+            if (item && wrongCurrency(item)) return;
             if (item) {
                 attachItem(tr, item);
                 // ⭐⭐⭐ TELL THE MODEL, NOT JUST THE DOM.
