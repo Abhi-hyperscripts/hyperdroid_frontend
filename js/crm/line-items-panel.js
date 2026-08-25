@@ -562,6 +562,16 @@ const LineItemsPanel = (() => {
             // that dead on the one path where the name is longest and certain to
             // be cut — the moment a product is chosen.
             desc.title = item.name || '';
+            // ⭐⭐⭐ REMEMBER THAT *WE* WROTE IT.
+            //
+            // The description is filled here only when the rep has not typed
+            // one. detachItem has to be able to undo exactly that and nothing
+            // else: a description the REP typed must survive taking the product
+            // off, and one the product supplied must not. Without this marker
+            // detach cannot tell them apart, so it left the product's name
+            // sitting on a line that no longer sells anything — a free-text line
+            // called "24 Mantra Organic Bajra Flour 500 gm" priced at zero.
+            tr.dataset.lipAutoname = item.name || '';
         }
 
         const price = tr.querySelector('[data-lip-field="unit_price"]');
@@ -779,6 +789,17 @@ const LineItemsPanel = (() => {
             thumb.replaceWith(gap);
         }
         tr.querySelector('.lip-blurb')?.remove();
+
+        // ⭐ AND THE NAME THE PRODUCT SUPPLIED — but only if it is still the
+        // product's. If the rep has typed over it since, that is their text and
+        // it stays.
+        const desc = tr.querySelector('[data-lip-field="description"]');
+        const auto = tr.dataset.lipAutoname;
+        if (desc && auto !== undefined && desc.value === auto) {
+            desc.value = '';
+            desc.title = '';
+        }
+        delete tr.dataset.lipAutoname;
 
         // Flipped HERE rather than by the click handler, so neither caller has
         // to remember half the job.
