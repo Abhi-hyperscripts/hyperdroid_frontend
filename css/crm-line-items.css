@@ -1241,3 +1241,12 @@
    already fires at these widths, because a narrow viewport gives a narrow
    container; the @media block could only ever disagree with it. */
 
+
+/* The "why" tag on the untaxed reconciliation row. Quiet — it explains an
+   existing figure rather than announcing one. */
+.lip-total-why {
+    font-style: normal;
+    font-size: 10px;
+    color: var(--text-tertiary, var(--text-secondary));
+    margin-left: 6px;
+}

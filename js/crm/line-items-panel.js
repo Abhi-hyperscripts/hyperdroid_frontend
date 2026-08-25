@@ -54,6 +54,31 @@ const LineItemsPanel = (() => {
         return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
     }
 
+    // ⭐⭐⭐ ONE JUDGEMENT ABOUT AN UNPRICED LINE, USED BY BOTH PAINTERS.
+    //
+    // There are two places that print a line's total — row(), which renders from
+    // the model, and refreshTotals(), which repaints the cell on every keystroke.
+    // They each carried their own copy of "is this line priced yet", and the
+    // copies were both wrong in the same way: they asked `is it a CATALOGUE line
+    // with an empty price`. So the moment a line stopped being a catalogue line
+    // while still carrying an empty price — which is exactly what "Remove
+    // product" does to an item the catalogue had no list price for — both fell
+    // through to `5 × (nothing) = ₹0.00` and the save posted zero.
+    //
+    // The real question is not "is it a catalogue line" but "do we have a price".
+    // Catalogue-ness only decides who is expected to supply it, and therefore
+    // what to say:
+    //   catalogue + no price → the server will price it on save  ("on save")
+    //   typed     + no price → nobody will; the rep must         ("needs a price",
+    //                          and save() refuses it)
+    // Returning null means priced, so callers read `?? money(...)`.
+    function unpricedLabel(isCatalogue, unitPrice) {
+        const missing = unitPrice === '' || unitPrice === null || unitPrice === undefined
+            || String(unitPrice).trim() === '';
+        if (!missing) return null;
+        return isCatalogue ? 'on save' : 'needs a price';
+    }
+
     function lineTotal(qty, price) {
         const q = Number(qty), p = Number(price);
         if (!isFinite(q) || !isFinite(p)) return 0;
@@ -121,11 +146,21 @@ const LineItemsPanel = (() => {
         st.taxableTotal = result.taxable_total ?? null;
         st.totalTax = result.total_tax ?? null;
         st.grandTotal = result.grand_total ?? null;
+        st.untaxedTotal = result.untaxed_total ?? null;
         st.taxUnavailable = !!result.tax_unavailable;
         st.taxByLine = result.tax_by_line || null;
         st.pricedAtListPrice = !!result.priced_at_list_price;
         st.taxIsProvisional = !!result.tax_is_provisional;
         st.taxNeedsGstTreatment = !!result.tax_needs_gst_treatment;
+
+        // ⭐⭐⭐ THE TOKEN THAT STOPS A STALE SAVE DELETING SOMEBODY'S LINE.
+        //
+        // The PUT replaces the WHOLE set, so two reps with the quote open and
+        // one line each added means whoever saves second silently erases the
+        // other's line. Read here and echoed on save, so the server refuses
+        // instead. Absorbed in the one place both load AND save pass through —
+        // a save returns the fresh set, so the next save is immediately valid.
+        st.version = result.version ?? 0;
     }
 
     /// ⭐ SAY WHEN A PRICE IS THE SHELF PRICE.
@@ -145,6 +180,22 @@ const LineItemsPanel = (() => {
                 Priced at catalogue list prices — nothing customer-specific has been agreed for these
                 products yet.
             </div>`;
+    }
+
+    // ⭐ THE ROWS ON SCREEN MUST ADD UP TO THE TOTAL BENEATH THEM.
+    //
+    // A typed line names no product, so Accounts cannot classify it and it
+    // carries no tax — "Taxable" is genuinely only the catalogue part. Printing
+    // taxable + tax and then a Total larger than their sum, with no line
+    // explaining the difference, reads as an arithmetic error. This row is that
+    // explanation. It appears only when there is something to explain.
+    function untaxedRow(state, currency) {
+        const untaxed = state.untaxedTotal;
+        if (untaxed === null || untaxed === undefined || Number(untaxed) === 0) return '';
+        return `<div class="lip-total-row">
+            <span>Not taxed <em class="lip-total-why">lines with no product</em></span>
+            <b>${esc(money(untaxed, currency))}</b>
+        </div>`;
     }
 
     function totalsBlock(state, subtotal) {
@@ -183,6 +234,7 @@ const LineItemsPanel = (() => {
         <div class="lip-totals">
             <div class="lip-total-row"><span>Taxable</span><b>${esc(money(state.taxableTotal, currency))}</b></div>
             <div class="lip-total-row"><span>Tax</span><b>${esc(money(state.totalTax, currency))}</b></div>
+            ${untaxedRow(state, currency)}
             <div class="lip-total-row lip-total-grand"><span>Total</span><b>${esc(money(state.grandTotal, currency))}</b></div>
             ${provisional}
         </div>`;
@@ -400,14 +452,11 @@ const LineItemsPanel = (() => {
     function row(line, index, state) {
         const { canEdit, currency } = state;
         const isCatalogue = !!line.item_id;
-        // A catalogue line the server has not priced yet has no total yet — the
-        // same judgement refreshTotals makes, and the two must agree or the
-        // figure changes character on the next keystroke.
-        const awaitingPrice = isCatalogue
-            && (line.unit_price === '' || line.unit_price === null || line.unit_price === undefined);
-        const total = awaitingPrice
-            ? 'on save'
-            : money(lineTotal(line.quantity, line.unit_price), currency);
+        // The same judgement refreshTotals makes — literally the same function,
+        // so the figure cannot change character on the next keystroke.
+        const pending = unpricedLabel(isCatalogue, line.unit_price);
+        const awaitingPrice = pending !== null;
+        const total = pending ?? money(lineTotal(line.quantity, line.unit_price), currency);
 
         // ⭐⭐⭐ ONE CONTROL HEIGHT, ONE BASELINE, NO EXCEPTIONS.
         //
@@ -995,19 +1044,16 @@ const LineItemsPanel = (() => {
         container.querySelectorAll('[data-lip-row]').forEach(tr => {
             const q = tr.querySelector('[data-lip-field="quantity"]')?.value;
             const p = tr.querySelector('[data-lip-field="unit_price"]')?.value;
-            // ⭐ A CATALOGUE LINE WITH NO PRICE YET HAS NO TOTAL YET.
-            //
-            // `5 × (nothing) = ₹0.00` states a fact — that this line is worth
-            // nothing — which is false and alarming on a product the rep just
-            // saw priced. Until the server prices it, the honest answer is that
-            // we do not know.
-            const awaitingPrice = tr.hasAttribute('data-lip-item') && String(p ?? '').trim() === '';
-            const t = awaitingPrice ? 0 : lineTotal(q, p);
+            // A line with no price has no total. `5 × (nothing) = ₹0.00` states
+            // a fact — that this line is worth nothing — which is false and
+            // alarming on a product the rep just saw priced.
+            const pending = unpricedLabel(tr.hasAttribute('data-lip-item'), p);
+            const t = pending !== null ? 0 : lineTotal(q, p);
             total += t;
             const cell = tr.querySelector('[data-lip-cell="total"]');
             if (cell) {
-                cell.textContent = awaitingPrice ? 'on save' : money(t, st.currency);
-                cell.classList.toggle('lip-n-pending', awaitingPrice);
+                cell.textContent = pending ?? money(t, st.currency);
+                cell.classList.toggle('lip-n-pending', pending !== null);
             }
         });
         // The total element only exists while there are lines — see shell().
@@ -1058,6 +1104,20 @@ const LineItemsPanel = (() => {
             if (!l.item_id && !String(l.description).trim()) { Toast.error(`Line ${i + 1} needs a description`); return; }
             const q = Number(l.quantity);
             if (!isFinite(q) || q <= 0) { Toast.error(`Line ${i + 1}: quantity must be more than zero`); return; }
+            // ⭐⭐⭐ AN EMPTY PRICE IS NOT A PRICE OF ZERO.
+            //
+            // Number('') is 0, and 0 is a legitimate price — a free line — so
+            // the range check below waves an empty field straight through and
+            // posts unit_price: 0. On a catalogue line that is harmless: the
+            // server prices it from the item. On a typed line NOBODY prices it,
+            // and the customer receives the line at nothing.
+            //
+            // A rep who means "free" can type 0. There is no way to type "I
+            // forgot", so this asks.
+            if (!l.item_id && String(l.unit_price ?? '').trim() === '') {
+                Toast.error(`Line ${i + 1} needs a price — type 0 if it is free`);
+                return;
+            }
             const p = Number(l.unit_price);
             if (!isFinite(p) || p < 0) { Toast.error(`Line ${i + 1}: a price cannot be negative`); return; }
         }
@@ -1074,6 +1134,14 @@ const LineItemsPanel = (() => {
         // Now the state carries it and every render reproduces it, which is the
         // same lesson as the renderer collapse: a fact held only in the DOM is
         // lost the moment the DOM is rebuilt.
+        // Refused rather than disabled: the button is re-rendered constantly,
+        // and a fact held only in the DOM does not survive a render.
+        if (st.loadFailed) {
+            Toast.error('These lines never loaded, so saving now would replace them with nothing. '
+                      + 'Reopen the deal and try again.');
+            return;
+        }
+
         st.saving = true;
         const btn = container.querySelector('[data-lip="save"]');
         if (btn) btn.disabled = true;
@@ -1093,6 +1161,10 @@ const LineItemsPanel = (() => {
                             // screen can never become the number quoted.
                             item_id: l.item_id || null,
                         })),
+                        // What this screen was showing when it loaded. Omitting
+                        // it does not fail — it turns the check off, which is
+                        // the whole defect.
+                        expected_version: st.version,
                     }),
                 });
 
@@ -1207,9 +1279,21 @@ const LineItemsPanel = (() => {
             st.lines = result.lines || [];
             st.currency = result.currency || st.currency;
             applyTotals(st, result);
+            st.loadFailed = false;
         } catch (e) {
+            // ⭐⭐⭐ AN EMPTY PANEL AND A PANEL THAT COULD NOT LOAD LOOK IDENTICAL.
+            //
+            // This set lines to [] and rendered — the same thing it renders for
+            // a deal that genuinely has none. The rep sees "no lines yet",
+            // clicks Save, and the PUT replaces the whole set with nothing:
+            // every line on the quote deleted because a request timed out.
+            //
+            // The version token does not save us here either. A failed load
+            // never received one, so the save would go out unchecked.
             console.error('Failed to load the line items:', e);
             st.lines = [];
+            st.version = null;
+            st.loadFailed = true;
         }
         render(container);
     }
