@@ -385,7 +385,14 @@ const LineItemsPanel = (() => {
     function row(line, index, state) {
         const { canEdit, currency } = state;
         const isCatalogue = !!line.item_id;
-        const total = money(lineTotal(line.quantity, line.unit_price), currency);
+        // A catalogue line the server has not priced yet has no total yet — the
+        // same judgement refreshTotals makes, and the two must agree or the
+        // figure changes character on the next keystroke.
+        const awaitingPrice = isCatalogue
+            && (line.unit_price === '' || line.unit_price === null || line.unit_price === undefined);
+        const total = awaitingPrice
+            ? 'on save'
+            : money(lineTotal(line.quantity, line.unit_price), currency);
 
         // ⭐⭐⭐ ONE CONTROL HEIGHT, ONE BASELINE, NO EXCEPTIONS.
         //
@@ -448,7 +455,7 @@ const LineItemsPanel = (() => {
                 ${isCatalogue ? productThumb(line) : '<span class="lip-thumb-gap" aria-hidden="true"></span>'}
                 ${name}
                 <div class="lip-sum">${sum}</div>
-                <div class="lip-f lip-n lip-n-total" data-lip-cell="total">${esc(total)}</div>
+                <div class="lip-f lip-n lip-n-total${awaitingPrice ? ' lip-n-pending' : ''}" data-lip-cell="total">${esc(total)}</div>
                 ${canEdit ? `
                 <button type="button" class="lip-kill" data-lip="remove"
                         aria-label="Remove line ${index + 1}">
@@ -574,11 +581,45 @@ const LineItemsPanel = (() => {
             tr.dataset.lipAutoname = item.name || '';
         }
 
+        // ⭐ THE REP NEEDS A NUMBER, EVEN IF IT IS NOT THE FINAL ONE.
+        //
+        // The price field says "priced on save" and the total says "on save",
+        // which is honest and, on its own, useless — the rep just saw this
+        // product listed at a price in the picker and now the line shows nothing
+        // at all. The list price goes on the provenance line, LABELLED as list,
+        // so a contracted account's lower price arriving on save contradicts
+        // nothing that was claimed.
+        const noteLine0 = tr.querySelector('.lip-note-line');
+        if (noteLine0 && item.list_price !== null && item.list_price !== undefined) {
+            let hint = noteLine0.querySelector('.lip-listprice');
+            if (!hint) {
+                hint = document.createElement('span');
+                hint.className = 'lip-listprice';
+                noteLine0.appendChild(hint);
+            }
+            hint.textContent = `list ${money(item.list_price, item.currency || '')}`;
+            hint.title = 'The catalogue list price. The final price is set on save, from this '
+                       + 'customer\'s price list.';
+        }
+
         const price = tr.querySelector('[data-lip-field="unit_price"]');
         if (price) {
             price.readOnly = true;
             price.title = 'This price comes from the product catalogue';
             price.placeholder = 'priced on save';
+            // ⭐⭐⭐ AND CLEAR IT, OR THE PLACEHOLDER NEVER SHOWS.
+            //
+            // A new row is created with unit_price: 0, so the field held "0" and
+            // a placeholder only renders on an EMPTY field. The rep picked a
+            // product they had just seen listed at ₹468 and the line read
+            // "5 × 0 = ₹0.00" — not "we will price this on save", but "this is
+            // free". The intent was written and then defeated by a leftover
+            // zero one line away.
+            //
+            // Safe to clear: readLines sends Number('') === 0, and the server
+            // prices catalogue lines from the catalogue regardless of what is
+            // sent — which is exactly why the field is readonly here.
+            price.value = '';
         }
 
         // ⭐ WRITE THE PROVENANCE WHERE THE RENDERER PUTS IT.
@@ -775,6 +816,7 @@ const LineItemsPanel = (() => {
         // The stock badge belongs to the product as much as the SKU does. Leaving
         // it behind left a free-text line still claiming "only 3 kg available".
         tr.querySelector('.lip-note-line .lip-stock')?.remove();
+        tr.querySelector('.lip-note-line .lip-listprice')?.remove();
 
         // ⭐ THE WHOLE SET, NOT THE PART I HAPPENED TO LIST.
         // The comment above used to enumerate "SKU, unit and the reservability
@@ -1073,10 +1115,20 @@ const LineItemsPanel = (() => {
         container.querySelectorAll('[data-lip-row]').forEach(tr => {
             const q = tr.querySelector('[data-lip-field="quantity"]')?.value;
             const p = tr.querySelector('[data-lip-field="unit_price"]')?.value;
-            const t = lineTotal(q, p);
+            // ⭐ A CATALOGUE LINE WITH NO PRICE YET HAS NO TOTAL YET.
+            //
+            // `5 × (nothing) = ₹0.00` states a fact — that this line is worth
+            // nothing — which is false and alarming on a product the rep just
+            // saw priced. Until the server prices it, the honest answer is that
+            // we do not know.
+            const awaitingPrice = tr.hasAttribute('data-lip-item') && String(p ?? '').trim() === '';
+            const t = awaitingPrice ? 0 : lineTotal(q, p);
             total += t;
             const cell = tr.querySelector('[data-lip-cell="total"]');
-            if (cell) cell.textContent = money(t, st.currency);
+            if (cell) {
+                cell.textContent = awaitingPrice ? 'on save' : money(t, st.currency);
+                cell.classList.toggle('lip-n-pending', awaitingPrice);
+            }
         });
         // The total element only exists while there are lines — see shell().
         // Showing a running total of $0.00 beside a $400,000 deal claimed the

@@ -446,6 +446,23 @@
     font-family: var(--font-family-mono);
     color: var(--text-muted);
 }
+/* A figure the server has not produced yet. Muted and not mono: it is a state,
+   not a number, and it must not sit in the decimal column pretending to be one. */
+.lip-row .lip-n-total.lip-n-pending {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+/* The catalogue list price, shown while the real one is still on the server.
+   Labelled "list" in the markup so nothing is claimed about what will be
+   charged — a contracted account pays less and that arrives on save. */
+.lip-listprice {
+    font-size: 10.5px;
+    font-family: var(--font-family-mono);
+    color: var(--text-muted);
+}
 .lip-row input.lip-acct {
     width: 130px;
     height: 20px;
