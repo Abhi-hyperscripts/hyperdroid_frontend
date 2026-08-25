@@ -589,23 +589,35 @@ const LineItemsPanel = (() => {
         // at all. The list price goes on the provenance line, LABELLED as list,
         // so a contracted account's lower price arriving on save contradicts
         // nothing that was claimed.
-        const noteLine0 = tr.querySelector('.lip-note-line');
-        if (noteLine0 && item.list_price !== null && item.list_price !== undefined) {
-            let hint = noteLine0.querySelector('.lip-listprice');
-            if (!hint) {
-                hint = document.createElement('span');
-                hint.className = 'lip-listprice';
-                noteLine0.appendChild(hint);
-            }
-            hint.textContent = `list ${money(item.list_price, item.currency || '')}`;
-            hint.title = 'The catalogue list price. The final price is set on save, from this '
-                       + 'customer\'s price list.';
-        }
+        // (The separate "list ₹421.00" hint that used to sit here is gone: the
+        // price field itself now carries the figure, and saying it twice only made
+        // the provenance line longer.)
 
         const price = tr.querySelector('[data-lip-field="unit_price"]');
         if (price) {
             price.readOnly = true;
-            price.title = 'This price comes from the product catalogue';
+            // ⭐⭐⭐ SHOW THE PRICE. THE REP JUST SAW IT IN THE PICKER.
+            //
+            // This deliberately left the field unpriced: the server prices the
+            // line against this customer's price list, and writing the list
+            // price here means the number can change on save for a contracted
+            // account. The reasoning is sound; the conclusion was wrong.
+            //
+            // What it produced was a line nobody could read. First "0" — the
+            // leftover from a new row — so a product listed at ₹468 looked
+            // free. Then nothing at all, and `10 × — = on save` still does not
+            // tell a rep what they are quoting. Reported twice, the same
+            // complaint both times: I picked a product with a price on it, show
+            // me the price.
+            //
+            // So the catalogue price goes in, readonly, and the arithmetic
+            // works immediately. A contracted rate replaces it on save, which is
+            // exactly what the panel's "priced at catalogue list prices" notice
+            // already explains. A figure that may be refined beats no figure.
+            const hasList = item.list_price !== null && item.list_price !== undefined;
+            price.title = hasList
+                ? 'The catalogue price. If this customer has an agreed rate it replaces this on save.'
+                : 'This price comes from the product catalogue';
             // ⭐ A PLACEHOLDER THAT DOES NOT FIT IS NOT A MESSAGE.
             //
             // This said "priced on save" — fourteen characters in a 78px field,
@@ -626,7 +638,7 @@ const LineItemsPanel = (() => {
             // Safe to clear: readLines sends Number('') === 0, and the server
             // prices catalogue lines from the catalogue regardless of what is
             // sent — which is exactly why the field is readonly here.
-            price.value = '';
+            price.value = hasList ? String(item.list_price) : '';
         }
 
         // ⭐ WRITE THE PROVENANCE WHERE THE RENDERER PUTS IT.
