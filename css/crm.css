@@ -184,11 +184,31 @@
     border-color: var(--color-danger-dark);
 }
 
+/* ⭐⭐⭐ SCOPED TO THE PAGE, NOT TO A CONTAINER THAT DOES NOT ALWAYS CONTAIN IT.
+   
+   `.btn-outline` is NOT a Bootstrap class — Bootstrap ships .btn-outline-primary
+   and friends, never the bare one — so a button with `class="btn btn-outline"`
+   takes its colour from Bootstrap's `.btn`, which is the light-theme default
+   #212529. On this app's near-black chrome that is #212529 on #0a0f1a:
+   **1.24:1**, where the readable minimum is 4.5:1. The label is there, sized,
+   visible, and unreadable.
+   
+   This rule already existed and was correct — and scoped to `.crm-container`.
+   The deals page puts its Renewals and Commission buttons in `.dfl-hero >
+   .dfl-headrow > .crm-header-actions`, which is OUTSIDE that container, so the
+   rule never applied to exactly the two buttons that needed it. Measured on the
+   deployed page: 3 `.btn-outline` inside the container at readable contrast, 2
+   outside it at 1.24:1.
+   
+   The page class is on <body> and therefore contains every button on the page
+   by construction, which a layout container does not. */
+.crm-page .btn-outline,
 .crm-container .btn-outline {
     background-color: transparent;
     border: 1px solid var(--border-color);
     color: var(--text-primary);
 }
+.crm-page .btn-outline:hover,
 .crm-container .btn-outline:hover {
     background-color: rgba(var(--brand-primary-rgb), 0.06);
     border-color: var(--brand-primary);
