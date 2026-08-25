@@ -209,7 +209,7 @@ const LineItemsPanel = (() => {
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
             </a>` : ''}
 
-            <details class="crm-help crm-help-sm">
+            <details class="crm-help crm-help-sm"${st.helpOpen ? ' open' : ''}>
                 <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>What is this? — Line items</summary>
                 <div class="crm-help-body">
                     <p>What this deal is made up of, line by line. These same lines become the
@@ -257,7 +257,8 @@ const LineItemsPanel = (() => {
                 </button>
                 <span class="lip-spacer"></span>
                 <span class="lip-hint" data-lip="hint"></span>
-                <button type="button" class="btn btn-sm btn-primary" data-lip="save">Save lines</button>
+                <button type="button" class="btn btn-sm btn-primary" data-lip="save"${
+                    st.saving ? ' disabled' : ''}>Save lines</button>
             </div>` : ''}
 
             ${listPriceNote(state)}
@@ -454,7 +455,14 @@ const LineItemsPanel = (() => {
                <input type="number" class="lip-f lip-n lip-n-price" data-lip-field="unit_price"
                       step="0.01" min="0" value="${esc(line.unit_price)}"
                       aria-label="Line ${index + 1} unit price"
-                      ${isCatalogue ? 'readonly title="This price comes from the product catalogue"' : ''}>
+                      ${isCatalogue ? `readonly placeholder="—" title="${
+                          // Two states, as the deleted painter had. The generic
+                          // sentence never said the thing that matters: WHY the
+                          // number can change when the quote is saved.
+                          line.unit_price === '' || line.unit_price === null || line.unit_price === undefined
+                              ? 'This price comes from the product catalogue'
+                              : 'The catalogue price. If this customer has an agreed rate it replaces this on save.'
+                      }"` : ''}>
                <span class="lip-op" aria-hidden="true">=</span>`
             : `<span class="lip-f lip-n lip-n-ro">${esc(line.quantity)}</span>
                <span class="lip-op" aria-hidden="true">&times;</span>
@@ -603,6 +611,26 @@ const LineItemsPanel = (() => {
     function attachItem(container, tr, item) {
         const st = mounted.get(container);
         if (!st) return;
+
+        // ⭐⭐⭐ THE ROW MAY NOT BE THERE ANY MORE.
+        //
+        // openPicker captures this element, then awaits a catalogue round trip
+        // BEFORE the overlay exists — the panel is fully clickable throughout.
+        // Delete another row in that window and this node is detached, still
+        // carrying its old data-lip-row. Reading an index off it then writes the
+        // product onto whichever line now sits at that position: its SKU,
+        // thumbnail and readonly price appear on the wrong quote line, and it
+        // saves that way. The description does not change, so the swap is easy
+        // to miss entirely.
+        //
+        // isConnected is the whole test. Refusing is right: there is no way to
+        // know which line the rep meant once their target has moved, and a
+        // wrong line on a customer's quote is worse than asking again.
+        if (!tr.isConnected) {
+            Toast.error('That line changed while the catalogue was open — pick the product again.');
+            return;
+        }
+
         const idx = Number(tr.getAttribute('data-lip-row'));
         // Typed values first, or picking a product discards edits made since the
         // last save. All three callers of readLines read before they mutate.
@@ -619,7 +647,10 @@ const LineItemsPanel = (() => {
         Object.assign(line, {
             item_id: item.id,
             description: typed || item.name || '',
-            description_from_item: !typed,
+            // What we filled, so detach can compare the live text against it.
+            // A boolean ("we filled it") cannot tell that the rep has since
+            // rewritten the field; the text can.
+            description_auto: typed ? null : (item.name || ''),
             unit_price: hasList ? item.list_price : '',
             image_url: item.image_url ?? null,
             image_count: item.image_count ?? 0,
@@ -640,21 +671,47 @@ const LineItemsPanel = (() => {
 
     function detachItem(container, tr) {
         const st = mounted.get(container);
-        if (!st) return;
+        if (!st || !tr || !tr.isConnected) return;   // same reasoning as attach
         const idx = Number(tr.getAttribute('data-lip-row'));
         st.lines = readLines(container);
         const line = st.lines[idx];
         if (!line) return;
 
-        // The description goes only if the PRODUCT supplied it.
-        const clearDescription = line.description_from_item === true;
+        // ⭐⭐⭐ COMPARE THE LIVE TEXT. A LATCHED FLAG CANNOT SEE AN EDIT.
+        //
+        // This asked `line.description_from_item === true` — a boolean set when
+        // the product was picked and never cleared when the rep rewrote the
+        // field. So a description they typed themselves was wiped on Remove
+        // product, with no confirm and no undo.
+        //
+        // The code this replaced compared the live VALUE against what attach had
+        // filled in, which is correct and is what happens here: the description
+        // goes only if it is still, character for character, the product's name.
+        const clearDescription =
+            String(line.description ?? '') === String(line.description_auto ?? '\u0000');
+
         st.lines[idx] = stripProductFacts({
             ...line,
             item_id: null,
             description: clearDescription ? '' : line.description,
-            // A catalogue price is not the rep's; taking the product off leaves
-            // the field empty for them to fill rather than quoting the old one.
-            unit_price: '',
+            // ⭐⭐⭐ THE PRICE STAYS. BLANKING IT SAVED THE LINE AT ZERO.
+            //
+            // This set unit_price: '' — "leave the field empty for them to fill".
+            // But the awaitingPrice guard that stops an empty price rendering as
+            // ₹0.00 is gated on the line being a CATALOGUE line, and this line
+            // has just stopped being one. So both renderers fell through to
+            // lineTotal(q, '') === 0 and the row read `5 × ⌷ = ₹0.00`.
+            //
+            // Worse, it SAVED that way: save() does Number('') === 0, which
+            // passes validation, and posts unit_price: 0 with item_id: null — so
+            // the server has nothing to re-price from. Two clicks and no warning
+            // took a ₹2,342.50 line to zero and dropped the deal value with it.
+            //
+            // Keeping the figure is also what the rep means: they are converting
+            // a catalogue line to free text, not giving the goods away. The
+            // field becomes editable (row() only marks it readonly for a
+            // catalogue line), so they can change it.
+            unit_price: line.unit_price,
         });
 
         render(container);
@@ -925,7 +982,7 @@ const LineItemsPanel = (() => {
             category_name, no_longer_sellable, enough_in_stock, available_base,
             stock_uom,
             // Set when a product is attached; meaningless once it is not.
-            cannot_be_reserved, description_from_item,
+            cannot_be_reserved, description_auto,
             ...rest
         } = line;
         return rest;
@@ -1005,6 +1062,19 @@ const LineItemsPanel = (() => {
             if (!isFinite(p) || p < 0) { Toast.error(`Line ${i + 1}: a price cannot be negative`); return; }
         }
 
+        // ⭐⭐⭐ "IN FLIGHT" IS STATE, NOT A PROPERTY OF ONE BUTTON.
+        //
+        // This disabled the button element and re-enabled it in `finally`. Any
+        // render() in between replaces container.innerHTML, so shell() emits a
+        // FRESH, ENABLED button and the finally re-enables a node that is no
+        // longer in the document. Remove a product while a save is in flight and
+        // Save is live again — two concurrent PUTs that each replace the whole
+        // line set, with no ordering guarantee about which one wins.
+        //
+        // Now the state carries it and every render reproduces it, which is the
+        // same lesson as the renderer collapse: a fact held only in the DOM is
+        // lost the moment the DOM is rebuilt.
+        st.saving = true;
         const btn = container.querySelector('[data-lip="save"]');
         if (btn) btn.disabled = true;
         try {
@@ -1073,7 +1143,13 @@ const LineItemsPanel = (() => {
             console.error('Failed to save the line items:', e);
             Toast.error(e.message || 'Could not save the lines');
         } finally {
-            if (btn) btn.disabled = false;
+            st.saving = false;
+            // The element captured above may have been replaced by a render
+            // during the request, so clear the flag on whatever button is in the
+            // document NOW as well as on the one we started with.
+            const live = container.querySelector('[data-lip="save"]');
+            if (live) live.disabled = false;
+            if (btn && btn !== live) btn.disabled = false;
         }
     }
 
@@ -1175,6 +1251,19 @@ const LineItemsPanel = (() => {
             if (e.target.closest('[data-lip="add"]')) return addLine(container);
             const rm = e.target.closest('[data-lip="remove"]');
             if (rm) return removeLine(container, rm.closest('[data-lip-row]'));
+            // ⭐ THE HELP PANEL'S OPEN STATE IS STATE TOO.
+            //
+            // <details> keeps "open" in the DOM, and every render rebuilds the
+            // DOM — so expanding the help and then picking a product snapped it
+            // shut. Same shape as the save button: a fact held only in the DOM
+            // does not survive a re-render.
+            const help = e.target.closest('.crm-help > summary');
+            if (help) {
+                const st0 = mounted.get(container);
+                if (st0) st0.helpOpen = !help.parentElement.open;
+                return;   // let the browser do the toggling
+            }
+
             if (e.target.closest('[data-lip="save"]')) return save(container);
             if (e.target.closest('[data-lip="quote"]')) return raiseQuotation(container);
 
