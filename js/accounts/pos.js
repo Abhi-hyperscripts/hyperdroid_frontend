@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.getElementById('sidebarOverlay')?.classList.remove('active');
     accountsRoles.applyRBAC();
     const [itemsRes, taxRes, bankRes, coaRes] = await Promise.all([
-        api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true }).catch(() => []),
+        api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales', view: 'pos' }), { _skipSpinner: true }).catch(() => []),
         api.request(AccountsCommon.buildUrl('tax/configurations'), { _skipSpinner: true }).catch(() => []),
         api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => []),
         api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => [])
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 async function refreshPosItems(silent = true) {
     posLotMrp.clear();   // lot MRPs can change as lots deplete — refetch with the catalog
     try {
-        const res = await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true });
+        const res = await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales', view: 'pos' }), { _skipSpinner: true });
         posItems = (Array.isArray(res) ? res : []).filter(i => i.is_active);
         let capped = false, packChanged = false;
         // BASE-unit-aware capping: walk this item's lines in cart order, each consuming from
@@ -954,10 +954,16 @@ function armPosScroll() {
  *  falls back to a letter badge when the item has no image or the URL fails to load. Lazy-loaded so a
  *  7,000-item catalogue only fetches what's on screen. */
 function posThumb(i) {
-    let urls = i.image_urls;
-    if (typeof urls === 'string') { try { urls = JSON.parse(urls); } catch { urls = []; } }
-    urls = Array.isArray(urls) ? urls : [];
-    const url = urls.find(u => typeof u === 'string' && /^https?:\/\//i.test(u));
+    // view=pos ships ONE usable url as `image_url` rather than the whole array — the tile only ever showed
+    // the first, and shipping every url 7,800 times was 4.65 MB of the old response. The array branch stays
+    // for a sale queued offline under the previous shape, and for any caller still on the full item.
+    let url = (typeof i.image_url === 'string' && /^https?:\/\//i.test(i.image_url)) ? i.image_url : null;
+    if (!url) {
+        let urls = i.image_urls;
+        if (typeof urls === 'string') { try { urls = JSON.parse(urls); } catch { urls = []; } }
+        urls = Array.isArray(urls) ? urls : [];
+        url = urls.find(u => typeof u === 'string' && /^https?:\/\//i.test(u)) || null;
+    }
     const letter = esc((String(i.name || '?').trim()[0] || '?').toUpperCase());
     if (!url) return `<span class="pos-thumb">${letter}</span>`;
     // Image thumbs are clickable to enlarge (pharma: confirm the exact pack/strip/dosage). stopPropagation
@@ -969,11 +975,21 @@ function posThumb(i) {
 /** Lightbox to inspect a product's image(s) at full size — the pharma use case: verify the strip/box and
  *  dosage before ringing it up. Shows the description too, and a thumbnail strip to flip between images
  *  (e.g. front/back of a box) when the item has more than one. */
-function openPosImagePreview(itemId) {
-    const i = (posItems || []).find(x => x.id === itemId);
+async function openPosImagePreview(itemId) {
+    let i = (posItems || []).find(x => x.id === itemId);
     if (!i) return;
+    // The counter list carries ONE image (view=pos). The lightbox is the only place that wants every image
+    // of an item, and it opens on a deliberate tap for one item — so read the full record here rather than
+    // ship every url to every till on every refresh. Falls back to whatever the list had if the fetch fails.
+    if (!Array.isArray(i.image_urls)) {
+        try {
+            const full = await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}`), { _skipSpinner: true });
+            if (full && full.id) i = { ...i, ...full };
+        } catch { /* offline or transient — fall through with the single thumbnail */ }
+    }
     let urls = i.image_urls;
     if (typeof urls === 'string') { try { urls = JSON.parse(urls); } catch { urls = []; } }
+    if (!Array.isArray(urls) && typeof i.image_url === 'string') urls = [i.image_url];
     urls = (Array.isArray(urls) ? urls : []).filter(u => typeof u === 'string' && /^https?:\/\//i.test(u));
     if (!urls.length) return;
     document.getElementById('posImgLightbox')?.remove();
@@ -1295,7 +1311,7 @@ async function completeSale() {
         resetSaleState();
         renderCart();
         // refresh stock counts on the grid
-        posItems = (await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true })).filter(i => i.is_active);
+        posItems = (await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales', view: 'pos' }), { _skipSpinner: true })).filter(i => i.is_active);
         renderCategoryFilter();
         renderGrid();
     } catch (err) {
