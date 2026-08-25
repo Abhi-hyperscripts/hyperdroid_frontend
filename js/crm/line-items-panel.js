@@ -375,11 +375,25 @@ const LineItemsPanel = (() => {
                    bits.join('<span class="lip-dot">·</span>')}</span>`
             : '';
 
+        // ⭐ TWO DIFFERENT FACTS, NOT ONE.
+        //
+        // `.lip-flag` used to mean "no longer sold" here and "no unit size" in
+        // attachItem — one class carrying two meanings, one per renderer, which
+        // is exactly the split this file just removed. Both are rendered here
+        // now, and they can both be true.
         const withdrawn = line.no_longer_sellable
             ? '<span class="lip-flag" title="The catalogue no longer sells this product">no longer sold</span>'
             : '';
 
-        return provenance + withdrawn;
+        // Only knowable when the product is chosen — the saved line does not
+        // carry it — and that is the moment it matters, while another product
+        // can still be picked instead.
+        const unreservable = line.cannot_be_reserved
+            ? '<span class="lip-flag" title="This product is stocked but has no unit size, '
+              + 'so it cannot be reserved">no unit size</span>'
+            : '';
+
+        return provenance + withdrawn + unreservable;
     }
 
     function row(line, index, state) {
@@ -557,253 +571,56 @@ const LineItemsPanel = (() => {
      * real figure on save; writing the list price now would show a number that
      * changes under the rep the moment they save, for a contracted account.
      */
-    function attachItem(tr, item) {
-        tr.setAttribute('data-lip-item', item.id);
-        tr.classList.add('is-catalogue');
-
-        const desc = tr.querySelector('[data-lip-field="description"]');
-        if (desc && !desc.value.trim()) {
-            desc.value = item.name || '';
-            // The renderer puts the full name in the title so a truncated name
-            // stays readable on hover. Setting the value without the title left
-            // that dead on the one path where the name is longest and certain to
-            // be cut — the moment a product is chosen.
-            desc.title = item.name || '';
-            // ⭐⭐⭐ REMEMBER THAT *WE* WROTE IT.
-            //
-            // The description is filled here only when the rep has not typed
-            // one. detachItem has to be able to undo exactly that and nothing
-            // else: a description the REP typed must survive taking the product
-            // off, and one the product supplied must not. Without this marker
-            // detach cannot tell them apart, so it left the product's name
-            // sitting on a line that no longer sells anything — a free-text line
-            // called "24 Mantra Organic Bajra Flour 500 gm" priced at zero.
-            tr.dataset.lipAutoname = item.name || '';
-        }
-
-        // ⭐ THE REP NEEDS A NUMBER, EVEN IF IT IS NOT THE FINAL ONE.
-        //
-        // The price field says "priced on save" and the total says "on save",
-        // which is honest and, on its own, useless — the rep just saw this
-        // product listed at a price in the picker and now the line shows nothing
-        // at all. The list price goes on the provenance line, LABELLED as list,
-        // so a contracted account's lower price arriving on save contradicts
-        // nothing that was claimed.
-        // (The separate "list ₹421.00" hint that used to sit here is gone: the
-        // price field itself now carries the figure, and saying it twice only made
-        // the provenance line longer.)
-
-        const price = tr.querySelector('[data-lip-field="unit_price"]');
-        if (price) {
-            price.readOnly = true;
-            // ⭐⭐⭐ SHOW THE PRICE. THE REP JUST SAW IT IN THE PICKER.
-            //
-            // This deliberately left the field unpriced: the server prices the
-            // line against this customer's price list, and writing the list
-            // price here means the number can change on save for a contracted
-            // account. The reasoning is sound; the conclusion was wrong.
-            //
-            // What it produced was a line nobody could read. First "0" — the
-            // leftover from a new row — so a product listed at ₹468 looked
-            // free. Then nothing at all, and `10 × — = on save` still does not
-            // tell a rep what they are quoting. Reported twice, the same
-            // complaint both times: I picked a product with a price on it, show
-            // me the price.
-            //
-            // So the catalogue price goes in, readonly, and the arithmetic
-            // works immediately. A contracted rate replaces it on save, which is
-            // exactly what the panel's "priced at catalogue list prices" notice
-            // already explains. A figure that may be refined beats no figure.
-            const hasList = item.list_price !== null && item.list_price !== undefined;
-            price.title = hasList
-                ? 'The catalogue price. If this customer has an agreed rate it replaces this on save.'
-                : 'This price comes from the product catalogue';
-            // ⭐ A PLACEHOLDER THAT DOES NOT FIT IS NOT A MESSAGE.
-            //
-            // This said "priced on save" — fourteen characters in a 78px field,
-            // 62px on a phone — so it rendered as "priced o". The sentence is
-            // carried by the LINE TOTAL, which says "on save", and by the
-            // `list ₹468.00` beside it. The field only has to say "not yet",
-            // and the full explanation is on its title.
-            price.placeholder = '—';
-            // ⭐⭐⭐ AND CLEAR IT, OR THE PLACEHOLDER NEVER SHOWS.
-            //
-            // A new row is created with unit_price: 0, so the field held "0" and
-            // a placeholder only renders on an EMPTY field. The rep picked a
-            // product they had just seen listed at ₹468 and the line read
-            // "5 × 0 = ₹0.00" — not "we will price this on save", but "this is
-            // free". The intent was written and then defeated by a leftover
-            // zero one line away.
-            //
-            // Safe to clear: readLines sends Number('') === 0, and the server
-            // prices catalogue lines from the catalogue regardless of what is
-            // sent — which is exactly why the field is readonly here.
-            price.value = hasList ? String(item.list_price) : '';
-        }
-
-        // ⭐ WRITE THE PROVENANCE WHERE THE RENDERER PUTS IT.
-        //
-        // This used to build its own span and append it to '.lip-col-desc' — a
-        // class from the table layout that the new markup does not emit. The
-        // append silently did nothing, so choosing a product showed no SKU and,
-        // worse, the "no unit size" caveat on a product that CANNOT be reserved
-        // never appeared. An optional-chained append that hits nothing looks
-        // exactly like one that worked.
-        //
-        // So it writes into the same band, with the same classes, that
-        // productMeta() emits. Two differences remain, both deliberate and both
-        // named here rather than glossed:
-        //
-        //  · HSN. The picker item does not carry hsn_sac; it arrives with the
-        //    saved line. So a reloaded row shows one more fact than a just-picked
-        //    one, and there is nothing to be done about that from here.
-        //
-        //  · The stock badge. detachItem removes it, because a stale "only 3 kg
-        //    available" on a line that no longer sells that product is a lie. But
-        //    attach cannot honestly restore it: stockBadge needs enough_in_stock,
-        //    a SERVER judgement comparing availability to this line's quantity in
-        //    a unit basis the picker does not expose. Deriving it here would put a
-        //    number on screen that can disagree with the one the server returns on
-        //    save. Absent is safe; wrong is not.
-        //
-        // The photo and the description are NOT on this list, though an earlier
-        // version of it wrongly implied they were by saying "two differences".
-        // They are restored below: the picker carries image_url, image_count and
-        // description, and renders all three itself, so there was never an
-        // argument for leaving them out.
-        //
-        // Claiming these away is how the last version of this comment came to say
-        // "looks identical" while three things differed.
-        const noteLine = tr.querySelector('.lip-note-line');
-        if (noteLine) {
-            let note = noteLine.querySelector('.lip-prov');
-            if (!note) {
-                note = document.createElement('span');
-                note.className = 'lip-prov';
-                noteLine.insertBefore(note, noteLine.firstChild);
-            }
-            // ⭐ THE SAME STRUCTURE AND THE SAME TITLE AS productMeta().
-            //
-            // This wrote plain textContent with literal middots and no title. Two
-            // consequences, both invisible until you look for them: the SKU lost
-            // its monospacing while an identical line one row down kept it, and —
-            // worse — `.lip-prov` truncates with an ellipsis in a narrow container
-            // on the stated promise that "the full text stays reachable as the
-            // element's title". After a pick there was no title, so a 13-digit
-            // barcode was cut off with nothing behind it.
-            //
-            // The comment below used to claim attach-then-reload looked identical.
-            // It does now.
-            // The picker carries sku, sale_unit and category_name. It does NOT
-            // carry hsn_sac — that arrives with the saved line — so the render
-            // after a reload legitimately has one more fact than this does.
-            const plain = [item.sku, item.sale_unit, item.category_name].filter(Boolean);
-            const bits = [
-                item.sku ? `<span class="lip-mono">${esc(item.sku)}</span>` : '',
-                item.sale_unit ? esc(item.sale_unit) : '',
-                item.category_name ? esc(item.category_name) : '',
-            ].filter(Boolean);
-
-            // productMeta emits NOTHING when there is nothing to say. Writing an
-            // empty span instead leaves a zero-width flex child, and the strip
-            // has an 8px gap — so "no provenance" rendered as a phantom indent.
-            if (!bits.length) {
-                note.remove();
-                note = null;
-            } else {
-                note.innerHTML = bits.join('<span class="lip-dot">\u00b7</span>');
-                note.title = plain.join(' \u00b7 ');
-            }
-
-            let flag = noteLine.querySelector('.lip-flag');
-            if (item.tracks_stock && !item.can_be_reserved) {
-                if (!flag) {
-                    flag = document.createElement('span');
-                    flag.className = 'lip-flag';
-                    // ⭐ WHERE, not just whether. productMeta returns
-                    // `provenance + withdrawn`, so the flag is the second child —
-                    // right after the provenance. appendChild put it LAST, after
-                    // the stock badge, the pick control and the account input, so
-                    // the same line looked different before and after a reload.
-                    noteLine.insertBefore(flag, note ? note.nextSibling : noteLine.firstChild);
-                }
-                flag.textContent = 'no unit size';
-                flag.title = 'This product is stocked but has no unit size, so it cannot be reserved';
-            } else if (flag) {
-                flag.remove();
-            }
-        }
-
-        // The control has to become its own opposite. Setting the row's
-        // attributes without flipping the button left the rep able to attach a
-        // product and with no way to take it off again until the next render —
-        // and re-rendering only happens on save, which is exactly when a wrong
-        // product becomes a wrong quote.
-        const control = tr.querySelector('.lip-pick');
-        if (control) {
-            control.setAttribute('data-lip', 'unpick');
-            control.textContent = 'Remove product';
-            control.title = 'Remove the product from this line';
-        }
-
-        // ⭐⭐⭐ THE PHOTO AND THE DESCRIPTION, WHICH detach TAKES AWAY.
-        //
-        // detachItem swaps the thumbnail for a gap and removes the blurb — both
-        // correct, they belong to the product. attach did not put them back, so
-        // remove-then-choose left a catalogue line with no photo and no
-        // description until the next save and reload.
-        //
-        // The comment above this function listed "two differences, both
-        // deliberate" and named HSN and the stock badge. These two were not on
-        // that list and had no argument behind them: the picker already carries
-        // image_url, image_count and description — it renders all three in its own
-        // rows. Enumerating a set in prose and implementing a subset is exactly
-        // what the ⭐ comment in detachItem was added to stop, and I did it again
-        // one commit later. The set is now the set.
-        const gap = tr.querySelector('.lip-thumb-gap');
-        if (gap) {
-            const holder = document.createElement('span');
-            // productThumb reads image_url and image_count and nothing else —
-            // alt is hardcoded empty. The picker's own call site passes
-            // `description` and `sku` too and they are equally dead there;
-            // passing them here would have copied the noise and, worse, made
-            // the commit message's reasoning ("the picker carries image_url,
-            // image_count and description") look like all three feed the thumb.
-            // They do not: the picker renders the description in its own row.
-            holder.innerHTML = productThumb({
-                image_url: item.image_url, image_count: item.image_count,
-            });
-            const built = holder.firstElementChild;
-            if (built) gap.replaceWith(built);
-        }
-
-        if (item.description && !tr.querySelector('.lip-blurb')) {
-            const blurb = document.createElement('p');
-            blurb.className = 'lip-blurb';
-            blurb.textContent = item.description;
-            blurb.title = item.description;
-            tr.appendChild(blurb);
-        }
-    }
-
     /**
-     * Writes the picked product's facts onto the line the model holds, so a
-     * re-render reproduces what attachItem painted.
+     * ⭐⭐⭐ ONE RENDERER. THIS IS THE PERMANENT FIX.
      *
-     * The field names are the ones row() reads — deliberately the same set the
-     * server sends, so a picked line and a loaded line are indistinguishable to
-     * the renderer. enough_in_stock is NOT among them: that is a server
-     * judgement about this line's quantity (see attachItem), and guessing it
-     * would put a number on screen the server can contradict.
+     * attachItem and detachItem used to PAINT the row: set attributes, build
+     * spans, flip the button, swap the thumbnail. row() paints it too, from the
+     * model. Two renderers for one row, and every defect found in this panel was
+     * the two of them disagreeing:
+     *
+     *   · product details vanished on "Add line"  — attach painted, model never learned
+     *   · the product's name stayed after Remove   — detach's set ⊂ attach's set
+     *   · the price showed 0                       — attach set readonly and the
+     *                                                placeholder, but not the value
+     *   · photo and description were not restored  — attach's set ⊂ detach's set
+     *   · "no unit size" vs "no longer sold"       — one class, two meanings, one
+     *                                                per renderer
+     *
+     * Each was fixed on its own, and the next one arrived from a direction the
+     * last fix did not cover, because the SHAPE was never addressed: any fact
+     * one renderer knows and the other does not is a bug waiting for a
+     * re-render. Guards can catch instances. Only deleting the second renderer
+     * makes the class impossible.
+     *
+     * So these now write to the MODEL and re-render. row() is the only thing
+     * that turns a line into markup. A fact added next year is rendered once, by
+     * construction, and cannot be lost by a path nobody thought to update.
+     *
+     * (This removed ~270 lines of DOM mutation and the two model-sync helpers
+     * that existed solely to keep the two renderers in step.)
      */
-    function rememberItemOnLine(container, tr, item) {
+    function attachItem(container, tr, item) {
         const st = mounted.get(container);
         if (!st) return;
         const idx = Number(tr.getAttribute('data-lip-row'));
-        if (!Number.isFinite(idx) || !st.lines[idx]) return;
+        // Typed values first, or picking a product discards edits made since the
+        // last save. All three callers of readLines read before they mutate.
+        st.lines = readLines(container);
+        const line = st.lines[idx];
+        if (!line) return;
 
-        Object.assign(st.lines[idx], {
+        const hasList = item.list_price !== null && item.list_price !== undefined;
+        // A description the rep typed is theirs and survives; an empty one is
+        // filled from the product, and remembered as ours so detach can undo
+        // exactly that and nothing else.
+        const typed = String(line.description ?? '').trim();
+
+        Object.assign(line, {
             item_id: item.id,
+            description: typed || item.name || '',
+            description_from_item: !typed,
+            unit_price: hasList ? item.list_price : '',
             image_url: item.image_url ?? null,
             image_count: item.image_count ?? 0,
             item_description: item.description ?? null,
@@ -811,70 +628,37 @@ const LineItemsPanel = (() => {
             uom: item.sale_unit ?? null,
             category_name: item.category_name ?? null,
             no_longer_sellable: item.is_sellable === false,
+            // Only knowable at pick time — the saved line does not carry it —
+            // and this is the moment it matters, when another product can still
+            // be chosen instead.
+            cannot_be_reserved: !!(item.tracks_stock && !item.can_be_reserved),
         });
+
+        render(container);
+        refreshTotals(container);
     }
 
-    /** Clears them again when the line stops naming a product. */
-    function forgetItemOnLine(container, tr) {
+    function detachItem(container, tr) {
         const st = mounted.get(container);
         if (!st) return;
         const idx = Number(tr.getAttribute('data-lip-row'));
-        if (!Number.isFinite(idx) || !st.lines[idx]) return;
-        st.lines[idx] = stripProductFacts({ ...st.lines[idx], item_id: null });
-    }
+        st.lines = readLines(container);
+        const line = st.lines[idx];
+        if (!line) return;
 
-    function detachItem(tr) {
-        tr.removeAttribute('data-lip-item');
-        tr.classList.remove('is-catalogue');
-        const price = tr.querySelector('[data-lip-field="unit_price"]');
-        if (price) { price.readOnly = false; price.title = ''; price.placeholder = ''; }
-        // Taking the product off takes its provenance with it — the SKU, unit and
-        // the reservability caveat all belonged to the product, not to the line.
-        tr.querySelector('.lip-note-line .lip-prov')?.remove();
-        tr.querySelector('.lip-note-line .lip-flag')?.remove();
-        // The stock badge belongs to the product as much as the SKU does. Leaving
-        // it behind left a free-text line still claiming "only 3 kg available".
-        tr.querySelector('.lip-note-line .lip-stock')?.remove();
-        tr.querySelector('.lip-note-line .lip-listprice')?.remove();
+        // The description goes only if the PRODUCT supplied it.
+        const clearDescription = line.description_from_item === true;
+        st.lines[idx] = stripProductFacts({
+            ...line,
+            item_id: null,
+            description: clearDescription ? '' : line.description,
+            // A catalogue price is not the rep's; taking the product off leaves
+            // the field empty for them to fill rather than quoting the old one.
+            unit_price: '',
+        });
 
-        // ⭐ THE WHOLE SET, NOT THE PART I HAPPENED TO LIST.
-        // The comment above used to enumerate "SKU, unit and the reservability
-        // caveat" and stop there, while the product's PHOTO and its DESCRIPTION
-        // stayed on a line that no longer sells a product. Enumerating a set in
-        // prose and implementing a subset is how the set gets trusted.
-        const thumb = tr.querySelector('.lip-prod-thumb');
-        if (thumb) {
-            const gap = document.createElement('span');
-            gap.className = 'lip-thumb-gap';
-            gap.setAttribute('aria-hidden', 'true');
-            thumb.replaceWith(gap);
-        }
-        tr.querySelector('.lip-blurb')?.remove();
-
-        // ⭐ AND THE NAME THE PRODUCT SUPPLIED — but only if it is still the
-        // product's. If the rep has typed over it since, that is their text and
-        // it stays.
-        const desc = tr.querySelector('[data-lip-field="description"]');
-        const auto = tr.dataset.lipAutoname;
-        if (desc && auto !== undefined && desc.value === auto) {
-            desc.value = '';
-            desc.title = '';
-        }
-        delete tr.dataset.lipAutoname;
-
-        // Flipped HERE rather than by the click handler, so neither caller has
-        // to remember half the job.
-        //
-        // NOT "exact inverses" — that claim was made and was false: detach used
-        // to leave the product's photo, its description and a stale stock badge
-        // on a line that no longer sold a product. Photo and description are
-        // handled now; the stock badge is deliberately one-way (see attachItem).
-        const control = tr.querySelector('.lip-pick');
-        if (control) {
-            control.setAttribute('data-lip', 'pick');
-            control.textContent = 'Choose product';
-            control.title = 'Choose a product from the catalogue';
-        }
+        render(container);
+        refreshTotals(container);
     }
 
     /**
@@ -923,13 +707,38 @@ const LineItemsPanel = (() => {
             !!i.currency && !!currency &&
             String(i.currency).toUpperCase() !== String(currency).toUpperCase();
 
+        /**
+         * ⭐⭐⭐ A PRODUCT THIS QUOTE ALREADY SELLS.
+         *
+         * Picking the same catalogue item onto a second line produces two rows
+         * quoting the same thing at the same price, which is a mistake ~always:
+         * the rep wanted more units, and the remedy is the quantity box on the
+         * line that already exists.
+         *
+         * Excludes the row being edited, so re-picking the SAME product onto the
+         * line that already has it is not blocked — that is a no-op, not a
+         * duplicate, and refusing it would be baffling.
+         *
+         * Read from the DOM rather than st.lines because the picker can be
+         * opened on a row whose product was chosen a moment ago and not yet
+         * saved — the DOM is what is true right now.
+         */
+        const alreadyOnQuote = (i) => {
+            const id = String(i.id);
+            return [...container.querySelectorAll('[data-lip-row]')]
+                .filter(row => row !== tr)
+                .some(row => row.getAttribute('data-lip-item') === id);
+        };
+
         const draw = (rows) => {
             list.innerHTML = rows.length
                 ? rows.map(i => `
                     <button type="button" class="lip-picker-row${
-                            wrongCurrency(i) ? ' is-unavailable' : ''}" data-pick="${esc(i.id)}"${
+                            (wrongCurrency(i) || alreadyOnQuote(i)) ? ' is-unavailable' : ''}" data-pick="${esc(i.id)}"${
                             wrongCurrency(i)
                                 ? ` disabled aria-disabled="true" title="Priced in ${esc(i.currency)}; this deal is in ${esc(currency)}"`
+                                : alreadyOnQuote(i)
+                                ? ' disabled aria-disabled="true" title="Already on this quote — change the quantity on that line instead"'
                                 : ''}>
                         ${productThumb({ image_url: i.image_url, image_count: i.image_count,
                                          description: i.name, sku: i.sku })}
@@ -956,6 +765,12 @@ const LineItemsPanel = (() => {
                                 // panel knows the deal's.
                                 wrongCurrency(i)
                                     ? `<span class="lip-chip lip-chip-warn">priced in ${esc(i.currency)}</span>` : '',
+                                // Same principle as the currency chip beside it:
+                                // the rep learns at the moment of choosing, not
+                                // by ending up with two identical lines and
+                                // noticing later — or not noticing.
+                                alreadyOnQuote(i)
+                                    ? '<span class="lip-chip lip-chip-warn">already on this quote</span>' : '',
                             ].filter(Boolean).join('')}</span>
                         </span>
                         <span class="lip-picker-right">
@@ -1020,24 +835,10 @@ const LineItemsPanel = (() => {
             // so this is belt and braces — but the row is also reachable by
             // keyboard in some assistive tooling, and attaching a product the
             // server will refuse is exactly the outcome this change removes.
-            if (item && wrongCurrency(item)) return;
+            if (item && (wrongCurrency(item) || alreadyOnQuote(item))) return;
             if (item) {
-                attachItem(tr, item);
-                // ⭐⭐⭐ TELL THE MODEL, NOT JUST THE DOM.
-                //
-                // attachItem paints the row. It does not touch st.lines, so the
-                // next re-render — Add line, remove a row, anything — rebuilt
-                // from a model that had never heard of this product, and every
-                // fact attach had just painted disappeared. Fixing readLines to
-                // carry facts FORWARD does nothing here: there was nothing to
-                // carry, because the writer never wrote.
-                //
-                // Measured on the deployed build: pick a product, click Add
-                // line, and the photo, provenance and description all vanish
-                // while the readonly price and the catalogue accent stay — the
-                // same half-alive row as the three earlier instances.
-                rememberItemOnLine(container, tr, item);
-                refreshTotals(container);
+                // One call: the model is updated and the row re-rendered from it.
+                attachItem(container, tr, item);
             }
             close();
         });
@@ -1122,7 +923,10 @@ const LineItemsPanel = (() => {
         const {
             image_url, image_count, item_description, sku, uom, hsn_sac,
             category_name, no_longer_sellable, enough_in_stock, available_base,
-            stock_uom, ...rest
+            stock_uom,
+            // Set when a product is attached; meaningless once it is not.
+            cannot_be_reserved, description_from_item,
+            ...rest
         } = line;
         return rest;
     }
@@ -1379,13 +1183,7 @@ const LineItemsPanel = (() => {
 
             const unpick = e.target.closest('[data-lip="unpick"]');
             if (unpick) {
-                const row = unpick.closest('[data-lip-row]');
-                detachItem(row);
-                // The inverse of the attach path: the DOM stops showing the
-                // product, and the MODEL has to stop believing in it, or the
-                // next re-render paints it back.
-                forgetItemOnLine(container, row);
-                return refreshTotals(container);
+                return detachItem(container, unpick.closest('[data-lip-row]'));
             }
         });
 
