@@ -606,7 +606,14 @@ const LineItemsPanel = (() => {
         if (price) {
             price.readOnly = true;
             price.title = 'This price comes from the product catalogue';
-            price.placeholder = 'priced on save';
+            // ⭐ A PLACEHOLDER THAT DOES NOT FIT IS NOT A MESSAGE.
+            //
+            // This said "priced on save" — fourteen characters in a 78px field,
+            // 62px on a phone — so it rendered as "priced o". The sentence is
+            // carried by the LINE TOTAL, which says "on save", and by the
+            // `list ₹468.00` beside it. The field only has to say "not yet",
+            // and the full explanation is on its title.
+            price.placeholder = '—';
             // ⭐⭐⭐ AND CLEAR IT, OR THE PLACEHOLDER NEVER SHOWS.
             //
             // A new row is created with unit_price: 0, so the field held "0" and
