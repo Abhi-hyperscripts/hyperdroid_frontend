@@ -181,7 +181,18 @@
         // differs from the contact we sent it to, and the audit trail records
         // what they typed either way.
         const typed = $('typedName');
-        if (typed && !typed.value) typed.value = view.signer_name || '';
+        if (typed && !typed.value) {
+            typed.value = view.signer_name || '';
+            // ⭐ SETTING .value FIRES NOTHING.
+            //
+            // The handwriting preview mirrors this field on `input`, and
+            // assigning the property does not raise that event — so a signer who
+            // never edited the prefilled name saw an empty preview above it and
+            // no sign of the signature they were about to give. Announcing the
+            // change keeps one source of truth for the preview rather than
+            // writing to it from two places.
+            typed.dispatchEvent(new Event('input', { bubbles: true }));
+        }
 
         show('documentState');
         setupPad();

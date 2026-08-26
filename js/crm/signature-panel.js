@@ -299,8 +299,25 @@ const SignaturePanel = (() => {
         if (st.entityType === 'deal') body.deal_id = st.entityId; else body.lead_id = st.entityId;
         if (kind === 'document') body.document_id = documentId;
 
+        // ⭐⭐⭐ A REFUSAL MUST NOT WIPE WHAT THEY TYPED.
+        //
+        // This called render() to reflect the sending state, and render()
+        // rebuilds the form from scratch — so the moment Create was pressed the
+        // fields blanked, and a server refusal ("this deal has no lines yet")
+        // left the rep looking at an empty form with no idea what had been in
+        // it. They then retype four fields to hit the same refusal.
+        //
+        // The submit button is therefore driven DIRECTLY, and nothing
+        // re-renders until the save has actually succeeded. That is the exact
+        // opposite of the rule for the SAVE button on the line-items panel — and
+        // deliberately so. There, the button lives among rows that re-render on
+        // every keystroke, so a DOM-held flag was lost and the state had to own
+        // it. Here nothing re-renders while the form is open, so touching the
+        // DOM is safe and re-rendering is the thing that does harm.
         st.sending = true;
-        render(container);
+        const submit = container.querySelector('[data-sig-form] button[type="submit"]');
+        if (submit) { submit.disabled = true; submit.textContent = 'Creating…'; }
+
         try {
             const created = await api.request('/crm/signature-requests', {
                 method: 'POST', body: JSON.stringify(body),
@@ -310,8 +327,10 @@ const SignaturePanel = (() => {
             await load(container);
             showLink(created);
         } catch (e) {
+            // Re-enable in place. The form keeps every value, so correcting one
+            // field and pressing Create again is all it takes.
             st.sending = false;
-            render(container);
+            if (submit) { submit.disabled = false; submit.textContent = 'Create signing link'; }
             Toast.error(e.message || 'Could not create the signing link');
         }
     }

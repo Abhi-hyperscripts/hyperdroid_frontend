@@ -41,6 +41,19 @@
 
         * { box-sizing: border-box; }
 
+        /* ⭐⭐⭐ MAKE `hidden` AUTHORITATIVE, ONCE.
+           ----------------------------------------------------------------
+           The hidden attribute is only `display: none` from the user-agent
+           stylesheet, which any class rule setting a display outranks. The
+           decline modal is `.modal-backdrop { display: grid }`, so it ignored
+           its own hidden attribute and greeted every signer with a "Decline to
+           sign" dialog over the document they had come to sign.
+           
+           Fixing the one selector would leave the next element that pairs
+           `hidden` with a display rule to do it again. This makes the whole
+           class impossible on this page. */
+        [hidden] { display: none !important; }
+
         body {
             margin: 0;
             background: var(--paper);

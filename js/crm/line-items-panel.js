@@ -240,6 +240,21 @@ const LineItemsPanel = (() => {
         </div>`;
     }
 
+    /**
+     * ⭐⭐⭐ THE PARAMETER IS `state`. THERE IS NO `st` IN THIS SCOPE.
+     *
+     * `st` is the name used inside every function that does
+     * `const st = mounted.get(container)`. This one takes the state as an
+     * argument instead, and three references here reached for `st` anyway —
+     * helpOpen, saving, and loadFailed. The FIRST one throws a ReferenceError,
+     * which means the whole panel rendered nothing and the quote page sat on
+     * "Loading lines…" forever.
+     *
+     * Two of the three shipped in an earlier commit and were never noticed,
+     * because the panel only appears on the quote page and nobody opened it.
+     * Syntax checks do not catch this — the file parses perfectly; the name is
+     * simply not bound at runtime.
+     */
     function shell(state) {
         const { lines, currency, canEdit, hasQuotation, quotationNumber } = state;
         const total = sum(lines);
@@ -261,7 +276,7 @@ const LineItemsPanel = (() => {
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
             </a>` : ''}
 
-            <details class="crm-help crm-help-sm"${st.helpOpen ? ' open' : ''}>
+            <details class="crm-help crm-help-sm"${state.helpOpen ? ' open' : ''}>
                 <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>What is this? — Line items</summary>
                 <div class="crm-help-body">
                     <p>What this deal is made up of, line by line. These same lines become the
@@ -284,7 +299,7 @@ const LineItemsPanel = (() => {
                 Only Team Leads, Managers and Admins can change what a deal is priced at.
             </p>` : ''}
 
-            ${st.loadFailed ? `
+            ${state.loadFailed ? `
             <p class="lip-none lip-load-failed">
                 These lines could not be loaded, so this is not what the deal is priced at.
                 Nothing here can be saved until they load — reopen the deal to try again.
@@ -315,7 +330,7 @@ const LineItemsPanel = (() => {
                 <span class="lip-spacer"></span>
                 <span class="lip-hint" data-lip="hint"></span>
                 <button type="button" class="btn btn-sm btn-primary" data-lip="save"${
-                    st.saving ? ' disabled' : ''}>Save lines</button>
+                    state.saving ? ' disabled' : ''}>Save lines</button>
             </div>` : ''}
 
             ${listPriceNote(state)}
