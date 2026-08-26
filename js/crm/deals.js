@@ -1645,6 +1645,13 @@ async function openDealDetailPanel(dealId) {
             document.getElementById('dealDocumentsPanel'), 'deal', dealId,
             { canReview: !isMember() });
     }
+    // Its own guard for the same reason as the one above: signatures and
+    // documents are separate features and one failing to load must not take the
+    // other with it.
+    if (typeof SignaturePanel !== 'undefined') {
+        SignaturePanel.mount(
+            document.getElementById('dealSignaturesPanel'), 'deal', dealId);
+    }
     // Activities could be logged and read but never corrected, completed or
     // removed — the timeline projection carries no activity id to act on.
     if (typeof ActivitiesPanel !== 'undefined') {

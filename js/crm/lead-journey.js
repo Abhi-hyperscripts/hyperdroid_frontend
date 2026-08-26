@@ -327,6 +327,10 @@
                 document.getElementById('leadDocumentsPanel'), 'lead', leadId,
                 { canReview: ['admin', 'manager', 'teamlead'].includes(window.myTeamRole) });
         }
+        if (typeof SignaturePanel !== 'undefined') {
+            SignaturePanel.mount(
+                document.getElementById('leadSignaturesPanel'), 'lead', leadId);
+        }
 
         // Notes on a lead had no UI at all — the API listed, edited, pinned and
         // deleted them and nothing called it.

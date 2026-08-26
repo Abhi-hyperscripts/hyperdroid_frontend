@@ -27,7 +27,8 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-notes.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../../css/crm-documents.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-documents.css?v=' + CACHE_VERSION + '">');
+    document.write('<link rel="stylesheet" href="../../css/crm-signatures.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-commission.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-renewal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-line-items.css?v=' + CACHE_VERSION + '">');</script>
@@ -548,6 +549,7 @@
 
             <div class="panel-section">
                 <div id="dealDocumentsPanel"></div>
+                <div id="dealSignaturesPanel"></div>
             </div>
 
             <div class="panel-section">
@@ -576,6 +578,7 @@
         // formatMoney, which lives here so the locale rule exists once.
         document.write('<script src="../../js/crm/currencies.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/documents-panel.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/signature-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/commission-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/renewal-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/line-items-panel.js?v=' + CACHE_VERSION + '"><\/script>');

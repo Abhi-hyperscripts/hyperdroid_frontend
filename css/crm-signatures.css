@@ -1,0 +1,262 @@
+/* ============================================================================
+   CRM — Signatures panel
+   ----------------------------------------------------------------------------
+   Sending a quote or a document for signature, and watching what happens to it.
+   Mounted inside the lead and deal detail slide-panels, so it is sized for a
+   ~520-640px column like the documents panel beside it rather than for a full
+   page.
+
+   Colours come from theme variables only, so the panel resolves in both themes.
+   The status colours are the semantic ones on purpose — a hard-coded green for
+   "signed" reads as a bright smear on the dark theme.
+   ============================================================================ */
+
+.sigp {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.sigp-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.sigp-h {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  color: var(--text-primary);
+}
+.sigp-send {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-inverse);
+  background: var(--brand-primary);
+  border: 1px solid transparent;
+  border-radius: var(--border-radius-md, 6px);
+  cursor: pointer;
+}
+.sigp-send:hover:not(:disabled) { background: var(--brand-primary-hover); }
+.sigp-send:disabled { opacity: .55; cursor: not-allowed; }
+.sigp-quiet {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md, 6px);
+  cursor: pointer;
+}
+.sigp-quiet:hover { color: var(--text-primary); }
+
+/* ── The send form ───────────────────────────────────────────────────── */
+.sigp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md, 6px);
+}
+.sigp-f {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.sigp-f > span:first-child { font-weight: 500; }
+/* Styled by SHAPE, not by an enumerated list of types.
+   ----------------------------------------------------------------------------
+   The first draft named [text, email, tel, number]. Add a field of any other
+   type — date, url, search, a future one — and it renders as a raw browser
+   control: right size, right place, wrong thing, and nothing measures it.
+   Excluding the types that are NOT text boxes is the stable half of the rule,
+   because that set is closed and the other one is not.
+
+   Height matches the modal input used elsewhere in the CRM, so a form inside a
+   panel does not read as a different product from the one beside it. */
+.sigp-f input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+.sigp-f textarea {
+  height: 34px;
+  padding: 0 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md, 6px);
+}
+.sigp-f input:focus,
+.sigp-f textarea:focus {
+  outline: none;
+  border-color: var(--border-color-focus, var(--brand-primary));
+  box-shadow: 0 0 0 2px var(--brand-primary-subtle, transparent);
+}
+.sigp-f input[type="number"] { max-width: 90px; }
+
+.sigp-radios { display: flex; gap: 14px; }
+.sigp-radios label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.sigp-radios input { accent-color: var(--brand-primary); }
+
+.sigp-doc-opt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-primary);
+  padding: 3px 0;
+  cursor: pointer;
+}
+
+.sigp-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-tertiary, var(--text-secondary));
+  font-style: normal;
+}
+
+.sigp-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* ── The list ────────────────────────────────────────────────────────── */
+.sigp-list { display: flex; flex-direction: column; gap: 8px; }
+
+.sigp-empty {
+  margin: 0;
+  padding: 18px 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius-md, 6px);
+}
+
+.sigp-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md, 6px);
+}
+.sigp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+
+.sigp-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sigp-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.sigp-badge {
+  flex: none;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border-radius: var(--border-radius-full, 999px);
+}
+.sigp-sent      { color: var(--status-pending);  background: var(--status-pending-bg, transparent); }
+.sigp-viewed    { color: var(--status-active);   background: var(--status-active-bg, transparent); }
+.sigp-signed    { color: var(--color-success);   background: var(--color-success-bg, transparent); }
+.sigp-declined  { color: var(--color-error);     background: var(--color-error-bg, transparent); }
+.sigp-cancelled { color: var(--text-secondary);  background: var(--bg-tertiary); }
+.sigp-expired   { color: var(--color-warning);   background: var(--color-warning-bg, transparent); }
+
+.sigp-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.sigp-meta span { overflow-wrap: anywhere; }
+
+.sigp-line { font-size: 11.5px; color: var(--text-secondary); }
+.sigp-good { color: var(--color-success); }
+.sigp-bad  { color: var(--color-error); }
+
+/* ── The audit trail ─────────────────────────────────────────────────── */
+.sigp-trail > summary {
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 0;
+  list-style: none;
+}
+.sigp-trail > summary::-webkit-details-marker { display: none; }
+.sigp-trail > summary::before { content: "▸ "; color: var(--text-tertiary, var(--text-secondary)); }
+.sigp-trail[open] > summary::before { content: "▾ "; }
+
+.sigp-trail ol {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  list-style: none;
+  background: var(--bg-primary);
+  border-left: 2px solid var(--border-color);
+  border-radius: 0 4px 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sigp-trail li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.sigp-trail li b { color: var(--text-primary); font-weight: 600; }
+
+.sigp-hash {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  color: var(--text-tertiary, var(--text-secondary));
+}
+.sigp-hash code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  padding: 1px 4px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+.sigp-cancel {
+  flex: none;
+  padding: 4px 9px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md, 6px);
+  cursor: pointer;
+}
+.sigp-cancel:hover { color: var(--color-error); border-color: var(--color-error); }
+
+/* The panel lives in a narrow slide-out column; below that the row's action
+   button has nowhere sensible to sit beside the content. */
+@media (max-width: 480px) {
+  .sigp-row { flex-direction: column; }
+  .sigp-cancel { align-self: flex-start; }
+}

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- A signing link is private to one customer. It must never be indexed,
+         and a search engine following it would also record a view against a
+         document nobody opened. -->
+    <meta name="robots" content="noindex, nofollow">
+    <!-- Keeps the token out of the Referer of every outbound request this page
+         makes, on top of stripping it from the address bar in sign.js. -->
+    <meta name="referrer" content="no-referrer">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Sign — Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap">
+    <style>
+        /* The signing page stands alone: no CRM chrome, no theme toggle, no
+           navigation. A customer arrives here from a link, does one thing, and
+           leaves. Anything else on the page is a way to not finish. */
+        :root {
+            --ink: #12181c;
+            --text: #1d262b;
+            --text-2: #5b6a72;
+            --text-3: #8797a0;
+            --paper: #f2f5f6;
+            --surface: #ffffff;
+            --surface-2: #eef2f3;
+            --rule: #d8e0e2;
+            --rule-soft: #e7edee;
+            --accent: #0f5f66;
+            --accent-hover: #0c4d53;
+            --accent-dim: #0f5f6614;
+            --danger: #8f3a30;
+            --danger-dim: #8f3a3012;
+            --good: #2f6b4f;
+            --shadow: 0 1px 2px rgba(18,24,28,.05), 0 12px 32px -16px rgba(18,24,28,.18);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--text);
+            font-family: "Inter Tight", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            font-size: 16px;
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .shell { max-width: 720px; margin: 0 auto; padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 2rem) 4rem; }
+
+        .brand {
+            display: flex; align-items: center; gap: .55rem;
+            font-weight: 600; letter-spacing: -.01em; color: var(--ink);
+            margin-bottom: 1.5rem;
+        }
+        .brand-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--rule);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-head { padding: 1.5rem 1.6rem 1.35rem; border-bottom: 1px solid var(--rule-soft); }
+        .eyebrow {
+            font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+            color: var(--accent); margin: 0 0 .5rem;
+        }
+        h1 { font-size: 1.45rem; font-weight: 600; letter-spacing: -.015em; margin: 0 0 .35rem; color: var(--ink); text-wrap: balance; }
+        .for-whom { margin: 0; color: var(--text-2); font-size: .92rem; }
+        .for-whom b { color: var(--text); font-weight: 600; }
+
+        .card-body { padding: 1.5rem 1.6rem; }
+
+        /* ── the document ─────────────────────────────────────── */
+        .doc-scroll { overflow-x: auto; margin: 0 -0.25rem; }
+        table.lines { border-collapse: collapse; width: 100%; min-width: 420px; }
+        table.lines th {
+            text-align: left; font-size: .68rem; font-weight: 600; letter-spacing: .08em;
+            text-transform: uppercase; color: var(--text-3);
+            padding: 0 .55rem .55rem; border-bottom: 1px solid var(--rule);
+        }
+        table.lines td { padding: .7rem .55rem; border-bottom: 1px solid var(--rule-soft); vertical-align: top; font-size: .92rem; }
+        table.lines .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        table.lines .strong { font-weight: 600; color: var(--ink); }
+        .ln-desc { display: block; color: var(--ink); }
+        .ln-sku, .ln-uom { font-size: .76rem; color: var(--text-3); }
+
+        .totals { margin-top: 1rem; display: flex; flex-direction: column; gap: .35rem; }
+        .total-row { display: flex; justify-content: space-between; gap: 2rem; font-size: .92rem; color: var(--text-2); }
+        .total-row b { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 500; }
+        .total-row.grand {
+            margin-top: .45rem; padding-top: .7rem; border-top: 1px solid var(--rule);
+            font-size: 1.05rem; color: var(--ink); font-weight: 600;
+        }
+        .total-row.grand b { font-weight: 700; }
+
+        .doc-note { margin: 1rem 0 0; font-size: .82rem; color: var(--text-3); }
+
+        .doc-file { display: flex; align-items: center; gap: .9rem; padding: 1.1rem; background: var(--surface-2); border-radius: 6px; }
+        .doc-file svg { width: 30px; height: 30px; color: var(--accent); flex: none; }
+        .doc-file b { display: block; color: var(--ink); font-weight: 600; }
+        .doc-file span { font-size: .8rem; color: var(--text-3); }
+
+        /* ── signing ──────────────────────────────────────────── */
+        .sign-block { margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); }
+        .sign-label { font-size: .74rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin: 0 0 .7rem; }
+
+        .modes { display: flex; gap: .45rem; margin-bottom: 1rem; }
+        .mode {
+            flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
+            padding: .55rem; border: 1px solid var(--rule); border-radius: 6px;
+            font-size: .88rem; color: var(--text-2); cursor: pointer; background: var(--surface);
+        }
+        .mode input { position: absolute; opacity: 0; pointer-events: none; }
+        .mode:has(input:checked) { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+        .mode:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        .pad-wrap { position: relative; border: 1px dashed var(--rule); border-radius: 6px; background: var(--surface-2); }
+        #padCanvas { display: block; width: 100%; height: 170px; touch-action: none; cursor: crosshair; color: var(--ink); }
+        .pad-hint { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; color: var(--text-3); font-size: .85rem; }
+        #padCanvas:not(:placeholder-shown) + .pad-hint { display: none; }
+        .pad-actions { display: flex; justify-content: flex-end; margin-top: .5rem; }
+
+        .field { margin-top: 1rem; }
+        .field label { display: block; font-size: .82rem; color: var(--text-2); margin-bottom: .35rem; }
+        input[type="text"], textarea {
+            width: 100%; padding: .6rem .7rem; font: inherit; color: var(--text);
+            background: var(--surface); border: 1px solid var(--rule); border-radius: 6px;
+        }
+        input[type="text"]:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+        #typedPreview { font-family: "Caveat", cursive; font-size: 2rem; color: var(--ink); min-height: 2.6rem; padding: .4rem .7rem; border-bottom: 1px solid var(--rule); }
+
+        .agree { display: flex; gap: .6rem; align-items: flex-start; margin-top: 1.25rem; font-size: .88rem; color: var(--text-2); }
+        .agree input { margin-top: .25rem; width: 16px; height: 16px; accent-color: var(--accent); flex: none; }
+
+        .actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.35rem; }
+        button {
+            font: inherit; font-weight: 600; padding: .7rem 1.2rem; border-radius: 6px;
+            border: 1px solid transparent; cursor: pointer;
+        }
+        button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .btn-primary { background: var(--accent); color: #fff; flex: 1; min-width: 200px; }
+        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+        .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+        .btn-quiet { background: transparent; color: var(--text-2); border-color: var(--rule); }
+        .btn-quiet:hover { color: var(--danger); border-color: var(--danger); }
+        .btn-small { padding: .35rem .7rem; font-size: .8rem; font-weight: 500; background: transparent; color: var(--text-2); border-color: var(--rule); }
+        .btn-danger { background: var(--danger); color: #fff; }
+
+        .expiry { margin: .9rem 0 0; font-size: .8rem; color: var(--text-3); }
+        .err { margin: .9rem 0 0; padding: .65rem .8rem; background: var(--danger-dim); border-left: 2px solid var(--danger); border-radius: 0 4px 4px 0; color: var(--danger); font-size: .88rem; }
+
+        .closed { margin-top: 1.5rem; padding: 1rem 1.1rem; background: var(--surface-2); border-radius: 6px; color: var(--text-2); font-size: .92rem; }
+
+        /* ── states ───────────────────────────────────────────── */
+        .state-pad { padding: 3.5rem 1.5rem; text-align: center; }
+        .spinner { width: 26px; height: 26px; margin: 0 auto 1rem; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+
+        .done-icon { width: 52px; height: 52px; margin: 0 auto 1.1rem; border-radius: 50%; display: grid; place-items: center; background: var(--good); color: #fff; }
+        .done-icon.is-declined { background: var(--text-3); }
+        .done-icon svg { width: 26px; height: 26px; }
+        .state-pad h2 { font-size: 1.2rem; font-weight: 600; margin: 0 0 .5rem; color: var(--ink); }
+        .state-pad p { margin: 0; color: var(--text-2); font-size: .93rem; }
+
+        /* ── decline modal ────────────────────────────────────── */
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(18,24,28,.45); display: grid; place-items: center; padding: 1rem; z-index: 40; }
+        .modal { background: var(--surface); border-radius: 8px; padding: 1.4rem 1.5rem; max-width: 440px; width: 100%; box-shadow: var(--shadow); }
+        .modal h3 { margin: 0 0 .5rem; font-size: 1.05rem; color: var(--ink); }
+        .modal p { margin: 0 0 1rem; font-size: .89rem; color: var(--text-2); }
+        .modal-actions { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.1rem; }
+
+        .foot { margin-top: 1.5rem; text-align: center; font-size: .76rem; color: var(--text-3); }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <div class="brand"><span class="brand-dot"></span> Ragenaizer</div>
+
+        <!-- loading -->
+        <div class="card" id="loadingState">
+            <div class="state-pad">
+                <div class="spinner"></div>
+                <p>Opening your document…</p>
+            </div>
+        </div>
+
+        <!-- could not open -->
+        <div class="card" id="errorState" hidden>
+            <div class="state-pad">
+                <h2>This link isn’t available</h2>
+                <p id="errorMessage"></p>
+            </div>
+        </div>
+
+        <!-- the document -->
+        <div class="card" id="documentState" hidden>
+            <div class="card-head">
+                <p class="eyebrow">For your signature</p>
+                <h1 id="docTitle"></h1>
+                <p class="for-whom">Prepared for <b id="docSigner"></b></p>
+            </div>
+            <div class="card-body">
+                <div id="docBody"></div>
+
+                <div class="closed" id="closedNotice" hidden></div>
+
+                <div class="sign-block" id="signBlock" hidden>
+                    <p class="sign-label">Your signature</p>
+
+                    <div class="modes">
+                        <label class="mode"><input type="radio" name="signMode" value="drawn" checked> Draw it</label>
+                        <label class="mode"><input type="radio" name="signMode" value="typed"> Type it</label>
+                    </div>
+
+                    <div id="drawArea">
+                        <div class="pad-wrap">
+                            <canvas id="padCanvas" aria-label="Draw your signature here"></canvas>
+                        </div>
+                        <div class="pad-actions">
+                            <button type="button" class="btn-small" id="padClear">Clear</button>
+                        </div>
+                    </div>
+
+                    <div id="typeArea" hidden>
+                        <div id="typedPreview" aria-hidden="true"></div>
+                    </div>
+
+                    <div class="field">
+                        <label for="typedName">Your full name</label>
+                        <input type="text" id="typedName" autocomplete="name" maxlength="200">
+                    </div>
+
+                    <label class="agree">
+                        <input type="checkbox" id="agreeBox">
+                        <span>I confirm I have read this document and I am signing it electronically.
+                              I understand this signature is legally binding.</span>
+                    </label>
+
+                    <div class="err" id="signError" hidden></div>
+
+                    <div class="actions">
+                        <button type="button" class="btn-primary" id="signButton" disabled>Sign this document</button>
+                        <button type="button" class="btn-quiet" id="declineButton">Decline</button>
+                    </div>
+
+                    <p class="expiry" id="expiryNote"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- done -->
+        <div class="card" id="doneState" hidden>
+            <div class="state-pad">
+                <div class="done-icon" id="doneIcon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <h2 id="doneTitle"></h2>
+                <p id="doneBody"></p>
+            </div>
+        </div>
+
+        <p class="foot">Signed electronically through Ragenaizer. A record of this signature,
+           including the time and the document it applied to, is kept with the sender.</p>
+    </div>
+
+    <!-- decline -->
+    <div class="modal-backdrop" id="declineModal" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="declineTitle">
+            <h3 id="declineTitle">Decline to sign</h3>
+            <p>The sender will be told you declined. If you’d like, say why — it goes to them directly.</p>
+            <textarea id="declineReason" rows="3" maxlength="1000" placeholder="Optional"></textarea>
+            <div class="modal-actions">
+                <button type="button" class="btn-quiet" id="declineCancel">Go back</button>
+                <button type="button" class="btn-danger" id="declineConfirm">Decline</button>
+            </div>
+        </div>
+    </div>
+
+    <script>document.write('<script src="../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../js/sign.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>
+        // The handwriting preview mirrors the name field. Cosmetic only — the
+        // value that gets signed is the input's, never this element's text.
+        document.addEventListener('DOMContentLoaded', () => {
+            const name = document.getElementById('typedName');
+            const preview = document.getElementById('typedPreview');
+            if (name && preview) {
+                const sync = () => { preview.textContent = name.value; };
+                name.addEventListener('input', sync);
+                sync();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1059,7 +1059,9 @@ async function buildAssembly() {
             if (!(err.message || '').includes('INSUFFICIENT_STOCK')) throw err;
             const proceed = await Confirm.show({
                 title: 'Not enough stock',
-                message: `${err.message}\n\nBuilding anyway will take that component's stock negative, and the finished item will be costed only from what was actually there.`,
+                // One flowing sentence, not two paragraphs: Confirm.show escapes the message into a single
+                // <p>, so a "\n\n" collapses and reads as a run-on rather than the break it looks like here.
+                message: `${err.message} Building anyway will take that component's stock negative, and the finished item will be costed only from what was actually there.`,
                 type: 'danger',
                 confirmText: 'Build anyway',
                 cancelText: 'Cancel'
@@ -1326,7 +1328,7 @@ async function issueWorkOrder(id) {
             if (!(err.message || '').includes('INSUFFICIENT_STOCK')) throw err;
             const proceed = await Confirm.show({
                 title: 'Not enough stock',
-                message: `${err.message}\n\nIssuing anyway will take that component's stock negative.`,
+                message: `${err.message} Issuing anyway will take that component's stock negative.`,
                 type: 'danger', confirmText: 'Issue anyway', cancelText: 'Cancel'
             });
             if (!proceed) return;
@@ -2092,6 +2094,17 @@ function mapHeaders(headerRow) {
 }
 
 const _impNum = v => { const n = parseFloat(String(v ?? '').replace(/[₹,\s]/g, '')); return isNaN(n) ? null : n; };
+/**
+ * INTEGER fields must use THIS, not _impNum.
+ *
+ * _impNum is parseFloat, so a cell reading "7.5" sends 7.5. Bound to an `int?` on the server that is not a
+ * rounding — System.Text.Json refuses to convert it and the request fails, taking the WHOLE import batch
+ * with it. One odd cell in a seven-thousand-row sheet, and nothing imports.
+ *
+ * Rounding beats refusing here: a fractional day or a fractional payment term is a data-entry artefact, not
+ * an instruction, and a spreadsheet full of otherwise good rows should not be rejected over it.
+ */
+const _impInt = v => { const n = _impNum(v); return n === null ? null : Math.round(n); };
 const _impStr = v => { const s = String(v ?? '').trim(); return s.length ? s : null; };
 const _impBool = v => { const s = String(v ?? '').trim().toLowerCase(); return ['y','yes','true','1'].includes(s) ? true : (['n','no','false','0'].includes(s) ? false : null); };
 /** dd-mm-yyyy / dd/mm/yyyy / yyyy-mm-dd → ISO, or null. */
@@ -2175,7 +2188,7 @@ async function pickImportFile(input, kind) {
                 state: _impStr(cell(r, 'state')), state_code: _impStr(cell(r, 'state_code')),
                 country: _impStr(cell(r, 'country')), postal_code: _impStr(cell(r, 'postal_code')),
                 gst_treatment: _impStr(cell(r, 'gst_treatment')),
-                payment_terms_days: _impNum(cell(r, 'payment_terms_days'))
+                payment_terms_days: _impInt(cell(r, 'payment_terms_days'))
             }));
             if (ignored.length) Toast.warning(`Ignored ${ignored.length} unrecognised column(s): ${ignored.slice(0, 6).join(', ')}`);
             await runImport(true);
@@ -2192,7 +2205,7 @@ async function pickImportFile(input, kind) {
             tax_rate: _impStr(cell(r, 'tax_rate')),
             sale_price: _impNum(cell(r, 'sale_price')), purchase_price: _impNum(cell(r, 'purchase_price')),
             mrp: _impNum(cell(r, 'mrp')), reorder_level: _impNum(cell(r, 'reorder_level')),
-            lead_time_days: _impNum(cell(r, 'lead_time_days')),
+            lead_time_days: _impInt(cell(r, 'lead_time_days')),
             tracking_mode: _impStr(cell(r, 'tracking_mode')),
             price_includes_tax: _impBool(cell(r, 'price_includes_tax')),
             // Storefront presentation. The backend template advertises both and BuildItemRequest reads
