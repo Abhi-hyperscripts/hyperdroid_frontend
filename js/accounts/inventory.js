@@ -823,6 +823,9 @@ function parseCsvRows() {
                 track_inventory: c[8] !== undefined ? yes(c[8]) : true,
                 tracking_mode: yes(c[9]) ? 'serial' : 'none',
                 barcode: c[10] || null,
+                // APPENDED at 11, deliberately. Renumbering would silently re-read every existing sheet's
+                // columns as something else — an import that "works" and puts barcodes in the unit field.
+                lead_time_days: parseInt(c[11]) || 0,
                 item_type: 'goods'
             };
         }).filter(r => r.sku && r.name);
@@ -1481,26 +1484,43 @@ async function planBom() {
             }
         })(d.tree);
 
-        const total = Math.max(1, Number(d.total_lead_days || 0));
+        // TWO numbers, deliberately. `totalDays` is the truth and drives every word on screen; `span` is
+        // only a divide-by-zero guard for the bar geometry. Conflating them made the "everything is in
+        // stock" branch DEAD — the clamp meant total was never 0 — so a fully stocked plan announced
+        // "Ready in 1 day", which is not true and is exactly the sort of wrong that reads as authoritative.
+        const totalDays = Number(d.total_lead_days || 0);
+        const span = Math.max(1, totalDays);
         const rows = [...byItem.values()];
         // the finished good is not inside its own tree — give it the final bar
         rows.push({ id: 'FINISHED', sku: d.sku, name: d.name, qty: Number(d.build_qty || qty),
-                    onHand: 0, lead: total - Math.max(0, ...rows.map(r => r.ready)),
-                    ready: total, assembly: true, finished: true });
+                    onHand: 0, lead: totalDays - Math.max(0, ...rows.map(r => r.ready)),
+                    ready: totalDays, assembly: true, finished: true });
 
         // The build-date field is the plan's day zero. Parse its ISO value directly rather than through a
         // helper — this is the same string buildAssembly() posts, so the plan and the build agree on day 0.
         const raw = (document.getElementById('buildDate')?.value || '').trim();
         const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
         const base = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date();
-        const dayLabel = off => { const x = new Date(base); x.setDate(x.getDate() + off); return x.toLocaleDateString(undefined, { day: '2-digit', month: 'short' }); };
+        // Show the YEAR whenever the plan leaves the start year. Lead times run to 365 days, so a plan can
+        // land on the same day-and-month it started — "Ready in 365 days · Sep 01" read as though it were
+        // ready today. Day-and-month is enough for the ordinary short plan and stays uncluttered.
+        const dayLabel = off => {
+            const x = new Date(base); x.setDate(x.getDate() + off);
+            const opts = x.getFullYear() === base.getFullYear()
+                ? { day: '2-digit', month: 'short' }
+                : { day: '2-digit', month: 'short', year: 'numeric' };
+            return x.toLocaleDateString(undefined, opts);
+        };
 
         const bar = r => {
             const short = r.qty > r.onHand;
             const kind = r.finished || (r.assembly && short) ? 'build' : (short ? 'buy' : 'ready');
             const colour = kind === 'build' ? 'var(--brand-primary)' : kind === 'buy' ? 'var(--color-warning)' : 'var(--color-success)';
             const from = Math.max(0, r.ready - r.lead), to = Math.max(r.ready, from + 0.35);
-            const left = 100 * from / total, width = Math.max(2, 100 * (to - from) / total);
+            // Keep the bar inside its track. The 2% floor exists so a zero-length activity is still visible,
+            // but applied to a bar starting at 100% it produced left:100%;width:2% — 102%, overflowing.
+            const left = Math.min(98, 100 * from / span);
+            const width = Math.min(100 - left, Math.max(2, 100 * (to - from) / span));
             const label = kind === 'build' ? 'BUILD' : kind === 'buy' ? 'BUY' : 'in stock';
             const need = kind === 'buy' ? Math.max(0, r.qty - r.onHand) : r.qty;
             return `<tr>
@@ -1522,7 +1542,7 @@ async function planBom() {
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
                 <strong style="font-size:.9rem;">Build plan · ${num(qty)} × ${esc(d.name || '')}</strong>
                 <span style="font-size:.85rem;color:var(--text-secondary);">
-                    ${total === 0 ? 'Everything is in stock — can build today.' : `Ready in <strong style="color:var(--text-primary);">${total} day${total === 1 ? '' : 's'}</strong> · ${dayLabel(total)}`}
+                    ${totalDays === 0 ? 'Everything is in stock — can build today.' : `Ready in <strong style="color:var(--text-primary);">${totalDays} day${totalDays === 1 ? '' : 's'}</strong> · ${dayLabel(totalDays)}`}
                 </span>
             </div>
             <div class="data-table-container"><table class="data-table">
@@ -2015,6 +2035,10 @@ const IMP_ALIASES = {
     purchase_price: ['purchase_price', 'purchase price', 'purchase rate', 'cost price', 'cost'],
     mrp:            ['mrp', 'max retail price'],
     reorder_level:  ['reorder_level', 'reorder level', 'reorder', 'min qty', 'minimum qty'],
+    // Bulk is the ONLY practical way to set these: the demo catalogue alone is 7,800 items, and nobody
+    // opens each one to type a supplier lead time. Without an import column the BOM build plan is a
+    // feature every tenant has and none can populate.
+    lead_time_days: ['lead_time_days', 'lead time', 'lead days', 'lead time days', 'supplier lead time', 'delivery days'],
     tracking_mode:  ['tracking_mode', 'tracking', 'batch tracked'],
     price_includes_tax: ['price_includes_tax', 'inclusive', 'tax inclusive', 'incl tax'],
     quantity:       ['quantity', 'qty', 'stock', 'opening qty', 'opening quantity', 'closing qty'],
@@ -2168,6 +2192,7 @@ async function pickImportFile(input, kind) {
             tax_rate: _impStr(cell(r, 'tax_rate')),
             sale_price: _impNum(cell(r, 'sale_price')), purchase_price: _impNum(cell(r, 'purchase_price')),
             mrp: _impNum(cell(r, 'mrp')), reorder_level: _impNum(cell(r, 'reorder_level')),
+            lead_time_days: _impNum(cell(r, 'lead_time_days')),
             tracking_mode: _impStr(cell(r, 'tracking_mode')),
             price_includes_tax: _impBool(cell(r, 'price_includes_tax')),
             // Storefront presentation. The backend template advertises both and BuildItemRequest reads
