@@ -137,6 +137,18 @@
                    final invoice against your registered details.</p>` : ''}`;
     }
 
+    /**
+     * ⭐⭐⭐ THE SIGNER MUST BE ABLE TO READ IT.
+     *
+     * This used to render a file icon, a name and a size — so a customer was
+     * asked to put their signature on a contract they had never been shown. A
+     * record claiming they agreed to a document they could not open is worse
+     * than no record, because it looks like consent.
+     *
+     * The document is fetched through the same token, embedded where the
+     * browser can render it, and always downloadable — because an embed that
+     * fails silently is the same defect wearing a viewer.
+     */
     function renderDocument(snap) {
         const size = Number(snap.size_bytes);
         const readable = isFinite(size) && size > 0
@@ -152,7 +164,60 @@
                     <b>${esc(snap.file_name)}</b>
                     ${readable ? `<span>${esc(readable)}</span>` : ''}
                 </div>
+                <a class="doc-open" id="docOpen" href="#" target="_blank" rel="noopener">Open in a new tab</a>
+            </div>
+            <div class="doc-viewer" id="docViewer">
+                <p class="doc-loading">Loading the document…</p>
             </div>`;
+    }
+
+    /**
+     * Fetch the document and put it on the page.
+     *
+     * Called after render, because the fetch needs the token and the elements
+     * need to exist. Failure is SAID rather than left as an empty frame — a
+     * signer staring at a blank box does not know whether the contract is empty
+     * or the page is broken.
+     */
+    async function loadDocument() {
+        const viewer = $('docViewer');
+        const open = $('docOpen');
+        if (!viewer) return;
+
+        let doc;
+        try {
+            doc = await post('document', { token });
+        } catch (e) {
+            viewer.innerHTML = '';
+            viewer.appendChild(Object.assign(document.createElement('p'), {
+                className: 'doc-failed',
+                textContent: 'This document could not be opened. Please ask the sender to resend it '
+                           + '— do not sign something you have not read.',
+            }));
+            if (open) open.hidden = true;
+            return;
+        }
+
+        if (open) open.href = doc.url;
+
+        const type = String(doc.content_type || '');
+        if (type === 'application/pdf' || type.startsWith('image/')) {
+            const frame = document.createElement(type.startsWith('image/') ? 'img' : 'iframe');
+            frame.src = doc.url;
+            if (frame.tagName === 'IFRAME') frame.title = 'The document you are signing';
+            else frame.alt = 'The document you are signing';
+            viewer.innerHTML = '';
+            viewer.appendChild(frame);
+        } else {
+            // Word, Excel and the rest cannot be embedded. Say so plainly and
+            // point at the link, rather than showing an empty frame.
+            viewer.innerHTML = '';
+            viewer.appendChild(Object.assign(document.createElement('p'), {
+                className: 'doc-note',
+                textContent: 'This file type cannot be shown here. Open it in a new tab to read it '
+                           + 'before you sign.',
+            }));
+        }
     }
 
     function render() {
@@ -161,6 +226,7 @@
 
         const snap = view.snapshot || {};
         $('docBody').innerHTML = view.kind === 'quote' ? renderQuote(snap) : renderDocument(snap);
+        if (view.kind !== 'quote') loadDocument();
 
         if (!view.is_actionable) {
             // A finished link still shows the document — the signer has every
@@ -379,7 +445,19 @@
         }
     }
 
+    /**
+     * Show the outcome and get everything else off the screen.
+     *
+     * ⭐ CLOSING THE MODAL IS PART OF FINISHING.
+     *
+     * decline() closed it on FAILURE and not on success, so a successful
+     * decline left "Decline to sign" sitting on top of the "Declined"
+     * confirmation, with a live Decline button inviting a second press. Done
+     * here rather than in each caller, because the next outcome added would
+     * forget it in exactly the same way.
+     */
     function finish(outcome) {
+        closeDecline();
         $('doneTitle').textContent = outcome === 'signed' ? 'Signed — thank you' : 'Declined';
         $('doneBody').textContent = outcome === 'signed'
             ? 'Your signature has been recorded and the sender has been notified. You can close this page.'

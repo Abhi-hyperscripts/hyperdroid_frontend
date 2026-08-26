@@ -277,3 +277,26 @@
   align-items: center;
   gap: 8px;
 }
+
+/* The heading matches its siblings — icon, then label. Without the icon the
+   panel read as a sub-heading of whatever sat above it rather than a section
+   of its own. */
+.sigp-h {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.sigp-h svg { width: 15px; height: 15px; color: var(--brand-primary); flex: none; }
+
+.sigp-actions { flex: none; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.sigp-view {
+  padding: 4px 9px;
+  font-size: 11px;
+  color: var(--brand-primary);
+  background: transparent;
+  border: 1px solid var(--brand-primary);
+  border-radius: var(--border-radius-md, 6px);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sigp-view:hover { background: var(--brand-primary); color: var(--text-inverse); }

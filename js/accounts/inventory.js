@@ -1466,6 +1466,18 @@ async function planBom() {
         const d = await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/bom-explosion`, { quantity: qty }), { _skipSpinner: true });
         if (!(d.tree || []).length) { view.innerHTML = '<p style="color:var(--text-secondary);font-size:.85rem;">No components — this item has no bill of materials.</p>'; return; }
 
+        // ⚠️ VERSION SKEW. Pages deploy in about a minute and the backend takes about five, so for a few
+        // minutes after a release this page can be talking to an API that predates `net_required_qty`.
+        // `Number(undefined || 0)` is 0, which would read as "nothing to obtain" and quietly render a plan
+        // with no work in it — a wrong answer that looks authoritative, not an error anybody would notice.
+        // So fall back to the pre-netting rule when the field is genuinely absent, and use it when present.
+        const hasNet = n => n.net_required_qty !== undefined && n.net_required_qty !== null;
+        // Per-NODE net, used only to decide whether to descend — identical to the pre-netting rule
+        // (`qty_on_hand >= required_qty`) when the field is absent, so descent behaviour is unchanged.
+        const netOf = n => hasNet(n)
+            ? Number(n.net_required_qty)
+            : Math.max(0, Number(n.required_qty || 0) - Number(n.qty_on_hand || 0));
+
         // Flatten the tree, merging repeats of the same item onto one line.
         const byItem = new Map();
         (function walk(ns) {
@@ -1474,6 +1486,15 @@ async function planBom() {
                 const row = {
                     id: n.item_id, sku: n.sku, name: n.name,
                     qty: (prev ? prev.qty : 0) + Number(n.required_qty || 0),
+                    // ⭐ NET comes from the backend, it is not re-derived here. The API nets level by level
+                    // and ALLOCATES stock across branches, so an item wanted by two sub-assemblies cannot
+                    // have the same units counted against both.
+                    netSum: (prev ? prev.netSum : 0) + (hasNet(n) ? Number(n.net_required_qty) : 0),
+                    // ⚠️ ...and the SKEW fallback must net ONCE on the merged row, not per node. Summing
+                    // per-node `required_qty - qty_on_hand` re-commits the very double-count the backend
+                    // allocation exists to prevent: one component wanted 10 by each of two branches with
+                    // 10 on hand comes out 0 instead of 10, i.e. it silently orders nothing. Measured.
+                    hasNet: (prev ? prev.hasNet : false) || hasNet(n),
                     onHand: Number(n.qty_on_hand || 0),
                     lead: Number(n.lead_time_days || 0),
                     ready: Number(n.available_after_days || 0),
@@ -1488,8 +1509,12 @@ async function planBom() {
                 // Measured: an in-stock sub-assembly over a 30-day raw produced "Ready in 2 days" next to
                 // "BUY Short Raw · Oct 01" in the same table, which is not a rounding but a contradiction.
                 // The full tree stays visible under Explode; the PLAN is about what has to happen.
-                const satisfied = Number(n.qty_on_hand || 0) >= Number(n.required_qty || 0);
-                if (!satisfied && n.components && n.components.length) walk(n.components);
+                // Nothing left to obtain ⇒ nothing beneath it has to happen either. Per-node on purpose:
+                // this reproduces the old per-node `satisfied` test exactly when the field is absent. Reading the backend's
+                // net figure rather than comparing stock to requirement also gets PARTIAL stock right: 6 of
+                // 10 gearboxes on the shelf still needs 4 built, so the subtree is still walked — for the
+                // netted quantity, not the full one.
+                if (netOf(n) > 0 && n.components && n.components.length) walk(n.components);
             }
         })(d.tree);
 
@@ -1500,8 +1525,11 @@ async function planBom() {
         const totalDays = Number(d.total_lead_days || 0);
         const span = Math.max(1, totalDays);
         const rows = [...byItem.values()];
+        // Resolve each merged row's net AFTER aggregation — see the skew note above.
+        for (const r of rows) r.net = r.hasNet ? r.netSum : Math.max(0, r.qty - r.onHand);
         // the finished good is not inside its own tree — give it the final bar
         rows.push({ id: 'FINISHED', sku: d.sku, name: d.name, qty: Number(d.build_qty || qty),
+                    net: Number(d.build_qty || qty), netSum: Number(d.build_qty || qty), hasNet: true,
                     onHand: 0, lead: totalDays - Math.max(0, ...rows.map(r => r.ready)),
                     ready: totalDays, assembly: true, finished: true });
 
@@ -1522,7 +1550,7 @@ async function planBom() {
         };
 
         const bar = r => {
-            const short = r.qty > r.onHand;
+            const short = r.net > 0;
             const kind = r.finished || (r.assembly && short) ? 'build' : (short ? 'buy' : 'ready');
             const colour = kind === 'build' ? 'var(--brand-primary)' : kind === 'buy' ? 'var(--color-warning)' : 'var(--color-success)';
             const from = Math.max(0, r.ready - r.lead), to = Math.max(r.ready, from + 0.35);
@@ -1531,7 +1559,7 @@ async function planBom() {
             const left = Math.min(98, 100 * from / span);
             const width = Math.min(100 - left, Math.max(2, 100 * (to - from) / span));
             const label = kind === 'build' ? 'BUILD' : kind === 'buy' ? 'BUY' : 'in stock';
-            const need = kind === 'buy' ? Math.max(0, r.qty - r.onHand) : r.qty;
+            const need = short ? r.net : r.qty;   // what to obtain, or what the build consumes from stock
             return `<tr>
                 <td style="white-space:nowrap;"><span style="display:inline-block;min-width:52px;font-size:.7rem;font-weight:600;color:${colour};">${label}</span>${num(need)} × ${esc(r.name || r.sku || '')}</td>
                 <td style="width:58%;padding-left:10px;">
@@ -1544,7 +1572,7 @@ async function planBom() {
         };
 
         // buy first, then builds, then what is already here — the order somebody actually works in
-        const rank = r => (r.finished ? 3 : (r.qty > r.onHand ? (r.assembly ? 2 : 0) : 1));
+        const rank = r => (r.finished ? 3 : (r.net > 0 ? (r.assembly ? 2 : 0) : 1));
         rows.sort((a, b) => rank(a) - rank(b) || a.ready - b.ready);
 
         view.innerHTML = `
@@ -1576,25 +1604,43 @@ async function explodeBom() {
         const d = await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/bom-explosion`, { quantity: qty }), { _skipSpinner: true });
         const raws = d.raw_materials || [];
         if (!raws.length) { view.innerHTML = '<p style="color:var(--text-secondary);font-size:.85rem;">No components — this item has no bill of materials.</p>'; return; }
+        // TWO quantities, and the difference between them is the useful part. "Required" is the full
+        // explosion (the costing quantity, stock ignored); "To buy" is after MRP netting, where stock of a
+        // sub-assembly absorbs everything beneath it. When they differ, material is already sitting inside
+        // something you have — showing only one of the two is what made this table read as a buy list for
+        // components the build never touches.
         const rows = raws.map(r => {
-            const short = Number(r.shortfall) > 0;
+            const buy = Number(r.shortfall) > 0;
+            // "Absorbed" is EXACT, not inferred: the gap between the costing quantity and what the build
+            // will actually consume is precisely the material sitting inside sub-assemblies already held.
+            // (Deriving it from net + on-hand instead would misfire whenever own stock exceeds demand.)
+            // Same version-skew guard as the plan — with no net figures there is nothing to flag.
+            const absorbed = r.gross_required_qty != null && Number(r.required_qty) > Number(r.gross_required_qty);
             return `<tr>
                 <td>${esc(r.sku || '')}</td><td>${esc(r.name || '')}</td>
-                <td style="text-align:right;">${num(r.required_qty)}</td>
+                <td style="text-align:right;"${absorbed ? ` title="The full recipe calls for ${num(r.required_qty)}, but this build will only consume ${num(r.gross_required_qty)} — the rest is already inside a sub-assembly you hold."` : ''}>${num(r.required_qty)}${absorbed ? ' <span style="color:var(--text-secondary);">*</span>' : ''}</td>
                 <td style="text-align:right;">${num(r.qty_on_hand)}</td>
-                <td style="text-align:right;${short ? 'color:var(--color-error);font-weight:600;' : ''}">${short ? num(r.shortfall) : '—'}</td>
+                <td style="text-align:right;${buy ? 'color:var(--color-error);font-weight:600;' : ''}">${buy ? num(r.shortfall) : '—'}</td>
                 <td style="text-align:right;">${fmtMoney(Number(r.required_qty) * Number(r.unit_cost))}</td>
             </tr>`;
         }).join('');
+        const anyAbsorbed = raws.some(r => r.gross_required_qty != null && Number(r.required_qty) > Number(r.gross_required_qty));
         view.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
                 <strong style="font-size:.9rem;">Raw materials to build ${num(qty)} · ${d.max_depth}-level BOM</strong>
-                <span style="font-size:.9rem;">Rolled-up cost: <strong>${fmtMoney(d.total_cost)}</strong></span>
+                <span style="font-size:.9rem;">
+                    <span title="The full bill of materials at current average cost, ignoring stock — what one of these is worth to make.">Rolled-up cost: <strong>${fmtMoney(d.total_cost)}</strong></span>
+                    ${d.net_material_cost == null ? '' : '<span style="color:var(--text-secondary);margin:0 6px;">·</span>'}
+                    ${d.net_material_cost == null ? '' : `<span title="What this build still has to buy, after netting off stock at every level.">Still to buy: <strong>${fmtMoney(d.net_material_cost)}</strong></span>`}
+                </span>
             </div>
             <div class="data-table-container"><table class="data-table">
-                <thead><tr><th>SKU</th><th>Component</th><th style="text-align:right;">Required</th><th style="text-align:right;">On hand</th><th style="text-align:right;">Shortfall</th><th style="text-align:right;">Cost</th></tr></thead>
+                <thead><tr><th>SKU</th><th>Component</th><th style="text-align:right;" title="Full explosion, ignoring stock — the costing quantity.">Required</th><th style="text-align:right;">On hand</th><th style="text-align:right;" title="After netting: stock of a sub-assembly absorbs the material beneath it.">To buy</th><th style="text-align:right;">Cost</th></tr></thead>
                 <tbody>${rows}</tbody>
-            </table></div>`;
+            </table></div>
+            ${anyAbsorbed ? `<p style="font-size:.75rem;color:var(--text-secondary);margin-top:6px;">* Some of this material is already inside a sub-assembly you hold, so this build will not consume it. <strong>Required</strong> costs the full recipe; <strong>To buy</strong> is what to order.</p>` : ''}`;
+        // Note the two figures answer different questions and are SUPPOSED to differ: "Rolled-up cost" is a
+        // valuation that must not move when stock moves, "Still to buy" is a spend forecast that must.
     } catch (e) { view.innerHTML = `<p style="color:var(--color-error);font-size:.85rem;">${esc(e.message || 'Explosion failed')}</p>`; }
 }
 

@@ -91,9 +91,14 @@ const SignaturePanel = (() => {
                     <p class="sigp-hash">Document fingerprint <code>${esc(String(r.content_hash || '').slice(0, 16))}…</code></p>
                 </details>
             </div>
-            ${canCancel
-                ? `<button type="button" class="sigp-cancel" data-sig-cancel="${esc(r.id)}">Withdraw</button>`
-                : ''}
+            <div class="sigp-actions">
+                ${canCancel
+                    ? `<button type="button" class="sigp-cancel" data-sig-cancel="${esc(r.id)}">Withdraw</button>`
+                    : ''}
+                ${status === 'signed' || status === 'declined'
+                    ? `<button type="button" class="sigp-view" data-sig-view="${esc(r.id)}">View signed copy</button>`
+                    : ''}
+            </div>
         </div>`;
     }
 
@@ -120,7 +125,10 @@ const SignaturePanel = (() => {
         container.innerHTML = `
         <div class="sigp">
             <div class="sigp-bar">
-                <h4 class="sigp-h">Signatures</h4>
+                <h4 class="sigp-h">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 17c3.5 0 3.5-10 7-10s3.5 10 7 10c1.5 0 2.5-.8 4-2"/><path d="M3 21h18"/></svg>
+                    Signatures
+                </h4>
                 ${st.formOpen || st.loadFailed
                     ? ''
                     : `<button type="button" class="sigp-send" data-sig-new${st.sending ? ' disabled' : ''}>
@@ -391,6 +399,137 @@ const SignaturePanel = (() => {
         return st;
     }
 
+    /**
+     * ⭐ THE ANSWER TO "SHOW ME WHAT THEY SIGNED".
+     *
+     * A signature nobody can produce afterwards is not evidence. This opens the
+     * certificate: the frozen document, the mark itself, who made it, when,
+     * from which address, the fingerprint, and every event in order — in a
+     * window that prints, because the person who asks for this usually needs to
+     * send it to somebody.
+     */
+    async function showCertificate(id) {
+        let cert;
+        try {
+            cert = await api.request(`/crm/signature-requests/${encodeURIComponent(id)}/certificate`);
+        } catch (e) {
+            Toast.error(e.message || 'Could not open the signed copy');
+            return;
+        }
+
+        const win = window.open('', '_blank', 'width=860,height=900');
+        if (!win) { Toast.error('Allow pop-ups to view the signed copy'); return; }
+
+        const snap = cert.snapshot || {};
+
+        // ⭐ ONE MONEY FORMATTER, AND IT LIVES IN currencies.js.
+        //
+        // The first version built its own Intl.NumberFormat here. Every previous
+        // copy of that in this codebase hard-coded en-IN and printed lakh
+        // grouping on non-INR amounts — which on a signed record would misstate
+        // the figure somebody agreed to.
+        //
+        // The certificate opens in a NEW WINDOW, so it cannot load the shared
+        // file itself. The amounts are therefore formatted HERE, in the parent,
+        // and written across as finished strings.
+        const money = (v) => {
+            const n = Number(v);
+            if (!isFinite(n)) return '';
+            // formatMoney is a bare global from currencies.js, not namespaced.
+            return typeof formatMoney === 'function'
+                ? formatMoney(n, snap.currency || 'INR')
+                : `${snap.currency || ''} ${n.toFixed(2)}`.trim();
+        };
+        const when = (v) => v ? new Date(v).toLocaleString(undefined,
+            { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+        const lines = Array.isArray(snap.lines) ? snap.lines : [];
+        const body = cert.kind === 'quote'
+            ? `<table class="lines">
+                 <thead><tr><th>Item</th><th class="n">Qty</th><th class="n">Unit price</th><th class="n">Amount</th></tr></thead>
+                 <tbody>${lines.map((l) => `<tr>
+                     <td>${esc(l.description)}</td>
+                     <td class="n">${esc(l.quantity)}</td>
+                     <td class="n">${esc(money(l.unit_price))}</td>
+                     <td class="n"><b>${esc(money(l.line_total))}</b></td>
+                 </tr>`).join('')}</tbody>
+               </table>
+               <p class="total">Total <b>${esc(money(snap.grand_total != null ? snap.grand_total : snap.subtotal))}</b></p>`
+            : `<p class="file">Document signed: <b>${esc(snap.file_name || cert.title)}</b></p>`;
+
+        // The mark: an image when drawn, the name in a hand when typed.
+        const mark = cert.signature_kind === 'drawn' && cert.signature_data
+            ? `<img class="mark" src="${esc(cert.signature_data)}" alt="Signature of ${esc(cert.signer_name)}">`
+            : cert.signature_data
+                ? `<div class="mark typed">${esc(cert.signature_data)}</div>`
+                : '<p class="muted">No signature — this request was not signed.</p>';
+
+        win.document.write(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+        <title>Signed copy — ${esc(cert.title)}</title>
+        <style>
+          body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#1d262b;
+               background:#f2f5f6;margin:0;padding:2rem 1rem 4rem;line-height:1.55}
+          .sheet{max-width:760px;margin:0 auto;background:#fff;border:1px solid #d8e0e2;border-radius:8px;padding:2rem 2.2rem}
+          h1{font-size:1.35rem;margin:0 0 .2rem}
+          .eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#0f5f66;margin:0 0 .5rem}
+          .status{display:inline-block;padding:.15rem .5rem;border-radius:999px;font-size:.7rem;font-weight:700;
+                  text-transform:uppercase;letter-spacing:.05em}
+          .signed{background:#e7f2ec;color:#2f6b4f}.declined{background:#f7e9e7;color:#8f3a30}
+          table.lines{border-collapse:collapse;width:100%;margin:1.4rem 0 0}
+          table.lines th{text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#8797a0;
+                         padding:0 .5rem .5rem;border-bottom:1px solid #d8e0e2}
+          table.lines td{padding:.6rem .5rem;border-bottom:1px solid #e7edee;font-size:.92rem}
+          .n{text-align:right;font-variant-numeric:tabular-nums}
+          .total{display:flex;justify-content:space-between;margin:1rem 0 0;padding-top:.7rem;
+                 border-top:1px solid #d8e0e2;font-size:1.05rem;font-weight:700}
+          .file{margin:1.4rem 0 0;padding:1rem;background:#eef2f3;border-radius:6px}
+          h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#8797a0;margin:2rem 0 .7rem}
+          .mark{max-width:320px;max-height:120px;display:block;border-bottom:1px solid #1d262b;padding-bottom:.3rem}
+          .mark.typed{font-family:"Segoe Script","Brush Script MT",cursive;font-size:2rem}
+          dl{display:grid;grid-template-columns:auto 1fr;gap:.4rem 1.2rem;margin:.8rem 0 0;font-size:.88rem}
+          dt{color:#5b6a72}dd{margin:0;font-weight:600}
+          code{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:#eef2f3;padding:.1rem .3rem;border-radius:3px;
+               overflow-wrap:anywhere}
+          ol{margin:.6rem 0 0;padding-left:1.1rem;font-size:.86rem;color:#5b6a72}
+          li{margin:.3rem 0}li b{color:#1d262b}
+          .muted{color:#8797a0}
+          .foot{margin-top:2rem;padding-top:1rem;border-top:1px solid #e7edee;font-size:.78rem;color:#8797a0}
+          @media print{body{background:#fff;padding:0}.sheet{border:0;max-width:none}}
+        </style></head><body><div class="sheet">
+          <p class="eyebrow">Signed copy</p>
+          <h1>${esc(cert.title)}</h1>
+          <span class="status ${esc(cert.status)}">${esc(cert.status)}</span>
+          ${body}
+
+          <h2>${cert.status === 'declined' ? 'Outcome' : 'Signature'}</h2>
+          ${mark}
+          <dl>
+            <!-- ⭐ A DECLINED RECORD MUST NOT SAY "SIGNED BY". It named the
+                 person who REFUSED as the person who signed, which is the one
+                 sentence on this page that must never be wrong. -->
+            <dt>${cert.status === 'declined' ? 'Sent to' : 'Signed by'}</dt><dd>${esc(cert.signer_name)}</dd>
+            ${cert.signer_email ? `<dt>Email</dt><dd>${esc(cert.signer_email)}</dd>` : ''}
+            ${cert.signer_phone ? `<dt>Phone</dt><dd>${esc(cert.signer_phone)}</dd>` : ''}
+            <dt>${cert.status === 'declined' ? 'Declined at' : 'Signed at'}</dt>
+            <dd>${esc(when(cert.signed_at || cert.declined_at))}</dd>
+            ${cert.signer_ip ? `<dt>From address</dt><dd>${esc(cert.signer_ip)}</dd>` : ''}
+            ${cert.decline_reason ? `<dt>Reason given</dt><dd>${esc(cert.decline_reason)}</dd>` : ''}
+            <dt>Document fingerprint</dt><dd><code>${esc(cert.content_hash)}</code></dd>
+          </dl>
+
+          <h2>Audit trail</h2>
+          <ol>${(cert.trail || []).map((e) => `<li>
+            <b>${esc(EVENT_LABEL[e.event] || e.event)}</b> — ${esc(when(e.occurred_at))}
+            ${e.ip ? ` from ${esc(e.ip)}` : ''}${e.detail ? ` — ${esc(e.detail)}` : ''}
+          </li>`).join('')}</ol>
+
+          <p class="foot">Signed electronically through Ragenaizer. The fingerprint above is a
+             SHA-256 of the document exactly as it was shown to the signer; it changes if a single
+             character of that document changes.</p>
+        </div></body></html>`);
+        win.document.close();
+    }
+
     async function cancelRequest(container, id) {
         const ok = await Confirm.show({
             title: 'Withdraw this request?',
@@ -425,6 +564,8 @@ const SignaturePanel = (() => {
         container.addEventListener('click', (evt) => {
             const cancel = evt.target.closest('[data-sig-cancel]');
             if (cancel) { cancelRequest(container, cancel.getAttribute('data-sig-cancel')); return; }
+            const view = evt.target.closest('[data-sig-view]');
+            if (view) { showCertificate(view.getAttribute('data-sig-view')); return; }
             if (evt.target.closest('[data-sig-retry]')) { load(container); return; }
             if (evt.target.closest('[data-sig-new]')) { openSendForm(container); return; }
             if (evt.target.closest('[data-sig-cancel-form]')) {

@@ -99,4 +99,85 @@ function checkCsvColumnsMatchTheHelpText() {
     name: 'Slow', sku: 'S', build_qty: 1, total_lead_days: 365, max_depth: 1,
     tree: [{ item_id: 'x', sku: 'X', name: 'Slow Part', required_qty: 1, qty_on_hand: 0, lead_time_days: 365, available_after_days: 365, is_assembly: false, components: [] }]
   });
+
+  // ───────────────────────── MRP NETTING ─────────────────────────
+  let failures = 0;
+  const expect = (name, cond, detail) => {
+    if (!cond) { failures++; console.log(`   ✗ ${name} — ${detail}`); } else console.log(`   ✓ ${name}`);
+  };
+
+  // 5. ⭐ PARTIAL sub-assembly stock. 6 of the 10 gearboxes exist, so 4 must be built and only those 4
+  // pull gears (4 × 4 = 16). The plan must show the NET quantities, not the gross explosion — quoting 10
+  // gearboxes and 40 gears is exactly the over-ordering this netting exists to stop. And it must still
+  // DESCEND: a "skip the subtree if any stock exists" shortcut would drop the gears entirely.
+  const t5 = await run('partial sub-assembly stock nets proportionally', {
+    name: 'Machine', sku: 'M', build_qty: 10, total_lead_days: 9, max_depth: 2, net_material_cost: 80, total_cost: 200,
+    tree: [{ item_id: 'box', sku: 'BOX', name: 'Gearbox', required_qty: 10, net_required_qty: 4, qty_on_hand: 6,
+             lead_time_days: 2, available_after_days: 9, is_assembly: true,
+      components: [{ item_id: 'gear', sku: 'GEAR', name: 'Gear', required_qty: 40, net_required_qty: 16, qty_on_hand: 0,
+                     lead_time_days: 7, available_after_days: 7, is_assembly: false, components: [] }] }]
+  });
+  // NOTE: this first one does NOT discriminate net from gross-minus-on-hand — at the TOP level they are
+  // the same number by construction (nothing above it to net against). Verified by planting: it stays green
+  // when netting is removed. The gear assertion below is the one that carries this case; keep it that way.
+  expect('builds the NET 4 gearboxes, not the gross 10', /BUILD 4 × Gearbox/.test(t5), t5.slice(0, 200));
+  expect('buys the NET 16 gears, not the gross 40', /BUY 16 × Gear\b/.test(t5), t5.slice(0, 200));
+  expect('still descends into a partially-stocked assembly', /Gear\b/.test(t5), 'gears vanished from the plan');
+
+  // 6. A FULLY stocked sub-assembly absorbs its whole subtree: nothing beneath it is ordered.
+  const t6 = await run('fully stocked sub-assembly absorbs its subtree', {
+    name: 'Machine', sku: 'M', build_qty: 10, total_lead_days: 3, max_depth: 2, net_material_cost: 0, total_cost: 200,
+    tree: [{ item_id: 'box', sku: 'BOX', name: 'Gearbox', required_qty: 10, net_required_qty: 0, qty_on_hand: 10,
+             lead_time_days: 2, available_after_days: 0, is_assembly: true,
+      components: [{ item_id: 'gear', sku: 'GEAR', name: 'Gear', required_qty: 40, net_required_qty: 0, qty_on_hand: 0,
+                     lead_time_days: 30, available_after_days: 30, is_assembly: false, components: [] }] }]
+  });
+  expect('no gear is ordered under an in-stock gearbox', !/BUY .* Gear\b/.test(t6), t6.slice(0, 200));
+
+  // 7. ⚠️ VERSION SKEW — the same payload with net_required_qty STRIPPED, as an older API returns it.
+  // Pages deploy in ~1 min and the backend in ~5, so this response shape is live during every release.
+  // `Number(undefined || 0)` is 0, which without a fallback reads as "nothing to obtain" and renders a
+  // plan with NO WORK IN IT — a confident, wrong, silent answer. The fallback must keep the old behaviour.
+  const strip = ns => ns.map(n => { const { net_required_qty, ...rest } = n; return { ...rest, components: strip(n.components || []) }; });
+  const t7 = await run('SKEW: old API response with no net_required_qty', {
+    name: 'Machine', sku: 'M', build_qty: 10, total_lead_days: 9, max_depth: 2,
+    tree: strip([{ item_id: 'box', sku: 'BOX', name: 'Gearbox', required_qty: 10, net_required_qty: 10, qty_on_hand: 0,
+             lead_time_days: 2, available_after_days: 9, is_assembly: true,
+      components: [{ item_id: 'gear', sku: 'GEAR', name: 'Gear', required_qty: 40, net_required_qty: 40, qty_on_hand: 0,
+                     lead_time_days: 7, available_after_days: 7, is_assembly: false, components: [] }] }])
+  });
+  expect('falls back to gross netting instead of showing an empty plan', /BUY 40 × Gear\b/.test(t7), t7.slice(0, 200));
+  expect('and still builds the gearbox', /BUILD 10 × Gearbox/.test(t7), t7.slice(0, 200));
+
+  // 8. ⭐⭐ SKEW + a component in TWO branches. This is the case that caught a real defect in the fallback
+  // itself: netting PER NODE and summing re-commits the double-count the backend allocation prevents —
+  // 10 wanted by each of two branches with 10 on hand came out 0, i.e. "order nothing", silently.
+  // The pre-netting code netted ONCE on the merged row, and the fallback must reproduce that exactly.
+  const t8 = await run('SKEW: shared component across two branches nets once, not per branch', {
+    name: 'Machine', sku: 'M', build_qty: 1, total_lead_days: 9, max_depth: 2,
+    tree: strip([
+      { item_id: 'l', sku: 'L', name: 'Left', required_qty: 1, net_required_qty: 1, qty_on_hand: 0, lead_time_days: 2, available_after_days: 9, is_assembly: true,
+        components: [{ item_id: 'sh', sku: 'SH', name: 'Shared', required_qty: 10, net_required_qty: 0, qty_on_hand: 10, lead_time_days: 7, available_after_days: 7, is_assembly: false, components: [] }] },
+      { item_id: 'r', sku: 'R', name: 'Right', required_qty: 1, net_required_qty: 1, qty_on_hand: 0, lead_time_days: 2, available_after_days: 9, is_assembly: true,
+        components: [{ item_id: 'sh', sku: 'SH', name: 'Shared', required_qty: 10, net_required_qty: 10, qty_on_hand: 10, lead_time_days: 7, available_after_days: 7, is_assembly: false, components: [] }] }
+    ])
+  });
+  expect('shared component orders the 10 it is genuinely short, not 0',
+         /BUY 10 × Shared/.test(t8), t8.slice(0, 240));
+
+  // 9. The same shape WITH netting present — the backend already allocated, so the page must simply add
+  // the per-node figures up (0 + 10) and must NOT re-net against on-hand a second time.
+  const t9 = await run('shared component across two branches, netting present', {
+    name: 'Machine', sku: 'M', build_qty: 1, total_lead_days: 9, max_depth: 2, net_material_cost: 20,
+    tree: [
+      { item_id: 'l', sku: 'L', name: 'Left', required_qty: 1, net_required_qty: 1, qty_on_hand: 0, lead_time_days: 2, available_after_days: 9, is_assembly: true,
+        components: [{ item_id: 'sh', sku: 'SH', name: 'Shared', required_qty: 10, net_required_qty: 0, qty_on_hand: 10, lead_time_days: 7, available_after_days: 7, is_assembly: false, components: [] }] },
+      { item_id: 'r', sku: 'R', name: 'Right', required_qty: 1, net_required_qty: 1, qty_on_hand: 0, lead_time_days: 2, available_after_days: 9, is_assembly: true,
+        components: [{ item_id: 'sh', sku: 'SH', name: 'Shared', required_qty: 10, net_required_qty: 10, qty_on_hand: 10, lead_time_days: 7, available_after_days: 7, is_assembly: false, components: [] }] }
+    ]
+  });
+  expect('allocated per-branch figures are summed, not re-netted', /BUY 10 × Shared/.test(t9), t9.slice(0, 240));
+
+  console.log(failures ? `\n✗ ${failures} assertion(s) FAILED` : '\n✓ all netting assertions passed');
+  process.exit(failures ? 1 : 0);
 })();
