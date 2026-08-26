@@ -51,7 +51,24 @@ async function run(name, payload) {
   if (bad.length) console.log('   ⚠ BAR OVERFLOWS ITS TRACK:', bad.slice(0,3).join(' '));
   return text;
 }
+/**
+ * The import help text is the ONLY thing telling a user what the fixed-column CSV expects, and the parser
+ * is the only thing that reads it. They drifted the moment lead_time_days was appended at index 11 and the
+ * help text still listed eleven columns — a capability nobody could reach, with no error to notice.
+ */
+function checkCsvColumnsMatchTheHelpText() {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'pages', 'accounts', 'inventory.html'), 'utf8');
+  const doc = /<code>(sku, name, sale_price[^<]*)<\/code>/.exec(html);
+  if (!doc) { console.log('\n── CSV columns\n   ⚠ help text not found — this check is watching nothing'); return; }
+  const documented = doc[1].split(',').map(s => s.trim());
+  const body = src.slice(src.indexOf('sku: c[0]'), src.indexOf("item_type: 'goods'"));
+  const highest = Math.max(...[...body.matchAll(/c\[(\d+)\]/g)].map(m => +m[1]));
+  const ok = documented.length === highest + 1;
+  console.log(`\n── CSV columns\n   help text lists ${documented.length}, parser reads ${highest + 1}  ->  ${ok ? 'match' : '⚠ OUT OF SYNC'}`);
+}
+
 (async () => {
+  checkCsvColumnsMatchTheHelpText();
   // 1. everything in stock, nothing to wait for
   await run('all in stock (total_lead_days = 0)', {
     name: 'Widget', sku: 'W', build_qty: 10, total_lead_days: 0, max_depth: 1,

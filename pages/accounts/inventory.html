@@ -659,7 +659,7 @@
             <div class="modal-header"><h3>Import Items from CSV</h3><button class="close-btn" onclick="AccountsCommon.closeModal('importModal')">&times;</button></div>
             <div class="modal-body">
                 <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;">Paste CSV rows (with or without a header). Columns, in order:<br>
-                <code>sku, name, sale_price, purchase_price, hsn, unit, warranty_months, reorder_level, track(y/n), serial(y/n), barcode</code><br>
+                <code>sku, name, sale_price, purchase_price, hsn, unit, warranty_months, reorder_level, track(y/n), serial(y/n), barcode, lead_time_days</code><br>
                 Only <strong>sku</strong> and <strong>name</strong> are required — missing columns use sensible defaults.</p>
                 <textarea id="csvBox" class="form-control" rows="10" placeholder="LAP-D5520, Dell Latitude 5520, 62000, 54000, 8471, pcs, 12, 3, y, y&#10;MSE-L100, Logitech Mouse, 500, 380, 8471, pcs, 0, 10, y, n"></textarea>
                 <div id="csvPreview" style="margin-top:8px;font-size:0.85rem;color:var(--text-secondary);"></div>
