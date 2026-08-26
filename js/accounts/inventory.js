@@ -1482,7 +1482,14 @@ async function planBom() {
                 // keep the LATEST placement — an earlier need is met by the same purchase
                 if (prev && prev.ready > row.ready) { row.ready = prev.ready; row.lead = prev.lead; }
                 byItem.set(n.item_id, row);
-                if (n.components && n.components.length) walk(n.components);
+                // ⭐ DO NOT descend into an assembly that is ALREADY IN STOCK. Its components are not
+                // consumed by this build — you use the sub-assembly you have — so listing them says "buy
+                // this" for something nobody needs, and worse, dates it LATER than the plan's own finish.
+                // Measured: an in-stock sub-assembly over a 30-day raw produced "Ready in 2 days" next to
+                // "BUY Short Raw · Oct 01" in the same table, which is not a rounding but a contradiction.
+                // The full tree stays visible under Explode; the PLAN is about what has to happen.
+                const satisfied = Number(n.qty_on_hand || 0) >= Number(n.required_qty || 0);
+                if (!satisfied && n.components && n.components.length) walk(n.components);
             }
         })(d.tree);
 

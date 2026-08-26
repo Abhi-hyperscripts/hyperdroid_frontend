@@ -84,7 +84,6 @@
    panel does not read as a different product from the one beside it. */
 .sigp-f input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
 .sigp-f textarea {
-  height: 34px;
   padding: 0 10px;
   font-size: 13px;
   color: var(--text-primary);
@@ -98,6 +97,12 @@
   border-color: var(--border-color-focus, var(--brand-primary));
   box-shadow: 0 0 0 2px var(--brand-primary-subtle, transparent);
 }
+/* The fixed height belongs to the single-line controls only — a textarea with
+   height:34px is one line tall and scrolls, which is the wrong control. */
+.sigp-f input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]) {
+  height: 34px;
+}
+.sigp-f textarea { padding: 8px 10px; min-height: 68px; resize: vertical; }
 .sigp-f input[type="number"] { max-width: 90px; }
 
 .sigp-radios { display: flex; gap: 14px; }

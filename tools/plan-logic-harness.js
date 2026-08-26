@@ -67,7 +67,17 @@ async function run(name, payload) {
         components: [{ item_id: 'box', sku: 'BOX', name: 'Gift Box', required_qty: 10, qty_on_hand: 0, lead_time_days: 1, available_after_days: 1, is_assembly: false, components: [] }] }
     ]
   });
-  // 3. a single very long lead time — bar must stay inside its track
+  // 3. ⭐ A SUB-ASSEMBLY IN STOCK WHOSE OWN COMPONENTS ARE SHORT.
+  // The parent needs nothing (ready 0) but its child still reports a lead, so a CHILD's ready exceeds its
+  // PARENT's — and the finished row's lead is computed as totalDays MINUS the max over ALL flattened rows.
+  // If that max comes from the deep child, the finished bar gets a NEGATIVE length.
+  await run('in-stock parent over a short child', {
+    name: 'Top', sku: 'T', build_qty: 1, total_lead_days: 2, max_depth: 2,
+    tree: [{ item_id: 'sub', sku: 'SUB', name: 'Sub In Stock', required_qty: 1, qty_on_hand: 99, lead_time_days: 1, available_after_days: 0, is_assembly: true,
+      components: [{ item_id: 'raw', sku: 'RAW', name: 'Short Raw', required_qty: 1, qty_on_hand: 0, lead_time_days: 30, available_after_days: 30, is_assembly: false, components: [] }] }]
+  });
+
+  // 4. a single very long lead time — bar must stay inside its track
   await run('one 365-day lead', {
     name: 'Slow', sku: 'S', build_qty: 1, total_lead_days: 365, max_depth: 1,
     tree: [{ item_id: 'x', sku: 'X', name: 'Slow Part', required_qty: 1, qty_on_hand: 0, lead_time_days: 365, available_after_days: 365, is_assembly: false, components: [] }]
