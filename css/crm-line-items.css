@@ -1250,3 +1250,11 @@
     color: var(--text-tertiary, var(--text-secondary));
     margin-left: 6px;
 }
+
+/* A load that FAILED is not an empty quote. Blocking the save was only half the
+   fix — the rep was still told the deal had no lines when it may have several. */
+.lip-load-failed {
+    border-left: 2px solid var(--color-warning);
+    padding-left: 10px;
+    color: var(--text-primary);
+}

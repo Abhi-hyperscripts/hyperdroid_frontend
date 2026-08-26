@@ -284,7 +284,12 @@ const LineItemsPanel = (() => {
                 Only Team Leads, Managers and Admins can change what a deal is priced at.
             </p>` : ''}
 
-            ${lines.length === 0 ? `
+            ${st.loadFailed ? `
+            <p class="lip-none lip-load-failed">
+                These lines could not be loaded, so this is not what the deal is priced at.
+                Nothing here can be saved until they load — reopen the deal to try again.
+            </p>
+            ` : lines.length === 0 ? `
             <p class="lip-none">${canEdit
                 ? 'No lines yet — this deal is priced by the value on it. Add a line to itemise it.'
                 : 'This deal is priced by the value on it, not by line items.'}</p>

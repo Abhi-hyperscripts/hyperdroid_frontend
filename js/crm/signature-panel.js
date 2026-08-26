@@ -101,15 +101,27 @@ const SignaturePanel = (() => {
         const st = mounted.get(container);
         if (!st) return;
 
-        const rows = st.requests.length
-            ? st.requests.map(requestRow).join('')
-            : `<p class="sigp-empty">Nothing has been sent for signature yet.</p>`;
+        // ⭐⭐⭐ "COULD NOT LOAD" AND "NOTHING HERE" MUST NOT LOOK THE SAME.
+        //
+        // The catch blanked the list and rendered, which is exactly what a
+        // record with no requests renders. So a failed request told the rep
+        // "nothing has been sent for signature" — and the natural next action is
+        // to send another one, duplicating a live signing link the rep cannot
+        // see. Saying so, and offering the retry, is the whole fix.
+        const rows = st.loadFailed
+            ? `<p class="sigp-empty sigp-failed">
+                   These could not be loaded, so this list is not the whole picture.
+                   <button type="button" class="sigp-quiet" data-sig-retry>Try again</button>
+               </p>`
+            : st.requests.length
+                ? st.requests.map(requestRow).join('')
+                : `<p class="sigp-empty">Nothing has been sent for signature yet.</p>`;
 
         container.innerHTML = `
         <div class="sigp">
             <div class="sigp-bar">
                 <h4 class="sigp-h">Signatures</h4>
-                ${st.formOpen
+                ${st.formOpen || st.loadFailed
                     ? ''
                     : `<button type="button" class="sigp-send" data-sig-new${st.sending ? ' disabled' : ''}>
                            ${st.sending ? 'Creating…' : 'Send for signature'}
@@ -315,8 +327,13 @@ const SignaturePanel = (() => {
                                                : `lead_id=${encodeURIComponent(st.entityId)}`;
             st.documents = await api.request(`/crm/entity-documents?${q}`) || [];
         } catch (e) {
+            // Same rule as the list above: an empty picker would read as "this
+            // record has no documents", which is a different untruth with the
+            // same cause.
             console.error('Could not load documents:', e);
             st.documents = [];
+            Toast.error('Could not load this record\'s documents. Try again in a moment.');
+            return;
         }
 
         st.formOpen = true;
@@ -389,6 +406,7 @@ const SignaturePanel = (() => {
         container.addEventListener('click', (evt) => {
             const cancel = evt.target.closest('[data-sig-cancel]');
             if (cancel) { cancelRequest(container, cancel.getAttribute('data-sig-cancel')); return; }
+            if (evt.target.closest('[data-sig-retry]')) { load(container); return; }
             if (evt.target.closest('[data-sig-new]')) { openSendForm(container); return; }
             if (evt.target.closest('[data-sig-cancel-form]')) {
                 const st = mounted.get(container);
