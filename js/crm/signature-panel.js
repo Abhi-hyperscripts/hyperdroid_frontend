@@ -417,6 +417,31 @@ const SignaturePanel = (() => {
             return;
         }
 
+        // ⭐⭐⭐ NAMING THE CONTRACT IS NOT SHOWING IT.
+        //
+        // The first version printed "Document signed: contract.pdf" and stopped
+        // there — a certificate that says a document was signed and cannot
+        // produce it proves nothing you could send to anyone.
+        //
+        // The bytes are fetched HERE, in the parent, because the download needs
+        // an Authorization header and the certificate opens as a blank popup
+        // that has no token. The blob URL it yields is same-origin with the
+        // opener, so the popup can embed it.
+        let documentUrl = null;
+        if (cert.document_id) {
+            try {
+                const base = (typeof CONFIG !== 'undefined' && CONFIG.crmApiBaseUrl) || '/api';
+                const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
+                const res = await fetch(
+                    `${base}/entity-documents/${encodeURIComponent(cert.document_id)}/download`,
+                    { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+                if (res.ok) documentUrl = URL.createObjectURL(await res.blob());
+            } catch (e) {
+                // Not fatal: the rest of the certificate is still the evidence.
+                console.error('Could not fetch the signed document:', e);
+            }
+        }
+
         const win = window.open('', '_blank', 'width=860,height=900');
         if (!win) { Toast.error('Allow pop-ups to view the signed copy'); return; }
 
@@ -455,7 +480,11 @@ const SignaturePanel = (() => {
                  </tr>`).join('')}</tbody>
                </table>
                <p class="total">Total <b>${esc(money(snap.grand_total != null ? snap.grand_total : snap.subtotal))}</b></p>`
-            : `<p class="file">Document signed: <b>${esc(snap.file_name || cert.title)}</b></p>`;
+            : `<p class="file">Document signed: <b>${esc(snap.file_name || cert.title)}</b>
+                 ${documentUrl ? `<a class="open" href="${esc(documentUrl)}" target="_blank" rel="noopener">Open</a>` : ''}</p>
+               ${documentUrl
+                    ? `<iframe class="doc" src="${esc(documentUrl)}" title="The signed document"></iframe>`
+                    : '<p class="muted">The document itself could not be loaded just now — the record below still stands.</p>'}`;
 
         // The mark: an image when drawn, the name in a hand when typed.
         const mark = cert.signature_kind === 'drawn' && cert.signature_data
@@ -482,7 +511,13 @@ const SignaturePanel = (() => {
           .n{text-align:right;font-variant-numeric:tabular-nums}
           .total{display:flex;justify-content:space-between;margin:1rem 0 0;padding-top:.7rem;
                  border-top:1px solid #d8e0e2;font-size:1.05rem;font-weight:700}
-          .file{margin:1.4rem 0 0;padding:1rem;background:#eef2f3;border-radius:6px}
+          .file{margin:1.4rem 0 0;padding:1rem;background:#eef2f3;border-radius:6px;
+                display:flex;justify-content:space-between;align-items:center;gap:1rem}
+          .file .open{font-size:.82rem;font-weight:600;color:#0f5f66;text-decoration:none;
+                      border:1px solid #d8e0e2;border-radius:5px;padding:.3rem .6rem;background:#fff}
+          iframe.doc{display:block;width:100%;height:60vh;min-height:340px;margin:.8rem 0 0;
+                     border:1px solid #d8e0e2;border-radius:6px;background:#fff}
+          @media print{iframe.doc{height:auto;min-height:520px}}
           h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#8797a0;margin:2rem 0 .7rem}
           .mark{max-width:320px;max-height:120px;display:block;border-bottom:1px solid #1d262b;padding-bottom:.3rem}
           .mark.typed{font-family:"Segoe Script","Brush Script MT",cursive;font-size:2rem}

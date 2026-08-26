@@ -1635,7 +1635,7 @@ async function explodeBom() {
                 </span>
             </div>
             <div class="data-table-container"><table class="data-table">
-                <thead><tr><th>SKU</th><th>Component</th><th style="text-align:right;" title="Full explosion, ignoring stock — the costing quantity.">Required</th><th style="text-align:right;">On hand</th><th style="text-align:right;" title="After netting: stock of a sub-assembly absorbs the material beneath it.">To buy</th><th style="text-align:right;">Cost</th></tr></thead>
+                <thead><tr><th>SKU</th><th>Component</th><th style="text-align:right;" title="Full explosion, ignoring stock — the costing quantity.">Required</th><th style="text-align:right;">On hand</th><th style="text-align:right;" title="After netting: stock of a sub-assembly absorbs the material beneath it.">To buy</th><th style="text-align:right;" title="Gross quantity at current average cost — the costing line for the full recipe, NOT what this build will spend. See &quot;Still to buy&quot; above for that.">Cost</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table></div>
             ${anyAbsorbed ? `<p style="font-size:.75rem;color:var(--text-secondary);margin-top:6px;">* Some of this material is already inside a sub-assembly you hold, so this build will not consume it. <strong>Required</strong> costs the full recipe; <strong>To buy</strong> is what to order.</p>` : ''}`;
