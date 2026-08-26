@@ -273,6 +273,7 @@ function showItemModal() {
     document.getElementById('itWarranty').value = '0';
     document.getElementById('itReorder').value = '0';
     document.getElementById('itReorderQty').value = '0';
+    document.getElementById('itLeadTime').value = '0';
     document.getElementById('itTrack').checked = true;
     document.getElementById('itSellable').checked = true;
     document.getElementById('itPurchasable').checked = true;
@@ -321,6 +322,7 @@ async function editItem(id) {
     document.getElementById('itWarranty').value = i.warranty_months;
     document.getElementById('itReorder').value = i.reorder_level;
     document.getElementById('itReorderQty').value = i.reorder_quantity ?? 0;
+    document.getElementById('itLeadTime').value = i.lead_time_days ?? 0;
     document.getElementById('itTrack').checked = i.track_inventory;
     document.getElementById('itSellable').checked = i.is_sellable !== false;
     document.getElementById('itPurchasable').checked = i.is_purchasable !== false;
@@ -385,6 +387,7 @@ async function saveItem() {
         sale_conversion: document.getElementById('itSaleConv').value.trim() === '' ? null : parseFloat(document.getElementById('itSaleConv').value),
         rack: document.getElementById('itRack').value.trim() || null,
         warranty_months: parseInt(document.getElementById('itWarranty').value) || 0,
+        lead_time_days: parseInt(document.getElementById('itLeadTime').value) || 0,
         reorder_level: parseFloat(document.getElementById('itReorder').value) || 0,
         reorder_quantity: parseFloat(document.getElementById('itReorderQty').value) || 0,
         track_inventory: document.getElementById('itTrack').checked,
@@ -1432,6 +1435,108 @@ async function finalizeStockCount() {
 }
 // Full multi-level BOM explosion for the item open in the BOM modal, at the entered build qty:
 // shows the flattened raw-material requirements (with shortfalls) and the rolled-up cost.
+/**
+ * THE BUILD PLAN — what to do first, and what everything is waiting on.
+ *
+ * A BOM is a hierarchy and a Gantt is a timeline, so the useful reading of "a Gantt of a BOM" is a
+ * time-phased procurement-and-build plan. The backend supplies it: every node carries its own lead time
+ * and an `available_after_days` OFFSET computed along the critical path (the LATEST branch, not the sum —
+ * suppliers deliver in parallel), and anything already in stock costs zero days however slow its supplier.
+ *
+ * Two presentation decisions live here rather than in the API, deliberately:
+ *   • DATES. The API returns day offsets, which have no timezone and no opinion about weekends. This turns
+ *     them into calendar days from the build date already on screen. A tenant that wants working days only
+ *     changes this function, not the schedule.
+ *   • AGGREGATION. The same component can appear in several branches (a gift box in two sub-assemblies),
+ *     and a buyer wants ONE line saying 20, not two saying 10. Merged by item, keeping the LATEST bar,
+ *     because the earlier one is satisfied by the same purchase.
+ */
+async function planBom() {
+    const itemId = document.getElementById('bomItemId').value;
+    const qty = parseFloat(document.getElementById('buildQty').value) || 1;
+    const view = document.getElementById('bomExplosionView');
+    if (!itemId) { Toast.error('Save the BOM first'); return; }
+    view.style.display = ''; view.innerHTML = '<p style="color:var(--text-secondary);font-size:.85rem;">Planning…</p>';
+    try {
+        const d = await api.request(AccountsCommon.buildUrl(`inventory/items/${itemId}/bom-explosion`, { quantity: qty }), { _skipSpinner: true });
+        if (!(d.tree || []).length) { view.innerHTML = '<p style="color:var(--text-secondary);font-size:.85rem;">No components — this item has no bill of materials.</p>'; return; }
+
+        // Flatten the tree, merging repeats of the same item onto one line.
+        const byItem = new Map();
+        (function walk(ns) {
+            for (const n of ns) {
+                const prev = byItem.get(n.item_id);
+                const row = {
+                    id: n.item_id, sku: n.sku, name: n.name,
+                    qty: (prev ? prev.qty : 0) + Number(n.required_qty || 0),
+                    onHand: Number(n.qty_on_hand || 0),
+                    lead: Number(n.lead_time_days || 0),
+                    ready: Number(n.available_after_days || 0),
+                    assembly: !!n.is_assembly
+                };
+                // keep the LATEST placement — an earlier need is met by the same purchase
+                if (prev && prev.ready > row.ready) { row.ready = prev.ready; row.lead = prev.lead; }
+                byItem.set(n.item_id, row);
+                if (n.components && n.components.length) walk(n.components);
+            }
+        })(d.tree);
+
+        const total = Math.max(1, Number(d.total_lead_days || 0));
+        const rows = [...byItem.values()];
+        // the finished good is not inside its own tree — give it the final bar
+        rows.push({ id: 'FINISHED', sku: d.sku, name: d.name, qty: Number(d.build_qty || qty),
+                    onHand: 0, lead: total - Math.max(0, ...rows.map(r => r.ready)),
+                    ready: total, assembly: true, finished: true });
+
+        // The build-date field is the plan's day zero. Parse its ISO value directly rather than through a
+        // helper — this is the same string buildAssembly() posts, so the plan and the build agree on day 0.
+        const raw = (document.getElementById('buildDate')?.value || '').trim();
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+        const base = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date();
+        const dayLabel = off => { const x = new Date(base); x.setDate(x.getDate() + off); return x.toLocaleDateString(undefined, { day: '2-digit', month: 'short' }); };
+
+        const bar = r => {
+            const short = r.qty > r.onHand;
+            const kind = r.finished || (r.assembly && short) ? 'build' : (short ? 'buy' : 'ready');
+            const colour = kind === 'build' ? 'var(--brand-primary)' : kind === 'buy' ? 'var(--color-warning)' : 'var(--color-success)';
+            const from = Math.max(0, r.ready - r.lead), to = Math.max(r.ready, from + 0.35);
+            const left = 100 * from / total, width = Math.max(2, 100 * (to - from) / total);
+            const label = kind === 'build' ? 'BUILD' : kind === 'buy' ? 'BUY' : 'in stock';
+            const need = kind === 'buy' ? Math.max(0, r.qty - r.onHand) : r.qty;
+            return `<tr>
+                <td style="white-space:nowrap;"><span style="display:inline-block;min-width:52px;font-size:.7rem;font-weight:600;color:${colour};">${label}</span>${num(need)} × ${esc(r.name || r.sku || '')}</td>
+                <td style="width:58%;padding-left:10px;">
+                    <div style="position:relative;height:18px;background:var(--bg-secondary);border-radius:3px;">
+                        <div title="ready ${dayLabel(r.ready)}" style="position:absolute;left:${left}%;width:${width}%;top:0;bottom:0;background:${colour};border-radius:3px;opacity:${kind === 'ready' ? .45 : .9};"></div>
+                    </div>
+                </td>
+                <td style="text-align:right;white-space:nowrap;font-size:.8rem;color:var(--text-secondary);">${kind === 'ready' ? 'have it' : dayLabel(r.ready)}</td>
+            </tr>`;
+        };
+
+        // buy first, then builds, then what is already here — the order somebody actually works in
+        const rank = r => (r.finished ? 3 : (r.qty > r.onHand ? (r.assembly ? 2 : 0) : 1));
+        rows.sort((a, b) => rank(a) - rank(b) || a.ready - b.ready);
+
+        view.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+                <strong style="font-size:.9rem;">Build plan · ${num(qty)} × ${esc(d.name || '')}</strong>
+                <span style="font-size:.85rem;color:var(--text-secondary);">
+                    ${total === 0 ? 'Everything is in stock — can build today.' : `Ready in <strong style="color:var(--text-primary);">${total} day${total === 1 ? '' : 's'}</strong> · ${dayLabel(total)}`}
+                </span>
+            </div>
+            <div class="data-table-container"><table class="data-table">
+                <tbody>${rows.map(bar).join('')}</tbody>
+            </table></div>
+            <p style="font-size:.75rem;color:var(--text-secondary);margin-top:6px;">
+                Calendar days from the build date, using each item's lead time. Items already in stock cost no time.
+                Set lead times on the item itself (Inventory → edit item → Lead time).
+            </p>`;
+    } catch (err) {
+        view.innerHTML = `<p style="color:var(--color-error);font-size:.85rem;">${esc(err.message || 'Could not build a plan')}</p>`;
+    }
+}
+
 async function explodeBom() {
     const itemId = document.getElementById('bomItemId').value;
     const qty = parseFloat(document.getElementById('buildQty').value) || 1;

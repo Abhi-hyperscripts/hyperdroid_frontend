@@ -599,6 +599,7 @@
                         <div class="form-group"><label>Cost method</label><div class="searchable-dropdown-container" id="itValuation"></div></div>
                         <div class="form-group"><label>Reorder Level <span class="opt">(base units)</span></label><input type="number" id="itReorder" class="form-control" min="0" value="0"></div>
                         <div class="form-group"><label>Reorder Qty <span class="opt">(suggested order size)</span></label><input type="number" id="itReorderQty" class="form-control" min="0" value="0"></div>
+                        <div class="form-group"><label>Lead time (days) <span class="opt">(to buy, or to build)</span></label><input type="number" id="itLeadTime" class="form-control" min="0" max="365" value="0"></div>
                         <div class="form-group"><label>Rack / Shelf <span class="opt">(where it physically sits, e.g. R3-S2)</span></label><input type="text" id="itRack" class="form-control" maxlength="40" placeholder="e.g. R3-S2"></div>
                     </div>
                 </div>
@@ -791,6 +792,7 @@
                 <div class="acc-form-page__actions-inner">
                     <button class="btn btn-outline" onclick="AccountsCommon.hideFormPage('bomPage')">Close</button>
                     <button class="btn btn-outline" onclick="explodeBom()">Explode (full tree)</button>
+                    <button class="btn btn-outline" onclick="planBom()">Build plan</button>
                     <button class="btn btn-outline" id="saveBomBtn" onclick="saveBom()">Save BOM</button>
                     <button class="btn btn-primary" id="buildBtn" onclick="buildAssembly()">Build</button>
                 </div>
