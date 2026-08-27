@@ -522,6 +522,7 @@ body.crm-analytics-page {
 @media (max-width: 1023px) {
   body.crm-analytics-page { padding-left: 0; padding-top: 0; }
   body.crm-analytics-page nav.pulse-rail { display: none; }
+body.crm-analytics-page nav.pulse-rail::-webkit-scrollbar { width: 0; height: 0; display: none; }
 }
 
 /* ambient backdrop */
@@ -557,14 +558,24 @@ body.crm-analytics-page nav.pulse-rail {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   padding: 14px 0;
   overflow-y: auto;
+  /* Same rail treatment as every other app — see the note in accounts.css.
+     No visible bar; the fade at both ends carries the cue instead, its length
+     matched to the rail's own 14px padding so nothing dims until it scrolls.
+     tools/check-rails.mjs fails if this drifts from the others. */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                                      #000 calc(100% - 14px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                                      #000 calc(100% - 14px), transparent 100%);
+
   z-index: 100;
 }
 body.crm-analytics-page .rail-item {
-  width: 60px; padding: 8px 0 6px; border-radius: 12px;
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  width: 60px; padding: 6px 0 5px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
   cursor: pointer; color: var(--text-muted); text-align: center;
 }
 body.crm-analytics-page .rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }

@@ -19,20 +19,55 @@ nav.pulse-rail {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   padding: 14px 0;
   overflow-y: auto;
+  /* ⭐⭐⭐ THE RAIL SCROLLS WITHOUT SAYING SO — SAME IN ALL FIVE APPS.
+     ------------------------------------------------------------------
+     Fourteen destinations in a 78px column overflow on a short window, and
+     the browser's answer was a scrollbar down the middle of the navigation.
+
+     Three things replace it:
+
+     1. The bar is hidden. On its own that is WORSE than showing it — the
+        user loses the only cue that more exists — so it never ships alone.
+     2. A fade at both ends carries that cue instead. Its length is exactly
+        the rail's own vertical padding (14px), which matters: with nothing
+        to scroll the fade covers blank space and the first icon stays
+        crisp, and the moment content scrolls under it, it fades. A longer
+        fade would dim "Today" on a tall window for no reason.
+     3. Items are tighter (see .rail-item), so on most windows there is
+        nothing to scroll at all — hiding a bar is the fallback, not the fix.
+
+     Deliberately NOT done here: pinning the last item to the bottom with
+     margin-top:auto. rail-rbac.js hides items with display:none, and CSS
+     :last-child matches structurally rather than visually — so under a role
+     that hides Settings it would pin whatever came before it, silently.
+     That needs an explicit class in the markup, not a positional selector.
+
+     ⚠️ THIS BLOCK IS DUPLICATED ACROSS FIVE FILES because each app skin owns
+     its own rail. accounts.css · crm-dashboard-analytics.css ·
+     hrms-dashboard.css · pms-pulse.css · vision-pulse.css. Change one, change
+     all five — tools/check-rails.mjs fails if they drift. */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                                      #000 calc(100% - 14px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                                      #000 calc(100% - 14px), transparent 100%);
+
   z-index: 100;
 }
+nav.pulse-rail::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
 .rail-item {
   width: 60px;
-  padding: 8px 0 6px;
+  /* Tightened with the rail above — see the note there. */
+  padding: 6px 0 5px;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   cursor: pointer;
   color: var(--text-muted);
   flex-shrink: 0;
