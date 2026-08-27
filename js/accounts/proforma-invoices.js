@@ -273,6 +273,10 @@ function proformaActions(pi) {
 
     // View is always available
     let html = `<button class="btn-icon" data-tooltip="View" onclick="viewProforma('${pi.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+    // PDF at EVERY status, deliberately. The edit/send/accept buttons below are status-gated because they
+    // change the document; downloading it does not — and a rep most often needs the file for a quote that
+    // is already sent, accepted or lapsed (re-sending a copy, or attaching it to a renewal).
+    html += ` <button class="btn-icon" data-tooltip="Download PDF" onclick="downloadProformaPdf('${pi.id}', '${AccountsCommon.escapeHtml(pi.proforma_number || '')}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
 
     // Mutating actions require admin (MANAGE_CUSTOMERS)
     if (!accountsRoles.isAdmin()) {
@@ -309,6 +313,11 @@ async function viewProforma(id) {
         const fmtD = AccountsCommon.formatDate;
 
         document.getElementById('proformaViewTitle').textContent = `Proforma ${esc(pi.proforma_number || '')}`;
+        // Bind rather than interpolate. AccountsCommon.escapeHtml DOES escape both quote characters, so
+        // the row button's inline handler is safe — but binding needs no escaping at all, and a listener
+        // cannot be broken by whatever a tenant puts in a document number.
+        const pdfBtn = document.getElementById('proformaViewPdfBtn');
+        if (pdfBtn) pdfBtn.onclick = () => downloadProformaPdf(pi.id, pi.proforma_number || '');
 
         const custName = _proformaPartyName(pi) || '-';
         const isProspect = !pi.customer_id && pi.recipient_name;
@@ -1091,4 +1100,34 @@ async function deleteProforma(id) {
 function setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
+}
+
+/**
+ * Download a quotation as a PDF. Mirrors downloadInvoicePdf in receivables.js — same auth header, same
+ * blob-to-anchor dance, same revokeObjectURL.
+ *
+ * ⚠️ A FAILED DOWNLOAD MUST NOT LOOK LIKE A SUCCESSFUL ONE. fetch() does not throw on 4xx/5xx, so without
+ * the response.ok check the error BODY is saved as a .pdf — the browser shows a download, the file opens
+ * to garbage, and the user reports "the PDF is corrupt" rather than "I was not allowed to do that".
+ */
+async function downloadProformaPdf(id, proformaNumber) {
+    try {
+        const baseUrl = api._getBaseUrl('/accounts/');
+        const url = `${baseUrl}/accounts/proforma-invoices/${id}/pdf?tenantId=${AccountsCommon.getTenantId()}`;
+        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${api.token}` } });
+        if (!response.ok) throw new Error(`Failed to download PDF (${response.status})`);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `Quote-${proformaNumber || id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        Toast.success('Quotation PDF downloaded');
+    } catch (err) {
+        console.error('[Proforma] PDF download error:', err);
+        Toast.error(err.message || 'Failed to download PDF');
+    }
 }
