@@ -146,6 +146,7 @@ const LineItemsPanel = (() => {
         st.taxableTotal = result.taxable_total ?? null;
         st.totalTax = result.total_tax ?? null;
         st.grandTotal = result.grand_total ?? null;
+        st.quotationPdfAvailable = result.quotation_pdf_available === true;
         st.untaxedTotal = result.untaxed_total ?? null;
         st.taxUnavailable = !!result.tax_unavailable;
         st.taxByLine = result.tax_by_line || null;
@@ -342,6 +343,11 @@ const LineItemsPanel = (() => {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                         Quotation raised${quotationNumber ? ` — <strong>${esc(quotationNumber)}</strong>` : ''}
                     </p>
+                    ${state.quotationPdfAvailable ? `
+                        <button type="button" class="lip-quote-open" data-lip="quote-pdf">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            Open the quotation
+                        </button>` : ''}
                     <p class="lip-hint">Raising it again returns the same document — a deal has one quotation.</p>
                 ` : `
                     <p class="lip-hint">A quotation is raised in Accounts from these lines. It is the same
@@ -1245,6 +1251,49 @@ const LineItemsPanel = (() => {
         }
     }
 
+    /**
+     * Open the quotation PDF.
+     *
+     * ⭐ FETCHED WITH THE TOKEN, NOT LINKED TO.
+     *
+     * A plain <a href="/api/…"> carries no Authorization header, so the tab
+     * would open on a 401 — the endpoint is authenticated precisely because it
+     * is CRM vouching for this user against Accounts. So the bytes are fetched
+     * here and handed to the browser as a blob, which is the same shape the
+     * signed-copy viewer uses for a Drive document.
+     */
+    async function openQuotationPdf(container) {
+        const st = mounted.get(container);
+        if (!st) return;
+        const btn = container.querySelector('[data-lip="quote-pdf"]');
+        if (btn) btn.disabled = true;
+        try {
+            const base = (typeof CONFIG !== 'undefined' && CONFIG.crmApiBaseUrl) || '/api';
+            const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
+            const res = await fetch(
+                `${base}/deals/${encodeURIComponent(st.dealId)}/quotation/pdf`,
+                { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+
+            if (!res.ok) {
+                let message = 'The quotation could not be opened.';
+                try { message = (await res.json()).error || message; } catch (e) { /* not json */ }
+                Toast.error(message);
+                return;
+            }
+
+            const url = URL.createObjectURL(await res.blob());
+            const win = window.open(url, '_blank', 'noopener');
+            if (!win) Toast.info('Allow pop-ups to open the quotation.');
+            // Revoked late: revoking immediately can race the new tab's load.
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+        } catch (e) {
+            console.error('Could not open the quotation:', e);
+            Toast.error('The quotation could not be opened.');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
     async function raiseQuotation(container) {
         const st = mounted.get(container);
         const btn = container.querySelector('[data-lip="quote"]');
@@ -1273,6 +1322,19 @@ const LineItemsPanel = (() => {
             Toast.success(result.already_existed
                 ? `Quotation ${result.proforma_number || ''}${raisedFor} already exists for this deal`.trim()
                 : `Quotation ${result.proforma_number || ''}${raisedFor} raised`.trim());
+
+            // ⭐ THE QUOTE WORKED; THE INVOICE IT BECOMES MIGHT NOT.
+            //
+            // A quote to a prospect needs only a name. Converting one needs an
+            // email and a phone, because it materialises a real customer — so a
+            // quote raised against a company holding neither is sendable and
+            // permanently unconvertible. The backend names the gap only for a
+            // prospect and only when something is actually missing.
+            //
+            // Shown as a SECOND toast rather than folded into the first: the
+            // success is real and the rep should read it as one, and burying a
+            // caveat inside a success line is how it gets skimmed past.
+            if (result.conversion_warning) Toast.info(result.conversion_warning);
         } catch (e) {
             console.error('Failed to raise the quotation:', e);
             Toast.error(e.message || 'Could not raise the quotation');
@@ -1339,6 +1401,13 @@ const LineItemsPanel = (() => {
             lines: [],
             hasQuotation: !!deal.has_quotation,
             quotationNumber: deal.accounts_proforma_number || null,
+            // ⭐ THE LINK IS DRAWN ONLY WHEN THE BACKEND SAYS IT CAN ANSWER.
+            //
+            // The document lives in Accounts and a rep holds no Accounts role,
+            // so CRM proxies it — and a deployment whose AccountsService
+            // predates that read has nothing to serve. The backend reports the
+            // capability; the panel never guesses at it.
+            quotationPdfAvailable: false,
             bound: prev ? prev.bound : false,
         });
 
@@ -1370,6 +1439,7 @@ const LineItemsPanel = (() => {
 
             if (e.target.closest('[data-lip="save"]')) return save(container);
             if (e.target.closest('[data-lip="quote"]')) return raiseQuotation(container);
+            if (e.target.closest('[data-lip="quote-pdf"]')) return openQuotationPdf(container);
 
             const pick = e.target.closest('[data-lip="pick"]');
             if (pick) return openPicker(container, pick.closest('[data-lip-row]'));

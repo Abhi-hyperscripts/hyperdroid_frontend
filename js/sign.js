@@ -78,11 +78,53 @@
 
     // ─── rendering ──────────────────────────────────────────────────────────
 
+    /**
+     * ⭐ THE SIGNER'S OWN PREFERENCE, REMEMBERED.
+     *
+     * The page follows the system by default — nothing is stamped on <html>,
+     * so prefers-color-scheme decides and most people never think about it.
+     * The toggle exists because a signer may want the light sheet to read a
+     * contract in daylight, or to print it, whatever their OS is set to.
+     *
+     * Stamping "light" or "dark" makes the explicit choice beat the system in
+     * BOTH directions, which is why the CSS guards its dark media block with
+     * :not([data-theme="light"]).
+     */
+    function setUpTheme() {
+        const btn = $('themeToggle');
+        if (!btn) return;
+
+        let saved = null;
+        try { saved = localStorage.getItem('rz-sign-theme'); } catch (e) { /* private mode */ }
+        if (saved === 'light' || saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', saved);
+        }
+
+        btn.addEventListener('click', () => {
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const current = document.documentElement.getAttribute('data-theme')
+                || (systemDark ? 'dark' : 'light');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            try { localStorage.setItem('rz-sign-theme', next); } catch (e) { /* private mode */ }
+        });
+    }
+
     function show(id) {
         ['loadingState', 'errorState', 'documentState', 'doneState'].forEach((s) => {
             const el = $(s);
             if (el) el.hidden = s !== id;
         });
+
+        // ⭐ THE FOOTER TALKS ABOUT "THIS SIGNATURE", SO IT NEEDS ONE TO EXIST.
+        //
+        // "A record of this signature, including the time and the document it
+        // applied to, is kept with the sender" is a reassurance while a document
+        // is on screen and after it is signed. Under "This link isn't available"
+        // it describes a signature that was never made, and while the page is
+        // still loading it answers a question nobody has asked yet.
+        const foot = document.querySelector('.foot');
+        if (foot) foot.hidden = (id === 'errorState' || id === 'loadingState');
     }
 
     function fail(message) {
@@ -105,17 +147,45 @@
                 <td class="num strong">${esc(money(l.line_total, currency))}</td>
             </tr>`).join('');
 
-        // Only the rows that exist. A "Not taxed ₹0.00" line invites the
-        // question it is there to answer, and a Tax row on an untaxed quote
-        // reads as an error.
+        // ⭐⭐⭐ A PRE-TAX FIGURE MAY NEVER BE LABELLED "TOTAL".
+        //
+        // This showed only the rows that exist, reasoning that "a Tax row on an
+        // untaxed quote reads as an error" — and then fell back to the SUBTOTAL
+        // under the word Total when tax was unknown. Measured 2026-08-27: a
+        // quote of three typed lines reached a customer reading
+        // "Total US$845,000.00" while Accounts raised the same document at
+        // ₹9,97,100 including 18% GST. The signer would have agreed to a number
+        // 18% below the invoice.
+        //
+        // Silence about tax is the failure, not the cure. Standard practice is
+        // the opposite of what the old comment assumed:
+        //
+        //   • A proforma/quote is expected to carry a tax breakup. It is not a
+        //     statutory GST document and no format is prescribed, but showing
+        //     estimated tax is what makes it convertible into a tax invoice.
+        //   • The document must SAY whether prices include tax. B2B convention
+        //     is exclusive-of-tax, explicitly stated — "prices are exclusive of
+        //     taxes unless otherwise quoted" is the standard clause.
+        //   • The named failure mode is a quote and its invoice disagreeing on
+        //     tax treatment, which is exactly this defect.
+        //
+        // So when tax is known it is shown; when it is NOT, the big number is
+        // labelled for what it actually is and the basis is stated in words. It
+        // does not block signing — no quoting tool does, and a business
+        // routinely quotes before tax is settled.
+        const taxKnown = snap.total_tax != null;
+
         const totals = [];
         if (snap.taxable_total != null)
             totals.push(['Taxable', money(snap.taxable_total, currency), false]);
-        if (snap.total_tax != null)
+        if (taxKnown)
             totals.push(['Tax', money(snap.total_tax, currency), false]);
         if (snap.untaxed_total != null && Number(snap.untaxed_total) !== 0)
             totals.push(['Not taxed', money(snap.untaxed_total, currency), false]);
-        totals.push(['Total', money(snap.grand_total != null ? snap.grand_total : snap.subtotal, currency), true]);
+
+        totals.push(taxKnown
+            ? ['Total', money(snap.grand_total != null ? snap.grand_total : snap.subtotal, currency), true]
+            : ['Total before tax', money(snap.subtotal, currency), true]);
 
         return `
             <div class="doc-scroll">
@@ -132,7 +202,11 @@
                         <span>${esc(label)}</span><b>${esc(value)}</b>
                     </div>`).join('')}
             </div>
-            ${snap.tax_is_provisional ? `
+            ${!taxKnown ? `
+                <p class="doc-note">These prices are exclusive of tax. Any tax that applies will be
+                   calculated and shown on the invoice, and is payable in addition to the amount
+                   above.</p>` : ''}
+            ${taxKnown && snap.tax_is_provisional ? `
                 <p class="doc-note">The tax shown is provisional and may be recalculated on the
                    final invoice against your registered details.</p>` : ''}`;
     }
@@ -166,6 +240,12 @@
                 </div>
                 <a class="doc-open" id="docOpen" href="#" target="_blank" rel="noopener">Open in a new tab</a>
             </div>
+            ${(view.fields || []).length
+                ? `<p class="doc-marks" id="docMarks">
+                       This document has <b>${(view.fields || []).length}</b> place${(view.fields || []).length === 1 ? '' : 's'}
+                       marked for your signature. Sign once below and it will be added to every one.
+                   </p>`
+                : ''}
             <div class="doc-viewer" id="docViewer">
                 <p class="doc-loading">Loading the document…</p>
             </div>`;
@@ -201,6 +281,30 @@
         if (open) open.href = doc.url;
 
         const type = String(doc.content_type || '');
+        const hasFields = ((view && view.fields) || []).length > 0;
+
+        // ⭐ BOXES NEED PAGES, NOT AN IFRAME.
+        //
+        // The native PDF viewer is the better reading experience — real page
+        // controls, search, print — so it is used whenever there is nothing to
+        // overlay. But nothing can be positioned on top of it: the document
+        // inside is a separate browsing context. When the sender has marked
+        // places, the pages are rendered as canvases here so the mark can be
+        // shown exactly where it will land.
+        if (type === 'application/pdf' && hasFields && typeof PdfJsLoader !== 'undefined') {
+            try {
+                viewer.innerHTML = '';
+                viewer.classList.add('doc-viewer-pages');
+                const total = await PdfJsLoader.renderInto(viewer, doc.url, viewer.clientWidth - 24);
+                labelPages(viewer, total, (view && view.fields) || []);
+                return;
+            } catch (e) {
+                // Fall through to the iframe. A signer who cannot see the boxes
+                // is better served by a readable document than by an error.
+                console.error('Could not render the pages:', e);
+            }
+        }
+
         if (type === 'application/pdf' || type.startsWith('image/')) {
             const frame = document.createElement(type.startsWith('image/') ? 'img' : 'iframe');
             frame.src = doc.url;
@@ -223,6 +327,16 @@
     function render() {
         $('docTitle').textContent = view.title || 'Document';
         $('docSigner').textContent = view.signer_name || '';
+
+        // The printed block beneath the execution rule. On a paper deed the
+        // signature sits on the line and the party's name is PRINTED under it,
+        // so there is no doubt whose mark it is. Same here — filled from the
+        // party the document was prepared for, not from what gets typed, so it
+        // states who is expected to sign rather than echoing the signer.
+        const printedName = $('printedName');
+        if (printedName) printedName.textContent = view.signer_name || '';
+        const printedDate = $('printedDate');
+        if (printedDate) printedDate.textContent = formatDate(new Date().toISOString());
 
         const snap = view.snapshot || {};
         $('docBody').innerHTML = view.kind === 'quote' ? renderQuote(snap) : renderDocument(snap);
@@ -273,6 +387,38 @@
             case 'expired':  return 'This signing link has expired. Ask for a new one to be sent.';
             default:         return 'This document is no longer open for signature.';
         }
+    }
+
+    /**
+     * ⭐ A FOUR-PAGE CONTRACT IN A SCROLL BOX NEEDS THE VIEWER'S OWN CHROME.
+     *
+     * Rendered as canvases, the pages lose everything a PDF reader gives you:
+     * there is no page number, no total, and no way to find the one page you
+     * actually have to sign. Four near-identical pages in a 3,000px scroll is a
+     * hunt. The document prints its own "Page 1 of 4" INSIDE the image, which
+     * is the document talking, not the viewer.
+     *
+     * So each page gets a rail: which page it is, out of how many, and — where
+     * it applies — that this is a page carrying a signature place. The badge is
+     * the only thing here in the accent, because finding those pages is the one
+     * navigational question this document actually poses.
+     */
+    function labelPages(viewer, total, fields) {
+        const marked = new Set(fields.map((f) => Number(f.page)));
+        viewer.querySelectorAll('.sign-page').forEach((el) => {
+            const n = Number(el.dataset.page);
+            const rail = document.createElement('div');
+            rail.className = 'page-rail';
+            const num = document.createElement('span');
+            num.textContent = `Page ${n} of ${total}`;
+            rail.appendChild(num);
+            if (marked.has(n)) {
+                const badge = document.createElement('b');
+                badge.textContent = 'Signature here';
+                rail.appendChild(badge);
+            }
+            el.parentNode.insertBefore(rail, el);
+        });
     }
 
     function formatDate(value) {
@@ -348,14 +494,23 @@
             if (!dirty) { dirty = true; syncSignButton(); }
         }
 
-        function end() { drawing = false; }
+        function end() {
+            if (!drawing) return;
+            drawing = false;
+            // Refreshed at the end of a stroke rather than on every move —
+            // toDataURL on each mousemove would make the pad crawl.
+            if (dirty) previewMarks(canvas.toDataURL('image/png'));
+        }
 
         canvas.addEventListener('mousedown', start);
         canvas.addEventListener('mousemove', move);
         window.addEventListener('mouseup', end);
         canvas.addEventListener('touchstart', start, { passive: false });
         canvas.addEventListener('touchmove', move, { passive: false });
-        canvas.addEventListener('touchend', end);
+        canvas.addEventListener('touchend', () => {
+            end();
+            if (dirty) previewMarks(canvas.toDataURL('image/png'));
+        });
         window.addEventListener('resize', resize);
 
         resize();
@@ -365,12 +520,47 @@
             clear: () => {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 dirty = false;
+                previewMarks(null);
                 syncSignButton();
             },
             toDataUrl: () => canvas.toDataURL('image/png'),
         };
 
         $('padClear').addEventListener('click', () => pad.clear());
+    }
+
+    /**
+     * ⭐ SHOW THE SIGNER WHERE IT WILL LAND, BEFORE THEY COMMIT.
+     *
+     * The boxes the sender marked are drawn over the rendered pages, and the
+     * mark appears in all of them the moment it is made. Telling somebody
+     * "it will be added to every one" and showing nothing asks them to take it
+     * on trust about a document they are about to be bound by.
+     *
+     * Purely a preview. The stamping that matters happens on the server, from
+     * the same stored fractions.
+     */
+    function previewMarks(dataUrl) {
+        const fields = (view && view.fields) || [];
+        if (!fields.length) return;
+
+        document.querySelectorAll('.sign-mark').forEach((m) => m.remove());
+        if (!dataUrl) return;
+
+        fields.forEach((f) => {
+            const page = document.querySelector(`.sign-page[data-page="${f.page}"]`);
+            if (!page) return;
+            const r = page.getBoundingClientRect();
+            const img = document.createElement('img');
+            img.className = 'sign-mark';
+            img.src = dataUrl;
+            img.alt = '';
+            img.style.left = `${f.x * r.width}px`;
+            img.style.top = `${f.y * r.height}px`;
+            img.style.width = `${f.w * r.width}px`;
+            img.style.height = `${f.h * r.height}px`;
+            page.appendChild(img);
+        });
     }
 
     function currentMode() {
@@ -383,6 +573,12 @@
         const named = $('typedName').value.trim().length > 0;
         const marked = currentMode() === 'typed' ? named : !!(pad && !pad.isEmpty());
         $('signButton').disabled = submitting || !(agreed && named && marked);
+
+        // The execution rule turns violet once a real mark exists — state, not
+        // decoration. It says the document has become executable, and it is the
+        // only thing on the page that changes colour.
+        const execution = document.querySelector('.execution');
+        if (execution) execution.classList.toggle('is-signed', marked);
     }
 
     function switchMode() {
@@ -502,6 +698,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        setUpTheme();
         $('agreeBox').addEventListener('change', syncSignButton);
         $('typedName').addEventListener('input', syncSignButton);
         document.querySelectorAll('input[name="signMode"]').forEach((r) =>

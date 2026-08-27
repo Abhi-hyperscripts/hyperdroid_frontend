@@ -15,28 +15,162 @@
     <script>window.CACHE_VERSION = Date.now();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter+Tight:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap">
     <style>
         /* The signing page stands alone: no CRM chrome, no theme toggle, no
            navigation. A customer arrives here from a link, does one thing, and
            leaves. Anything else on the page is a way to not finish. */
+        /* ⭐ THE FRAME IS RAGENAIZER; THE SHEET IS PAPER.
+           ----------------------------------------------------------------
+           This page carried its own teal-on-grey identity that appeared
+           nowhere else in the product — so the one screen a CUSTOMER ever sees
+           was the one screen that did not look like us. The palette below is
+           the suite's own (Aurora violet/indigo/cyan), so the frame is
+           unmistakably ours.
+
+           The document inside it stays WHITE on purpose. A contract should
+           read like a contract: paper is the convention every signing tool
+           uses, it survives being printed, and it is what stays legible on a
+           phone in daylight. Dark chrome around a light sheet says "our
+           product, presenting your document" — which is exactly what this is. */
+        /* ⭐ THE SITE'S OWN THEME, NOT A SECOND ONE.
+           ----------------------------------------------------------------
+           Taken straight from css/landing.css so the page a customer lands on
+           and the page they sign on are visibly the same company:
+             ground #050810 · text #f1f5f9/#cbd5e1/#94a3b8
+             surfaces rgba(255,255,255,.03/.06) · borders rgba(255,255,255,.08)
+             violet #8b5cf6 · blue #3b82f6 · cyan #06b6d4 · logo 32px · 1200px
+
+           The DOCUMENT keeps its own light surface, because an uploaded PDF
+           renders as white pages and a contract has to survive being printed.
+           Every PDF viewer ever built shows white paper on a dark ground; that
+           is the relationship here too. */
+        /* ⭐⭐⭐ TWO REAL THEMES, AND THREE STATES TO SERVE.
+           ----------------------------------------------------------------
+           A signer arrives with a system preference we cannot ask about, so:
+
+             :root                          → light, the complete palette
+             prefers-color-scheme: dark     → dark, tokens only, and guarded
+                                              with :not([data-theme="light"])
+                                              so an explicit light choice wins
+                                              over a dark OS
+             [data-theme="dark"]            → the toggle wins in that direction
+
+           Every component below styles through these tokens and never inside a
+           media block, because a colour whose only definition sits behind a
+           preference query has no value in the un-stamped default state.
+
+           Dark is the site's own palette (css/landing.css). Light is NOT that
+           palette inverted — inverting a near-black ground gives a glaring
+           white and a violet that vibrates on it. It is built for paper: a
+           cool violet-tinted stock, violet-black ink, and a deeper accent that
+           holds its contrast on a light ground. */
         :root {
-            --ink: #12181c;
-            --text: #1d262b;
-            --text-2: #5b6a72;
-            --text-3: #8797a0;
-            --paper: #f2f5f6;
-            --surface: #ffffff;
-            --surface-2: #eef2f3;
-            --rule: #d8e0e2;
-            --rule-soft: #e7edee;
-            --accent: #0f5f66;
-            --accent-hover: #0c4d53;
-            --accent-dim: #0f5f6614;
-            --danger: #8f3a30;
-            --danger-dim: #8f3a3012;
-            --good: #2f6b4f;
-            --shadow: 0 1px 2px rgba(18,24,28,.05), 0 12px 32px -16px rgba(18,24,28,.18);
+            --ground: #F5F4F9;
+            --raised: #FFFFFF;
+            --raised-2: #FAFAFD;
+            --line: #DCD8E8;
+            --line-soft: #EBE8F2;
+
+            --text: #14121C;
+            --text-2: #3F3A4E;
+            --text-3: #6F6885;
+
+            --violet: #6D28D9;
+            --violet-2: #6D28D9;
+            --violet-hover: #5B21B6;
+            --violet-wash: rgba(109,40,217,.07);
+            --violet-glow: rgba(109,40,217,.34);
+            --cyan: #0E7490;
+
+            --danger: #B3261E;
+            --danger-wash: rgba(179,38,30,.08);
+            --good: #14664B;
+
+            --paper: #FFFFFF;          /* the attached instrument, always */
+            --viewer-bed: #ECEAF3;
+            --page-shadow: 0 1px 3px rgba(20,18,28,.14);
+            --wash-1: rgba(59,130,246,.10);
+            --wash-2: rgba(139,92,246,.10);
+
+            --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+            --sans: "Inter Tight", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            --measure: 64ch;
+            /* Track the viewport rather than a fixed column — capped so a
+               2560px display does not stretch the schedule into a ledger. */
+            --frame-w: min(1720px, 95vw);
+            --scrim: rgba(20,18,28,.55);
+            --disabled: #E4E1EC;
+
+            color-scheme: light;
+        }
+
+        /* System dark, unless the signer has explicitly chosen light. */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --ground: #050810;
+                --raised: rgba(255,255,255,.035);
+                --raised-2: rgba(255,255,255,.06);
+                --line: rgba(255,255,255,.09);
+                --line-soft: rgba(255,255,255,.055);
+
+                --text: #f1f5f9;
+                --text-2: #cbd5e1;
+                --text-3: #94a3b8;
+
+                --violet: #8b5cf6;
+                --violet-2: #a78bfa;
+                --violet-hover: #7c3aed;
+                --violet-wash: rgba(139,92,246,.10);
+                --violet-glow: rgba(139,92,246,.8);
+                --cyan: #06b6d4;
+
+                --danger: #f87171;
+                --danger-wash: rgba(248,113,113,.10);
+                --good: #34d399;
+
+                --viewer-bed: #0b0f18;
+                --page-shadow: 0 2px 8px rgba(0,0,0,.5);
+                --wash-1: rgba(59,130,246,.13);
+                --wash-2: rgba(139,92,246,.11);
+                --scrim: rgba(5,8,16,.78);
+            --disabled: rgba(255,255,255,.07);
+
+                color-scheme: dark;
+            }
+        }
+
+        /* The toggle, in the other direction. */
+        :root[data-theme="dark"] {
+            --ground: #050810;
+            --raised: rgba(255,255,255,.035);
+            --raised-2: rgba(255,255,255,.06);
+            --line: rgba(255,255,255,.09);
+            --line-soft: rgba(255,255,255,.055);
+
+            --text: #f1f5f9;
+            --text-2: #cbd5e1;
+            --text-3: #94a3b8;
+
+            --violet: #8b5cf6;
+            --violet-2: #a78bfa;
+            --violet-hover: #7c3aed;
+            --violet-wash: rgba(139,92,246,.10);
+            --violet-glow: rgba(139,92,246,.8);
+            --cyan: #06b6d4;
+
+            --danger: #f87171;
+            --danger-wash: rgba(248,113,113,.10);
+            --good: #34d399;
+
+            --viewer-bed: #0b0f18;
+            --page-shadow: 0 2px 8px rgba(0,0,0,.5);
+            --wash-1: rgba(59,130,246,.13);
+            --wash-2: rgba(139,92,246,.11);
+            --scrim: rgba(5,8,16,.78);
+            --disabled: rgba(255,255,255,.07);
+
+            color-scheme: dark;
         }
 
         * { box-sizing: border-box; }
@@ -56,162 +190,505 @@
 
         body {
             margin: 0;
-            background: var(--paper);
-            color: var(--text);
-            font-family: "Inter Tight", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: var(--ground);
+            color: var(--text-2);
+            font-family: var(--sans);
             font-size: 16px;
-            line-height: 1.55;
+            line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            /* The site's hero wash, at a fraction of its strength — enough to
+               place the page in the same world, not enough to compete with a
+               document. */
+            background-image:
+                radial-gradient(ellipse 60% 45% at 22% -8%, var(--wash-1), transparent 55%),
+                radial-gradient(ellipse 55% 40% at 88% 2%, var(--wash-2), transparent 55%);
+            background-repeat: no-repeat;
         }
 
-        .shell { max-width: 720px; margin: 0 auto; padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 2rem) 4rem; }
-
-        .brand {
-            display: flex; align-items: center; gap: .55rem;
-            font-weight: 600; letter-spacing: -.01em; color: var(--ink);
-            margin-bottom: 1.5rem;
+        /* ── masthead ─────────────────────────────────────────────
+           Matches the site's nav: 32px mark, hairline rule beneath. */
+        .masthead {
+            max-width: var(--frame-w); margin: 0 auto;
+            padding: clamp(1.1rem, 2.5vw, 1.5rem) clamp(1.15rem, 3vw, 2.25rem);
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+            border-bottom: 1px solid var(--line-soft);
         }
-        .brand-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+        /* ⭐ ONE WORDMARK, INVERTED — NOT TWO DIFFERENT MARKS.
+           This briefly swapped in logo-black.png for the light theme, which
+           is a DIFFERENT composition: 977×216 carrying the {RA} icon glyph,
+           against the 697×80 wordmark used on dark. The brand appeared to
+           change with the theme.
 
+           There is no black wordmark asset and there need not be:
+           filter: invert(1) operates on RGB and leaves ALPHA untouched, so a
+           white glyph on transparency inverts to a black glyph with exactly
+           the same antialiased edge. (The comment that stood here claimed it
+           would fringe the edges — that was wrong.) It is also what
+           theme.css already does for .navbar-logo across the product. */
+        .masthead .mark { height: 32px; width: auto; display: block; }
+        :root[data-theme="light"] .masthead .mark { filter: invert(1); }
+        @media (prefers-color-scheme: light) {
+            :root:not([data-theme="dark"]) .masthead .mark { filter: invert(1); }
+        }
+        .stamp {
+            display: inline-flex; align-items: center; gap: .5rem;
+            font-family: var(--mono); font-size: .7rem; font-weight: 500;
+            letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
+        }
+        .stamp svg { width: 13px; height: 13px; color: var(--cyan); }
+        @media (max-width: 560px) { .stamp span { display: none; } }
+
+        .masthead-right { display: flex; align-items: center; gap: 1.1rem; }
+        .theme-toggle {
+            display: grid; place-items: center; width: 32px; height: 32px;
+            background: transparent; border: 1px solid var(--line); color: var(--text-3);
+            cursor: pointer; padding: 0;
+        }
+        .theme-toggle:hover { color: var(--text); border-color: var(--text-3); }
+        .theme-toggle svg { width: 15px; height: 15px; }
+        /* One icon shows the theme you would MOVE TO, which is the question the
+           control answers. The other is never rendered, not merely faded. */
+        .theme-toggle .i-sun { display: none; }
+        :root[data-theme="dark"] .theme-toggle .i-sun { display: block; }
+        :root[data-theme="dark"] .theme-toggle .i-moon { display: none; }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .theme-toggle .i-sun { display: block; }
+            :root:not([data-theme="light"]) .theme-toggle .i-moon { display: none; }
+        }
+
+        /* The viewer's own chrome for a multi-page document. */
+        .page-rail {
+            width: 100%; max-width: 100%;
+            display: flex; align-items: center; gap: .7rem;
+            font-family: var(--mono); font-size: .655rem; font-weight: 500;
+            letter-spacing: .14em; text-transform: uppercase; color: var(--text-3);
+        }
+        .page-rail::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+        .page-rail b {
+            order: 3; font-weight: 500; color: var(--violet-2);
+            padding: .18rem .5rem; border: 1px solid color-mix(in srgb, var(--violet) 45%, transparent);
+            background: var(--violet-wash); letter-spacing: .1em;
+        }
+
+        /* ⭐ THE SHELL IS THE SITE'S 1200px, NOT A NARROW COLUMN.
+           At 46rem the page threw away most of a desktop screen — and the
+           PDF viewer, which is the thing that most wants width, was the worst
+           affected. Prose keeps its own reading measure below; everything
+           that benefits from room now gets it. */
+        /* ⭐ THE PAGE FILLS THE SCREEN; THE PROSE DOES NOT.
+             1200px looked generous next to a 736px column and still threw away
+             a third of a large display. The frame now tracks the viewport, and
+             the extra width goes where it is worth something — the document.
+             Running text keeps --measure regardless, so nothing becomes a
+             90-character line. */
+        .shell {
+            max-width: var(--frame-w); margin: 0 auto;
+            padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1.15rem, 3vw, 2.25rem) 5rem;
+        }
+
+        /* ── the sheet ────────────────────────────────────────────
+           A raised panel in the site's own surface language, not a white card. */
         .card {
-            background: var(--surface);
-            border: 1px solid var(--rule);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
+            background: var(--raised);
+            border: 1px solid var(--line);
         }
 
-        .card-head { padding: 1.5rem 1.6rem 1.35rem; border-bottom: 1px solid var(--rule-soft); }
-        .eyebrow {
-            font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
-            color: var(--accent); margin: 0 0 .5rem;
+        .card-head { padding: clamp(1.75rem, 3.5vw, 2.75rem) clamp(1.35rem, 3.5vw, 2.75rem) 0; }
+
+        .caption {
+            font-family: var(--mono); font-size: .72rem; font-weight: 500;
+            letter-spacing: .2em; text-transform: uppercase; color: var(--violet-2);
+            margin: 0 0 1.1rem;
         }
-        h1 { font-size: 1.45rem; font-weight: 600; letter-spacing: -.015em; margin: 0 0 .35rem; color: var(--ink); text-wrap: balance; }
-        .for-whom { margin: 0; color: var(--text-2); font-size: .92rem; }
-        .for-whom b { color: var(--text); font-weight: 600; }
 
-        .card-body { padding: 1.5rem 1.6rem; }
+        h1 {
+            font-family: var(--sans);
+            font-size: clamp(1.5rem, 1.15rem + 1.3vw, 2.15rem);
+            font-weight: 600; letter-spacing: -.022em; line-height: 1.2;
+            margin: 0 0 .6rem; color: var(--text); text-wrap: balance;
+        }
+        .for-whom { margin: 0; color: var(--text-3); font-size: .93rem; }
+        .for-whom b { color: var(--text-2); font-weight: 600; }
 
-        /* ── the document ─────────────────────────────────────── */
-        .doc-scroll { overflow-x: auto; margin: 0 -0.25rem; }
-        table.lines { border-collapse: collapse; width: 100%; min-width: 420px; }
+        .card-body { padding: clamp(1.6rem, 3.5vw, 2.4rem) clamp(1.35rem, 3.5vw, 2.75rem) clamp(1.75rem, 3.5vw, 2.75rem); }
+
+        .rule-label {
+            display: flex; align-items: center; gap: .9rem;
+            font-family: var(--mono); font-size: .69rem; font-weight: 500;
+            letter-spacing: .2em; text-transform: uppercase; color: var(--text-3);
+            margin: 0 0 1.3rem;
+        }
+        .rule-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+        /* ── the schedule ─────────────────────────────────────── */
+        .doc-scroll { overflow-x: auto; }
+        table.lines { border-collapse: collapse; width: 100%; min-width: 400px; }
         table.lines th {
-            text-align: left; font-size: .68rem; font-weight: 600; letter-spacing: .08em;
-            text-transform: uppercase; color: var(--text-3);
-            padding: 0 .55rem .55rem; border-bottom: 1px solid var(--rule);
+            text-align: left; font-family: var(--mono); font-size: .655rem; font-weight: 500;
+            letter-spacing: .16em; text-transform: uppercase; color: var(--text-3);
+            padding: 0 0 .8rem; border-bottom: 1px solid var(--line);
         }
-        table.lines td { padding: .7rem .55rem; border-bottom: 1px solid var(--rule-soft); vertical-align: top; font-size: .92rem; }
-        table.lines .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        table.lines .strong { font-weight: 600; color: var(--ink); }
-        .ln-desc { display: block; color: var(--ink); }
-        .ln-sku, .ln-uom { font-size: .76rem; color: var(--text-3); }
+        table.lines th + th { padding-left: 1.1rem; }
+        table.lines td { padding: 1rem 0; border-bottom: 1px solid var(--line-soft); vertical-align: baseline; font-size: .95rem; }
+        table.lines td + td { padding-left: 1.1rem; }
+        table.lines .num { text-align: right; font-family: var(--mono); font-size: .86rem; white-space: nowrap; color: var(--text-2); }
+        table.lines .strong { font-weight: 500; color: var(--text); }
+        .ln-desc { display: block; color: var(--text); }
+        .ln-sku, .ln-uom { font-family: var(--mono); font-size: .7rem; color: var(--text-3); letter-spacing: .02em; }
 
-        .totals { margin-top: 1rem; display: flex; flex-direction: column; gap: .35rem; }
-        .total-row { display: flex; justify-content: space-between; gap: 2rem; font-size: .92rem; color: var(--text-2); }
-        .total-row b { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 500; }
+        .totals { margin-top: 1.75rem; display: flex; flex-direction: column; gap: .55rem; }
+        .total-row {
+            display: flex; justify-content: space-between; align-items: baseline; gap: 2rem;
+            font-size: .9rem; color: var(--text-3);
+        }
+        .total-row b { font-family: var(--mono); font-size: .88rem; color: var(--text-2); font-weight: 500; }
+
+        /* ⭐⭐⭐ THE AMOUNT IS STILL THE HERO.
+           The one number the reader is deciding about, so it stays the largest
+           thing on the page — and on the dark ground it is the brightest, which
+           is the same statement made in the site's own material. */
         .total-row.grand {
-            margin-top: .45rem; padding-top: .7rem; border-top: 1px solid var(--rule);
-            font-size: 1.05rem; color: var(--ink); font-weight: 600;
+            margin-top: 1rem; padding-top: 1.3rem; border-top: 1px solid var(--line);
         }
-        .total-row.grand b { font-weight: 700; }
+        .total-row.grand span {
+            font-family: var(--mono); font-size: .69rem; font-weight: 500;
+            letter-spacing: .16em; text-transform: uppercase; color: var(--text-3);
+            max-width: 9rem; line-height: 1.45;
+        }
+        .total-row.grand b {
+            font-family: var(--mono); font-weight: 700;
+            font-size: clamp(1.9rem, 1.3rem + 2.4vw, 3rem);
+            letter-spacing: -.035em; color: var(--text); line-height: 1;
+        }
 
-        .doc-note { margin: 1rem 0 0; font-size: .82rem; color: var(--text-3); }
+        .doc-note {
+            margin: 1.2rem 0 0; font-size: .855rem; line-height: 1.6; color: var(--text-3);
+            max-width: var(--measure);
+        }
 
-        .doc-file { display: flex; align-items: center; gap: .9rem; padding: 1.1rem; background: var(--surface-2); border-radius: 6px; }
-        .doc-file svg { width: 30px; height: 30px; color: var(--accent); flex: none; }
-        .doc-file b { display: block; color: var(--ink); font-weight: 600; }
-        .doc-file span { font-size: .8rem; color: var(--text-3); }
+        /* ── the exhibit (an uploaded document) ─────────────────
+           The instrument itself stays WHITE — a PDF renders as white pages and
+           a contract has to print. Shown on the dark ground the way every PDF
+           viewer shows paper. It now gets the shell's full width, which is what
+           the extra room was reclaimed for. */
+        .doc-file {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1.1rem 1.25rem; border: 1px solid var(--line); background: var(--raised-2);
+        }
+        .doc-file svg { width: 26px; height: 26px; color: var(--violet-2); flex: none; }
+        .doc-file b { display: block; color: var(--text); font-weight: 600; font-size: .95rem; }
+        .doc-file span { font-family: var(--mono); font-size: .7rem; color: var(--text-3); letter-spacing: .04em; }
         .doc-file > div { flex: 1; min-width: 0; }
         .doc-open {
-            flex: none; font-size: .82rem; font-weight: 600; color: var(--accent);
-            text-decoration: none; padding: .35rem .6rem; border: 1px solid var(--rule);
-            border-radius: 5px; background: var(--surface);
+            flex: none; font-family: var(--mono); font-size: .655rem; font-weight: 500;
+            letter-spacing: .12em; text-transform: uppercase; color: var(--text-2);
+            text-decoration: none; padding: .55rem .9rem; border: 1px solid var(--line);
+            background: transparent;
         }
-        .doc-open:hover { border-color: var(--accent); }
+        .doc-open:hover { border-color: var(--violet); color: var(--violet-2); }
 
-        /* The document itself. A signer who cannot read it cannot agree to it. */
-        .doc-viewer { margin-top: .9rem; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--surface-2); }
-        .doc-viewer iframe { display: block; width: 100%; height: 62vh; min-height: 380px; border: 0; background: #fff; }
+        .doc-viewer { margin-top: 1rem; border: 1px solid var(--line); overflow: hidden; background: var(--viewer-bed); }
+        .doc-viewer iframe { display: block; width: 100%; height: 68vh; min-height: 420px; border: 0; background: var(--paper); }
         .doc-viewer img { display: block; width: 100%; height: auto; }
-        .doc-loading, .doc-failed { margin: 0; padding: 2rem 1rem; text-align: center; font-size: .9rem; color: var(--text-2); }
-        .doc-failed { color: var(--danger); background: var(--danger-dim); }
+        .doc-loading, .doc-failed { margin: 0; padding: 2.5rem 1rem; text-align: center; font-size: .9rem; color: var(--text-3); }
 
-        /* ── signing ──────────────────────────────────────────── */
-        .sign-block { margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); }
-        .sign-label { font-size: .74rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin: 0 0 .7rem; }
+        .doc-viewer-pages {
+            background: var(--viewer-bed); padding: 1.1rem; display: flex; flex-direction: column;
+            align-items: center; gap: 1.1rem; overflow: auto; max-height: 76vh;
+        }
+        .sign-page {
+            position: relative; flex: none; background: var(--paper);
+            box-shadow: var(--page-shadow); max-width: 100%;
+        }
+        .sign-page canvas { display: block; max-width: 100%; height: auto; }
+        .sign-mark { position: absolute; object-fit: contain; pointer-events: none; }
+        .doc-marks {
+            margin: 1rem 0 0; padding: .9rem 1.05rem; font-size: .9rem; color: var(--text-2);
+            background: var(--violet-wash); border-left: 2px solid var(--violet);
+            max-width: var(--measure);
+        }
+        .doc-failed { color: var(--danger); background: var(--danger-wash); }
 
-        .modes { display: flex; gap: .45rem; margin-bottom: 1rem; }
+        /* ── execution ───────────────────────────────────────────
+           The deed's execution block, now in the site's material. */
+        .sign-block { margin-top: 2.75rem; }
+
+        /* ⭐⭐⭐ DOCUMENT LEFT, EXECUTION RIGHT — AND THE PANEL FOLLOWS YOU.
+           ----------------------------------------------------------------
+           Splitting the execution block internally moved the empty half down
+           the page rather than filling it. The width belongs to the two things
+           the page is actually made of: the instrument, and the act of signing
+           it. So on a wide screen the document takes the larger column and the
+           execution panel sits beside it, sticky — you can read page 3 of a
+           contract with the signature line still in front of you, instead of
+           scrolling to the bottom and losing sight of what you are signing.
+
+           It is also the arrangement every signing tool converges on, for the
+           same reason. Below 1100px it stacks: document first, then the act. */
+        @media (min-width: 1100px) {
+            .card-body {
+                display: grid;
+                /* The panel is a form; past ~26rem it only gets emptier. So
+                   it is capped and every extra pixel goes to the document. */
+                grid-template-columns: minmax(0, 1fr) clamp(21rem, 26vw, 26rem);
+                column-gap: clamp(2rem, 3.5vw, 3.25rem);
+                align-items: start;
+            }
+            #docBody   { grid-column: 1; }
+            .closed    { grid-column: 1 / -1; }
+            .sign-block {
+                grid-column: 2; grid-row: 1;
+                margin-top: 0;
+                position: sticky; top: 1.5rem;
+                padding: 1.6rem 1.75rem 1.75rem;
+                background: var(--raised-2);
+                border: 1px solid var(--line);
+            }
+            /* Inside a column this narrow the execution block is single-file
+               again — the two-up split only made sense across the full sheet. */
+            .sign-block .rule-label { margin-top: 0; }
+            .execution, .field, .agree, .err, .closed { max-width: none; }
+            .doc-marks { max-width: none; }
+        }
+
+        .modes { display: inline-flex; margin-bottom: 2rem; border: 1px solid var(--line); }
         .mode {
-            flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
-            padding: .55rem; border: 1px solid var(--rule); border-radius: 6px;
-            font-size: .88rem; color: var(--text-2); cursor: pointer; background: var(--surface);
+            position: relative; padding: .5rem 1.05rem; cursor: pointer;
+            font-family: var(--mono); font-size: .69rem; font-weight: 500;
+            letter-spacing: .12em; text-transform: uppercase; color: var(--text-3);
+            background: transparent;
         }
+        .mode + .mode { border-left: 1px solid var(--line); }
+        .mode:has(input:checked) { background: var(--violet); color: #fff; }
+        .mode:has(input:focus-visible) { outline: 2px solid var(--violet-2); outline-offset: 2px; }
         .mode input { position: absolute; opacity: 0; pointer-events: none; }
-        .mode:has(input:checked) { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); font-weight: 600; }
-        .mode:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-        .pad-wrap { position: relative; border: 1px dashed var(--rule); border-radius: 6px; background: var(--surface-2); }
-        #padCanvas { display: block; width: 100%; height: 170px; touch-action: none; cursor: crosshair; color: var(--ink); }
-        .pad-hint { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; color: var(--text-3); font-size: .85rem; }
-        #padCanvas:not(:placeholder-shown) + .pad-hint { display: none; }
-        .pad-actions { display: flex; justify-content: flex-end; margin-top: .5rem; }
+        /* ⭐⭐⭐ YOU STILL SIGN ON THE LINE.
+           The one element this page is remembered by. On the dark ground the
+           mark is drawn in LIGHT ink — a signature is made in whatever the
+           surface takes, and on this surface that is white. */
+        /* ⭐⭐⭐ THE SIGNING STRIP IS PAPER IN BOTH THEMES, AND THE INK IS
+           ALWAYS DARK.
+           ----------------------------------------------------------------
+           This is a correctness rule wearing a design decision's clothes.
 
-        .field { margin-top: 1rem; }
-        .field label { display: block; font-size: .82rem; color: var(--text-2); margin-bottom: .35rem; }
+           The pad took its ink from getComputedStyle(canvas).color, which
+           followed --text. In dark mode that is #f1f5f9 — so the mark a signer
+           drew was stored as a near-WHITE png, and that png is stamped onto the
+           PDF's white pages by SignedPdfStamper. The signature would have been
+           invisible on the executed document: not a rendering complaint, a
+           signed contract with nothing on the signature line.
+
+           So the ink is pinned dark regardless of theme, because the surface it
+           ultimately lands on is always white paper. Which in turn decides the
+           strip: a dark mark needs a light ground to be seen while it is being
+           drawn, so the pad stays paper even at night. It reads correctly too —
+           this is the one physical object on the page, the piece of paper you
+           put your name on.
+
+           Pinning the colour also removes a second-order bug: strokeStyle is
+           captured once at setup, so a signer who toggled the theme afterwards
+           kept whatever ink was current when the pad was built. */
+        .execution { max-width: 34rem; }
+        .pad-wrap {
+            position: relative;
+            background: #FFFFFF;
+            border: 1px solid var(--line);
+            border-bottom: 0;
+        }
+
+        #padCanvas {
+            display: block; width: 100%; height: 110px;
+            touch-action: none; cursor: crosshair;
+            color: #14121C;              /* the ink. never themed — see above */
+        }
+        .pad-guide {
+            position: absolute; left: .8rem; bottom: .55rem; pointer-events: none;
+            font-family: var(--mono); font-size: .655rem; letter-spacing: .16em;
+            text-transform: uppercase; color: #6D28D9; opacity: .6;
+            transition: opacity .18s ease;
+        }
+        .execution.is-signed .pad-guide { opacity: 0; }
+
+        .execution-rule {
+            height: 2px; background: #14121C;
+            transition: background-color .25s ease;
+        }
+        .execution.is-signed .execution-rule { background: #6D28D9; }
+
+        .printed { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-top: .7rem; }
+        .printed b {
+            font-family: var(--mono); font-size: .76rem; font-weight: 700;
+            letter-spacing: .11em; text-transform: uppercase; color: var(--text);
+        }
+        .printed span { font-family: var(--mono); font-size: .72rem; color: var(--text-3); }
+
+        .pad-actions { display: none; margin-top: .55rem; }
+        .execution.is-signed .pad-actions { display: flex; justify-content: flex-start; }
+
+        /* Same strip, same ink — a typed mark is shown as it would be written. */
+        #typeArea {
+            min-height: 110px; display: flex; align-items: flex-end;
+            background: #FFFFFF; border: 1px solid var(--line); border-bottom: 0;
+        }
+        #typedPreview {
+            font-family: "Caveat", cursive; font-size: 2.6rem; line-height: 1.1;
+            color: #14121C; padding: 0 .8rem .35rem; width: 100%;
+        }
+
+        .field { margin-top: 2.1rem; max-width: 34rem; }
+        .field label {
+            display: block; font-family: var(--mono); font-size: .69rem; font-weight: 500;
+            letter-spacing: .12em; text-transform: uppercase; color: var(--text-3);
+            margin-bottom: .55rem;
+        }
         input[type="text"], textarea {
-            width: 100%; padding: .6rem .7rem; font: inherit; color: var(--text);
-            background: var(--surface); border: 1px solid var(--rule); border-radius: 6px;
+            width: 100%; font: inherit; color: var(--text);
+            background: var(--raised-2); border: 1px solid var(--line); border-radius: 0;
+            padding: .7rem .85rem;
         }
-        input[type="text"]:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
-        #typedPreview { font-family: "Caveat", cursive; font-size: 2rem; color: var(--ink); min-height: 2.6rem; padding: .4rem .7rem; border-bottom: 1px solid var(--rule); }
-
-        .agree { display: flex; gap: .6rem; align-items: flex-start; margin-top: 1.25rem; font-size: .88rem; color: var(--text-2); }
-        .agree input { margin-top: .25rem; width: 16px; height: 16px; accent-color: var(--accent); flex: none; }
-
-        .actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.35rem; }
-        button {
-            font: inherit; font-weight: 600; padding: .7rem 1.2rem; border-radius: 6px;
-            border: 1px solid transparent; cursor: pointer;
+        input[type="text"]::placeholder, textarea::placeholder { color: var(--text-3); }
+        input[type="text"]:focus, textarea:focus {
+            outline: 2px solid var(--violet); outline-offset: -1px; border-color: var(--violet);
         }
-        button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-        .btn-primary { background: var(--accent); color: #fff; flex: 1; min-width: 200px; }
-        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
-        .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
-        .btn-quiet { background: transparent; color: var(--text-2); border-color: var(--rule); }
-        .btn-quiet:hover { color: var(--danger); border-color: var(--danger); }
-        .btn-small { padding: .35rem .7rem; font-size: .8rem; font-weight: 500; background: transparent; color: var(--text-2); border-color: var(--rule); }
-        .btn-danger { background: var(--danger); color: #fff; }
 
-        .expiry { margin: .9rem 0 0; font-size: .8rem; color: var(--text-3); }
-        .err { margin: .9rem 0 0; padding: .65rem .8rem; background: var(--danger-dim); border-left: 2px solid var(--danger); border-radius: 0 4px 4px 0; color: var(--danger); font-size: .88rem; }
+        .agree {
+            display: flex; gap: .8rem; align-items: flex-start; margin-top: 2rem;
+            font-size: .9rem; line-height: 1.6; color: var(--text-2); max-width: var(--measure);
+        }
+        .agree input { margin-top: .25rem; width: 17px; height: 17px; accent-color: var(--violet); flex: none; }
 
-        .closed { margin-top: 1.5rem; padding: 1rem 1.1rem; background: var(--surface-2); border-radius: 6px; color: var(--text-2); font-size: .92rem; }
+        .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.8rem; }
+        button { font: inherit; cursor: pointer; border-radius: 0; }
+        button:focus-visible { outline: 2px solid var(--violet-2); outline-offset: 2px; }
 
-        /* ── states ───────────────────────────────────────────── */
-        .state-pad { padding: 3.5rem 1.5rem; text-align: center; }
-        .spinner { width: 26px; height: 26px; margin: 0 auto 1rem; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+        .btn-primary, .btn-quiet {
+            font-family: var(--mono); font-size: .76rem; font-weight: 500;
+            letter-spacing: .14em; text-transform: uppercase;
+            padding: 1.05rem 1.75rem; border: 1px solid transparent;
+        }
+        .btn-primary {
+            background: var(--violet); color: #fff; flex: 1 1 auto; min-width: 12rem;
+            box-shadow: 0 8px 26px -12px var(--violet-glow);
+        }
+        .btn-primary:hover:not(:disabled) { background: var(--violet-hover); }
+        /* --raised-2 is near-white in the light theme, so the disabled primary
+           lost its edges entirely and read as stray text. A dedicated token
+           keeps it visible as a button in both. */
+        .btn-primary:disabled {
+            background: var(--disabled); color: var(--text-3); box-shadow: none; cursor: not-allowed;
+        }
+        .btn-quiet { background: transparent; color: var(--text-2); border-color: var(--line); }
+        .btn-quiet:hover { border-color: var(--text-3); color: var(--text); }
+
+        .btn-small {
+            font-family: var(--mono); font-size: .655rem; letter-spacing: .12em; text-transform: uppercase;
+            background: none; border: 0; color: var(--text-3); padding: .2rem 0;
+            border-bottom: 1px solid var(--line);
+        }
+        .btn-small:hover { color: var(--violet-2); border-bottom-color: var(--violet); }
+
+        .err {
+            margin-top: 1.1rem; padding: .8rem .95rem; font-size: .9rem; max-width: var(--measure);
+            color: var(--danger); background: var(--danger-wash); border-left: 2px solid var(--danger);
+        }
+        .expiry { margin: 1.6rem 0 0; font-family: var(--mono); font-size: .69rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
+
+        .closed {
+            margin-top: 2rem; padding: 1.05rem 1.15rem; font-size: .92rem; color: var(--text-2);
+            background: var(--violet-wash); border-left: 2px solid var(--violet); max-width: var(--measure);
+        }
+
+        /* ── states ──────────────────────────────────────────────── */
+        .state-pad { padding: clamp(3rem, 8vw, 5rem) clamp(1.35rem, 3.5vw, 2.75rem); text-align: center; }
+        .spinner {
+            width: 24px; height: 24px; margin: 0 auto 1.2rem;
+            border: 1.5px solid var(--line); border-top-color: var(--violet); border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
 
-        .done-icon { width: 52px; height: 52px; margin: 0 auto 1.1rem; border-radius: 50%; display: grid; place-items: center; background: var(--good); color: #fff; }
-        .done-icon.is-declined { background: var(--text-3); }
-        .done-icon svg { width: 26px; height: 26px; }
-        .state-pad h2 { font-size: 1.2rem; font-weight: 600; margin: 0 0 .5rem; color: var(--ink); }
-        .state-pad p { margin: 0; color: var(--text-2); font-size: .93rem; }
+        .done-icon {
+            width: 48px; height: 48px; margin: 0 auto 1.5rem; display: grid; place-items: center;
+            border: 1.5px solid var(--good); color: var(--good); border-radius: 50%;
+        }
+        .done-icon.is-declined { border-color: var(--text-3); color: var(--text-3); }
+        .done-icon svg { width: 22px; height: 22px; }
+        .state-pad h2 {
+            font-family: var(--sans); font-size: 1.4rem; font-weight: 600; letter-spacing: -.02em;
+            margin: 0 0 .6rem; color: var(--text);
+        }
+        .state-pad p { margin: 0 auto; max-width: 34rem; color: var(--text-3); font-size: .93rem; }
 
-        /* ── decline modal ────────────────────────────────────── */
-        .modal-backdrop { position: fixed; inset: 0; background: rgba(18,24,28,.45); display: grid; place-items: center; padding: 1rem; z-index: 40; }
-        .modal { background: var(--surface); border-radius: 8px; padding: 1.4rem 1.5rem; max-width: 440px; width: 100%; box-shadow: var(--shadow); }
-        .modal h3 { margin: 0 0 .5rem; font-size: 1.05rem; color: var(--ink); }
-        .modal p { margin: 0 0 1rem; font-size: .89rem; color: var(--text-2); }
-        .modal-actions { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.1rem; }
+        /* ── decline ─────────────────────────────────────────────── */
+        .modal-backdrop { position: fixed; inset: 0; background: var(--scrim); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 1rem; z-index: 40; }
+        .modal { background: var(--raised); border: 1px solid var(--line); padding: 1.9rem; max-width: 30rem; width: 100%; }
+        .modal h3 { font-family: var(--sans); margin: 0 0 .55rem; font-size: 1.2rem; font-weight: 600; letter-spacing: -.018em; color: var(--text); }
+        .modal p { margin: 0 0 1.15rem; font-size: .9rem; color: var(--text-3); }
+        .modal-actions { display: flex; gap: .8rem; justify-content: flex-end; margin-top: 1.35rem; }
 
-        .foot { margin-top: 1.5rem; text-align: center; font-size: .76rem; color: var(--text-3); }
+        .foot {
+            margin: 2rem auto 0; max-width: var(--measure); text-align: center;
+            font-size: .79rem; line-height: 1.65; color: var(--text-3);
+        }
+
+        /* ── narrow ──────────────────────────────────────────────── */
+        @media (max-width: 640px) {
+            .doc-scroll { overflow-x: visible; }
+            table.lines { min-width: 0; }
+            table.lines thead { display: none; }
+            table.lines tbody tr {
+                display: grid; grid-template-columns: auto auto 1fr;
+                grid-template-areas: "desc desc desc" "qty price amount";
+                gap: .15rem .5rem; padding: 1rem 0; border-bottom: 1px solid var(--line-soft);
+            }
+            table.lines tbody tr:last-child { border-bottom: 0; }
+            table.lines td, table.lines td + td { border: 0; padding: 0; }
+            table.lines td:nth-child(1) { grid-area: desc; margin-bottom: .4rem; }
+            table.lines td:nth-child(2) { grid-area: qty;    text-align: left; }
+            table.lines td:nth-child(2)::after { content: " ×"; color: var(--text-3); }
+            table.lines td:nth-child(3) { grid-area: price;  text-align: left; }
+            table.lines td:nth-child(4) { grid-area: amount; text-align: right; }
+
+            .total-row.grand { flex-direction: column; align-items: flex-start; gap: .5rem; }
+            .total-row.grand span { max-width: none; }
+
+            .actions { flex-direction: column; }
+            .btn-primary, .btn-quiet { width: 100%; min-width: 0; flex: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .spinner { animation-duration: 3s; }
+            .execution-rule, .pad-guide, .pad-wrap { transition: none; }
+        }
     </style>
 </head>
 <body>
+    <header class="masthead">
+        <img class="mark" src="../assets/logo-name-white.png" alt="Ragenaizer">
+        <div class="masthead-right">
+        <button type="button" class="theme-toggle" id="themeToggle" aria-label="Switch between light and dark">
+            <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4.2"></circle>
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+            </svg>
+            <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5z"></path>
+            </svg>
+        </button>
+        <span class="stamp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Private link · encrypted</span>
+        </span>
+        </div>
+    </header>
     <div class="shell">
-        <div class="brand"><span class="brand-dot"></span> Ragenaizer</div>
 
         <!-- loading -->
         <div class="card" id="loadingState">
@@ -232,7 +709,7 @@
         <!-- the document -->
         <div class="card" id="documentState" hidden>
             <div class="card-head">
-                <p class="eyebrow">For your signature</p>
+                <p class="caption">For execution</p>
                 <h1 id="docTitle"></h1>
                 <p class="for-whom">Prepared for <b id="docSigner"></b></p>
             </div>
@@ -242,28 +719,44 @@
                 <div class="closed" id="closedNotice" hidden></div>
 
                 <div class="sign-block" id="signBlock" hidden>
-                    <p class="sign-label">Your signature</p>
+                    <p class="rule-label">Execution</p>
 
+                    <div class="exec-left">
                     <div class="modes">
                         <label class="mode"><input type="radio" name="signMode" value="drawn" checked> Draw it</label>
                         <label class="mode"><input type="radio" name="signMode" value="typed"> Type it</label>
                     </div>
 
-                    <div id="drawArea">
-                        <div class="pad-wrap">
-                            <canvas id="padCanvas" aria-label="Draw your signature here"></canvas>
+                    <!-- The execution block. The pad IS the ruled line, and the
+                         printed name sits beneath it, exactly as on paper. -->
+                    <div class="execution">
+                        <div id="drawArea">
+                            <div class="pad-wrap">
+                                <canvas id="padCanvas" aria-label="Sign on the line"></canvas>
+                                <span class="pad-guide" aria-hidden="true">Sign here</span>
+                            </div>
+                        </div>
+
+                        <div id="typeArea" hidden>
+                            <div id="typedPreview" aria-hidden="true"></div>
+                        </div>
+
+                        <div class="execution-rule"></div>
+
+                        <div class="printed">
+                            <b id="printedName"></b>
+                            <span id="printedDate"></span>
                         </div>
                         <div class="pad-actions">
                             <button type="button" class="btn-small" id="padClear">Clear</button>
                         </div>
                     </div>
 
-                    <div id="typeArea" hidden>
-                        <div id="typedPreview" aria-hidden="true"></div>
-                    </div>
+                    </div><!-- /exec-left -->
 
+                    <div class="exec-right">
                     <div class="field">
-                        <label for="typedName">Your full name</label>
+                        <label for="typedName">Your full name, for the record</label>
                         <input type="text" id="typedName" autocomplete="name" maxlength="200">
                     </div>
 
@@ -281,6 +774,7 @@
                     </div>
 
                     <p class="expiry" id="expiryNote"></p>
+                    </div><!-- /exec-right -->
                 </div>
             </div>
         </div>
@@ -316,6 +810,7 @@
     </div>
 
     <script>document.write('<script src="../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../js/pdfjs-loader.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../js/sign.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>
         // The handwriting preview mirrors the name field. Cosmetic only — the

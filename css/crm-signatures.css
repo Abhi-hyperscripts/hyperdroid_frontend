@@ -300,3 +300,114 @@
   white-space: nowrap;
 }
 .sigp-view:hover { background: var(--brand-primary); color: var(--text-inverse); }
+
+/* ── Marking where the signature goes ───────────────────────────────────── */
+.sigp-place-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.sigp-place-back {
+  /* ⭐⭐⭐ !important BECAUSE styles.css TAKES position AWAY FROM NEW OVERLAYS.
+     ----------------------------------------------------------------------
+     body.dashboard > :not(.navbar):not(.slide-panel)… ~25 :not() entries …
+     { position: relative; }
+
+     Anything appended to document.body that is not already named in that chain
+     is forced back to relative, and the dialog lands in page flow at whatever
+     scroll offset it happened to be created at — measured here as a page whose
+     top sat 1097px down a 902px viewport, so nothing on it could be clicked.
+     Every OTHER property applied, which is what makes it so hard to see: the
+     stylesheet is clearly loading, and only position is lost.
+
+     It cannot be out-specified — each :not(.class) contributes a full class, so
+     that selector is ~(0,25,1) against this rule's (0,1,0). Adding a 26th entry
+     to the shared chain would work and leaves the trap armed for the next
+     person; this states the intent locally instead. */
+  position: fixed !important;
+  /* ⭐ AND z-index, WHICH THE SAME RULE ALSO FORCES TO 1.
+     The chain sets BOTH position:relative AND z-index:1. With z-index lost, the
+     dialog sat under the deal panel's own backdrop (1040) and its slide panel
+     (1050): visible, because the backdrop is translucent, and completely
+     unclickable. 1200 clears both. */
+  z-index: 1200 !important;
+  inset: 0;
+  /* The dialog holds pages 820px wide. Without these it can push the DOCUMENT
+     wider than the viewport, and the dashboard's own right-hand slide panel —
+     which is positioned against that width — ends up off-screen and unclickable
+     even after the dialog closes. Measured: scrollWidth 1905 in an 1800 viewport,
+     with the panel's buttons at x=1954. */
+  max-width: 100vw;
+  max-height: 100vh;
+  overflow: hidden;
+  background: rgba(8, 12, 14, .62);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.sigp-place {
+  display: flex; flex-direction: column;
+  width: min(920px, 100%); max-width: 100%;
+  height: min(88vh, 100%);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg, 10px);
+  overflow: hidden;
+}
+.sigp-place-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 18px; border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+.sigp-place-head b { display: block; font-size: 14px; color: var(--text-primary); }
+.sigp-place-head span { font-size: 12px; color: var(--text-secondary); }
+.sigp-place-actions { display: flex; align-items: center; gap: 10px; }
+.sigp-place-count {
+  font-size: 12px; font-weight: 600; color: var(--brand-primary);
+  padding: 3px 9px; border-radius: var(--border-radius-full, 999px);
+  background: var(--bg-tertiary);
+}
+
+/* The pages scroll; each is a positioning context for the boxes drawn on it. */
+.sigp-place-body {
+  flex: 1; overflow: auto; padding: 16px;
+  /* A page wider than the dialog scrolls INSIDE it rather than stretching it. */
+  max-width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  background: var(--bg-tertiary);
+}
+.sigp-place-loading, .sigp-place-failed {
+  margin: auto; max-width: 46ch; text-align: center;
+  font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+}
+.sigp-place-failed { color: var(--color-warning); }
+
+.sigp-page {
+  position: relative; flex: none;
+  background: #fff; border: 1px solid var(--border-color);
+  border-radius: 3px; overflow: hidden; cursor: crosshair;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.sigp-page canvas { display: block; }
+.sigp-page-no {
+  position: absolute; top: 6px; right: 8px;
+  font-size: 10px; padding: 1px 6px; border-radius: 3px;
+  background: rgba(0,0,0,.55); color: #fff; pointer-events: none;
+}
+
+.sigp-box {
+  position: absolute;
+  border: 2px dashed var(--brand-primary);
+  background: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: default;
+}
+.sigp-box-ghost { pointer-events: none; }
+.sigp-box > span {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--brand-primary); pointer-events: none;
+}
+.sigp-box > button {
+  position: absolute; top: -9px; right: -9px;
+  width: 18px; height: 18px; line-height: 1;
+  border: 0; border-radius: 50%;
+  background: var(--color-error); color: #fff;
+  font-size: 13px; cursor: pointer;
+}

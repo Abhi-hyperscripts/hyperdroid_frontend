@@ -98,6 +98,13 @@ const SignaturePanel = (() => {
                 ${status === 'signed' || status === 'declined'
                     ? `<button type="button" class="sigp-view" data-sig-view="${esc(r.id)}">View signed copy</button>`
                     : ''}
+                ${status === 'signed' && r.document_id && r.has_signed_document === false
+                  && r.places_marked > 0 && r.signature_kind === 'drawn'
+                    ? `<button type="button" class="sigp-quiet" data-sig-restamp="${esc(r.id)}"
+                               title="The signature is recorded, but the stamped PDF was never produced">
+                           Produce the stamped copy
+                       </button>`
+                    : ''}
             </div>
         </div>`;
     }
@@ -226,6 +233,19 @@ const SignaturePanel = (() => {
                 <span>Link stays open for</span>
                 <input type="number" id="sigExpiryDays" value="14" min="1" max="90"> days
             </label>
+            <div class="sigp-f" data-sig-place-row${st.entityType === 'deal' ? ' hidden' : ''}>
+                <span>Where do they sign?</span>
+                <span class="sigp-place-line">
+                    <button type="button" class="sigp-quiet" data-sig-place>
+                        ${st.fields.length ? 'Change the places' : 'Mark places on the document'}
+                    </button>
+                    <em class="sigp-note" data-sig-place-count>
+                        ${st.fields.length
+                            ? `${st.fields.length} place${st.fields.length === 1 ? '' : 's'} marked`
+                            : 'Optional — without this the signature is recorded but not stamped into the file.'}
+                    </em>
+                </span>
+            </div>
             <div class="sigp-form-actions">
                 <button type="submit" class="sigp-send">Create signing link</button>
                 <button type="button" class="sigp-quiet" data-sig-cancel-form>Cancel</button>
@@ -243,9 +263,22 @@ const SignaturePanel = (() => {
         const host = container.querySelector('[data-sig-doc-mount]');
         if (!host || !st.documents.length) return;
 
-        // Default to the first, so a rep who never touches the picker still
-        // sends something rather than meeting a refusal.
-        st.documentId = st.documents[0].id;
+        // ⭐⭐⭐ A RE-RENDER MUST NOT UNDO THE REP'S CHOICE.
+        //
+        // This runs on EVERY render, and render() rebuilds the panel's markup —
+        // so an unconditional `st.documentId = st.documents[0].id` here silently
+        // threw the selection back to the first file whenever anything else
+        // redrew the panel (reload() does, from the panel's own refresh path).
+        // Worse than losing it: the rebuilt dropdown showed its PLACEHOLDER, so
+        // the screen said "Which document?" while the state said "the first
+        // one", and Send would have mailed a customer a contract nobody chose.
+        //
+        // So: keep the current choice if it still names a document this record
+        // has, and only fall back to the first otherwise. The picker is then
+        // told that value, so what is displayed and what would be sent are the
+        // same fact rather than two.
+        const stillPresent = st.documents.some((d) => d.id === st.documentId);
+        if (!stillPresent) st.documentId = st.documents[0].id;
 
         if (typeof SearchableDropdown === 'function') {
             st.docDropdown = new SearchableDropdown(host, {
@@ -254,20 +287,76 @@ const SignaturePanel = (() => {
                     label: d.file_name,
                     description: d.doc_type ? String(d.doc_type).replace(/_/g, ' ') : '',
                 })),
+                value: st.documentId,
                 placeholder: 'Which document?',
                 searchPlaceholder: 'Search documents…',
                 compact: true,
                 onChange: (value) => { st.documentId = value; },
             });
         } else {
-            host.innerHTML = st.documents.map((d, i) =>
+            host.innerHTML = st.documents.map((d) =>
                 `<label class="sigp-doc-opt">
-                     <input type="radio" name="sigDoc" value="${esc(d.id)}"${i === 0 ? ' checked' : ''}>
+                     <input type="radio" name="sigDoc" value="${esc(d.id)}"${d.id === st.documentId ? ' checked' : ''}>
                      ${esc(d.file_name)}
                  </label>`).join('');
             host.addEventListener('change', (e) => {
                 if (e.target.name === 'sigDoc') st.documentId = e.target.value;
             });
+        }
+    }
+
+    /**
+     * Open the placement dialog for whichever document is selected.
+     *
+     * The bytes are fetched HERE because the dialog renders them with PDF.js,
+     * which needs a URL it can read — and the authenticated download needs a
+     * header a plain URL cannot carry.
+     */
+    async function openPlacer(container) {
+        const st = mounted.get(container);
+        if (!st || !st.documentId) {
+            Toast.error('Choose a document first, then mark where they sign.');
+            return;
+        }
+        if (typeof SignaturePlacer === 'undefined') {
+            Toast.error('The placement view could not be loaded.');
+            return;
+        }
+
+        let blobUrl;
+        try {
+            const base = (typeof CONFIG !== 'undefined' && CONFIG.crmApiBaseUrl) || '/api';
+            const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
+            const res = await fetch(
+                `${base}/entity-documents/${encodeURIComponent(st.documentId)}/download`,
+                { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+            if (!res.ok) throw new Error('That document could not be opened');
+            blobUrl = URL.createObjectURL(await res.blob());
+        } catch (e) {
+            Toast.error(e.message || 'That document could not be opened');
+            return;
+        }
+
+        try {
+            const placed = await SignaturePlacer.open(blobUrl, st.fields);
+            if (placed) {
+                st.fields = placed;
+                const count = container.querySelector('[data-sig-place-count]');
+                const button = container.querySelector('[data-sig-place]');
+                if (count) {
+                    count.textContent = placed.length
+                        ? `${placed.length} place${placed.length === 1 ? '' : 's'} marked`
+                        : 'Optional — without this the signature is recorded but not stamped into the file.';
+                }
+                if (button) {
+                    button.textContent = placed.length ? 'Change the places' : 'Mark places on the document';
+                }
+            }
+        } finally {
+            // Freed either way: the dialog has finished with it, and a blob URL
+            // that is never revoked holds the whole file in memory for the life
+            // of the page.
+            URL.revokeObjectURL(blobUrl);
         }
     }
 
@@ -305,7 +394,12 @@ const SignaturePanel = (() => {
             expires_in_days: days,
         };
         if (st.entityType === 'deal') body.deal_id = st.entityId; else body.lead_id = st.entityId;
-        if (kind === 'document') body.document_id = documentId;
+        if (kind === 'document') {
+            body.document_id = documentId;
+            // Only a document can carry places. Sending them on a quote is
+            // refused by the server, and rightly — there are no pages.
+            body.fields = st.fields || [];
+        }
 
         // ⭐⭐⭐ A REFUSAL MUST NOT WIPE WHAT THEY TYPED.
         //
@@ -363,6 +457,9 @@ const SignaturePanel = (() => {
             return;
         }
 
+        // A fresh form starts with no places. Carrying them over from the last
+        // send would silently mark a DIFFERENT document in the same spots.
+        st.fields = [];
         st.formOpen = true;
         render(container);
     }
@@ -397,6 +494,36 @@ const SignaturePanel = (() => {
             showCancel: false,
         });
         return st;
+    }
+
+    /**
+     * Produce the stamped copy for a signature that never got one.
+     *
+     * ⭐ THE WORDING SAYS PRODUCE, NOT RE-SIGN.
+     *
+     * A rep seeing this button is looking at a record that says SIGNED with no
+     * file behind it, and the one thing they must not conclude is that the
+     * customer has to sign again. Everything needed was frozen when they did:
+     * the document, the marked places, and the mark itself — this only renders
+     * them. So the button, the toast and the failure all talk about the COPY,
+     * never about the signature.
+     */
+    async function produceSignedCopy(container, button) {
+        // Disabled for the round trip: stamping uploads a new file, and two
+        // clicks would be two objects with only the second reachable.
+        button.disabled = true;
+        const original = button.textContent;
+        button.textContent = 'Producing…';
+        try {
+            await api.request(`/crm/signature-requests/${encodeURIComponent(
+                button.getAttribute('data-sig-restamp'))}/regenerate-signed-copy`, { method: 'POST' });
+            Toast.success('The stamped copy is ready.');
+            await load(container);
+        } catch (e) {
+            Toast.error(e.message || 'The stamped copy could not be produced.');
+            button.disabled = false;
+            button.textContent = original;
+        }
     }
 
     /**
@@ -591,7 +718,7 @@ const SignaturePanel = (() => {
 
         mounted.set(container, {
             entityType, entityId, requests: [], helpOpen: false, loadFailed: false,
-            formOpen: false, sending: false, documents: [], documentId: null,
+            formOpen: false, sending: false, documents: [], documentId: null, fields: [],
         });
 
         // Delegated, so a re-render cannot leave a live listener on a node that
@@ -601,6 +728,9 @@ const SignaturePanel = (() => {
             if (cancel) { cancelRequest(container, cancel.getAttribute('data-sig-cancel')); return; }
             const view = evt.target.closest('[data-sig-view]');
             if (view) { showCertificate(view.getAttribute('data-sig-view')); return; }
+            const restamp = evt.target.closest('[data-sig-restamp]');
+            if (restamp) { produceSignedCopy(container, restamp); return; }
+            if (evt.target.closest('[data-sig-place]')) { openPlacer(container); return; }
             if (evt.target.closest('[data-sig-retry]')) { load(container); return; }
             if (evt.target.closest('[data-sig-new]')) { openSendForm(container); return; }
             if (evt.target.closest('[data-sig-cancel-form]')) {
@@ -624,6 +754,8 @@ const SignaturePanel = (() => {
             if (evt.target.name !== 'sigKind') return;
             const field = container.querySelector('[data-sig-doc-field]');
             if (field) field.hidden = evt.target.value !== 'document';
+            const placeRow = container.querySelector('[data-sig-place-row]');
+            if (placeRow) placeRow.hidden = evt.target.value !== 'document';
         });
 
         container.addEventListener('toggle', (evt) => {

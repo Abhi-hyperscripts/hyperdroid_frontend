@@ -641,6 +641,17 @@
   color: var(--color-success);
 }
 .lip-quote-done svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.lip-quote-open {
+    display: inline-flex; align-items: center; gap: .4rem;
+    margin-top: .55rem; padding: .35rem .7rem;
+    font-size: .8rem; font-weight: 600; font-family: inherit;
+    color: var(--brand-primary); background: transparent;
+    border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;
+}
+.lip-quote-open:hover:not(:disabled) { border-color: var(--brand-primary); }
+.lip-quote-open:disabled { opacity: .55; cursor: progress; }
+.lip-quote-open svg { flex-shrink: 0; }
 .lip-quote-done strong { font-family: var(--font-family-mono); color: var(--text-primary); }
 
 .lip-readonly, .ppp-readonly, .ppp-blocked, .ppp-error {
