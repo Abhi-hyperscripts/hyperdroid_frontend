@@ -2878,6 +2878,30 @@ a.dv-tile:hover { transform: translateY(-2px);
 :root[data-theme="light"] .explore-btn { background: #fff; border-color: #e2e8f0; }
 :root[data-theme="light"] .explore-btn:hover { background: color-mix(in srgb, var(--brand-primary) 6%, #fff); }
 
+/* The visible way in. On desktop it reads "Search ⌘K" and teaches the shortcut; below
+   700px the label and the key collapse and it becomes a plain magnifier — which on a
+   phone is the ONLY way to open the palette, since there is no keyboard to press. */
+.cp-trigger { display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 10px 6px 9px; border-radius: 999px; cursor: pointer;
+    font-family: var(--font-family); font-size: 0.78rem; font-weight: 500;
+    color: var(--text-secondary);
+    border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    transition: color 0.14s, border-color 0.14s, background 0.14s; }
+.cp-trigger:hover { color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--brand-primary) 45%, var(--border-color));
+    background: color-mix(in srgb, var(--brand-primary) 9%, transparent); }
+.cp-trigger:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+.cp-trigger svg { width: 14px; height: 14px; flex-shrink: 0; }
+.cp-trigger kbd { font-family: var(--font-family); font-size: 0.67rem; line-height: 1.5;
+    color: var(--text-muted); border: 1px solid var(--border-color);
+    border-radius: 5px; padding: 1px 5px; }
+
+@media (max-width: 700px) {
+  .cp-trigger { padding: 7px; gap: 0; }
+  .cp-trigger .cp-trigger-txt, .cp-trigger kbd { display: none; }
+}
+
 /* ── Command palette (js/accounts/accounts-palette.js) ── */
 /* ⭐ position/inset FORCED, and the !important is load-bearing. Two global rules —
    `body.dashboard > *:not(<whitelist>)` in styles.css and another with a DIFFERENT

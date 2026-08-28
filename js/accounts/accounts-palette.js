@@ -175,6 +175,56 @@
         });
     }
 
+    /** ⌘ on Apple, Ctrl elsewhere. Printing the wrong one is worse than printing none:
+     *  it teaches a shortcut that does not work on the reader's machine. */
+    function keyLabel() {
+        const ua = navigator.userAgent || '';
+        return /Mac|iPhone|iPad|iPod/.test(navigator.platform || ua) ? '\u2318K' : 'Ctrl K';
+    }
+
+    /**
+     * ⭐ A KEYBOARD SHORTCUT NOBODY IS TOLD ABOUT IS A FEATURE NOBODY HAS.
+     *
+     * <p>Two reasons this button is not optional. The obvious one: ⌘K is invisible, so
+     * without a visible affordance the palette is a secret kept from everyone who did
+     * not read a changelog. The load-bearing one: ON A PHONE THERE IS NO KEYBOARD AT
+     * ALL, so until this existed the palette — and with it the only route from most
+     * pages to most sections — was simply unreachable on touch.</p>
+     *
+     * <p>Injected from here rather than added to js/navigation.js, which is shared by
+     * every module (Vision, Drive, HRMS, CRM, PMS): the palette is an Accounts feature
+     * and the shared navbar should not grow a button that does nothing in five other
+     * products.</p>
+     *
+     * <p>Navigation.init() REPLACES .navbar-menu's innerHTML when it renders the user
+     * avatar, and whether that happens before or after this runs depends on script
+     * order per page. So the insert is idempotent and a MutationObserver puts it back
+     * if the navbar is re-rendered underneath it — a one-shot insert on DOMContentLoaded
+     * silently loses the race on any page that inits navigation late.</p>
+     */
+    function ensureTrigger() {
+        const host = document.querySelector('.navbar-menu');
+        if (!host || host.querySelector('.cp-trigger')) return;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cp-trigger';
+        b.setAttribute('aria-label', 'Search Accounts');
+        b.innerHTML =
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+            '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+            '<span class="cp-trigger-txt">Search</span>' +
+            '<kbd>' + keyLabel() + '</kbd>';
+        b.addEventListener('click', open);
+        host.insertBefore(b, host.firstChild);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        ensureTrigger();
+        const root = document.querySelector('.navbar') || document.body;
+        // Idempotent, so re-entry from our own insert terminates immediately.
+        new MutationObserver(ensureTrigger).observe(root, { childList: true, subtree: true });
+    });
+
     document.addEventListener('keydown', (e) => {
         const k = (e.key || '').toLowerCase();
         if ((e.metaKey || e.ctrlKey) && k === 'k') { e.preventDefault(); open(); return; }
