@@ -619,9 +619,15 @@ function addProformaLine(data = {}) {
     select.style.display = 'none';
     if (data.account_id) select.value = data.account_id;
 
+    // ⭐ FILTER THE LIST THE USER ACTUALLY SEES. The hidden native <select> above is built
+    // from postableAccounts(accounts, 'income'), but this — the SearchableDropdown that
+    // replaces it on screen — mapped the raw account list, so a quotation offered every
+    // account in the chart: "1000 — Assets", "1110 — Cash & Cash Equivalents", "1111 —
+    // Cash in Hand". You cannot sell Cash in Hand. Its three siblings (receivables,
+    // payables, purchase-orders) all filter here; this was the one that did not.
     const buildAccountOptions = () => [
         { value: '', label: 'Select...' },
-        ...accounts.map(a => {
+        ...AccountsCommon.postableAccounts(accounts, 'income').map(a => {
             const code = a.account_code || a.code || '';
             const name = a.account_name || a.name || '';
             return { value: a.id, label: code && name ? `${code} — ${name}` : (name || code) };

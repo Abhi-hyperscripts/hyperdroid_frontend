@@ -27,6 +27,9 @@
     'use strict';
 
     let INDEX = null, el = null, listEl = null, inputEl = null, rows = [], cursor = 0;
+    // Filled in asynchronously; the palette opens immediately with whatever is known and
+    // repaints if the counts land after. Waiting on four requests would defeat ⌘K.
+    let BADGES = {};
     const RECENT_KEY = 'acct_palette_recent';
 
     const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -36,7 +39,10 @@
     const helpFor = (href) => (window.AccountsExplore ? window.AccountsExplore.describe(href) : '');
 
     function build() {
-        const groups = (window.AccountsExplore && window.AccountsExplore.groups) || [];
+        // visibleGroups(), not groups: the palette must not hand back a door the menu
+        // deliberately hid, or the role gate is decorative.
+        const groups = (window.AccountsExplore && window.AccountsExplore.visibleGroups())
+                    || (window.AccountsExplore && window.AccountsExplore.groups) || [];
         const out = [];
         groups.forEach(g => g.links.forEach(([label, href]) =>
             out.push({ label, href, group: g.name, color: g.color, desc: helpFor(href) })));
@@ -97,6 +103,7 @@
                     <span class="cp-label">${esc(r.label)}</span>
                     ${r.desc ? `<span class="cp-desc">${esc(r.desc)}</span>` : ''}
                   </span>
+                  ${BADGES[r.href] ? `<span class="cp-badge cp-badge-${BADGES[r.href].tone}">${BADGES[r.href].count > 99 ? '99+' : BADGES[r.href].count}</span>` : ''}
                   <span class="cp-group">${esc(r.group)}</span>
                 </a>`).join('')
             : `<div class="cp-empty">Nothing matches “${esc(q)}”.</div>`;
@@ -123,6 +130,7 @@
     function close() { if (el) { el.remove(); el = null; } }
 
     function open() {
+        markSeen();
         if (el) { inputEl.focus(); inputEl.select(); return; }
         // ACCOUNTS_HELP is normally already loaded by accounts-common's help panels.
         // If the user hits ⌘K before that lands, open immediately WITHOUT descriptions
@@ -136,6 +144,9 @@
             document.head.appendChild(s);
         }
         INDEX = build();
+        if (window.AccountsBadges) {
+            window.AccountsBadges.load().then(m => { BADGES = m || {}; if (el) paint(inputEl.value); });
+        }
 
         el = document.createElement('div');
         el.className = 'cp-scrim';
@@ -218,11 +229,84 @@
         host.insertBefore(b, host.firstChild);
     }
 
+    /**
+     * ⭐ THE HINT WHERE IT IS ACTUALLY WANTED: an empty screen.
+     *
+     * <p>"No invoices found" is the moment someone is most likely to be in the wrong
+     * place, and therefore the moment a jump-anywhere shortcut is worth most. So the
+     * hint is appended to empty states rather than shouted on arrival.</p>
+     *
+     * <p>⭐ ONE IMPLEMENTATION, NOT 69 EDITS. AccountsCommon.emptyState() exists but is
+     * used in exactly one place: seventeen page scripts write .empty-state markup by
+     * hand, across 69 sites. Adding a line to each is precisely the shape that ends up
+     * applied to 60 of them — so this attaches to the CLASS instead, once, and covers
+     * every site including ones written next year. Idempotent, and a MutationObserver
+     * catches the states that are rendered after a filter or a tab switch.</p>
+     */
+    function attachEmptyStateHints(root) {
+        (root || document).querySelectorAll('.empty-state').forEach(es => {
+            if (es.querySelector('.cp-hint')) return;
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'cp-hint';
+            b.textContent = `or press ${keyLabel()} to jump anywhere`;
+            b.addEventListener('click', (e) => { e.preventDefault(); open(); });
+            es.appendChild(b);
+        });
+    }
+
+    /**
+     * ⭐ ONE POINTER, ONCE, AND ONLY TO SOMEONE WHO HAS NEVER USED IT.
+     *
+     * <p>A coach mark is an interruption, so it earns its place only by never appearing
+     * twice and never appearing to someone who already knows. It is suppressed the
+     * moment the palette is opened by any route — including the very first time — so a
+     * user who found ⌘K on their own is never told about ⌘K.</p>
+     */
+    const SEEN_KEY = 'acct_palette_seen';
+    function markSeen() { try { localStorage.setItem(SEEN_KEY, '1'); } catch (_) {} }
+    function coachMark() {
+        let seen = true;
+        try { seen = localStorage.getItem(SEEN_KEY) === '1'; } catch (_) {}
+        if (seen) return;
+        const anchor = document.querySelector('.cp-trigger');
+        if (!anchor) return;
+        const tip = document.createElement('div');
+        tip.className = 'cp-coach';
+        tip.innerHTML = `<strong>Search anything</strong>` +
+            `<span>Jump to any section — invoices, GSTR-1, stock on hand — from any page.</span>` +
+            `<button type="button" class="cp-coach-ok">Got it</button>`;
+        document.body.appendChild(tip);
+        const place = () => {
+            const r = anchor.getBoundingClientRect();
+            tip.style.top = Math.round(r.bottom + 10) + 'px';
+            tip.style.right = Math.max(12, Math.round(window.innerWidth - r.right)) + 'px';
+        };
+        place();
+        window.addEventListener('resize', place);
+        const dismiss = () => { markSeen(); tip.remove(); window.removeEventListener('resize', place); };
+        tip.querySelector('.cp-coach-ok').addEventListener('click', dismiss);
+        anchor.addEventListener('click', dismiss, { once: true });
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && (e.key || '').toLowerCase() === 'k') dismiss();
+        }, { once: true });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         ensureTrigger();
+        attachEmptyStateHints();
         const root = document.querySelector('.navbar') || document.body;
         // Idempotent, so re-entry from our own insert terminates immediately.
         new MutationObserver(ensureTrigger).observe(root, { childList: true, subtree: true });
+        // Empty states appear after a fetch, a filter or a tab switch, so a one-shot
+        // sweep on load would miss almost all of them. Debounced: page scripts replace
+        // whole table bodies and would otherwise trigger a scan per row.
+        let t = null;
+        new MutationObserver(() => {
+            clearTimeout(t);
+            t = setTimeout(() => attachEmptyStateHints(), 150);
+        }).observe(document.body, { childList: true, subtree: true });
+        setTimeout(coachMark, 1400);
     });
 
     document.addEventListener('keydown', (e) => {

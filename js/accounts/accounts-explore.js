@@ -40,6 +40,43 @@
     // Descriptions are written for someone with no accounting background — the same
     // audience js/accounts/accounts-help.js is written for. They say what the group
     // is for, not what it contains; the sub-links already say that.
+    /**
+     * ⭐ THE GATE IS COPIED FROM THE CONTROLLER, NOT GUESSED.
+     *
+     * <p>A menu that offers a door the server will slam is worse than one that hides
+     * it: the user reads it as the product being broken. So each restricted link
+     * carries the EXACT role list from its [Authorize(Roles=...)] attribute, named
+     * after the controller it came from — which is also how the next person checks it
+     * is still true.</p>
+     *
+     * <p>The three helpers on accountsRoles (isAdmin / isManager / isAuditor) were not
+     * enough. BudgetsController allows ADMIN, MANAGER, AUDITOR and SUPERADMIN: isManager()
+     * would wrongly hide it from an auditor who IS allowed, and isAuditor() would wrongly
+     * hide it from a manager who IS allowed. Neither expresses "anyone but a plain user",
+     * so the role list is spelled out per link instead of squeezed into a helper.</p>
+     */
+    const R = {
+        // [Authorize(Roles = "ACCOUNTS_ADMIN,SUPERADMIN")] — Coupons, Bxgy, GiftCards,
+        // AutomaticDiscounts, StorefrontKeys, Import, Mailboxes, Closing
+        ADMIN: ['ACCOUNTS_ADMIN', 'SUPERADMIN'],
+        // RecurringController
+        MANAGER: ['ACCOUNTS_ADMIN', 'ACCOUNTS_MANAGER', 'SUPERADMIN'],
+        // BudgetsController, AuditController — everyone except a plain ACCOUNTS_USER
+        NOT_PLAIN_USER: ['ACCOUNTS_ADMIN', 'ACCOUNTS_MANAGER', 'ACCOUNTS_AUDITOR', 'SUPERADMIN'],
+        // AdminController — integrity check, job log, danger zone
+        SUPER: ['SUPERADMIN'],
+    };
+
+    /** Roles from the JWT. Read here rather than through accountsRoles, whose init()
+     *  runs inside AccountsCommon.initPage — this module renders on DOMContentLoaded and
+     *  must not depend on which listener registered first. */
+    function myRoles() {
+        try { return (typeof getUserRoles === 'function' ? getUserRoles() : []) || []; }
+        catch (_) { return []; }
+    }
+
+    const allowed = (roles) => !roles || roles.some(r => myRoles().includes(r));
+
     const GROUPS = [
         { id: 'sell', name: 'Sell', color: '#22c55e', icon: I.sell,
           desc: 'Quote, invoice and get paid — everything on the money-coming-in side.',
@@ -51,7 +88,7 @@
             ['Payments received',   'receivables.html#customer-payments'],
             ['Credit notes',        'receivables.html#credit-notes'],
             ['Counter sale (POS)',  'pos.html#pos-counter'],
-            ['Recurring invoices',  'recurring.html#recurring-list'],
+            ['Recurring invoices',  'recurring.html#recurring-list', R.MANAGER],
             ['Who owes you (AR aging)', 'receivables.html#ar-aging'],
             ['Customer statements', 'receivables.html#customer-statements'],
             ['Overdue interest',    'receivables.html#overdue-interest'],
@@ -84,7 +121,7 @@
             ['Price lists',         'inventory.html#inv-pricelists'],
             ['Schemes',             'inventory.html#inv-schemes'],
             ['Brands & categories', 'inventory.html#inv-merch'],
-            ['Bulk import',         'inventory.html#inv-import'],
+            ['Bulk import',         'inventory.html#inv-import', R.ADMIN],
           ]},
         { id: 'bank', name: 'Banking & cash', color: '#3b82f6', icon: I.bank,
           desc: 'Where the money actually sits — accounts, transfers, cheques and reconciliation.',
@@ -119,8 +156,8 @@
             ['Account ledger',      'reports.html#account-ledger'],
             ['Day book',            'reports.html#day-book'],
             ['Cash book',           'reports.html#cash-book'],
-            ['Budgets',             'budgets.html#budget-list'],
-            ['Budget vs actual',    'budgets.html#budget-analysis'],
+            ['Budgets',             'budgets.html#budget-list', R.NOT_PLAIN_USER],
+            ['Budget vs actual',    'budgets.html#budget-analysis', R.NOT_PLAIN_USER],
             ['Department spend',    'cost-centres.html#cc-spend'],
             ['Projects',            'projects.html#pr-list'],
             ['Project statement',   'projects.html#pr-stmt'],
@@ -142,11 +179,11 @@
         { id: 'store', name: 'Online store', color: '#14b8a6', icon: I.store,
           desc: 'The storefront API and the offers that run on it.',
           links: [
-            ['API keys',            'storefront.html#sf-keys'],
-            ['Coupons',             'storefront.html#sf-coupons'],
-            ['Automatic discounts', 'storefront.html#sf-discounts'],
-            ['Buy X get Y',         'storefront.html#sf-bxgy'],
-            ['Gift cards',          'storefront.html#sf-giftcards'],
+            ['API keys',            'storefront.html#sf-keys', R.ADMIN],
+            ['Coupons',             'storefront.html#sf-coupons', R.ADMIN],
+            ['Automatic discounts', 'storefront.html#sf-discounts', R.ADMIN],
+            ['Buy X get Y',         'storefront.html#sf-bxgy', R.ADMIN],
+            ['Gift cards',          'storefront.html#sf-giftcards', R.ADMIN],
           ]},
         { id: 'setup', name: 'Setup & admin', color: '#94A3B8', icon: I.setup,
           desc: 'Who you trade with, how the books are structured, and everything administrative.',
@@ -161,11 +198,11 @@
             ['COA templates',       'setup.html#templates'],
             ['Tenant settings',     'admin.html#tenant-settings'],
             ['Custom fields',       'admin.html#custom-fields'],
-            ['Email sending',       'admin.html#email-sending'],
+            ['Email sending',       'admin.html#email-sending', R.ADMIN],
             ['Pending approvals',   'admin.html#pending-approvals'],
-            ['Audit logs',          'admin.html#audit-logs'],
-            ['Integrity check',     'admin.html#integrity-check'],
-            ['Year-end closing',    'admin.html#year-end'],
+            ['Audit logs',          'admin.html#audit-logs', R.NOT_PLAIN_USER],
+            ['Integrity check',     'admin.html#integrity-check', R.SUPER],
+            ['Year-end closing',    'admin.html#year-end', R.ADMIN],
             ['Subscription & billing', 'billing.html#subscriptions'],
           ]},
     ];
@@ -196,10 +233,22 @@
 
     const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+    /**
+     * The groups as THIS user may see them. A group whose every link is gated away
+     * disappears entirely rather than rendering an empty card with a count of 0 —
+     * for a plain ACCOUNTS_USER that is the whole Online store group, since every one
+     * of its five sections is ACCOUNTS_ADMIN only.
+     */
+    function visibleGroups() {
+        return GROUPS
+            .map(g => ({ ...g, links: g.links.filter(l => allowed(l[2])) }))
+            .filter(g => g.links.length > 0);
+    }
+
     function render(host) {
         if (!host) return;
         host.className = 'explore-groups';
-        host.innerHTML = GROUPS.map(g => `
+        host.innerHTML = visibleGroups().map(g => `
             <section class="xg" data-group="${g.id}" style="--xg:${g.color}">
               <button type="button" class="xg-head" aria-expanded="false" aria-controls="xg-${g.id}">
                 <span class="xg-ic">
@@ -262,10 +311,18 @@
         });
     }
 
-    window.AccountsExplore = { groups: GROUPS, render, describe };
+    window.AccountsExplore = { groups: GROUPS, visibleGroups, render, describe };
     document.addEventListener('DOMContentLoaded', () => {
         const host = document.getElementById('exploreGroups');
         render(host);
         attachTooltips(host, 20);
+        // Deferred: the counts come from four endpoints and must never sit between the
+        // user and a rendered menu. accounts-badges.js caches per session, so this is
+        // one round of requests however many times the dashboard is revisited.
+        setTimeout(() => window.AccountsBadges && window.AccountsBadges.applyToExplore(host), 900);
+        // Deferred: the counts come from four endpoints and must never sit between the
+        // user and a rendered menu. accounts-badges.js caches per session, so this is
+        // one round of requests however many times the dashboard is revisited.
+        setTimeout(() => window.AccountsBadges && window.AccountsBadges.applyToExplore(host), 900);
     });
 })();

@@ -2902,6 +2902,54 @@ a.dv-tile:hover { transform: translateY(-2px);
   .cp-trigger .cp-trigger-txt, .cp-trigger kbd { display: none; }
 }
 
+/* The empty-state nudge and the one-time coach mark. */
+.cp-hint { display: inline-block; margin-top: 10px; cursor: pointer;
+    font-family: var(--font-family); font-size: 0.76rem; font-weight: 500;
+    color: var(--text-muted); background: transparent;
+    border: 1px dashed color-mix(in srgb, var(--border-color) 85%, transparent);
+    border-radius: 8px; padding: 5px 10px;
+    transition: color 0.14s, border-color 0.14s, background 0.14s; }
+.cp-hint:hover { color: var(--text-primary); border-style: solid;
+    border-color: color-mix(in srgb, var(--brand-primary) 45%, var(--border-color));
+    background: color-mix(in srgb, var(--brand-primary) 8%, transparent); }
+
+.cp-coach { position: fixed !important; z-index: 4100; max-width: 268px;
+    display: flex; flex-direction: column; gap: 5px;
+    padding: 13px 15px; border-radius: 13px;
+    background: var(--bg-primary);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 40%, var(--border-color));
+    box-shadow: 0 16px 40px rgba(0,0,0,0.38);
+    animation: cpIn 0.2s ease-out; }
+.cp-coach::before { content: ''; position: absolute; top: -6px; right: 26px;
+    width: 11px; height: 11px; transform: rotate(45deg);
+    background: var(--bg-primary);
+    border-left: 1px solid color-mix(in srgb, var(--brand-primary) 40%, var(--border-color));
+    border-top: 1px solid color-mix(in srgb, var(--brand-primary) 40%, var(--border-color)); }
+.cp-coach strong { font-size: 0.85rem; color: var(--text-primary); }
+.cp-coach span { font-size: 0.75rem; line-height: 1.45; color: var(--text-muted); }
+.cp-coach-ok { align-self: flex-start; margin-top: 4px; cursor: pointer;
+    font-family: var(--font-family); font-size: 0.74rem; font-weight: 600;
+    color: var(--brand-primary); background: transparent; border: 0; padding: 2px 0; }
+.cp-coach-ok:hover { text-decoration: underline; }
+
+/* ── Attention badges (js/accounts/accounts-badges.js) ──
+   Two tones only. `alert` is money already late; `warn` is something that will bite if
+   ignored. A third tone would make the menu a traffic light nobody reads. */
+.xg-badge, .cp-badge { flex-shrink: 0; margin-left: auto;
+    font-size: 0.65rem; font-weight: 700; font-variant-numeric: tabular-nums;
+    border-radius: 999px; padding: 1px 6px; line-height: 1.55; }
+.xg-badge-alert, .cp-badge-alert { color: var(--color-error);
+    background: color-mix(in srgb, var(--color-error) 15%, transparent); }
+.xg-badge-warn, .cp-badge-warn { color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 16%, transparent); }
+.cp-badge { margin-left: 0; }
+
+/* Rolled up to the group header so a COLLAPSED group still says something inside wants
+   attention — otherwise the badges are only visible to someone who already expanded. */
+.xg-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin: 8px 2px 0 0; }
+.xg-dot-alert { background: var(--color-error); }
+.xg-dot-warn { background: var(--color-warning); }
+
 /* ── Command palette (js/accounts/accounts-palette.js) ── */
 /* ⭐ position/inset FORCED, and the !important is load-bearing. Two global rules —
    `body.dashboard > *:not(<whitelist>)` in styles.css and another with a DIFFERENT
