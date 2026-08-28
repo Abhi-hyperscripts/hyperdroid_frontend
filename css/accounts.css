@@ -2878,6 +2878,77 @@ a.dv-tile:hover { transform: translateY(-2px);
 :root[data-theme="light"] .explore-btn { background: #fff; border-color: #e2e8f0; }
 :root[data-theme="light"] .explore-btn:hover { background: color-mix(in srgb, var(--brand-primary) 6%, #fff); }
 
+/* ── Grouped Explore menu (js/accounts/accounts-explore.js) ──
+   Replaces the flat tile strip: nine collapsible groups, each with a plain-English
+   description, expanding to the sections inside it. Each group carries its identity
+   colour as --xg, so the icon, the open border and the link markers all pick it up
+   from one place and a new group needs no new CSS. */
+
+/* Multi-column, not grid. A grid row is as tall as its tallest cell, so one expanded
+   group left dead space beside every collapsed one — the more useful the menu got,
+   the worse it looked. Columns flow instead. break-inside keeps a group whole. */
+.explore-groups { column-width: 320px; column-gap: 10px; }
+.explore-groups .xg { break-inside: avoid; -webkit-column-break-inside: avoid; margin-bottom: 10px; }
+
+.xg { border-radius: 14px; overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 2%, transparent);
+    transition: border-color 0.18s, background 0.18s; }
+.xg:hover { border-color: color-mix(in srgb, var(--xg) 30%, var(--border-color)); }
+.xg.open { border-color: color-mix(in srgb, var(--xg) 38%, var(--border-color));
+    background: color-mix(in srgb, var(--xg) 4%, transparent); }
+
+.xg-head { width: 100%; display: flex; align-items: flex-start; gap: 11px;
+    padding: 12px 13px; background: transparent; border: 0; cursor: pointer;
+    font-family: var(--font-family); text-align: left; color: var(--text-primary); }
+.xg-head:hover { background: color-mix(in srgb, var(--xg) 6%, transparent); }
+.xg-head:focus-visible { outline: 2px solid var(--xg); outline-offset: -2px; }
+
+.xg-ic { width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; color: var(--xg);
+    display: inline-flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--xg) 13%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--xg) 22%, transparent); }
+.xg-ic svg { width: 16px; height: 16px; }
+
+.xg-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.xg-name { font-size: 0.88rem; font-weight: 650; letter-spacing: -0.01em; line-height: 1.2; }
+.xg-desc { font-size: 0.72rem; line-height: 1.4; color: var(--text-muted); }
+
+.xg-count { flex-shrink: 0; margin-top: 2px;
+    font-size: 0.67rem; font-weight: 650; font-variant-numeric: tabular-nums;
+    color: color-mix(in srgb, var(--xg) 75%, var(--text-primary));
+    background: color-mix(in srgb, var(--xg) 12%, transparent);
+    border-radius: 999px; padding: 2px 7px; line-height: 1.5; }
+.xg-chev { width: 15px; height: 15px; flex-shrink: 0; margin-top: 4px; color: var(--text-muted);
+    transition: transform 0.2s var(--dash-ease), color 0.2s; }
+.xg.open .xg-chev { transform: rotate(180deg); color: var(--xg); }
+
+/* ⭐ ROWS, NOT PILLS. These were bordered chips that wrapped raggedly — eleven of them
+   in Sell alone made a torn right edge, and every link read at identical weight, which
+   is the same "flat list of nouns" problem the groups exist to solve. Aligned rows in
+   even columns scan top-to-bottom, and the leading marker carries the group colour so
+   a link is visibly part of its group. */
+.xg-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: 1px 6px; padding: 0 10px 11px;
+    border-top: 1px solid color-mix(in srgb, var(--xg) 14%, transparent);
+    margin-top: 2px; padding-top: 8px; }
+.xg-link { display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 8px; text-decoration: none;
+    font-size: 0.775rem; font-weight: 500; line-height: 1.3;
+    color: var(--text-secondary);
+    transition: background 0.13s, color 0.13s, transform 0.13s var(--dash-ease); }
+.xg-link::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+    background: var(--xg); opacity: 0.4; transition: opacity 0.13s, transform 0.13s; }
+.xg-link:hover { color: var(--text-primary); transform: translateX(2px);
+    background: color-mix(in srgb, var(--xg) 11%, transparent); }
+.xg-link:hover::before { opacity: 1; transform: scale(1.35); }
+.xg-link:focus-visible { outline: 2px solid var(--xg); outline-offset: -1px; }
+
+:root[data-theme="light"] .xg { background: #fff; border-color: #e2e8f0; }
+:root[data-theme="light"] .xg.open { background: color-mix(in srgb, var(--xg) 3%, #fff); }
+
+@media (max-width: 520px) { .xg-body { grid-template-columns: 1fr; } }
+
 /* Layout refinement: aging pair 2-up, net chart in side stack, Explore full-width horizontal */
 .dv-band2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 13px; margin-bottom: 13px;
     animation: dashRise 0.55s var(--dash-ease) 0.2s both; }
@@ -3259,6 +3330,17 @@ nav.pulse-rail::-webkit-scrollbar { width: 0; height: 0; display: none; }
   cursor: pointer;
   color: var(--text-muted);
   flex-shrink: 0;
+}
+
+/* The pulse rail's items are <button>s now (rendered by js/accounts/accounts-rail.js
+   from the same list the drawer rail uses), so they need the UA button reset that
+   rail-drawer.css already applies to its own. Without it every rail icon picks up a
+   1px border and the platform button face. Harmless where the items are still divs. */
+nav.pulse-rail .rail-item {
+  background: transparent;
+  border: 0;
+  font-family: var(--font-family);
+  text-align: center;
 }
 
 .rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
