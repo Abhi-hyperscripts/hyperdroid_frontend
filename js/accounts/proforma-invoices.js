@@ -333,11 +333,18 @@ async function viewProforma(id) {
             const lineAmt = Number(l.amount) || 0;
             const lineTax = Number(l.tax_amount) || 0; // stored per-line tax; never recompute from current rates
             const taxLabel = cfg ? `${cfg.name || 'Tax'}${lineTax ? ' ' + fmt(lineTax) : ''}` : (lineTax ? fmt(lineTax) : '—');
+            // ⭐ SHOW THE DISCOUNT, OR THE ROW READS AS AN ARITHMETIC ERROR. `amount` is stored NET,
+            // so on a discounted line qty x unit_price does NOT equal the Amount beside it — 10 x
+            // Rs 1,000 showing Rs 9,000 looks like a bug to the person checking their own quote.
+            // The Disc % column is what makes the row add up on screen, exactly as it does on the PDF.
+            const discPct = Number(l.discount_percent) || 0;
             return `<tr>
                 <td>${esc(l.description || '-')}</td>
                 <td>${esc(l.account_code ? l.account_code + ' — ' + (l.account_name || '') : (l.account_name || '-'))}</td>
-                <td>${l.quantity}</td>
+                <td>${esc(l.hsn_sac || '-')}</td>
+                <td>${l.quantity}${l.uom ? ' ' + esc(l.uom) : ''}</td>
                 <td class="text-right">${fmt(l.unit_price)}</td>
+                <td class="text-right">${discPct > 0 ? discPct + '%' : '-'}</td>
                 <td>${esc(taxLabel)}</td>
                 <td class="text-right">${fmt(lineAmt + lineTax)}</td>
             </tr>`;
@@ -347,7 +354,7 @@ async function viewProforma(id) {
         if (lines.length) {
             linesHtml = `<div class="data-table-container" style="margin-top: 1rem;">
                 <table class="data-table">
-                    <thead><tr><th>Description</th><th>Account</th><th style="width:80px;">Qty</th><th style="width:100px;">Unit Price</th><th style="width:140px;">Tax</th><th style="width:110px;">Amount</th></tr></thead>
+                    <thead><tr><th>Description</th><th>Account</th><th style="width:90px;">HSN/SAC</th><th style="width:90px;">Qty</th><th style="width:100px;">Unit Price</th><th style="width:70px;">Disc %</th><th style="width:140px;">Tax</th><th style="width:110px;">Amount</th></tr></thead>
                     <tbody>${lineRows}</tbody>
                 </table>
             </div>`;
