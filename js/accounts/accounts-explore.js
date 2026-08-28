@@ -45,13 +45,13 @@
           desc: 'Quote, invoice and get paid — everything on the money-coming-in side.',
           links: [
             ['Invoices',            'receivables.html#customer-invoices'],
-            ['Quotes / Proforma',   'proforma-invoices.html'],
+            ['Quotes / Proforma',   'proforma-invoices.html#proforma-list'],
             ['Sales orders',        'receivables.html#sales-orders'],
             ['Delivery challans',   'receivables.html#delivery-challans'],
             ['Payments received',   'receivables.html#customer-payments'],
             ['Credit notes',        'receivables.html#credit-notes'],
-            ['Counter sale (POS)',  'pos.html'],
-            ['Recurring invoices',  'recurring.html'],
+            ['Counter sale (POS)',  'pos.html#pos-counter'],
+            ['Recurring invoices',  'recurring.html#recurring-list'],
             ['Who owes you (AR aging)', 'receivables.html#ar-aging'],
             ['Customer statements', 'receivables.html#customer-statements'],
             ['Overdue interest',    'receivables.html#overdue-interest'],
@@ -59,7 +59,7 @@
         { id: 'buy', name: 'Buy & spend', color: '#f59e0b', icon: I.buy,
           desc: 'Order from suppliers, record their bills, pay them, and claim staff expenses.',
           links: [
-            ['Purchase orders',     'purchase-orders.html'],
+            ['Purchase orders',     'purchase-orders.html#po-list'],
             ['Vendor bills',        'payables.html#vendor-bills'],
             ['Payments made',       'payables.html#vendor-payments'],
             ['Debit notes',         'payables.html#debit-notes'],
@@ -95,7 +95,7 @@
             ['Cheques / PDC',       'banking.html#pdc-cheques'],
             ['Import statement',    'banking.html#statement-import'],
             ['Reconciliation',      'banking.html#reconciliation'],
-            ['Loans',               'loans.html'],
+            ['Loans',               'loans.html#loan-list'],
           ]},
         { id: 'books', name: 'The books', color: '#F472B6', icon: I.books,
           desc: 'The double-entry record underneath everything else, and the assets you own.',
@@ -170,6 +170,30 @@
           ]},
     ];
 
+    /**
+     * ⭐ THE DESCRIPTIONS ARE NOT NEW COPY. accounts-help.js already carries 94
+     * hand-written, plain-English explanations — one per section, for a reader with no
+     * accounting background — and 82 of the 91 destinations below have one. Each panel
+     * opens with a bolded lead sentence ("Lot & expiry control for pharma, food &
+     * chemicals.") which is exactly the one-liner a menu wants, so this takes the first
+     * sentence and strips the markup.
+     *
+     * Lives HERE, next to the destinations, rather than in the palette: the palette is
+     * a consumer of this list, and a describe() that lived there would have to be
+     * reimplemented by the next consumer.
+     */
+    function describe(href) {
+        const [page, anchor] = String(href).split('#');
+        const html = anchor && window.ACCOUNTS_HELP
+            ? window.ACCOUNTS_HELP[`${page.replace('.html', '')}:${anchor}`] : null;
+        if (!html) return '';
+        const text = String(html).replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&')
+                                 .replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+        const stop = text.search(/\.\s/);
+        const first = stop > 0 ? text.slice(0, stop + 1) : text;
+        return first.length > 170 ? first.slice(0, 167).trimEnd() + '…' : first;
+    }
+
     const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
     function render(host) {
@@ -223,6 +247,25 @@
         } catch (_) { /* ignore */ }
     }
 
-    window.AccountsExplore = { groups: GROUPS, render };
-    document.addEventListener('DOMContentLoaded', () => render(document.getElementById('exploreGroups')));
+    /** Attach the written descriptions as tooltips. accounts-common.js lazy-loads
+     *  accounts-help.js for its own help panels, so this waits for it rather than
+     *  pulling a second 65KB copy — and gives up quietly if it never arrives. */
+    function attachTooltips(host, tries) {
+        if (!host) return;
+        if (!window.ACCOUNTS_HELP) {
+            if (tries > 0) setTimeout(() => attachTooltips(host, tries - 1), 400);
+            return;
+        }
+        host.querySelectorAll('.xg-link').forEach(a => {
+            const d = describe(a.getAttribute('href'));
+            if (d) a.setAttribute('data-tooltip', d);
+        });
+    }
+
+    window.AccountsExplore = { groups: GROUPS, render, describe };
+    document.addEventListener('DOMContentLoaded', () => {
+        const host = document.getElementById('exploreGroups');
+        render(host);
+        attachTooltips(host, 20);
+    });
 })();
