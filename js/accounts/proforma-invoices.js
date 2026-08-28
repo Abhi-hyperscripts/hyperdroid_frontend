@@ -525,6 +525,7 @@ function showCreateProformaModal() {
     proformaCustSel.dispatchEvent(new Event('change'));
     document.getElementById('proformaLines').innerHTML = '';
     initProformaCurrencyDropdown(BASE_CURRENCY);
+    initProformaItemPicker();
     addProformaLine();
     calculateProformaTotals();
     renderProformaCustomFields(null);
@@ -570,7 +571,13 @@ async function editProforma(id) {
         }
         const tbody = document.getElementById('proformaLines');
         tbody.innerHTML = '';
+        // The picker is needed on the EDIT path too, not just on create — adding a catalogue line
+        // to an existing quote is the ordinary way a quote grows during a negotiation.
+        initProformaItemPicker();
         if (lines.length) {
+            // addProformaLine reads hsn_sac / discount_percent / item_id / uom straight off the API
+            // row, so an edited quote round-trips every particular instead of dropping the ones the
+            // editor cannot show.
             lines.forEach(l => addProformaLine(l));
         } else {
             addProformaLine();
@@ -608,12 +615,19 @@ function addProformaLine(data = {}) {
     row.innerHTML = `
         <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
+        <td><input type="text" class="form-control line-hsn" value="${AccountsCommon.escapeHtml(data.hsn_sac || '')}" placeholder="HSN/SAC"></td>
         <td><input type="number" class="form-control line-qty" value="${data.quantity ?? 1}" min="0" step="any" oninput="calculateProformaTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${data.unit_price || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateProformaTotals()"></td>
+        <td><input type="number" class="form-control line-disc" value="${data.discount_percent || ''}" min="0" max="100" step="0.01" placeholder="0" oninput="calculateProformaTotals()"></td>
         <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeProformaLine(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
+
+    // Held on the row, not in a field: the item is an identity the line was quoted from,
+    // and it must survive to the invoice on conversion.
+    row._itemId = data.item_id || null;
+    row._uom = data.uom || null;
 
     const select = row.querySelector('.line-account');
     select.style.display = 'none';
@@ -759,6 +773,59 @@ async function openProformaQuickAddAccount(dropdownInstance, rebuildOptions) {
     };
 }
 
+
+// ─────────────────────────── quote from the catalogue ───────────────────────────
+
+let proformaItems = [];
+let proformaItemPickerDD = null;
+
+/**
+ * ⭐ THE SAME ITEM PICKER THE INVOICE HAS. A quotation is a preview of the tax invoice it
+ * becomes, so it must be quotable from the catalogue — picking an item pre-fills the
+ * description, price, HSN and GST slab, and the item identity rides through conversion.
+ * Without this a quote could only ever be typed free-hand, and every particular had to be
+ * re-entered on the invoice, which is exactly how a bill comes to disagree with the quote
+ * the customer accepted.
+ *
+ * `usage: 'sales'` matches the invoice's call, so raw materials and other not-sold items
+ * stay out of a sales document.
+ */
+async function initProformaItemPicker() {
+    const container = document.getElementById('proformaItemPicker');
+    if (!container || typeof SearchableDropdown !== 'function') return;
+    if (!proformaItems.length) {
+        try {
+            proformaItems = await api.request(AccountsCommon.buildUrl('inventory/items', { usage: 'sales' }), { _skipSpinner: true });
+        } catch { proformaItems = []; }
+    }
+    if (!Array.isArray(proformaItems)) proformaItems = proformaItems?.data || [];
+    const opts = [{ value: '', label: '+ Add from item catalog…' },
+        ...proformaItems.filter(i => i.is_active).map(i => ({
+            value: i.id, label: `${i.sku} — ${i.name} (${AccountsCommon.formatCurrency(i.sale_price)})`
+        }))];
+    container.innerHTML = '';
+    proformaItemPickerDD = new SearchableDropdown(container, {
+        id: 'proformaItemPickerDD', options: opts, value: '', placeholder: '+ Add from item catalog…',
+        searchPlaceholder: 'Search SKU / name…', compact: true,
+        onChange: (v) => {
+            if (!v) return;
+            const it = proformaItems.find(x => x.id === v);
+            if (it) {
+                addProformaLine({
+                    item_id: it.id, description: it.name, hsn_sac: it.hsn_sac || '',
+                    quantity: 1, unit_price: it.sale_price, uom: it.unit || null,
+                    // The item's own revenue account, else the first income account already offered
+                    // in the line dropdown — never a balance-sheet account.
+                    account_id: it.income_account_id || AccountsCommon.postableAccounts(accounts, 'income')[0]?.id || undefined,
+                    ...(it.tax_config_id ? { tax_config_id: it.tax_config_id } : {})
+                });
+                calculateProformaTotals();
+            }
+            proformaItemPickerDD.setValue?.('');
+        }
+    });
+}
+
 function removeProformaLine(btn) {
     btn.closest('tr').remove();
     calculateProformaTotals();
@@ -770,7 +837,12 @@ function calculateProformaTotals() {
     document.querySelectorAll('#proformaLines tr').forEach(row => {
         const qty = parseFloat(row.querySelector('.line-qty')?.value) || 0;
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
-        const amt = qty * rate;
+        // ⭐ MIRROR THE SERVER'S ARITHMETIC, IN THE SAME ORDER. gross is rounded to 2dp BEFORE the
+        // discount and the tax is charged on the NET — see ProformaLineNet in the business layer.
+        // Computing tax on gross here would show the customer one total on screen and store another.
+        const disc = Math.min(100, Math.max(0, parseFloat(row.querySelector('.line-disc')?.value) || 0));
+        const gross = Math.round(qty * rate * 100) / 100;
+        const amt = gross - Math.round(gross * disc) / 100;
         subtotal += amt;
 
         const taxConfigId = row._lineTaxDropdown?.selectedValue || '';
@@ -845,6 +917,10 @@ async function saveProforma() {
             account_id,
             quantity,
             unit_price,
+            hsn_sac: (row.querySelector('.line-hsn')?.value || '').trim() || null,
+            discount_percent: Math.min(100, Math.max(0, parseFloat(row.querySelector('.line-disc')?.value) || 0)),
+            item_id: row._itemId || null,
+            uom: row._uom || null,
             tax_config_id: taxConfigId,
             tax_rate: taxRate || 0
         });

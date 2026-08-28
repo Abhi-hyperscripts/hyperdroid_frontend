@@ -315,16 +315,24 @@
                 <div class="form-section">
                     <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Line Items</div>
                     <div class="po-lines-wrap">
+                        <!-- Same item picker the invoice has. A quotation is a preview of the invoice it
+                             becomes, so it must be quotable from the catalogue rather than retyped. -->
+                        <div class="filters-bar" style="margin-bottom:8px;align-items:center;gap:10px;">
+                            <div class="searchable-dropdown-container" id="proformaItemPicker" style="min-width:300px;"></div>
+                            <small class="field-hint" style="margin:0;">Pick a catalog item to add a pre-filled line (price, HSN, GST) — it carries through to the invoice on conversion.</small>
+                        </div>
                         <div class="data-table-container po-lines-container">
                             <table class="data-table po-lines-table" id="proformaLinesTable">
                                 <thead>
                                     <tr>
                                         <th style="width:220px;">Account *</th>
                                         <th>Description</th>
-                                        <th style="width:130px;">Qty</th>
-                                        <th style="width:150px;">Unit Price</th>
+                                        <th style="width:100px;">HSN/SAC</th>
+                                        <th style="width:110px;">Qty</th>
+                                        <th style="width:140px;">Unit Price</th>
+                                        <th style="width:90px;">Disc %</th>
                                         <th style="width:160px;">Tax</th>
-                                        <th style="width:150px; text-align:right;">Amount</th>
+                                        <th style="width:140px; text-align:right;">Amount</th>
                                         <th style="width:40px;"></th>
                                     </tr>
                                 </thead>
