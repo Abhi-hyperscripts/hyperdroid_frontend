@@ -199,7 +199,7 @@
             ['Tenant settings',     'admin.html#tenant-settings'],
             ['Custom fields',       'admin.html#custom-fields'],
             ['Email sending',       'admin.html#email-sending', R.ADMIN],
-            ['Pending approvals',   'admin.html#pending-approvals'],
+            ['Pending approvals',   'admin.html#pending-approvals', R.NOT_PLAIN_USER],  // audit/approvals/pending — AuditController
             ['Audit logs',          'admin.html#audit-logs', R.NOT_PLAIN_USER],
             ['Integrity check',     'admin.html#integrity-check', R.SUPER],
             ['Year-end closing',    'admin.html#year-end', R.ADMIN],

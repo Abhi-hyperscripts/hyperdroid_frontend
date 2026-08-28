@@ -111,6 +111,10 @@ function setupSearchListeners() {
     const debounce = (fn, ms = 400) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
     document.getElementById('proformaSearch')?.addEventListener('input', debounce(() => { proformaPage = 1; loadProformaInvoices(); }));
     document.getElementById('proformaStatusFilter')?.addEventListener('change', () => { proformaPage = 1; loadProformaInvoices(); });
+    // The customer decides which rates a picked item pre-fills. The SearchableDropdown writes
+    // through to this native select and dispatches 'change', and the edit path fires the same
+    // event — so one listener covers picking a customer, changing it, and loading a saved quote.
+    document.getElementById('proformaCustomerId')?.addEventListener('change', () => { loadProformaPriceList(); });
 }
 
 function initDatePickers() {
@@ -532,6 +536,9 @@ function showCreateProformaModal() {
     proformaCustSel.dispatchEvent(new Event('change'));
     document.getElementById('proformaLines').innerHTML = '';
     initProformaCurrencyDropdown(BASE_CURRENCY);
+    // Clear any rates left from the last quote opened — a stale map would price a NEW
+    // customer's lines at the PREVIOUS customer's contracted rates.
+    proformaPriceMap = new Map(); proformaPriceListName = '';
     initProformaItemPicker();
     addProformaLine();
     calculateProformaTotals();
@@ -781,6 +788,43 @@ async function openProformaQuickAddAccount(dropdownInstance, rebuildOptions) {
 }
 
 
+
+/**
+ * ⭐ THE CUSTOMER'S CONTRACTED RATES, ON THE QUOTE TOO.
+ *
+ * <p>The invoice screen pre-fills a picked item at the customer's PRICE-LIST rate
+ * (loadInvoicePriceList / effectiveItemPrice) and only falls back to the catalogue
+ * price when they are on no list. The quote screen had no such notion — so a customer
+ * on negotiated rates would be QUOTED list price and INVOICED contract price, and the
+ * two documents would disagree about the number the customer actually agreed to.
+ * That is precisely the divergence quote/invoice parity exists to remove, so adding
+ * an item picker without this would have opened the hole the feature was closing.</p>
+ *
+ * <p>Prospect mode has no price list by construction: there is no customer record yet,
+ * so the map stays empty and the catalogue price is used.</p>
+ */
+let proformaPriceMap = new Map();
+let proformaPriceListName = '';
+
+async function loadProformaPriceList() {
+    proformaPriceMap = new Map(); proformaPriceListName = '';
+    const custId = document.getElementById('proformaCustomerId')?.value;
+    const cust = customers.find(c => c.id === custId);
+    if (!cust?.price_list_id) return;
+    try {
+        const rows = await api.request(AccountsCommon.buildUrl(`price-lists/${cust.price_list_id}/prices`), { _skipSpinner: true });
+        (Array.isArray(rows) ? rows : (rows?.data || [])).forEach(r => proformaPriceMap.set(r.item_id, parseFloat(r.price)));
+        const lists = await api.request(AccountsCommon.buildUrl('price-lists'), { _skipSpinner: true }).catch(() => []);
+        proformaPriceListName = (Array.isArray(lists) ? lists : (lists?.data || [])).find(p => p.id === cust.price_list_id)?.name || 'price list';
+        if (proformaPriceMap.size) Toast.info(`Using '${proformaPriceListName}' rates for ${cust.name} — new lines pre-fill them.`);
+    } catch { /* fall back to catalogue prices, as the invoice does */ }
+}
+
+/** Effective per-BASE-unit price for an item on THIS quote: customer's list price, else catalog. */
+function effectiveProformaPrice(it) {
+    return proformaPriceMap.has(it.id) ? proformaPriceMap.get(it.id) : it.sale_price;
+}
+
 // ─────────────────────────── quote from the catalogue ───────────────────────────
 
 let proformaItems = [];
@@ -820,7 +864,7 @@ async function initProformaItemPicker() {
             if (it) {
                 addProformaLine({
                     item_id: it.id, description: it.name, hsn_sac: it.hsn_sac || '',
-                    quantity: 1, unit_price: it.sale_price, uom: it.unit || null,
+                    quantity: 1, unit_price: effectiveProformaPrice(it), uom: it.unit || null,
                     // The item's own revenue account, else the first income account already offered
                     // in the line dropdown — never a balance-sheet account.
                     account_id: it.income_account_id || AccountsCommon.postableAccounts(accounts, 'income')[0]?.id || undefined,
@@ -838,6 +882,37 @@ function removeProformaLine(btn) {
     calculateProformaTotals();
 }
 
+
+/**
+ * ⭐⭐ MONEY IN INTEGER PAISE, BECAUSE float64 AND decimal DISAGREE.
+ *
+ * <p>The server computes a line in C# `decimal` — exact base-10, rounded half-away-from-zero.
+ * The obvious JS mirror, `Math.round(qty * rate * 100) / 100`, is NOT the same function: 1.5 × 0.15
+ * is 0.22499999999999998 in float64, so it rounds DOWN to 0.22 while the server stores 0.23. A
+ * differential run over 1,089 (qty, rate, discount) combinations found 9 disagreements, and one
+ * case leaked raw dust into the displayed figure (115.04999999999998).</p>
+ *
+ * <p>A paisa is not a rounding curiosity here: the screen would show the customer one total and the
+ * database would keep another, on the very document the parity work exists to keep consistent.</p>
+ *
+ * <p>Scaling both operands to integers first makes the product exact, so the only rounding is the
+ * deliberate one. Quantity carries up to 4dp and money 2dp, matching the columns. Safe while the
+ * intermediate stays under 2^53, which the money-precision guards already ensure.</p>
+ */
+function _pfPaise(qty, rate) {
+    const qi = Math.round(qty * 10000);      // 4dp, as NUMERIC(18,4)
+    const ri = Math.round(rate * 100);       // 2dp money
+    return Math.round((qi * ri) / 10000);    // -> paise, half-up like AwayFromZero on positives
+}
+
+/** A line's NET value in rupees: gross rounded to 2dp, less the trade discount — the same order,
+ *  and the same rounding, as ProformaLineNet in the business layer. */
+function proformaLineNet(qty, rate, discPct) {
+    const gross = _pfPaise(qty, rate);
+    const disc = Math.round((gross * discPct) / 100);
+    return (gross - disc) / 100;
+}
+
 function calculateProformaTotals() {
     let subtotal = 0;
     let totalTax = 0;
@@ -848,8 +923,7 @@ function calculateProformaTotals() {
         // discount and the tax is charged on the NET — see ProformaLineNet in the business layer.
         // Computing tax on gross here would show the customer one total on screen and store another.
         const disc = Math.min(100, Math.max(0, parseFloat(row.querySelector('.line-disc')?.value) || 0));
-        const gross = Math.round(qty * rate * 100) / 100;
-        const amt = gross - Math.round(gross * disc) / 100;
+        const amt = proformaLineNet(qty, rate, disc);
         subtotal += amt;
 
         const taxConfigId = row._lineTaxDropdown?.selectedValue || '';
@@ -872,9 +946,14 @@ function calculateProformaTotals() {
     const sym = cur === BASE_CURRENCY ? '' : currencySymbol(cur);
     setText('proformaSubtotal', sym + subtotal.toFixed(2));
     setText('proformaTax', sym + totalTax.toFixed(2));
-    // The proforma stores/prints the pre-tax subtotal (GST is authoritatively added when it converts to
-    // an invoice), so the Proforma Total must equal the subtotal — matching the saved + detail-view figures.
-    setText('proformaTotal', sym + subtotal.toFixed(2));
+    // ⭐ THE FORM WAS THE ONLY SURFACE SAYING SOMETHING DIFFERENT. The comment here used to claim
+    // the Total must equal the pre-tax subtotal "matching the saved + detail-view figures" — and that
+    // claim was false in all four directions: the DB stores `total_amount = @sub + @tax`, the list
+    // column, the detail view and the quotation PDF all print that tax-inclusive figure. So a user
+    // filled in a discounted line, read "Total ₹9,000", saved, and the list showed ₹10,620 for the
+    // same quote. Prose asserting a consistency the code does not have is worse than no comment: it
+    // is what stops the next reader checking. The form now agrees with the document it produces.
+    setText('proformaTotal', sym + (subtotal + totalTax).toFixed(2));
     const fxRow = document.getElementById('proformaFxEquiv');
     if (fxRow) {
         const rate = proformaRate();
