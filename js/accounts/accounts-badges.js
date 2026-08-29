@@ -23,9 +23,40 @@
 (function () {
     'use strict';
 
-    const KEY = 'acct_badges_v1';
+    /**
+     * ⭐ THE CACHE KEY CARRIES THE TENANT, BECAUSE sessionStorage OUTLIVES THE SESSION IT WAS
+     * NAMED FOR. clearAuthData() on logout clears localStorage keys and the FCM state; NOTHING
+     * clears sessionStorage. So a logout followed by a login as a DIFFERENT tenant in the same
+     * tab left this cache in place, and tenant B saw tenant A's counts — overdue invoices,
+     * expiring lots, pending approvals — until the 3-minute TTL expired.
+     *
+     * Scoping the key is better than adding a logout hook: it cannot be defeated by a logout path
+     * that forgets to call the hook, and it is correct even if a tenant is switched by some route
+     * that does not go through logout at all. A tenant with no id falls back to a shared key, which
+     * is the pre-auth case where there is nothing to leak.
+     */
+    const KEY_BASE = 'acct_badges_v1';
+    /**
+     * ⭐ NO TENANT ⇒ NO CACHE. The first cut returned the bare KEY_BASE when the tenant could not
+     * be read — which is exactly the unscoped, cross-tenant-readable key the scoping exists to
+     * remove, reinstated by the fallback. Proven in a browser: with an unreadable tenant the module
+     * purged the legacy key at load and store() wrote the very same key back a moment later.
+     * Returning null instead means an unknown tenant simply does not cache: four cheap requests are
+     * a trivial cost, and unlike a shared key it cannot be read by whoever logs in next.
+     */
+    const keyFor = () => {
+        try {
+            const t = (typeof AccountsCommon !== 'undefined' && AccountsCommon.getTenantId) ? AccountsCommon.getTenantId() : null;
+            return t ? `${KEY_BASE}:${t}` : null;
+        } catch (_) { return null; }
+    };
     const TTL_MS = 3 * 60 * 1000;
     let inflight = null;
+
+    // Drop the pre-tenant-scoping key. Nothing reads it any more, but sessionStorage lives as long
+    // as the tab does, so in a browser that ran the earlier build it would sit there holding one
+    // tenant's counts indefinitely. Removing it is the difference between "not read" and "not there".
+    try { sessionStorage.removeItem(KEY_BASE); } catch (_) {}
 
     /** Which destination each fact belongs to, and how loud it is. `alert` is money
      *  already late; `warn` is something that will bite if ignored. */
@@ -33,14 +64,18 @@
 
     function cached() {
         try {
-            const raw = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+            const k = keyFor();
+            if (!k) return null;
+            const raw = JSON.parse(sessionStorage.getItem(k) || 'null');
             if (raw && Date.now() - raw.at < TTL_MS) return raw.data;
         } catch (_) {}
         return null;
     }
 
     function store(data) {
-        try { sessionStorage.setItem(KEY, JSON.stringify({ at: Date.now(), data })); } catch (_) {}
+        const k = keyFor();
+        if (!k) return;   // unknown tenant: compute fresh rather than cache under a shared key
+        try { sessionStorage.setItem(k, JSON.stringify({ at: Date.now(), data })); } catch (_) {}
     }
 
     const canRead = (roles) => {
