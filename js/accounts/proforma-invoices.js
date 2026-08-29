@@ -20,6 +20,13 @@
 let customers = [];
 let accounts = [];
 let taxConfigs = [];
+// The customer's contracted rates for THIS quote. Declared with the other module state rather than
+// beside loadProformaPriceList further down: `let` is hoisted but sits in the temporal dead zone
+// until its line runs, and setProformaBillTo (defined ~22k chars earlier) now reads them. Every
+// current caller is inside a handler, so evaluation finishes first — but a future top-level call
+// would throw a ReferenceError, and there is no reason to leave that trap armed.
+let proformaPriceMap = new Map();
+let proformaPriceListName = '';
 
 // Module-scoped cache so row-action handlers can look up full entity by id
 let proformaInvoices = [];
@@ -434,6 +441,13 @@ function setProformaBillTo(mode) {
     const custGroup = document.getElementById('proformaCustomerGroup');
     if (custGroup) custGroup.style.display = isRecipient ? 'none' : '';
     document.querySelectorAll('.proforma-recipient-field').forEach(el => el.style.display = isRecipient ? '' : 'none');
+    // ⭐ SWITCHING TO PROSPECT MODE MUST DROP THE CUSTOMER'S CONTRACTED RATES. This only HIDES the
+    // customer field — the select keeps its value, and saveProforma sends customer_id = null. Without
+    // this, picking Customer A (their price list loads), switching to prospect, then adding a
+    // catalogue item priced that prospect's line at A's NEGOTIATED rate: a wrong number on the quote,
+    // and one that leaks a confidential contracted price to a third party.
+    if (isRecipient) { proformaPriceMap = new Map(); proformaPriceListName = ''; }
+    else loadProformaPriceList();
 }
 
 // ── Multi-currency (display-layer FX) — mirror of the invoice form ────────────
@@ -803,9 +817,6 @@ async function openProformaQuickAddAccount(dropdownInstance, rebuildOptions) {
  * <p>Prospect mode has no price list by construction: there is no customer record yet,
  * so the map stays empty and the catalogue price is used.</p>
  */
-let proformaPriceMap = new Map();
-let proformaPriceListName = '';
-
 async function loadProformaPriceList() {
     proformaPriceMap = new Map(); proformaPriceListName = '';
     const custId = document.getElementById('proformaCustomerId')?.value;
