@@ -907,8 +907,16 @@ function removeProformaLine(btn) {
  * database would keep another, on the very document the parity work exists to keep consistent.</p>
  *
  * <p>Scaling both operands to integers first makes the product exact, so the only rounding is the
- * deliberate one. Quantity carries up to 4dp and money 2dp, matching the columns. Safe while the
- * intermediate stays under 2^53, which the money-precision guards already ensure.</p>
+ * deliberate one. Quantity carries up to 4dp and money 2dp, matching the columns.</p>
+ *
+ * <p>⭐ THE EXACT RANGE, MEASURED — an earlier version of this comment claimed the money-precision
+ * guards keep the intermediate under 2^53, and that was simply false. The intermediate is
+ * qty×rate×10^6, and ValidateMoneyPrecision permits a line up to 10^12, which lands at 10^18 —
+ * about 111× past 2^53. Exactness therefore holds while qty × rate stays under ₹9,007,199,254;
+ * above that a displayed figure can drift by a paisa. That is unreachable in this product's
+ * lifetime (a single nine-billion-rupee quote line) and the SERVER remains exact regardless, since
+ * it computes in decimal — but a comment asserting a bound the code does not have is worse than no
+ * comment, because it is what stops the next reader checking.</p>
  */
 function _pfPaise(qty, rate) {
     const qi = Math.round(qty * 10000);      // 4dp, as NUMERIC(18,4)
