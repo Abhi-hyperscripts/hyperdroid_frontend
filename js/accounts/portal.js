@@ -233,8 +233,8 @@
     const loaded = {};
     function switchTab(name) {
         document.querySelectorAll('.cp-tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
-        ['invoices', 'quotes', 'statement', 'payments'].forEach((t) => { $('tab-' + t).hidden = t !== name; });
-        if (!loaded[name]) { loaded[name] = true; ({ invoices: loadInvoices, quotes: loadQuotes, statement: loadStatement, payments: loadPayments })[name](); }
+        ['invoices', 'quotes', 'projects', 'statement', 'payments', 'tds'].forEach((t) => { $('tab-' + t).hidden = t !== name; });
+        if (!loaded[name]) { loaded[name] = true; ({ invoices: loadInvoices, quotes: loadQuotes, projects: loadProjects, statement: loadStatement, payments: loadPayments, tds: loadTds })[name](); }
     }
 
     // ── the hero wave: the customer's own ledger, per day ───────────────────────────────────
@@ -282,6 +282,11 @@
             series[1].values[k] = (series[1].values[k] || 0) + Number(p.amount || 0);
         });
         renderInsights(inv.items || [], pay.items || []);
+        call('tds').then((t) => {
+            if (!Number(t.total_tds)) return;
+            const host = $('insights'); if (!host) return;
+            host.insertAdjacentHTML('beforeend', `<span class="cp-chip"><i></i>TDS withheld this FY <b>${money(t.total_tds)}</b> · <button class="cp-btn-link" data-goto-tab="tds" type="button" style="padding:0">see breakdown</button></span>`);
+        }).catch(() => {});
         paletteDocs = { invoices: inv.items || [], quotes: paletteDocs.quotes };
         const dayKey = (off) => { const d = new Date(today); d.setDate(today.getDate() - off); return d.getTime(); };
         const countIn = (days) => series.some((s) => { for (let i = 0; i < days; i++) if (s.values[dayKey(i)]) return true; return false; });
@@ -471,6 +476,80 @@
         } catch (e) { host.innerHTML = errorBox(e.message); }
     }
 
+    // ── projects ────────────────────────────────────────────────────────────────────────────
+
+    async function loadProjects() {
+        const host = $('projectsBody'); host.innerHTML = skeleton(6);
+        try {
+            const ps = await call('projects');
+            const groups = (ps.projects || []).filter((g) => g.invoices.length || Number(g.billed));
+            const real = groups.filter((g) => g.project_id);
+            const c = $('tabCountProjects'); c.textContent = real.length; c.hidden = !real.length;
+            if (!groups.length) { host.innerHTML = empty('No invoices to group yet', 'Once your supplier bills work against a project, it will appear here with its own running total.'); return; }
+            host.innerHTML = `
+                <div class="cp-strip">
+                    <div class="cp-tile"><div class="cp-tile-label">Billed (ex tax)</div><div class="cp-tile-value">${money(ps.total_billed_ex_tax)}</div></div>
+                    <div class="cp-tile"><div class="cp-tile-label">Tax</div><div class="cp-tile-value">${money(ps.total_tax)}</div></div>
+                    <div class="cp-tile ok"><div class="cp-tile-label">Collected</div><div class="cp-tile-value">${money(ps.total_collected)}</div></div>
+                    <div class="cp-tile"><div class="cp-tile-label">Credited</div><div class="cp-tile-value">${money(ps.total_credited)}</div></div>
+                    <div class="cp-tile ${Number(ps.total_due) > 0 ? 'warn' : 'ok'}"><div class="cp-tile-label">Due</div><div class="cp-tile-value">${money(ps.total_due)}</div></div>
+                </div>
+                <div class="cp-projects">${groups.map((g) => {
+                    const pct = Number(g.billed) > 0 ? Math.min(100, Math.round(Number(g.collected) / Number(g.billed) * 100)) : 0;
+                    return `<article class="cp-project">
+                        <header class="cp-project-head">
+                            <div>
+                                <div class="cp-eyebrow"><i></i>${g.project_id ? esc(g.project_code || 'Project') : 'Not tied to a project'}${g.status ? ` · ${esc(g.status)}` : ''}</div>
+                                <h3>${esc(g.project_name)}</h3>
+                            </div>
+                            <div class="cp-project-due ${Number(g.due) > 0 ? 'warn' : 'ok'}"><span>Due</span><b>${money(g.due)}</b></div>
+                        </header>
+                        <div class="cp-project-bar" title="${pct}% of billed collected"><i style="width:${pct}%"></i></div>
+                        <dl class="cp-project-facts">
+                            <div><dt>Billed (ex tax)</dt><dd>${money(g.billed_ex_tax)}</dd></div>
+                            <div><dt>Tax</dt><dd>${money(g.tax)}</dd></div>
+                            <div><dt>Billed</dt><dd>${money(g.billed)}</dd></div>
+                            <div><dt>Collected</dt><dd>${money(g.collected)}</dd></div>
+                            <div><dt>Credited</dt><dd>${money(g.credited)}</dd></div>
+                            <div><dt>TDS withheld</dt><dd>${money(g.tds_withheld)}</dd></div>
+                        </dl>
+                        ${g.invoices.length ? `<div class="cp-table-wrap"><table class="cp-table"><thead><tr><th>Invoice</th><th>Date</th><th>Status</th><th class="num">This project (ex tax)</th><th class="num">Invoice total</th><th class="num">Balance</th></tr></thead>
+                            <tbody>${g.invoices.map((i) => `<tr>
+                                <td><button class="cp-btn-link" data-open-invoice="${esc(i.id)}" type="button">${esc(i.invoice_number)}</button></td>
+                                <td class="cp-date">${date(i.invoice_date)}</td><td>${badge(i.status, i.is_overdue)}</td>
+                                <td class="num strong">${money(i.share_ex_tax)}</td><td class="num">${money(i.total_amount)}</td><td class="num">${money(i.balance_due)}</td>
+                            </tr>`).join('')}</tbody></table></div>` : '<div class="cp-help">No issued invoices yet for this project.</div>'}
+                    </article>`; }).join('')}</div>`;
+        } catch (e) { host.innerHTML = errorBox(e.message); }
+    }
+
+    // ── TDS withheld ────────────────────────────────────────────────────────────────────────
+
+    async function loadTds() {
+        const host = $('tdsBody'); host.innerHTML = skeleton(4);
+        const from = $('tdsFrom').value, to = $('tdsTo').value;
+        try {
+            const qs = [from ? `fromDate=${from}` : '', to ? `toDate=${to}` : ''].filter(Boolean).join('&');
+            const t = await call('tds' + (qs ? '?' + qs : ''));
+            if (!from) $('tdsFrom').value = String(t.from_date).slice(0, 10);
+            if (!to) $('tdsTo').value = String(t.to_date).slice(0, 10);
+            const period = `${date(t.from_date)} – ${date(t.to_date)}`;
+            if (!Number(t.total_tds)) { host.innerHTML = empty('No TDS in this period', `No payment you made between ${period} carried tax deducted at source. Change the dates to look at another period.`); return; }
+            const table = (rows, label, key) => `<div class="cp-table-wrap"><table class="cp-table"><thead><tr><th>${label}</th><th class="num">TDS withheld</th><th class="num">Share</th></tr></thead>
+                <tbody>${rows.map((r) => `<tr><td>${key === 'invoice' ? `<button class="cp-btn-link" data-open-invoice="${esc(r.invoice_id)}" type="button">${esc(r.invoice_number)}</button>` : esc(r.project_name || 'Not tied to a project')}</td>
+                    <td class="num strong">${money(r.tds)}</td><td class="num">${(Number(r.tds) / Number(t.total_tds) * 100).toFixed(0)}%</td></tr>`).join('')}
+                <tr class="total"><td>Total</td><td class="num">${money(rows.reduce((s, r) => s + Number(r.tds), 0))}</td><td class="num">100%</td></tr></tbody></table></div>`;
+            host.innerHTML = `
+                <div class="cp-strip">
+                    <div class="cp-tile cp-tile-hero"><div class="cp-tile-label">Total TDS withheld</div><div class="cp-tile-value">${money(t.total_tds)}</div><div class="cp-tile-sub">${esc(period)}</div></div>
+                    <div class="cp-tile"><div class="cp-tile-label">Invoices</div><div class="cp-tile-value">${t.by_invoice.length}</div><div class="cp-tile-sub">carried a deduction</div></div>
+                    <div class="cp-tile"><div class="cp-tile-label">Projects</div><div class="cp-tile-value">${t.by_project.length}</div><div class="cp-tile-sub">apportioned by line value</div></div>
+                </div>
+                <div class="cp-help" style="margin-bottom:14px;">Per-invoice and per-project figures split each payment's TDS in proportion to what it settled, so they can differ from the total by a few paise after rounding — exactly as your supplier's own report does.</div>
+                <div class="cp-two"><div><h3 class="cp-sub">By invoice</h3>${table(t.by_invoice, 'Invoice', 'invoice')}</div><div><h3 class="cp-sub">By project</h3>${table(t.by_project, 'Project', 'project')}</div></div>`;
+        } catch (e) { host.innerHTML = errorBox(e.message); }
+    }
+
     // ── payments & credits ──────────────────────────────────────────────────────────────────
 
     async function loadPayments() {
@@ -479,9 +558,9 @@
         try {
             const [pay, cr] = await Promise.all([call('payments?limit=200'), call('credit-notes?limit=200')]);
             const pr = pay.items || [];
-            p.innerHTML = pr.length ? `<table class="cp-table"><thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th>Reference</th><th class="num">Amount</th><th class="num">On deposit</th></tr></thead>
+            p.innerHTML = pr.length ? `<table class="cp-table"><thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th>Reference</th><th class="num">Amount</th><th class="num">TDS withheld</th><th class="num">On deposit</th></tr></thead>
                 <tbody>${pr.map((x) => `<tr><td><span style="font-family:var(--cp-mono)">${esc(x.payment_number)}</span></td><td class="cp-date">${date(x.payment_date)}</td><td>${esc(String(x.payment_method || '').replace(/_/g, ' '))}</td><td>${esc(x.reference_number || '-')}</td>
-                <td class="num strong">${money(x.amount)}</td><td class="num">${Number(x.advance_remaining) ? money(x.advance_remaining) : ''}</td></tr>`).join('')}</tbody></table>`
+                <td class="num strong">${money(x.amount)}</td><td class="num">${Number(x.tds_amount) ? money(x.tds_amount) : ''}</td><td class="num">${Number(x.advance_remaining) ? money(x.advance_remaining) : ''}</td></tr>`).join('')}</tbody></table>`
                 : empty('No payments recorded yet', 'Receipts your supplier records against your invoices will show here with their method and reference.');
             const crr = cr.items || [];
             c.innerHTML = crr.length ? `<table class="cp-table"><thead><tr><th>Credit note</th><th>Date</th><th>Against</th><th>Reason</th><th>Status</th><th class="num">Amount</th></tr></thead>
@@ -530,7 +609,9 @@
         const items = [
             { k: 'section', label: 'Invoices', run: () => switchTab('invoices') },
             { k: 'section', label: 'Quotations', run: () => switchTab('quotes') },
+            { k: 'section', label: 'Projects', run: () => switchTab('projects') },
             { k: 'section', label: 'Account statement', run: () => switchTab('statement') },
+            { k: 'section', label: 'TDS withheld', run: () => switchTab('tds') },
             { k: 'section', label: 'Payments & credits', run: () => switchTab('payments') },
             { k: 'action', label: 'Sign out', run: () => signOut(false) },
             ...paletteDocs.invoices.map((i) => ({ k: 'invoice', label: i.invoice_number, meta: `${money(i.balance_due)} due · ${date(i.due_date)}`, run: () => { switchTab('invoices'); openInvoice(i.id); } })),
@@ -593,6 +674,8 @@
             loadInvoices();
         }));
         $('stmtRun').addEventListener('click', loadStatement);
+        $('tdsRun').addEventListener('click', loadTds);
+        document.addEventListener('click', (ev) => { const t = ev.target.closest('[data-goto-tab]'); if (t) switchTab(t.dataset.gotoTab); });
         armSpotlight(); armParallax();
         $('paletteBtn').addEventListener('click', openPalette);
         $('paletteOverlay').addEventListener('click', (ev) => { if (ev.target === $('paletteOverlay')) closePalette(); });

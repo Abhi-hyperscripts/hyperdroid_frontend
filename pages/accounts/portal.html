@@ -245,8 +245,10 @@
         <div class="cp-tabs cp-rise d3" role="tablist">
             <button class="cp-tab active" data-tab="invoices" type="button">Invoices <span class="n" id="tabCountInvoices" hidden></span></button>
             <button class="cp-tab" data-tab="quotes" type="button">Quotations <span class="n" id="tabCountQuotes" hidden></span></button>
+            <button class="cp-tab" data-tab="projects" type="button">Projects <span class="n" id="tabCountProjects" hidden></span></button>
             <button class="cp-tab" data-tab="statement" type="button">Statement</button>
             <button class="cp-tab" data-tab="payments" type="button">Payments &amp; credits</button>
+            <button class="cp-tab" data-tab="tds" type="button">TDS withheld</button>
         </div>
 
         <section class="cp-panel cp-rise d4" id="tab-invoices">
@@ -270,6 +272,13 @@
             <div class="cp-table-wrap" id="quotesTable"></div>
         </section>
 
+        <section class="cp-panel" id="tab-projects" hidden>
+            <div class="cp-panel-head">
+                <div><h2>Projects</h2><p>Your invoices grouped by the project they were billed to — what each project has cost, what you have paid on it, and what is still due. These add up to your statement exactly.</p></div>
+            </div>
+            <div id="projectsBody"></div>
+        </section>
+
         <section class="cp-panel" id="tab-statement" hidden>
             <div class="cp-panel-head">
                 <div><h2>Account statement</h2><p>Leave both dates blank for your full history. The opening balance carries forward anything before the From date.</p></div>
@@ -287,6 +296,18 @@
             <div class="cp-table-wrap" id="paymentsTable" style="margin-bottom:22px;"></div>
             <div class="cp-panel-head"><div><h2>Credit notes</h2><p>Credits issued to you, and the invoice each one settles.</p></div></div>
             <div class="cp-table-wrap" id="creditsTable"></div>
+        </section>
+
+        <section class="cp-panel" id="tab-tds" hidden>
+            <div class="cp-panel-head">
+                <div><h2>TDS you have withheld</h2><p>Tax deducted at source on the payments you made — the same figures your supplier reconciles against Form 26AS, split by invoice and by project. Defaults to the current financial year.</p></div>
+                <div class="cp-toolbar">
+                    <div class="cp-field"><label class="cp-label" for="tdsFrom">From</label><input class="cp-input" id="tdsFrom" type="date"></div>
+                    <div class="cp-field"><label class="cp-label" for="tdsTo">To</label><input class="cp-input" id="tdsTo" type="date"></div>
+                    <button class="cp-btn" id="tdsRun" type="button">Recalculate</button>
+                </div>
+            </div>
+            <div id="tdsBody"></div>
         </section>
 
         <aside class="cp-pitch cp-rise d4">

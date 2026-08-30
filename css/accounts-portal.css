@@ -596,3 +596,24 @@ body.cp-portal > #appView > .navbar { position: fixed !important; z-index: 1150 
   .cp-nav-account { padding: 0 8px 0 4px; }
   .cp-menu { width: min(300px, calc(100vw - 24px)); }
 }
+
+/* ── projects & TDS ──────────────────────────────────────────────────────── */
+.cp-projects { display: grid; gap: 14px; }
+.cp-project {
+  position: relative; border: 1px solid var(--cp-line); border-radius: 14px; padding: 16px 18px 12px;
+  background: color-mix(in srgb, var(--bg-card) 62%, transparent);
+}
+.cp-project-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+.cp-project-head h3 { font-family: var(--cp-display); font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin: 6px 0 0; }
+.cp-project-due { text-align: right; }
+.cp-project-due span { display: block; font: 600 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px; }
+.cp-project-due b { font-family: var(--cp-mono); font-variant-numeric: tabular-nums; font-size: 20px; }
+.cp-project-due.warn b { color: var(--cp-rose); } .cp-project-due.ok b { color: var(--cp-mint); }
+.cp-project-bar { height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text-primary) 8%, transparent); margin: 12px 0 10px; overflow: hidden; }
+.cp-project-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--brand-primary), var(--cp-mint)); border-radius: 999px; transition: width .6s ease; }
+.cp-project-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px 14px; margin: 0 0 8px; }
+.cp-project-facts dt { font: 600 10.5px/1 var(--cp-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px; }
+.cp-project-facts dd { margin: 0; font-family: var(--cp-mono); font-variant-numeric: tabular-nums; font-size: 13.5px; }
+.cp-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cp-sub { font-family: var(--cp-display); font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+@media (max-width: 900px) { .cp-two { grid-template-columns: 1fr; } }
