@@ -2226,14 +2226,20 @@ function showCreateCreditNoteModal() {
     AccountsCommon.openModal('creditNoteModal');
 }
 
+// Only the LATEST customer pick may render. The customer <select> is wrapped by a SearchableDropdown and a
+// single pick reaches this loader more than once (wrapper sync + native change); each call used to clear
+// the list and then APPEND after its own fetch, so a customer with four open invoices showed twelve.
+let _cnInvoiceLoadSeq = 0;
 async function loadCustomerInvoicesForCN() {
     const custId = document.getElementById('cnCustomerId').value;
     const sel = document.getElementById('cnInvoiceId');
+    const seq = ++_cnInvoiceLoadSeq;
     sel.innerHTML = '<option value="">Select invoice...</option>';
     syncCnAmountMax();
     if (!custId) return;
     try {
         const res = await api.request(AccountsCommon.buildUrl('invoices', { customerId: custId, limit: 200 }));
+        if (seq !== _cnInvoiceLoadSeq) return;   // a newer pick is in flight or already rendered
         const items = (Array.isArray(res) ? res : (res?.data || res?.items || []))
             // Mirror the payables debit-note rule: a credit note can only be raised
             // against an ISSUED invoice with money still open — not a draft (never
@@ -2243,14 +2249,20 @@ async function loadCustomerInvoicesForCN() {
                 const st = (inv.status || '').toLowerCase();
                 return bal > 0 && (st === 'approved' || st === 'sent' || st === 'partially_paid' || st === 'overdue');
             });
+        const frag = document.createDocumentFragment();
+        const blank = document.createElement('option');
+        blank.value = ''; blank.textContent = 'Select invoice...';
+        frag.appendChild(blank);
         items.forEach(inv => {
             const bal = parseFloat(inv.balance_due) || 0;
             const opt = document.createElement('option');
             opt.value = inv.id;
             opt.dataset.balance = bal;
             opt.textContent = `${inv.invoice_number || inv.id} - ${AccountsCommon.formatCurrency(inv.total_amount)} (${AccountsCommon.formatCurrency(bal)} due)`;
-            sel.appendChild(opt);
+            frag.appendChild(opt);
         });
+        sel.replaceChildren(frag);   // ONE replacement — never an append onto a list another call built
+        syncCnAmountMax();
     } catch (err) { console.error('[AR] loadCustomerInvoicesForCN error:', err); }
 }
 

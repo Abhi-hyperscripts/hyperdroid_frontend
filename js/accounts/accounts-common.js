@@ -177,14 +177,13 @@ const AccountsCommon = {
             const selects = document.querySelectorAll('.filters-bar select:not([data-searchable]), .filter-row select:not([data-searchable])');
             selects.forEach(sel => {
                 if (!sel.id || sel.closest('.modal')) return;
-                const originalOnChange = sel.onchange;
+                // The wrapper already sets the linked <select>'s value and dispatches ONE native `change`
+                // on it (SearchableDropdown.select / commitCreate), which runs the inline onchange and any
+                // listeners. Calling the handler and dispatching again here ran every filter's loader
+                // THREE times per pick. Nothing is needed in this callback beyond the value sync.
                 convertSelectToSearchable(sel.id, {
                     compact: true,
-                    onChange: (value) => {
-                        sel.value = value;
-                        if (originalOnChange) originalOnChange.call(sel);
-                        sel.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
+                    onChange: (value) => { sel.value = value; }
                 });
             });
         }, 500);
@@ -1284,17 +1283,13 @@ const AccountsCommon = {
         if (typeof convertSelectToSearchable !== 'function') return;
         const selects = modal.querySelectorAll('select:not([data-searchable])');
         selects.forEach(sel => {
-            // Preserve any onchange handler
-            const originalOnChange = sel.onchange;
+            // The wrapper syncs the hidden <select> and dispatches ONE native `change` on it, which runs
+            // the inline onchange handler and any listeners. This callback used to call the handler AND
+            // dispatch `change` again — three runs per pick — so a form whose handler appended to a list
+            // (credit note → invoice) showed every row three times, and every other form fetched thrice.
             convertSelectToSearchable(sel.id, {
                 compact: true,
-                onChange: (value) => {
-                    // Sync value back to hidden select for form reads
-                    sel.value = value;
-                    if (originalOnChange) originalOnChange.call(sel);
-                    // Also fire change event for any listeners
-                    sel.dispatchEvent(new Event('change', { bubbles: true }));
-                }
+                onChange: (value) => { sel.value = value; }
             });
         });
     },
