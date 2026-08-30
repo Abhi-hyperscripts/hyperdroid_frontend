@@ -451,7 +451,17 @@
             // credits reduce it. Same rows, same dates, same totals as the statement your supplier emails.
             const rows = [];
             (s.invoices || []).forEach((i) => rows.push({ d: i.invoice_date, type: 'Invoice', ref: i.invoice_number, debit: i.total_amount, credit: 0, note: i.status }));
-            (s.payments || []).forEach((p) => rows.push({ d: p.payment_date, type: 'Payment', ref: p.payment_number, debit: 0, credit: Number(p.amount) - Number(p.advance_remaining || 0) - Number(p.advance_refunded || 0), note: p.payment_method }));
+            // A receipt clears the invoice for cash + TDS the client withheld. A debtor's ledger carries those as
+            // two credits — "By bank" and "By TDS deducted" — so the statement prints two rows, never one receipt
+            // line that reads as cash the client did not pay.
+            let tdsInPeriod = 0;
+            (s.payments || []).forEach((p) => {
+                const cleared = Number(p.amount) - Number(p.advance_remaining || 0) - Number(p.advance_refunded || 0);
+                const tds = Math.min(Number(p.tds_amount || 0), cleared);
+                tdsInPeriod += tds;
+                rows.push({ d: p.payment_date, type: 'Payment', ref: p.payment_number, debit: 0, credit: cleared - tds, note: p.payment_method });
+                if (tds > 0) rows.push({ d: p.payment_date, type: 'TDS withheld', ref: p.payment_number, debit: 0, credit: tds, note: 'deducted at source by you' });
+            });
             (s.credit_notes || []).forEach((c) => rows.push({ d: c.credit_date, type: 'Credit note', ref: c.credit_note_number, debit: 0, credit: c.amount, note: c.reason }));
             (s.gift_card_redemptions || []).forEach((g) => rows.push({ d: g.redeem_date, type: 'Gift card', ref: g.invoice_number, debit: 0, credit: g.amount, note: g.card_code }));
             (s.advance_applications || []).forEach((a) => rows.push({ d: a.event_date, type: 'Advance applied', ref: a.invoice_number, debit: 0, credit: a.amount, note: '' }));
@@ -467,7 +477,8 @@
                 <div class="cp-strip">
                     <div class="cp-tile"><div class="cp-tile-label">Opening balance</div><div class="cp-tile-value">${money(s.opening_balance)}</div></div>
                     <div class="cp-tile"><div class="cp-tile-label">Invoiced</div><div class="cp-tile-value">${money(s.total_invoiced)}</div></div>
-                    <div class="cp-tile ok"><div class="cp-tile-label">Received</div><div class="cp-tile-value">${money(s.total_received)}</div></div>
+                    <div class="cp-tile ok"><div class="cp-tile-label">Paid (cash)</div><div class="cp-tile-value">${money(Math.max(0, Number(s.total_received) - tdsInPeriod))}</div></div>
+                    <div class="cp-tile"><div class="cp-tile-label">TDS withheld</div><div class="cp-tile-value">${money(tdsInPeriod)}</div></div>
                     <div class="cp-tile"><div class="cp-tile-label">Credits</div><div class="cp-tile-value">${money(credits)}</div></div>
                     <div class="cp-tile ${Number(s.total_outstanding) > 0 ? 'warn' : 'ok'}"><div class="cp-tile-label">Closing balance</div><div class="cp-tile-value">${money(s.total_outstanding)}</div></div>
                 </div>
