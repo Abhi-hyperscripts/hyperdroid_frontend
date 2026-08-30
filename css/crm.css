@@ -101,7 +101,8 @@
 .cid-hero > .breadcrumb-nav,
 .sqx-hero > .breadcrumb-nav,
 .anx-hero > .breadcrumb-nav,
-.mdp-hero > .breadcrumb-nav {
+.mdp-hero > .breadcrumb-nav,
+.cmp-hero > .breadcrumb-nav {
     padding-left: 24px;
     position: relative;
     z-index: 10;
@@ -116,7 +117,8 @@
 .cid-hero > .breadcrumb-nav,
 .sqx-hero > .breadcrumb-nav,
 .anx-hero > .breadcrumb-nav,
-.mdp-hero > .breadcrumb-nav {
+.mdp-hero > .breadcrumb-nav,
+.cmp-hero > .breadcrumb-nav {
     pointer-events: none;
     width: fit-content;
 }
@@ -127,7 +129,8 @@
 .cid-hero > .breadcrumb-nav > *,
 .sqx-hero > .breadcrumb-nav > *,
 .anx-hero > .breadcrumb-nav > *,
-.mdp-hero > .breadcrumb-nav > * {
+.mdp-hero > .breadcrumb-nav > *,
+.cmp-hero > .breadcrumb-nav > * {
     pointer-events: auto;
 }
 @media (max-width: 768px) {
@@ -139,7 +142,8 @@
     .cid-hero > .breadcrumb-nav,
     .sqx-hero > .breadcrumb-nav,
     .anx-hero > .breadcrumb-nav,
-    .mdp-hero > .breadcrumb-nav {
+    .mdp-hero > .breadcrumb-nav,
+    .cmp-hero > .breadcrumb-nav {
         padding-left: 0;
     }
 }
@@ -6233,14 +6237,25 @@ body.crm-leads-page nav.pulse-rail {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   padding: 14px 0;
   overflow-y: auto;
   z-index: 100;
+
+  /* Same rail treatment as every other app — see the note in accounts.css.
+     No visible bar; the fade at both ends carries the cue instead, its length
+     matched to the rail's own 14px padding so nothing dims until it scrolls.
+     tools/check-rails.mjs fails if this drifts from the others. */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                                      #000 calc(100% - 14px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                                      #000 calc(100% - 14px), transparent 100%);
 }
+body.crm-leads-page nav.pulse-rail::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
 body.crm-leads-page .rail-item {
-  width: 60px; padding: 8px 0 6px; border-radius: 12px;
+  width: 60px; padding: 6px 0 5px; border-radius: 12px;
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   cursor: pointer; color: var(--text-muted); flex-shrink: 0;
 }

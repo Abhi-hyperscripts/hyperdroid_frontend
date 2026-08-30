@@ -16,7 +16,6 @@ body.crm-deals-page {
 @media (max-width: 1023px) {
   body.crm-deals-page { padding-left: 0; padding-top: 0; }
   body.crm-deals-page nav.pulse-rail { display: none; }
-body.crm-deals-page nav.pulse-rail::-webkit-scrollbar { width: 0; height: 0; display: none; }
 }
 
 /* ambient backdrop */
@@ -67,6 +66,7 @@ body.crm-deals-page nav.pulse-rail {
 
   z-index: 100;
 }
+body.crm-deals-page nav.pulse-rail::-webkit-scrollbar { width: 0; height: 0; display: none; }
 body.crm-deals-page .rail-item {
   width: 60px; padding: 6px 0 5px; border-radius: 12px;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -404,3 +404,17 @@ body.crm-deals-page .pipeline-bulk-bar .btn {
 /* filter row sits clear of whatever follows it (bulk bar or saved views) */
 body.crm-deals-page .pipeline-toolbar { padding: 2px 0 4px; margin-bottom: 4px; }
 body.crm-deals-page .saved-views-bar { margin: 10px 0 14px; }
+
+/* ⭐ RESTORES THE NAVBAR CLEARANCE IN THE BAND WHERE THE NAVBAR IS STILL FIXED.
+   Earlier in this file the body's padding-top is dropped at this page's mobile
+   breakpoint. But .navbar only leaves the flow at max-width 768
+   (css/styles.css); above that it is `position: fixed` and 52px tall — so
+   dropping the clearance at the wider breakpoint slid the whole hero underneath
+   the navbar. Measured on Companies at 1023px: the breadcrumb was entirely
+   hidden and the H1 clipped in half.
+   This sits at the end of the file rather than beside that rule, on purpose —
+   the rule is left exactly as written and this wins inside the band by source
+   order, so the fix cannot disturb whatever else its block does. */
+@media (min-width: 769px) and (max-width: 1023px) {
+  body.crm-deals-page { padding-top: 52px; }
+}

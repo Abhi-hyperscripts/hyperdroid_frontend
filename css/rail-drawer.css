@@ -74,16 +74,26 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   padding: 14px 0;
   overflow-y: auto;
+  /* Same rail treatment as every other app — see the note in accounts.css.
+     No visible bar; the fade at both ends carries the cue instead, its length
+     matched to the rail's own 14px padding so nothing dims until it scrolls.
+     tools/check-rails.mjs fails if this drifts from the others. */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                                      #000 calc(100% - 14px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                                      #000 calc(100% - 14px), transparent 100%);
 }
+.rail-drawer::-webkit-scrollbar { width: 0; height: 0; display: none; }
 .rail-drawer.open { transform: translateX(0); }
 
 /* rail items inside the drawer (page-agnostic — no body-class scoping) */
 .rail-drawer .rail-item {
   width: 60px;
-  padding: 8px 0 6px;
+  padding: 6px 0 5px;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -101,3 +111,10 @@
 .rail-drawer .rail-item span { font-size: 9px; letter-spacing: 0.02em; }
 .rail-drawer .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
 .rail-drawer .rail-item.active { background: color-mix(in srgb, var(--text-primary) 9%, transparent); color: var(--text-primary); }
+
+/* Suppressed while the page's own rail is showing — set by js/rail-drawer.js on
+   load and on every resize. Without this the handle sits on top of a restored
+   rail after a window is widened back. */
+body.rail-drawer-off .rail-drawer-handle,
+body.rail-drawer-off .rail-drawer,
+body.rail-drawer-off .rail-drawer-scrim { display: none !important; }

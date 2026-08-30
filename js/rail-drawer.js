@@ -54,6 +54,76 @@
     ];
 
     document.addEventListener('DOMContentLoaded', () => {
+        // ⭐ A PAGE SHOWING A RAIL MUST NOT ALSO SHOW THE DRAWER — but a page
+        //   whose rail is HIDDEN still needs one.
+        //
+        // The drawer exists for pages whose left column is spoken for. Give one
+        // of those pages a real rail later — as Companies got in the Pulse
+        // redesign — and without a guard it keeps the drawer too: the handle
+        // sits ON TOP of the rail, covering an item and clipping its label.
+        //
+        // The first version of this guard tested for the rail's EXISTENCE, and
+        // that was wrong in the one place it mattered. Every skin hides its rail
+        // under ~1023px, so on a phone the element is still in the DOM while
+        // showing nothing — and suppressing the drawer there left the page with
+        // no section navigation at all, which is strictly worse than the
+        // overlap it was meant to fix. Visibility is the real question.
+        //
+        // ⭐⭐ AND THE RESIZE ANSWER MUST BE TWO-WAY.
+        //
+        // A first attempt only handled narrow-ward: it built the drawer when the
+        // rail became hidden and then stopped listening. Widening back left the
+        // handle sitting on the restored rail — verbatim the defect above, just
+        // reached by dragging a window instead of by loading a page, and it
+        // persisted for the rest of the session. Narrow a desktop window once,
+        // or put a tablet into a wide split view, and you were in it.
+        //
+        // So this SYNCS in both directions rather than latching. The drawer is
+        // built at most once and then shown or hidden; rebuilding it on every
+        // resize would drop its open state and re-run the item markup.
+        const railVisible = () => {
+            const rail = document.querySelector('.pulse-rail');
+            return !!rail && getComputedStyle(rail).display !== 'none';
+        };
+
+        const sync = () => {
+            const suppress = railVisible();
+            if (!suppress) build();            // lazy: never built on pages that never need it
+            document.body.classList.toggle('rail-drawer-off', suppress);
+            if (suppress) closeDrawer();       // never leave it open behind the rail
+        };
+
+        sync();
+
+        // Coalesced to one check per frame — resize fires continuously while a
+        // window is dragged and getComputedStyle forces layout.
+        let queued = false;
+        window.addEventListener('resize', () => {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(() => { queued = false; sync(); });
+        });
+    });
+
+    /** Closes the drawer if it exists and is open. Safe before build(). */
+    function closeDrawer() {
+        const drawer = document.querySelector('.rail-drawer');
+        if (drawer && drawer.classList.contains('open')) {
+            drawer.classList.remove('open');
+            document.querySelector('.rail-drawer-scrim')?.classList.remove('open');
+            const h = document.querySelector('.rail-drawer-handle');
+            if (h) {
+                h.setAttribute('aria-expanded', 'false');
+                h.setAttribute('aria-label', 'Open CRM sections');
+            }
+        }
+    }
+
+    /** Injects the handle, scrim and drawer. Called once, from whichever of the
+     *  two entry points above decides the page needs it. */
+    function build() {
+        if (document.querySelector('.rail-drawer')) return;   // never twice
+
         const items = window.RAIL_DRAWER_ITEMS || DEFAULT_ITEMS;
         const current = (location.pathname.split('/').pop() || '').toLowerCase();
 
@@ -97,5 +167,5 @@
             const btn = e.target.closest('.rail-item[data-href]');
             if (btn) window.location = btn.getAttribute('data-href');
         });
-    });
+    }
 })();

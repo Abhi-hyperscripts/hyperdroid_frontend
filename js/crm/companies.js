@@ -84,13 +84,37 @@ async function loadCompanies() {
         const result = await api.request('/crm/companies');
         companies = result || [];
         renderCompanies();
+        renderCompaniesHero();
     } catch (error) {
         console.error('Error loading companies:', error);
         Toast.error('Failed to load companies');
         companies = [];
         renderCompanies();
+        renderCompaniesHero();
     } finally {
         showLoading(false);
+    }
+}
+
+/** Hero count + the companies-created wave. Always the full set — never the
+ *  filtered one.
+ *
+ *  Called only from loadCompanies(). renderFilteredCompanies() reassigns the
+ *  `companies` global to the search results around its render call, so hooking
+ *  this into renderCompanies() would make the header count follow the search
+ *  box and disagree with the page's own title. (filterCompanies() itself does
+ *  no such swap — an earlier version of this comment named the wrong one.) */
+function renderCompaniesHero() {
+    const countEl = document.getElementById('cmpCount');
+    if (countEl) countEl.textContent = companies.length;
+    if (typeof CrmHeroWave !== 'undefined') {
+        CrmHeroWave.render({
+            bandId: 'cmpWave',
+            capId: 'cmpWaveCap',
+            rows: companies,
+            dateField: 'created_at',
+            caption: 'New companies/day',
+        });
     }
 }
 

@@ -1,0 +1,227 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPANIES — brought in line with Contacts (Lead Desk design language).
+   Glass icon rail, a hero carrying the title, live count, search and the
+   companies-created wave. The table itself is unchanged: Companies is a
+   nine-column record of who an account IS (industry, site, location, status),
+   and that reads as a table. Contacts became cards because a contact is a
+   person you ACT on — call, WhatsApp, email — and chips beat columns for that.
+   Same shell, different body, on purpose.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.crm-companies-page {
+  --cmp-line: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  padding-left: 78px;
+  padding-top: 52px;
+}
+@media (max-width: 1023px) {
+  body.crm-companies-page { padding-left: 0; padding-top: 0; }
+}
+
+/* ambient backdrop — the rail accent (#93C5FD) is the hue, as Contacts uses
+   its own #F472B6. Keeps the pages siblings rather than copies. */
+body.crm-companies-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 480px at 85% 112%, color-mix(in srgb, #93C5FD 11%, transparent), transparent 68%),
+    radial-gradient(760px 420px at 8% -8%, color-mix(in srgb, var(--brand-primary) 13%, transparent), transparent 70%);
+  background-repeat: no-repeat;
+  animation: cmp-drift 28s ease-in-out infinite alternate;
+}
+@keyframes cmp-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: -55px 35px, 45px -35px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.crm-companies-page::after { animation: none; }
+}
+
+/* ── glass icon rail ──────────────────────────────────────────────────────── */
+body.crm-companies-page nav.pulse-rail {
+  position: fixed !important;
+  left: 0; top: 52px; bottom: 0;
+  width: 78px;
+  border-right: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 14px 0;
+  overflow-y: auto;
+  /* Same rail treatment as every other app — see the note in accounts.css.
+     No visible bar; the fade at both ends carries the cue instead, its length
+     matched to the rail's own 14px padding so nothing dims until it scrolls.
+     tools/check-rails.mjs fails if this drifts from the others. */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                                      #000 calc(100% - 14px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 14px,
+                                      #000 calc(100% - 14px), transparent 100%);
+  z-index: 100;
+}
+body.crm-companies-page nav.pulse-rail::-webkit-scrollbar { width: 0; height: 0; display: none; }
+body.crm-companies-page .rail-item {
+  width: 60px; padding: 6px 0 5px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  cursor: pointer; color: var(--text-muted); text-align: center;
+}
+body.crm-companies-page .rail-item .ric { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+body.crm-companies-page .rail-item .ric svg { width: 18px; height: 18px; }
+body.crm-companies-page .rail-item span { font-size: 9px; letter-spacing: 0.02em; }
+body.crm-companies-page .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+body.crm-companies-page .rail-item.active { background: color-mix(in srgb, #93C5FD 16%, transparent); color: #93C5FD; }
+
+/* ── hero: title + count + search + New over the companies-created wave ───── */
+/* ⭐ THE HERO MUST SHARE .crm-container's MEASURE.
+   The table stayed inside .crm-container (max-width 1400, 24px gutter). Giving
+   the hero its own 1600/30px meant the title sat left of the first column —
+   5px at 1512, and growing with the window, because only one of the two is
+   capped at 1400. Contacts does not hit this: its grid wrapper carries the
+   same measure as its hero. */
+.cmp-hero {
+  position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 22px 24px 0;
+}
+.cmp-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.cmp-wavebg[hidden] { display: none; }
+.cmp-wavebg svg { width: 100%; height: 100%; display: block; }
+.cmp-wavecap {
+  position: absolute;
+  right: 24px;
+  bottom: 6px;
+  z-index: 1;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.cmp-headrow {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 10px 0 18px;
+  /* the wave underneath must stay clickable-through */
+  pointer-events: none;
+}
+.cmp-headrow > * { pointer-events: auto; }
+.cmp-id { display: flex; align-items: baseline; gap: 10px; }
+.cmp-hero h1 {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.cmp-count { font-family: var(--font-family-mono); font-size: 0.95rem; color: var(--text-muted); }
+.cmp-sub { margin: 2px 0 0; color: var(--text-secondary); font-size: 0.85em; }
+
+.cmp-tools { display: flex; align-items: center; gap: 10px; }
+
+.cmp-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 340px;
+}
+.cmp-search svg {
+  position: absolute;
+  left: 12px;
+  width: 15px; height: 15px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.cmp-search input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-card) 80%, transparent);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+}
+.cmp-search input:focus { border-color: var(--brand-primary); }
+.cmp-search input::placeholder { color: var(--text-muted); }
+
+.cmp-new {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 38px; padding: 0 14px;
+  border: 0; border-radius: 10px;
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+  font-size: 0.85rem; font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+/* Not var(--brand-primary-hover): that token does not exist anywhere in css/,
+   so the fallback resolved to the base colour and the button had no hover. */
+.cmp-new:hover { background: color-mix(in srgb, var(--brand-primary) 86%, #000); }
+.cmp-new svg { width: 15px; height: 15px; }
+
+/* .crm-container carries 80px of top padding to clear the fixed navbar — which
+   was right while the page header lived inside it. The hero now sits above it
+   and does that job, so on this page that padding is dead space between the
+   title and the table. What is left is only enough to keep the wave's caption,
+   which sits on the hero's bottom edge, off the table's header row. Scoped to
+   this body class: every other CRM page still needs the full 80px. */
+body.crm-companies-page .crm-container { padding-top: 18px; }
+
+/* 1023 is the RAIL's breakpoint — what changes here is everything the rail
+   going away affects, plus the wave, which is too short to read once the header
+   stacks. The gutter is deliberately NOT in this block: see below. */
+@media (max-width: 1023px) {
+  .cmp-wavebg, .cmp-wavecap { display: none; }
+  .cmp-hero { padding-top: 14px; }
+  .cmp-headrow { padding: 6px 0 12px; }
+  .cmp-tools { width: 100%; }
+  .cmp-search { min-width: 0; flex: 1; }
+}
+
+/* ⭐ THE GUTTER FOLLOWS .crm-container's BREAKPOINT, NOT THE RAIL's.
+   The table lives in .crm-container, whose padding drops to 16px at 768 —
+   css/crm.css. Dropping the hero's gutter at 1023 instead put the title 8px
+   left of the first column for the whole 769–1023 band: the same misalignment
+   that was just fixed at desktop width, reappearing one breakpoint down. */
+@media (max-width: 768px) {
+  .cmp-hero { padding-left: 16px; padding-right: 16px; }
+}
+
+/* Scoped, unlike the copy this was taken from: an unscoped `nav.pulse-rail`
+   here would reach every page that ever loads this file.
+   The selector is now character-identical to the rail rule above, so the two
+   have EQUAL specificity and this one wins on source order alone — the
+   !important is belt-and-braces against a later rule landing below it, not the
+   thing doing the work. (An earlier version of this comment claimed the
+   opposite on both counts.) */
+@media (max-width: 1023px) {
+  body.crm-companies-page nav.pulse-rail { display: none !important; }
+}
+
+/* ⭐ RESTORES THE NAVBAR CLEARANCE IN THE BAND WHERE THE NAVBAR IS STILL FIXED.
+   Earlier in this file the body's padding-top is dropped at this page's mobile
+   breakpoint. But .navbar only leaves the flow at max-width 768
+   (css/styles.css); above that it is `position: fixed` and 52px tall — so
+   dropping the clearance at the wider breakpoint slid the whole hero underneath
+   the navbar. Measured on Companies at 1023px: the breadcrumb was entirely
+   hidden and the H1 clipped in half.
+   This sits at the end of the file rather than beside that rule, on purpose —
+   the rule is left exactly as written and this wins inside the band by source
+   order, so the fix cannot disturb whatever else its block does. */
+@media (min-width: 769px) and (max-width: 1023px) {
+  body.crm-companies-page { padding-top: 52px; }
+}
