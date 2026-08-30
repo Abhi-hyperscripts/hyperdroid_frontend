@@ -665,7 +665,27 @@
 
     // ── wiring ──────────────────────────────────────────────────────────────────────────────
 
+    /**
+     * The portal must always be the file on the server. A customer's browser has no Ragenaizer service
+     * worker; a supplier's Finance user opening their own portal link DOES (the app pages register one), and
+     * it served a stale portal.js after a deploy — the client saw yesterday's build. The portal has no
+     * offline story, so if a worker controls this page, drop it and its caches and reload once.
+     */
+    async function shedServiceWorker() {
+        try {
+            if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return false;
+            if (sessionStorage.getItem('rz_portal_sw_shed')) return false;
+            sessionStorage.setItem('rz_portal_sw_shed', '1');
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const r of regs) await r.unregister();
+            if (window.caches) { const keys = await caches.keys(); for (const k of keys) await caches.delete(k); }
+            location.reload();
+            return true;
+        } catch (_) { return false; }
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
+        if (await shedServiceWorker()) return;
         $('loginForm').addEventListener('submit', login);
         $('togglePassword').addEventListener('click', () => {
             const input = $('password'); input.type = input.type === 'password' ? 'text' : 'password';
