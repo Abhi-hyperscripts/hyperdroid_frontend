@@ -219,10 +219,13 @@
             chips.push(`<span class="cp-chip warn"><i></i>Overdue <b>${money(overdue.reduce((s, i) => s + Number(i.balance_due), 0))}</b> · oldest ${daysBetween(new Date(oldest.due_date), today)} days past due</span>`);
         }
         const year = today.getFullYear();
-        const paidThisYear = payments.filter((p) => new Date(p.payment_date).getFullYear() === year).reduce((s, p) => s + Number(p.amount || 0), 0);
+        const paidThisYear = payments.filter((p) => new Date(p.payment_date).getFullYear() === year).reduce((s, p) => s + Number(p.amount || 0), 0);   // settled (cash + TDS)
         const yearReceipts = payments.filter((p) => new Date(p.payment_date).getFullYear() === year);
-        if ($('tileReceived')) { countUp($('tileReceived'), paidThisYear, money); $('tileReceivedSub').textContent = yearReceipts.length ? `${yearReceipts.length} receipt${yearReceipts.length === 1 ? '' : 's'} in ${year}` : `No receipts yet in ${year}`; }
-        if (paidThisYear > 0) chips.push(`<span class="cp-chip ok"><i></i>Paid in ${year} <b>${money(paidThisYear)}</b> across ${payments.length} receipt${payments.length === 1 ? '' : 's'}</span>`);
+        // A receipt's `amount` is what settled the invoice = cash + TDS the client withheld. The client PAID the cash.
+        const tdsThisYear = yearReceipts.reduce((t, p) => t + Number(p.tds_amount || 0), 0);
+        const cashThisYear = Math.max(0, paidThisYear - tdsThisYear);
+        if ($('tileReceived')) { countUp($('tileReceived'), cashThisYear, money); $('tileReceivedSub').textContent = yearReceipts.length ? `${yearReceipts.length} receipt${yearReceipts.length === 1 ? '' : 's'} in ${year}${tdsThisYear ? ' · + ' + money(tdsThisYear) + ' TDS withheld' : ''}` : `No receipts yet in ${year}`; }
+        if (cashThisYear > 0) chips.push(`<span class="cp-chip ok"><i></i>Paid in ${year} <b>${money(cashThisYear)}</b> across ${yearReceipts.length} receipt${yearReceipts.length === 1 ? '' : 's'}</span>`);
         if (invoices.length) {
             const first = invoices.map((i) => new Date(i.invoice_date)).sort((a, b) => a - b)[0];
             chips.push(`<span class="cp-chip"><i></i>Customer since <b>${esc(first.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }))}</b> · ${invoices.length} invoice${invoices.length === 1 ? '' : 's'}</span>`);
@@ -486,14 +489,21 @@
             const real = groups.filter((g) => g.project_id);
             const c = $('tabCountProjects'); c.textContent = real.length; c.hidden = !real.length;
             if (!groups.length) { host.innerHTML = empty('No invoices to group yet', 'Once your supplier bills work against a project, it will appear here with its own running total.'); return; }
+            // "Collected" in the supplier's books = cash + TDS credit (both settle the invoice). From this side of the
+            // table the client paid the cash and withheld the TDS, so the two are shown apart — and then
+            // paid + TDS withheld + credited + due = billed, which is the sum a client can check by hand.
+            const totalTds = groups.reduce((t, g) => t + Number(g.tds_withheld || 0), 0);
+            const cash = (g) => Math.max(0, Number(g.collected || 0) - Number(g.tds_withheld || 0));
             host.innerHTML = `
                 <div class="cp-strip">
                     <div class="cp-tile"><div class="cp-tile-label">Billed (ex tax)</div><div class="cp-tile-value">${money(ps.total_billed_ex_tax)}</div></div>
                     <div class="cp-tile"><div class="cp-tile-label">Tax</div><div class="cp-tile-value">${money(ps.total_tax)}</div></div>
-                    <div class="cp-tile ok"><div class="cp-tile-label">Collected</div><div class="cp-tile-value">${money(ps.total_collected)}</div></div>
+                    <div class="cp-tile ok"><div class="cp-tile-label">Paid (cash)</div><div class="cp-tile-value">${money(Math.max(0, Number(ps.total_collected) - totalTds))}</div></div>
+                    <div class="cp-tile"><div class="cp-tile-label">TDS withheld</div><div class="cp-tile-value">${money(totalTds)}</div></div>
                     <div class="cp-tile"><div class="cp-tile-label">Credited</div><div class="cp-tile-value">${money(ps.total_credited)}</div></div>
                     <div class="cp-tile ${Number(ps.total_due) > 0 ? 'warn' : 'ok'}"><div class="cp-tile-label">Due</div><div class="cp-tile-value">${money(ps.total_due)}</div></div>
                 </div>
+                <div class="cp-help" style="margin-bottom:12px;">Paid (cash) + TDS withheld + credited + due = billed. TDS you deduct settles the invoice on your supplier's books, so it is shown beside what you actually paid rather than inside it.</div>
                 <div class="cp-projects">${groups.map((g) => {
                     const pct = Number(g.billed) > 0 ? Math.min(100, Math.round(Number(g.collected) / Number(g.billed) * 100)) : 0;
                     return `<article class="cp-project">
@@ -504,14 +514,14 @@
                             </div>
                             <div class="cp-project-due ${Number(g.due) > 0 ? 'warn' : 'ok'}"><span>Due</span><b>${money(g.due)}</b></div>
                         </header>
-                        <div class="cp-project-bar" title="${pct}% of billed collected"><i style="width:${pct}%"></i></div>
+                        <div class="cp-project-bar" title="${pct}% of billed settled (cash + TDS)"><i style="width:${pct}%"></i></div>
                         <dl class="cp-project-facts">
                             <div><dt>Billed (ex tax)</dt><dd>${money(g.billed_ex_tax)}</dd></div>
                             <div><dt>Tax</dt><dd>${money(g.tax)}</dd></div>
                             <div><dt>Billed</dt><dd>${money(g.billed)}</dd></div>
-                            <div><dt>Collected</dt><dd>${money(g.collected)}</dd></div>
-                            <div><dt>Credited</dt><dd>${money(g.credited)}</dd></div>
+                            <div><dt>Paid (cash)</dt><dd>${money(cash(g))}</dd></div>
                             <div><dt>TDS withheld</dt><dd>${money(g.tds_withheld)}</dd></div>
+                            <div><dt>Credited</dt><dd>${money(g.credited)}</dd></div>
                         </dl>
                         ${g.invoices.length ? `<div class="cp-table-wrap"><table class="cp-table"><thead><tr><th>Invoice</th><th>Date</th><th>Status</th><th class="num">This project (ex tax)</th><th class="num">Invoice total</th><th class="num">Balance</th></tr></thead>
                             <tbody>${g.invoices.map((i) => `<tr>
@@ -558,9 +568,10 @@
         try {
             const [pay, cr] = await Promise.all([call('payments?limit=200'), call('credit-notes?limit=200')]);
             const pr = pay.items || [];
-            p.innerHTML = pr.length ? `<table class="cp-table"><thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th>Reference</th><th class="num">Amount</th><th class="num">TDS withheld</th><th class="num">On deposit</th></tr></thead>
+            p.innerHTML = pr.length ? `<table class="cp-table"><thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th>Reference</th><th class="num">Paid (cash)</th><th class="num">TDS withheld</th><th class="num">Settled</th><th class="num">On deposit</th></tr></thead>
                 <tbody>${pr.map((x) => `<tr><td><span style="font-family:var(--cp-mono)">${esc(x.payment_number)}</span></td><td class="cp-date">${date(x.payment_date)}</td><td>${esc(String(x.payment_method || '').replace(/_/g, ' '))}</td><td>${esc(x.reference_number || '-')}</td>
-                <td class="num strong">${money(x.amount)}</td><td class="num">${Number(x.tds_amount) ? money(x.tds_amount) : ''}</td><td class="num">${Number(x.advance_remaining) ? money(x.advance_remaining) : ''}</td></tr>`).join('')}</tbody></table>`
+                <td class="num strong">${money(Math.max(0, Number(x.amount) - Number(x.tds_amount || 0)))}</td><td class="num">${Number(x.tds_amount) ? money(x.tds_amount) : ''}</td><td class="num">${money(x.amount)}</td><td class="num">${Number(x.advance_remaining) ? money(x.advance_remaining) : ''}</td></tr>`).join('')}</tbody></table>
+                <div class="cp-help" style="margin-top:8px;">Settled = what the receipt cleared on your account (cash you paid + TDS you withheld).</div>`
                 : empty('No payments recorded yet', 'Receipts your supplier records against your invoices will show here with their method and reference.');
             const crr = cr.items || [];
             c.innerHTML = crr.length ? `<table class="cp-table"><thead><tr><th>Credit note</th><th>Date</th><th>Against</th><th>Reason</th><th>Status</th><th class="num">Amount</th></tr></thead>
