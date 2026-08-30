@@ -317,6 +317,8 @@ function openDetailPanel(item, type) {
         ` : ''}
     `;
 
+    if (!isVendor) renderPortalAccessSection(item);
+
     document.getElementById('detailPanelOverlay').classList.add('active');
     document.getElementById('detailPanel').classList.add('active');
     document.body.classList.add('modal-open');
@@ -407,6 +409,7 @@ function editVendor(id) {
 // Update the GSTIN required-marker + an explanatory hint when the GST treatment changes.
 function onVendorTreatmentChange() {
     const t = document.getElementById('vendorGstTreatment')?.value || 'registered';
+    applyOverseasFieldRules('vendor', t === 'overseas');
     const req = document.getElementById('vendorTaxIdReq');
     if (req) req.style.visibility = (t === 'registered') ? 'visible' : 'hidden';
     const hint = document.getElementById('vendorTreatmentHint');
@@ -418,8 +421,26 @@ function onVendorTreatmentChange() {
     })[t] || '';
 }
 
+/**
+ * ⭐ THE FORM MUST AGREE WITH THE SERVER ABOUT WHAT IS REQUIRED. The overseas hint already told the
+ * user "state not required" while the label still carried a red asterisk AND the phone input carried
+ * a hard `required` attribute — so an overseas party could not be saved through the UI at all, and
+ * the prose contradicted the control sitting next to it. The server now exempts overseas from phone
+ * and state; this keeps the form saying the same thing, in both directions (switching back to a
+ * domestic treatment restores both).
+ */
+function applyOverseasFieldRules(party, isOverseas) {
+    const star = (id, on) => { const e = document.getElementById(id); if (e) e.style.visibility = on ? 'visible' : 'hidden'; };
+    const need = (id, on) => { const e = document.getElementById(id); if (e) { if (on) e.setAttribute('required', ''); else e.removeAttribute('required'); } };
+    star(`${party}PhoneReq`, !isOverseas);
+    star(`${party}StateReq`, !isOverseas);
+    need(`${party}Phone`, !isOverseas);
+    need(`${party}State`, !isOverseas);
+}
+
 function onCustomerTreatmentChange() {
     const t = document.getElementById('customerGstTreatment')?.value || 'registered';
+    applyOverseasFieldRules('customer', t === 'overseas');
     const req = document.getElementById('customerTaxIdReq');
     if (req) req.style.visibility = (t === 'registered') ? 'visible' : 'hidden';
     const hint = document.getElementById('customerTreatmentHint');
@@ -998,5 +1019,172 @@ async function confirmReject() {
         Toast.error(err.message || 'Failed to reject request');
     } finally {
         AccountsCommon.endSubmit('confirmReject');
+    }
+}
+
+// ============================================================================
+// CLIENT PORTAL ACCESS (customer detail panel)
+//
+// Finance issues the client's portal password against the email already on the customer record, hands
+// it over by email or any other medium, and can re-issue or revoke it at any time. The password appears
+// on screen exactly once — the reply to Generate — and is never retrievable afterwards.
+// ============================================================================
+
+function renderPortalAccessSection(customer) {
+    const body = document.getElementById('detailPanelBody');
+    if (!body) return;
+    const section = document.createElement('div');
+    section.className = 'panel-section';
+    section.id = 'portalAccessSection';
+    section.innerHTML = `
+        <div class="panel-section-header">
+            <div class="panel-section-icon primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            </div>
+            <span class="panel-section-title">Client Portal Access</span>
+        </div>
+        <p style="font-size:12px; color:var(--text-secondary); margin:0 0 10px; line-height:1.5;">
+            Lets this client sign in and see their own invoices, quotations, receipts and account statement.
+            Their login is the email on this customer record; you issue the password.
+        </p>
+        <div id="portalAccessBody" style="font-size:13px; color:var(--text-secondary);">Loading…</div>
+    `;
+    body.appendChild(section);
+    loadPortalAccess(customer.id);
+}
+
+async function loadPortalAccess(customerId) {
+    const host = document.getElementById('portalAccessBody');
+    if (!host) return;
+    try {
+        const status = await api.request(AccountsCommon.buildUrl(`customers/${customerId}/portal-access`), { _skipSpinner: true });
+        renderPortalAccessStatus(customerId, status, null);
+    } catch (err) {
+        // A 403 means the signed-in user is not an Accounts admin: the section still explains itself.
+        const msg = /403|forbidden|permission/i.test(err?.message || '') ? 'Only an Accounts admin can manage portal access.' : (err?.message || 'Could not load portal access.');
+        host.innerHTML = `<div style="color:var(--text-secondary);">${AccountsCommon.escapeHtml(msg)}</div>`;
+    }
+}
+
+function renderPortalAccessStatus(customerId, status, issued) {
+    const host = document.getElementById('portalAccessBody');
+    if (!host) return;
+    const esc = AccountsCommon.escapeHtml;
+    const when = (d) => d ? new Date(d).toLocaleString() : '-';
+    const active = !!status.exists && !!status.is_active;
+    const badge = !status.exists
+        ? `<span class="status-badge" style="background:var(--bg-tertiary); color:var(--text-secondary);">Not set up</span>`
+        : active
+            ? `<span class="status-badge" style="background:var(--status-active); color:white;">Active</span>`
+            : `<span class="status-badge" style="background:var(--status-rejected); color:white;">Revoked</span>`;
+    const locked = status.locked_until && new Date(status.locked_until) > new Date();
+    const noEmail = !status.login_email;
+
+    const rows = [];
+    rows.push(`<div class="panel-detail-row"><span class="panel-detail-label">Status</span><span class="panel-detail-value">${badge}</span></div>`);
+    rows.push(`<div class="panel-detail-row"><span class="panel-detail-label">Login email</span><span class="panel-detail-value">${noEmail ? '<em>No email on record</em>' : esc(status.login_email)}</span></div>`);
+    if (status.exists) {
+        rows.push(`<div class="panel-detail-row"><span class="panel-detail-label">Password issued</span><span class="panel-detail-value">${esc(when(status.password_set_at))}</span></div>`);
+        rows.push(`<div class="panel-detail-row"><span class="panel-detail-label">Last login</span><span class="panel-detail-value">${esc(when(status.last_login_at))}</span></div>`);
+        if (locked) rows.push(`<div class="panel-detail-row"><span class="panel-detail-label">Locked</span><span class="panel-detail-value" style="color:var(--color-warning);">Too many wrong passwords — unlocks ${esc(when(status.locked_until))}. Generating a new password unlocks it now.</span></div>`);
+    }
+
+    const warnings = [];
+    if (noEmail) warnings.push('Add an email address to this customer first — it is what the client signs in with.');
+    if (status.exists && status.email_matches_customer === false) warnings.push('The customer\'s email changed after the password was issued. The client must still sign in with the OLD address until you generate a new password.');
+
+    const oneTime = issued ? `
+        <div style="margin:12px 0; padding:12px; border:1px dashed var(--brand-primary); border-radius:8px; background:var(--bg-tertiary);">
+            <div style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">New password — shown once</div>
+            <div style="font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:16px; letter-spacing:1px; color:var(--text-primary); user-select:all;" id="portalIssuedPassword">${esc(issued.password)}</div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:6px; line-height:1.5;">
+                Copy it now and hand it to the client with the portal link. Once you leave this panel it cannot be shown again — you would generate another.
+            </div>
+            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                <button class="btn btn-sm btn-primary" type="button" id="portalCopyPasswordBtn">Copy password</button>
+                <button class="btn btn-sm btn-secondary" type="button" id="portalCopyMessageBtn">Copy full message</button>
+            </div>
+        </div>` : '';
+
+    host.innerHTML = `
+        <div class="panel-detail-grid">${rows.join('')}</div>
+        ${warnings.map(w => `<div style="margin-top:8px; font-size:12px; color:var(--color-warning); line-height:1.5;">${esc(w)}</div>`).join('')}
+        ${oneTime}
+        <div class="panel-detail-row" style="margin-top:10px;"><span class="panel-detail-label">Portal link</span>
+            <span class="panel-detail-value" style="word-break:break-all;"><span id="portalLinkText">${esc(status.portal_url || '')}</span>
+            <button class="btn btn-sm btn-link" type="button" id="portalCopyLinkBtn" style="padding:0 6px;">Copy</button></span></div>
+        <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+            <button class="btn btn-sm btn-primary" type="button" id="portalGenerateBtn" ${noEmail ? 'disabled' : ''}>${active ? 'Generate new password' : 'Generate password'}</button>
+            <button class="btn btn-sm btn-secondary" type="button" id="portalEmailBtn" ${noEmail ? 'disabled' : ''}>Email password to client</button>
+            ${active ? '<button class="btn btn-sm btn-outline-danger" type="button" id="portalRevokeBtn">Revoke access</button>' : ''}
+        </div>
+        <div style="font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5;">
+            Generating or emailing replaces any previous password and signs the client out everywhere.
+            Email goes to the login address from your configured sending mailbox.
+        </div>`;
+
+    document.getElementById('portalGenerateBtn')?.addEventListener('click', () => portalGenerate(customerId, active));
+    document.getElementById('portalEmailBtn')?.addEventListener('click', () => portalSendEmail(customerId, active, status.login_email));
+    document.getElementById('portalRevokeBtn')?.addEventListener('click', () => portalRevoke(customerId));
+    document.getElementById('portalCopyLinkBtn')?.addEventListener('click', () => portalCopy(status.portal_url || '', 'Portal link copied'));
+    if (issued) {
+        document.getElementById('portalCopyPasswordBtn')?.addEventListener('click', () => portalCopy(issued.password, 'Password copied'));
+        document.getElementById('portalCopyMessageBtn')?.addEventListener('click', () => portalCopy(
+            `Your client portal access\n\nPortal link: ${issued.portal_url || status.portal_url || ''}\nLogin email: ${issued.login_email}\nPassword: ${issued.password}\n\nKeep this password safe. Contact us if you need it changed.`,
+            'Message copied'));
+    }
+}
+
+async function portalGenerate(customerId, alreadyActive) {
+    if (alreadyActive) {
+        const ok = await AccountsCommon.confirm('This replaces the client\'s current password and signs them out of the portal. Continue?', 'Generate new password');
+        if (!ok) return;
+    }
+    try {
+        const issued = await api.request(AccountsCommon.buildUrl(`customers/${customerId}/portal-access/generate`), { method: 'POST' });
+        const status = await api.request(AccountsCommon.buildUrl(`customers/${customerId}/portal-access`), { _skipSpinner: true });
+        renderPortalAccessStatus(customerId, status, issued);
+        Toast.success('Password generated — copy it now, it is shown once');
+    } catch (err) {
+        console.error('[Parties] portalGenerate error:', err);
+        Toast.error(err.message || 'Failed to generate the password');
+    }
+}
+
+async function portalSendEmail(customerId, alreadyActive, email) {
+    const ok = await AccountsCommon.confirm(
+        `A new password will be generated and emailed to ${email || 'the client'} with the portal link.${alreadyActive ? ' The current password stops working.' : ''} Continue?`,
+        'Email portal password');
+    if (!ok) return;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`customers/${customerId}/portal-access/send-email`), { method: 'POST' });
+        Toast.success(`Password emailed to ${res?.sent_to || email || 'the client'}`);
+        await loadPortalAccess(customerId);
+    } catch (err) {
+        console.error('[Parties] portalSendEmail error:', err);
+        Toast.error(err.message || 'The email could not be sent');
+        await loadPortalAccess(customerId);
+    }
+}
+
+async function portalRevoke(customerId) {
+    const ok = await AccountsCommon.confirm('The client will be signed out and unable to log in until you generate a new password. Continue?', 'Revoke portal access');
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`customers/${customerId}/portal-access/revoke`), { method: 'POST' });
+        Toast.success('Portal access revoked');
+        await loadPortalAccess(customerId);
+    } catch (err) {
+        console.error('[Parties] portalRevoke error:', err);
+        Toast.error(err.message || 'Failed to revoke portal access');
+    }
+}
+
+async function portalCopy(text, okMessage) {
+    try {
+        await navigator.clipboard.writeText(text);
+        Toast.success(okMessage);
+    } catch (_) {
+        Toast.error('Copy failed — select the text and copy it manually');
     }
 }

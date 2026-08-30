@@ -454,7 +454,7 @@
                                     <input type="email" id="vendorEmail" class="form-control" placeholder="vendor@example.com">
                                 </div>
                                 <div class="form-group">
-                                    <label for="vendorPhone">Phone <span class="req">*</span></label>
+                                    <label for="vendorPhone">Phone <span class="req" id="vendorPhoneReq">*</span></label>
                                     <input type="text" id="vendorPhone" class="form-control" placeholder="Phone number">
                                 </div>
                             </div>
@@ -499,7 +499,7 @@
                                     <input type="hidden" id="vendorCountry">
                                 </div>
                                 <div class="form-group">
-                                    <label for="vendorStateContainer">State <span class="req">*</span></label>
+                                    <label for="vendorStateContainer">State <span class="req" id="vendorStateReq">*</span></label>
                                     <div class="searchable-dropdown-container" id="vendorStateContainer"></div>
                                     <input type="text" id="vendorStateText" class="form-control" placeholder="State / Province" style="display:none;">
                                     <input type="hidden" id="vendorState">
@@ -608,7 +608,7 @@
                                     <input type="email" id="customerEmail" class="form-control" required maxlength="200" placeholder="customer@example.com">
                                 </div>
                                 <div class="form-group">
-                                    <label for="customerPhone">Phone <span class="req">*</span></label>
+                                    <label for="customerPhone">Phone <span class="req" id="customerPhoneReq">*</span></label>
                                     <input type="text" id="customerPhone" class="form-control" required maxlength="50" placeholder="Phone number">
                                 </div>
                             </div>
@@ -646,7 +646,7 @@
                                     <input type="hidden" id="customerCountry">
                                 </div>
                                 <div class="form-group">
-                                    <label for="customerStateContainer">State <span class="req">*</span></label>
+                                    <label for="customerStateContainer">State <span class="req" id="customerStateReq">*</span></label>
                                     <div class="searchable-dropdown-container" id="customerStateContainer"></div>
                                     <input type="text" id="customerStateText" class="form-control" maxlength="100" placeholder="State / Province" style="display:none;">
                                     <input type="hidden" id="customerState">
