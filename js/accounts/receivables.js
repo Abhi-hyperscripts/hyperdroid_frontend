@@ -236,19 +236,30 @@ function initDropdowns() {
     invoiceCustomerFilterDD = new SearchableDropdown(document.getElementById('invoiceCustomerFilterContainer'), {
         id: 'invoiceCustomerFilter', options: custOpts, placeholder: 'All Customers',
         searchPlaceholder: 'Search customers...', compact: true,
-        onChange: () => { invoicePage = 1; loadCustomerInvoices(); }
+        onChange: (customerId) => {
+            // Projects are per-customer: once a customer is chosen the Project filter offers only theirs,
+            // and a project of some other customer that was selected before is dropped, not silently kept
+            // (a kept one would force the fetch back to ITS customer and contradict the customer shown).
+            invoiceProjectFilterDD?.setOptions?.(invoiceProjectFilterOptions(customerId), true);
+            invoicePage = 1; loadCustomerInvoices();
+        }
     });
     // Project filter: narrows the list to invoices that touch the chosen project (label carries the
-    // owning customer so identically-named projects are distinguishable).
-    const projFilterOpts = (projects || []).map(p => ({
-        value: p.id,
-        label: (p.code ? p.code + ' — ' : '') + (p.name || 'Untitled')
-            + (p.customer_name ? '  ·  ' + p.customer_name : '')
-    }));
+    // owning customer so identically-named projects are distinguishable when no customer is chosen).
     invoiceProjectFilterDD = new SearchableDropdown(document.getElementById('invoiceProjectFilterContainer'), {
-        id: 'invoiceProjectFilter', options: projFilterOpts, placeholder: 'All Projects',
+        id: 'invoiceProjectFilter', options: invoiceProjectFilterOptions(''), placeholder: 'All Projects',
         searchPlaceholder: 'Search projects...', compact: true,
-        onChange: () => { invoicePage = 1; loadCustomerInvoices(); }
+        onChange: (projectId) => {
+            // Picking a project from the all-customers list commits to its customer: show that customer in
+            // the Customer filter and narrow this list to match, so the two filters never disagree.
+            const owner = (projects || []).find(p => p.id === projectId)?.customer_id;
+            if (owner && invoiceCustomerFilterDD?.getValue?.() !== owner) {
+                invoiceCustomerFilterDD.setValue(owner, false);
+                invoiceProjectFilterDD.setOptions(invoiceProjectFilterOptions(owner), true);
+                invoiceProjectFilterDD.setValue(projectId, false);   // re-label without the owner suffix
+            }
+            invoicePage = 1; loadCustomerInvoices();
+        }
     });
     paymentCustomerFilterDD = new SearchableDropdown(document.getElementById('paymentCustomerFilterContainer'), {
         id: 'paymentCustomerFilter', options: custOpts, placeholder: 'All Customers',
@@ -264,6 +275,18 @@ function initDropdowns() {
         id: 'statementCustomerFilter', options: custOpts, placeholder: 'Select Customer',
         searchPlaceholder: 'Search customers...', compact: true
     });
+}
+
+/** Project-filter options: every project when no customer is chosen (label carries the owner), otherwise
+ *  only the chosen customer's projects. Both filter bars call this so their lists can never diverge. */
+function invoiceProjectFilterOptions(customerId) {
+    return (projects || [])
+        .filter(p => !customerId || p.customer_id === customerId)
+        .map(p => ({
+            value: p.id,
+            label: (p.code ? p.code + ' — ' : '') + (p.name || 'Untitled')
+                + (!customerId && p.customer_name ? '  ·  ' + p.customer_name : '')
+        }));
 }
 
 // ============================================================================
