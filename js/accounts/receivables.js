@@ -2446,13 +2446,21 @@ async function loadCustomerStatement() {
             date: i.invoice_date, type: 'Invoice', reference: i.invoice_number,
             debit: parseFloat(i.total_amount) || 0, credit: 0
         }));
-        const payments = (res?.payments || []).map(p => ({
-            date: p.payment_date, type: `Payment (${p.payment_method || 'bank'})`, reference: p.payment_number,
+        // A receipt clears the invoice for cash + the TDS the customer withheld. The ledger a customer keeps
+        // carries those as TWO credits — "By bank" and "By TDS deducted" — and printing them as one receipt
+        // line overstated the cash by the TDS (a ₹5,90,000 "payment" against ₹5,40,000 banked). Split here.
+        let tdsInPeriod = 0;
+        const payments = [];
+        (res?.payments || []).forEach(p => {
             // Credit only the AR-clearing portion (gross − held advance − refunded advance), matching the
             // header's total_received/total_outstanding — a gross credit overstated collections when the
             // receipt carried an unapplied or refunded advance.
-            debit: 0, credit: (parseFloat(p.amount) || 0) - (parseFloat(p.advance_remaining) || 0) - (parseFloat(p.advance_refunded) || 0)
-        }));
+            const cleared = (parseFloat(p.amount) || 0) - (parseFloat(p.advance_remaining) || 0) - (parseFloat(p.advance_refunded) || 0);
+            const tds = Math.min(parseFloat(p.tds_amount) || 0, cleared);
+            tdsInPeriod += tds;
+            payments.push({ date: p.payment_date, type: `Payment (${p.payment_method || 'bank'})`, reference: p.payment_number, debit: 0, credit: cleared - tds });
+            if (tds > 0) payments.push({ date: p.payment_date, type: 'TDS deducted by customer', reference: p.payment_number, debit: 0, credit: tds });
+        });
         const credits = (res?.credit_notes || []).map(c => ({
             date: c.credit_date, type: 'Credit Note', reference: c.credit_note_number,
             debit: 0, credit: parseFloat(c.amount) || 0
@@ -2470,7 +2478,8 @@ async function loadCustomerStatement() {
         let html = `<h3 class="stmt-title">${esc(custName)} — Statement</h3>
         <div class="stats-row">
             <div class="stat-card"><div class="stat-value">${fmt(res?.total_invoiced ?? 0)}</div><div class="stat-label">Total Invoiced</div></div>
-            <div class="stat-card"><div class="stat-value">${fmt(res?.total_received ?? 0)}</div><div class="stat-label">Total Received</div></div>
+            <div class="stat-card"><div class="stat-value">${fmt(Math.max(0, (parseFloat(res?.total_received) || 0) - tdsInPeriod))}</div><div class="stat-label">Received (cash)</div></div>
+            <div class="stat-card"><div class="stat-value">${fmt(tdsInPeriod)}</div><div class="stat-label">TDS deducted by customer</div></div>
             <div class="stat-card"><div class="stat-value stmt-outstanding">${fmt(res?.total_outstanding ?? 0)}</div><div class="stat-label">Outstanding</div></div>
         </div>`;
 
