@@ -239,7 +239,7 @@
         const raw = parseFloat(e.target.value);
         // Blank or zero is how a client REMOVES a line. A number that is merely out of range is a typo —
         // an extra zero on the quantity — and deleting the product for it loses what they were buying.
-        if (e.target.value.trim() === '' || raw === 0) { delete cart[id]; saveCart(); renderCart(); return; }
+        if (e.target.value.trim() === '' || raw === 0) { delete cart[id]; saveCart(); renderCart(); renderGrid(); return; }
         const qty = normaliseQty(raw);
         if (qty == null) { renderCart(); return; }        // keep the line, restore the stored quantity
         cart[id].qty = qty; saveCart(); renderCart();
