@@ -50,7 +50,13 @@
         const modal = document.getElementById('ekartAccessModal');
         if (!modal) return;
         modal.classList.remove('active');
-        setTimeout(() => { modal.classList.remove('gm-animating'); modal.style.display = 'none'; }, 200);
+        setTimeout(() => {
+            modal.classList.remove('gm-animating');
+            modal.style.display = 'none';
+            // The password is shown once and this modal says it is not stored — so do not keep it in the DOM
+            // for the life of the page, where devtools, an extension or any other script can read it back.
+            const b = body(); if (b) b.innerHTML = '';
+        }, 200);
     }
 
     const body = () => document.getElementById('ekartAccessBody');
@@ -62,7 +68,10 @@
         try {
             status = await api.request(`/crm/ekart-access/status?${q()}`);
         } catch (err) {
-            if (!/404|not found|No e-kart/i.test(String(err && err.message))) {
+            // ONLY the absent case falls through to the "issue" pitch. A scope refusal is also a 404 (it
+            // says "Lead not found." deliberately), and matching /not found/ swallowed it — the modal then
+            // offered a button that refuses again on click.
+            if (!/No e-kart access issued/i.test(String(err && err.message))) {
                 body().innerHTML = `<p style="color:var(--color-error,#ef4444)">${esc(err.message || 'Could not load e-kart status.')}</p>`;
                 return;
             }
@@ -85,14 +94,20 @@
                 <span style="color:var(--text-secondary)">Status</span><b>${esc(state)}</b>
                 <span style="color:var(--text-secondary)">Issued</span><span>${esc(new Date(status.created_at).toLocaleString())}</span>
             </div>
+            ${status.portal_url ? `<div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+                <input class="form-input" readonly value="${esc(status.portal_url)}" id="ekartStatusUrl" style="font-size:.8rem">
+                <button class="btn btn-sm btn-outline-secondary" data-copy="ekartStatusUrl">Copy link</button>
+            </div>` : ''}
             <p style="color:var(--text-secondary);font-size:.8rem;margin:12px 0 10px">
-                The password is never stored or shown again. Issuing a new one keeps the same login id
-                and immediately replaces the old password${status.revoked ? ' (and re-enables the revoked access)' : ''}.
+                The password is never stored or shown again. Copy the link above to re-send it. Issuing a
+                new password keeps the same login id, replaces the old password and signs out every open
+                session${status.revoked ? ' (and re-enables the revoked access)' : ''}.
             </p>
             <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" id="ekartRotateBtn">Issue new password</button>
                 ${status.revoked ? '' : '<button class="btn btn-outline-danger" id="ekartRevokeBtn">Revoke access</button>'}
             </div>`;
+        body().querySelectorAll('[data-copy]').forEach((btn) => btn.addEventListener('click', () => copyValue(btn)));
         document.getElementById('ekartRotateBtn').addEventListener('click', () => issue(true));
         const revokeBtn = document.getElementById('ekartRevokeBtn');
         if (revokeBtn) revokeBtn.addEventListener('click', () => revoke(status.access_id));
@@ -129,7 +144,8 @@
             </div>
             <button class="btn btn-sm btn-outline-secondary" id="ekartCopyAllBtn" style="margin-top:12px">Copy all as a message</button>
             <p style="color:var(--text-secondary);font-size:.78rem;margin:10px 0 0">
-                ${isRotate ? 'The old password stopped working the moment this one was issued.' : 'Their submissions will appear as deals tagged <b>ekart-inquiry</b>.'}
+
+                ${isRotate ? 'The old password stopped working the moment this one was issued, and every open session was signed out.' : 'Their submissions will appear as deals tagged <b>ekart-inquiry</b>.'}
             </p>`;
         body().querySelectorAll('[data-copy]').forEach((btn) => btn.addEventListener('click', () => copyValue(btn)));
         document.getElementById('ekartCopyAllBtn').addEventListener('click', () => copyText(

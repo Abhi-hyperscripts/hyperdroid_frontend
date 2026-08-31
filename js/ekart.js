@@ -19,6 +19,14 @@
     const NAME_KEY = 'ek_name';
     let tenantId = params.get('t') || sessionStorage.getItem(TENANT_KEY) || '';
     let token = sessionStorage.getItem(TOKEN_KEY) || '';
+    // A buyer who deals with two suppliers on this platform can paste supplier B's link into the tab where
+    // they are signed in to supplier A. The URL would say B while the token still resolved A — A's
+    // catalogue, A's name, A's prices, under B's address. The token belongs to whoever issued it.
+    if (params.get('t') && sessionStorage.getItem(TENANT_KEY) && params.get('t') !== sessionStorage.getItem(TENANT_KEY)) {
+        token = '';
+        sessionStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(NAME_KEY);
+    }
     let priceMode = 'hidden';
     let items = [];                       // last catalogue page, by render order
     const cartKey = () => 'ek_cart_' + tenantId;
@@ -79,6 +87,8 @@
             sessionStorage.setItem(TOKEN_KEY, token);
             sessionStorage.setItem(TENANT_KEY, tenantId);
             sessionStorage.setItem(NAME_KEY, data.display_name || '');
+            cart = loadCart();            // this client's own cart, not whatever was in the tab
+            renderCartCount();
             await showApp();
         } catch (err) {
             $('loginError').textContent = err.message;
@@ -91,21 +101,33 @@
         token = '';
         sessionStorage.removeItem(TOKEN_KEY);
         sessionStorage.removeItem(NAME_KEY);
+        // The cart goes with the session. Shared tablet, same tenant: without this the next client signs in
+        // to the previous one's basket — sees what they were buying, and can submit it under their own name.
+        cart = {};
+        try { sessionStorage.removeItem(cartKey()); } catch { /* private mode */ }
+        const note = $('cartNote'); if (note) note.value = '';
+        renderCartCount();
         showLogin();
     }
     $('logoutBtn').addEventListener('click', () => signOut(true));
 
     // ---------- catalogue ----------
 
+    let catalogSeq = 0;
     async function refreshCatalog(query) {
+        // Responses can land out of order: "pan" (slow) after "panel" (fast) would leave the grid showing
+        // pan's rows under panel's search box — and a slow FAILURE would blank a catalogue that loaded fine.
+        const mySeq = ++catalogSeq;
         try {
             const data = await call('GET', 'catalog' + (query ? `?query=${encodeURIComponent(query)}` : ''));
+            if (mySeq !== catalogSeq) return;
             priceMode = data.price_mode || priceMode;
             if (data.display_name) { sessionStorage.setItem(NAME_KEY, data.display_name); $('whoAmI').textContent = data.display_name; }
             items = data.items || [];
             $('priceHint').hidden = priceMode !== 'list';
             renderGrid();
         } catch (err) {
+            if (mySeq !== catalogSeq) return;
             items = [];
             renderGrid();
             $('catalogEmptyMsg').textContent = err.message;
