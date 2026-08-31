@@ -1,3 +1,9 @@
+/* The page hides the drawers and the tenant-missing banner with the `hidden` attribute, and an author
+   `display:` on those elements outranks the UA sheet's [hidden] rule. Bootstrap's reboot happens to carry
+   `[hidden]{display:none!important}` and the page loads it — but that is a CDN's stylesheet deciding
+   whether this page renders correctly. accounts-portal.css declares this for the same reason. */
+[hidden] { display: none !important; }
+
 /* E-kart — the client-facing product inquiry portal. Rides theme.css tokens; the login view is the
    shared desk-landing/form-desk skin. Everything here is the shop view. */
 

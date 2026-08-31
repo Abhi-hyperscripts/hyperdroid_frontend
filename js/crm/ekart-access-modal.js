@@ -12,6 +12,7 @@
 
     let kind = 'lead';      // 'lead' | 'contact'
     let entityId = null;
+    let closeTimer = null;
 
     const esc = (s) => String(s == null ? '' : s)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -40,6 +41,10 @@
         kind = entityKind; entityId = id;
         ensureModal();
         const modal = document.getElementById('ekartAccessModal');
+        // A close scheduled 200ms ago must not wipe the modal we are re-opening — the rep who closes and
+        // immediately re-opens ("I did not copy the password") would watch it be erased, and the password
+        // exists nowhere else.
+        if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
         modal.style.display = '';
         modal.classList.add('gm-animating');
         requestAnimationFrame(() => modal.classList.add('active'));
@@ -50,7 +55,8 @@
         const modal = document.getElementById('ekartAccessModal');
         if (!modal) return;
         modal.classList.remove('active');
-        setTimeout(() => {
+        closeTimer = setTimeout(() => {
+            closeTimer = null;
             modal.classList.remove('gm-animating');
             modal.style.display = 'none';
             // The password is shown once and this modal says it is not stored — so do not keep it in the DOM

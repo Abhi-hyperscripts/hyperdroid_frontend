@@ -107,6 +107,13 @@
         try { sessionStorage.removeItem(cartKey()); } catch { /* private mode */ }
         const note = $('cartNote'); if (note) note.value = '';
         renderCartCount();
+        // …and the DRAWERS, which are the only thing that actually shows a cart or a history. Clearing the
+        // state alone left client A's basket and A's submitted notes rendered for client B to read.
+        renderCart();
+        $('historyBody').innerHTML = '';
+        items = [];
+        $('catalogGrid').innerHTML = '';
+        closeDrawers();
         showLogin();
     }
     $('logoutBtn').addEventListener('click', () => signOut(true));
@@ -173,13 +180,23 @@
         const id = card.getAttribute('data-id');
         const it = items.find((x) => String(x.id) === id);
         if (!it) return;
-        const qty = parseFloat(card.querySelector('.ek-qty').value);
-        if (!(qty > 0)) { toast('error', 'Enter a quantity above zero.'); return; }
+        const qty = normaliseQty(parseFloat(card.querySelector('.ek-qty').value));
+        if (qty == null) return;
         cart[id] = { name: it.name, unit: it.unit || 'unit', qty };
         saveCart();
         btn.textContent = 'Update'; btn.classList.add('in-cart');
         toast('success', `${it.name} — ${qty} ${it.unit || ''} in your inquiry`);
     });
+
+    /// The server stores quantities as NUMERIC(15,3) and caps a line at a million, so show the client the
+    /// number that will actually be on their inquiry rather than letting the whole cart be refused later.
+    function normaliseQty(raw) {
+        if (!(raw > 0)) { toast('error', 'Enter a quantity above zero.'); return null; }
+        const rounded = Math.round(raw * 1000) / 1000;
+        if (rounded < 0.001) { toast('error', 'That quantity is too small to order.'); return null; }
+        if (rounded > 1000000) { toast('error', 'That is more than 1,000,000 of one product — please call the team.'); return null; }
+        return rounded;
+    }
 
     let searchTimer = null;
     $('searchInput').addEventListener('input', (e) => {
@@ -217,9 +234,10 @@
     $('cartBody').addEventListener('change', (e) => {
         const line = e.target.closest('.ek-line');
         if (!line || !e.target.classList.contains('ek-qty')) return;
-        const qty = parseFloat(e.target.value);
         const id = line.getAttribute('data-id');
-        if (qty > 0) { cart[id].qty = qty; saveCart(); }
+        if (!cart[id]) { renderCart(); return; }          // the cart was cleared under this drawer
+        const qty = normaliseQty(parseFloat(e.target.value));
+        if (qty != null) { cart[id].qty = qty; saveCart(); renderCart(); }
         else { delete cart[id]; saveCart(); renderCart(); }
     });
 
@@ -256,11 +274,14 @@
 
     // ---------- history ----------
 
+    let historySeq = 0;
     async function renderHistory() {
         const body = $('historyBody');
+        const mySeq = ++historySeq;
         body.innerHTML = '<p class="ek-smallprint" style="padding:20px 0">Loading…</p>';
         try {
             const data = await call('GET', 'inquiries');
+            if (mySeq !== historySeq || !token) return;
             const list = (data && data.inquiries) || [];
             if (list.length === 0) { body.innerHTML = '<p class="ek-smallprint" style="padding:20px 0">No inquiries yet — your submitted carts will show here.</p>'; return; }
             body.innerHTML = list.map((q) => `
@@ -273,6 +294,7 @@
                     ${q.note ? `<div class="ek-inq-note">${esc(q.note)}</div>` : ''}
                 </div>`).join('');
         } catch (err) {
+            if (mySeq !== historySeq || !token) return;
             body.innerHTML = `<p class="ek-smallprint" style="padding:20px 0">${esc(err.message)}</p>`;
         }
     }
