@@ -3,7 +3,9 @@
  * Shared styles for all AccountsService pages.
  * Uses ONLY CSS variables from theme.css — no hardcoded colors.
  */
-@import url('tooltip.css');
+/* tooltip.css is deliberately NOT imported here. Every Accounts page loads js/tooltip.js, the platform's
+   body-anchored tooltip; importing the pure-CSS [data-tooltip]::after bubble as well painted TWO tooltips
+   for every hover — the second one nowrap and clipped by its card (seen on the dashboard's Sell card). */
 
 /* =============================================================
    GLASSMORPHIC PAGE BACKGROUND — subtle gradient for glass effect
