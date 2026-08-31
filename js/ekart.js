@@ -101,14 +101,23 @@
         token = '';
         sessionStorage.removeItem(TOKEN_KEY);
         sessionStorage.removeItem(NAME_KEY);
-        // The cart goes with the session. Shared tablet, same tenant: without this the next client signs in
-        // to the previous one's basket — sees what they were buying, and can submit it under their own name.
-        cart = {};
-        try { sessionStorage.removeItem(cartKey()); } catch { /* private mode */ }
-        const note = $('cartNote'); if (note) note.value = '';
+        // The cart goes with a DELIBERATE sign-out. Shared tablet, same tenant: without that the next
+        // client signs in to the previous one's basket, sees what they were buying, and can submit it
+        // under their own name.
+        //
+        // An INVOLUNTARY 401 keeps it. The login id is not a secret — it travels in the same message as the
+        // password — so five wrong guesses by anyone who has seen it lock the account for fifteen minutes
+        // and log the real buyer out. Throwing away the sixty lines they had assembled would make that a
+        // remote delete button; they sign back in and their basket is still there.
+        if (callServer) {
+            cart = {};
+            try { sessionStorage.removeItem(cartKey()); } catch { /* private mode */ }
+            const note = $('cartNote'); if (note) note.value = '';
+        }
         renderCartCount();
         // …and the DRAWERS, which are the only thing that actually shows a cart or a history. Clearing the
-        // state alone left client A's basket and A's submitted notes rendered for client B to read.
+        // state alone left client A's basket and A's submitted notes rendered for client B to read. The
+        // history is emptied either way: it is the SERVER's list for whoever was signed in.
         renderCart();
         $('historyBody').innerHTML = '';
         items = [];
