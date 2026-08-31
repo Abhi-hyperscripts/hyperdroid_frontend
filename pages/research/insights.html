@@ -2726,8 +2726,10 @@
         });
     })();
     </script>
-    <!-- AI Copilot Widget -->
-    <script>window.CACHE_VERSION = window.CACHE_VERSION || Date.now();</script>
-    <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="research" data-title="Research Assistant"><\/script>');</script>
+    <!-- No copilot widget here, on purpose. This is the PUBLIC share page (?token=…): it loads no config.js and
+         its reader is usually not a Ragenaizer user, so a copilot-mode widget resolves its API to the page origin
+         and every message 404s ("Request failed"). Worse, widget.js is single-instance — this include ran first
+         and blocked the page's own share-token assistant (embed mode, loaded by insights.js once the dashboard
+         has its embed_key), which is the assistant this page is meant to have. -->
 </body>
 </html>
