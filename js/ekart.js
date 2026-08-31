@@ -17,6 +17,7 @@
     const TENANT_KEY = 'ek_tenant';
     const TOKEN_KEY = 'ek_token';
     const NAME_KEY = 'ek_name';
+    const LOGIN_KEY = 'ek_login';
     let tenantId = params.get('t') || sessionStorage.getItem(TENANT_KEY) || '';
     let token = sessionStorage.getItem(TOKEN_KEY) || '';
     // A buyer who deals with two suppliers on this platform can paste supplier B's link into the tab where
@@ -29,7 +30,13 @@
     }
     let priceMode = 'hidden';
     let items = [];                       // last catalogue page, by render order
-    const cartKey = () => 'ek_cart_' + tenantId;
+    let loginId = sessionStorage.getItem(LOGIN_KEY) || '';
+    // Keyed by the CLIENT, not just the supplier. Round 2 cleared the cart on every sign-out, which kept
+    // the next client on a shared tablet out of the previous one's basket; round 7 stopped clearing it on
+    // an INVOLUNTARY sign-out (so a lockout someone else triggers cannot delete an afternoon's work) — and
+    // with a tenant-wide key that handed client B client A's basket, and let B submit it as their own.
+    // Per-client keys give both: A's cart survives A's lockout, B never sees it.
+    const cartKey = () => 'ek_cart_' + tenantId + '_' + loginId;
     let cart = loadCart();                // { itemId: { name, unit, qty } }
 
     const $ = (id) => document.getElementById(id);
@@ -84,6 +91,13 @@
                 password: $('password').value,
             });
             token = data.token; priceMode = data.price_mode || 'hidden';
+            const newLogin = $('loginId').value.trim().toUpperCase();
+            if (newLogin !== loginId) {
+                // A different person is signing in on this device: their note is not the last one's.
+                const note = $('cartNote'); if (note) note.value = '';
+            }
+            loginId = newLogin;
+            sessionStorage.setItem(LOGIN_KEY, loginId);
             sessionStorage.setItem(TOKEN_KEY, token);
             sessionStorage.setItem(TENANT_KEY, tenantId);
             sessionStorage.setItem(NAME_KEY, data.display_name || '');
