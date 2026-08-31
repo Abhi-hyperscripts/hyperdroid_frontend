@@ -131,11 +131,13 @@
             priceMode = data.price_mode || priceMode;
             if (data.display_name) { sessionStorage.setItem(NAME_KEY, data.display_name); $('whoAmI').textContent = data.display_name; }
             items = data.items || [];
+            catalogFailed = false;
             $('priceHint').hidden = priceMode !== 'list';
             renderGrid();
         } catch (err) {
             if (mySeq !== catalogSeq) return;
             items = [];
+            catalogFailed = true;
             renderGrid();
             $('catalogEmptyMsg').textContent = err.message;
             $('catalogEmpty').hidden = false;
@@ -149,10 +151,18 @@
         } catch { return String(v); }
     }
 
+    let catalogFailed = false;
     function renderGrid() {
         const grid = $('catalogGrid');
         $('catalogEmpty').hidden = items.length > 0;
-        if (items.length === 0) { grid.innerHTML = ''; $('catalogEmptyMsg').textContent = 'No products matched your search.'; return; }
+        if (items.length === 0) {
+            grid.innerHTML = '';
+            // Only claim "nothing matched" when the catalogue actually answered. A repaint triggered by a
+            // cart edit was replacing a live outage message with a claim that the supplier has no such
+            // products — over an empty search box.
+            if (!catalogFailed) $('catalogEmptyMsg').textContent = 'No products matched your search.';
+            return;
+        }
         grid.innerHTML = items.map((it) => {
             const inCart = cart[it.id];
             const price = (priceMode === 'list' && it.list_price != null)
