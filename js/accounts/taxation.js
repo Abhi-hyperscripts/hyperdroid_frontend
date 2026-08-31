@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         'gstr-3b': 'GSTR-3B',
         'gstr-2b': 'GSTR-2B Match',
         'tds-return': 'TDS Return',
+        'e-invoicing': 'e-Invoicing (IRP)',
         'tax-calculator': 'Tax Calculator',
         'tax-ledger': 'Tax Ledger'
     };
@@ -98,6 +99,7 @@ function onTabSwitch(tabId) {
             { const m = document.getElementById('gstr2bMonth'); if (m && !m.value) { const d = new Date(); d.setMonth(d.getMonth() - 1); m.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; } }
             break;
         case 'tds-return':      setDefaultDatesAndGenerate('tdsFrom', 'tdsTo', generateTDSReturn); break;
+        case 'e-invoicing':     loadEInvoiceSettings(); break;
         case 'tax-calculator':  populateCalcConfigSelect(); break;
         case 'tax-ledger':      loadTaxLedger(); break;
     }
@@ -1428,4 +1430,84 @@ function renderGstr2b() {
                 </table>
             </div>
         </div>`;
+}
+
+
+// ============================================================================
+// E-INVOICING (IRP) SETTINGS — per-tenant IRP API user; secrets never round-trip
+// ============================================================================
+const EINV_IRP_URLS = { sandbox: 'https://einv-apisandbox.nic.in', nic1: 'https://einvoice1.gst.gov.in', nic2: 'https://einvoice2.gst.gov.in', clear: 'https://einvoice4.gst.gov.in' };
+
+function onEInvoiceIrpChange() {
+    const irp = document.getElementById('einvIrp').value;
+    const url = document.getElementById('einvBaseUrl');
+    if (irp === 'custom') { url.readOnly = false; if (EINV_IRP_URLS[url.value] || Object.values(EINV_IRP_URLS).includes(url.value)) url.value = ''; url.focus(); }
+    else { url.readOnly = true; url.value = EINV_IRP_URLS[irp]; }
+}
+
+async function loadEInvoiceSettings() {
+    try {
+        const s = await api.request(AccountsCommon.buildUrl('einvoice/settings'), { _skipSpinner: true });
+        document.getElementById('einvIrp').value = s.irp || 'sandbox';
+        document.getElementById('einvBaseUrl').value = s.base_url || EINV_IRP_URLS[s.irp] || '';
+        document.getElementById('einvBaseUrl').readOnly = (s.irp || 'sandbox') !== 'custom';
+        document.getElementById('einvClientId').value = s.client_id || '';
+        document.getElementById('einvUser').value = s.api_username || '';
+        document.getElementById('einvPublicKey').value = s.public_key || '';
+        document.getElementById('einvAato').value = s.aato_band || 'under_5cr';
+        document.getElementById('einvGstin').value = s.gstin || '— not set in Settings → Organisation —';
+        document.getElementById('einvAuto').checked = !!s.auto_generate_on_approve;
+        document.getElementById('einvEnabled').checked = !!s.enabled;
+        document.getElementById('einvClientSecret').value = '';
+        document.getElementById('einvPassword').value = '';
+        document.getElementById('einvClientSecretHint').textContent = s.has_client_secret ? 'A secret is stored. Type a new one only to replace it.' : 'Not set yet.';
+        document.getElementById('einvPasswordHint').textContent = s.has_api_password ? 'A password is stored. Type a new one only to replace it.' : 'Not set yet.';
+        const chip = document.getElementById('einvStatusChip');
+        const testTxt = s.last_test_at ? `Last test ${AccountsCommon.formatDate(s.last_test_at)}: ${s.last_test_ok ? 'OK' : 'failed'}` : 'Never tested';
+        chip.innerHTML = `<span style="color:${s.enabled ? 'var(--color-success)' : 'var(--text-secondary)'};">● ${s.enabled ? 'Enabled' : (s.configured ? 'Configured, not enabled' : 'Not configured')}</span> · ${AccountsCommon.escapeHtml(testTxt)}`;
+        const r = document.getElementById('einvTestResult');
+        r.textContent = s.last_error ? `Last error: ${s.last_error}` : '';
+        r.style.color = s.last_error ? 'var(--color-error)' : 'var(--text-secondary)';
+    } catch (e) { Toast.error(e.message || 'Could not load e-invoicing settings'); }
+}
+
+function readEInvoiceForm() {
+    return {
+        enabled: document.getElementById('einvEnabled').checked,
+        irp: document.getElementById('einvIrp').value,
+        base_url: document.getElementById('einvBaseUrl').value.trim(),
+        public_key: document.getElementById('einvPublicKey').value.trim(),
+        client_id: document.getElementById('einvClientId').value.trim(),
+        client_secret: document.getElementById('einvClientSecret').value,
+        api_username: document.getElementById('einvUser').value.trim(),
+        api_password: document.getElementById('einvPassword').value,
+        auto_generate_on_approve: document.getElementById('einvAuto').checked,
+        aato_band: document.getElementById('einvAato').value
+    };
+}
+
+async function saveEInvoiceSettings() {
+    try {
+        await api.request(AccountsCommon.buildUrl('einvoice/settings'), { method: 'PUT', body: JSON.stringify(readEInvoiceForm()) });
+        Toast.success('e-Invoicing settings saved');
+    } catch (e) {
+        // A 409 "Saved, but NOT enabled" is a real save with the switch refused — say exactly that.
+        (e.message || '').startsWith('Saved') ? Toast.warning(e.message) : Toast.error(e.message || 'Save failed');
+    }
+    await loadEInvoiceSettings();
+}
+
+async function testEInvoiceConnection() {
+    const r = document.getElementById('einvTestResult');
+    // Save first so the test runs against what is on screen, not what was stored a minute ago.
+    try { await api.request(AccountsCommon.buildUrl('einvoice/settings'), { method: 'PUT', body: JSON.stringify({ ...readEInvoiceForm(), enabled: document.getElementById('einvEnabled').checked }) }); }
+    catch (e) { if (!(e.message || '').startsWith('Saved')) { Toast.error(e.message || 'Save failed'); return; } }
+    r.style.color = 'var(--text-secondary)'; r.textContent = 'Contacting the IRP…';
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('einvoice/settings/test'), { method: 'POST' });
+        r.style.color = res.ok ? 'var(--color-success)' : 'var(--color-error)';
+        r.textContent = res.ok ? `✓ ${res.message}` : `✗ ${res.message}`;
+        res.ok ? Toast.success('IRP connection OK') : Toast.error('IRP connection failed');
+    } catch (e) { r.style.color = 'var(--color-error)'; r.textContent = e.message || 'Test failed'; }
+    await loadEInvoiceSettings();
 }

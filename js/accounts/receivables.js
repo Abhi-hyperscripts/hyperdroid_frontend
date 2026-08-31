@@ -468,10 +468,37 @@ async function cancelInvoiceDoc(id, number) {
 }
 
 // ── GST E-Invoicing (IRP / IRN) ─────────────────────────────────────────────
-// Injects an "E-Invoice" panel into the read-only invoice view. The Generate action
-// is gated behind CONFIG.eInvoiceEnabled — a GST Suvidha Provider must be configured
-// + validated server-side before it will complete, so we hide it until then rather
-// than ship a button that errors. Preview builds the INV-01 payload locally (no GSP call).
+// Injects an "E-Invoice" panel into the read-only invoice view. The Generate action is
+// gated on the TENANT's e-invoicing status (Taxation → e-Invoicing), read once per page
+// load: the IRP account is per business, not a deployment flag. Preview builds the INV-01
+// payload locally (no IRP call).
+let _einvStatus = null;
+async function getEInvoiceStatus() {
+    if (_einvStatus) return _einvStatus;
+    try { _einvStatus = await api.request(AccountsCommon.buildUrl('einvoice/settings/status'), { _skipSpinner: true }); }
+    catch (e) { _einvStatus = { enabled: false, configured: false, aato_band: 'under_5cr' }; }
+    return _einvStatus;
+}
+
+// The signed QR PNG needs the bearer token, which an <img src> cannot carry — fetch it and hand back a blob URL.
+async function fetchEInvoiceQrUrl(invoiceId) {
+    try {
+        const res = await fetch(AccountsCommon.buildUrl(`einvoice/${invoiceId}/qr.png`), { headers: { Authorization: 'Bearer ' + (localStorage.getItem('ragenaizer_authToken') || '') } });
+        if (!res.ok) return null;
+        return URL.createObjectURL(await res.blob());
+    } catch (e) { return null; }
+}
+
+// ₹10 crore+ businesses must report the IRN within 30 days of the invoice date; the IRP refuses after that.
+function eInvoiceWindowNote(inv, status) {
+    if (status.aato_band !== '10cr_plus') return '';
+    const days = Math.floor((Date.now() - new Date(inv.invoice_date).getTime()) / 86400000);
+    const left = 30 - days;
+    if (left < 0) return `<div style="margin-top:8px;color:var(--color-error);">The 30-day IRP reporting window closed ${-left} day${-left === 1 ? '' : 's'} ago — the IRP will refuse this IRN.</div>`;
+    if (left <= 7) return `<div style="margin-top:8px;color:var(--color-warning);">${left} day${left === 1 ? '' : 's'} left in the 30-day IRP reporting window.</div>`;
+    return `<div style="margin-top:8px;color:var(--text-secondary);">${left} days left in the 30-day IRP reporting window.</div>`;
+}
+
 async function renderEInvoicePanel(inv) {
     const modal = document.getElementById('customerInvoiceModal');
     if (!modal) return;
@@ -502,6 +529,7 @@ async function renderEInvoicePanel(inv) {
     let rec = null;
     try { rec = await api.request(AccountsCommon.buildUrl(`einvoice/${inv.id}`), { _skipSpinner: true }); }
     catch (e) { rec = null; } // 404 = not registered yet
+    const einv = await getEInvoiceStatus();
 
     if (rec && rec.irn) {
         const cancelled = (rec.status || '').toLowerCase() === 'cancelled';
@@ -514,8 +542,16 @@ async function renderEInvoicePanel(inv) {
               ${rec.ack_no ? `<span>Ack No</span><span style="color:var(--text-primary);">${AccountsCommon.escapeHtml(String(rec.ack_no))}</span>` : ''}
               ${rec.ack_date ? `<span>Ack Date</span><span style="color:var(--text-primary);">${AccountsCommon.formatDate(rec.ack_date)}</span>` : ''}
             </div>
-            ${rec.signed_qr_code ? `<details style="margin-top:8px;"><summary style="cursor:pointer;">Signed QR (print on the invoice)</summary><textarea readonly style="width:100%;height:80px;margin-top:6px;font-family:monospace;font-size:0.7rem;">${AccountsCommon.escapeHtml(rec.signed_qr_code)}</textarea></details>` : ''}
+            ${rec.signed_qr_code && !cancelled ? `<div class="einvoice-qr" style="margin-top:10px;display:flex;align-items:center;gap:12px;"><span style="width:112px;height:112px;background:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#888;font-size:0.7rem;">loading…</span><span>Signed QR from the IRP — printed top-right on the PDF. Scan with the GSTN e-Invoice Verifier app.</span></div>` : ''}
             ${cancelled && rec.cancel_reason ? `<div style="margin-top:8px;color:var(--color-error);">Cancelled: ${AccountsCommon.escapeHtml(rec.cancel_reason)}</div>` : ''}`;
+        if (rec.signed_qr_code && !cancelled) {
+            fetchEInvoiceQrUrl(inv.id).then(url => {
+                const slot = detailEl.querySelector('.einvoice-qr span');
+                if (!slot) return;
+                if (url) { const img = document.createElement('img'); img.src = url; img.alt = 'Signed e-invoice QR'; img.style.cssText = 'width:112px;height:112px;background:#fff;border-radius:6px;'; slot.replaceWith(img); }
+                else slot.textContent = 'QR unavailable';
+            });
+        }
         if (!cancelled && isAdmin) {
             const btn = document.createElement('button');
             btn.className = 'btn btn-outline';
@@ -526,7 +562,7 @@ async function renderEInvoicePanel(inv) {
         }
     } else {
         statusEl.innerHTML = `<span>● Not registered</span>`;
-        detailEl.innerHTML = `Register this B2B invoice on the government IRP to obtain an IRN + signed QR. The customer must have a GSTIN.`;
+        detailEl.innerHTML = `Register this B2B invoice on the government IRP to obtain an IRN + signed QR. The customer must have a GSTIN.` + eInvoiceWindowNote(inv, einv);
         const actions = document.createElement('div');
         actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center;';
         if (isManager) {
@@ -537,7 +573,7 @@ async function renderEInvoicePanel(inv) {
             prev.onclick = () => previewEInvoice(inv.id);
             actions.appendChild(prev);
         }
-        if (CONFIG.eInvoiceEnabled && isAdmin) {
+        if (einv.enabled && isAdmin) {
             const gen = document.createElement('button');
             gen.className = 'btn btn-primary';
             gen.style.cssText = 'padding:0.3rem 0.8rem;font-size:0.78rem;';
@@ -545,9 +581,10 @@ async function renderEInvoicePanel(inv) {
             gen.onclick = () => generateEInvoice(inv.id, inv.invoice_number || '');
             actions.appendChild(gen);
         } else if (isAdmin) {
-            const note = document.createElement('span');
-            note.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);';
-            note.textContent = 'E-invoicing not enabled yet (GSP setup pending).';
+            const note = document.createElement('a');
+            note.href = 'taxation.html#e-invoicing';
+            note.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);text-decoration:underline;';
+            note.textContent = einv.configured ? 'E-invoicing is configured but not enabled — enable it under Taxation → e-Invoicing.' : 'E-invoicing not set up yet — Taxation → e-Invoicing (IRP).';
             actions.appendChild(note);
         }
         detailEl.appendChild(actions);
@@ -581,7 +618,7 @@ async function previewEInvoice(id) {
     }
 }
 
-// Register the invoice on the IRP (admin only; gated by CONFIG.eInvoiceEnabled in the UI).
+// Register the invoice on the IRP (admin only; offered only when the tenant has enabled e-invoicing).
 async function generateEInvoice(id, number) {
     const ok = await Confirm.show({
         title: `Generate IRN for ${number}?`,

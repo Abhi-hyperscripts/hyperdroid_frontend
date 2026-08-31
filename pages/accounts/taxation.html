@@ -140,6 +140,9 @@
                             <button class="sidebar-btn" data-tab="tds-return" id="tdsReturnTab" data-admin-only>
                                 <span class="nav-number">7</span><span class="nav-label">TDS Return</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="e-invoicing" id="eInvoicingTab" data-admin-only>
+                                <span class="nav-number">8</span><span class="nav-label">e-Invoicing (IRP)</span>
+                            </button>
                         </div>
                     </div>
 
@@ -156,10 +159,10 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="tax-calculator" id="taxCalculatorTab">
-                                <span class="nav-number">8</span><span class="nav-label">Tax Calculator</span>
+                                <span class="nav-number">9</span><span class="nav-label">Tax Calculator</span>
                             </button>
                             <button class="sidebar-btn" data-tab="tax-ledger" id="taxLedgerTab">
-                                <span class="nav-number">9</span><span class="nav-label">Tax Ledger</span>
+                                <span class="nav-number">10</span><span class="nav-label">Tax Ledger</span>
                             </button>
                         </div>
                     </div>
@@ -492,6 +495,106 @@
                 <!-- ============================================================ -->
                 <!-- Tab 7: Tax Calculator -->
                 <!-- ============================================================ -->
+                <div class="tab-content" id="e-invoicing">
+                    <div class="glass-card">
+                        <div class="glass-card-body">
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+                                <div>
+                                    <h4 style="margin-bottom:0.25rem;">e-Invoicing (IRP)</h4>
+                                    <p style="font-size:0.85rem;color:var(--text-secondary);margin:0;max-width:720px;">
+                                        Registers B2B invoices on the government Invoice Registration Portal and prints the IRN + signed QR on the PDF.
+                                        Mandatory once your annual turnover crosses ₹5 crore. Create an API user on the IRP portal (API Registration → Create API User),
+                                        paste its credentials here, test, then enable.
+                                    </p>
+                                </div>
+                                <div id="einvStatusChip" style="font-size:0.8rem;color:var(--text-secondary);white-space:nowrap;"></div>
+                            </div>
+                            <form id="einvSettingsForm" onsubmit="event.preventDefault(); saveEInvoiceSettings();">
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="einvIrp">Invoice Registration Portal</label>
+                                        <select id="einvIrp" class="form-control" onchange="onEInvoiceIrpChange()">
+                                            <option value="sandbox">NIC Sandbox (testing)</option>
+                                            <option value="nic1">NIC IRP-1 (einvoice1.gst.gov.in)</option>
+                                            <option value="nic2">NIC IRP-2 (einvoice2.gst.gov.in)</option>
+                                            <option value="clear">Clear IRP-4 (einvoice4.gst.gov.in)</option>
+                                            <option value="custom">Custom / GSP pass-through URL</option>
+                                        </select>
+                                        <small class="form-hint">All four speak the NIC e-Invoice API. Start on the sandbox; switch to a production IRP once your API user is live there.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="einvBaseUrl">API base URL</label>
+                                        <input type="url" id="einvBaseUrl" class="form-control" placeholder="https://…" readonly>
+                                        <small class="form-hint">Set by the IRP choice; editable only for a custom / GSP URL.</small>
+                                    </div>
+                                </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="einvClientId">Client ID</label>
+                                        <input type="text" id="einvClientId" class="form-control" autocomplete="off" placeholder="Issued by the IRP / GSP">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="einvClientSecret">Client secret</label>
+                                        <input type="password" id="einvClientSecret" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep the stored secret">
+                                        <small class="form-hint" id="einvClientSecretHint"></small>
+                                    </div>
+                                </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="einvUser">IRP API user name</label>
+                                        <input type="text" id="einvUser" class="form-control" autocomplete="off" placeholder="The API user created on the IRP portal">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="einvPassword">IRP API password</label>
+                                        <input type="password" id="einvPassword" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep the stored password">
+                                        <small class="form-hint" id="einvPasswordHint"></small>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="einvPublicKey">IRP public key</label>
+                                    <textarea id="einvPublicKey" class="form-control" rows="4" spellcheck="false" placeholder="-----BEGIN PUBLIC KEY-----&#10;… paste the key downloaded from the IRP portal (sandbox and production differ) …"></textarea>
+                                    <small class="form-hint">Encrypts your login to the IRP. PEM or bare base64 — exactly as the portal provides it.</small>
+                                </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="einvAato">Annual aggregate turnover band</label>
+                                        <select id="einvAato" class="form-control">
+                                            <option value="under_5cr">Under ₹5 crore — e-invoicing optional</option>
+                                            <option value="5_to_10cr">₹5–10 crore — mandatory, no reporting window</option>
+                                            <option value="10cr_plus">₹10 crore and above — mandatory, IRN within 30 days of the invoice date</option>
+                                        </select>
+                                        <small class="form-hint">Drives the 30-day countdown shown on unregistered invoices.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>GSTIN used for IRP calls</label>
+                                        <input type="text" id="einvGstin" class="form-control" readonly>
+                                        <small class="form-hint">From Settings → Organisation. Must match the IRP API user's GSTIN.</small>
+                                    </div>
+                                </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label class="toggle-row" style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;">
+                                            <input type="checkbox" id="einvAuto"> <span>Generate the IRN automatically when an invoice is approved</span>
+                                        </label>
+                                        <small class="form-hint">Best-effort: a refusal by the IRP never blocks the approval; the invoice shows "Not registered" with Generate still available.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="toggle-row" style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;">
+                                            <input type="checkbox" id="einvEnabled"> <span><strong>Enable e-invoicing</strong> for this business</span>
+                                        </label>
+                                        <small class="form-hint">Refused until every field above is filled. Test the connection first.</small>
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;margin-top:0.5rem;">
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                    <button type="button" class="btn btn-secondary" onclick="testEInvoiceConnection()">Test connection</button>
+                                    <span id="einvTestResult" style="font-size:0.82rem;color:var(--text-secondary);"></span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="tab-content" id="tax-calculator">
                     <div class="glass-card">
                         <div class="glass-card-body">
