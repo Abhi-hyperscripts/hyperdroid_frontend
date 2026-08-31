@@ -286,6 +286,11 @@
         <div class="panel-body">
             <!-- Contact info summary -->
             <div id="contactDetailInfo" class="lead-detail-info"></div>
+                <div class="lead-detail-actions" id="contactDetailActions" style="margin-top:10px">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="openEkartAccessModal('contact', window._contactDetailId)" title="Issue a catalogue login — they browse products and submit an inquiry cart that lands here as a deal">
+                        🛒 E-kart
+                    </button>
+                </div>
 
             <hr style="border:none;border-top:1px solid var(--border-color);margin:12px 0;">
 
@@ -328,7 +333,8 @@
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/phone-link.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/related-panel.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/crm/contacts.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/ekart-access-modal.js?v=' + CACHE_VERSION + '"><\/script>');
+    document.write('<script src="../../js/crm/contacts.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="crm" data-title="Sales Assistant"><\/script>');</script>

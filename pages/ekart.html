@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+    <meta charset="UTF-8">
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Product Inquiry - Ragenaizer</title>
+    <meta name="description" content="Browse your supplier's catalogue, add what you need with quantities, and send it as an inquiry — their sales team quotes you back. Powered by Ragenaizer.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:title" content="Send your supplier a product inquiry">
+    <meta property="og:description" content="Browse the catalogue, pick products and quantities, and submit — you'll get a quote back from their team.">
+    <meta name="theme-color" content="#0b1030">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/form-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/ekart.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="landing-page desk-landing form-desk">
+
+<!-- SIGN IN -->
+<div id="loginView" class="dk-wrap">
+    <nav class="dk-nav">
+        <a class="dk-logo" href="../index.html" aria-label="Ragenaizer — home">
+            <img src="../assets/logo-name-white.png" alt="Ragenaizer" width="697" height="80">
+        </a>
+    </nav>
+    <div class="fm-split">
+        <div class="fm-pitch">
+            <div class="dk-eyebrow"><i></i>Product inquiry</div>
+            <h2>Tell them what you need.<br>They'll quote you back.</h2>
+            <p>Browse your supplier's catalogue, add products with the quantities you want, and send it in one go. Their sales team prices it and comes back to you — no calls, no lists typed into chat.</p>
+            <div class="fm-points">
+                <div><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><b>The real catalogue.</b> Photos and descriptions straight from your supplier's own records.</span></div>
+                <div><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><b>No commitment.</b> An inquiry is a question, not an order — nothing is billed or reserved.</span></div>
+                <div><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><b>No sign-up.</b> Your contact issued your login. Lost it? They can send a fresh one in seconds.</span></div>
+            </div>
+        </div>
+        <div class="fm-formcol">
+            <header class="fm-head" style="text-align:left;padding-top:0">
+                <h1 class="fm-title">Sign in</h1>
+                <p class="fm-lede" style="margin-left:0">Use the login id and password you were given.</p>
+            </header>
+            <div class="login-form-container">
+                <form id="loginForm" class="login-form" autocomplete="off">
+                    <div id="loginTenantMissing" class="login-error-msg" hidden style="display:block;color:var(--color-error, #ef4444);font-size:0.8125rem;margin:0 0 14px;">
+                        This link is incomplete — it does not say which supplier you are signing in to. Open the link exactly as it was sent to you.
+                    </div>
+                    <div class="form-group">
+                        <label for="loginId" class="form-label">Login id</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="loginId" class="form-input" placeholder="EK-XXXXXXXX" required autocomplete="username" spellcheck="false">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="password" class="form-label">Password</label>
+                            <span class="forgot-password-link" style="cursor:default" title="Your supplier issues these">Issued by your supplier</span>
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="password" id="password" class="form-input" placeholder="Enter the password you were given" required autocomplete="current-password">
+                        </div>
+                    </div>
+                    <div id="loginError" class="login-error-msg" hidden style="display:block;color:var(--color-error, #ef4444);font-size:0.8125rem;margin:0 0 14px;"></div>
+                    <button type="submit" class="btn-login" id="loginBtn">Sign in</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SHOP -->
+<div id="appView" hidden>
+    <nav class="navbar ek-nav">
+        <div class="navbar-brand">
+            <a href="../index.html" aria-label="Ragenaizer"><img src="../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo"></a>
+        </div>
+        <div class="ek-nav-right">
+            <span class="ek-who" id="whoAmI"></span>
+            <button class="ek-pill" id="historyBtn" type="button">My inquiries</button>
+            <button class="ek-pill ek-cart-btn" id="cartBtn" type="button">Cart <span class="ek-cart-count" id="cartCount" hidden>0</span></button>
+            <button class="ek-pill" id="logoutBtn" type="button">Sign out</button>
+        </div>
+    </nav>
+
+    <main class="ek-main">
+        <div class="ek-toolbar">
+            <input type="search" id="searchInput" class="ek-search" placeholder="Search products…" autocomplete="off">
+            <span class="ek-hint" id="priceHint" hidden>Prices shown are list prices — your quote may differ.</span>
+        </div>
+        <div id="catalogGrid" class="ek-grid" aria-live="polite"></div>
+        <div id="catalogEmpty" class="ek-empty" hidden>
+            <h3>Nothing here yet</h3>
+            <p id="catalogEmptyMsg">No products matched your search.</p>
+        </div>
+    </main>
+
+    <!-- CART DRAWER -->
+    <div class="ek-drawer" id="cartDrawer" hidden>
+        <div class="ek-drawer-head">
+            <h3>Your inquiry</h3>
+            <button class="ek-x" id="cartClose" type="button" aria-label="Close">×</button>
+        </div>
+        <div class="ek-drawer-body" id="cartBody"></div>
+        <div class="ek-drawer-foot">
+            <textarea id="cartNote" class="ek-note" rows="2" maxlength="2000" placeholder="Anything they should know? Delivery city, timelines, specs…"></textarea>
+            <button class="ek-submit" id="submitBtn" type="button">Send inquiry</button>
+            <p class="ek-smallprint">An inquiry is not an order — their team will come back to you with a quote.</p>
+        </div>
+    </div>
+
+    <!-- HISTORY DRAWER -->
+    <div class="ek-drawer" id="historyDrawer" hidden>
+        <div class="ek-drawer-head">
+            <h3>My inquiries</h3>
+            <button class="ek-x" id="historyClose" type="button" aria-label="Close">×</button>
+        </div>
+        <div class="ek-drawer-body" id="historyBody"></div>
+    </div>
+    <div class="ek-scrim" id="scrim" hidden></div>
+</div>
+
+<script>
+    document.write('<script src="../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+    document.write('<script src="../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+    document.write('<script src="../js/ekart.js?v=' + CACHE_VERSION + '"><\/script>');
+</script>
+</body>
+</html>

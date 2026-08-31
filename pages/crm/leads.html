@@ -514,6 +514,9 @@
                         <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/>
                     </svg>Enroll in Sequence
                 </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="openEkartAccessModal('lead', window._leadDetailId)" title="Issue a catalogue login — they browse products and submit an inquiry cart that lands here as a deal">
+                    🛒 E-kart
+                </button>
                 <button class="btn btn-sm btn-outline-secondary" onclick="openLeadQrModal(window._leadDetailId)" title="Show QR code that opens the lead's public customer card">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
                         <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -1603,6 +1606,7 @@
         document.write('<script src="../../js/crm/lead-history-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-journey.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-qr-modal.js?v=' + CACHE_VERSION + '"><\/script>');
+    document.write('<script src="../../js/crm/ekart-access-modal.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/bulk-whatsapp-modal.js?v=' + CACHE_VERSION + '"><\/script>');
         // bulk-whatsapp-tracker.js is loaded dynamically by navigation.js
         // on every CRM page (so the chip follows the rep across pages).

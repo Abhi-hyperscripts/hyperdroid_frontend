@@ -532,6 +532,7 @@ function showLoading(show) {
 // ==================== Contact Detail Slide Panel ====================
 
 async function openContactDetailPanel(contactId) {
+    window._contactDetailId = contactId;
     document.getElementById('contactDetailOverlay').classList.add('active');
     document.getElementById('contactDetailPanel').classList.add('active');
     document.getElementById('contactTimeline').innerHTML = '<div class="import-loading">Loading timeline...</div>';
