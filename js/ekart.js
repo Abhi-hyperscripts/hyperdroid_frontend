@@ -236,9 +236,13 @@
         if (!line || !e.target.classList.contains('ek-qty')) return;
         const id = line.getAttribute('data-id');
         if (!cart[id]) { renderCart(); return; }          // the cart was cleared under this drawer
-        const qty = normaliseQty(parseFloat(e.target.value));
-        if (qty != null) { cart[id].qty = qty; saveCart(); renderCart(); }
-        else { delete cart[id]; saveCart(); renderCart(); }
+        const raw = parseFloat(e.target.value);
+        // Blank or zero is how a client REMOVES a line. A number that is merely out of range is a typo —
+        // an extra zero on the quantity — and deleting the product for it loses what they were buying.
+        if (e.target.value.trim() === '' || raw === 0) { delete cart[id]; saveCart(); renderCart(); return; }
+        const qty = normaliseQty(raw);
+        if (qty == null) { renderCart(); return; }        // keep the line, restore the stored quantity
+        cart[id].qty = qty; saveCart(); renderCart();
     });
 
     function openDrawer(which) {
