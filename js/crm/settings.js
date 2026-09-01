@@ -4293,7 +4293,21 @@ function openWipeModal(mode) {
         // Two labels, one fact. TheWipeLabelDoesNotDriftFromTheWipe now reads
         // BOTH of them with a floor of two, because a guard pinned to the
         // optional one is what let the second recurrence through.
-        descEl.innerHTML = `This will delete <strong>leads created between ${startDate} and ${endDate}</strong> (inclusive on both ends), plus all their lead-scoped child rows — including <strong>call records, recordings, transcripts and call scores</strong>, sequence enrolments, <strong>catalogue portal logins and the inquiries those clients submitted</strong>, activities, follow-ups, email sends (and their events/replies), tasks, notes, transfer/help requests, assignment history and other lead-scoped records. <strong>Companies, contacts, and deals are NOT deleted</strong> — they can belong to leads outside this range; WhatsApp campaign recipients are scrubbed rather than deleted and are not in that count.`;
+        //
+        // AND THE WHATSAPP CLAUSE SAID THE OPPOSITE OF WHAT HAPPENS. It named
+        // the one WhatsApp table that SURVIVES (bulk-campaign recipients, which
+        // are scrubbed) and said nothing about whatsapp_messages, which is hard
+        // deleted and which the backend calls the heaviest lead PII in the
+        // schema — the conversation body, media and customer phone. An admin
+        // read the only WhatsApp sentence in the dialog and concluded their
+        // WhatsApp history was safe.
+        //
+        // Three more destroyed categories were named in neither label and sat
+        // under the catch-all: uploaded documents, signature requests (which
+        // carry an IMAGE of the signature) and appointments. That is defect (1)
+        // again — the omitted ones being the alarming ones — and adding the
+        // e-kart pair without revisiting the rest is how it recurred.
+        descEl.innerHTML = `This will delete <strong>leads created between ${startDate} and ${endDate}</strong> (inclusive on both ends), plus all their lead-scoped child rows — including <strong>call records, recordings, transcripts and call scores</strong>, sequence enrolments, <strong>catalogue portal logins and the inquiries those clients submitted</strong>, <strong>uploaded documents, signature requests and the signature images on them</strong>, appointments, <strong>WhatsApp conversations</strong>, activities, follow-ups, email sends (and their events/replies), tasks, notes, transfer/help requests, assignment history and other lead-scoped records. <strong>Companies, contacts, and deals are NOT deleted</strong> — they can belong to leads outside this range. WhatsApp conversations attached to these leads are deleted with them; only the bulk-campaign recipient rows are scrubbed rather than deleted and are not in that count.`;
     } else {
         titleEl.textContent = 'Wipe All CRM Data';
         descEl.innerHTML = 'This will delete <strong>EVERYTHING</strong> for this tenant — including teams, members, functional areas, deal stages, lead sources, integrations, and CRM settings. Use only when seeding a fresh tenant.';
@@ -4350,7 +4364,7 @@ async function previewWipeLeadsByRange() {
         //    wrong number.
         //  - The comment above promised the copy ends with "and other lead-scoped records". It did
         //    not; now it does, which is what makes the list honest as the backend keeps growing.
-        previewEl.innerHTML = `Will delete <strong>${res.leads_count} leads</strong>, ${res.activities_count} activities, ${res.followups_count} follow-ups, ${res.email_sends_count} email sends, and ${res.other_child_rows_count} other child rows — including <strong>call records, recordings, transcripts and call scores</strong>, sequence enrolments, <strong>catalogue portal logins and the inquiries those clients submitted</strong>, tasks, notes, assignment history and other lead-scoped records. <strong>Total: ${res.total_rows_count} rows.</strong> Companies, contacts, and deals are not deleted; WhatsApp campaign recipients are scrubbed rather than deleted and are not in that total.`;
+        previewEl.innerHTML = `Will delete <strong>${res.leads_count} leads</strong>, ${res.activities_count} activities, ${res.followups_count} follow-ups, ${res.email_sends_count} email sends, and ${res.other_child_rows_count} other child rows — including <strong>call records, recordings, transcripts and call scores</strong>, sequence enrolments, <strong>catalogue portal logins and the inquiries those clients submitted</strong>, <strong>uploaded documents, signature requests and the signature images on them</strong>, appointments, <strong>WhatsApp conversations</strong>, tasks, notes, assignment history and other lead-scoped records. <strong>Total: ${res.total_rows_count} rows.</strong> Companies, contacts, and deals are not deleted. WhatsApp conversations attached to these leads are deleted with them; only the bulk-campaign recipient rows are scrubbed rather than deleted and are not in that count.`;
     } catch (e) {
         console.error('Preview wipe failed:', e);
         // Use the canonical escapeHtml (defined at top of file) instead of

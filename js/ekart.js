@@ -343,19 +343,30 @@
     // One place that writes the name, so the label and its title cannot drift apart.
     //
     // The title is a HOVER mechanism, so it is not the phone that benefits — a touch device has no
-    // hover, and below 769px the label is squeezed to almost nothing anyway. Where it actually pays
-    // is the pointer band from about 769 to 860, which is exactly where the name is truncated and a
-    // mouse is present. Free either way, and it is the only "who am I signed in as" cue on the page.
+    // hover, and below 769px the label is squeezed to almost nothing anyway. Where it pays is a
+    // pointer device at a width where the name is truncated, which starts around 769 and runs as
+    // wide as the name is long: display_name is VARCHAR(200), so on a long one that is any desktop
+    // width at all. Free either way, and it is the only "who am I signed in as" cue on the page.
     function setWho(name) {
         const el = $('whoAmI');
         el.textContent = name;
         if (name) el.title = name; else el.removeAttribute('title');
     }
 
-    // The drawers are fixed-position and start below the navbar, so they need its REAL height —
-    // .ek-nav wraps on narrow screens, and a hardcoded offset would put the drawer under the nav
-    // on a phone or leave a gap on a desktop. Re-measured on resize and whenever the nav's own
-    // contents change (signing in adds the buttons, which is what makes it wrap).
+    // The drawers are fixed-position, so they must start below the navbar — but ONLY where the
+    // navbar is itself pinned over them. This is really a breakpoint switch, and the honest way to
+    // read it is: 52 above 768, 0 below.
+    //
+    // (It used to claim it measured because .ek-nav "wraps on narrow screens". That was never the
+    // reason and the function contradicts it four lines down: below 768 the nav is in flow and the
+    // answer is deliberately 0, and above 768 .ek-nav is flex-wrap: nowrap inside a .navbar fixed
+    // at height: 52px, so the measurement is a constant equal to the CSS fallback. The wrapping
+    // cited as the reason to measure happens only where the measurement is thrown away.)
+    //
+    // Measuring rather than hardcoding still earns its keep: it is the one thing that notices if
+    // the navbar's height ever stops being 52, and the h <= 0 branch below is load-bearing on the
+    // login view. Re-run on resize and via a ResizeObserver because `position` changes with the
+    // viewport, not with anything this file can see.
     function syncNavHeight() {
         const nav = document.querySelector('.ek-nav');
         if (!nav) return;
