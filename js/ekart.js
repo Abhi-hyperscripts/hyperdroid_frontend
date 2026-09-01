@@ -192,8 +192,13 @@
         }
         grid.innerHTML = items.map((it) => {
             const inCart = cart[it.id];
-            const price = (priceMode === 'list' && it.list_price != null)
-                ? `<span class="ek-card-price">${esc(money(it.list_price, it.currency))}</span>` : '';
+            // In list mode an item with no price says so. Blank would read as an oversight next to
+            // priced neighbours, and ₹0.00 — which is what the supplier's catalogue literally holds
+            // for anything nobody has priced — reads as free. Neither is what the team means.
+            const price = priceMode !== 'list' ? ''
+                : it.list_price != null
+                    ? `<span class="ek-card-price">${esc(money(it.list_price, it.currency))}</span>`
+                    : '<span class="ek-card-price ek-card-price-ask">Price on request</span>';
             return `
             <div class="ek-card" data-id="${esc(it.id)}">
                 <div class="ek-card-img">${it.image_url ? `<img src="${esc(it.image_url)}" alt="" loading="lazy">` : '<span class="ek-noimg">📦</span>'}</div>
