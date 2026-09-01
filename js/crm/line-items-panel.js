@@ -289,9 +289,15 @@ const LineItemsPanel = (() => {
      */
     function shell(state) {
         const { lines, currency, canEdit, hasQuotation, quotationNumber } = state;
-        const total = totalFromVerdicts(
+        // TWO VALUES, AND THEY ARE NOT INTERCHANGEABLE. subtotal is a NUMBER for anything that
+        // will do arithmetic or format it; headline is the already-FORMATTED string for the chip,
+        // which may not be money at all. Collapsing them into one `total` is how the Subtotal row
+        // came to read "—": totalsBlock formatted the chip's string a second time, Number()
+        // returned NaN, and formatMoney answers an em dash for that — on priced quotes too.
+        const subtotal = sum(lines);
+        const headline = totalFromVerdicts(
             lines.map(l => unpricedLabel(!!l.item_id, l.unit_price, l.awaiting_price)),
-            sum(lines), currency);
+            subtotal, currency);
 
         return `
         <div class="lip">
@@ -301,7 +307,7 @@ const LineItemsPanel = (() => {
                     Line items
                 </h4>
                 ${lines.length > 0
-                    ? `<span class="lip-total" data-lip="total">${esc(total)}</span>`
+                    ? `<span class="lip-total" data-lip="total">${esc(headline)}</span>`
                     : ''}
             </div>
             ${state.showOpenFull ? `
@@ -368,7 +374,7 @@ const LineItemsPanel = (() => {
             </div>` : ''}
 
             ${listPriceNote(state)}
-            ${totalsBlock(state, total)}
+            ${totalsBlock(state, subtotal)}
 
             <div class="lip-quote">
                 ${hasQuotation ? `
@@ -515,6 +521,10 @@ const LineItemsPanel = (() => {
         // so the figure cannot change character on the next keystroke.
         const pending = unpricedLabel(isCatalogue, line.unit_price, line.awaiting_price);
         const awaitingPrice = pending !== null;
+        // ONE reading of the flag for the whole row. unpricedLabel tests `=== true`, so a row
+        // testing truthiness instead could mark itself awaiting for a value the judgement calls
+        // priced — the two-painters split again, in miniature.
+        const unanswered = line.awaiting_price === true;
         const total = pending ?? money(lineTotal(line.quantity, line.unit_price), currency);
 
         // ⭐⭐⭐ ONE CONTROL HEIGHT, ONE BASELINE, NO EXCEPTIONS.
@@ -567,7 +577,7 @@ const LineItemsPanel = (() => {
                           // Two states, as the deleted painter had. The generic
                           // sentence never said the thing that matters: WHY the
                           // number can change when the quote is saved.
-                          line.awaiting_price
+                          unanswered
                               ? 'The client asked for this through the catalogue. It has not been priced yet — saving prices it.'
                               : line.unit_price === '' || line.unit_price === null || line.unit_price === undefined
                               ? 'This price comes from the product catalogue'
@@ -576,7 +586,11 @@ const LineItemsPanel = (() => {
                <span class="lip-op" aria-hidden="true">=</span>`
             : `<span class="lip-f lip-n lip-n-ro">${esc(line.quantity)}</span>
                <span class="lip-op" aria-hidden="true">&times;</span>
-               <span class="lip-f lip-n lip-n-ro">${esc(money(line.unit_price, currency))}</span>
+               <span class="lip-f lip-n lip-n-ro${unanswered ? ' lip-n-pending' : ''}">${
+                   // A reader who cannot edit gets no tooltip and no editable box to explain the
+                   // number, so ₹0.00 here is simply a statement that the product is free. The
+                   // total cell beside it already says the honest thing; the price says it too.
+                   esc(unanswered ? '—' : money(line.unit_price, currency))}</span>
                <span class="lip-op" aria-hidden="true">=</span>`;
 
         return `
@@ -585,7 +599,7 @@ const LineItemsPanel = (() => {
             // refreshTotals re-decides from the DOM on every keystroke, so the flag has to
             // live ON the row or the corrected label would be undone by the first edit
             // anywhere in the panel.
-            line.awaiting_price ? ' data-lip-awaiting' : ''}>
+            unanswered ? ' data-lip-awaiting' : ''}>
 
             <div class="lip-band">
                 ${isCatalogue ? productThumb(line) : '<span class="lip-thumb-gap" aria-hidden="true"></span>'}
@@ -826,6 +840,17 @@ const LineItemsPanel = (() => {
             // field becomes editable (row() only marks it readonly for a
             // catalogue line), so they can change it.
             unit_price: line.unit_price,
+
+            // AND THE AWAITING FLAG GOES, because it has just stopped being true. It means "the
+            // server has not priced this yet", and the server prices CATALOGUE lines — this line
+            // is about to have no item_id, so nothing will ever price it but the rep.
+            //
+            // Left set, it outlived the thing it described: the rep detaches an e-kart line, types
+            // 5000, and the row reads `2 × 5000 = needs a price` while contributing nothing to the
+            // header total — and save() posts the 5000 regardless. The screen contradicted what was
+            // about to be saved. The PRICE still stays, for the reason above; only the stale claim
+            // about it goes.
+            awaiting_price: false,
         });
 
         render(container);
