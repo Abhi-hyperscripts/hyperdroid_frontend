@@ -839,7 +839,19 @@ const LineItemsPanel = (() => {
             // a catalogue line to free text, not giving the goods away. The
             // field becomes editable (row() only marks it readonly for a
             // catalogue line), so they can change it.
-            unit_price: line.unit_price,
+            // …UNLESS IT WAS NEVER A PRICE. The rule above is about a figure the CATALOGUE
+            // stated — that is worth keeping, and blanking it once saved a ₹2,342.50 line at
+            // zero. An awaiting line's 0 is not that: it is the placeholder the intake writes
+            // because nobody has answered yet, and carrying it across makes a line that reads
+            // as priced at nothing.
+            //
+            // Clearing the flag alone made that worse, not better: the row stopped saying
+            // "needs a price", the chip folded the 0 into the sum, and save() waved it through
+            // — the contradiction resolved in favour of the wrong half. The Deal-Won guard
+            // cannot catch it either, because it filters catalogue lines and this line no
+            // longer has an item_id. Blanking the placeholder puts it back in front of the
+            // rep: save() refuses a typed line with no price by name.
+            unit_price: line.awaiting_price === true ? '' : line.unit_price,
 
             // AND THE AWAITING FLAG GOES, because it has just stopped being true. It means "the
             // server has not priced this yet", and the server prices CATALOGUE lines — this line

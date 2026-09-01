@@ -448,6 +448,11 @@
 }
 /* A figure the server has not produced yet. Muted and not mono: it is a state,
    not a number, and it must not sit in the decimal column pretending to be one. */
+/* .lip-n-ro is the read-only twin of .lip-n-total: the price cell a viewer who cannot edit sees.
+   It carries this class too, and the selector did not reach it — so the em dash rendered in the
+   mono, tabular-nums decimal column, which is exactly what the comment below says must not
+   happen. A class that matches nothing reads to the next author as if it were doing something. */
+.lip-row .lip-n-ro.lip-n-pending,
 .lip-row .lip-n-total.lip-n-pending {
     font-family: inherit;
     font-size: 11px;

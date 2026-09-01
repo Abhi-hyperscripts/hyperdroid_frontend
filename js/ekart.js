@@ -342,7 +342,23 @@
     // contents change (signing in adds the buttons, which is what makes it wrap).
     function syncNavHeight() {
         const nav = document.querySelector('.ek-nav');
-        if (nav) document.documentElement.style.setProperty('--ek-nav-h', nav.getBoundingClientRect().height + 'px');
+        if (!nav) return;
+
+        // THE DRAWER ONLY HAS TO DODGE THE NAV WHERE THE NAV IS PINNED OVER IT. Below 768px the
+        // shared .navbar is position: relative and scrolls away with the page, so the offset left
+        // a 52px dead band at the top of the drawer with only the scrim behind it — and tapping
+        // that band CLOSED the drawer. The overlap this offset exists to fix does not happen
+        // there either: the mobile nav sits at z-index 1000, below the scrim.
+        const fixed = getComputedStyle(nav).position === 'fixed';
+        const h = fixed ? nav.getBoundingClientRect().height : 0;
+
+        // A nav that is pinned but has no box yet is the login view, where #appView is still
+        // hidden. Writing 0 there would defeat the 52px fallback in the stylesheet — an
+        // explicitly-set property has no fallback — and leave the first-opened drawer overlapping
+        // the nav again if the ResizeObserver is unavailable.
+        if (fixed && h <= 0) return;
+
+        document.documentElement.style.setProperty('--ek-nav-h', h + 'px');
     }
     window.addEventListener('resize', syncNavHeight);
     if (window.ResizeObserver) {

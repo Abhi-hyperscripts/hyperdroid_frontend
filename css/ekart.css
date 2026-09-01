@@ -73,7 +73,12 @@
 .ek-inq-note { color: var(--text-secondary); font-size: .8rem; margin-top: 6px; }
 
 @media (max-width: 640px) {
-  .ek-nav { flex-wrap: wrap; gap: 8px; }
+  /* ⭐ WRAPPING IS POINTLESS IF THE SECOND ROW IS CLIPPED OFF.
+     .navbar is height: 52px AND overflow: hidden, and .ek-nav overrode neither — so the row this
+     rule wraps to sat entirely below the cut and was painted away. Cart, My inquiries and Sign
+     out were invisible AND unclickable on a phone, drawer or no drawer, from the day the page
+     shipped. Nothing measured it because every check was run at one desktop viewport. */
+  .ek-nav { flex-wrap: wrap; gap: 8px; height: auto; overflow: visible; }
   .ek-main { padding: 12px 12px 70px; }
   .ek-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
 }
