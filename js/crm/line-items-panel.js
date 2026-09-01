@@ -72,8 +72,20 @@ const LineItemsPanel = (() => {
     //   typed     + no price → nobody will; the rep must         ("needs a price",
     //                          and save() refuses it)
     // Returning null means priced, so callers read `?? money(...)`.
-    function unpricedLabel(isCatalogue, unitPrice) {
-        const missing = unitPrice === '' || unitPrice === null || unitPrice === undefined
+    // ⭐ AN EMPTY BOX AND A ZERO ARE DIFFERENT ANSWERS, AND ONLY THE SERVER KNOWS WHICH.
+    //
+    // The comment above states the right question and the emptiness test below could not
+    // answer it: a line the client raised through the e-kart arrives with unit_price 0 AND
+    // awaiting_price true, because 0 is what a numeric column holds when nobody has priced
+    // it yet. Read as a number that is simply not missing, it rendered `5 × ₹0.00 = ₹0.00`
+    // under the tooltip "The catalogue price" — the panel telling the rep, in as many words,
+    // that the catalogue says this product is free. It is not the same fact as a price of
+    // zero the catalogue actually states, which is why awaiting_price exists and why the
+    // sales-order guard refuses on it. This was the only human-facing surface still deciding
+    // by the number, so the rep's first warning was the order being refused at Deal Won.
+    function unpricedLabel(isCatalogue, unitPrice, awaitingPrice) {
+        const missing = awaitingPrice === true
+            || unitPrice === '' || unitPrice === null || unitPrice === undefined
             || String(unitPrice).trim() === '';
         if (!missing) return null;
         return isCatalogue ? 'on save' : 'needs a price';
@@ -87,6 +99,25 @@ const LineItemsPanel = (() => {
 
     function sum(lines) {
         return lines.reduce((t, l) => t + lineTotal(l.quantity, l.unit_price), 0);
+    }
+
+    // The header chip, which is the one number a rep reads before anything else.
+    //
+    // When NOTHING on the quote is priced the sum is 0 for lack of prices, not because the work
+    // is worth nothing — and printing ₹0.00 beside lines that each say "on save" is the screen
+    // contradicting itself, which is the complaint this panel already carries a guard about. A
+    // partial sum is different and stays a number: some lines really are priced, and their total
+    // is a fact worth showing.
+    //
+    // It takes the verdicts both painters have ALREADY computed rather than re-deciding, because
+    // a third copy of "has this been priced" is exactly what OneJudgementAboutAnUnpricedLine
+    // forbids — and it caught this function doing it.
+    function totalFromVerdicts(pending, total, currency) {
+        if (pending.length > 0 && pending.every(p => p !== null)) {
+            // One label when they agree; otherwise the one that demands somebody act.
+            return pending.every(p => p === pending[0]) ? pending[0] : unpricedLabel(false, '');
+        }
+        return money(total, currency);
     }
 
     // ─── Rendering ──────────────────────────────────────────────────────────
@@ -258,7 +289,9 @@ const LineItemsPanel = (() => {
      */
     function shell(state) {
         const { lines, currency, canEdit, hasQuotation, quotationNumber } = state;
-        const total = sum(lines);
+        const total = totalFromVerdicts(
+            lines.map(l => unpricedLabel(!!l.item_id, l.unit_price, l.awaiting_price)),
+            sum(lines), currency);
 
         return `
         <div class="lip">
@@ -268,7 +301,7 @@ const LineItemsPanel = (() => {
                     Line items
                 </h4>
                 ${lines.length > 0
-                    ? `<span class="lip-total" data-lip="total">${esc(money(total, currency))}</span>`
+                    ? `<span class="lip-total" data-lip="total">${esc(total)}</span>`
                     : ''}
             </div>
             ${state.showOpenFull ? `
@@ -480,7 +513,7 @@ const LineItemsPanel = (() => {
         const isCatalogue = !!line.item_id;
         // The same judgement refreshTotals makes — literally the same function,
         // so the figure cannot change character on the next keystroke.
-        const pending = unpricedLabel(isCatalogue, line.unit_price);
+        const pending = unpricedLabel(isCatalogue, line.unit_price, line.awaiting_price);
         const awaitingPrice = pending !== null;
         const total = pending ?? money(lineTotal(line.quantity, line.unit_price), currency);
 
@@ -534,7 +567,9 @@ const LineItemsPanel = (() => {
                           // Two states, as the deleted painter had. The generic
                           // sentence never said the thing that matters: WHY the
                           // number can change when the quote is saved.
-                          line.unit_price === '' || line.unit_price === null || line.unit_price === undefined
+                          line.awaiting_price
+                              ? 'The client asked for this through the catalogue. It has not been priced yet — saving prices it.'
+                              : line.unit_price === '' || line.unit_price === null || line.unit_price === undefined
                               ? 'This price comes from the product catalogue'
                               : 'The catalogue price. If this customer has an agreed rate it replaces this on save.'
                       }"` : ''}>
@@ -546,7 +581,11 @@ const LineItemsPanel = (() => {
 
         return `
         <div class="lip-row${isCatalogue ? ' is-catalogue' : ''}" data-lip-row="${index}"${
-            isCatalogue ? ` data-lip-item="${esc(line.item_id)}"` : ''}>
+            isCatalogue ? ` data-lip-item="${esc(line.item_id)}"` : ''}${
+            // refreshTotals re-decides from the DOM on every keystroke, so the flag has to
+            // live ON the row or the corrected label would be undone by the first edit
+            // anywhere in the panel.
+            line.awaiting_price ? ' data-lip-awaiting' : ''}>
 
             <div class="lip-band">
                 ${isCatalogue ? productThumb(line) : '<span class="lip-thumb-gap" aria-hidden="true"></span>'}
@@ -1067,13 +1106,16 @@ const LineItemsPanel = (() => {
         const st = mounted.get(container);
         if (!st) return;
         let total = 0;
+        const verdicts = [];
         container.querySelectorAll('[data-lip-row]').forEach(tr => {
             const q = tr.querySelector('[data-lip-field="quantity"]')?.value;
             const p = tr.querySelector('[data-lip-field="unit_price"]')?.value;
             // A line with no price has no total. `5 × (nothing) = ₹0.00` states
             // a fact — that this line is worth nothing — which is false and
             // alarming on a product the rep just saw priced.
-            const pending = unpricedLabel(tr.hasAttribute('data-lip-item'), p);
+            const pending = unpricedLabel(tr.hasAttribute('data-lip-item'), p,
+                                          tr.hasAttribute('data-lip-awaiting'));
+            verdicts.push(pending);
             const t = pending !== null ? 0 : lineTotal(q, p);
             total += t;
             const cell = tr.querySelector('[data-lip-cell="total"]');
@@ -1086,7 +1128,9 @@ const LineItemsPanel = (() => {
         // Showing a running total of $0.00 beside a $400,000 deal claimed the
         // deal was worth nothing, when in fact it simply is not priced by lines.
         const el = container.querySelector('[data-lip="total"]');
-        if (el) el.textContent = money(total, st.currency);
+        // Same function the initial render uses, fed the verdicts from the DOM the rep is
+        // actually looking at — so the chip cannot change character on the next keystroke.
+        if (el) el.textContent = totalFromVerdicts(verdicts, total, st.currency);
     }
 
     // ─── Actions ────────────────────────────────────────────────────────────

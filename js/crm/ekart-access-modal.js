@@ -41,9 +41,12 @@
         kind = entityKind; entityId = id;
         ensureModal();
         const modal = document.getElementById('ekartAccessModal');
-        // A close scheduled 200ms ago must not wipe the modal we are re-opening — the rep who closes and
-        // immediately re-opens ("I did not copy the password") would watch it be erased, and the password
-        // exists nowhere else.
+        // A close scheduled 200ms ago would hide the modal we are re-opening, 200ms after it appears.
+        //
+        // It does NOT rescue the password: renderStatus() below repaints the body on every open, and
+        // shown-exactly-once is the design. Saying otherwise here would have told the next reader that
+        // re-opening recovers a password the rep did not copy, which it does not — they must issue a
+        // new one.
         if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
         modal.style.display = '';
         modal.classList.add('gm-animating');
@@ -114,7 +117,7 @@
                 ${status.revoked ? '' : '<button class="btn btn-outline-danger" id="ekartRevokeBtn">Revoke access</button>'}
             </div>`;
         body().querySelectorAll('[data-copy]').forEach((btn) => btn.addEventListener('click', () => copyValue(btn)));
-        document.getElementById('ekartRotateBtn').addEventListener('click', () => issue(true));
+        document.getElementById('ekartRotateBtn').addEventListener('click', () => rotate(status.revoked));
         const revokeBtn = document.getElementById('ekartRevokeBtn');
         if (revokeBtn) revokeBtn.addEventListener('click', () => revoke(status.access_id));
     }
@@ -186,6 +189,25 @@
         ta.select();
         try { document.execCommand('copy'); done(); } catch { Toast.error('Could not copy'); }
         document.body.removeChild(ta);
+    }
+
+    // Revoke asked before acting and rotate did not, which is the wrong way round. Revoke is the
+    // recoverable one — issue a fresh password and the client is back. A stray rotate silently kills a
+    // credential the rep has already sent the client over WhatsApp, and the client discovers it, not
+    // the rep. Re-enabling a revoked access is the one case worth doing without a prompt in the way,
+    // since that is the button's whole purpose there.
+    async function rotate(reEnabling) {
+        if (!reEnabling) {
+            const ok = await Confirm.show({
+                title: 'Issue a new password?',
+                message: 'The password you sent them stops working immediately and every open session ends. '
+                       + 'They cannot use the catalogue again until you send them the new one.',
+                type: 'danger',
+                confirmText: 'Issue new password',
+            });
+            if (!ok) return;
+        }
+        await issue(true);
     }
 
     async function revoke(accessId) {

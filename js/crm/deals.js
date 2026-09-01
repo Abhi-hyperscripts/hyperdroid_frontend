@@ -1692,10 +1692,29 @@ async function openDealDetailPanel(dealId) {
 
         // Try to find source lead for richer data
         let lead = null;
+
+        // AN E-KART DEAL IS NOT A CONVERTED DEAL. Nobody converted anything — the prospect
+        // raised it themselves from the catalogue — so leads.converted_deal_id never points
+        // at it and the scan below cannot find it however many pages it reads. The result
+        // was a deal whose Contact, Company, Email, Phone, Source, Team and City all rendered
+        // blank, with the person's name surviving only inside the deal's title string.
+        //
+        // The anchor it was raised from is recorded on the deal itself, so this is a direct
+        // read rather than a search. GET /crm/leads/{id} is scope-checked server-side, so a
+        // rep who may not see the lead still sees nothing — by refusal, not by accident.
         try {
-            const leads = await api.request('/crm/leads?pageSize=200');
-            const allLeads = leads.data || leads || [];
-            lead = allLeads.find(l => l.converted_deal_id === dealId);
+            const own = typeof deal.custom_fields === 'string'
+                ? JSON.parse(deal.custom_fields || '{}')
+                : (deal.custom_fields || {});
+            if (own.ekart_lead_id) lead = await api.request(`/crm/leads/${own.ekart_lead_id}`);
+        } catch {}
+
+        try {
+            if (!lead) {
+                const leads = await api.request('/crm/leads?pageSize=200');
+                const allLeads = leads.data || leads || [];
+                lead = allLeads.find(l => l.converted_deal_id === dealId);
+            }
         } catch {}
 
         const teamBadge = lead?.team_name ? `<span class="crm-team-badge">${esc(lead.team_name)}</span>` : null;
