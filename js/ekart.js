@@ -336,8 +336,23 @@
         }
     }
 
+    // The drawers are fixed-position and start below the navbar, so they need its REAL height —
+    // .ek-nav wraps on narrow screens, and a hardcoded offset would put the drawer under the nav
+    // on a phone or leave a gap on a desktop. Re-measured on resize and whenever the nav's own
+    // contents change (signing in adds the buttons, which is what makes it wrap).
+    function syncNavHeight() {
+        const nav = document.querySelector('.ek-nav');
+        if (nav) document.documentElement.style.setProperty('--ek-nav-h', nav.getBoundingClientRect().height + 'px');
+    }
+    window.addEventListener('resize', syncNavHeight);
+    if (window.ResizeObserver) {
+        const nav = document.querySelector('.ek-nav');
+        if (nav) new ResizeObserver(syncNavHeight).observe(nav);
+    }
+
     // ---------- boot ----------
 
+    syncNavHeight();
     renderCartCount();
     if (token) { showApp().catch(() => showLogin()); } else { showLogin(); }
 })();
