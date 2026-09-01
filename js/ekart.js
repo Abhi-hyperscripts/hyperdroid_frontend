@@ -365,8 +365,15 @@
     //
     // Measuring rather than hardcoding still earns its keep: it is the one thing that notices if
     // the navbar's height ever stops being 52, and the h <= 0 branch below is load-bearing on the
-    // login view. Re-run on resize and via a ResizeObserver because `position` changes with the
-    // viewport, not with anything this file can see.
+    // login view.
+    //
+    // The resize listener covers the viewport. The ResizeObserver covers the OTHER transition, and
+    // it is the only thing that can: .ek-nav lives inside #appView, which is hidden at boot — the
+    // one syncNavHeight() call happens before showApp() unhides it, and showApp() does not call it.
+    // So the nav goes from having no box to having one with no resize event at all. (An earlier
+    // version of this comment credited the observer with noticing `position` changing; a
+    // ResizeObserver watches box size and cannot see that, and the resize listener above already
+    // handles it.)
     function syncNavHeight() {
         const nav = document.querySelector('.ek-nav');
         if (!nav) return;

@@ -77,8 +77,12 @@
    fixed that and created the mirror image: with a drawer open, .ek-drawer-head lay across the nav
    strip and Cart, My inquiries AND Sign out all became visible, enabled and inert — no feedback,
    nothing to tell the client why. Both were found by CLICKING, never by reading the DOM.
-   So the drawer starts BELOW the nav and the overlap is gone in both directions. --ek-nav-h is
-   measured in ekart.js because .ek-nav wraps on narrow screens and its height is not a constant. */
+   So the drawer starts BELOW the nav and the overlap is gone in both directions. --ek-nav-h is measured
+   in ekart.js rather than hardcoded so that it notices if the navbar ever stops being 52px, and so
+   the login view — where the nav has no box yet — clears the property instead of pinning it. NOT
+   because .ek-nav wraps: it is flex-wrap: nowrap in this very band, and where it does wrap the
+   measurement is forced to 0 and thrown away. That wrong reason was corrected in ekart.js and left
+   standing here, which is the two-copies-of-one-fact mistake this file's other comments are about. */
 .ek-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,.08)); }
 .ek-drawer-head h3 { margin: 0; font-size: 1.05rem; color: var(--text-primary); }
 .ek-x { background: none; border: none; color: var(--text-secondary); font-size: 1.4rem; cursor: pointer; line-height: 1; }
