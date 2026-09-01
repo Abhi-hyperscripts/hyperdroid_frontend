@@ -4328,7 +4328,18 @@ async function previewWipeLeadsByRange() {
         // Naming the destructive categories explicitly and ending with "and
         // other lead-scoped records" keeps it accurate without pinning the
         // copy to a table list that will drift again.
-        previewEl.innerHTML = `Will delete <strong>${res.leads_count} leads</strong>, ${res.activities_count} activities, ${res.followups_count} follow-ups, ${res.email_sends_count} email sends, and ${res.other_child_rows_count} other child rows — including <strong>call records, recordings, transcripts and call scores</strong>, sequence enrolments, WhatsApp campaign recipients, tasks, notes and assignment history. <strong>Total: ${res.total_rows_count} rows.</strong> Companies, contacts, and deals are not deleted.`;
+        //
+        // AND IT DRIFTED AGAIN. Three corrections:
+        //  - The e-kart credential, its sessions and the client's submitted-cart HISTORY now count
+        //    toward the total. That history is the only link from deals still sitting in the
+        //    pipeline back to the person who raised them, and the sentence did not mention it —
+        //    the same "told a number, lost rows on top of it" this copy exists to prevent.
+        //  - WhatsApp campaign recipients are SCRUBBED, not deleted, and are deliberately kept out
+        //    of the total. Listing them among the deletions described the wrong outcome AND the
+        //    wrong number.
+        //  - The comment above promised the copy ends with "and other lead-scoped records". It did
+        //    not; now it does, which is what makes the list honest as the backend keeps growing.
+        previewEl.innerHTML = `Will delete <strong>${res.leads_count} leads</strong>, ${res.activities_count} activities, ${res.followups_count} follow-ups, ${res.email_sends_count} email sends, and ${res.other_child_rows_count} other child rows — including <strong>call records, recordings, transcripts and call scores</strong>, sequence enrolments, <strong>catalogue portal logins and the inquiries those clients submitted</strong>, tasks, notes, assignment history and other lead-scoped records. <strong>Total: ${res.total_rows_count} rows.</strong> Companies, contacts, and deals are not deleted; WhatsApp campaign recipients are scrubbed rather than deleted and are not in that total.`;
     } catch (e) {
         console.error('Preview wipe failed:', e);
         // Use the canonical escapeHtml (defined at top of file) instead of
