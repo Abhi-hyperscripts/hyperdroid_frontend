@@ -4270,7 +4270,7 @@ function openWipeModal(mode) {
         titleEl.textContent = 'Wipe Leads by Date Range';
         // This list is the one that MATTERS: the preview is optional and
         // rendered further up the page, while this is the final dialog the
-        // admin types CONFIRM into before an irreversible delete. It used to
+        // admin types WIPE into before an irreversible delete. It used to
         // enumerate only the safe-sounding half — "activities, follow-ups,
         // email sends, tasks, notes, transfer/help requests, assignment
         // history" — and omit call records, recordings, transcripts, call
