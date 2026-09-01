@@ -16,6 +16,16 @@
 .ek-cart-count { background: var(--brand-primary); color: #fff; border-radius: 999px; font-size: .7rem; padding: 1px 7px; margin-left: 6px; }
 
 .ek-main { max-width: 1180px; margin: 0 auto; padding: 18px 20px 80px; }
+
+/* ⭐⭐⭐ A FIXED NAV IS OUT OF FLOW. THE PAGE HAS TO RESERVE ITS HEIGHT.
+   Above 768px the shared .navbar is position: fixed, so <main> began at y=0 — UNDER it. The search
+   box, the only way into a catalogue of thousands of items, had 34 of its 45px covered and did not
+   answer a click; the price hint above it was covered outright. Since the page shipped.
+   Below 768px the nav is position: relative and in flow, so it must NOT be offset there — which is
+   the same boundary --ek-nav-h is computed on. */
+@media (min-width: 769px) {
+  .ek-main { padding-top: calc(18px + var(--ek-nav-h, 52px)); }
+}
 .ek-toolbar { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
 .ek-search { flex: 1 1 320px; max-width: 480px; background: var(--bg-secondary); border: 1px solid var(--border-color, rgba(255,255,255,.12)); color: var(--text-primary); border-radius: 10px; padding: 10px 14px; font-size: .95rem; }
 .ek-search:focus { outline: none; border-color: var(--brand-primary); }
@@ -72,13 +82,19 @@
 .ek-inq-status { font-size: .72rem; border: 1px solid var(--border-color, rgba(255,255,255,.14)); border-radius: 999px; padding: 2px 10px; color: var(--text-primary); }
 .ek-inq-note { color: var(--text-secondary); font-size: .8rem; margin-top: 6px; }
 
+/* ⭐ ANYTHING THAT MAKES THIS NAV TALLER THAN 52px IS PAINTED AWAY, NOT SHOWN.
+   .navbar is height: 52px AND overflow: hidden, and .ek-nav overrode neither. That bites at TWO
+   widths, not one: below 640 the whole row wraps and Cart / My inquiries / Sign out were invisible
+   AND unclickable on a phone from the day the page shipped; between 641 and 768 the pill LABELS
+   wrap instead, making the buttons 55px tall inside the 52px cut and slicing them top and bottom.
+   The second one is not even a fixed breakpoint — how early it starts depends on the length of the
+   client's own name. One release of the height covers both. */
+@media (max-width: 768px) {
+  .ek-nav { height: auto; overflow: visible; }
+}
+
 @media (max-width: 640px) {
-  /* ⭐ WRAPPING IS POINTLESS IF THE SECOND ROW IS CLIPPED OFF.
-     .navbar is height: 52px AND overflow: hidden, and .ek-nav overrode neither — so the row this
-     rule wraps to sat entirely below the cut and was painted away. Cart, My inquiries and Sign
-     out were invisible AND unclickable on a phone, drawer or no drawer, from the day the page
-     shipped. Nothing measured it because every check was run at one desktop viewport. */
-  .ek-nav { flex-wrap: wrap; gap: 8px; height: auto; overflow: visible; }
+  .ek-nav { flex-wrap: wrap; gap: 8px; }
   .ek-main { padding: 12px 12px 70px; }
   .ek-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
 }

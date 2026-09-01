@@ -356,7 +356,11 @@
         // hidden. Writing 0 there would defeat the 52px fallback in the stylesheet — an
         // explicitly-set property has no fallback — and leave the first-opened drawer overlapping
         // the nav again if the ResizeObserver is unavailable.
-        if (fixed && h <= 0) return;
+        // CLEAR it rather than leaving whatever was there. Returning early preserved a 0px written
+        // by a narrow layout, and an explicitly-set property has no fallback — so resizing a phone
+        // layout back to desktop while signed out stranded the drawer at top: 0, the exact overlap
+        // this variable exists to prevent, in the no-ResizeObserver case the guard below allows for.
+        if (fixed && h <= 0) { document.documentElement.style.removeProperty('--ek-nav-h'); return; }
 
         document.documentElement.style.setProperty('--ek-nav-h', h + 'px');
     }
