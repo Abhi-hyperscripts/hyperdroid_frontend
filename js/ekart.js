@@ -340,17 +340,22 @@
         }
     }
 
-    // The drawers are fixed-position and start below the navbar, so they need its REAL height —
-    // .ek-nav wraps on narrow screens, and a hardcoded offset would put the drawer under the nav
-    // on a phone or leave a gap on a desktop. Re-measured on resize and whenever the nav's own
-    // contents change (signing in adds the buttons, which is what makes it wrap).
-    // One place that writes the name, so the label and the title cannot drift apart.
+    // One place that writes the name, so the label and its title cannot drift apart.
+    //
+    // The title is a HOVER mechanism, so it is not the phone that benefits — a touch device has no
+    // hover, and below 769px the label is squeezed to almost nothing anyway. Where it actually pays
+    // is the pointer band from about 769 to 860, which is exactly where the name is truncated and a
+    // mouse is present. Free either way, and it is the only "who am I signed in as" cue on the page.
     function setWho(name) {
         const el = $('whoAmI');
         el.textContent = name;
         if (name) el.title = name; else el.removeAttribute('title');
     }
 
+    // The drawers are fixed-position and start below the navbar, so they need its REAL height —
+    // .ek-nav wraps on narrow screens, and a hardcoded offset would put the drawer under the nav
+    // on a phone or leave a gap on a desktop. Re-measured on resize and whenever the nav's own
+    // contents change (signing in adds the buttons, which is what makes it wrap).
     function syncNavHeight() {
         const nav = document.querySelector('.ek-nav');
         if (!nav) return;
