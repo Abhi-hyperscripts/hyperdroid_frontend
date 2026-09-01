@@ -4282,7 +4282,18 @@ function openWipeModal(mode) {
         // wrong. Kept in step with previewEl above, and ending on the same
         // open-ended phrase so neither pins itself to a table list that will
         // drift again.
-        descEl.innerHTML = `This will delete <strong>leads created between ${startDate} and ${endDate}</strong> (inclusive on both ends), plus all their lead-scoped child rows — including <strong>call records, recordings, transcripts and call scores</strong>, sequence enrolments, WhatsApp campaign recipients, activities, follow-ups, email sends (and their events/replies), tasks, notes, transfer/help requests, assignment history and other lead-scoped records. <strong>Companies, contacts, and deals are NOT deleted</strong> — they can belong to leads outside this range.`;
+        //
+        // AND IT HAPPENED AGAIN, to the paragraph directly above warning about
+        // it. The e-kart correction went into previewEl only, so this dialog
+        // still promised WhatsApp recipients were deleted (they are SCRUBBED
+        // and deliberately excluded from the number being approved) and said
+        // nothing about the portal logins or the client's submitted-cart
+        // history, which ARE deleted and ARE in that number.
+        //
+        // Two labels, one fact. TheWipeLabelDoesNotDriftFromTheWipe now reads
+        // BOTH of them with a floor of two, because a guard pinned to the
+        // optional one is what let the second recurrence through.
+        descEl.innerHTML = `This will delete <strong>leads created between ${startDate} and ${endDate}</strong> (inclusive on both ends), plus all their lead-scoped child rows — including <strong>call records, recordings, transcripts and call scores</strong>, sequence enrolments, <strong>catalogue portal logins and the inquiries those clients submitted</strong>, activities, follow-ups, email sends (and their events/replies), tasks, notes, transfer/help requests, assignment history and other lead-scoped records. <strong>Companies, contacts, and deals are NOT deleted</strong> — they can belong to leads outside this range; WhatsApp campaign recipients are scrubbed rather than deleted and are not in that count.`;
     } else {
         titleEl.textContent = 'Wipe All CRM Data';
         descEl.innerHTML = 'This will delete <strong>EVERYTHING</strong> for this tenant — including teams, members, functional areas, deal stages, lead sources, integrations, and CRM settings. Use only when seeding a fresh tenant.';
