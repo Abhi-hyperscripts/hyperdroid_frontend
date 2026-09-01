@@ -114,8 +114,23 @@
   .ek-nav { height: auto; overflow: visible; }
 }
 
+/* ⭐ THE LAST ~30px, AND ONLY THERE.
+   The three pills plus their gaps need ~307px, so under a nav padded by 40 the row stops fitting
+   at about 347px — below that the Sign out pill ran off the right edge, and .landing-page is
+   overflow-x: clip, so that strip cannot even be scrolled to. flex-shrink: 0 keeps the buttons
+   whole where the nav cannot grow; here it can, so the row wraps instead. (Shrinking was never the
+   answer — the pre-fix code did shrink them and still overflowed.)
+
+   Scoped this tightly ON PURPOSE. At 640 it cost a whole row at 375px, the commonest phone width:
+   flex wraps on the hypothetical size BEFORE it shrinks anything, so the name no longer absorbed
+   the overflow and the nav went 109px -> 152px on a 667px screen. Measured, not assumed. */
+@media (max-width: 350px) {
+  .ek-nav-right { flex-wrap: wrap; justify-content: flex-end; row-gap: 8px; }
+}
+
 @media (max-width: 640px) {
   .ek-nav { flex-wrap: wrap; gap: 8px; }
+
   .ek-main { padding: 12px 12px 70px; }
   .ek-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
 }

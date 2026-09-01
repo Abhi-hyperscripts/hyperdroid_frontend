@@ -76,7 +76,11 @@
     async function showApp() {
         $('loginView').style.display = 'none';
         $('appView').hidden = false;
-        $('whoAmI').textContent = sessionStorage.getItem(NAME_KEY) || '';
+        // The label truncates with an ellipsis at every width, and on a phone it is cut to
+        // nothing — so the full name lives in the title, where it can still be read. This is the
+        // only "who am I signed in as" cue on the page, and the shared-tablet reasoning in
+        // signOut() is exactly the case where a client needs it.
+        setWho(sessionStorage.getItem(NAME_KEY) || '');
         await refreshCatalog('');
     }
 
@@ -152,7 +156,7 @@
             const data = await call('GET', 'catalog' + (query ? `?query=${encodeURIComponent(query)}` : ''));
             if (mySeq !== catalogSeq) return;
             priceMode = data.price_mode || priceMode;
-            if (data.display_name) { sessionStorage.setItem(NAME_KEY, data.display_name); $('whoAmI').textContent = data.display_name; }
+            if (data.display_name) { sessionStorage.setItem(NAME_KEY, data.display_name); setWho(data.display_name); }
             items = data.items || [];
             catalogFailed = false;
             $('priceHint').hidden = priceMode !== 'list';
@@ -340,6 +344,13 @@
     // .ek-nav wraps on narrow screens, and a hardcoded offset would put the drawer under the nav
     // on a phone or leave a gap on a desktop. Re-measured on resize and whenever the nav's own
     // contents change (signing in adds the buttons, which is what makes it wrap).
+    // One place that writes the name, so the label and the title cannot drift apart.
+    function setWho(name) {
+        const el = $('whoAmI');
+        el.textContent = name;
+        if (name) el.title = name; else el.removeAttribute('title');
+    }
+
     function syncNavHeight() {
         const nav = document.querySelector('.ek-nav');
         if (!nav) return;
