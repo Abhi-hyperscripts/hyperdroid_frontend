@@ -8,8 +8,16 @@
    shared desk-landing/form-desk skin. Everything here is the shop view. */
 
 .ek-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,.08)); }
-.ek-nav-right { display: flex; align-items: center; gap: 10px; }
-.ek-who { color: var(--text-secondary); font-size: .85rem; margin-right: 4px; }
+.ek-nav-right { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* The name gives way, at every width — it is the one thing here that can be arbitrarily long
+   (display_name is VARCHAR(200)) and the only one nobody needs to read in full. Without this a
+   77-character company name made the nav 238px tall on a 375px phone, a third of the screen,
+   pushing the catalogue below the fold. The buttons never shrink; see the >=769px block for why
+   this matters even more up there, where the row cannot grow at all. */
+.ek-who { color: var(--text-secondary); font-size: .85rem; margin-right: 4px;
+          min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ek-pill { flex-shrink: 0; }
 .ek-pill { border: 1px solid var(--border-color, rgba(255,255,255,.12)); background: var(--bg-secondary); color: var(--text-primary); border-radius: 999px; padding: 6px 14px; font-size: .85rem; cursor: pointer; }
 .ek-pill:hover { border-color: var(--brand-primary); }
 .ek-cart-btn { position: relative; }
@@ -25,6 +33,19 @@
    the same boundary --ek-nav-h is computed on. */
 @media (min-width: 769px) {
   .ek-main { padding-top: calc(18px + var(--ek-nav-h, 52px)); }
+
+  /* ⭐⭐⭐ AND THE ROW MUST NOT WRAP UP HERE EITHER — THE THIRD BAND.
+     Bootstrap ships .navbar { flex-wrap: wrap }, and styles.css only overrides it to nowrap BELOW
+     769px. So above that the button block wrapped to a second row and .navbar's own
+     height: 52px + overflow: hidden painted it away: a client whose name runs to about thirty
+     characters lost Cart, My inquiries AND Sign out on a half-width window, an iPad in landscape,
+     or a desktop at 125% zoom — able to fill a cart they could never open or send.
+
+     Releasing the height (what fixes the two narrower bands) would work here too, but it would
+     make the bar grow on desktop and the padding-top fallback above assumes 52 — so a page whose
+     JS has not run yet would overlap. Keeping the row on ONE line preserves both. The NAME is what
+     gives way, with an ellipsis; the buttons never shrink. */
+  .ek-nav { flex-wrap: nowrap; }
 }
 .ek-toolbar { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
 .ek-search { flex: 1 1 320px; max-width: 480px; background: var(--bg-secondary); border: 1px solid var(--border-color, rgba(255,255,255,.12)); color: var(--text-primary); border-radius: 10px; padding: 10px 14px; font-size: .95rem; }
