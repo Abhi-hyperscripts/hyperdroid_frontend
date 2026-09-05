@@ -2782,7 +2782,7 @@ async function loadEdcTerminals() {
               <td>${AccountsCommon.escapeHtml(t.bank_account_name || '—')}</td>
               <td>${t.is_active ? (t.configured ? '<span style="color:var(--color-success);">● Ready</span>' : '<span style="color:var(--color-warning);">● Incomplete</span>') : '<span style="color:var(--text-secondary);">● Off</span>'}</td>
               <td>${t.last_test_at ? `${AccountsCommon.formatDate(t.last_test_at)} — ${t.last_test_ok ? 'OK' : AccountsCommon.escapeHtml(t.last_error || 'failed')}` : 'Never'}</td>
-              <td>
+              <td class="actions-cell">
                 <button class="btn-icon" data-tooltip="Test" onclick="testEdcTerminal('${t.id}')">🔌</button>
                 <button class="btn-icon" data-tooltip="Edit" onclick="openEdcTerminalModal('${t.id}')">✎</button>
                 <button class="btn-icon btn-icon-danger" data-tooltip="Delete" onclick="deleteEdcTerminal('${t.id}', '${AccountsCommon.escapeHtml(t.label)}')">🗑</button>

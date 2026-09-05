@@ -5689,6 +5689,17 @@ body:has(.pre-meeting-container)::after {
     box-shadow: 0 2px 4px var(--border-color);
 }
 
+/* Bare action buttons dropped straight into a table cell: .btn/.btn-icon/.action-btn
+   are display:flex (block-level), so without a flex wrapper they STACK VERTICALLY.
+   Render them in a row. Wrapped buttons (.action-buttons/.crm-actions) keep their flex. */
+td > .btn,
+td > .btn-icon,
+td > .action-btn,
+td > .btn-link {
+    display: inline-flex;
+    vertical-align: middle;
+}
+
 .btn-icon.btn-primary {
     background: var(--gradient-primary);
     color: var(--btn-primary-text);
