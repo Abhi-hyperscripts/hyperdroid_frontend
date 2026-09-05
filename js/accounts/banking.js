@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         'bank-transactions': 'Transactions',
         'bank-transfers': 'Inter-Bank Transfer',
         'pdc-cheques': 'Cheques / PDC',
+        'card-machines': 'Card Machines',
         'statement-import': 'Import Statement',
         'reconciliation': 'Reconciliation'
     };
@@ -87,6 +88,7 @@ function onTabSwitch(tabId) {
         case 'bank-transactions':  loadBankTransactions(); break;
         case 'bank-transfers':     loadRecentTransfers(); break;
         case 'pdc-cheques':        loadPdcCheques(); break;
+        case 'card-machines':      loadEdcTerminals(); break;
         case 'statement-import':   initImportTab(); break;
         case 'reconciliation':     break; // user-triggered
     }
@@ -2755,4 +2757,95 @@ async function loadCounterAccountsFor(bankId) {
         importCounterDropdown.setOptions([{ value: '', label: 'Could not load accounts — retry' }]);
         Toast.error('Could not load the list of counter accounts');
     }
+}
+
+
+// ============================================================================
+// CARD MACHINES (EDC) — Pine Labs terminals the POS pushes bills to
+// ============================================================================
+let edcTermBankDD = null;
+
+async function loadEdcTerminals() {
+    const tbody = document.getElementById('edcTerminalsTable');
+    try {
+        const list = await api.request(AccountsCommon.buildUrl('pos/edc/terminals'), { _skipSpinner: true });
+        if (!list.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:1.2rem;">No card machines yet. Add your Pine Labs terminal to take card/UPI payments straight from the POS.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = list.map(t => `
+            <tr>
+              <td>${AccountsCommon.escapeHtml(t.label)}</td>
+              <td>Pine Labs</td>
+              <td>${AccountsCommon.escapeHtml(t.merchant_id || '—')}</td>
+              <td>${AccountsCommon.escapeHtml([t.store_id, t.client_id].filter(Boolean).join(' / ') || '—')}</td>
+              <td>${AccountsCommon.escapeHtml(t.bank_account_name || '—')}</td>
+              <td>${t.is_active ? (t.configured ? '<span style="color:var(--color-success);">● Ready</span>' : '<span style="color:var(--color-warning);">● Incomplete</span>') : '<span style="color:var(--text-secondary);">● Off</span>'}</td>
+              <td>${t.last_test_at ? `${AccountsCommon.formatDate(t.last_test_at)} — ${t.last_test_ok ? 'OK' : AccountsCommon.escapeHtml(t.last_error || 'failed')}` : 'Never'}</td>
+              <td>
+                <button class="btn-icon" data-tooltip="Test" onclick="testEdcTerminal('${t.id}')">🔌</button>
+                <button class="btn-icon" data-tooltip="Edit" onclick="openEdcTerminalModal('${t.id}')">✎</button>
+                <button class="btn-icon btn-icon-danger" data-tooltip="Delete" onclick="deleteEdcTerminal('${t.id}', '${AccountsCommon.escapeHtml(t.label)}')">🗑</button>
+              </td>
+            </tr>`).join('');
+        window._edcTerminals = list;
+    } catch (e) { tbody.innerHTML = `<tr><td colspan="8" style="color:var(--color-error);">Could not load card machines: ${AccountsCommon.escapeHtml(e.message || '')}</td></tr>`; }
+}
+
+async function openEdcTerminalModal(id) {
+    const t = id ? (window._edcTerminals || []).find(x => x.id === id) : null;
+    document.getElementById('edcTerminalModalTitle').textContent = t ? `Edit ${t.label}` : 'Add card machine';
+    document.getElementById('edcTermId').value = t?.id || '';
+    document.getElementById('edcTermLabel').value = t?.label || '';
+    document.getElementById('edcTermBaseUrl').value = t?.base_url || 'https://www.plutuscloudserviceuat.in:8201';
+    document.getElementById('edcTermMerchant').value = t?.merchant_id || '';
+    document.getElementById('edcTermToken').value = '';
+    document.getElementById('edcTermTokenHint').textContent = t?.has_security_token ? 'A token is stored. Type a new one only to replace it.' : 'From Pine Labs onboarding.';
+    document.getElementById('edcTermStore').value = t?.store_id || '';
+    document.getElementById('edcTermClient').value = t?.client_id || '';
+    document.getElementById('edcTermModes').value = t?.allowed_modes || '0';
+    document.getElementById('edcTermActive').checked = t ? !!t.is_active : true;
+    const banks = await api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => []);
+    const opts = (banks.data || banks).map(b => ({ value: b.id, label: b.account_name }));
+    if (!edcTermBankDD) {
+        edcTermBankDD = new SearchableDropdown(document.getElementById('edcTermBankContainer'), { id: 'edcTermBankDD', options: opts, placeholder: 'Select account…', compact: true });
+    } else { edcTermBankDD.setOptions(opts, false); }
+    edcTermBankDD.setValue(t?.bank_account_id || opts[0]?.value || '', false);
+    AccountsCommon.openModal('edcTerminalModal');
+}
+
+async function saveEdcTerminal() {
+    const id = document.getElementById('edcTermId').value;
+    const body = {
+        label: document.getElementById('edcTermLabel').value.trim(),
+        base_url: document.getElementById('edcTermBaseUrl').value.trim(),
+        merchant_id: document.getElementById('edcTermMerchant').value.trim(),
+        security_token: document.getElementById('edcTermToken').value,
+        store_id: document.getElementById('edcTermStore').value.trim(),
+        client_id: document.getElementById('edcTermClient').value.trim(),
+        allowed_modes: document.getElementById('edcTermModes').value,
+        bank_account_id: edcTermBankDD?.getValue?.() || null,
+        is_active: document.getElementById('edcTermActive').checked
+    };
+    try {
+        await api.request(AccountsCommon.buildUrl(id ? `pos/edc/terminals/${id}` : 'pos/edc/terminals'), { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) });
+        Toast.success('Card machine saved');
+        AccountsCommon.closeModal('edcTerminalModal');
+        await loadEdcTerminals();
+    } catch (e) { Toast.error(e.message || 'Save failed'); }
+}
+
+async function testEdcTerminal(id) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`pos/edc/terminals/${id}/test`), { method: 'POST' });
+        res.ok ? Toast.success(res.message || 'Connection OK') : Toast.error(res.message || 'Connection failed');
+    } catch (e) { Toast.error(e.message || 'Test failed'); }
+    await loadEdcTerminals();
+}
+
+function deleteEdcTerminal(id, label) {
+    Confirm.show(`Delete ${label}?`, 'The POS will stop offering this machine. Past receipts are unaffected.', async () => {
+        try { await api.request(AccountsCommon.buildUrl(`pos/edc/terminals/${id}`), { method: 'DELETE' }); Toast.success('Deleted'); await loadEdcTerminals(); }
+        catch (e) { Toast.error(e.message || 'Delete failed'); }
+    });
 }

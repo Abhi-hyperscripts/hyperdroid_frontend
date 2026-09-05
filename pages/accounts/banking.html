@@ -132,6 +132,9 @@
                             <button class="sidebar-btn" data-tab="pdc-cheques" id="pdcChequesTab">
                                 <span class="nav-number">4</span><span class="nav-label">Cheques / PDC</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="card-machines" id="cardMachinesTab" data-admin-only>
+                                <span class="nav-number">•</span><span class="nav-label">Card Machines</span>
+                            </button>
                         </div>
                     </div>
 
@@ -424,6 +427,28 @@
                 <!-- ============================================================ -->
                 <!-- Tab 4: Cheques / PDC register -->
                 <!-- ============================================================ -->
+                <div class="tab-content" id="card-machines">
+                    <div class="glass-card">
+                        <div class="glass-card-body">
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+                                <div>
+                                    <h4 style="margin-bottom:0.25rem;">Card machines (EDC)</h4>
+                                    <p style="font-size:0.85rem;color:var(--text-secondary);margin:0;max-width:720px;">
+                                        Pine Labs terminals the POS can push a bill to — the customer pays on the device and the receipt
+                                        records itself with the RRN. Credentials come from Pine Labs onboarding (Cloud Integration);
+                                        settlements land in the bank account you pick here.
+                                    </p>
+                                </div>
+                                <button class="btn btn-primary" onclick="openEdcTerminalModal()">+ Add machine</button>
+                            </div>
+                            <div class="data-table-container"><table class="data-table">
+                                <thead><tr><th>Label</th><th>Provider</th><th>Merchant</th><th>Store / Client</th><th>Settles into</th><th>Status</th><th>Last test</th><th style="width:180px;">Actions</th></tr></thead>
+                                <tbody id="edcTerminalsTable"><tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">Loading…</td></tr></tbody>
+                            </table></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="tab-content" id="pdc-cheques">
                     <div class="stats-row">
                         <div class="stat-card">
@@ -797,6 +822,56 @@
     </div>
 
     <!-- Register cheque modal (header-only doc — modal allowed) -->
+    <div id="edcTerminalModal" class="modal">
+        <div class="modal-content" style="max-width:640px;">
+            <div class="modal-header"><h3 id="edcTerminalModalTitle">Add card machine</h3>
+                <button class="close-btn" onclick="AccountsCommon.closeModal('edcTerminalModal')">&times;</button></div>
+            <div class="modal-body">
+                <form id="edcTerminalForm" onsubmit="event.preventDefault(); saveEdcTerminal();">
+                    <input type="hidden" id="edcTermId">
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="edcTermLabel">Label *</label>
+                            <input type="text" id="edcTermLabel" class="form-control" required placeholder="Counter 1 — Pine Labs"></div>
+                        <div class="form-group"><label for="edcTermBaseUrl">Provider URL</label>
+                            <input type="url" id="edcTermBaseUrl" class="form-control" placeholder="https://www.plutuscloudserviceuat.in:8201">
+                            <small class="form-hint">Leave as-is for the Pine Labs UAT; the production URL comes with onboarding.</small></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="edcTermMerchant">Merchant ID *</label>
+                            <input type="text" id="edcTermMerchant" class="form-control" autocomplete="off"></div>
+                        <div class="form-group"><label for="edcTermToken">Security token *</label>
+                            <input type="password" id="edcTermToken" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep the stored token">
+                            <small class="form-hint" id="edcTermTokenHint"></small></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label for="edcTermStore">Store ID</label>
+                            <input type="text" id="edcTermStore" class="form-control" autocomplete="off">
+                            <small class="form-hint">From the Pine Labs portal, per device. Store ID or Client ID — at least one.</small></div>
+                        <div class="form-group"><label for="edcTermClient">Client ID (terminal)</label>
+                            <input type="text" id="edcTermClient" class="form-control" autocomplete="off"></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group"><label>Settlement bank account *</label>
+                            <div class="searchable-dropdown-container" id="edcTermBankContainer"></div>
+                            <small class="form-hint">Where this machine's settlements land — used on every recorded receipt.</small></div>
+                        <div class="form-group"><label for="edcTermModes">Payment modes</label>
+                            <select id="edcTermModes" class="form-control">
+                                <option value="0">Everything enabled on the device</option>
+                                <option value="1">Card only</option>
+                                <option value="10">UPI only</option>
+                            </select></div>
+                    </div>
+                    <div class="form-group"><label class="toggle-row" style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;">
+                        <input type="checkbox" id="edcTermActive" checked> <span>Active (offered at the POS)</span></label></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('edcTerminalModal')">Close</button>
+                <button class="btn btn-primary" onclick="saveEdcTerminal()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <div id="pdcModal" class="modal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">

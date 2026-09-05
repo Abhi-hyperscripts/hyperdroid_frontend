@@ -46,8 +46,10 @@ document.addEventListener('DOMContentLoaded', async function () {
             { value: 'cash', label: 'Cash' }, { value: 'upi', label: 'UPI' },
             { value: 'card', label: 'Card' }, { value: 'bank_transfer', label: 'Bank Transfer' }
         ],
-        value: 'cash', compact: true
+        value: 'cash', compact: true,
+        onChange: (v) => applyPosMethod(v)
     });
+    initPosEdc();   // offers "Card machine" when a ready terminal exists; swaps the account picker to a machine picker
     initPosCustomerPicker();   // bill-to picker (Walk-in default; known customers reprice via their list)
     loadPosSchemes();          // active free-goods schemes — auto free lines maintained per cart change
     connectStockHub();
@@ -347,6 +349,10 @@ async function submitSaleToServer(sale, { enforceStock }) {
         if (sale.id) await posQueuePut(sale).catch(() => {});
     }
     const total = Math.round(invoices.reduce((s, i) => s + i.total, 0) * 100) / 100;
+    if (sale.method === 'edc') {
+        await collectOnCardMachine(sale, invoices, total);
+        return { invoices, total };
+    }
     await api.request(AccountsCommon.buildUrl('invoices/payments'), {
         method: 'POST',
         body: JSON.stringify({
@@ -1276,8 +1282,10 @@ async function ensureWalkInCustomer() {
 
 async function completeSale() {
     if (!cart.length) { Toast.error('Cart is empty'); return; }
+    const method = posMethodDD?.getValue?.() || 'cash';
+    if (method === 'edc' && netOffline) { Toast.error('The card machine needs internet — choose another method or wait for the connection.'); return; }
     const bankId = posBankDD?.getValue?.();
-    if (!bankId) { Toast.error('Pick the account the money went into'); return; }
+    if (!bankId) { Toast.error(method === 'edc' ? 'Pick the card machine' : 'Pick the account the money went into'); return; }
     if (!incomeAccounts.length) { Toast.error('No postable Income account found — set up your chart of accounts first.'); return; }
     const btn = document.getElementById('posPayBtn');
     btn.dataset.processing = '1'; btn.disabled = true; btn.textContent = 'Processing…';
@@ -1288,8 +1296,9 @@ async function completeSale() {
         cart: cart.map(c => ({ item: { ...c.item }, qty: c.qty, disc: c.disc || 0, uom: c.uom || null, px: linePrice(c) })),   // px FROZEN: replay posts the receipt's price
         customerId: posCustomerId, customerName: posCustomerName,
         date: AccountsCommon.todayLocal(),
-        bankId,
-        method: posMethodDD?.getValue?.() || 'cash',
+        bankId: method === 'edc' ? null : bankId,
+        terminalId: method === 'edc' ? bankId : null,   // in EDC mode the picker holds the MACHINE
+        method,
         // Stable ref for this sale, assigned up front so the invoice-create client_ref and the
         // payment Idempotency-Key are the SAME whether the sale posts live or via offline replay.
         offlineRef: 'OFF-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase()
@@ -1722,4 +1731,106 @@ async function prefillFromCatalogue(barcode) {
     // Everything we could know is known; the price is the one thing only this shop can say.
     const priceEl = document.getElementById('qaPrice');
     if (priceEl && !priceEl.value && document.activeElement === nameEl) priceEl.focus();
+}
+
+
+// ============================================================================
+// CARD MACHINE (EDC) — push the payable to the terminal; the SERVER records the
+// receipt once the machine approves, so a dead tab cannot lose a paid charge.
+// ============================================================================
+let posEdcTerminals = [];
+let _posBankOptions = null;
+let _posPayLabels = null;
+
+async function initPosEdc() {
+    try { posEdcTerminals = (await api.request(AccountsCommon.buildUrl('pos/edc/terminals'), { _skipSpinner: true })).filter(t => t.is_active && t.configured); }
+    catch (e) { posEdcTerminals = []; }
+    if (!posEdcTerminals.length) return;
+    const opts = posMethodDD.options.slice();
+    opts.push({ value: 'edc', label: 'Card machine' });
+    posMethodDD.setOptions(opts, true);
+    _posPayLabels = document.querySelectorAll('.pos-pay-row label');
+}
+
+function applyPosMethod(method) {
+    if (!posEdcTerminals.length) return;
+    const label = _posPayLabels && _posPayLabels[0];
+    if (method === 'edc') {
+        if (_posBankOptions == null) _posBankOptions = posBankDD.options.slice();
+        if (label) label.textContent = 'Machine';
+        posBankDD.setOptions(posEdcTerminals.map(t => ({ value: t.id, label: t.label })), false);
+        posBankDD.setValue(posEdcTerminals[0].id, false);
+    } else if (_posBankOptions) {
+        if (label) label.textContent = 'Received into';
+        posBankDD.setOptions(_posBankOptions, false);
+        posBankDD.setValue(_posBankOptions[0]?.value || '', false);
+        _posBankOptions = null;
+    }
+}
+
+/** Push to the terminal and wait until the machine answers. Throws on decline/cancel/timeout so the
+ *  partial-post handling keeps the invoices retryable (same offlineRef → the push dedupes too). */
+async function collectOnCardMachine(sale, invoices, total) {
+    const req = await api.request(AccountsCommon.buildUrl('pos/edc/collect'), {
+        method: 'POST',
+        body: JSON.stringify({
+            terminal_id: sale.terminalId,
+            customer_id: sale.customerId,
+            payment_date: sale.date,
+            reference: sale.offlineRef,
+            allocations: invoices.filter(i => i.total > 0).map(i => ({ customer_invoice_id: i.invId, allocated_amount: i.total }))
+        })
+    });
+    const ui = showEdcWaitUi(total);
+    let cancelRequested = false;
+    ui.onCancel(async () => {
+        cancelRequested = true;
+        ui.update('Cancelling on the machine…');
+        try { await api.request(AccountsCommon.buildUrl(`pos/edc/collect/${req.id}/cancel`), { method: 'POST', _skipSpinner: true }); }
+        catch (e) { /* the poll below reports the outcome — a tap that beat the cancel settles as PAID */ }
+    });
+    try {
+        const started = Date.now();
+        while (true) {
+            const st = await api.request(AccountsCommon.buildUrl(`pos/edc/collect/${req.id}`), { _skipSpinner: true });
+            if (st.status === 'approved') { ui.close(); Toast.success(`Paid on the machine — ${st.payment_mode || 'card'}${st.rrn ? ' · RRN ' + st.rrn : ''}`); return st; }
+            if (st.status === 'cancelled') { ui.close(); throw new Error('Cancelled on the card machine — the sale is unpaid; charge again or pick another method.'); }
+            if (st.status === 'failed') { ui.close(); throw new Error(st.message || 'The card machine declined the payment.'); }
+            if (Date.now() - started > 5 * 60 * 1000 && !cancelRequested) { ui.update('Still waiting… you can cancel and retry.'); }
+            ui.update(cancelRequested ? 'Cancelling on the machine…' : `Waiting for the customer to pay on the machine…`);
+            await new Promise(r => setTimeout(r, 2500));
+        }
+    } catch (err) {
+        ui.close();
+        throw err;
+    }
+}
+
+function showEdcWaitUi(total) {
+    let modal = document.getElementById('posEdcWaitModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'posEdcWaitModal';
+        modal.className = 'modal';
+        modal.innerHTML = `<div class="modal-content" style="max-width:420px;text-align:center;">
+            <div class="modal-body" style="padding:2rem 1.5rem;">
+              <div style="font-size:2.4rem;">💳</div>
+              <h3 style="margin:0.6rem 0 0.2rem;">On the card machine</h3>
+              <div id="posEdcWaitAmount" style="font-size:1.6rem;font-weight:700;"></div>
+              <p id="posEdcWaitStatus" style="color:var(--text-secondary);font-size:0.9rem;margin-top:0.6rem;">Sending to the machine…</p>
+              <button class="btn btn-outline" id="posEdcWaitCancel" style="margin-top:1rem;">Cancel on machine</button>
+            </div>
+          </div>`;
+        document.body.appendChild(modal);
+    }
+    modal.querySelector('#posEdcWaitAmount').textContent = money(total);
+    modal.querySelector('#posEdcWaitStatus').textContent = 'Sending to the machine…';
+    const btn = modal.querySelector('#posEdcWaitCancel');
+    btn.disabled = false; btn.onclick = null;
+    AccountsCommon.openModal('posEdcWaitModal');
+    return {
+        update(text) { const el = modal.querySelector('#posEdcWaitStatus'); if (el) el.textContent = text; },
+        onCancel(fn) { btn.onclick = () => { btn.disabled = true; fn(); }; },
+        close() { AccountsCommon.closeModal('posEdcWaitModal'); }
+    };
 }
