@@ -350,7 +350,7 @@ async function submitSaleToServer(sale, { enforceStock }) {
     }
     const total = Math.round(invoices.reduce((s, i) => s + i.total, 0) * 100) / 100;
     if (sale.method === 'edc') {
-        await collectOnCardMachine(sale, invoices, total);
+        await collectOnCardMachine(sale, invoices, total, customerId);
         return { invoices, total };
     }
     await api.request(AccountsCommon.buildUrl('invoices/payments'), {
@@ -1770,12 +1770,12 @@ function applyPosMethod(method) {
 
 /** Push to the terminal and wait until the machine answers. Throws on decline/cancel/timeout so the
  *  partial-post handling keeps the invoices retryable (same offlineRef → the push dedupes too). */
-async function collectOnCardMachine(sale, invoices, total) {
+async function collectOnCardMachine(sale, invoices, total, customerId) {
     const req = await api.request(AccountsCommon.buildUrl('pos/edc/collect'), {
         method: 'POST',
         body: JSON.stringify({
             terminal_id: sale.terminalId,
-            customer_id: sale.customerId,
+            customer_id: customerId || null,
             payment_date: sale.date,
             reference: sale.offlineRef,
             allocations: invoices.filter(i => i.total > 0).map(i => ({ customer_invoice_id: i.invId, allocated_amount: i.total }))
