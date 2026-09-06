@@ -1120,6 +1120,15 @@ function _setInvoiceModalReadOnly(readOnly) {
             b.style.display = readOnly ? 'none' : '';
         }
     });
+    // The PROJECT tag stays editable on an issued invoice — it's a pure reporting overlay
+    // (no GL/GST/statement effect). Re-enable its dropdown and surface the dedicated save button
+    // (the blanket disable loops above just hit both).
+    const projWrap = document.getElementById('invoiceProjectContainer');
+    if (projWrap) { projWrap.style.pointerEvents = ''; projWrap.style.opacity = ''; }
+    const projBtn = document.getElementById('invoiceProjectSaveBtn');
+    if (projBtn) { projBtn.style.display = readOnly ? '' : 'none'; projBtn.removeAttribute('disabled'); }
+    const projHelp = document.getElementById('invoiceProjectHelp');
+    if (projHelp) projHelp.style.display = readOnly ? '' : 'none';
     // Add a banner at top of body if missing
     let banner = modal.querySelector('.invoice-readonly-banner');
     if (readOnly && !banner) {
@@ -1139,6 +1148,25 @@ function _setInvoiceModalReadOnly(readOnly) {
     } else if (!readOnly && banner) {
         banner.remove();
     }
+}
+
+/** Retag an ISSUED invoice's project without touching the document — PUT invoices/{id}/project.
+ *  The backend applies the same customer/archived guards as billing-time tagging. */
+async function saveInvoiceProjectOnly() {
+    const id = document.getElementById('invoiceId')?.value;
+    if (!id) return;
+    const projectId = invoiceProjectDropdown?.getValue?.() || null;
+    if (!AccountsCommon.beginSubmit('invProjectOnly')) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`invoices/${encodeURIComponent(id)}/project`), {
+            method: 'PUT', body: JSON.stringify({ project_id: projectId })
+        });
+        Toast.success(projectId ? 'Invoice tagged to the project' : 'Project tag cleared');
+        await loadCustomerInvoices();
+    } catch (err) {
+        console.error('[Receivables] project retag error:', err);
+        Toast.error(err.message || 'Failed to update the project tag');
+    } finally { AccountsCommon.endSubmit('invProjectOnly'); }
 }
 
 function addInvoiceLine(data = {}) {
