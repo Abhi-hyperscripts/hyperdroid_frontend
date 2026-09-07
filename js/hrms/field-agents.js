@@ -68,13 +68,13 @@
         map = L.map('fieldAgentsMap', { zoomControl: true, attributionControl: true })
             .setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 
-        // OpenStreetMap tiles — free for non-commercial; for prod traffic we
-        // may eventually swap for MapTiler/Carto via a tenant-stored key, but
-        // OSM keeps us moving and the customer's compliance officer signed
-        // off on it because we're not embedding map material in payslips.
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        // CARTO Voyager raster tiles (OSM data, Google-like cartography,
+        // retina via {r}, no key). Free tier for low-volume use; if traffic
+        // ever warrants it, swap the URL for a keyed provider here only.
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            subdomains: 'abcd',
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
         }).addTo(map);
 
         // Cluster bubble for the live pins. spiderfyOnMaxZoom expands the
@@ -404,16 +404,37 @@
             }
 
             const coords = pings.map(p => [p.latitude, p.longitude]);
-            // The polyline IS the trail. Intermediate small dots make it
-            // easier to eyeball direction + density at a glance.
-            const polyline = L.polyline(coords, {
-                color: '#7C3AED',
-                weight: 4,
-                opacity: 0.85,
-                lineCap: 'round',
-                lineJoin: 'round',
-            });
-            trailLayerGroup.addLayer(polyline);
+            // Draw the road-snapped trail. Pings are 5 minutes apart, so a
+            // chord between two of them cuts across whatever lies between
+            // (an expressway, a park). Each continuous run of pings is
+            // routed through OSRM and the returned road geometry is drawn;
+            // a run boundary (a gap > SNAP_GAP_MS) is drawn as a dashed
+            // grey chord so a missing stretch never looks like a drive.
+            const { segments, gaps } = buildTrailSegments(pings);
+            let snappedRuns = 0, chordRuns = 0;
+            for (const seg of segments) {
+                const segCoords = seg.map(p => [p.latitude, p.longitude]);
+                if (segCoords.length < 2) continue;
+                const snapped = await snapToRoads(segCoords);
+                if (snapped && snapped.length >= 2) {
+                    snappedRuns++;
+                    trailLayerGroup.addLayer(L.polyline(snapped, {
+                        color: '#7C3AED', weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round',
+                    }));
+                } else {
+                    chordRuns++;
+                    trailLayerGroup.addLayer(L.polyline(segCoords, {
+                        color: '#7C3AED', weight: 4, opacity: 0.7, dashArray: '2 8', lineCap: 'round', lineJoin: 'round',
+                    }));
+                }
+            }
+            for (const [a, b] of gaps) {
+                const line = L.polyline([[a.latitude, a.longitude], [b.latitude, b.longitude]], {
+                    color: '#94A3B8', weight: 3, opacity: 0.8, dashArray: '6 10', lineCap: 'round',
+                });
+                line.bindTooltip(`No pings for ${humanDuration(new Date(b.recorded_at) - new Date(a.recorded_at))} — phone was off, offline, or the shift was paused.`, { sticky: true });
+                trailLayerGroup.addLayer(line);
+            }
 
             pings.forEach((p, idx) => {
                 if (idx === 0 || idx === pings.length - 1) return;  // first/last visually distinct below
@@ -432,7 +453,11 @@
             document.getElementById('trailLast').textContent = humanTime(pings[pings.length - 1].recorded_at);
             const lastBat = pings[pings.length - 1].battery_pct;
             document.getElementById('trailBattery').textContent = typeof lastBat === 'number' ? `${lastBat}%` : '—';
-            document.getElementById('trailHint').textContent = `Trail of ${pings.length} ping${pings.length === 1 ? '' : 's'} recorded between ${humanTime(pings[0].recorded_at)} and ${humanTime(pings[pings.length-1].recorded_at)}.`;
+            const parts = [`Trail of ${pings.length} ping${pings.length === 1 ? '' : 's'} recorded between ${humanTime(pings[0].recorded_at)} and ${humanTime(pings[pings.length-1].recorded_at)}.`];
+            if (segments.length === 0 || segments.every(sg => sg.length < 2)) parts.push('The agent stayed within ~30 m all day, so there is no route to draw.');
+            if (chordRuns > 0) parts.push(`Road snapping unavailable for ${chordRuns} stretch${chordRuns === 1 ? '' : 'es'} (dotted) — showing straight lines.`);
+            if (gaps.length > 0) parts.push(`${gaps.length} gap${gaps.length === 1 ? '' : 's'} over 10 min shown dashed grey.`);
+            document.getElementById('trailHint').textContent = parts.join(' ');
 
             // Fit map to trail
             map.fitBounds(L.latLngBounds(coords), { padding: [50, 50], maxZoom: 17 });
@@ -440,6 +465,83 @@
             console.error('[field-agents] trail fetch failed:', e);
             document.getElementById('trailHint').textContent = 'Could not load trail. The backend may have rejected the request (e.g. you do not manage this employee).';
         }
+    }
+
+    // ─── Road snapping ─────────────────────────────────────────────────
+    // OSRM public demo router. Free, keyless, OSM road graph. Route
+    // (not match) because our points are minutes apart and match's
+    // GPS-noise model expects seconds. ~90 coordinates per request keeps
+    // us under the server's max-locations; a shift at 5-minute pings is
+    // ~96 points, so at most two calls per day per agent.
+    const OSRM_ROUTE_URL = 'https://router.project-osrm.org/route/v1/driving/';
+    const SNAP_GAP_MS = 10 * 60 * 1000;   // > 10 min between pings = a gap, not a drive
+    const SNAP_MIN_MOVE_M = 30;           // consecutive pings closer than this are the same place (GPS jitter)
+    const SNAP_CHUNK = 90;
+    const SNAP_TIMEOUT_MS = 8000;
+
+    function haversineM(a, b) {
+        const R = 6371000, toRad = d => d * Math.PI / 180;
+        const dLat = toRad(b[0] - a[0]), dLng = toRad(b[1] - a[1]);
+        const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLng / 2) ** 2;
+        return 2 * R * Math.asin(Math.sqrt(h));
+    }
+
+    /** Split the day's pings into continuous runs (split at time gaps) and
+     *  collapse stationary jitter inside a run. Returns the runs plus the
+     *  [lastOfRun, firstOfNextRun] pairs that bridge the gaps. */
+    function buildTrailSegments(pings) {
+        const sorted = [...pings].sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
+        const segments = [];
+        const gaps = [];
+        let cur = [];
+        for (const p of sorted) {
+            const prev = cur[cur.length - 1];
+            if (prev && (new Date(p.recorded_at) - new Date(prev.recorded_at)) > SNAP_GAP_MS) {
+                segments.push(cur);
+                gaps.push([prev, p]);
+                cur = [p];
+                continue;
+            }
+            if (prev && haversineM([prev.latitude, prev.longitude], [p.latitude, p.longitude]) < SNAP_MIN_MOVE_M) continue;
+            cur.push(p);
+        }
+        if (cur.length) segments.push(cur);
+        return { segments, gaps };
+    }
+
+    /** [lat,lng][] → road-following [lat,lng][] via OSRM, or null on any
+     *  failure so the caller falls back to the chord. Never throws. */
+    async function snapToRoads(coords) {
+        if (coords.length < 2) return null;
+        const out = [];
+        for (let i = 0; i < coords.length - 1; i += SNAP_CHUNK - 1) {
+            const chunk = coords.slice(i, i + SNAP_CHUNK);
+            if (chunk.length < 2) break;
+            const path = chunk.map(c => `${c[1].toFixed(6)},${c[0].toFixed(6)}`).join(';');
+            const ctl = new AbortController();
+            const timer = setTimeout(() => ctl.abort(), SNAP_TIMEOUT_MS);
+            try {
+                const r = await fetch(`${OSRM_ROUTE_URL}${path}?overview=full&geometries=geojson&steps=false`, { signal: ctl.signal });
+                if (!r.ok) return null;
+                const j = await r.json();
+                const line = j?.routes?.[0]?.geometry?.coordinates;
+                if (!Array.isArray(line) || line.length < 2) return null;
+                for (const [lng, lat] of line) out.push([lat, lng]);
+            } catch (e) {
+                console.warn('[field-agents] OSRM snap failed, falling back to chord:', e?.message || e);
+                return null;
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+        return out.length >= 2 ? out : null;
+    }
+
+    function humanDuration(ms) {
+        const m = Math.round(ms / 60000);
+        if (m < 60) return `${m} min`;
+        const h = Math.floor(m / 60), rem = m % 60;
+        return rem ? `${h} h ${rem} min` : `${h} h`;
     }
 
     // ─── Formatting helpers ────────────────────────────────────────────
