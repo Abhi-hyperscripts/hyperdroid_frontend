@@ -19,7 +19,7 @@
     const POLL_MS = 60_000;
     const DEFAULT_CENTER = [20.5937, 78.9629];  // Geographic centre of India
     const DEFAULT_ZOOM = 5;
-    const STALE_MS = 15 * 60 * 1000;            // > 15 min since last ping → stale
+    const STALE_MS = 20 * 60 * 1000;            // > 20 min since last ping → stale (pings are every 5 min; 3 misses + upload slack)
     const LOW_BATT = 20;                         // ≤ 20% → low
 
     let map = null;
