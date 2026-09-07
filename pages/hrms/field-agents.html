@@ -411,6 +411,19 @@
                         <div id="trailHint" style="margin-top:14px;font-size:0.75rem;color:var(--text-secondary);line-height:1.5;">
                             Pick a date to see this employee's trail for any day in the last 7 days.
                         </div>
+
+                        <!-- Share live location: a public, time-limited link (default 2 h,
+                             dies at clock-out). Recipients see the current position only. -->
+                        <div class="share-section" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-color);">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                <div style="font-weight:600;color:var(--text-primary);font-size:0.85rem;">Share live location</div>
+                                <button class="btn btn-primary btn-sm" id="shareCreateBtn" type="button">New 2-hour link</button>
+                            </div>
+                            <div id="shareHint" style="margin-top:6px;font-size:0.72rem;color:var(--text-secondary);line-height:1.45;">
+                                Anyone with the link sees this agent's current position until it expires or the agent clocks out. The agent is notified.
+                            </div>
+                            <div id="shareList" style="margin-top:10px;"></div>
+                        </div>
                     </div>
                 </aside>
             </div>

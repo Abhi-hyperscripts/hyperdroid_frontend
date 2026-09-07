@@ -110,6 +110,7 @@
             fitMapToLiveAgents();
         });
         document.getElementById('trailCloseBtn').addEventListener('click', closeTrail);
+        document.getElementById('shareCreateBtn').addEventListener('click', () => { createShare().catch(() => undefined); });
 
         // Search input — re-renders the list as the user types. Cheap;
         // the list is virtualized via the browser's natural scroll.
@@ -374,6 +375,98 @@
         // Auto-load today's trail
         const date = document.getElementById('trailDate').value;
         loadTrail(employeeId, date).catch(() => undefined);
+        loadShares(employeeId).catch(() => undefined);
+    }
+
+    // ─── Share live location ───────────────────────────────────────────
+    // POST …/employee/{id}/share mints a public token (default 2 h; the
+    // backend also ends it at clock-out). The public page is
+    // /pages/hrms/track.html?t=<token>. Recipients see the current position
+    // only — no trail, no ids. The agent gets a push when a link is made.
+
+    function shareUrl(token) {
+        return `${location.origin}/pages/hrms/track.html?t=${encodeURIComponent(token)}`;
+    }
+
+    function whatsappUrl(agentName, url, expiresAt) {
+        const until = expiresAt ? ` until ${humanTime(expiresAt)}` : '';
+        const msg = `Live location of ${agentName || 'our field agent'}${until}: ${url}`;
+        return `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    }
+
+    async function loadShares(employeeId) {
+        const box = document.getElementById('shareList');
+        if (!box) return;
+        try {
+            const res = await api.listLocationShares(employeeId);
+            renderShares(employeeId, res?.shares || []);
+        } catch (e) {
+            // 403 = not this manager's report; the create button will say so too.
+            box.innerHTML = '';
+        }
+    }
+
+    function renderShares(employeeId, shares) {
+        const box = document.getElementById('shareList');
+        const agent = liveAgents.find(a => a.employee_id === employeeId);
+        const name = agent?.employee_name || agent?.employee_code || 'the agent';
+        if (!shares.length) {
+            box.innerHTML = '<div style="font-size:0.72rem;color:var(--text-secondary);">No active links.</div>';
+            return;
+        }
+        box.innerHTML = shares.map(s => {
+            const url = shareUrl(s.token);
+            return `
+            <div class="share-row" data-id="${escapeHtmlAttr(s.id)}" style="margin-top:8px;padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-tertiary);">
+                <div style="font-size:0.72rem;color:var(--text-secondary);">Expires ${humanTime(s.expires_at)}</div>
+                <input type="text" readonly value="${escapeHtmlAttr(url)}" style="width:100%;margin-top:6px;font-size:0.72rem;padding:6px 8px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);">
+                <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+                    <a class="btn btn-sm btn-success" target="_blank" rel="noopener" href="${escapeHtmlAttr(whatsappUrl(name, url, s.expires_at))}">WhatsApp</a>
+                    <button type="button" class="btn btn-sm btn-outline-secondary share-copy" data-url="${escapeHtmlAttr(url)}">Copy link</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger share-revoke" data-id="${escapeHtmlAttr(s.id)}">Stop sharing</button>
+                </div>
+            </div>`;
+        }).join('');
+        box.querySelectorAll('.share-copy').forEach(b => b.addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(b.dataset.url); toast('Link copied.', 'success'); }
+            catch { toast('Could not copy — select the link and copy it manually.', 'error'); }
+        }));
+        box.querySelectorAll('.share-revoke').forEach(b => b.addEventListener('click', async () => {
+            b.disabled = true;
+            try {
+                await api.revokeLocationShare(b.dataset.id);
+                toast('Sharing stopped. The link no longer works.', 'success');
+                await loadShares(employeeId);
+            } catch (e) {
+                b.disabled = false;
+                toast(errText(e, 'Could not stop sharing.'), 'error');
+            }
+        }));
+    }
+
+    async function createShare() {
+        if (!selectedEmployeeId) return;
+        const btn = document.getElementById('shareCreateBtn');
+        btn.disabled = true;
+        try {
+            await api.createLocationShare(selectedEmployeeId, 2);
+            toast('Link created. It stops working in 2 hours or when the agent clocks out.', 'success');
+            await loadShares(selectedEmployeeId);
+        } catch (e) {
+            toast(errText(e, 'Could not create the link.'), 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function toast(msg, kind) {
+        if (typeof showToast === 'function') showToast(msg, kind); else alert(msg);
+    }
+    function errText(e, fallback) {
+        return e?.data?.message || e?.response?.data?.message || e?.message || fallback;
+    }
+    function escapeHtmlAttr(v) {
+        return String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
     function closeTrail() {

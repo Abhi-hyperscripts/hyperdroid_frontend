@@ -2350,6 +2350,22 @@ class API {
         return this.request('/hrms/attendance/location-pings/live');
     }
 
+    // --- Live-location share links (public tracking page) ---
+    async createLocationShare(employeeId, hours = 2) {
+        return this.request(`/hrms/attendance/location-pings/employee/${employeeId}/share`, {
+            method: 'POST',
+            body: JSON.stringify({ hours })
+        });
+    }
+
+    async listLocationShares(employeeId) {
+        return this.request(`/hrms/attendance/location-pings/employee/${employeeId}/shares`);
+    }
+
+    async revokeLocationShare(shareId) {
+        return this.request(`/hrms/attendance/location-pings/shares/${shareId}`, { method: 'DELETE' });
+    }
+
     // --- Leave Management ---
     async getLeaveTypes() {
         return this.request('/hrms/leave/types');
