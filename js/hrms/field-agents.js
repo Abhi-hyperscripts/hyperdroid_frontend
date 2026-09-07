@@ -68,13 +68,13 @@
         map = L.map('fieldAgentsMap', { zoomControl: true, attributionControl: true })
             .setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 
-        // CARTO Voyager raster tiles (OSM data, Google-like cartography,
-        // retina via {r}, no key). Free tier for low-volume use; if traffic
-        // ever warrants it, swap the URL for a keyed provider here only.
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            subdomains: 'abcd',
-            maxZoom: 20,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        // Esri World Street Map — keyless, Google-like street cartography.
+        // (CARTO's basemaps now watermark "API KEY REQUIRED" without a key,
+        // verified live 2026-09-07; OSM's default style is the fallback if
+        // Esri ever changes terms.) Tiles are z/y/x, not z/x/y.
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, OpenStreetMap contributors, and the GIS User Community'
         }).addTo(map);
 
         // Cluster bubble for the live pins. spiderfyOnMaxZoom expands the
