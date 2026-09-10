@@ -164,7 +164,7 @@ async function loadInitialData() {
         window._bankAccountMap = {};
         bankAccounts.forEach(b => { window._bankAccountMap[b.id] = b.account_name || b.bank_name || b.name; });
 
-        populateSelect('invoiceCustomerId', customers, 'id', 'name', 'Select customer...');
+        populateSelect('invoiceCustomerId', customers, 'id', 'name', 'Select customer...', AccountsCommon.customerSearchLine);
         // When the invoice's customer changes, re-scope each line's Project dropdown to that customer
         // (the backend rejects a project that belongs to a different customer).
         const invCustSel = document.getElementById('invoiceCustomerId');
@@ -172,8 +172,8 @@ async function loadInitialData() {
             invCustSel._projectHooked = true;
             invCustSel.addEventListener('change', onInvoiceCustomerChange);
         }
-        populateSelect('paymentCustomerId', customers, 'id', 'name', 'Select customer...');
-        populateSelect('cnCustomerId', customers, 'id', 'name', 'Select customer...');
+        populateSelect('paymentCustomerId', customers, 'id', 'name', 'Select customer...', AccountsCommon.customerSearchLine);
+        populateSelect('cnCustomerId', customers, 'id', 'name', 'Select customer...', AccountsCommon.customerSearchLine);
         populateSelect('paymentBankAccountId', bankAccounts.map(b => ({ ...b, name: b.account_name || b.name })), 'id', 'name', 'Select bank...');
 
         loadCustomerInvoices();
@@ -182,13 +182,30 @@ async function loadInitialData() {
     }
 }
 
-function populateSelect(selectId, items, valueField, labelField, placeholder) {
+/**
+ * `descFn` is optional: when given, each <option> carries the returned text as
+ * data-description. auto-searchable-select.js copies that onto the generated
+ * SearchableDropdown option, which renders it as a second line AND matches it
+ * in filter() — so a customer becomes findable by GSTIN, email or phone, not
+ * just by name.
+ *
+ * Built into an array and assigned ONCE rather than `innerHTML +=` per item:
+ * the old form reparsed the whole element on every iteration and fired the
+ * converter's child-list observer once per option.
+ */
+function populateSelect(selectId, items, valueField, labelField, placeholder, descFn) {
     const sel = document.getElementById(selectId);
     if (!sel) return;
-    sel.innerHTML = `<option value="">${AccountsCommon.escapeHtml(placeholder)}</option>`;
+    const esc = (x) => AccountsCommon.escapeHtml(x);
+    const html = [`<option value="">${esc(placeholder)}</option>`];
     items.forEach(item => {
-        sel.innerHTML += `<option value="${item[valueField]}">${AccountsCommon.escapeHtml(item[labelField] || item.code || '')}</option>`;
+        const desc = typeof descFn === 'function' ? (descFn(item) || '') : '';
+        html.push(
+            `<option value="${esc(item[valueField])}"` +
+            `${desc ? ` data-description="${esc(desc)}"` : ''}>` +
+            `${esc(item[labelField] || item.code || '')}</option>`);
     });
+    sel.innerHTML = html.join('');
 }
 
 /**
@@ -208,9 +225,9 @@ document.addEventListener('accounts:customer-created', (e) => {
     const detail = e.detail || {};
     if (Array.isArray(detail.customers)) customers = detail.customers;
 
-    populateSelect('invoiceCustomerId', customers, 'id', 'name', 'Select customer...');
-    populateSelect('paymentCustomerId', customers, 'id', 'name', 'Select customer...');
-    populateSelect('cnCustomerId', customers, 'id', 'name', 'Select customer...');
+    populateSelect('invoiceCustomerId', customers, 'id', 'name', 'Select customer...', AccountsCommon.customerSearchLine);
+    populateSelect('paymentCustomerId', customers, 'id', 'name', 'Select customer...', AccountsCommon.customerSearchLine);
+    populateSelect('cnCustomerId', customers, 'id', 'name', 'Select customer...', AccountsCommon.customerSearchLine);
 
     const sel = detail.sourceSelectId && document.getElementById(detail.sourceSelectId);
     if (sel && detail.customer && detail.customer.id) {
@@ -259,7 +276,9 @@ function initDatePickers() {
 // ============================================================================
 
 function initDropdowns() {
-    const custOpts = customers.map(c => ({ value: c.id, label: c.name }));
+    // description = code · GSTIN · email · phone. SearchableDropdown.filter()
+    // matches it, so these filters search by all four, not just the name.
+    const custOpts = customers.map(c => ({ value: c.id, label: c.name, description: AccountsCommon.customerSearchLine(c) }));
 
     invoiceCustomerFilterDD = new SearchableDropdown(document.getElementById('invoiceCustomerFilterContainer'), {
         id: 'invoiceCustomerFilter', options: custOpts, placeholder: 'All Customers',
@@ -2927,7 +2946,7 @@ async function showChallanModal() {
     challanCustomerDD = new SearchableDropdown(document.getElementById('challanCustomerDD'), {
         id: 'challanCustomerSD',
         options: [{ value: '', label: 'Select customer...' },
-            ...customers.filter(c => c.is_active !== false).map(c => ({ value: c.id, label: c.name }))],
+            ...customers.filter(c => c.is_active !== false).map(c => ({ value: c.id, label: c.name, description: AccountsCommon.customerSearchLine(c) }))],
         value: '', placeholder: 'Select customer...', searchPlaceholder: 'Search customers…'
     });
     challanPurposeDD = new SearchableDropdown(document.getElementById('challanPurposeDD'), {
@@ -3448,7 +3467,7 @@ async function showSalesOrderForm() {
     soCustomerDD = new SearchableDropdown(document.getElementById('soCustomerDD'), {
         id: 'soCustomerSD',
         options: [{ value: '', label: 'Select customer...' },
-            ...customers.filter(c => c.is_active !== false).map(c => ({ value: c.id, label: c.name }))],
+            ...customers.filter(c => c.is_active !== false).map(c => ({ value: c.id, label: c.name, description: AccountsCommon.customerSearchLine(c) }))],
         value: '', placeholder: 'Select customer...', searchPlaceholder: 'Search customers…'
     });
     addSoLine();

@@ -1020,6 +1020,25 @@ const AccountsCommon = {
 
     /** XSS-safe HTML escaping — quote-safe, so it is correct in element text,
      *  HTML-attribute, and (with escJs for the JS layer) inline-handler contexts. */
+    /**
+     * The secondary line shown under a customer's name in every customer picker,
+     * and — because SearchableDropdown.filter() matches `description` as well as
+     * `label` — the text that makes a customer findable by the things people
+     * actually have to hand: their code, their GSTIN, their email, their phone.
+     *
+     * Searching by name alone fails exactly when it matters: two "Sharma
+     * Traders", or a caller who can give you a GSTIN and nothing else.
+     *
+     * No `this` — it is passed around as a bare function reference.
+     */
+    customerSearchLine(c) {
+        if (!c) return '';
+        return [c.customer_code, c.tax_id, c.email, c.phone]
+            .map(x => (x == null ? '' : String(x).trim()))
+            .filter(Boolean)
+            .join(' \u00b7 ');
+    },
+
     escapeHtml(text) {
         if (text === null || text === undefined) return '';
         return String(text)

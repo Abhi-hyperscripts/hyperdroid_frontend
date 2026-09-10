@@ -93,7 +93,7 @@ async function loadInitialData() {
         accounts = Array.isArray(acctRes) ? acctRes : (acctRes?.data || acctRes?.items || []);
         taxConfigs = Array.isArray(taxRes) ? taxRes : (taxRes?.data || taxRes?.items || []);
 
-        populateSelect('proformaCustomerId', customers, 'id', 'name', 'Select customer...');
+        populateSelect('proformaCustomerId', customers, 'id', 'name', 'Select customer...', AccountsCommon.customerSearchLine);
 
         loadProformaInvoices();
     } catch (err) {
@@ -101,13 +101,30 @@ async function loadInitialData() {
     }
 }
 
-function populateSelect(selectId, items, valueField, labelField, placeholder) {
+/**
+ * `descFn` is optional: when given, each <option> carries the returned text as
+ * data-description. auto-searchable-select.js copies that onto the generated
+ * SearchableDropdown option, which renders it as a second line AND matches it
+ * in filter() — so a customer becomes findable by GSTIN, email or phone, not
+ * just by name.
+ *
+ * Built into an array and assigned ONCE rather than `innerHTML +=` per item:
+ * the old form reparsed the whole element on every iteration and fired the
+ * converter's child-list observer once per option.
+ */
+function populateSelect(selectId, items, valueField, labelField, placeholder, descFn) {
     const sel = document.getElementById(selectId);
     if (!sel) return;
-    sel.innerHTML = `<option value="">${AccountsCommon.escapeHtml(placeholder)}</option>`;
+    const esc = (x) => AccountsCommon.escapeHtml(x);
+    const html = [`<option value="">${esc(placeholder)}</option>`];
     items.forEach(item => {
-        sel.innerHTML += `<option value="${item[valueField]}">${AccountsCommon.escapeHtml(item[labelField] || item.code || '')}</option>`;
+        const desc = typeof descFn === 'function' ? (descFn(item) || '') : '';
+        html.push(
+            `<option value="${esc(item[valueField])}"` +
+            `${desc ? ` data-description="${esc(desc)}"` : ''}>` +
+            `${esc(item[labelField] || item.code || '')}</option>`);
     });
+    sel.innerHTML = html.join('');
 }
 
 /**
@@ -127,7 +144,7 @@ document.addEventListener('accounts:customer-created', (e) => {
     const detail = e.detail || {};
     if (Array.isArray(detail.customers)) customers = detail.customers;
 
-    populateSelect('proformaCustomerId', customers, 'id', 'name', 'Select customer...');
+    populateSelect('proformaCustomerId', customers, 'id', 'name', 'Select customer...', AccountsCommon.customerSearchLine);
 
     const sel = detail.sourceSelectId && document.getElementById(detail.sourceSelectId);
     if (sel && detail.customer && detail.customer.id) {
@@ -167,7 +184,9 @@ function initDatePickers() {
 // ============================================================================
 
 function initDropdowns() {
-    const custOpts = customers.map(c => ({ value: c.id, label: c.name }));
+    // description = code · GSTIN · email · phone. SearchableDropdown.filter()
+    // matches it, so these filters search by all four, not just the name.
+    const custOpts = customers.map(c => ({ value: c.id, label: c.name, description: AccountsCommon.customerSearchLine(c) }));
 
     proformaCustomerFilterDD = new SearchableDropdown(document.getElementById('proformaCustomerFilterContainer'), {
         id: 'proformaCustomerFilter', options: custOpts, placeholder: 'All Customers',
