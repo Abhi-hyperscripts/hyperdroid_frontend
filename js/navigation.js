@@ -716,7 +716,27 @@ const Navigation = {
                 if (!dot) {
                     dot = document.createElement('span');
                     dot.className = 'nav-chat-dot';
-                    dot.style.cssText = 'position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:var(--color-error,#ef4444);border:2px solid var(--bg-primary,#0f172a);pointer-events:none;';
+                    // Sit the dot on the avatar's rim at the BOTTOM-RIGHT 45deg
+                    // point — the convention for a presence/activity indicator
+                    // (a top-right badge is for counts).
+                    //
+                    // Two things make the naive `bottom:2px;right:2px` wrong:
+                    //   1. The avatar is a CIRCLE. Its rim at 45deg is inset from
+                    //      the bounding-box corner by r*(1 - 1/sqrt2), so a small
+                    //      corner offset leaves the dot floating off the edge.
+                    //   2. An absolutely positioned child's offsets resolve against
+                    //      the containing block's PADDING box, and this avatar has a
+                    //      2px border — so offsets start 2px inside the visible rim.
+                    //      Ignoring that left the dot 2px short on each axis.
+                    // Both are measured rather than assumed, so this stays correct
+                    // if the avatar is resized or its border changes.
+                    const avStyle = window.getComputedStyle(avatar);
+                    const avBorder = parseFloat(avStyle.borderRightWidth) || 0;
+                    const avRadius = (avatar.offsetWidth || 34) / 2;
+                    const rimInset = Math.max(0, avRadius * (1 - Math.SQRT1_2) - avBorder);
+                    // bottom/right place the dot's corner; translate(50%,50%) moves
+                    // its CENTRE onto that point, i.e. onto the rim.
+                    dot.style.cssText = 'position:absolute;bottom:' + rimInset.toFixed(1) + 'px;right:' + rimInset.toFixed(1) + 'px;transform:translate(50%,50%);width:7px;height:7px;border-radius:50%;background:var(--color-error,#ef4444);box-shadow:0 0 0 1.5px var(--bg-primary,#0f172a);pointer-events:none;';
                     avatar.style.position = 'relative';
                     avatar.appendChild(dot);
                 }
