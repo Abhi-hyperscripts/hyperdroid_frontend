@@ -403,6 +403,17 @@ function clearAuthData() {
     removeRefreshToken();
     removeTokenExpiry();
     removeStoredUser();
+    // The email client's local mail cache (IndexedDB) belongs to this login.
+    try {
+        const last = localStorage.getItem('rz_mail_db');
+        if (last) indexedDB.deleteDatabase(last);
+        localStorage.removeItem('rz_mail_db');
+        if (window.indexedDB && indexedDB.databases) {
+            indexedDB.databases().then(list => list.forEach(d => {
+                if (d.name && d.name.startsWith('rz_mail_')) indexedDB.deleteDatabase(d.name);
+            })).catch(() => {});
+        }
+    } catch (_) { /* no IndexedDB (private mode) - nothing cached */ }
     // Also clear organization/license info cache
     localStorage.removeItem('organization_info');
     localStorage.removeItem(`${STORAGE_PREFIX}tenant_features`);

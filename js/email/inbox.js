@@ -41,6 +41,138 @@ const State = {
 // render without serialization noise.
 let loadMoreObserver = null;
 
+// ==================== Local mail cache (IndexedDB) ====================
+//
+// The list paints from MailCache first and then reconciles with the server:
+// a folder's first visit fetches its first page as before; every visit after
+// that asks GET /email/messages/changes for what changed since the mailbox's
+// cursor. Search stays server-side and never touches the cache.
+const SYNC_INTERVAL_MS = 120000;
+let _loadSeq = 0;               // a newer load invalidates an older one still in flight
+let _syncTimer = null;
+let _syncing = false;
+
+function cacheOn() { return typeof MailCache !== 'undefined' && MailCache.ready; }
+
+function cacheIdentity() {
+    // Per (tenant, user) database name — derived from the token, never from
+    // anything another user on the same browser could share.
+    try {
+        const payload = decodeJwtPayload(getAuthToken()) || {};
+        const user = payload.sub || payload.nameid
+            || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
+            || (getStoredUser() || {}).id || '';
+        const raw = `${payload.tenant_id || ''}|${user}`;
+        if (!user) return null;
+        let h = 5381;
+        for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) >>> 0;
+        return h.toString(16) + '_' + raw.length;
+    } catch (_) { return null; }
+}
+
+function currentTargets() {
+    if ((State.searchQuery || '').trim()) return [];
+    if (State.unified) return unifiedInboxTargets();
+    if (!State.selectedMailboxId || !State.selectedFolderId) return [];
+    const mbx = State.mailboxes.find(m => m.id === State.selectedMailboxId);
+    return [{ mailboxId: State.selectedMailboxId, folderId: State.selectedFolderId, address: mbx?.email_address }];
+}
+
+/**
+ * The first `offset + limit` cached rows across the targets, newest first, or
+ * null when any target folder has never been fetched (nothing to paint yet).
+ */
+async function readCachedWindow(targets, offset, limit) {
+    let merged = [];
+    let total = 0;
+    for (const t of targets) {
+        if (!(await MailCache.isSeeded(t.mailboxId, t.folderId))) return null;
+        const rows = await MailCache.listFolder(t.mailboxId, t.folderId);
+        const serverTotal = await MailCache.getTotal(t.mailboxId, t.folderId);
+        total += Math.max(typeof serverTotal === 'number' ? serverTotal : 0, rows.length);
+        if (State.unified) {
+            rows.forEach(m => merged.push(Object.assign({}, m, { _mailboxId: t.mailboxId, _accountAddress: t.address })));
+        } else {
+            merged = rows;
+        }
+    }
+    if (State.unified) merged.sort((a, b) => b._ts - a._ts);
+    return { items: merged.slice(0, offset + limit), total, cached: merged.length };
+}
+
+function applyWindow(win) {
+    State.messages = win.items;
+    State.totalCount = win.total;
+    State.hasMore = State.messages.length < State.totalCount;
+    updateFolderCount();
+    renderMessages();
+}
+
+/** Bring every target mailbox's cache up to date with the server. */
+async function syncTargets(targets) {
+    const byMailbox = new Map();
+    targets.forEach(t => {
+        if (!byMailbox.has(t.mailboxId)) byMailbox.set(t.mailboxId, []);
+        byMailbox.get(t.mailboxId).push(t.folderId);
+    });
+    await Promise.all(Array.from(byMailbox, ([mailboxId, folderIds]) => syncMailbox(mailboxId, folderIds)));
+}
+
+async function syncMailbox(mailboxId, folderIds, isRetry) {
+    for (const folderId of folderIds) {
+        if (await MailCache.isSeeded(mailboxId, folderId)) continue;
+        const resp = await api.request(`/email/messages?mailbox_id=${mailboxId}&folder_id=${folderId}&limit=${PAGE_SIZE}&offset=0`, { _skipSpinner: true });
+        await MailCache.recordPage(mailboxId, folderId, resp?.items, resp?.total, PAGE_SIZE, resp?.server_time);
+    }
+    let cursor = await MailCache.getCursor(mailboxId);
+    if (!cursor) return;
+    for (let page = 0; page < 25; page++) {
+        const params = new URLSearchParams({ mailbox_id: mailboxId, since: cursor.watermark, since_id: cursor.watermark_id || MailCache.EMPTY_GUID, limit: '200' });
+        const d = await api.request(`/email/messages/changes?${params}`, { _skipSpinner: true });
+        if (d?.full_resync_required) {
+            await MailCache.dropMailbox(mailboxId);
+            if (!isRetry) await syncMailbox(mailboxId, folderIds, true);
+            return;
+        }
+        if (Array.isArray(d?.items) && d.items.length) await MailCache.putMessages(d.items);
+        if (Array.isArray(d?.deleted_ids) && d.deleted_ids.length) await MailCache.deleteMessages(d.deleted_ids);
+        cursor = { watermark: d?.watermark || cursor.watermark, watermark_id: d?.watermark_id || MailCache.EMPTY_GUID };
+        await MailCache.setCursor(mailboxId, cursor);
+        if (!d?.has_more) break;
+    }
+    MailCache.trim(mailboxId).catch(() => {});
+}
+
+/** Background reconcile of the folder on screen; re-renders only if rows changed. */
+async function resyncCurrent() {
+    if (_syncing || !cacheOn() || document.hidden) return;
+    const targets = currentTargets();
+    if (targets.length === 0) return;
+    _syncing = true;
+    const seq = _loadSeq;
+    try {
+        await syncTargets(targets);
+        if (seq !== _loadSeq) return;
+        const win = await readCachedWindow(targets, 0, Math.max(PAGE_SIZE, State.messages.length));
+        if (seq !== _loadSeq || !win) return;
+        const sig = list => list.map(m => `${m.id}:${m.is_read ? 1 : 0}:${m.folder_id || ''}`).join(',');
+        if (sig(win.items) !== sig(State.messages) || win.total !== State.totalCount) applyWindow(win);
+    } catch (err) {
+        console.warn('background mail sync failed', err);
+    } finally {
+        _syncing = false;
+    }
+}
+
+function startBackgroundSync() {
+    if (_syncTimer) clearInterval(_syncTimer);
+    _syncTimer = setInterval(resyncCurrent, SYNC_INTERVAL_MS);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) resyncCurrent(); });
+}
+
+function cachePatch(ids, fields) { if (cacheOn()) MailCache.patchMany(ids, fields).catch(err => console.warn('mail cache patch failed', err)); }
+function cacheRemove(ids) { if (cacheOn()) MailCache.deleteMessages(ids).catch(err => console.warn('mail cache delete failed', err)); }
+
 // Quill rich-text editor instance for the compose modal. Lazy-init on
 // first openCompose() so the page paint isn't delayed by editor setup.
 // TinyMCE replaces Quill — see CRM Settings/Lead-journey for rationale.
@@ -174,8 +306,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.body.appendChild(overlay);
     }
 
+    if (typeof MailCache !== 'undefined') {
+        try {
+            if (await MailCache.open(cacheIdentity())) MailCache.sweepForeign();
+        } catch (err) { console.warn('mail cache unavailable', err); }
+    }
+
     await loadMailboxes();
     connectEmailHub();
+
+    if (cacheOn()) {
+        MailCache.keepOnly(State.mailboxes.map(m => m.id)).catch(() => {});
+        startBackgroundSync();
+    }
 });
 
 // ==================== SignalR live push ====================
@@ -739,6 +882,7 @@ async function syncFolderInBackground(mailboxId, folderId) {
 
 async function loadMessages() {
     if (!State.unified && (!State.selectedMailboxId || !State.selectedFolderId)) return;
+    const seq = ++_loadSeq;
 
     // Reset pagination state whenever we load a new folder/search.
     State.messages = [];
@@ -748,26 +892,92 @@ async function loadMessages() {
     if (loadMoreObserver) { loadMoreObserver.disconnect(); loadMoreObserver = null; }
 
     const rows = document.getElementById('emailRows');
-    rows.innerHTML = skeletonRows(6);
+    const targets = cacheOn() ? currentTargets() : [];
 
+    // 1. Paint what is already on disk — no skeleton, no wait — when every
+    //    target folder has been fetched before.
+    let painted = false;
+    if (targets.length > 0) {
+        try {
+            const win = await readCachedWindow(targets, 0, PAGE_SIZE);
+            if (seq !== _loadSeq) return;
+            if (win) { applyWindow(win); painted = true; }
+        } catch (err) { console.warn('mail cache read failed', err); }
+    }
+    if (!painted) rows.innerHTML = skeletonRows(6);
+
+    // 2. Reconcile with the server (first page on a first visit, delta after).
+    //    A failing sync never blanks the list: cached rows stay up with a
+    //    warning, and a cold folder falls through to the plain page fetch.
     try {
+        if (targets.length > 0) {
+            let synced = false;
+            try {
+                await syncTargets(targets);
+                synced = true;
+            } catch (err) {
+                if (seq !== _loadSeq) return;
+                console.warn('mail sync failed, falling back to a plain fetch', err);
+                if (painted) Toast.error(`Could not refresh from the server — showing cached mail. ${err.message || ''}`.trim());
+            }
+            if (seq !== _loadSeq) return;
+            if (synced) {
+                const win = await readCachedWindow(targets, 0, Math.max(PAGE_SIZE, State.messages.length));
+                if (seq !== _loadSeq) return;
+                if (win) { applyWindow(win); return; }
+            } else if (painted) {
+                return;
+            }
+        }
         const resp = await fetchMessagesPage(0, PAGE_SIZE);
+        if (seq !== _loadSeq) return;
         State.messages = Array.isArray(resp?.items) ? resp.items : [];
         State.totalCount = resp?.total || State.messages.length;
         State.hasMore = State.messages.length < State.totalCount;
         updateFolderCount();
         renderMessages();
     } catch (err) {
+        if (seq !== _loadSeq) return;
         console.error('loadMessages failed', err);
-        rows.innerHTML = `<div class="email-empty" style="padding:32px;"><p style="color:var(--color-danger);">${escapeHtml(err.message)}</p></div>`;
+        if (painted) {
+            // Cached rows stay on screen; the failure is told, not hidden behind them.
+            Toast.error(`Could not refresh from the server — showing cached mail. ${err.message || ''}`.trim());
+        } else {
+            rows.innerHTML = `<div class="email-empty" style="padding:32px;"><p style="color:var(--color-danger);">${escapeHtml(err.message)}</p></div>`;
+        }
     }
 }
 
 async function loadMoreMessages() {
     if (State.isLoadingMore || !State.hasMore) return;
     State.isLoadingMore = true;
+    const seq = _loadSeq;
     try {
+        const targets = cacheOn() ? currentTargets() : [];
+        if (targets.length > 0) {
+            const before = State.messages.length;
+            let win = await readCachedWindow(targets, before, PAGE_SIZE);
+            if (seq !== _loadSeq) return;
+            if (win && win.items.length <= before) {
+                // The contiguous window is exhausted: extend it with the next
+                // server page, which also lowers the folder's horizon.
+                const resp = await fetchMessagesPage(before, PAGE_SIZE);
+                if (seq !== _loadSeq) return;
+                const got = Array.isArray(resp?.items) ? resp.items.length : 0;
+                win = await readCachedWindow(targets, before, PAGE_SIZE);
+                if (seq !== _loadSeq) return;
+                if (win && win.items.length <= before) {
+                    // Nothing new even after asking the server — stop asking.
+                    win.total = got === 0 ? before : win.total;
+                    applyWindow(win);
+                    State.hasMore = false;
+                    return;
+                }
+            }
+            if (win) { applyWindow(win); return; }
+        }
         const resp = await fetchMessagesPage(State.messages.length, PAGE_SIZE);
+        if (seq !== _loadSeq) return;
         const items = Array.isArray(resp?.items) ? resp.items : [];
         if (items.length > 0) State.messages = State.messages.concat(items);
         State.totalCount = resp?.total || State.totalCount;
@@ -810,8 +1020,14 @@ async function fetchMessagesPage(offset, limit) {
         const pages = await Promise.all(targets.map(t =>
             api.request(`/email/messages?mailbox_id=${t.mailboxId}&folder_id=${t.folderId}`
                 + `&limit=${offset + limit}&offset=0`, { _skipSpinner: true })
-                .then(r => ({ t, items: Array.isArray(r?.items) ? r.items : [], total: r?.total || 0 }))
-                .catch(() => ({ t, items: [], total: 0 }))));
+                .then(r => ({ t, items: Array.isArray(r?.items) ? r.items : [], total: r?.total || 0, server_time: r?.server_time, ok: true }))
+                .catch(() => ({ t, items: [], total: 0, ok: false }))));
+        if (cacheOn()) {
+            // Each per-mailbox page starts at offset 0 and is offset+limit long.
+            pages.filter(p => p.ok).forEach(p =>
+                MailCache.recordPage(p.t.mailboxId, p.t.folderId, p.items, p.total, offset + limit, p.server_time)
+                    .catch(err => console.warn('mail cache write failed', err)));
+        }
         const merged = [];
         let total = 0;
         pages.forEach(p => {
@@ -831,7 +1047,12 @@ async function fetchMessagesPage(offset, limit) {
     // _skipSpinner: the list already shows its own skeleton (initial) or streams
     // in silently (lazy scroll) — the global full-screen overlay would block UI
     // for no reason and make the list feel sluggish on every scroll page.
-    return await api.request(url, { _skipSpinner: true });
+    const resp = await api.request(url, { _skipSpinner: true });
+    if (cacheOn() && resp) {
+        MailCache.recordPage(State.selectedMailboxId, State.selectedFolderId, resp.items, resp.total, limit, resp.server_time)
+            .catch(err => console.warn('mail cache write failed', err));
+    }
+    return resp;
 }
 
 function updateFolderCount() {
@@ -1179,6 +1400,7 @@ async function openMessage(messageId) {
                     if (row) row.classList.remove('unread');
                     const local = State.messages.find(m => m.id === messageId);
                     if (local) local.is_read = true;
+                    cachePatch([messageId], { is_read: true });
                     adjustFolderUnreadCount(State.selectedMailboxId, State.selectedFolderId, -1);
                 })
                 .catch(err => console.warn('mark-read failed', err));
@@ -1421,6 +1643,7 @@ async function toggleRead(messageId, isRead) {
         await api.request(`/email/messages/${messageId}/mark-read?read=${isRead}`, { method: 'POST', _skipSpinner: true });
         Toast.success(isRead ? 'Marked as read' : 'Marked as unread');
         if (local) local.is_read = isRead;
+        cachePatch([messageId], { is_read: isRead });
         const row = document.querySelector(`.email-row[data-message-id="${messageId}"]`);
         if (row) row.classList.toggle('unread', !isRead);
         if (wasRead !== isRead) {
@@ -1471,6 +1694,7 @@ async function deleteMessage(messageId) {
     try {
         const res = await api.request(`/email/messages/${messageId}`, { method: 'DELETE' });
         State.messages = State.messages.filter(m => m.id !== messageId);
+        cacheRemove([messageId]);
         State.selectedMessageId = null;
         renderMessages();
         renderEmptyRead();
@@ -2577,6 +2801,7 @@ async function bulkMarkRead(isRead) {
         }
         clearBulkSelection();
         renderMessages();
+        cachePatch(ids, { is_read: isRead });
         Toast.success(`Marked ${ids.length} as ${isRead ? 'read' : 'unread'}`);
     } catch (err) {
         Toast.error(`Failed: ${err.message || err}`);
@@ -2595,6 +2820,7 @@ async function bulkDelete() {
         const deleted = resp?.deleted || 0;
         // Drop the deleted rows locally.
         State.messages = State.messages.filter(m => !ids.includes(m.id));
+        cacheRemove(ids);
         clearBulkSelection();
         renderMessages();
         Toast.success(`${deleted} deleted`);
@@ -2613,6 +2839,7 @@ async function performBulkMove(messageIds, mailboxId, targetFolderId, folderLabe
         const moved = resp?.moved || 0;
         // Drop the moved rows from the CURRENT folder view and clear selection.
         State.messages = State.messages.filter(m => !messageIds.includes(m.id));
+        cachePatch(messageIds, { folder_id: targetFolderId });
         clearBulkSelection();
         renderMessages();
         Toast.success(`Moved ${moved} to ${folderLabel || 'folder'}`);
