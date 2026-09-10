@@ -165,6 +165,9 @@
             });
         },
 
+        getMeta: key => run(['meta'], 'readonly', t => meta.get(t, key)),
+        setMeta: (key, value) => run(['meta'], 'readwrite', t => { meta.set(t, key, value); }),
+
         isSeeded: (mailboxId, folderId) => run(['meta'], 'readonly', t => meta.get(t, `seeded:${mailboxId}:${folderId || ''}`)).then(v => !!v),
         getTotal: (mailboxId, folderId) => run(['meta'], 'readonly', t => meta.get(t, `total:${mailboxId}:${folderId || ''}`)),
         setTotal: (mailboxId, folderId, total) => run(['meta'], 'readwrite', t => { meta.set(t, `total:${mailboxId}:${folderId || ''}`, total); }),

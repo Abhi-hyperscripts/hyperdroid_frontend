@@ -308,7 +308,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (typeof MailCache !== 'undefined') {
         try {
-            if (await MailCache.open(cacheIdentity())) MailCache.sweepForeign();
+            if (await MailCache.open(cacheIdentity())) {
+                MailCache.sweepForeign();
+                await paintTreeFromCache();   // sidebar + last folder from disk, before any request
+            }
         } catch (err) { console.warn('mail cache unavailable', err); }
     }
 
@@ -466,6 +469,7 @@ async function loadMailboxes() {
                 </div>`;
             document.getElementById('emailRows').innerHTML =
                 `<div class="email-empty" style="padding:40px 20px;"><p>No mailboxes yet.</p></div>`;
+            saveTreeToCache();
             return;
         }
 
@@ -475,14 +479,20 @@ async function loadMailboxes() {
         // Select last-used mailbox + its inbox
         const last = localStorage.getItem('email_last_mailbox');
         const mbxId = State.mailboxes.some(m => m.id === last) ? last : State.mailboxes[0].id;
+        const alreadyShowing = !State.unified && State.selectedMailboxId === mbxId ? State.selectedFolderId : null;
         State.selectedMailboxId = mbxId;
         document.getElementById('composeFrom').value = mbxId;
 
+        // A mailbox connected moments ago has no folders in the DB until its
+        // first IMAP discovery — for that one, wait for the refresh.
+        if ((State.foldersByMailbox[mbxId] || []).length === 0 && _folderRefresh[mbxId]) await _folderRefresh[mbxId];
+
         renderAccountTree();
+        saveTreeToCache();
 
         const folders = State.foldersByMailbox[mbxId] || [];
         const inbox = folders.find(f => f.folder_type === 'inbox') || folders[0];
-        if (inbox) selectFolder(mbxId, inbox.id, inbox.folder_type, inbox.folder_name);
+        if (inbox && alreadyShowing !== inbox.id) selectFolder(mbxId, inbox.id, inbox.folder_type, inbox.folder_name);
     } catch (err) {
         console.error('loadMailboxes failed', err);
         Toast.error(`Could not load mailboxes: ${err.message}`);
@@ -502,50 +512,99 @@ function recordMailboxIssue(mailboxId, err) {
     }
 }
 
+const _folderRefresh = {};   // mailbox_id → promise of the background IMAP refresh
+
 async function loadFolders(mailboxId) {
     delete MailboxIssues[mailboxId];
     try {
-        // Ask the server to re-run IMAP folder discovery before we list — this
-        // picks up any folders the user created (or deleted) on webmail /
-        // another client since our last 25-min IDLE reconnect cycle. The
-        // endpoint returns the refreshed folder list directly so we don't
-        // need a second GET.
-        let folders;
-        try {
-            folders = await api.request(`/email/mailboxes/${mailboxId}/folders/refresh`, {
-                method: 'POST',
-                _skipSpinner: true
-            });
-        } catch (refreshErr) {
-            // Refresh is best-effort — if the IMAP call fails we still want
-            // to show whatever folders we already have in the DB.
-            console.warn('Folder refresh failed, falling back to cached list', refreshErr);
-            // A credential failure (424) used to end here silently: the account
-            // rendered as healthy and merely empty, so a mailbox that had
-            // stopped syncing looked identical to one with no new mail. Record
-            // it so the account tree can say so.
-            recordMailboxIssue(mailboxId, refreshErr);
-            folders = await api.request(`/email/mailboxes/${mailboxId}/folders`);
-        }
-        const list = Array.isArray(folders) ? folders : [];
-        // Canonical order for standard folders; custom folders sorted by path
-        // so nested children appear right after their parent (tree order).
-        const order = ['inbox', 'sent', 'drafts', 'archive', 'junk', 'trash', 'custom'];
-        list.sort((a, b) => {
-            const ai = order.indexOf(a.folder_type);
-            const bi = order.indexOf(b.folder_type);
-            if (ai !== bi) return ai - bi;
-            if (a.folder_type === 'custom') {
-                return (a.folder_path || '').localeCompare(b.folder_path || '');
-            }
-            return (a.folder_name || '').localeCompare(b.folder_name || '');
-        });
-        State.foldersByMailbox[mailboxId] = list;
+        // The folder list we already hold in the DB answers in milliseconds.
+        // The IMAP re-discovery that used to gate this (one slow server held
+        // every account's tree — and the message list — for 9 s) now runs in
+        // the background and re-renders the tree when it lands.
+        const folders = await api.request(`/email/mailboxes/${mailboxId}/folders`, { _skipSpinner: true });
+        State.foldersByMailbox[mailboxId] = sortFolders(folders);
     } catch (err) {
         recordMailboxIssue(mailboxId, err);
         console.warn(`loadFolders(${mailboxId}) failed`, err);
         State.foldersByMailbox[mailboxId] = [];
     }
+    _folderRefresh[mailboxId] = refreshFoldersInBackground(mailboxId);
+}
+
+/**
+ * Ask the server to re-run IMAP folder discovery — picks up folders the user
+ * created or deleted on webmail / another client since our last 25-min IDLE
+ * reconnect cycle. Best-effort: a failure keeps the listed folders, and a
+ * credential failure (424) is recorded so the account tree can say so
+ * instead of rendering as healthy and merely empty.
+ */
+async function refreshFoldersInBackground(mailboxId) {
+    try {
+        const folders = await api.request(`/email/mailboxes/${mailboxId}/folders/refresh`, {
+            method: 'POST',
+            _skipSpinner: true
+        });
+        if (!Array.isArray(folders)) return;
+        State.foldersByMailbox[mailboxId] = sortFolders(folders);
+    } catch (refreshErr) {
+        console.warn('Folder refresh failed, keeping the listed folders', refreshErr);
+        recordMailboxIssue(mailboxId, refreshErr);
+    }
+    renderAccountTree();
+    saveTreeToCache();
+}
+
+function sortFolders(folders) {
+    const list = Array.isArray(folders) ? folders : [];
+    // Canonical order for standard folders; custom folders sorted by path
+    // so nested children appear right after their parent (tree order).
+    const order = ['inbox', 'sent', 'drafts', 'archive', 'junk', 'trash', 'custom'];
+    list.sort((a, b) => {
+        const ai = order.indexOf(a.folder_type);
+        const bi = order.indexOf(b.folder_type);
+        if (ai !== bi) return ai - bi;
+        if (a.folder_type === 'custom') {
+            return (a.folder_path || '').localeCompare(b.folder_path || '');
+        }
+        return (a.folder_name || '').localeCompare(b.folder_name || '');
+    });
+    return list;
+}
+
+/** Paint the account tree and the last folder from the cache before any network. */
+async function paintTreeFromCache() {
+    try {
+        const tree = await MailCache.getMeta('tree');
+        if (!tree || !Array.isArray(tree.mailboxes) || tree.mailboxes.length === 0) return false;
+        State.mailboxes = tree.mailboxes;
+        State.foldersByMailbox = tree.foldersByMailbox || {};
+        const composeFrom = document.getElementById('composeFrom');
+        composeFrom.innerHTML = '';
+        State.mailboxes.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.email_address;
+            composeFrom.appendChild(opt);
+        });
+        const last = localStorage.getItem('email_last_mailbox');
+        const mbxId = State.mailboxes.some(m => m.id === last) ? last : State.mailboxes[0].id;
+        State.selectedMailboxId = mbxId;
+        composeFrom.value = mbxId;
+        renderAccountTree();
+        const folders = State.foldersByMailbox[mbxId] || [];
+        const inbox = folders.find(f => f.folder_type === 'inbox') || folders[0];
+        if (inbox) selectFolder(mbxId, inbox.id, inbox.folder_type, inbox.folder_name);
+        return !!inbox;
+    } catch (err) {
+        console.warn('tree cache unavailable', err);
+        return false;
+    }
+}
+
+function saveTreeToCache() {
+    if (!cacheOn()) return;
+    MailCache.setMeta('tree', { mailboxes: State.mailboxes, foldersByMailbox: State.foldersByMailbox })
+        .catch(err => console.warn('tree cache write failed', err));
 }
 
 /**
