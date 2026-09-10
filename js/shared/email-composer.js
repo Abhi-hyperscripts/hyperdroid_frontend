@@ -33,6 +33,17 @@
 //   });
 // ============================================================================
 
+
+// Enter makes a <p> (forced_root_block), and the editor iframe used to leave
+// paragraphs on the browser default 1em top+bottom margin — a 28px gap
+// between one-line paragraphs. The editor now styles p to 8px below, and the
+// same margin goes inline on the outgoing HTML so recipients see the spacing
+// the sender saw rather than their client's default.
+function inlineParagraphSpacing(html) {
+    return (html || '').replace(/<p(\s[^>]*)?>/gi, (m, attrs) =>
+        /style\s*=/i.test(attrs || '') ? m : `<p${attrs || ''} style="margin:0 0 8px">`);
+}
+
 (function (window, document) {
     'use strict';
 
@@ -353,6 +364,7 @@
             // quoted replies need their rule and their line wrapping from here.
             content_style: [
                 'body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #1f2430; margin: 14px 16px; }',
+                'p { margin: 0 0 8px; }',
                 'blockquote { margin: 12px 0; padding: 2px 0 2px 14px; border-left: 3px solid #d3d8e0; color: #55607a; }',
                 'body, p, div, td, blockquote { overflow-wrap: anywhere; }',
                 'a { color: #1a53c0; }'
@@ -456,7 +468,7 @@
         const fromId   = document.getElementById('emailComposerFrom').value;
         const subject  = document.getElementById('emailComposerSubject').value.trim();
         const ed       = getEditor();
-        const html     = ed ? (ed.getContent() || '') : '';
+        const html     = ed ? inlineParagraphSpacing(ed.getContent() || '') : '';
         const text     = ed ? (ed.getContent({ format: 'text' }) || '').trim() : '';
 
         const showErr = (msg) => {

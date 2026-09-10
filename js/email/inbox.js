@@ -177,6 +177,16 @@ function cacheRemove(ids) { if (cacheOn()) MailCache.deleteMessages(ids).catch(e
 // first openCompose() so the page paint isn't delayed by editor setup.
 // TinyMCE replaces Quill — see CRM Settings/Lead-journey for rationale.
 const COMPOSE_TMCE_ID = 'composeBodyEditor';
+
+// Enter makes a <p> (forced_root_block), and the editor iframe used to leave
+// paragraphs on the browser default 1em top+bottom margin — a 28px gap
+// between one-line paragraphs. The editor now styles p to 8px below, and the
+// same margin goes inline on the outgoing HTML so recipients see the spacing
+// the sender saw rather than their client's default.
+function inlineParagraphSpacing(html) {
+    return (html || '').replace(/<p(\s[^>]*)?>/gi, (m, attrs) =>
+        /style\s*=/i.test(attrs || '') ? m : `<p${attrs || ''} style="margin:0 0 8px">`);
+}
 let _composeTmceReady = null;
 
 function ensureComposeTmce() {
@@ -225,6 +235,7 @@ function ensureComposeTmce() {
         // quote styling and long-line wrapping have to come through here.
         content_style: [
             'body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #1f2430; margin: 14px 16px; }',
+            'p { margin: 0 0 8px; }',
             // Quoted replies arrived as literal "> " prefixed plain text and
             // ran past the right edge. Wrap them and give the block a rule
             // instead of leaving the markers to do the work.
@@ -250,7 +261,7 @@ function ensureComposeTmce() {
 
 function getComposeHtml() {
     const ed = (typeof tinymce !== 'undefined') ? tinymce.get(COMPOSE_TMCE_ID) : null;
-    return ed ? (ed.getContent() || '') : '';
+    return ed ? inlineParagraphSpacing(ed.getContent() || '') : '';
 }
 function getComposeText() {
     const ed = (typeof tinymce !== 'undefined') ? tinymce.get(COMPOSE_TMCE_ID) : null;
