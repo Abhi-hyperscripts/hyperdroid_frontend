@@ -6718,8 +6718,8 @@ input:checked + .slider:before {
 .employee-code-badge {
     font-size: 0.6rem;
     font-weight: 500;
-    color: var(--primary-color);
-    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    color: var(--brand-primary);
+    background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
     padding: 2px 6px;
     border-radius: 4px;
     white-space: nowrap;
@@ -9435,34 +9435,34 @@ input:checked + .slider:before {
 }
 
 .type-card:hover .type-card-content {
-    border-color: var(--primary-color);
+    border-color: var(--brand-primary);
     background: var(--bg-elevated);
 }
 
 .type-card input[type="radio"]:checked + .type-card-content {
-    border-color: var(--primary-color);
-    background: color-mix(in srgb, var(--primary-color) 8%, var(--bg-card));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 15%, transparent);
+    border-color: var(--brand-primary);
+    background: color-mix(in srgb, var(--brand-primary) 8%, var(--bg-card));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 15%, transparent);
 }
 
 .type-card input[type="radio"]:checked + .type-card-content svg {
-    color: var(--primary-color);
+    color: var(--brand-primary);
 }
 
 .type-card input[type="radio"]:checked + .type-card-content .type-name {
-    color: var(--primary-color);
+    color: var(--brand-primary);
 }
 
 /* Recovery type - red accent when selected */
 .type-card[data-type="recovery"] input[type="radio"]:checked + .type-card-content {
-    border-color: var(--danger-color);
-    background: color-mix(in srgb, var(--danger-color) 8%, var(--bg-card));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-color) 15%, transparent);
+    border-color: var(--color-error);
+    background: color-mix(in srgb, var(--color-error) 8%, var(--bg-card));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 15%, transparent);
 }
 
 .type-card[data-type="recovery"] input[type="radio"]:checked + .type-card-content svg,
 .type-card[data-type="recovery"] input[type="radio"]:checked + .type-card-content .type-name {
-    color: var(--danger-color);
+    color: var(--color-error);
 }
 
 /* ============================================
@@ -10048,8 +10048,8 @@ input:checked + .slider:before {
 .adj-employee-code {
     font-size: 11px;
     font-weight: 500;
-    color: var(--primary-color);
-    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    color: var(--brand-primary);
+    background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
     padding: 2px 8px;
     border-radius: 4px;
 }
@@ -11562,7 +11562,7 @@ input:checked + .slider:before {
 
 .salary-actions .btn-icon:hover {
     background: var(--bg-tertiary);
-    border-color: var(--primary-color);
+    border-color: var(--brand-primary);
 }
 
 .salary-actions .btn-icon.btn-danger {
