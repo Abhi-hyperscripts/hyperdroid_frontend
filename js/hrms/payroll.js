@@ -1315,7 +1315,7 @@ function updatePayrollDraftsTable(draftsList) {
             <td>${draft.total_employees || 0}</td>
             <td style="white-space:nowrap">${formatCurrency(draft.total_gross, draft.currency_code, draft.currency_symbol)}</td>
             <td style="white-space:nowrap">${formatCurrency(draft.total_net, draft.currency_code, draft.currency_symbol)}</td>
-            <td><span class="status-badge status-${escapeHtml(String(draft.status || '').toLowerCase())}">${escapeHtml(formatDraftStatus(draft.status))}</span></td>
+            <td><span class="status-badge status-${escapeHtml(draftStatusClass(draft))}">${escapeHtml(formatDraftStatus(draft.status, draft))}</span></td>
             <td>${formatDate(draft.created_at)}</td>
             <td>
                 <div class="action-buttons">
@@ -1346,11 +1346,13 @@ function updatePayrollDraftsTable(draftsList) {
                             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                         </svg>
                     </button>
+                    ${(draft.total_employees || 0) > 0 ? `
                     <button class="action-btn success" onclick="finalizeDraft('${escapeHtml(draft.id)}')" title="Finalize Draft">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                     </button>
+                    ` : ''}
                     ` : ''}
                     <button class="action-btn" onclick="renameDraft('${escapeHtml(draft.id)}', '${escapeHtml(String(draft.draft_name || 'Draft').replace(/'/g, '&#39;'))}')" title="Rename">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1370,7 +1372,20 @@ function updatePayrollDraftsTable(draftsList) {
     `).join('');
 }
 
-function formatDraftStatus(status) {
+// A draft is only "ready" when it actually holds payslips. Processing can end
+// with EVERY employee rejected (a salary structure that pays more than CTC did
+// exactly that on a test tenant) and the status is still 'processed' — showing
+// that as "Ready to Finalize" with 0 employees sent the user looking for an
+// error that the screen never named.
+function draftHasNoPayslips(draft) {
+    return draft && draft.status === 'processed' && !(draft.total_employees > 0);
+}
+function draftStatusClass(draft) {
+    if (draftHasNoPayslips(draft)) return 'needs-attention';
+    return String(draft?.status || '').toLowerCase();
+}
+function formatDraftStatus(status, draft) {
+    if (draft && draftHasNoPayslips(draft)) return 'No payslips — needs attention';
     const statusMap = {
         'pending': 'Not Processed',
         'processing': 'Processing...',
@@ -1820,11 +1835,14 @@ async function recalculateDraft(draftId) {
             method: 'POST'
         });
 
-        showToast(`Draft recalculated! ${result.payslips_generated || 0} payslips regenerated`, 'success');
-        await loadPayrollDrafts();
         hideLoading();
+        await loadPayrollDrafts();
+        // Same outcome handling as Process: the backend returns per-employee
+        // errors on this call too, and a green "0 payslips regenerated" toast
+        // over an empty details window told the user nothing.
+        await showProcessOutcome(result);
 
-        if (result.draft_id) {
+        if (result.draft_id && (result.payslips_generated || 0) > 0) {
             await viewDraftDetails(result.draft_id);
         }
     } catch (error) {

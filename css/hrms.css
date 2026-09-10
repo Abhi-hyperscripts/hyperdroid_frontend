@@ -23909,3 +23909,10 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     border-color: #ef4444;
     background: rgba(239, 68, 68, 0.1);
 }
+
+/* A processed payroll draft that holds NO payslips (every employee rejected) —
+   distinct from "Ready to Finalize" so the failure is visible in the list. */
+.status-badge.status-needs-attention {
+    background: color-mix(in srgb, var(--color-error) 15%, transparent);
+    color: var(--color-error);
+}
