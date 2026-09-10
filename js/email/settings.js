@@ -53,7 +53,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Phase 6a — Connect Gmail kicks off the OAuth dance owned by EmailService.
     // Popup → consent → callback closes via postMessage.
     const gmailBtn = document.getElementById('btnConnectGmail');
-    if (gmailBtn) gmailBtn.addEventListener('click', connectGmailOAuth);
+    if (gmailBtn) {
+        gmailBtn.addEventListener('click', connectGmailOAuth);
+        // The button ships hidden. Show it only when the backend can actually
+        // complete the Google consent flow for this tenant (BYOC client,
+        // platform client or baked credentials) — a stock deployment has none,
+        // and a button that always errors is worse than no button.
+        api.request('/email/google-oauth/status', { _skipSpinner: true })
+            .then(st => { if (st && st.gmail_oauth_available) gmailBtn.hidden = false; })
+            .catch(() => { /* leave hidden */ });
+    }
     document.getElementById('mailboxModalClose').addEventListener('click', closeMailboxModal);
     document.getElementById('mailboxModal').addEventListener('click', e => {
         if (e.target.id === 'mailboxModal') closeMailboxModal();

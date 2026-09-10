@@ -39,12 +39,14 @@
         <div class="email-settings-header">
             <div>
                 <h1>Mailbox settings</h1>
-                <p>Connect Gmail (consumer or Workspace), Microsoft 365, or any IMAP/SMTP account so EmailService can sync mail and let you send.</p>
+                <p>Add any mailbox that supports IMAP and SMTP &mdash; Gmail and Google Workspace with an app password, Zoho, Titan, Hostinger, Yahoo, iCloud and your own domain &mdash; and Ragenaizer syncs mail and lets you send from it. Microsoft 365 and Outlook.com require sign-in with Microsoft, which is coming next.</p>
             </div>
             <div style="display:flex; gap:10px;">
                 <!-- Phase 6a — Google OAuth dance lives here in EmailService.
                      Same code path serves @gmail.com and Google Workspace. -->
-                <button class="email-settings-add" id="btnConnectGmail" style="background:#fff; color:#3c4043; border:1px solid #dadce0;">
+                <!-- Hidden until GET /email/google-oauth/status says a Google OAuth client is
+                     configured for this tenant; otherwise every click ended in an error. -->
+                <button class="email-settings-add" id="btnConnectGmail" hidden style="background:#fff; color:#3c4043; border:1px solid #dadce0;">
                     <svg viewBox="0 0 48 48" width="18" height="18" style="margin-right:6px; vertical-align:-3px;">
                         <path fill="#4285f4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84a10.13 10.13 0 0 1-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
                         <path fill="#34a853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7A21.99 21.99 0 0 0 24 46z"/>
