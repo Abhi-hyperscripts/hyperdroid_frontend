@@ -358,7 +358,9 @@ function inlineParagraphSpacing(html) {
             link_default_target: '_blank',
             link_default_protocol: 'https',
             link_assume_external_targets: 'https',
-            keep_styles: true, forced_root_block: 'p', element_format: 'html',
+            keep_styles: true,
+            // Gmail / Outlook model: Enter is a new line (margin-less <div>), see inbox.js
+            forced_root_block: 'div', block_formats: 'Normal=div;Paragraph=p;Heading 1=h1;Heading 2=h2;Heading 3=h3;Preformatted=pre', element_format: 'html',
             verify_html: false, cleanup: false, convert_urls: false, entity_encoding: 'raw',
             // The editor body is an iframe, so page CSS cannot reach it —
             // quoted replies need their rule and their line wrapping from here.

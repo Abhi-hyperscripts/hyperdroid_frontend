@@ -225,7 +225,11 @@ function ensureComposeTmce() {
         link_default_protocol: 'https',
         link_assume_external_targets: 'https',
         keep_styles: true,
-        forced_root_block: 'p',
+        // Gmail / Outlook model: Enter is a new LINE (a margin-less <div>), a
+        // blank line is an empty one, so the gap on screen is exactly the number
+        // of Enters typed. 'p' was the word-processor model with a margin per block.
+        forced_root_block: 'div',
+        block_formats: 'Normal=div;Paragraph=p;Heading 1=h1;Heading 2=h2;Heading 3=h3;Preformatted=pre',
         element_format: 'html',
         verify_html: false,
         cleanup: false,
