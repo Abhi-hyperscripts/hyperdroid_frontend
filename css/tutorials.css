@@ -210,3 +210,13 @@ body.legal-desk.tutorials-page .lg-toc { padding-left: 12px; }
        `body.legal-desk .legal-section` — a plain `.tutorials-page` selector loses to both. */
     body.legal-desk.tutorials-page .tut-start { padding: 1.15rem 1.15rem 1rem; }
 }
+
+/* A short caveat under a video — provider quirks, what to do when it stops working. */
+.tutorials-page .tut-item .tut-note {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--dk-mute, rgba(255, 255, 255, 0.62));
+  border-left: 2px solid rgba(167, 139, 250, 0.6);
+  padding-left: 12px;
+}
