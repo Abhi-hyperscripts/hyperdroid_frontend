@@ -9440,9 +9440,9 @@ input:checked + .slider:before {
 }
 
 .type-card input[type="radio"]:checked + .type-card-content {
-    border-color: var(--brand-primary);
-    background: color-mix(in srgb, var(--brand-primary) 8%, var(--bg-card));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 15%, transparent);
+    border-color: var(--brand-primary) !important;
+    background: color-mix(in srgb, var(--brand-primary) 8%, var(--bg-card)) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 15%, transparent) !important;
 }
 
 .type-card input[type="radio"]:checked + .type-card-content svg {
@@ -9455,9 +9455,9 @@ input:checked + .slider:before {
 
 /* Recovery type - red accent when selected */
 .type-card[data-type="recovery"] input[type="radio"]:checked + .type-card-content {
-    border-color: var(--color-error);
-    background: color-mix(in srgb, var(--color-error) 8%, var(--bg-card));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 15%, transparent);
+    border-color: var(--color-error) !important;
+    background: color-mix(in srgb, var(--color-error) 8%, var(--bg-card)) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 15%, transparent) !important;
 }
 
 .type-card[data-type="recovery"] input[type="radio"]:checked + .type-card-content svg,
@@ -23562,17 +23562,17 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 
 /* Selected state - Strong brand color accent */
 .regime-card.selected {
-    border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px var(--brand-primary-light, rgba(79, 70, 229, 0.1)), var(--shadow-md);
-    background: var(--bg-card-hover);
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 3px var(--brand-primary-light, rgba(79, 70, 229, 0.1)), var(--shadow-md) !important;
+    background: var(--bg-card-hover) !important;
 }
 
 [data-theme="light"] .regime-card.selected {
-    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%) !important;
 }
 
 [data-theme="dark"] .regime-card.selected {
-    background: linear-gradient(135deg, #3730a3 0%, #312e81 100%);
+    background: linear-gradient(135deg, #3730a3 0%, #312e81 100%) !important;
 }
 
 .regime-card.selected:hover {

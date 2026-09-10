@@ -1976,9 +1976,9 @@
 }
 
 .regime-card.selected {
-    border-color: var(--brand-primary);
-    background: var(--bg-selected, rgba(59, 130, 246, 0.06));
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    border-color: var(--brand-primary) !important;
+    background: var(--bg-selected, rgba(59, 130, 246, 0.06)) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
 }
 
 .regime-card.locked {
