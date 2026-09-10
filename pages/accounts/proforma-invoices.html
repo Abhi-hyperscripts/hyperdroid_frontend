@@ -260,7 +260,8 @@
                         <!-- Existing-customer mode -->
                         <div class="form-group" id="proformaCustomerGroup">
                             <label for="proformaCustomerId">Customer <span class="req">*</span></label>
-                            <select id="proformaCustomerId" class="form-control">
+                            <select id="proformaCustomerId" class="form-control"
+                                    data-quick-add="openCustomerQuickAdd" data-quick-add-title="Add a new customer">
                                 <option value="">Select customer…</option>
                             </select>
                         </div>
@@ -462,6 +463,7 @@
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"><\/script>');
         document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/customer-quick-add.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/proforma-invoices.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 

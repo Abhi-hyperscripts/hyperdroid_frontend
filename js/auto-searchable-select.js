@@ -17,6 +17,11 @@
  *   - Re-renders the SearchableDropdown when the underlying <select>'s
  *     option list is repopulated (cascading dropdowns: country -> state).
  *
+ * Opt-in extras
+ *   - `data-quick-add="globalFnName"` renders a "+" button inside the dropdown
+ *     and calls `window.globalFnName(select, instance)` when clicked. Use
+ *     `data-quick-add-title` to label it. See js/accounts/customer-quick-add.js.
+ *
  * Opt-out
  *   - Add `data-no-sd="true"` on a <select> to skip auto-conversion.
  *   - `<select multiple>` and `<select size="N">` (N>1) are skipped.
@@ -97,6 +102,33 @@
         obs.observe(select, { attributes: true, attributeFilter: ['style', 'class', 'hidden'] });
     }
 
+    /**
+     * Optional "+" affordance inside the generated dropdown.
+     *
+     * Opt-in with `data-quick-add="globalFunctionName"` (and optionally
+     * `data-quick-add-title="Create new X"`) on the <select>. The named
+     * function is resolved off `window` at CLICK time, not at conversion time,
+     * so the script that defines it may load in any order.
+     */
+    function buildQuickAdd(select) {
+        const fnName = select.dataset.quickAdd;
+        if (!fnName) return null;
+        return {
+            title: select.dataset.quickAddTitle || 'Add new',
+            onClick: (instance) => {
+                const fn = window[fnName];
+                if (typeof fn !== 'function') {
+                    console.warn(
+                        `[auto-sd] data-quick-add="${fnName}" on #${select.id} but ` +
+                        `window.${fnName} is not a function. A function declared inside a ` +
+                        `module or IIFE is NOT on window — assign it explicitly.`);
+                    return;
+                }
+                return fn(select, instance);
+            }
+        };
+    }
+
     function buildOptions(select) {
         return Array.from(select.options).map(o => ({
             value: o.value,
@@ -148,6 +180,7 @@
             placeholder,
             compact: !!compact,
             disabled: select.disabled,
+            quickAdd: buildQuickAdd(select),
             onChange: (val) => {
                 if (select.value === val) return;
                 select.value = val;

@@ -110,6 +110,32 @@ function populateSelect(selectId, items, valueField, labelField, placeholder) {
     });
 }
 
+/**
+ * A customer created from the picker's "+" (js/accounts/customer-quick-add.js).
+ *
+ * ORDER MATTERS. The page's own `customers` array is refreshed FIRST, because
+ * it — not the <select> — is what feeds the zero-rating check, the price-list
+ * lookup and the HSN warning. Repopulating the options while leaving the array
+ * stale would show the new customer and then silently mis-handle it: an
+ * overseas party would not zero-rate, and their price list would not load.
+ *
+ * Then the option lists, then the value on the picker that asked, then the
+ * `change` event so the existing handler runs exactly as it does for a
+ * hand-picked customer.
+ */
+document.addEventListener('accounts:customer-created', (e) => {
+    const detail = e.detail || {};
+    if (Array.isArray(detail.customers)) customers = detail.customers;
+
+    populateSelect('proformaCustomerId', customers, 'id', 'name', 'Select customer...');
+
+    const sel = detail.sourceSelectId && document.getElementById(detail.sourceSelectId);
+    if (sel && detail.customer && detail.customer.id) {
+        sel.value = detail.customer.id;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+});
+
 // ============================================================================
 // SEARCH & DATE PICKERS
 // ============================================================================

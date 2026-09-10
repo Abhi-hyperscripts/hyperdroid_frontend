@@ -776,7 +776,8 @@
                     <div class="pgrid">
                         <div class="form-group">
                             <label for="invoiceCustomerId">Customer <span class="req">*</span></label>
-                            <select id="invoiceCustomerId" class="form-control" required>
+                            <select id="invoiceCustomerId" class="form-control" required
+                                    data-quick-add="openCustomerQuickAdd" data-quick-add-title="Add a new customer">
                                 <option value="">Select customer…</option>
                             </select>
                         </div>
@@ -981,7 +982,7 @@
                         <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="cnCustomerId">Customer *</label>
-                                <select id="cnCustomerId" class="form-control" required onchange="loadCustomerInvoicesForCN()">
+                                <select id="cnCustomerId" class="form-control" required onchange="loadCustomerInvoicesForCN()" data-quick-add="openCustomerQuickAdd" data-quick-add-title="Add a new customer">
                                     <option value="">Select customer...</option>
                                 </select>
                             </div>
@@ -1178,6 +1179,7 @@
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-charts.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/customer-quick-add.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/receivables.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 
