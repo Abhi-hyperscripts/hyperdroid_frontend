@@ -37,6 +37,8 @@
     let accounts = [];       // the tenant's chart
     let customers = [];
     let vendors = [];
+    let items = [];           // inventory items, for the stock step
+    let assetCategories = [];  // fixed-asset categories, for the asset step
     let steps = [];          // resolved question steps, in order
     let stepIndex = 0;
     let asOfDate = '';
@@ -64,25 +66,6 @@
             q: 'Do you run a separate petty cash float?',
             help: 'Only if you keep it apart from the main till. If it is all one pot, say no — you have already counted it above.',
             amountLabel: 'Petty cash float'
-        },
-        {
-            key: 'stock', side: 'debit', codes: ['1135'], match: /stock|inventory/i,
-            q: 'Do you hold stock you have not sold yet?',
-            help: 'Value it at what it COST you, not at the price you will sell it for.',
-            amountLabel: 'Cost of stock on hand',
-            warn: 'This records a total value only. If you track stock item by item, also run the opening-stock import so quantities match — otherwise your cost of sales will be wrong on the first sale.'
-        },
-        {
-            key: 'equipment', side: 'debit', codes: ['1230'], match: /equipment|computer/i,
-            q: 'Do you own computers, equipment or furniture?',
-            help: 'What they are realistically worth today, after wear and tear — not what you paid years ago.',
-            amountLabel: 'Current value'
-        },
-        {
-            key: 'coldEquip', side: 'debit', codes: ['1240'], match: /refrigerat/i,
-            q: 'Any refrigeration or store equipment?',
-            help: 'Same idea — what it is worth now.',
-            amountLabel: 'Current value'
         },
         {
             key: 'salaryDue', side: 'credit', codes: ['2120'], match: /salary payable/i,
@@ -156,6 +139,33 @@
             });
         }
 
+        // ⭐ STOCK AND ASSETS ARE ITEMISED, for the same reason AR/AP are: a total
+        // value with nothing behind it is drift that nothing downstream notices.
+        //   - A stock VALUE with no per-item quantities makes cost of sales wrong
+        //     on the very first sale, because there is no cost layer to consume.
+        //   - An equipment VALUE with no register row cannot depreciate, so the
+        //     balance sheet slowly overstates assets for the rest of the company's
+        //     life and nobody is told.
+        // Both of these post their OWN ledger entries (against the same contra), so
+        // neither may also be sent as a coa/opening-balances row — that would double
+        // the whole figure. See buildPlan, which keeps them out of glRows.
+        if (items.length) {
+            steps.push({
+                key: 'stock', kind: 'stock',
+                q: 'Do you hold stock you have not sold yet?',
+                help: 'Enter it item by item at what it COST you, not the selling price. Per-item quantities are what make your cost of sales right on the first sale.'
+            });
+        }
+        // Asked even with no asset categories set up: dropping the question would
+        // mean a tenant never learns they could have recorded assets at all, and
+        // silently carrying none is the outcome this whole step exists to stop. The
+        // follow-up explains the prerequisite instead.
+        steps.push({
+            key: 'assets', kind: 'assets',
+            q: 'Do you own equipment, computers, furniture or vehicles?',
+            help: 'One line per thing, at what it is realistically worth TODAY after wear and tear. Each becomes a real asset record that depreciates from here on.'
+        });
+
         steps.push({
             key: 'ar', kind: 'party', partyType: 'customer',
             q: 'Do any customers still owe you money?',
@@ -204,6 +214,33 @@
                     ${step.gstOut.length ? `<div class="obw-subhead">GST you have collected but not yet paid</div>
                         <div class="obw-grid3">${step.gstOut.map(row).join('')}</div>` : ''}
                 </div>`;
+        } else if (yes && step.kind === 'stock') {
+            const rows = (a.rows && a.rows.length) ? a.rows : [{ sku: '', quantity: '', unit_cost: '' }];
+            body = `
+                <div class="obw-followup">
+                    <table class="obw-party-table">
+                        <thead><tr>
+                            <th>Item</th><th style="width:110px">Quantity</th>
+                            <th style="width:140px">Cost each</th><th style="width:36px"></th>
+                        </tr></thead>
+                        <tbody id="obwStockRows">${rows.map((r, i) => stockRowHtml(r, i)).join('')}</tbody>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-outline" id="obwAddStock" style="margin-top:0.6rem;">+ Add another</button>
+                </div>`;
+        } else if (yes && step.kind === 'assets') {
+            const rows = (a.rows && a.rows.length) ? a.rows : [{ name: '', category: '', value: '' }];
+            body = `
+                <div class="obw-followup">
+                    <table class="obw-party-table">
+                        <thead><tr>
+                            <th>What is it</th><th style="width:190px">Kind</th>
+                            <th style="width:140px">Worth today</th><th style="width:36px"></th>
+                        </tr></thead>
+                        <tbody id="obwAssetRows">${rows.map((r, i) => assetRowHtml(r, i)).join('')}</tbody>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-outline" id="obwAddAsset" style="margin-top:0.6rem;">+ Add another</button>
+                    ${assetCategories.length === 0 ? `<small class="field-hint obw-warn">No asset kinds are set up yet. Create at least one under Assets &rsaquo; Categories (it decides the depreciation rate), then come back — assets cannot be recorded without one.</small>` : ''}
+                </div>`;
         } else if (yes && step.kind === 'party') {
             const list = step.partyType === 'customer' ? customers : vendors;
             const rows = (a.rows && a.rows.length) ? a.rows : [{ party: '', amount: '', reference: '' }];
@@ -232,6 +269,35 @@
             ${body}`;
     }
 
+    function stockRowHtml(row, i) {
+        const opts = ['<option value="">Select…</option>']
+            .concat(items.map(it => {
+                const sku = it.sku || it.code || '';
+                const label = sku ? `${sku} — ${it.name || ''}` : (it.name || '');
+                return `<option value="${esc(sku)}"${sku === row.sku ? ' selected' : ''}>${esc(label)}</option>`;
+            })).join('');
+        return `
+            <tr data-row="${i}">
+                <td><select class="form-control obw-sku" data-no-sd="true">${opts}</select></td>
+                <td><input type="number" class="form-control obw-qty" min="0" step="any" placeholder="0" value="${row.quantity ? esc(row.quantity) : ''}"></td>
+                <td><input type="number" class="form-control obw-cost" min="0" step="0.01" placeholder="0.00" value="${row.unit_cost ? esc(row.unit_cost) : ''}"></td>
+                <td><button type="button" class="btn-icon btn-icon-danger obw-del" title="Remove">&times;</button></td>
+            </tr>`;
+    }
+
+    function assetRowHtml(row, i) {
+        const opts = ['<option value="">Select…</option>']
+            .concat(assetCategories.map(c => `<option value="${esc(c.id)}"${c.id === row.category ? ' selected' : ''}>${esc(c.name)}</option>`))
+            .join('');
+        return `
+            <tr data-row="${i}">
+                <td><input type="text" class="form-control obw-aname" placeholder="e.g. Billing counter PC" value="${esc(row.name || '')}"></td>
+                <td><select class="form-control obw-acat" data-no-sd="true">${opts}</select></td>
+                <td><input type="number" class="form-control obw-aval" min="0" step="0.01" placeholder="0.00" value="${row.value ? esc(row.value) : ''}"></td>
+                <td><button type="button" class="btn-icon btn-icon-danger obw-del" title="Remove">&times;</button></td>
+            </tr>`;
+    }
+
     function partyRowHtml(list, row, i) {
         const opts = ['<option value="">Select…</option>']
             .concat(list.map(p => `<option value="${esc(p.name)}"${p.name === row.party ? ' selected' : ''}>${esc(p.name)}</option>`))
@@ -247,9 +313,11 @@
 
     /** Everything the wizard will post, as plain rows a reviewer can check. */
     function buildPlan() {
-        const glRows = [];   // -> coa/opening-balances/bulk
-        const arRows = [];   // -> import/opening-balances
+        const glRows = [];    // -> coa/opening-balances/bulk
+        const arRows = [];    // -> import/opening-balances
         const apRows = [];
+        const stockRows = []; // -> import/opening-stock   (posts its own GL)
+        const assetRows = []; // -> fixed-assets           (posts its own GL)
 
         steps.forEach(step => {
             const a = answers[step.key];
@@ -260,6 +328,16 @@
             } else if (step.kind === 'gst') {
                 step.gstIn.forEach(g => { if (a[g.key] > 0) glRows.push({ account: g.account, amount: a[g.key], side: 'debit', label: g.label }); });
                 step.gstOut.forEach(g => { if (a[g.key] > 0) glRows.push({ account: g.account, amount: a[g.key], side: 'credit', label: g.label }); });
+            } else if (step.kind === 'stock') {
+                (a.rows || []).forEach(r => {
+                    if (r.sku && r.quantity > 0 && r.unit_cost > 0) {
+                        stockRows.push({ sku: r.sku, quantity: r.quantity, unit_cost: r.unit_cost });
+                    }
+                });
+            } else if (step.kind === 'assets') {
+                (a.rows || []).forEach(r => {
+                    if (r.name && r.category && r.value > 0) assetRows.push(r);
+                });
             } else if (step.kind === 'party') {
                 (a.rows || []).forEach(r => {
                     if (!r.party || !(r.amount > 0)) return;
@@ -275,12 +353,20 @@
             }
         });
 
+        // Stock and assets are debits too — they post their own entries, but they are
+        // still things the business OWNS and belong in the figure shown to the user.
+        // Leaving them out would understate the stake by exactly their value.
+        const stockValue = stockRows.reduce((s, r) => s + r.quantity * r.unit_cost, 0);
+        const assetValue = assetRows.reduce((s, r) => s + r.value, 0);
+
         const debits = glRows.filter(r => r.side === 'debit').reduce((s, r) => s + r.amount, 0)
-                     + arRows.reduce((s, r) => s + r.amount, 0);
+                     + arRows.reduce((s, r) => s + r.amount, 0)
+                     + stockValue + assetValue;
         const credits = glRows.filter(r => r.side === 'credit').reduce((s, r) => s + r.amount, 0)
                       + apRows.reduce((s, r) => s + r.amount, 0);
 
-        return { glRows, arRows, apRows, debits, credits, stake: debits - credits };
+        return { glRows, arRows, apRows, stockRows, assetRows, stockValue, assetValue,
+                 debits, credits, stake: debits - credits };
     }
 
     function reviewHtml() {
@@ -301,7 +387,25 @@
                 <td class="obw-amt">${money(r.amount)}</td>
             </tr>`;
 
-        if (!p.glRows.length && !p.arRows.length && !p.apRows.length) {
+        const stockLine = (r) => `
+            <tr>
+                <td>${esc(r.sku)}</td>
+                <td class="obw-acct">Opening stock · ${esc(r.quantity)} &times; ${money(r.unit_cost)}</td>
+                <td class="obw-side">Money in / owned</td>
+                <td class="obw-amt">${money(r.quantity * r.unit_cost)}</td>
+            </tr>`;
+        const assetLine = (r) => {
+            const cat = assetCategories.find(c => c.id === r.category);
+            return `
+            <tr>
+                <td>${esc(r.name)}</td>
+                <td class="obw-acct">Asset register${cat ? ' · ' + esc(cat.name) : ''}</td>
+                <td class="obw-side">Money in / owned</td>
+                <td class="obw-amt">${money(r.value)}</td>
+            </tr>`;
+        };
+
+        if (!p.glRows.length && !p.arRows.length && !p.apRows.length && !p.stockRows.length && !p.assetRows.length) {
             return `<div class="obw-q">Nothing to record</div>
                     <div class="obw-help">You answered no to everything. Go back if that was not what you meant.</div>`;
         }
@@ -312,6 +416,8 @@
             <table class="obw-review">
                 <tbody>
                     ${p.glRows.map(r => line(r.label, r.account, r.amount, r.side)).join('')}
+                    ${p.stockRows.map(stockLine).join('')}
+                    ${p.assetRows.map(assetLine).join('')}
                     ${p.arRows.map(r => partyLine(r, 'ar')).join('')}
                     ${p.apRows.map(r => partyLine(r, 'ap')).join('')}
                 </tbody>
@@ -361,6 +467,27 @@
             });
         });
 
+        if (step.kind === 'stock' || step.kind === 'assets') {
+            const blank = step.kind === 'stock'
+                ? { sku: '', quantity: '', unit_cost: '' }
+                : { name: '', category: '', value: '' };
+            document.getElementById(step.kind === 'stock' ? 'obwAddStock' : 'obwAddAsset')
+                ?.addEventListener('click', () => {
+                    captureStep(step);
+                    const a2 = answers[step.key];
+                    a2.rows = (a2.rows || []).concat([{ ...blank }]);
+                    render();
+                });
+            body.querySelectorAll('.obw-del').forEach(b => b.addEventListener('click', (e) => {
+                captureStep(step);
+                const idx = Number(e.target.closest('tr').dataset.row);
+                const a2 = answers[step.key];
+                a2.rows = (a2.rows || []).filter((_, i) => i !== idx);
+                if (!a2.rows.length) a2.rows = [{ ...blank }];
+                render();
+            }));
+        }
+
         if (step.kind === 'party') {
             const add = document.getElementById('obwAddParty');
             add?.addEventListener('click', () => {
@@ -392,6 +519,18 @@
         } else if (step.kind === 'gst') {
             step.gstIn.forEach(g => { a[g.key] = num('obw_' + g.key); });
             step.gstOut.forEach(g => { a[g.key] = num('obw_' + g.key); });
+        } else if (step.kind === 'stock') {
+            a.rows = [...document.querySelectorAll('#obwStockRows tr')].map(tr => ({
+                sku: tr.querySelector('.obw-sku')?.value || '',
+                quantity: parseFloat(tr.querySelector('.obw-qty')?.value) || 0,
+                unit_cost: parseFloat(tr.querySelector('.obw-cost')?.value) || 0
+            }));
+        } else if (step.kind === 'assets') {
+            a.rows = [...document.querySelectorAll('#obwAssetRows tr')].map(tr => ({
+                name: (tr.querySelector('.obw-aname')?.value || '').trim(),
+                category: tr.querySelector('.obw-acat')?.value || '',
+                value: parseFloat(tr.querySelector('.obw-aval')?.value) || 0
+            }));
         } else if (step.kind === 'party') {
             a.rows = [...document.querySelectorAll('#obwPartyRows tr')].map(tr => ({
                 party: tr.querySelector('.obw-party')?.value || '',
@@ -411,7 +550,7 @@
 
     async function save() {
         const p = buildPlan();
-        if (!p.glRows.length && !p.arRows.length && !p.apRows.length) {
+        if (!p.glRows.length && !p.arRows.length && !p.apRows.length && !p.stockRows.length && !p.assetRows.length) {
             Toast.error('Nothing to save — go back and answer at least one question.');
             return;
         }
@@ -420,12 +559,22 @@
         const btn = document.getElementById('obwNext');
         if (btn) btn.disabled = true;
 
+        // ⭐ THIS SPANS FOUR SUBSYSTEMS AND CANNOT BE ONE TRANSACTION. The GL bulk
+        // is atomic within itself; the stock import, the asset register and the
+        // AR/AP import each commit separately. So the order below is chosen to make
+        // a failure as harmless as possible, and `written` exists so a failure tells
+        // the truth about what DID land rather than claiming nothing did — which is
+        // the lie the first version of this told, and the one that would send a user
+        // to re-enter figures that are already in the ledger.
+        //
+        //  1. Dry-run everything that CAN be dry-run, before writing anything.
+        //  2. Assets next: the register has no dry run, so it is the one that can
+        //     still surprise us — better it fails with nothing else written.
+        //  3. Then the GL bulk, stock and parties, whose dry runs already passed.
+        const written = [];
         try {
-            // AR/AP first and as a DRY RUN, because it is the half that can fail
-            // on data rather than arithmetic — a party name that does not match,
-            // or a party that already carries an opening balance. Finding that
-            // out after the GL half is posted would leave a half-migrated set.
             const partyRows = p.arRows.concat(p.apRows);
+
             if (partyRows.length) {
                 const dry = await api.request(AccountsCommon.buildUrl('import/opening-balances'), {
                     method: 'POST',
@@ -433,9 +582,42 @@
                 });
                 const bad = (dry?.rows || dry?.results || []).filter(r => r.outcome === 'error');
                 if (bad.length) {
-                    Toast.error(`Nothing was saved. ${bad.length} party row${bad.length === 1 ? '' : 's'} would fail: ${bad.slice(0, 3).map(b => b.message).join('; ')}`);
+                    Toast.error(`Nothing was saved. ${bad.length} customer/supplier row${bad.length === 1 ? '' : 's'} would fail: ${bad.slice(0, 3).map(b => b.message).join('; ')}`);
                     return;
                 }
+            }
+
+            if (p.stockRows.length) {
+                const dry = await api.request(AccountsCommon.buildUrl('import/opening-stock'), {
+                    method: 'POST',
+                    body: JSON.stringify({ rows: p.stockRows, dry_run: true, as_of_date: asOfDate })
+                });
+                const bad = (dry?.rows || []).filter(r => r.outcome === 'error');
+                if (bad.length) {
+                    Toast.error(`Nothing was saved. ${bad.length} stock row${bad.length === 1 ? '' : 's'} would fail: ${bad.slice(0, 3).map(b => b.message).join('; ')}`);
+                    return;
+                }
+            }
+
+            // Assets first among the writes — no dry run available for the register.
+            // funding_source 'opening' credits the same contra as everything else
+            // here: 'bank' would drain the opening bank balance just keyed in, and
+            // 'payable' would invent a supplier debt for a desk bought years ago.
+            // See AssetOpeningBalanceFundingTests.
+            for (const r of p.assetRows) {
+                await api.request(AccountsCommon.buildUrl('assets'), {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        asset_code: 'OB-' + Math.random().toString(36).slice(2, 8).toUpperCase(),
+                        name: r.name,
+                        asset_category_id: r.category,
+                        purchase_date: asOfDate,
+                        purchase_cost: r.value,
+                        salvage_value: 0,
+                        funding_source: 'opening'
+                    })
+                });
+                written.push(`asset "${r.name}"`);
             }
 
             if (p.glRows.length) {
@@ -450,6 +632,15 @@
                         }))
                     })
                 });
+                written.push(`${p.glRows.length} account balance${p.glRows.length === 1 ? '' : 's'}`);
+            }
+
+            if (p.stockRows.length) {
+                await api.request(AccountsCommon.buildUrl('import/opening-stock'), {
+                    method: 'POST',
+                    body: JSON.stringify({ rows: p.stockRows, dry_run: false, as_of_date: asOfDate })
+                });
+                written.push(`${p.stockRows.length} stock line${p.stockRows.length === 1 ? '' : 's'}`);
             }
 
             if (partyRows.length) {
@@ -457,6 +648,7 @@
                     method: 'POST',
                     body: JSON.stringify({ rows: partyRows, dry_run: false, as_of_date: asOfDate })
                 });
+                written.push(`${partyRows.length} customer/supplier balance${partyRows.length === 1 ? '' : 's'}`);
             }
 
             AccountsCommon.closeModal(MODAL_ID);
@@ -465,7 +657,12 @@
         } catch (err) {
             console.error('[OBWizard] save failed:', err);
             const msg = err.message || 'Could not save the opening balances.';
-            Toast.error(msg.includes('NOTHING was saved') ? msg : `Nothing was saved — ${msg}`);
+            // Say exactly what landed. Telling someone "nothing was saved" when half
+            // of it was is worse than the failure: they re-enter it and the ledger
+            // doubles.
+            Toast.error(written.length
+                ? `Stopped after saving ${written.join(', ')}. The rest was NOT saved — ${msg} Re-run the wizard for the remaining items only.`
+                : `Nothing was saved — ${msg}`);
         } finally {
             AccountsCommon.endSubmit('obWizard');
             const b = document.getElementById('obwNext');
@@ -543,15 +740,19 @@
         document.getElementById('obwBody').innerHTML = '<div class="obw-help">Loading your chart of accounts…</div>';
 
         try {
-            const [coa, cust, vend] = await Promise.all([
+            const [coa, cust, vend, inv, cats] = await Promise.all([
                 api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }),
                 api.request(AccountsCommon.buildUrl('customers'), { _skipSpinner: true }).catch(() => []),
-                api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }).catch(() => [])
+                api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }).catch(() => []),
+                api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }).catch(() => []),
+                api.request(AccountsCommon.buildUrl('assets/categories'), { _skipSpinner: true }).catch(() => [])
             ]);
             const arr = (x) => Array.isArray(x) ? x : (x?.data || x?.items || []);
             accounts = arr(coa);
             customers = arr(cust);
             vendors = arr(vend);
+            items = arr(inv);
+            assetCategories = arr(cats);
         } catch (err) {
             console.error('[OBWizard] load failed:', err);
             document.getElementById('obwBody').innerHTML =
