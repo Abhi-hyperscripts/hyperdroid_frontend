@@ -3751,3 +3751,102 @@ body.accounts-dashboard::after {
 @media (max-width: 768px) {
     .pulse-inbox { max-height: none; overflow-y: visible; }
 }
+
+/* ===================================================================
+   OPENING BALANCE WIZARD — js/accounts/opening-balance-wizard.js
+   Big touch targets and one question per screen: the whole point is
+   that someone who does not know what a debit is can finish it.
+   =================================================================== */
+.obw-progress-wrap {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 1.25rem 0;
+}
+.obw-bar {
+    flex: 1; height: 4px; border-radius: 2px;
+    background: var(--border-color-light); overflow: hidden;
+}
+.obw-bar > span {
+    display: block; height: 100%; width: 0;
+    background: var(--brand-primary);
+    transition: width 0.25s ease;
+}
+.obw-progress {
+    font-size: 0.72rem; color: var(--text-muted); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.obw-q {
+    font-size: 1.12rem; font-weight: 600; color: var(--text-primary);
+    line-height: 1.35; margin-bottom: 0.4rem;
+}
+.obw-help {
+    font-size: 0.86rem; color: var(--text-secondary);
+    line-height: 1.5; margin-bottom: 1rem; max-width: 58ch;
+}
+.obw-warn { color: var(--color-warning, #b8860b); display: block; margin-top: 0.4rem; }
+
+.obw-gate { display: flex; gap: 0.6rem; margin-bottom: 0.25rem; }
+.obw-choice {
+    flex: 0 0 110px; padding: 0.7rem 1rem;
+    border: 2px solid var(--border-color); border-radius: 10px;
+    background: var(--bg-card); color: var(--text-primary);
+    font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.obw-choice:hover { border-color: var(--brand-primary); }
+/* !important: glass-cards.css paints several card classes with !important on
+   the base state, and this control sits in the same family. Without it the
+   chosen answer would show no change at all — the same defect that made the
+   tax-regime and adjustment-type cards look dead. */
+.obw-choice.is-on {
+    border-color: var(--brand-primary) !important;
+    background: color-mix(in srgb, var(--brand-primary) 12%, var(--bg-card)) !important;
+    color: var(--brand-primary) !important;
+}
+
+.obw-followup { margin-top: 1rem; }
+.obw-subhead {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-muted);
+    margin: 0.9rem 0 0.5rem;
+}
+.obw-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+@media (max-width: 640px) { .obw-grid3 { grid-template-columns: 1fr; } }
+
+.obw-party-table { width: 100%; border-collapse: collapse; }
+.obw-party-table th {
+    text-align: left; font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted); padding: 0 0.4rem 0.4rem 0;
+}
+.obw-party-table td { padding: 0.2rem 0.4rem 0.2rem 0; vertical-align: middle; }
+
+.obw-review { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+.obw-review td {
+    padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--border-color-light);
+    font-size: 0.88rem;
+}
+.obw-review .obw-acct { color: var(--text-muted); font-size: 0.8rem; }
+.obw-review .obw-side { color: var(--text-secondary); font-size: 0.8rem; white-space: nowrap; }
+.obw-review .obw-amt {
+    text-align: right; font-variant-numeric: tabular-nums;
+    font-weight: 600; color: var(--text-primary); white-space: nowrap;
+}
+
+.obw-stake {
+    margin-top: 1.1rem; padding: 0.9rem 1rem;
+    border-radius: 10px; border: 1px solid var(--border-color);
+    background: var(--bg-card-hover);
+}
+.obw-stake-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem; padding: 0.22rem 0; font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+.obw-stake-row strong { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.obw-stake-net {
+    margin-top: 0.4rem; padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.98rem; color: var(--text-primary); font-weight: 600;
+}
+.obw-stake-net strong { color: var(--brand-primary); font-size: 1.05rem; }

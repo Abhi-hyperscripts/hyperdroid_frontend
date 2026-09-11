@@ -407,6 +407,16 @@
                 <div class="tab-content" id="opening-balances">
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="obFiscalYearContainer"></div>
+                        <!-- The guided route reads FIRST: the grid below is the expert path, and a
+                             non-accountant who lands here needs to see there is another way in. -->
+                        <button class="btn btn-outline" id="openingBalanceWizardBtn"
+                                onclick="openOpeningBalanceWizard(window.obWizardAsOfDate &amp;&amp; window.obWizardAsOfDate())" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9.663 17h4.673M12 3v1M18.364 5.636l-.707.707M21 12h-1M4 12H3M6.343 6.343l-.707-.707"></path>
+                                <path d="M12 17a5 5 0 1 0-3-9 5 5 0 0 0 3 9z"></path>
+                            </svg>
+                            Not sure? Answer a few questions
+                        </button>
                         <button class="btn btn-primary" id="saveAllOpeningBalancesBtn" onclick="saveAllOpeningBalances()" data-admin-only>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -1454,6 +1464,7 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/opening-balance-wizard.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/setup.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 

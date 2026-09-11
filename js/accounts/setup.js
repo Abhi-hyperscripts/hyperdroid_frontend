@@ -897,6 +897,20 @@ function collapseAllNodes() {
 // 5. OPENING BALANCES
 // ============================================================================
 
+/**
+ * The date opening balances are stated as at — the selected fiscal year's start.
+ * Exposed on window for js/accounts/opening-balance-wizard.js, which is a
+ * separate IIFE and cannot see this module's scope. Returns '' when no fiscal
+ * year is selected, so the caller can refuse rather than silently use today.
+ */
+window.obWizardAsOfDate = function () {
+    const fiscalYearId = obFiscalYearDropdown?.getValue?.();
+    if (!fiscalYearId) return '';
+    const fyList = (window.fiscalYears || []).length ? window.fiscalYears : (typeof fiscalYears !== 'undefined' ? fiscalYears : []);
+    const fy = fyList.find(f => f.id === fiscalYearId);
+    return String(fy?.start_date || fy?.startDate || AccountsCommon.todayLocal() || '').slice(0, 10);
+};
+
 async function loadOpeningBalances() {
     const fiscalYearId = obFiscalYearDropdown?.getValue?.();
     if (!fiscalYearId) {
