@@ -39,6 +39,7 @@
     let vendors = [];
     let items = [];           // inventory items, for the stock step
     let assetCategories = [];  // fixed-asset categories, for the asset step
+    let bankAccounts = [];     // existing bank accounts, each already on its own ledger
     let steps = [];          // resolved question steps, in order
     let stepIndex = 0;
     let asOfDate = '';
@@ -50,31 +51,25 @@
     // account is dropped — see resolveSteps.
     const QUESTIONS = [
         {
-            key: 'bank', side: 'debit', codes: ['1121'], match: /bank/i,
-            q: 'Do you have money in a business bank account?',
-            help: 'Use the closing balance on your bank statement for the day before you started using Ragenaizer.',
-            amountLabel: 'Balance as per the bank statement'
-        },
-        {
-            key: 'cash', side: 'debit', codes: ['1111'], match: /cash in hand/i,
+            key: 'cash', side: 'debit', codes: ['1111'], match: /cash in hand/i, expectType: 'Assets',
             q: 'Do you keep cash in a till, drawer or safe?',
             help: 'Physical notes and coins the business holds — not your personal money.',
             amountLabel: 'Cash on hand'
         },
         {
-            key: 'petty', side: 'debit', codes: ['1112'], match: /petty/i,
+            key: 'petty', side: 'debit', codes: ['1112'], match: /petty/i, expectType: 'Assets',
             q: 'Do you run a separate petty cash float?',
             help: 'Only if you keep it apart from the main till. If it is all one pot, say no — you have already counted it above.',
             amountLabel: 'Petty cash float'
         },
         {
-            key: 'salaryDue', side: 'credit', codes: ['2120'], match: /salary payable/i,
+            key: 'salaryDue', side: 'credit', codes: ['2120'], match: /salary payable/i, expectType: 'Liabilities',
             q: 'Do you owe staff for work they have already done?',
             help: 'Salary earned before your start date but not yet paid out.',
             amountLabel: 'Salary owed'
         },
         {
-            key: 'loan', side: 'credit', codes: [], match: /loan/i, group: 'Liabilities',
+            key: 'loan', side: 'credit', codes: [], match: /loan/i, expectType: 'Liabilities',
             q: 'Does the business have a loan still to repay?',
             help: 'The amount still outstanding — not the original loan amount.',
             amountLabel: 'Outstanding loan balance'
@@ -106,17 +101,35 @@
         return Number.isFinite(n) && n > 0 ? n : 0;
     };
 
-    function findAccount(codes, match, groupName) {
+    /**
+     * Resolve a question to a real account: by code first, then by name.
+     *
+     * ⭐ THE NAME FALLBACK MUST FILTER BY POSTABILITY AND TYPE. It did not, and
+     * on a standard chart that was invisible because the code always hit first.
+     * On a TRIMMED chart with no 1121, /bank/i matched in array order and the
+     * first hit is "1120 Bank Accounts" — a non-postable HEADER row — with
+     * "5410 Bank Charges", an EXPENSE, right behind it. So the fallback could
+     * silently aim an opening bank balance at a header (refused on save, with a
+     * message about an account the user never chose) or at an expense account
+     * (accepted, and wrong). `expectType` is checked against the account's own
+     * type rather than a group name, because the group is what made the header
+     * look acceptable in the first place.
+     */
+    function findAccount(codes, match, expectType) {
+        const postable = (a) => a.allow_direct_posting !== false && a.is_active !== false;
+        const typeOk = (a) => !expectType
+            || String(a.account_type_name || a.type || '').toLowerCase() === expectType.toLowerCase();
+
         for (const c of (codes || [])) {
             const hit = accounts.find(a => String(a.account_code || a.code || '') === c);
-            if (hit) return hit;
+            // A code is an exact instruction, but still must not name a header —
+            // a chart that moved 1121 to a parent row would otherwise break the
+            // same way, just less obviously.
+            if (hit && postable(hit)) return hit;
         }
         if (match) {
-            return accounts.find(a => {
-                if (!match.test(a.account_name || a.name || '')) return false;
-                if (groupName && !String(a.account_type_name || a.type || '').toLowerCase().includes(groupName.toLowerCase())) return false;
-                return true;
-            }) || null;
+            return accounts.find(a =>
+                match.test(a.account_name || a.name || '') && postable(a) && typeOk(a)) || null;
         }
         return null;
     }
@@ -124,8 +137,22 @@
     /** Drop questions whose account this chart does not have. */
     function resolveSteps() {
         steps = [];
+
+        // ⭐ BANKS ARE REPEATABLE, not one question. Every ACTIVE bank must have
+        // its OWN ledger — uq_bank_accounts_active_gl is a partial unique index on
+        // (tenant_id, gl_account_id), and bank_accounts.current_balance is a cache
+        // synced from that ledger, so two banks on one ledger drift both caches and
+        // make per-bank reconciliation impossible. A single "money in the bank"
+        // question mapped to 1121 therefore could not express a business with three
+        // banks: it silently recorded one and dropped the rest, which is worse than
+        // refusing, because the totals still look plausible.
+        steps.push({
+            key: 'banks', kind: 'banks',
+            q: 'Do you have money in a business bank account?',
+            help: 'One row per account, using the closing balance on each statement for the day before you started here. Accounts you have not set up yet can be added right here.'
+        });
         QUESTIONS.forEach(q => {
-            const acct = findAccount(q.codes, q.match, q.group);
+            const acct = findAccount(q.codes, q.match, q.expectType);
             if (acct) steps.push({ ...q, kind: 'amount', account: acct });
         });
 
@@ -214,6 +241,23 @@
                     ${step.gstOut.length ? `<div class="obw-subhead">GST you have collected but not yet paid</div>
                         <div class="obw-grid3">${step.gstOut.map(row).join('')}</div>` : ''}
                 </div>`;
+        } else if (yes && step.kind === 'banks') {
+            const rows = (a.rows && a.rows.length) ? a.rows
+                : (bankAccounts.length
+                    ? bankAccounts.map(b => ({ bankId: b.id, newName: '', amount: '' }))
+                    : [{ bankId: '__new__', newName: '', amount: '' }]);
+            body = `
+                <div class="obw-followup">
+                    <table class="obw-party-table">
+                        <thead><tr>
+                            <th>Account</th><th style="width:200px">Name it</th>
+                            <th style="width:150px">Balance</th><th style="width:36px"></th>
+                        </tr></thead>
+                        <tbody id="obwBankRows">${rows.map((r, i) => bankRowHtml(r, i)).join('')}</tbody>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-outline" id="obwAddBank" style="margin-top:0.6rem;">+ Add another account</button>
+                    <small class="field-hint">Each account gets its own ledger — two accounts cannot share one, or neither could be reconciled against its statement.</small>
+                </div>`;
         } else if (yes && step.kind === 'stock') {
             const rows = (a.rows && a.rows.length) ? a.rows : [{ sku: '', quantity: '', unit_cost: '' }];
             body = `
@@ -269,6 +313,22 @@
             ${body}`;
     }
 
+    function bankRowHtml(row, i) {
+        const opts = bankAccounts.map(b =>
+            `<option value="${esc(b.id)}"${b.id === row.bankId ? ' selected' : ''}>${esc(b.account_name || b.bank_name || 'Bank')}</option>`)
+            .concat([`<option value="__new__"${row.bankId === '__new__' ? ' selected' : ''}>＋ An account not set up yet…</option>`])
+            .join('');
+        const isNew = row.bankId === '__new__';
+        return `
+            <tr data-row="${i}">
+                <td><select class="form-control obw-bank" data-no-sd="true">${opts}</select></td>
+                <td><input type="text" class="form-control obw-bankname" placeholder="${isNew ? 'e.g. HDFC Current' : '—'}"
+                           value="${esc(row.newName || '')}" ${isNew ? '' : 'disabled'}></td>
+                <td><input type="number" class="form-control obw-bankamt" min="0" step="0.01" placeholder="0.00" value="${row.amount ? esc(row.amount) : ''}"></td>
+                <td><button type="button" class="btn-icon btn-icon-danger obw-del" title="Remove">&times;</button></td>
+            </tr>`;
+    }
+
     function stockRowHtml(row, i) {
         const opts = ['<option value="">Select…</option>']
             .concat(items.map(it => {
@@ -317,7 +377,8 @@
         const arRows = [];    // -> import/opening-balances
         const apRows = [];
         const stockRows = []; // -> import/opening-stock   (posts its own GL)
-        const assetRows = []; // -> fixed-assets           (posts its own GL)
+        const assetRows = []; // -> assets                 (posts its own GL)
+        const bankRows = [];  // existing bank -> glRows; new bank -> created first
 
         steps.forEach(step => {
             const a = answers[step.key];
@@ -328,6 +389,16 @@
             } else if (step.kind === 'gst') {
                 step.gstIn.forEach(g => { if (a[g.key] > 0) glRows.push({ account: g.account, amount: a[g.key], side: 'debit', label: g.label }); });
                 step.gstOut.forEach(g => { if (a[g.key] > 0) glRows.push({ account: g.account, amount: a[g.key], side: 'credit', label: g.label }); });
+            } else if (step.kind === 'banks') {
+                (a.rows || []).forEach(r => {
+                    if (!(r.amount > 0)) return;
+                    if (r.bankId === '__new__') {
+                        if (r.newName) bankRows.push({ isNew: true, name: r.newName, amount: r.amount });
+                    } else {
+                        const bank = bankAccounts.find(b => b.id === r.bankId);
+                        if (bank) bankRows.push({ isNew: false, bank, amount: r.amount });
+                    }
+                });
             } else if (step.kind === 'stock') {
                 (a.rows || []).forEach(r => {
                     if (r.sku && r.quantity > 0 && r.unit_cost > 0) {
@@ -356,16 +427,26 @@
         // Stock and assets are debits too — they post their own entries, but they are
         // still things the business OWNS and belong in the figure shown to the user.
         // Leaving them out would understate the stake by exactly their value.
+        // An existing bank already has a ledger, so it can go through the same
+        // atomic bulk post as everything else. A NEW one has no ledger yet, so it
+        // is created during save and its balance appended to that same call —
+        // which is why bankRows is carried separately rather than merged here.
+        bankRows.filter(r => !r.isNew).forEach(r => {
+            const acct = accounts.find(a => a.id === r.bank.gl_account_id);
+            if (acct) glRows.push({ account: acct, amount: r.amount, side: 'debit', label: r.bank.account_name || 'Bank' });
+        });
+
+        const bankNewValue = bankRows.filter(r => r.isNew).reduce((s, r) => s + r.amount, 0);
         const stockValue = stockRows.reduce((s, r) => s + r.quantity * r.unit_cost, 0);
         const assetValue = assetRows.reduce((s, r) => s + r.value, 0);
 
         const debits = glRows.filter(r => r.side === 'debit').reduce((s, r) => s + r.amount, 0)
                      + arRows.reduce((s, r) => s + r.amount, 0)
-                     + stockValue + assetValue;
+                     + stockValue + assetValue + bankNewValue;
         const credits = glRows.filter(r => r.side === 'credit').reduce((s, r) => s + r.amount, 0)
                       + apRows.reduce((s, r) => s + r.amount, 0);
 
-        return { glRows, arRows, apRows, stockRows, assetRows, stockValue, assetValue,
+        return { glRows, arRows, apRows, stockRows, assetRows, bankRows, stockValue, assetValue,
                  debits, credits, stake: debits - credits };
     }
 
@@ -405,7 +486,15 @@
             </tr>`;
         };
 
-        if (!p.glRows.length && !p.arRows.length && !p.apRows.length && !p.stockRows.length && !p.assetRows.length) {
+        const newBankLine = (r) => `
+            <tr>
+                <td>${esc(r.name)}</td>
+                <td class="obw-acct">New bank + its own ledger</td>
+                <td class="obw-side">Money in / owned</td>
+                <td class="obw-amt">${money(r.amount)}</td>
+            </tr>`;
+
+        if (!p.glRows.length && !p.arRows.length && !p.apRows.length && !p.stockRows.length && !p.assetRows.length && !p.bankRows.length) {
             return `<div class="obw-q">Nothing to record</div>
                     <div class="obw-help">You answered no to everything. Go back if that was not what you meant.</div>`;
         }
@@ -416,6 +505,7 @@
             <table class="obw-review">
                 <tbody>
                     ${p.glRows.map(r => line(r.label, r.account, r.amount, r.side)).join('')}
+                    ${p.bankRows.filter(r => r.isNew).map(newBankLine).join('')}
                     ${p.stockRows.map(stockLine).join('')}
                     ${p.assetRows.map(assetLine).join('')}
                     ${p.arRows.map(r => partyLine(r, 'ar')).join('')}
@@ -466,6 +556,30 @@
                 setTimeout(() => body.querySelector('input, select')?.focus(), 60);
             });
         });
+
+        if (step.kind === 'banks') {
+            // The name box only applies to a NEW account, so flipping the picker
+            // has to re-render — otherwise it stays disabled and the row cannot
+            // be completed, with nothing on screen saying why.
+            body.querySelectorAll('.obw-bank').forEach(sel => sel.addEventListener('change', () => {
+                captureStep(step);
+                render();
+            }));
+            document.getElementById('obwAddBank')?.addEventListener('click', () => {
+                captureStep(step);
+                const a2 = answers[step.key];
+                a2.rows = (a2.rows || []).concat([{ bankId: '__new__', newName: '', amount: '' }]);
+                render();
+            });
+            body.querySelectorAll('.obw-del').forEach(b => b.addEventListener('click', (e) => {
+                captureStep(step);
+                const idx = Number(e.target.closest('tr').dataset.row);
+                const a2 = answers[step.key];
+                a2.rows = (a2.rows || []).filter((_, i) => i !== idx);
+                if (!a2.rows.length) a2.rows = [{ bankId: '__new__', newName: '', amount: '' }];
+                render();
+            }));
+        }
 
         if (step.kind === 'stock' || step.kind === 'assets') {
             const blank = step.kind === 'stock'
@@ -519,6 +633,12 @@
         } else if (step.kind === 'gst') {
             step.gstIn.forEach(g => { a[g.key] = num('obw_' + g.key); });
             step.gstOut.forEach(g => { a[g.key] = num('obw_' + g.key); });
+        } else if (step.kind === 'banks') {
+            a.rows = [...document.querySelectorAll('#obwBankRows tr')].map(tr => ({
+                bankId: tr.querySelector('.obw-bank')?.value || '',
+                newName: (tr.querySelector('.obw-bankname')?.value || '').trim(),
+                amount: parseFloat(tr.querySelector('.obw-bankamt')?.value) || 0
+            }));
         } else if (step.kind === 'stock') {
             a.rows = [...document.querySelectorAll('#obwStockRows tr')].map(tr => ({
                 sku: tr.querySelector('.obw-sku')?.value || '',
@@ -550,7 +670,7 @@
 
     async function save() {
         const p = buildPlan();
-        if (!p.glRows.length && !p.arRows.length && !p.apRows.length && !p.stockRows.length && !p.assetRows.length) {
+        if (!p.glRows.length && !p.arRows.length && !p.apRows.length && !p.stockRows.length && !p.assetRows.length && !p.bankRows.length) {
             Toast.error('Nothing to save — go back and answer at least one question.');
             return;
         }
@@ -620,19 +740,37 @@
                 written.push(`asset "${r.name}"`);
             }
 
-            if (p.glRows.length) {
+            // New banks first: each needs a LEDGER OF ITS OWN before any balance
+            // can point at it (uq_bank_accounts_active_gl forbids sharing one).
+            // Their balances are folded into the SAME bulk call below, so the
+            // whole set of opening balances still posts atomically rather than
+            // the new banks landing in a second, separate post.
+            const extraBalances = [];
+            for (const r of p.bankRows.filter(x => x.isNew)) {
+                const gl = await AccountsCommon.createBankGlAccount(r.name);
+                written.push(`ledger ${gl.account_code} for "${r.name}"`);
+                await api.request(AccountsCommon.buildUrl('bank/accounts'), {
+                    method: 'POST',
+                    body: JSON.stringify({ account_name: r.name, bank_name: r.name, account_type: 'bank', gl_account_id: gl.id })
+                });
+                written.push(`bank account "${r.name}"`);
+                extraBalances.push({ account_id: gl.id, amount: r.amount, balance_type: 'debit', as_of_date: asOfDate });
+            }
+
+            if (p.glRows.length || extraBalances.length) {
                 await api.request(AccountsCommon.buildUrl('coa/opening-balances/bulk'), {
                     method: 'POST',
                     body: JSON.stringify({
-                        balances: p.glRows.map(r => ({
+                        balances: extraBalances.concat(p.glRows.map(r => ({
                             account_id: r.account.id,
                             amount: r.amount,
                             balance_type: r.side,
                             as_of_date: asOfDate
-                        }))
+                        })))
                     })
                 });
-                written.push(`${p.glRows.length} account balance${p.glRows.length === 1 ? '' : 's'}`);
+                const n = p.glRows.length + extraBalances.length;
+                written.push(`${n} account balance${n === 1 ? '' : 's'}`);
             }
 
             if (p.stockRows.length) {
@@ -740,12 +878,13 @@
         document.getElementById('obwBody').innerHTML = '<div class="obw-help">Loading your chart of accounts…</div>';
 
         try {
-            const [coa, cust, vend, inv, cats] = await Promise.all([
+            const [coa, cust, vend, inv, cats, banks] = await Promise.all([
                 api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }),
                 api.request(AccountsCommon.buildUrl('customers'), { _skipSpinner: true }).catch(() => []),
                 api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }).catch(() => []),
                 api.request(AccountsCommon.buildUrl('inventory/items'), { _skipSpinner: true }).catch(() => []),
-                api.request(AccountsCommon.buildUrl('assets/categories'), { _skipSpinner: true }).catch(() => [])
+                api.request(AccountsCommon.buildUrl('assets/categories'), { _skipSpinner: true }).catch(() => []),
+                api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => [])
             ]);
             const arr = (x) => Array.isArray(x) ? x : (x?.data || x?.items || []);
             accounts = arr(coa);
@@ -753,6 +892,7 @@
             vendors = arr(vend);
             items = arr(inv);
             assetCategories = arr(cats);
+            bankAccounts = arr(banks);
         } catch (err) {
             console.error('[OBWizard] load failed:', err);
             document.getElementById('obwBody').innerHTML =

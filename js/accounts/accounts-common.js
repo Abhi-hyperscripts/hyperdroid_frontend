@@ -1039,6 +1039,69 @@ const AccountsCommon = {
             .join(' \u00b7 ');
     },
 
+    /**
+     * Create a GL account for a NEW bank, and return it.
+     *
+     * ⭐ EVERY ACTIVE BANK NEEDS ITS OWN GL ACCOUNT — that is not a convention,
+     * it is enforced: uq_bank_accounts_active_gl is a partial unique index on
+     * (tenant_id, gl_account_id) WHERE is_active. Two banks cannot share one.
+     * They must not, either: bank_accounts.current_balance is a cache synced
+     * from the linked GL, so sharing one would drift both caches and make
+     * per-bank reconciliation impossible.
+     *
+     * The chart template seeds exactly ONE bank ledger (1121 Primary Bank
+     * Account), so the second bank previously meant leaving Banking, creating an
+     * account by hand with the right type, group and normal balance, and coming
+     * back. This does that in one call so the second bank is as easy as the first.
+     *
+     * Shared between the Banking page's picker and the opening-balance wizard,
+     * so the two cannot create subtly different accounts.
+     */
+    async createBankGlAccount(name) {
+        const clean = String(name || '').trim();
+        if (!clean) throw new Error('A name is required for the new bank ledger.');
+
+        const arr = (x) => Array.isArray(x) ? x : (x?.data || x?.items || []);
+        const [typesRes, groupsRes, coaRes] = await Promise.all([
+            api.request(this.buildUrl('coa/types'), { _skipSpinner: true }),
+            api.request(this.buildUrl('coa/groups'), { _skipSpinner: true }),
+            api.request(this.buildUrl('coa'), { _skipSpinner: true })
+        ]);
+        const types = arr(typesRes), groups = arr(groupsRes), coa = arr(coaRes);
+
+        const assetType = types.find(t => /^assets$/i.test(t.type_name || t.name || ''));
+        if (!assetType) throw new Error('No "Assets" account type found — set up your chart of accounts first.');
+
+        // Group by NAME, not by code: the seeded group code is "BA", not "1120".
+        // Matching on the ledger code would have found nothing and silently
+        // created an ungrouped account that the balance sheet files elsewhere.
+        const bankGroup = groups.find(g => /bank/i.test(g.group_name || g.name || ''));
+
+        // Next free code beside the seeded 1121, so new banks sit together in the
+        // chart instead of landing at the end of the asset range.
+        const used = new Set(coa.map(a => String(a.account_code || a.code || '')));
+        let code = null;
+        for (let n = 1121; n <= 1199; n++) { if (!used.has(String(n))) { code = String(n); break; } }
+        if (!code) throw new Error('No free account code between 1121 and 1199 — create the ledger by hand.');
+
+        const created = await api.request(this.buildUrl('coa'), {
+            method: 'POST',
+            body: JSON.stringify({
+                account_code: code,
+                account_name: clean,
+                account_type_id: assetType.id,
+                account_group_id: bankGroup ? bankGroup.id : null,
+                normal_balance: 'debit',
+                allow_direct_posting: true,
+                description: 'Bank ledger created alongside the bank account.'
+            })
+        });
+
+        const id = created?.id || created?.data?.id;
+        if (!id) throw new Error('The ledger was created but no id came back.');
+        return { id, account_code: code, account_name: clean };
+    },
+
     escapeHtml(text) {
         if (text === null || text === undefined) return '';
         return String(text)

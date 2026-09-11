@@ -328,6 +328,63 @@ async function reactivateBankAccount(id) {
     }
 }
 
+/**
+ * "+" inside the GL picker: create this bank's ledger without leaving the form.
+ *
+ * Every active bank needs its OWN GL account — uq_bank_accounts_active_gl makes
+ * that a hard constraint — but the chart seeds only 1121, so adding a second
+ * bank used to mean leaving Banking, building an account by hand with the right
+ * type, group and normal balance, and coming back. The picker even filters out
+ * ledgers already claimed by another bank, so for a tenant with one bank the
+ * list was simply EMPTY, with nothing on screen explaining why or what to do.
+ *
+ * Resolved off window by auto-searchable-select.js at click time — see the
+ * data-quick-add attribute on #glAccountId.
+ */
+window.openBankGlQuickAdd = async function (select) {
+    // The ledger is NAMED AFTER THE BANK, so the form already holds the answer —
+    // no prompt to invent, and no chance of the ledger and the bank drifting to
+    // two different names. (A native prompt() is out for the same reason
+    // confirm() is: it cannot be themed and it blocks the page.)
+    const accountName = (document.getElementById('accountName')?.value || '').trim();
+    const bankName = (document.getElementById('bankName')?.value || '').trim();
+    const name = [bankName, accountName].filter(Boolean).join(' — ') || accountName || bankName;
+    if (!name) {
+        Toast.error('Fill in the bank name and account name first — the ledger is named after them.');
+        document.getElementById('bankName')?.focus();
+        return;
+    }
+
+    if (!AccountsCommon.beginSubmit('bankGlQuickAdd')) return;
+    try {
+        const acct = await AccountsCommon.createBankGlAccount(name);
+        // Re-read the chart so the new ledger is in coaAccounts BEFORE the picker
+        // is rebuilt — repopulating from the stale copy renders a list that does
+        // not contain the account we are about to select.
+        const fresh = await api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true });
+        coaAccounts = Array.isArray(fresh) ? fresh : (fresh?.data || fresh?.items || []);
+        const apply = () => {
+            populateGLAccountSelect(acct.id);
+            select.value = acct.id;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        apply();
+        // Re-assert on the next tick. Measured: the value is set correctly and is
+        // then EMPTY by the time the user sees the form — something on this page
+        // re-renders after the await and takes the selection with it. The ledger
+        // is created either way, so the visible failure is the worst kind: the
+        // account exists, the dropdown looks untouched, and pressing the button
+        // again would mint a SECOND ledger for the same bank.
+        setTimeout(() => { if (select.value !== acct.id) apply(); }, 60);
+        Toast.success(`Ledger ${acct.account_code} ${acct.account_name} created and selected`);
+    } catch (err) {
+        console.error('[Banking] bank GL quick-add failed:', err);
+        Toast.error(err.message || 'Could not create the ledger.');
+    } finally {
+        AccountsCommon.endSubmit('bankGlQuickAdd');
+    }
+};
+
 function populateGLAccountSelect(selectedId) {
     const sel = document.getElementById('glAccountId');
     if (!sel) return;
