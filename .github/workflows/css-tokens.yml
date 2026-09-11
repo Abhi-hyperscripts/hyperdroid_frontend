@@ -1,0 +1,42 @@
+# Fails a push or PR that introduces a CSS custom property nothing declares.
+#
+# This exists because that class of defect is INVISIBLE at runtime: a
+# declaration reading an undeclared token is dropped by the browser with no
+# error, no console warning and no failing request, so the styling simply does
+# not happen and review sees a line that looks perfectly correct.
+#
+# Measured before this landed: --primary-color and --danger-color were
+# referenced 15 times in hrms.css and declared nowhere, which killed the entire
+# selected-state styling on the adjustment-type and tax-regime cards — you could
+# not tell what you had selected. --brand-primary-hover was referenced 32 times
+# and declared nowhere, so those buttons had no hover at all.
+#
+# It does NOT run the whole site or a browser: one Node pass over the CSS and
+# HTML, about a second. There is nothing to maintain and no flake surface.
+name: CSS tokens
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only. Deliberately cannot interfere with the Pages deployment, which
+# runs as its own separate workflow.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: No undeclared CSS custom properties
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # No install step: the guard is dependency-free on purpose, so it cannot
+      # break because of something unrelated in the dependency graph.
+      - name: Check CSS custom properties
+        run: node scripts/check-css-tokens.js

@@ -25,6 +25,14 @@
   --brand-primary-rgb: 59, 130, 246;  /* RGB values for rgba() usage */
   --brand-primary-light: #60a5fa;     /* Lighter variant - hover states */
   --brand-primary-dark: #2563eb;      /* Darker variant - active states */
+  /* Referenced 32 times across chat, CRM and HRMS and declared NOWHERE, so every
+     one of those hover rules was dropped by the browser and the buttons had no
+     hover at all. crm-companies.css carries a comment from whoever hit it once —
+     they fixed their own line with a darker colour-mix and the other 31 stayed
+     dead. Declared as an alias rather than rewriting 32 call sites, and pointed
+     at the DARK variant to match that existing fix. Caught by
+     scripts/check-css-tokens.js. */
+  --brand-primary-hover: var(--brand-primary-dark);
   --brand-secondary: #8b5cf6;         /* Secondary accent (Purple) */
   --brand-accent: #6366f1;            /* Accent highlights (Indigo) */
 
