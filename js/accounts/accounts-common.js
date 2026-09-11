@@ -1040,6 +1040,31 @@ const AccountsCommon = {
     },
 
     /**
+     * The account codes the service reserves for its own system accounts.
+     *
+     * Returns a Set of code strings. Cached for the life of the page — the set is
+     * static service data, not tenant data.
+     *
+     * Fails SOFT: an older service has no such route, and a bank ledger that has to
+     * be renumbered once is better than a picker that cannot create one at all. The
+     * caller retries on the refusal, so a miss here costs a round trip, not the flow.
+     */
+    async reservedAccountCodes() {
+        if (this._reservedCodes) return this._reservedCodes;
+        try {
+            const res = await api.request(this.buildUrl('coa/reserved-codes'), { _skipSpinner: true });
+            const rows = Array.isArray(res) ? res : (res?.data || res?.items || []);
+            this._reservedCodes = new Set(
+                rows.map(r => String(r?.account_code ?? r?.code ?? r ?? '').trim()).filter(Boolean)
+            );
+        } catch (e) {
+            console.warn('[accounts] reserved account codes unavailable — relying on the service to refuse:', e);
+            this._reservedCodes = new Set();
+        }
+        return this._reservedCodes;
+    },
+
+    /**
      * Create a GL account for a NEW bank, and return it.
      *
      * ⭐ EVERY ACTIVE BANK NEEDS ITS OWN GL ACCOUNT — that is not a convention,
@@ -1079,27 +1104,72 @@ const AccountsCommon = {
 
         // Next free code beside the seeded 1121, so new banks sit together in the
         // chart instead of landing at the end of the asset range.
+        //
+        // ⭐⭐ "ABSENT FROM THE CHART" IS NOT "FREE". A reserved code — 1125 Payment
+        // Gateway Clearing, 1135 Inventory, 1145 WIP, 1150 TDS Receivable, the GST
+        // control accounts — is absent from the chart precisely UNTIL the service
+        // needs it. That is what reserving means. So a "first unused number" walk is
+        // not merely at risk of hitting one, it is DRAWN to them: they are exactly
+        // the gaps it can see. Measured 2026-09-11 on the demo tenant, where
+        // 1121-1124 were taken by real banks: this proposed 1125, the backend refused
+        // it, and the opening-balance wizard died after ten answered questions with
+        // the asset already written. The refusal was right; the guess was wrong.
+        //
+        // The reserved set is read from the service rather than restated here. It has
+        // grown twice, and a second copy in the frontend would be the one nobody
+        // updates.
         const used = new Set(coa.map(a => String(a.account_code || a.code || '')));
-        let code = null;
-        for (let n = 1121; n <= 1199; n++) { if (!used.has(String(n))) { code = String(n); break; } }
-        if (!code) throw new Error('No free account code between 1121 and 1199 — create the ledger by hand.');
+        for (const c of await this.reservedAccountCodes()) used.add(c);
 
-        const created = await api.request(this.buildUrl('coa'), {
-            method: 'POST',
-            body: JSON.stringify({
-                account_code: code,
-                account_name: clean,
-                account_type_id: assetType.id,
-                account_group_id: bankGroup ? bankGroup.id : null,
-                normal_balance: 'debit',
-                allow_direct_posting: true,
-                description: 'Bank ledger created alongside the bank account.'
-            })
-        });
+        const nextCode = () => {
+            for (let n = 1121; n <= 1199; n++) if (!used.has(String(n))) return String(n);
+            return null;
+        };
 
-        const id = created?.id || created?.data?.id;
-        if (!id) throw new Error('The ledger was created but no id came back.');
-        return { id, account_code: code, account_name: clean };
+        // The skip list above is a courtesy; the SERVICE is the authority. If it
+        // refuses a code anyway — a frontend served from a stale cache, a reserved
+        // code added since this tab loaded — take it as news, record it and move to
+        // the next candidate rather than dead-ending a user mid-wizard.
+        let lastRefusal = null;
+        for (let attempt = 0; attempt < 6; attempt++) {
+            const code = nextCode();
+            if (!code) break;
+
+            let created;
+            try {
+                created = await api.request(this.buildUrl('coa'), {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        account_code: code,
+                        account_name: clean,
+                        account_type_id: assetType.id,
+                        account_group_id: bankGroup ? bankGroup.id : null,
+                        normal_balance: 'debit',
+                        allow_direct_posting: true,
+                        description: 'Bank ledger created alongside the bank account.'
+                    })
+                });
+            } catch (e) {
+                const msg = String(e?.message || e);
+                // Only a reserved-code or already-taken refusal is retryable. Anything
+                // else — a permission failure, a bad group — repeats identically on the
+                // next number, so rethrow instead of burning six attempts on it.
+                if (/reserved|already exists|duplicate/i.test(msg)) {
+                    used.add(code);
+                    lastRefusal = msg;
+                    continue;
+                }
+                throw e;
+            }
+
+            const id = created?.id || created?.data?.id;
+            if (!id) throw new Error('The ledger was created but no id came back.');
+            return { id, account_code: code, account_name: clean };
+        }
+
+        throw new Error(lastRefusal
+            ? `Could not find a free bank ledger code. The last code tried was refused: ${lastRefusal}`
+            : 'No free account code between 1121 and 1199 — create the ledger by hand.');
     },
 
     escapeHtml(text) {
