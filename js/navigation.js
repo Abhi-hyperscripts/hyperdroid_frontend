@@ -302,7 +302,13 @@ const Navigation = {
         'procurement': 'Procurement',
         'accounts': 'Accounts',
         'paymentplans': 'PaymentPlans',
-        'news': 'KIP'
+        // ⭐ 'News', not 'KIP'. Auth issues the licence under the service's REGISTERED name, and
+        // NewsService registers as "News" (appsettings ServiceInfo.Name). Measured against Auth's
+        // CheckAccess on 2026-09-13: service_name "News" answers allowed; "KIP" answers
+        // "Service 'KIP' not included in license". So this mapping could never match a real licence and
+        // the News link was hidden for EVERY tenant — invisible, because a wrongly hidden nav item looks
+        // exactly like one the tenant did not buy. "KIP" is the UI's label for it, not Auth's name.
+        'news': 'News'
         // 'admin' and 'home' don't require service licensing
     },
 
@@ -352,6 +358,41 @@ const Navigation = {
                 document.body.prepend(banner);
             }
         } catch (e) { /* non-fatal — enforcement is server-side regardless */ }
+
+        // Hide in-page features that belong to a module this tenant does not have.
+        this.applyLicenceGating();
+    },
+
+    /**
+     * Hide every element marked `data-requires-service="X"` when the tenant has no X licence.
+     *
+     * ⭐ THE MODULES ARE CROSS-WIRED AND THE UI NEVER SAID SO. CRM's "Raise quotation" creates a proforma
+     * IN ACCOUNTS; its e-kart issues a login to the ACCOUNTS catalogue; the WhatsApp composer's attach
+     * button uploads to DRIVE. A tenant who bought CRM alone was shown all three and found out by
+     * clicking. The nav bar has hidden unlicensed MODULES for as long as it has existed — this is the
+     * same rule applied one level down, to features inside a module they do own.
+     *
+     * Declarative on purpose. The alternative is a conditional per button scattered across pages, each
+     * one a place to forget — and a forgotten one is invisible, because a feature that should have been
+     * hidden looks exactly like a feature that is meant to be there.
+     *
+     * Removes rather than hides: `display:none` leaves the control in the DOM, where a querySelector, the
+     * keyboard tab order and an automated click all still find it.
+     *
+     * ⚠️ UX, NOT SECURITY. The boundary is LicenseValidationMiddleware on the HTTP plane and
+     * TenantLicenceInterceptor on each service's gRPC plane. This only spares an honest user a click into
+     * a refusal, which is why it is safe for it to fail open — as hasLicensedService does.
+     *
+     * Pages that render controls AFTER init should call `Navigation.applyLicenceGating()` again, or pass a
+     * root element; it is idempotent and cheap.
+     */
+    applyLicenceGating(root) {
+        if (typeof hasLicensedService !== 'function') return;
+        const scope = root || document;
+        scope.querySelectorAll('[data-requires-service]').forEach(el => {
+            const needed = el.getAttribute('data-requires-service');
+            if (needed && !hasLicensedService(needed)) el.remove();
+        });
     },
 
     /**

@@ -577,10 +577,54 @@ function getOrganizationInfo() {
     return cached ? JSON.parse(cached) : null;
 }
 
+/**
+ * Is this tenant licensed for `serviceName`?
+ *
+ * ⭐ THE PLATFORM IS DEEPLY CROSS-WIRED, AND THE FRONTEND NEVER ASKED THIS.
+ *
+ * The `licensed_services` JWT claim has existed all along, and exactly two files read it: navigation.js,
+ * to hide top-level module links, and auth/admin.js. Nothing INSIDE a module ever asked. So CRM offered
+ * "raise a quotation" and the e-cart to a tenant with no Accounts licence — features whose work happens
+ * in another service entirely.
+ *
+ * ⚠️ THIS IS UX, NOT A SECURITY BOUNDARY. Hiding a button stops an honest user walking into a dead end;
+ * it stops nobody typing the URL. The boundary is TenantLicenceInterceptor on each service's gRPC plane
+ * and LicenseValidationMiddleware on the HTTP plane. Never rely on this to protect anything — treat it
+ * as spelling the answer the backend would give, before the user spends a click finding out.
+ *
+ * FAILS OPEN, deliberately. An absent or unparsable claim means an old token or a shape change, and
+ * hiding the whole product because a claim went missing is a worse failure than showing a feature that
+ * then refuses server-side with a clear message. navigation.js already takes this stance for the nav bar
+ * (`if (orgInfo && orgInfo.licensedServices)`), and two different answers to the same question across one
+ * page would be worse than either.
+ *
+ * Service names are Auth's, not the UI's: "Accounts", "Drive", "Vision", "EmailService", "News".
+ *
+ * @param {string} serviceName Auth's service name, case-insensitive.
+ * @returns {boolean}
+ */
+function hasLicensedService(serviceName) {
+    if (!serviceName) return true;
+    try {
+        const info = getOrganizationInfo();
+        const list = info && info.licensedServices;
+        if (!Array.isArray(list) || list.length === 0) return true;   // fail open — see above
+        const want = String(serviceName).trim().toLowerCase();
+        return list.some(s => String(s).trim().toLowerCase() === want);
+    } catch (e) {
+        console.warn('[licence] could not read licensed services; showing the feature:', e);
+        return true;
+    }
+}
+
 // Expose globals on window so non-module consumers (e.g., embed/widget.js) can
 // read them. Top-level `const` in classic <script> tags goes to script scope,
 // not the window object — without these explicit assignments, code that does
 // `window.CONFIG?.authApiBaseUrl` silently falls back to localhost in prod.
 window.CONFIG = CONFIG;
+// Page scripts are classic <script> tags, so a top-level function declaration here is not automatically
+// reachable as window.hasLicensedService from another file in every browser/bundling path. Assigned
+// explicitly for the same reason CONFIG is — the silent failure is the feature staying visible.
+window.hasLicensedService = hasLicensedService;
 window.FIREBASE_CONFIG = FIREBASE_CONFIG;
 window.FIREBASE_VAPID_KEY = FIREBASE_VAPID_KEY;

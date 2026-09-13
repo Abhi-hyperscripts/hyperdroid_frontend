@@ -376,6 +376,7 @@ const LineItemsPanel = (() => {
             ${listPriceNote(state)}
             ${totalsBlock(state, subtotal)}
 
+            ${!accountsLicensed() ? '' : `
             <div class="lip-quote">
                 ${hasQuotation ? `
                     <p class="lip-quote-done">
@@ -397,8 +398,27 @@ const LineItemsPanel = (() => {
                 <button type="button" class="btn btn-sm ${hasQuotation ? 'btn-secondary' : 'btn-primary'}" data-lip="quote">
                     ${hasQuotation ? 'View / re-fetch quotation' : 'Raise quotation'}
                 </button>` : ''}
-            </div>
+            </div>`}
         </div>`;
+    }
+
+    /**
+     * Is this tenant licensed for Accounts?
+     *
+     * ⭐ THE QUOTATION IS NOT CRM'S WORK. "Raise quotation" posts to CRM, which creates a PROFORMA IN
+     * ACCOUNTS over gRPC. A tenant who bought CRM and not Accounts was offered the button anyway, and
+     * Accounts now refuses it — correctly, but only after the click.
+     *
+     * The catalogue picker on this same panel needs no such gate: catalogueIsAvailable() already asks the
+     * backend whether a catalogue exists and hides itself when the answer is no or the call fails, so a
+     * licence refusal already reads to it as "not right now". Only the quotation block was asserting a
+     * capability it had not checked.
+     *
+     * Fails OPEN via hasLicensedService — see its comment. The server is the boundary; this only saves the
+     * user a click into a refusal.
+     */
+    function accountsLicensed() {
+        return typeof hasLicensedService !== 'function' || hasLicensedService('Accounts');
     }
 
     /// A product thumbnail, or its initial when there is no image yet.
