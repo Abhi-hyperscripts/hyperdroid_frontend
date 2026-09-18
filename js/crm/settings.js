@@ -1848,13 +1848,50 @@ function bindFacebookFormListHandlers() {
     _fbFormListBound = true;
 }
 
+let _fbFormsAll = [];
+
 function renderFacebookFormList(forms) {
     const list = document.getElementById('fbFormList');
-    if (forms.length === 0) {
+    const tools = document.getElementById('fbFormListTools');
+    const filterEl = document.getElementById('fbFormFilter');
+    _fbFormsAll = Array.isArray(forms) ? forms : [];
+    if (_fbFormsAll.length === 0) {
+        if (tools) tools.style.display = 'none';
         list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No lead forms found on this page.</div>';
         return;
     }
-    list.innerHTML = forms.map(f => `
+    // A page can carry dozens of forms (one client: 37). Meta lists newest
+    // first, so the ones people look for sit below the fold of a scroll box
+    // whose scrollbar macOS hides until touched — which reads as "my forms
+    // are missing". Show the count, and let them type.
+    if (tools) tools.style.display = 'flex';
+    if (filterEl && !filterEl._fbBound) {
+        filterEl.addEventListener('input', () => renderFacebookFormRows(filterEl.value));
+        filterEl._fbBound = true;
+    }
+    if (filterEl) filterEl.value = '';
+    renderFacebookFormRows('');
+    bindFacebookFormListHandlers();
+}
+
+function renderFacebookFormRows(query) {
+    const list = document.getElementById('fbFormList');
+    const countEl = document.getElementById('fbFormCount');
+    const q = (query || '').trim().toLowerCase();
+    const shown = q
+        ? _fbFormsAll.filter(f => (f.form_name || '').toLowerCase().includes(q) || String(f.form_id || '').includes(q))
+        : _fbFormsAll;
+    const mapped = _fbFormsAll.filter(f => f.already_connected).length;
+    if (countEl) {
+        countEl.textContent = q
+            ? `${shown.length} of ${_fbFormsAll.length} forms`
+            : `${_fbFormsAll.length} form${_fbFormsAll.length === 1 ? '' : 's'} on this page · ${mapped} mapped`;
+    }
+    if (shown.length === 0) {
+        list.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No form matches “${escapeHtml(query)}”.</div>`;
+        return;
+    }
+    list.innerHTML = shown.map(f => `
         <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-color-light);"
              data-fb-form-id="${escapeHtml(f.form_id)}"
              data-fb-form-name="${escapeHtml(f.form_name || 'Untitled form')}"
@@ -1870,8 +1907,7 @@ function renderFacebookFormList(forms) {
                 ${f.already_connected ? 'Edit Mapping' : 'Connect & Map'}
             </button>
         </div>
-    `).join('');
-    bindFacebookFormListHandlers();
+    `).join('') + `<div style="padding: 10px 14px; font-size: 0.8em; color: var(--text-secondary); text-align: center;">End of list · ${shown.length} form${shown.length === 1 ? '' : 's'}</div>`;
 }
 
 async function startFacebookFormMapping(formId, formName, existingSourceId) {
