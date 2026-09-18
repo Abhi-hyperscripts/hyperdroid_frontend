@@ -137,6 +137,38 @@ class TenantManagerAPI {
         return await response.json();
     }
 
+    /**
+     * Cancel a sub-tenant's licence: access stops immediately and their live sessions are revoked.
+     *
+     * NOT deleteTenant. That removes the tenant RECORD; this keeps the customer and their data and only
+     * stops access, which is what "cancel the subscription" means to an operator. Conflating the two would
+     * make a billing action destructive.
+     */
+    async cancelSubTenant(tenantId, reason) {
+        const response = await fetch(`${this.baseUrl}${CONFIG.endpoints.tenants}/${tenantId}/cancel`, {
+            method: 'POST',
+            headers: this._getHeaders(),
+            body: JSON.stringify({ reason: reason || null })
+        });
+
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.message || 'Failed to cancel the subscription');
+        return body;
+    }
+
+    /** Move a sub-tenant onto a different plan. Also how a cancelled tenant is brought back on. */
+    async changeSubTenantPlan(tenantId, planId) {
+        const response = await fetch(`${this.baseUrl}${CONFIG.endpoints.tenants}/${tenantId}/change-plan`, {
+            method: 'POST',
+            headers: this._getHeaders(),
+            body: JSON.stringify({ planId })
+        });
+
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.message || 'Failed to change the plan');
+        return body;
+    }
+
     async deleteTenant(tenantId) {
         const response = await fetch(`${this.baseUrl}${CONFIG.endpoints.tenants}/${tenantId}`, {
             method: 'DELETE',
@@ -356,7 +388,14 @@ class TenantManagerAPI {
         return await response.json();
     }
 
-    async generateLicense(tenantId, startDate, expiryDate, notes = '', selectedServiceIds = null, keyType = 'on-premise', platformId = null) {
+    /**
+     * Issue a licence. `options` carries the bespoke parts:
+     *   maxUsers            — resize the seat block (-1 = unlimited); null leaves it alone
+     *   syncTenantServices  — treat the ticked services as the tenant's ENTITLEMENTS, granting and
+     *                         revoking, rather than as a filter over what they already have
+     *   applyToAuth         — push the licence to Auth so it is actually in force
+     */
+    async generateLicense(tenantId, startDate, expiryDate, notes = '', selectedServiceIds = null, keyType = 'on-premise', platformId = null, options = {}) {
         const body = { startDate, expiryDate, notes, keyType };
         if (selectedServiceIds && selectedServiceIds.length > 0) {
             body.selectedServiceIds = selectedServiceIds;
@@ -364,6 +403,13 @@ class TenantManagerAPI {
         if (platformId) {
             body.platformId = platformId;
         }
+        // Explicit null check, not a truthiness test: -1 is a legitimate seat count (unlimited) and
+        // 0 must reach the server to be refused there rather than vanish here.
+        if (options.maxUsers !== null && options.maxUsers !== undefined) {
+            body.maxUsers = options.maxUsers;
+        }
+        if (options.syncTenantServices) body.syncTenantServices = true;
+        if (options.applyToAuth) body.applyToAuth = true;
 
         const response = await fetch(
             `${this.baseUrl}${CONFIG.endpoints.tenants}/${tenantId}/licenses`,

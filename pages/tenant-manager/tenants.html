@@ -1283,6 +1283,19 @@
                             </div>
                         </div>
 
+                        <!-- Seats. Editable, because "upsize this customer to 50 users" is the most
+                             common bespoke change and the licence takes its seat count from the
+                             tenant row — so this is a real resize, not a number inside a token. -->
+                        <div class="form-group" style="margin-top: 1rem; margin-bottom: 0;">
+                            <label class="form-label" for="licenseMaxUsers">Seats</label>
+                            <input type="number" id="licenseMaxUsers" class="form-control" min="-1" step="1"
+                                   placeholder="e.g. 50">
+                            <small class="form-hint">
+                                Number of users this tenant may have. Use <strong>-1</strong> for unlimited.
+                                Saved against the tenant, so it survives their next renewal.
+                            </small>
+                        </div>
+
                         <!-- Service Selection Section -->
                         <div class="form-section-title" style="margin-top: 1rem;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1293,6 +1306,11 @@
                             Licensed Services
                             <span class="service-count-badge" id="licenseServiceCount">0</span>
                         </div>
+                        <small class="form-hint" style="display:block;margin:-4px 0 8px;">
+                            Every service on the platform is listed; the ticked ones are what this tenant
+                            has today. Ticking grants, unticking revokes — both take effect when the
+                            licence is issued.
+                        </small>
                         <div class="service-checkboxes" id="licenseServiceCheckboxes">
                             <p class="text-muted">Loading services...</p>
                         </div>
@@ -1312,8 +1330,8 @@
                             <polyline points="22 4 12 14.01 9 11.01"></polyline>
                         </svg>
                     </div>
-                    <h3 class="success-title">License Generated!</h3>
-                    <p class="success-subtitle">Your encrypted license token is ready to use</p>
+                    <h3 class="success-title" id="licenseSuccessTitle">License Generated!</h3>
+                    <p class="success-subtitle" id="licenseSuccessSubtitle">Your encrypted license token is ready to use</p>
 
                     <!-- License Info Summary -->
                     <div class="license-info-summary">
@@ -1437,6 +1455,47 @@
     </div>
 
     <!-- Create Sub-Tenant Modal -->
+    <!-- Change plan / Resubscribe. One modal for both because it is one action; only the wording differs
+         with whether the tenant is currently active. -->
+    <div id="changePlanModal" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Apply a Plan</h5>
+                    <button class="close-btn" onclick="closeModal('changePlanModal')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="changePlanTenantId">
+                    <input type="hidden" id="changePlanPlatformId">
+                    <p style="margin:0 0 12px;">
+                        Tenant: <strong id="changePlanTenantName"></strong>
+                    </p>
+                    <div class="alert alert-info" style="margin-bottom:12px;">
+                        Applying a plan issues a fresh licence and replaces whatever they hold now. If the
+                        subscription was cancelled, this also restores their access.
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="changePlanSelect">Plan *</label>
+                        <select id="changePlanSelect" class="form-control"></select>
+                        <small class="form-hint">
+                            A fresh licence is issued from this plan and applied immediately. The customer keeps
+                            their sign-in — no new password is created.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('changePlanModal')">Cancel</button>
+                    <button class="btn btn-primary" id="changePlanSubmitBtn" onclick="submitChangePlan()">Apply plan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="subTenantModal" class="modal">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -1827,6 +1886,23 @@
             `}).join('');
         }
 
+        /**
+         * Escape for a QUOTED HTML ATTRIBUTE. Separate from escapeHtml below on purpose: that one
+         * backslash-escapes quotes, which is right inside a JS string literal and useless in an
+         * attribute — a backslash has no meaning to the HTML parser, so `O"Brien` still closes the
+         * attribute and the rest of the tag is attacker-controlled. Entities are what an attribute
+         * understands, and `dataset` hands them back decoded, so the reader sees the original text.
+         * & must be replaced first or it would double-escape the entities added after it.
+         */
+        function attrText(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -1923,6 +1999,125 @@
                 Toast.success('On-premise license saved successfully');
             } catch (error) {
                 Toast.error('Failed to save license: ' + error.message);
+            }
+        }
+
+        /**
+         * Cancel a sub-tenant's subscription.
+         *
+         * Deliberately NOT deleteTenant: that removes the tenant record, this stops access and keeps the
+         * customer and their data. The copy says what actually happens — access stops, sessions are
+         * revoked, data is kept — because an operator clicking this needs to know it is reversible.
+         */
+        async function cancelSubTenant(btn) {
+            const { tenantId, tenantName, platformId } = btn.dataset;
+
+            // Confirm.show, not Confirm.danger — danger() hardcodes confirmText 'Delete', and this flow's
+            // whole point is that it is NOT a deletion. Both buttons are named after what they do, because
+            // a bare "Cancel" on a dialog about cancelling a subscription reads as either answer.
+            const confirmed = await Confirm.show({
+                type: 'danger',
+                title: 'Cancel Subscription',
+                message: `Cancel the subscription for "${tenantName}"?\n\n` +
+                    `\u2022 Access stops immediately and everyone signed in is logged out\n` +
+                    `\u2022 Their data is KEPT \u2014 this is not a deletion\n` +
+                    `\u2022 They can be brought back on with Apply a Plan`,
+                confirmText: 'Cancel subscription',
+                cancelText: 'Keep it active'
+            });
+            if (!confirmed) return;
+
+            // Prompt.show, not Prompt.text — the latter does not exist, and `Prompt.text?.()` would have
+            // returned undefined forever: a reason box that silently never collected a reason.
+            // 'Skip', not 'Back': dismissing resolves null and the cancellation proceeds, so a button
+            // labelled Back would be lying about where it takes you.
+            const reason = await Prompt.show({
+                title: 'Cancel Subscription',
+                message: `Why is "${tenantName}" being cancelled? (optional \u2014 recorded in the audit log)`,
+                placeholder: 'e.g. non-payment, customer request',
+                confirmText: 'Cancel subscription',
+                cancelText: 'Skip'
+            });
+            // null when dismissed. Treated as "no reason given" rather than as abandoning the
+            // cancellation — the operator already confirmed the destructive step above.
+
+            try {
+                const result = await api.cancelSubTenant(tenantId, reason);
+                // loadSubTenants, not loadSaaSPlatforms: re-rendering the whole platform list collapses
+                // the panel the operator is working in. This is what the edit flow already does.
+                await loadSubTenants(platformId);
+                // Says which of the two things happened. "Cancelled" on an already-cancelled tenant would
+                // imply this click did it, and hide that an earlier attempt had already succeeded.
+                if (result.alreadyCancelled) Toast.info('That subscription was already cancelled — nothing changed.');
+                else Toast.success(result.message || 'Subscription cancelled');
+            } catch (error) {
+                Toast.error('Failed to cancel: ' + error.message);
+            }
+        }
+
+        /**
+         * Apply a plan to a sub-tenant — both the plan CHANGE and the way a cancelled one is resubscribed.
+         *
+         * One action, not two, and no "is this tenant cancelled?" branch, because this console genuinely
+         * does not know: revocation lives in Auth, and the tenants.is_active flag shown in the row means
+         * something else entirely (a signup that never completed payment). A branch on a fact we cannot
+         * read would have been confidently wrong on every cancelled tenant.
+         */
+        async function openChangePlanModal(btn) {
+            const { tenantId, tenantName, platformId } = btn.dataset;
+            try {
+                // getPlans resolves the ENVELOPE — { success, plans } — not an array. Reading it as one
+                // made this modal throw on open and never render.
+                const response = await api.getPlans();
+                const active = (response?.plans || []).filter(p => p.isActive !== false);
+                if (!active.length) { Toast.error('No active plans to choose from'); return; }
+
+                document.getElementById('changePlanTenantId').value = tenantId;
+                document.getElementById('changePlanPlatformId').value = platformId;
+                document.getElementById('changePlanTenantName').textContent = tenantName;
+
+                // Built as elements with textContent rather than interpolated HTML: a plan display name is
+                // operator-entered text, and the one escaper on this page backslash-escapes quotes, which
+                // an HTML parser ignores.
+                const select = document.getElementById('changePlanSelect');
+                select.innerHTML = '';
+                for (const plan of active) {
+                    const option = document.createElement('option');
+                    option.value = plan.id;
+                    const price = Number(plan.pricePerUserMonthly);
+                    const bits = [`${plan.validityDays} days`];
+                    if (Number.isFinite(price) && price > 0) bits.push(`₹${price.toLocaleString('en-IN')}/user/mo`);
+                    if (plan.isTrial) bits.push('trial');
+                    option.textContent = `${plan.displayName} — ${bits.join(' · ')}`;
+                    select.appendChild(option);
+                }
+
+                openModal('changePlanModal');
+            } catch (error) {
+                Toast.error('Could not load plans: ' + error.message);
+            }
+        }
+
+        async function submitChangePlan() {
+            const tenantId = document.getElementById('changePlanTenantId').value;
+            const platformId = document.getElementById('changePlanPlatformId').value;
+            const planId = document.getElementById('changePlanSelect').value;
+            if (!tenantId || !planId) { Toast.error('Choose a plan first'); return; }
+
+            const btn = document.getElementById('changePlanSubmitBtn');
+            const original = btn.textContent;
+            btn.disabled = true; btn.textContent = 'Applying…';
+
+            try {
+                const result = await api.changeSubTenantPlan(tenantId, planId);
+                closeModal('changePlanModal');
+                await loadSubTenants(platformId);
+                Toast.success(result.message || 'Plan applied');
+            } catch (error) {
+                // Modal deliberately left open on failure so the operator keeps their selection.
+                Toast.error('Failed: ' + error.message);
+            } finally {
+                btn.disabled = false; btn.textContent = original;
             }
         }
 
@@ -2060,6 +2255,10 @@
             document.getElementById('licenseTenantEmail').textContent = '-';
             document.getElementById('licenseTenantMaxUsers').textContent = '-';
             document.getElementById('licensePlatformRow').style.display = 'none';
+            // Cleared here, filled only from the tenant we actually fetched below. currentTenantData
+            // survives between openings, so prefilling from it after a failed fetch would show the
+            // PREVIOUS tenant's seat count — and submitting would resize this one to match it.
+            document.getElementById('licenseMaxUsers').value = '';
 
             // Open modal immediately with loading state
             openModal('licenseModal');
@@ -2075,6 +2274,9 @@
                 document.getElementById('licenseTenantOrg').textContent = tenant.organizationName || tenant.companyName || '';
                 document.getElementById('licenseTenantEmail').textContent = tenant.superAdminEmail || tenant.contactEmail || '-';
                 document.getElementById('licenseTenantMaxUsers').textContent = tenant.maxUsers === -1 ? 'Unlimited' : (tenant.maxUsers || 5);
+                // Prefilled with what they have, so leaving it alone is a no-op and typing over it
+                // is the resize. An empty box is sent as null — "do not touch the seat count".
+                document.getElementById('licenseMaxUsers').value = tenant.maxUsers != null ? tenant.maxUsers : '';
 
                 // Determine license key type and update badge
                 let keyType, badgeClass, badgeText, iconSvg;
@@ -2159,6 +2361,13 @@
             await loadTenantServicesForLicense(tenantId);
         }
 
+        /**
+         * Every service on the platform, with the tenant's current ones ticked.
+         *
+         * It used to list ONLY the services the tenant already had, which meant a bespoke licence
+         * could take an app away but could never add one — the thing an operator most often wants
+         * when they upgrade somebody. Ticking a new service now grants it; unticking revokes it.
+         */
         async function loadTenantServicesForLicense(tenantId) {
             const container = document.getElementById('licenseServiceCheckboxes');
             const countBadge = document.getElementById('licenseServiceCount');
@@ -2166,43 +2375,71 @@
             countBadge.textContent = '0';
 
             try {
-                const services = await api.getTenantServices(tenantId);
-                currentTenantServices = services;
+                // /api/services answers with an ENVELOPE, { services: [...] }, while
+                // tenants/{id}/services answers with a bare array. Reading either as the other is
+                // silent — it yields undefined, not an error — so both are unwrapped explicitly.
+                const [catalogue, assigned] = await Promise.all([
+                    api.getServices(),
+                    api.getTenantServices(tenantId)
+                ]);
 
-                if (services.length === 0) {
+                const allServices = catalogue?.services || (Array.isArray(catalogue) ? catalogue : []);
+                const assignedList = Array.isArray(assigned) ? assigned : (assigned?.services || []);
+                currentTenantServices = assignedList;
+
+                if (allServices.length === 0) {
                     container.innerHTML = `
                         <div class="empty-services-message">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M16 16s-1.5-2-4-2-4 2-4 2"></path>
-                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                            </svg>
-                            <p>No services assigned to this tenant.</p>
-                            <a href="javascript:void(0)" onclick="closeModal('licenseModal'); viewTenantDetails('${tenantId}')">
-                                Assign services first →
-                            </a>
+                            <p>No services exist on this platform yet.</p>
+                            <a href="services.html">Create services first →</a>
                         </div>
                     `;
                     document.getElementById('generateLicenseBtn').disabled = true;
                     return;
                 }
 
-                countBadge.textContent = services.length;
+                const held = new Set(assignedList.map(s => String(s.serviceId)));
                 document.getElementById('generateLicenseBtn').disabled = false;
 
-                container.innerHTML = services.map(service => `
-                    <label class="service-chip" data-service-id="${service.serviceId}">
-                        <input type="checkbox" name="licenseService" value="${service.serviceId}" checked onchange="updateLicenseServiceCount()">
-                        <span class="chip-icon">${getServiceIcon(service.serviceName)}</span>
-                        <span class="chip-name">${service.serviceName}</span>
-                        <span class="chip-check">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </span>
-                    </label>
-                `).join('');
+                // Built as elements rather than interpolated HTML: a service name is
+                // operator-entered text, and this page's escapeHtml backslash-escapes quotes, which
+                // an HTML parser ignores.
+                container.innerHTML = '';
+                for (const service of allServices) {
+                    const id = String(service.id);
+                    const label = document.createElement('label');
+                    label.className = 'service-chip';
+                    label.dataset.serviceId = id;
+
+                    const box = document.createElement('input');
+                    box.type = 'checkbox';
+                    box.name = 'licenseService';
+                    box.value = id;
+                    box.checked = held.has(id);
+                    box.addEventListener('change', updateLicenseServiceCount);
+                    label.appendChild(box);
+
+                    const icon = document.createElement('span');
+                    icon.className = 'chip-icon';
+                    icon.innerHTML = getServiceIcon(service.serviceName);   // our own SVG, not user text
+                    label.appendChild(icon);
+
+                    const name = document.createElement('span');
+                    name.className = 'chip-name';
+                    name.textContent = service.displayName || service.serviceName;
+                    label.appendChild(name);
+
+                    const tick = document.createElement('span');
+                    tick.className = 'chip-check';
+                    tick.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" '
+                        + 'stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12">'
+                        + '</polyline></svg>';
+                    label.appendChild(tick);
+
+                    container.appendChild(label);
+                }
+
+                updateLicenseServiceCount();
             } catch (error) {
                 container.innerHTML = '<p class="text-danger">Failed to load services</p>';
                 console.error('Error loading services:', error);
@@ -2303,6 +2540,23 @@
                 return;
             }
 
+            // Seats. Blank means "leave the seat count alone"; the backend refuses 0 and anything
+            // below -1. Parsed here too so a typo is caught before a round trip.
+            const seatsRaw = document.getElementById('licenseMaxUsers').value.trim();
+            let maxUsers = null;
+            if (seatsRaw !== '') {
+                maxUsers = Number(seatsRaw);
+                if (!Number.isInteger(maxUsers) || maxUsers === 0 || maxUsers < -1) {
+                    Toast.error('Seats must be a whole positive number, or -1 for unlimited.');
+                    return;
+                }
+            }
+
+            // A SaaS sub-tenant has nowhere to paste a token, so its licence has to be pushed to
+            // Auth or nothing changes. An on-premise licence is handed to the customer instead, and
+            // there is no Auth of ours to push it to.
+            const applyToAuth = keyType === 'saas-tenant';
+
             // Disable button and show loading
             const btn = document.getElementById('generateLicenseBtn');
             const originalText = btn.innerHTML;
@@ -2322,7 +2576,9 @@
             `;
 
             try {
-                const result = await api.generateLicense(tenantId, startDate, expiryDate, notes, selectedServiceIds, keyType, platformId);
+                const result = await api.generateLicense(tenantId, startDate, expiryDate, notes,
+                    selectedServiceIds, keyType, platformId,
+                    { maxUsers, syncTenantServices: true, applyToAuth });
 
                 // Update token display
                 document.getElementById('licenseToken').textContent = result.encryptedToken;
@@ -2340,8 +2596,21 @@
                 document.getElementById('licenseSuccessSection').classList.add('show');
                 document.getElementById('generateLicenseBtn').style.display = 'none';
 
+                // The wording has to follow the behaviour. For a SaaS sub-tenant the licence has
+                // already been pushed to Auth and is live, so "ready to use" would send the operator
+                // looking for somewhere to paste a token that needs no pasting — and would leave
+                // them unsure whether the change had taken effect. For an on-premise licence the
+                // token IS the deliverable and the original wording is right.
+                const wasApplied = applyToAuth;
+                document.getElementById('licenseSuccessTitle').textContent =
+                    wasApplied ? 'Licence applied' : 'License Generated!';
+                document.getElementById('licenseSuccessSubtitle').textContent = wasApplied
+                    ? 'It is in force now — no token needs to be sent. Kept below for your records.'
+                    : 'Your encrypted license token is ready to use';
+
                 // Update header to success state
-                document.getElementById('licenseModalTitle').textContent = 'License Generated';
+                document.getElementById('licenseModalTitle').textContent =
+                    wasApplied ? 'Licence applied' : 'License Generated';
                 document.getElementById('licenseModalSubtitle').textContent = `License for ${currentTenantName}`;
                 document.getElementById('licenseModalIcon').classList.add('success');
                 document.getElementById('licenseModalIcon').innerHTML = `
@@ -2768,6 +3037,27 @@
                                     <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                                     <path d="M2 17l10 5 10-5"></path>
                                     <path d="M2 12l10 5 10-5"></path>
+                                </svg>
+                            </button>
+                            <button class="btn-icon-sm btn-icon-primary"
+                                    data-tenant-id="${tenant.id}"
+                                    data-tenant-name="${attrText(tenant.tenantName)}"
+                                    data-platform-id="${platformId}"
+                                    onclick="openChangePlanModal(this)" data-tooltip="Apply a plan / resubscribe">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                            </button>
+                            <button class="btn-icon-sm btn-icon-danger"
+                                    data-tenant-id="${tenant.id}"
+                                    data-tenant-name="${attrText(tenant.tenantName)}"
+                                    data-platform-id="${platformId}"
+                                    onclick="cancelSubTenant(this)" data-tooltip="Cancel subscription">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
                                 </svg>
                             </button>
                         </div>
