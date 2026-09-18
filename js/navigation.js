@@ -353,8 +353,15 @@ const Navigation = {
                     'padding:10px 16px;text-align:center;font-size:14px;font-weight:600;line-height:1.4;';
                 let expiry = '';
                 try { if (lf.expiry) expiry = new Date(lf.expiry).toLocaleDateString(); } catch (_e) {}
-                banner.textContent = 'Your subscription has expired' + (expiry ? ' on ' + expiry : '') +
-                    '. Access to features is disabled — please renew to restore access.';
+                // A licence can end two ways: the clock runs out, or an operator revokes it. Both strip
+                // every service from the token and both need this banner, but telling a revoked customer
+                // their subscription "expired on <a future date>" reads as a bug and sends them to the
+                // wrong remedy — they need to talk to someone, not click renew.
+                banner.textContent = lf.revoked
+                    ? 'Your subscription has been cancelled. Access to features is disabled — '
+                      + 'please contact support to restore access.'
+                    : 'Your subscription has expired' + (expiry ? ' on ' + expiry : '') +
+                      '. Access to features is disabled — please renew to restore access.';
                 document.body.prepend(banner);
             }
         } catch (e) { /* non-fatal — enforcement is server-side regardless */ }
