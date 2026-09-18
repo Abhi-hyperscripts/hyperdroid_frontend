@@ -3108,11 +3108,16 @@ function escapeAttr(value) {
  * control. A sub-tenant's own admin is refused by Auth even if they call it directly.
  */
 function openExtendLicenceModal(btn) {
-    const { tenantId, tenantName, expiry, expired } = btn.dataset;
+    const { tenantId, tenantName, expiry, expired, maxUsers } = btn.dataset;
 
     document.getElementById('extendLicenceTenantId').value = tenantId;
     document.getElementById('extendLicenceTenantName').textContent = tenantName;
     document.getElementById('extendLicenceDays').value = 5;
+    // Seeded from the LICENCE the row is showing, then overwritten by the tenant record once
+    // TenantManager answers. If that call fails the operator still sees a real number rather than an
+    // empty box that reads as "no seats" — and an empty box submitted unchanged sends nothing, so
+    // the wrong-looking value could not have been applied anyway.
+    document.getElementById('extendLicenceSeats').value = maxUsers || '';
 
     const isExpired = expired === '1';
     const current = expiry ? formatDate(expiry) : 'unknown';
@@ -3124,57 +3129,154 @@ function openExtendLicenceModal(btn) {
     // wrong one either grants far more than they meant or restores nothing at all.
     document.getElementById('extendLicenceBasisHint').textContent = isExpired
         ? 'Counted from today, because the licence has already lapsed — access resumes immediately.'
-        : 'Added to the current expiry date, not to today.';
+        : 'Added to the current expiry date, not to today. Leave at 0 to keep the same expiry.';
 
     const result = document.getElementById('extendLicenceResult');
     result.style.display = 'none';
     result.textContent = '';
 
     openModal('extendLicenceModal');
+    loadLicenceOptions(tenantId);
+}
+
+/**
+ * Current seats and apps, plus the catalogue so apps the tenant does NOT have can be offered.
+ *
+ * Seats and apps come from TenantManager rather than from the row: the row shows what the LICENCE
+ * says, and the tenant record is what the next licence will be minted from. Those can differ, and
+ * prefilling from the wrong one would silently re-apply a stale value.
+ */
+async function loadLicenceOptions(tenantId) {
+    const box = document.getElementById('extendLicenceApps');
+    const count = document.getElementById('extendLicenceAppCount');
+    box.innerHTML = '<span style="color:var(--text-secondary);font-size:12px;">Loading…</span>';
+    count.textContent = '';
+
+    try {
+        const opts = await api.getTenantLicenceOptions(tenantId);
+        // The TENANT RECORD's seat count, which is what the next licence is minted from — it can
+        // differ from the licence in force, and that difference is exactly what an operator needs
+        // to see before changing it.
+        if (opts.maxUsers != null) document.getElementById('extendLicenceSeats').value = opts.maxUsers;
+
+        const held = new Set((opts.heldServiceIds || []).map(String));
+        const catalogue = opts.catalogue || [];
+
+        if (catalogue.length === 0) {
+            box.innerHTML = '<span style="color:var(--text-secondary);font-size:12px;">No apps defined on this platform.</span>';
+            return;
+        }
+
+        // Built as elements with textContent: an app's display name is operator-entered text, and
+        // interpolating it into HTML is how a quote in a name breaks the markup.
+        box.innerHTML = '';
+        for (const svc of catalogue) {
+            const label = document.createElement('label');
+            label.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--border-primary);border-radius:14px;font-size:12px;cursor:pointer;';
+
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'licence-app';
+            cb.value = svc.id;
+            cb.checked = held.has(String(svc.id));
+            cb.addEventListener('change', updateLicenceAppCount);
+            label.appendChild(cb);
+
+            const name = document.createElement('span');
+            name.textContent = svc.name + (svc.isActive === false ? ' (retired)' : '');
+            label.appendChild(name);
+
+            box.appendChild(label);
+        }
+        updateLicenceAppCount();
+    } catch (error) {
+        // Said plainly rather than left as a spinner: without the catalogue the operator can still
+        // change days and seats, and should know the app list is the part that failed.
+        box.innerHTML = '';
+        const msg = document.createElement('span');
+        msg.style.cssText = 'color:var(--color-error,#c00);font-size:12px;';
+        msg.textContent = 'Could not load apps: ' + (error.message || 'unknown error')
+            + ' — days and seats can still be changed.';
+        box.appendChild(msg);
+    }
+}
+
+function updateLicenceAppCount() {
+    const all = [...document.querySelectorAll('.licence-app')];
+    const on = all.filter(c => c.checked).length;
+    document.getElementById('extendLicenceAppCount').textContent = `(${on} of ${all.length})`;
 }
 
 async function submitExtendLicence() {
     const tenantId = document.getElementById('extendLicenceTenantId').value;
-    const days = parseInt(document.getElementById('extendLicenceDays').value, 10);
     const result = document.getElementById('extendLicenceResult');
     const btn = document.getElementById('extendLicenceBtn');
 
-    if (!Number.isInteger(days) || days < 1) {
+    const show = (text, ok) => {
         result.style.display = 'block';
-        result.style.background = 'var(--color-error-bg, #fee)';
-        result.style.color = 'var(--color-error, #c00)';
-        result.textContent = 'Enter a whole number of days, at least 1.';
-        return;
+        result.style.background = ok ? 'var(--color-success-bg, #efe)' : 'var(--color-error-bg, #fee)';
+        result.style.color = ok ? 'var(--color-success, #070)' : 'var(--color-error, #c00)';
+        result.textContent = text;
+    };
+
+    const daysRaw = document.getElementById('extendLicenceDays').value.trim();
+    const seatsRaw = document.getElementById('extendLicenceSeats').value.trim();
+
+    // Each field is sent ONLY if it is actually being changed. Sending a value the operator did not
+    // touch is how a seats edit silently moves an expiry.
+    const payload = {};
+
+    if (daysRaw !== '' && Number(daysRaw) !== 0) {
+        const days = Number(daysRaw);
+        if (!Number.isInteger(days) || days < 1) return show('Days must be a whole number, at least 1.', false);
+        payload.days = days;
+    }
+
+    if (seatsRaw !== '') {
+        const seats = Number(seatsRaw);
+        if (!Number.isInteger(seats) || seats === 0 || seats < -1) {
+            return show('Users must be a whole positive number, or -1 for unlimited.', false);
+        }
+        payload.maxUsers = seats;
+    }
+
+    const boxes = [...document.querySelectorAll('.licence-app')];
+    if (boxes.length > 0) {
+        const chosen = boxes.filter(c => c.checked).map(c => c.value);
+        if (chosen.length === 0) return show('Choose at least one app — a licence with none locks the tenant out.', false);
+
+        // Sent only when the selection DIFFERS from what they hold, so opening the modal and
+        // changing only the seat count does not re-write the app list as a side effect.
+        const held = new Set(boxes.filter(c => c.defaultChecked).map(c => c.value));
+        const changed = chosen.length !== held.size || chosen.some(id => !held.has(id));
+        if (changed) payload.serviceIds = chosen;
+    }
+
+    if (Object.keys(payload).length === 0) {
+        return show('Nothing to change — adjust the days, the users, or the apps.', false);
     }
 
     const original = btn.textContent;
     btn.disabled = true;
-    btn.textContent = 'Extending…';
+    btn.textContent = 'Applying…';
 
     try {
-        const response = await api.extendTenantLicence(tenantId, days);
-
-        result.style.display = 'block';
-        result.style.background = 'var(--color-success-bg, #efe)';
-        result.style.color = 'var(--color-success, #070)';
+        const response = await api.modifyTenantLicence(tenantId, payload);
         // Says RESTORED versus postponed — different events, and the operator needs to know which
         // one they just caused.
-        result.textContent = response.wasAlreadyExpired
+        show(response.wasAlreadyExpired
             ? `${response.message} Access has been restored.`
-            : response.message;
+            : response.message, true);
 
-        // Reload from the server rather than patching the row: the expiry, the status badge and the
-        // expired counter all derive from this, and three hand-updates are three chances to drift.
+        // Reload from the server rather than patching the row: expiry, status badge and the expired
+        // counter all derive from this, and three hand-updates are three chances to drift.
         subTenantsData = null;
         await loadSubTenants();
 
         setTimeout(() => closeModal('extendLicenceModal'), 2500);
     } catch (error) {
-        result.style.display = 'block';
-        result.style.background = 'var(--color-error-bg, #fee)';
-        result.style.color = 'var(--color-error, #c00)';
-        // The modal stays open on failure so the operator keeps the number they typed.
-        result.textContent = error.message || 'Could not extend the licence.';
+        // The modal stays open on failure so the operator keeps what they typed.
+        show(error.message || 'Could not change the licence.', false);
     } finally {
         btn.disabled = false;
         btn.textContent = original;
@@ -3258,6 +3360,7 @@ function renderSubTenantRow(tenant) {
                         data-tenant-name="${escapeAttr(tenant.organizationName || tenant.tenantName)}"
                         data-expiry="${tenant.expiryDate || ''}"
                         data-expired="${tenant.isExpired ? '1' : '0'}"
+                        data-max-users="${tenant.maxUsers ?? ''}"
                         onclick="event.stopPropagation(); openExtendLicenceModal(this)"
                         title="Extend this tenant's licence">
                     Extend

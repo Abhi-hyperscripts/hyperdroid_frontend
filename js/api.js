@@ -710,6 +710,28 @@ class API {
         });
     }
 
+    /** Current seats and apps for a tenant, plus the whole catalogue so apps can be ADDED. */
+    async getTenantLicenceOptions(tenantId) {
+        return this.request(`/tenants/${tenantId}/licence-options`);
+    }
+
+    /**
+     * Change a licence: term, seats, apps, or any combination.
+     *
+     * Anything omitted is carried over from the licence in force — so a seats-only change must send
+     * ONLY maxUsers, or it would move the expiry as a side effect.
+     */
+    async modifyTenantLicence(tenantId, { days, maxUsers, serviceIds } = {}) {
+        const body = {};
+        if (days != null) body.days = days;
+        if (maxUsers != null) body.maxUsers = maxUsers;
+        if (serviceIds != null) body.serviceIds = serviceIds;
+        return this.request(`/tenants/${tenantId}/licence`, {
+            method: 'POST',
+            body: JSON.stringify(body)
+        });
+    }
+
     // Tenant API Keys (SUPERADMIN)
     async getApiKeys() {
         return this.request('/tenant-api-keys');
