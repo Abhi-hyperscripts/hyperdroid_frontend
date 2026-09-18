@@ -3179,6 +3179,13 @@ async function loadLicenceOptions(tenantId) {
             cb.className = 'licence-app';
             cb.value = svc.id;
             cb.checked = held.has(String(svc.id));
+            // defaultChecked is the "what they had" baseline the submit step compares against, and
+            // setting .checked as a PROPERTY does not set it — it stayed false for every box, so the
+            // "only send apps if they changed" guard never fired and a seats-only edit re-sent the
+            // whole app list every time. Harmless while the reconciliation is a no-op for an
+            // unchanged set, but it made the confirmation message claim apps had been changed when
+            // they had not, and it left a real reconciliation one refactor away from doing damage.
+            cb.defaultChecked = cb.checked;
             cb.addEventListener('change', updateLicenceAppCount);
             label.appendChild(cb);
 
