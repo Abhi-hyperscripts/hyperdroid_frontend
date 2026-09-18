@@ -1166,8 +1166,11 @@ let _fbStandardFields = null;          // { field_key: "Display Name" } — lazy
 async function loadFacebookPages() {
     try {
         const [pages, forms] = await Promise.all([
-            api.request('/crm/facebook/pages').catch(() => []),
-            api.request('/crm/facebook/forms').catch(() => [])
+            // Silent: this also runs on every FacebookSynced hub event (per form,
+            // per poll cycle), and the global overlay flashing every few seconds
+            // over a page the user is reading was the visible result.
+            api.request('/crm/facebook/pages', { _skipSpinner: true }).catch(() => []),
+            api.request('/crm/facebook/forms', { _skipSpinner: true }).catch(() => [])
         ]);
         facebookPages = pages || [];
         facebookForms = forms || [];
@@ -1493,7 +1496,7 @@ async function refreshFacebookSyncLogs() {
     if (tbody) tbody.innerHTML = '';
 
     try {
-        const data = await api.request(`/crm/Facebook/forms/${sourceId}/sync-logs?limit=100`);
+        const data = await api.request(`/crm/Facebook/forms/${sourceId}/sync-logs?limit=100`, { _skipSpinner: true });
         const items = (data && data.items) || [];
         if (loadingEl) loadingEl.style.display = 'none';
         if (items.length === 0) {
@@ -4628,9 +4631,10 @@ async function loadGoogleSheetsState() {
         // SA info fetched in parallel so the share button visibility flips
         // in one render pass with the rest of the card.
         const [conns, sheets, saInfo] = await Promise.all([
-            api.request('/crm/GoogleSheets/connections'),
-            api.request('/crm/GoogleSheets/sheets'),
-            api.request('/crm/GoogleSheets/service-account/info').catch(() => ({ enabled: false }))
+            // Silent for the same reason as loadFacebookPages: re-run on every GoogleSheetSynced event.
+            api.request('/crm/GoogleSheets/connections', { _skipSpinner: true }),
+            api.request('/crm/GoogleSheets/sheets', { _skipSpinner: true }),
+            api.request('/crm/GoogleSheets/service-account/info', { _skipSpinner: true }).catch(() => ({ enabled: false }))
         ]);
         _gsConnections = conns || [];
         _gsConnectedSheets = Array.isArray(sheets) ? sheets : [];
@@ -5108,7 +5112,7 @@ async function refreshGoogleSheetSyncLogs() {
     if (tbody) tbody.innerHTML = '';
 
     try {
-        const data = await api.request(`/crm/GoogleSheets/sources/${sourceId}/sync-logs?limit=100`);
+        const data = await api.request(`/crm/GoogleSheets/sources/${sourceId}/sync-logs?limit=100`, { _skipSpinner: true });
         const items = (data && data.items) || [];
         if (loadingEl) loadingEl.style.display = 'none';
         if (items.length === 0) {
