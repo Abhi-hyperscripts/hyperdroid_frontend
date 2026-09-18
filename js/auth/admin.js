@@ -3117,7 +3117,9 @@ function openExtendLicenceModal(btn) {
     // TenantManager answers. If that call fails the operator still sees a real number rather than an
     // empty box that reads as "no seats" — and an empty box submitted unchanged sends nothing, so
     // the wrong-looking value could not have been applied anyway.
-    document.getElementById('extendLicenceSeats').value = maxUsers || '';
+    const seatsField = document.getElementById('extendLicenceSeats');
+    seatsField.value = maxUsers || '';
+    seatsField.dataset.loaded = maxUsers || '';
 
     const isExpired = expired === '1';
     const current = expiry ? formatDate(expiry) : 'unknown';
@@ -3157,7 +3159,13 @@ async function loadLicenceOptions(tenantId) {
         // The TENANT RECORD's seat count, which is what the next licence is minted from — it can
         // differ from the licence in force, and that difference is exactly what an operator needs
         // to see before changing it.
-        if (opts.maxUsers != null) document.getElementById('extendLicenceSeats').value = opts.maxUsers;
+        if (opts.maxUsers != null) {
+            const seatsField = document.getElementById('extendLicenceSeats');
+            seatsField.value = opts.maxUsers;
+            // The baseline the submit step compares against. Same reason the app list keeps one:
+            // a value the operator never touched must not be sent as though they had chosen it.
+            seatsField.dataset.loaded = String(opts.maxUsers);
+        }
 
         const held = new Set((opts.heldServiceIds || []).map(String));
         const catalogue = opts.catalogue || [];
@@ -3244,7 +3252,13 @@ async function submitExtendLicence() {
         if (!Number.isInteger(seats) || seats === 0 || seats < -1) {
             return show('Users must be a whole positive number, or -1 for unlimited.', false);
         }
-        payload.maxUsers = seats;
+        // Sent only when it DIFFERS from what was loaded. Re-sending an untouched seat count is
+        // harmless in itself, but it makes the confirmation claim a change that never happened —
+        // and an operator who is told seats moved when they did not has been misinformed about the
+        // one thing they came here to check.
+        if (seatsRaw !== (document.getElementById('extendLicenceSeats').dataset.loaded ?? '')) {
+            payload.maxUsers = seats;
+        }
     }
 
     const boxes = [...document.querySelectorAll('.licence-app')];
