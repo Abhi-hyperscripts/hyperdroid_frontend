@@ -1221,6 +1221,17 @@ function renderFacebookPageCard(page, forms) {
     const usagePctChip = (page.usage_pct != null) ? renderFbUsageChip(page.usage_pct, page.usage_checked_at) : '';
     const cooldownBadge = renderFbCooldownBadge(page.cooldown_until);
 
+    // Meta refused this page's token (blocked app, dead token, lost permission).
+    // Until 2026-09-18 this was invisible: the card showed "0 leads" and the
+    // forms dialog showed "no forms" while Meta had been saying no for weeks.
+    const errorHtml = page.last_error
+        ? `<div class="fb-page-error" style="margin-top: 10px; padding: 10px 12px; border: 1px solid var(--color-error); border-left-width: 4px; border-radius: 6px; background: var(--bg-tertiary); font-size: 0.85em;">
+              <div style="font-weight: 600; color: var(--color-error);">Meta is refusing this page${page.last_error_at ? ' · since ' + escapeHtml(fbRelativeTime(page.last_error_at)) : ''}</div>
+              <div style="margin-top: 4px; color: var(--text-primary);">${escapeHtml(page.last_error_hint || page.last_error)}</div>
+              <div style="margin-top: 4px; color: var(--text-secondary); font-size: 0.92em;">Meta said: ${escapeHtml(page.last_error)}${page.last_error_code != null ? ' (code ' + escapeHtml(String(page.last_error_code)) + ')' : ''}</div>
+           </div>`
+        : '';
+
     const formsHtml = forms.length > 0
         ? `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color-light);">
               ${forms.map(f => renderFacebookFormRow(f)).join('')}
@@ -1253,6 +1264,7 @@ function renderFacebookPageCard(page, forms) {
                     </button>
                 </div>
             </div>
+            ${errorHtml}
             ${formsHtml}
         </div>
     `;
@@ -1797,7 +1809,13 @@ async function openFacebookFormModal(pageId, pageName) {
         const forms = await api.request(`/crm/facebook/pages/${encodeURIComponent(pageId)}/forms`);
         renderFacebookFormList(forms || []);
     } catch (err) {
-        document.getElementById('fbFormList').innerHTML = `<div style="padding: 20px; color: var(--color-error);">Failed to load forms: ${escapeHtml(err.message || 'unknown error')}</div>`;
+        const d = err && err.data ? err.data : null;
+        const hint = d && d.hint ? `<div style="margin-top: 8px; color: var(--text-primary);">${escapeHtml(d.hint)}</div>` : '';
+        const said = d && d.fb_error_message ? `<div style="margin-top: 6px; color: var(--text-secondary); font-size: 0.92em;">Meta said: ${escapeHtml(d.fb_error_message)}${d.fb_error_code != null ? ' (code ' + escapeHtml(String(d.fb_error_code)) + ')' : ''}</div>` : '';
+        document.getElementById('fbFormList').innerHTML = `<div style="padding: 20px;">
+            <div style="font-weight: 600; color: var(--color-error);">${hint ? 'Meta refused the request for this page' : 'Failed to load forms: ' + escapeHtml(err.message || 'unknown error')}</div>
+            ${hint}${said}
+        </div>`;
     }
 }
 
