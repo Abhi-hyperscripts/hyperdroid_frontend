@@ -1881,11 +1881,12 @@ function renderFacebookFormRows(query) {
     const shown = q
         ? _fbFormsAll.filter(f => (f.form_name || '').toLowerCase().includes(q) || String(f.form_id || '').includes(q))
         : _fbFormsAll;
+    const total = _fbFormsAll.length;
     const mapped = _fbFormsAll.filter(f => f.already_connected).length;
+    const unmapped = total - mapped;
     if (countEl) {
-        countEl.textContent = q
-            ? `${shown.length} of ${_fbFormsAll.length} forms`
-            : `${_fbFormsAll.length} form${_fbFormsAll.length === 1 ? '' : 's'} on this page · ${mapped} mapped`;
+        const tally = `${total} total · <span style="color: var(--color-success);">${mapped} mapped</span> · ${unmapped} unmapped`;
+        countEl.innerHTML = q ? `Showing ${shown.length} of ${total} · ${tally}` : tally;
     }
     if (shown.length === 0) {
         list.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No form matches “${escapeHtml(query)}”.</div>`;
