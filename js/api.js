@@ -696,6 +696,20 @@ class API {
         return this.request(`/tenants/${tenantId}`);
     }
 
+    /**
+     * Extend a sub-tenant's licence by a number of days.
+     *
+     * Auth cannot mint a licence — the expiry that is enforced lives inside the signed token — so it
+     * asks TenantManager for a new one and applies what comes back. Nothing here needs a token pasted
+     * in, which is the whole point: a lapsed demo is extended from this console.
+     */
+    async extendTenantLicence(tenantId, days) {
+        return this.request(`/tenants/${tenantId}/extend`, {
+            method: 'POST',
+            body: JSON.stringify({ days })
+        });
+    }
+
     // Tenant API Keys (SUPERADMIN)
     async getApiKeys() {
         return this.request('/tenant-api-keys');

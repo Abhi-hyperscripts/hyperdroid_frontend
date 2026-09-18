@@ -3055,7 +3055,7 @@ async function loadSubTenants() {
         if (subTenants.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="7">
+                    <td colspan="8">
                         <div class="empty-state" style="padding: 40px;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 16px; color: var(--text-muted);">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -3083,6 +3083,101 @@ async function loadSubTenants() {
             notSaaSCard.querySelector('h3').textContent = 'Error Loading Sub-Tenants';
             notSaaSCard.querySelector('p').textContent = error.message || 'Failed to retrieve sub-tenant information.';
         }
+    }
+}
+
+/**
+ * Escape for a QUOTED HTML ATTRIBUTE. Entities are what an attribute understands, and `dataset`
+ * hands them back decoded, so the reader sees the original text. & must go first or it would
+ * double-escape the entities added after it.
+ */
+function escapeAttr(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * Extend a sub-tenant's licence.
+ *
+ * Only reachable from the Sub-Tenants tab, which is shown only to the SaaS platform operator — and
+ * the endpoint behind it is platform-scoped too, so the UI gating is convenience rather than the
+ * control. A sub-tenant's own admin is refused by Auth even if they call it directly.
+ */
+function openExtendLicenceModal(btn) {
+    const { tenantId, tenantName, expiry, expired } = btn.dataset;
+
+    document.getElementById('extendLicenceTenantId').value = tenantId;
+    document.getElementById('extendLicenceTenantName').textContent = tenantName;
+    document.getElementById('extendLicenceDays').value = 5;
+
+    const isExpired = expired === '1';
+    const current = expiry ? formatDate(expiry) : 'unknown';
+    document.getElementById('extendLicenceCurrent').textContent = isExpired
+        ? `Licence EXPIRED on ${current} — this tenant is locked out right now.`
+        : `Licence currently runs to ${current}.`;
+
+    // Says which date the days are added to. The two cases differ, and an operator who assumes the
+    // wrong one either grants far more than they meant or restores nothing at all.
+    document.getElementById('extendLicenceBasisHint').textContent = isExpired
+        ? 'Counted from today, because the licence has already lapsed — access resumes immediately.'
+        : 'Added to the current expiry date, not to today.';
+
+    const result = document.getElementById('extendLicenceResult');
+    result.style.display = 'none';
+    result.textContent = '';
+
+    openModal('extendLicenceModal');
+}
+
+async function submitExtendLicence() {
+    const tenantId = document.getElementById('extendLicenceTenantId').value;
+    const days = parseInt(document.getElementById('extendLicenceDays').value, 10);
+    const result = document.getElementById('extendLicenceResult');
+    const btn = document.getElementById('extendLicenceBtn');
+
+    if (!Number.isInteger(days) || days < 1) {
+        result.style.display = 'block';
+        result.style.background = 'var(--color-error-bg, #fee)';
+        result.style.color = 'var(--color-error, #c00)';
+        result.textContent = 'Enter a whole number of days, at least 1.';
+        return;
+    }
+
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Extending…';
+
+    try {
+        const response = await api.extendTenantLicence(tenantId, days);
+
+        result.style.display = 'block';
+        result.style.background = 'var(--color-success-bg, #efe)';
+        result.style.color = 'var(--color-success, #070)';
+        // Says RESTORED versus postponed — different events, and the operator needs to know which
+        // one they just caused.
+        result.textContent = response.wasAlreadyExpired
+            ? `${response.message} Access has been restored.`
+            : response.message;
+
+        // Reload from the server rather than patching the row: the expiry, the status badge and the
+        // expired counter all derive from this, and three hand-updates are three chances to drift.
+        subTenantsData = null;
+        await loadSubTenants();
+
+        setTimeout(() => closeModal('extendLicenceModal'), 2500);
+    } catch (error) {
+        result.style.display = 'block';
+        result.style.background = 'var(--color-error-bg, #fee)';
+        result.style.color = 'var(--color-error, #c00)';
+        // The modal stays open on failure so the operator keeps the number they typed.
+        result.textContent = error.message || 'Could not extend the licence.';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = original;
     }
 }
 
@@ -3153,9 +3248,24 @@ function renderSubTenantRow(tenant) {
                     ${statusText}
                 </span>
             </td>
+            <td>
+                <!-- stopPropagation: the row itself toggles the details panel, so without it every
+                     click here would also expand the row underneath the modal. Identity travels in
+                     data attributes rather than an interpolated onclick string — an organisation
+                     name containing a quote would otherwise end the attribute. -->
+                <button class="btn btn-sm btn-secondary"
+                        data-tenant-id="${tid}"
+                        data-tenant-name="${escapeAttr(tenant.organizationName || tenant.tenantName)}"
+                        data-expiry="${tenant.expiryDate || ''}"
+                        data-expired="${tenant.isExpired ? '1' : '0'}"
+                        onclick="event.stopPropagation(); openExtendLicenceModal(this)"
+                        title="Extend this tenant's licence">
+                    Extend
+                </button>
+            </td>
         </tr>
         <tr id="subtenant-details-${tid}" style="display:none;">
-            <td colspan="7" style="padding:0;">
+            <td colspan="8" style="padding:0;">
                 <div id="subtenant-details-content-${tid}" style="padding:16px 20px;background:var(--bg-secondary);border-top:1px solid var(--border-primary);">
                     <span style="color:var(--text-secondary);font-size:12px;">Loading...</span>
                 </div>

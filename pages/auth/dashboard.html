@@ -496,11 +496,12 @@
                                         <th>Start Date</th>
                                         <th>Expiry Date</th>
                                         <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="subtenantsTableBody">
                                     <tr>
-                                        <td colspan="7">
+                                        <td colspan="8">
                                             <div class="loading-spinner">
                                                 <div class="spinner"></div>
                                             </div>
@@ -733,6 +734,38 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                         Activate
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extend a sub-tenant's licence. No token to paste: Auth asks TenantManager for one. -->
+    <div class="modal" id="extendLicenceModal">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Extend Licence</h3>
+                    <button class="close-btn" onclick="closeModal('extendLicenceModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="extendLicenceTenantId">
+                    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:4px;">
+                        Extending <strong id="extendLicenceTenantName" style="color:var(--text-primary);"></strong>
+                    </p>
+                    <p id="extendLicenceCurrent" style="color:var(--text-secondary);font-size:12px;margin:0 0 16px;"></p>
+
+                    <div class="form-group">
+                        <label>Extend by (days) *</label>
+                        <input type="number" id="extendLicenceDays" min="1" max="730" step="1" value="5"
+                               style="width:100%;padding:10px;border:1px solid var(--border-primary);border-radius:6px;background:var(--bg-tertiary);color:var(--text-primary);">
+                        <small style="display:block;margin-top:6px;color:var(--text-secondary);font-size:12px;" id="extendLicenceBasisHint"></small>
+                    </div>
+
+                    <div id="extendLicenceResult" style="display:none;margin-top:12px;padding:12px;border-radius:6px;font-size:13px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('extendLicenceModal')">Cancel</button>
+                    <button class="btn btn-primary" id="extendLicenceBtn" onclick="submitExtendLicence()">Extend</button>
                 </div>
             </div>
         </div>
