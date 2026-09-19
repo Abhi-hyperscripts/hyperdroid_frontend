@@ -6900,8 +6900,20 @@ body.crm-leads-page .lp-toolbar .crm-filter-group--no-label { flex-shrink: 0; di
     border-bottom-color: var(--brand-primary);
 }
 
-/* [hidden] loses to the panel's own display rules without this, and every pane
-   would render at once — the exact stacking this replaced. */
+/* A pane must reproduce the spacing its children used to get from .panel-body.
+   .panel-section carries NO margin of its own — the gap between cards came entirely from
+   .panel-body's `display:flex; flex-direction:column; gap:16px`. Wrapping the sections in panes
+   moved them one level down, so that gap started applying BETWEEN PANES instead, and the two
+   cards that share a pane — Documents/Signatures, and Logged activity/History — rendered flush
+   against each other with no gap at all. */
+.ld-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Beats the display:flex above, which would otherwise show a hidden pane.
+   [hidden] alone loses to any display rule, and every pane would render at once. */
 .ld-pane[hidden] { display: none !important; }
 
 /* Icons inherit the tab's colour, so they light up with the label on hover and when active rather
