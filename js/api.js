@@ -721,9 +721,15 @@ class API {
      * Anything omitted is carried over from the licence in force — so a seats-only change must send
      * ONLY maxUsers, or it would move the expiry as a side effect.
      */
-    async modifyTenantLicence(tenantId, { days, maxUsers, serviceIds } = {}) {
+    /** Revoke a licence: access stops and every session in that organisation is dropped. */
+    async revokeTenantLicence(tenantId) {
+        return this.request(`/tenants/${tenantId}/license`, { method: 'DELETE' });
+    }
+
+    async modifyTenantLicence(tenantId, { days, maxUsers, serviceIds, expiryDate } = {}) {
         const body = {};
         if (days != null) body.days = days;
+        if (expiryDate != null) body.expiryDate = expiryDate;
         if (maxUsers != null) body.maxUsers = maxUsers;
         if (serviceIds != null) body.serviceIds = serviceIds;
         return this.request(`/tenants/${tenantId}/licence`, {

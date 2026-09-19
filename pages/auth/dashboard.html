@@ -762,6 +762,17 @@
                     </div>
 
                     <div class="form-group">
+                        <label>…or set the expiry date</label>
+                        <input type="date" id="extendLicenceExpiry"
+                               style="width:100%;padding:10px;border:1px solid var(--border-primary);border-radius:6px;background:var(--bg-tertiary);color:var(--text-primary);">
+                        <small style="display:block;margin-top:6px;color:var(--text-secondary);font-size:12px;">
+                            The only way to <strong>shorten</strong> a term — adding days can only lengthen one.
+                            Setting a date here ignores the days above. A past date is refused: to end access
+                            now, use Revoke.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
                         <label>Users</label>
                         <input type="number" id="extendLicenceSeats" min="-1" step="1"
                                style="width:100%;padding:10px;border:1px solid var(--border-primary);border-radius:6px;background:var(--bg-tertiary);color:var(--text-primary);">
@@ -783,9 +794,15 @@
 
                     <div id="extendLicenceResult" style="display:none;margin-top:12px;padding:12px;border-radius:6px;font-size:13px;"></div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('extendLicenceModal')">Cancel</button>
-                    <button class="btn btn-primary" id="extendLicenceBtn" onclick="submitExtendLicence()">Apply changes</button>
+                <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                    <!-- Kept apart from the other two: revoking is not a variation on changing a
+                         licence, it ends access and drops every session. Separated so it cannot be
+                         hit while reaching for Apply. -->
+                    <button class="btn btn-danger" id="revokeLicenceBtn" onclick="revokeLicence()">Revoke now</button>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-secondary" onclick="closeModal('extendLicenceModal')">Cancel</button>
+                        <button class="btn btn-primary" id="extendLicenceBtn" onclick="submitExtendLicence()">Apply changes</button>
+                    </div>
                 </div>
             </div>
         </div>

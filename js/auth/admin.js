@@ -2989,7 +2989,7 @@ async function checkSubTenantsVisibility() {
     };
 
     try {
-        const response = await api.getSubTenants();
+        const response = await api.getSubTenants(true);   // include REVOKED tenants — see below
 
         if (response && response.success && response.isSaaSPlatform) {
             showPlatformOnly(true);
@@ -3015,7 +3015,11 @@ async function loadSubTenants() {
     try {
         // If we already have data from visibility check, use it
         if (!subTenantsData) {
-            const response = await api.getSubTenants();
+            // includeInactive: a revoked tenant is still a customer, and leaving them out made
+            // revoke a ONE-WAY DOOR in this console — the moment you revoked, the row vanished and
+            // there was nothing left to click to bring them back. The row renderer already knows how
+            // to show them ("Inactive"); it was simply never given any.
+            const response = await api.getSubTenants(true);
             subTenantsData = response;
         }
 
@@ -3120,6 +3124,11 @@ function openExtendLicenceModal(btn) {
     const seatsField = document.getElementById('extendLicenceSeats');
     seatsField.value = maxUsers || '';
     seatsField.dataset.loaded = maxUsers || '';
+    // Seeded with the CURRENT expiry so shortening is a small edit rather than a date looked up
+    // elsewhere — and so an accidental submit re-states the same date instead of moving it.
+    const expiryField = document.getElementById('extendLicenceExpiry');
+    expiryField.value = expiry ? new Date(expiry).toISOString().slice(0, 10) : '';
+    expiryField.dataset.loaded = expiryField.value;
 
     const isExpired = expired === '1';
     const current = expiry ? formatDate(expiry) : 'unknown';
@@ -3222,6 +3231,57 @@ function updateLicenceAppCount() {
     document.getElementById('extendLicenceAppCount').textContent = `(${on} of ${all.length})`;
 }
 
+/**
+ * Revoke a licence: access stops and every session in that organisation is dropped.
+ *
+ * Confirmed rather than immediate, and the confirmation says what actually happens rather than
+ * asking whether the operator is sure. "Are you sure?" tells someone nothing they did not already
+ * know; "everyone signed in will be logged out" is the fact they might not have.
+ */
+async function revokeLicence() {
+    const tenantId = document.getElementById('extendLicenceTenantId').value;
+    const tenantName = document.getElementById('extendLicenceTenantName').textContent;
+    const btn = document.getElementById('revokeLicenceBtn');
+    const result = document.getElementById('extendLicenceResult');
+
+    const confirmed = await Confirm.show({
+        type: 'danger',
+        title: 'Revoke Licence',
+        message: `Revoke the licence for "${tenantName}"?\n\n`
+            + `\u2022 Access stops immediately\n`
+            + `\u2022 Everyone signed in is logged out\n`
+            + `\u2022 Their data is KEPT \u2014 this is not a deletion\n`
+            + `\u2022 Applying a licence brings them back`,
+        confirmText: 'Revoke now',
+        cancelText: 'Keep it active'
+    });
+    if (!confirmed) return;
+
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Revoking…';
+
+    try {
+        const response = await api.revokeTenantLicence(tenantId);
+        result.style.display = 'block';
+        result.style.background = 'var(--color-warning-bg, #fff6e0)';
+        result.style.color = 'var(--color-warning, #8a5b00)';
+        result.textContent = response.message || 'Licence revoked.';
+
+        subTenantsData = null;
+        await loadSubTenants();
+        setTimeout(() => closeModal('extendLicenceModal'), 3000);
+    } catch (error) {
+        result.style.display = 'block';
+        result.style.background = 'var(--color-error-bg, #fee)';
+        result.style.color = 'var(--color-error, #c00)';
+        result.textContent = error.message || 'Could not revoke the licence.';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+    }
+}
+
 async function submitExtendLicence() {
     const tenantId = document.getElementById('extendLicenceTenantId').value;
     const result = document.getElementById('extendLicenceResult');
@@ -3261,6 +3321,17 @@ async function submitExtendLicence() {
         }
     }
 
+    const expiryField = document.getElementById('extendLicenceExpiry');
+    const expiryRaw = expiryField.value.trim();
+    if (expiryRaw !== '' && expiryRaw !== (expiryField.dataset.loaded ?? '')) {
+        if (payload.days != null) {
+            return show('Use either a number of days or an expiry date, not both.', false);
+        }
+        // Sent as midnight UTC on the chosen day. A bare date parsed in local time would land on the
+        // previous day for anyone east of UTC, quietly cutting the term a day shorter than shown.
+        payload.expiryDate = `${expiryRaw}T00:00:00Z`;
+    }
+
     const boxes = [...document.querySelectorAll('.licence-app')];
     if (boxes.length > 0) {
         const chosen = boxes.filter(c => c.checked).map(c => c.value);
@@ -3274,7 +3345,7 @@ async function submitExtendLicence() {
     }
 
     if (Object.keys(payload).length === 0) {
-        return show('Nothing to change — adjust the days, the users, or the apps.', false);
+        return show('Nothing to change — adjust the days, the expiry date, the users, or the apps.', false);
     }
 
     const original = btn.textContent;
