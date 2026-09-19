@@ -190,64 +190,81 @@ class API {
             }
         }
 
-        // Auto-show spinner overlay (ref-counted — stays visible until all calls finish)
+        // Auto-show spinner overlay (ref-counted — stays visible until all calls finish).
+        //
+        // NOTE the placement: show() sits outside the try whose finally calls hide(), and there is
+        // throwable code between them — _getBaseUrl, the prefix rewriting, header construction. A
+        // throw anywhere in that window leaks the ref count permanently and leaves the overlay over
+        // the page swallowing every click. Wrapped so the balancing hide() is guaranteed.
         const _showSpinner = options._skipSpinner !== true && typeof ButtonSpinner !== 'undefined';
         if (_showSpinner) ButtonSpinner.show();
 
-        const baseUrl = this._getBaseUrl(endpoint);
-        // For HRMS endpoints, strip /hrms prefix since baseUrl already has /api
-        // e.g., /hrms/offices -> /offices (baseUrl has /api, so final is /api/offices)
-        let actualEndpoint = endpoint;
-        if (endpoint.startsWith('/hrms/')) {
-            actualEndpoint = endpoint.substring(5); // Remove '/hrms' prefix, keep the rest
-        }
-        // For CRM endpoints, strip /crm prefix since baseUrl already has /api
-        // e.g., /crm/dashboard -> /dashboard (baseUrl has /api, so final is /api/dashboard)
-        if (endpoint.startsWith('/crm/')) {
-            actualEndpoint = endpoint.substring(4); // Remove '/crm' prefix, keep the rest
-        }
-        // For Research endpoints, strip /research prefix since baseUrl already has /api
-        if (endpoint.startsWith('/research/')) {
-            actualEndpoint = endpoint.substring(9); // Remove '/research' prefix, keep the rest
-        }
-        // For PMS endpoints, strip /pms prefix since baseUrl already has /api
-        if (endpoint.startsWith('/pms/')) {
-            actualEndpoint = endpoint.substring(4); // Remove '/pms' prefix, keep the rest
-        }
-        // For Procurement endpoints, strip /procurement prefix since baseUrl already has /api
-        if (endpoint.startsWith('/procurement/')) {
-            actualEndpoint = endpoint.substring(12); // Remove '/procurement' prefix, keep the rest
-        }
-        // For LMS endpoints, strip /lms prefix since baseUrl already has /api
-        if (endpoint.startsWith('/lms/')) {
-            actualEndpoint = endpoint.substring(4); // Remove '/lms' prefix, keep the rest
-        }
-        // For Email endpoints, strip /email prefix since baseUrl already has /api
-        // e.g. /email/mailboxes → /mailboxes → {emailApiBaseUrl}/mailboxes → /api/mailboxes
-        if (endpoint.startsWith('/email/')) {
-            actualEndpoint = endpoint.substring(6); // Remove '/email' prefix, keep the rest
-        }
-        const url = `${baseUrl}${actualEndpoint}`;
-        const isFormData = options.body instanceof FormData;
-        const headers = {
-            ...(!isFormData && { 'Content-Type': 'application/json' }),
-            // Skip Authorization header on public endpoints so stale / expired
-            // tokens don't trigger a 401 on routes that don't need auth.
-            ...(!isPublicEndpoint && this.token && { 'Authorization': `Bearer ${this.token}` })
-        };
-
-        const config = {
-            ...options,
-            headers: {
-                ...headers,
-                ...options.headers
+        // The guard spans the WHOLE prologue, not just _getBaseUrl. Header construction, the
+        // prefix rewriting and the spread of a caller-supplied options.headers are every bit as
+        // throwable, and a throw at any of them strands the ref count exactly as completely — a
+        // guard around the first throwable statement only would be this same bug, moved.
+        let url, config;
+        try {
+            const baseUrl = this._getBaseUrl(endpoint);
+            // For HRMS endpoints, strip /hrms prefix since baseUrl already has /api
+            // e.g., /hrms/offices -> /offices (baseUrl has /api, so final is /api/offices)
+            let actualEndpoint = endpoint;
+            if (endpoint.startsWith('/hrms/')) {
+                actualEndpoint = endpoint.substring(5); // Remove '/hrms' prefix, keep the rest
             }
-        };
-        // For FormData, ensure Content-Type is not set (browser sets multipart boundary)
-        if (isFormData) delete config.headers['Content-Type'];
-        // Remove internal flags before fetch
-        delete config._skipSpinner;
+            // For CRM endpoints, strip /crm prefix since baseUrl already has /api
+            // e.g., /crm/dashboard -> /dashboard (baseUrl has /api, so final is /api/dashboard)
+            if (endpoint.startsWith('/crm/')) {
+                actualEndpoint = endpoint.substring(4); // Remove '/crm' prefix, keep the rest
+            }
+            // For Research endpoints, strip /research prefix since baseUrl already has /api
+            if (endpoint.startsWith('/research/')) {
+                actualEndpoint = endpoint.substring(9); // Remove '/research' prefix, keep the rest
+            }
+            // For PMS endpoints, strip /pms prefix since baseUrl already has /api
+            if (endpoint.startsWith('/pms/')) {
+                actualEndpoint = endpoint.substring(4); // Remove '/pms' prefix, keep the rest
+            }
+            // For Procurement endpoints, strip /procurement prefix since baseUrl already has /api
+            if (endpoint.startsWith('/procurement/')) {
+                actualEndpoint = endpoint.substring(12); // Remove '/procurement' prefix, keep the rest
+            }
+            // For LMS endpoints, strip /lms prefix since baseUrl already has /api
+            if (endpoint.startsWith('/lms/')) {
+                actualEndpoint = endpoint.substring(4); // Remove '/lms' prefix, keep the rest
+            }
+            // For Email endpoints, strip /email prefix since baseUrl already has /api
+            // e.g. /email/mailboxes → /mailboxes → {emailApiBaseUrl}/mailboxes → /api/mailboxes
+            if (endpoint.startsWith('/email/')) {
+                actualEndpoint = endpoint.substring(6); // Remove '/email' prefix, keep the rest
+            }
+            url = `${baseUrl}${actualEndpoint}`;
+            const isFormData = options.body instanceof FormData;
+            const headers = {
+                ...(!isFormData && { 'Content-Type': 'application/json' }),
+                // Skip Authorization header on public endpoints so stale / expired
+                // tokens don't trigger a 401 on routes that don't need auth.
+                ...(!isPublicEndpoint && this.token && { 'Authorization': `Bearer ${this.token}` })
+            };
 
+            config = {
+                ...options,
+                headers: {
+                    ...headers,
+                    ...options.headers
+                }
+            };
+            // For FormData, ensure Content-Type is not set (browser sets multipart boundary)
+            if (isFormData) delete config.headers['Content-Type'];
+            // Remove internal flags before fetch
+            delete config._skipSpinner;
+
+        } catch (e) {
+            // Balance the show() above before rethrowing. Without this the overlay stays up over
+            // the page, intercepting every click, for the life of the tab.
+            if (_showSpinner) ButtonSpinner.hide();
+            throw e;
+        }
         try {
             const response = await fetch(url, config);
 

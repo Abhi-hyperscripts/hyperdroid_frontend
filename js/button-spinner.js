@@ -71,6 +71,17 @@ const ButtonSpinner = (() => {
             if (_count === 0) hideOverlay();
         },
 
+        /**
+         * Force the count to zero and take the overlay down.
+         *
+         * For the watchdog, and for anyone recovering from a leaked show(). Deliberately public:
+         * without it there is no way back from a wedged page short of a reload.
+         */
+        reset() {
+            _count = 0;
+            hideOverlay();
+        },
+
         /** Disable button + show overlay (legacy) */
         start(btn, loadingText = 'Please wait...') {
             if (btn) {
@@ -104,6 +115,37 @@ const ButtonSpinner = (() => {
 // A balancing hide() fires after DOMContentLoaded + 100ms grace period
 // to let initial API calls register their own show()/hide() refs.
 ButtonSpinner.show();
-document.addEventListener('DOMContentLoaded', () => {
+
+// The balancing hide MUST still happen when this script evaluates after DOMContentLoaded has
+// already fired — which it can, because these pages inject their scripts with document.write and
+// a cache-busting query, so evaluation order varies with the cache and the service worker.
+//
+// Registering the listener unconditionally was a permanent leak in exactly that case: the event
+// never fires again, the ref count never returns to zero, and the overlay sits over the page
+// intercepting EVERY click for the life of the tab. The page looks loaded and is completely dead —
+// observed on a cold load of the leads page, where it swallowed clicks on the filter controls and
+// read as "the custom field filter does nothing".
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => ButtonSpinner.hide(), 100);
+    });
+} else {
     setTimeout(() => ButtonSpinner.hide(), 100);
-});
+}
+
+// Last-resort watchdog. Any future unbalanced show() — a caller returning early, a throw between
+// show() and its hide() — wedges the whole page silently, and a blocked page is a far worse
+// outcome than a spinner that disappears while something is still loading. The content still
+// arrives; the user simply is not held hostage while it does.
+setInterval(() => {
+    const el = document.querySelector('.spinner-overlay.visible');
+    if (!el) { ButtonSpinner._stuckSince = 0; return; }
+    const now = Date.now();
+    if (!ButtonSpinner._stuckSince) { ButtonSpinner._stuckSince = now; return; }
+    if (now - ButtonSpinner._stuckSince > 20000) {
+        console.warn('[ButtonSpinner] Overlay visible for 20s — forcing it down. '
+            + 'Something called show() without a matching hide().');
+        ButtonSpinner.reset();
+        ButtonSpinner._stuckSince = 0;
+    }
+}, 5000);
