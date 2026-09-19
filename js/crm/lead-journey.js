@@ -361,6 +361,11 @@
         document.getElementById('leadDetailPanel').classList.add('active');
         document.getElementById('leadTimeline').innerHTML = '<div class="import-loading">Loading timeline...</div>';
         document.getElementById('leadDetailInfo').innerHTML = '';
+        // Cleared alongside the fields: left alone, the previous lead's name and phone number sit
+        // at the top of the panel while the next one loads — the worst possible moment to show
+        // somebody the wrong customer.
+        const heroSlot = document.getElementById('leadDetailHero');
+        if (heroSlot) heroSlot.innerHTML = '';
         document.getElementById('leadDetailName').textContent = 'Lead Details';
 
         try {
@@ -417,7 +422,10 @@
             const _convBtn = document.getElementById('leadDetailConvertBtn');
             if (_convBtn) _convBtn.style.display = (lead.status === 'converted') ? 'none' : '';
 
-            document.getElementById('leadDetailInfo').innerHTML = `
+            // The hero renders into its OWN slot, outside the tabs. It carries who this record is —
+            // name badges, phone, email, owner — and a tabbed panel that hides the identity the
+            // moment you open Documents is a panel you can get lost in.
+            document.getElementById('leadDetailHero').innerHTML = `
                 <div class="ld-hero">
                     <span class="lead-avatar ld-avatar" style="background:${avBg}">${esc(avTxt)}</span>
                     <div class="ld-hero-main">
@@ -435,6 +443,9 @@
                         </div>
                     </div>
                 </div>
+            `;
+
+            document.getElementById('leadDetailInfo').innerHTML = `
                 ${section('About', [
                     item('Company', lead.company_name ? esc(lead.company_name) : ''),
                     item('Job title', lead.job_title ? esc(lead.job_title) : ''),
@@ -1796,12 +1807,37 @@
 
     // ─── Print Timeline ─────────────────────────────────────────────────
 
+    /**
+     * Show one pane of the lead detail panel.
+     *
+     * Visibility only — every pane stays mounted. The panels render themselves once when the lead
+     * opens, so unmounting the hidden ones would mean re-mounting on every tab click and losing
+     * whatever the user had half-typed into the note box.
+     */
+    function switchLeadTab(btn) {
+        const pane = btn.dataset.pane;
+
+        document.querySelectorAll('#leadDetailTabs .ld-tab')
+            .forEach(t => t.classList.toggle('active', t === btn));
+
+        document.querySelectorAll('#leadDetailPanel .ld-pane')
+            .forEach(p => { p.hidden = p.dataset.pane !== pane; });
+
+        // Back to the top on switch. Without it, arriving at a short pane from a long one leaves
+        // the panel scrolled past the content that just appeared, which reads as an empty tab.
+        const body = document.querySelector('#leadDetailPanel .panel-body');
+        if (body) body.scrollTop = 0;
+    }
+
     function printLeadTimeline() {
         const panel = document.getElementById('leadDetailPanel');
         if (!panel) return;
 
         const name = document.getElementById('leadDetailName')?.textContent || 'Lead';
-        const info = document.getElementById('leadDetailInfo')?.innerHTML || '';
+        // Hero AND fields. The hero moved out of #leadDetailInfo when the panel became tabbed, and
+        // reading only the latter would print a timeline with no name, phone or owner on it.
+        const info = (document.getElementById('leadDetailHero')?.innerHTML || '')
+                   + (document.getElementById('leadDetailInfo')?.innerHTML || '');
         const timeline = document.getElementById('leadTimeline')?.innerHTML || '';
 
         const logoUrl = window.location.origin + '/assets/logo-name-blue.png';
@@ -2859,6 +2895,9 @@
     window.closeLeadDetailPanel = closeLeadDetailPanel;
     window.filterTimeline = filterTimeline;
     window.printLeadTimeline = printLeadTimeline;
+    // Called from an inline onclick in leads.html. This file is an IIFE, so without this line the
+    // tab buttons would throw ReferenceError on every click and the panel would simply not respond.
+    window.switchLeadTab = switchLeadTab;
     window.openScheduleFollowupModal = openScheduleFollowupModal;
     window.closeScheduleFollowupModal = closeScheduleFollowupModal;
     window.submitScheduleFollowup = submitScheduleFollowup;

@@ -6857,3 +6857,64 @@ body.crm-leads-page .lp-toolbar .crm-filter-group--no-label { flex-shrink: 0; di
     .lead-form-grid { grid-template-columns: 1fr; }
     .lead-form-grid .col-md-6 { grid-column: span 1; }
 }
+
+
+/* ── Lead detail tabs ──────────────────────────────────────────────────────
+   Eleven sections stacked vertically meant scrolling past Documents, Signatures
+   and Appointments — usually all empty — to reach Notes and Logged activity,
+   which are not. Sticky so the tabs stay reachable in a long Timeline. */
+.ld-tabs {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border-primary);
+    margin: 4px 0 16px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--bg-card);
+    /* The scrollbar appears only when the tabs actually overflow the panel width. */
+    scrollbar-width: thin;
+}
+
+.ld-tab {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+}
+
+.ld-tab:hover { color: var(--text-primary); }
+
+.ld-tab.active {
+    color: var(--brand-primary);
+    border-bottom-color: var(--brand-primary);
+}
+
+/* [hidden] loses to the panel's own display rules without this, and every pane
+   would render at once — the exact stacking this replaced. */
+.ld-pane[hidden] { display: none !important; }
+
+/* Icons inherit the tab's colour, so they light up with the label on hover and when active rather
+   than needing a second rule per state. Sized in em so they track the label if the font changes. */
+.ld-tab svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+}
+
+/* Below ~520px the labels are what goes, not the icons: six icons still fit across a phone-width
+   panel, six words do not. The label stays in the accessible name via the button's text content. */
+@media (max-width: 520px) {
+    .ld-tab span { display: none; }
+    .ld-tab { padding: 9px 12px; }
+}
