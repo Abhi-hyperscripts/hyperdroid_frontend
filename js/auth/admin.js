@@ -3040,42 +3040,9 @@ async function loadSubTenants() {
         if (summarySection) summarySection.style.display = 'flex';
         if (notSaaSCard) notSaaSCard.style.display = 'none';
 
-        const subTenants = subTenantsData.subTenants || [];
-
-        // Update summary stats
-        const total = subTenants.length;
-        const active = subTenants.filter(t => t.isActive && !t.isExpired).length;
-        const expired = subTenants.filter(t => t.isExpired).length;
-
-        const totalEl = document.getElementById('totalSubtenants');
-        const activeEl = document.getElementById('activeSubtenants');
-        const expiredEl = document.getElementById('expiredSubtenants');
-
-        if (totalEl) totalEl.textContent = total;
-        if (activeEl) activeEl.textContent = active;
-        if (expiredEl) expiredEl.textContent = expired;
-
-        // Render table
-        if (subTenants.length === 0) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="8">
-                        <div class="empty-state" style="padding: 40px;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 16px; color: var(--text-muted);">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            </svg>
-                            <h3 style="margin: 0 0 8px; color: var(--text-primary);">No Sub-Tenants Yet</h3>
-                            <p style="color: var(--text-secondary); margin: 0;">Sub-tenants will appear here once they activate their licenses.</p>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        } else {
-            tableBody.innerHTML = subTenants.map(tenant => renderSubTenantRow(tenant)).join('');
-        }
+        // Fetching and rendering are separate: the tabs and the search box re-render from what is
+        // already in hand rather than asking the server again on every keystroke.
+        renderSubTenants();
 
     } catch (error) {
         console.error('Failed to load sub-tenants:', error);
@@ -3375,6 +3342,97 @@ async function submitExtendLicence() {
     }
 }
 
+/**
+ * Which slice of the list is on screen. "revoked" is isActive === false — an operator stopped their
+ * access — which is a different thing from a licence that simply ran out, and conflating the two
+ * hides whether a customer lapsed or was cut off.
+ */
+let subTenantFilter = 'all';
+
+function classifySubTenant(tenant) {
+    if (!tenant.isActive) return 'revoked';
+    if (tenant.isExpired) return 'expired';
+    return 'active';
+}
+
+function setSubTenantFilter(btn) {
+    subTenantFilter = btn.dataset.filter;
+    document.querySelectorAll('.subtenant-tab').forEach(t => t.classList.toggle('active', t === btn));
+    renderSubTenants();
+}
+
+/**
+ * Renders the table from subTenantsData, applying the tab and the search box.
+ *
+ * Counts on the tabs come from the WHOLE list, not the filtered one — a tab that reported "0" once
+ * you were searching would look like the state had emptied rather than like the search had narrowed.
+ */
+function renderSubTenants() {
+    const tableBody = document.getElementById('subtenantsTableBody');
+    if (!tableBody) return;
+
+    const all = (subTenantsData && subTenantsData.subTenants) || [];
+
+    const counts = { all: all.length, active: 0, expired: 0, revoked: 0 };
+    for (const t of all) counts[classifySubTenant(t)]++;
+    document.querySelectorAll('.subtenant-tab').forEach(tab => {
+        const c = tab.querySelector('.subtenant-tab-count');
+        if (c) c.textContent = counts[tab.dataset.filter] ?? 0;
+    });
+
+    // The summary cards stay the headline figures for the whole platform; the tabs navigate.
+    const totalEl = document.getElementById('totalSubtenants');
+    const activeEl = document.getElementById('activeSubtenants');
+    const expiredEl = document.getElementById('expiredSubtenants');
+    if (totalEl) totalEl.textContent = counts.all;
+    if (activeEl) activeEl.textContent = counts.active;
+    if (expiredEl) expiredEl.textContent = counts.expired;
+
+    const term = (document.getElementById('subtenantSearch')?.value || '').trim().toLowerCase();
+    const shown = all.filter(t => {
+        if (subTenantFilter !== 'all' && classifySubTenant(t) !== subTenantFilter) return false;
+        if (!term) return true;
+        // Organisation, tenant name and the super admin's address — the three things an operator
+        // actually has to hand when someone asks about an account.
+        return [t.organizationName, t.tenantName, t.superAdminEmail]
+            .some(v => (v || '').toLowerCase().includes(term));
+    });
+
+    if (shown.length > 0) {
+        tableBody.innerHTML = shown.map(tenant => renderSubTenantRow(tenant)).join('');
+        return;
+    }
+
+    // Says WHY it is empty. "No sub-tenants yet" under an active search or a Revoked tab would be a
+    // lie about the platform rather than a statement about the filter.
+    const label = { all: '', active: 'active ', expired: 'expired ', revoked: 'revoked ' }[subTenantFilter];
+    const why = term
+        // escapeAttr, not escapeHtml: the latter lives inside toast.js's closures and is not in
+        // scope here, so referencing it would have thrown on the first keystroke. Entities render as
+        // the literal characters in text, so it is correct here as well as in an attribute.
+        ? `Nothing matches “${escapeAttr(term)}”${subTenantFilter === 'all' ? '' : ` in ${label.trim()} tenants`}.`
+        : (all.length === 0
+            ? 'Sub-tenants will appear here once they activate their licenses.'
+            : `No ${label}tenants.`);
+
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="8">
+                <div class="empty-state" style="padding: 40px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 16px; color: var(--text-muted);">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <h3 style="margin: 0 0 8px; color: var(--text-primary);">${all.length === 0 ? 'No Sub-Tenants Yet' : 'Nothing to show'}</h3>
+                    <p style="color: var(--text-secondary); margin: 0;">${why}</p>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
 function renderSubTenantRow(tenant) {
     // Format dates
     const startDate = tenant.startDate ? formatDate(tenant.startDate) : '-';
@@ -3386,7 +3444,9 @@ function renderSubTenantRow(tenant) {
 
     if (!tenant.isActive) {
         statusClass = 'inactive';
-        statusText = 'Inactive';
+        // is_active = false on the licence means an operator stopped their access — revoked or
+        // cancelled. "Inactive" reads like a dormant account; it is not one.
+        statusText = 'Revoked';
     } else if (tenant.isExpired) {
         statusClass = 'expired';
         statusText = 'Expired';

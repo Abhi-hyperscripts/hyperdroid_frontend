@@ -485,6 +485,23 @@
                             </button>
                         </div>
 
+                        <!-- Filter bar. The list is small today and will not stay that way; four
+                             distinct states already exist and were only distinguishable by reading
+                             the badge on every row. -->
+                        <div class="subtenant-filters" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin:16px 0 12px;">
+                            <div class="subtenant-tabs" style="display:inline-flex;border:1px solid var(--border-primary);border-radius:8px;overflow:hidden;">
+                                <button type="button" class="subtenant-tab active" data-filter="all"     onclick="setSubTenantFilter(this)">All <span class="subtenant-tab-count">0</span></button>
+                                <button type="button" class="subtenant-tab"        data-filter="active"  onclick="setSubTenantFilter(this)">Active <span class="subtenant-tab-count">0</span></button>
+                                <button type="button" class="subtenant-tab"        data-filter="expired" onclick="setSubTenantFilter(this)">Expired <span class="subtenant-tab-count">0</span></button>
+                                <button type="button" class="subtenant-tab"        data-filter="revoked" onclick="setSubTenantFilter(this)">Revoked <span class="subtenant-tab-count">0</span></button>
+                            </div>
+                            <div class="search-input-wrapper">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" class="search-input" id="subtenantSearch" placeholder="Search name or admin email…"
+                                       oninput="renderSubTenants()" autocomplete="off">
+                            </div>
+                        </div>
+
                         <div class="subtenants-table-container">
                             <table class="subtenants-table">
                                 <thead>
@@ -740,6 +757,34 @@
     </div>
 
     <!-- Extend a sub-tenant's licence. No token to paste: Auth asks TenantManager for one. -->
+    <style>
+        /* Segmented control rather than the page's main tabs: this filters a list inside one tab,
+           and reusing the top-level tab styling would imply it navigates somewhere. */
+        .subtenant-tab {
+            padding: 7px 14px;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            border-right: 1px solid var(--border-primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .subtenant-tab:last-child { border-right: none; }
+        .subtenant-tab:hover { background: var(--bg-secondary); color: var(--text-primary); }
+        .subtenant-tab.active { background: var(--brand-primary); color: var(--text-inverse); }
+        .subtenant-tab-count {
+            font-size: 11px;
+            padding: 1px 6px;
+            border-radius: 9px;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+        }
+        .subtenant-tab.active .subtenant-tab-count { background: rgba(255,255,255,0.25); color: var(--text-inverse); }
+    </style>
+
     <div class="modal" id="extendLicenceModal">
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
