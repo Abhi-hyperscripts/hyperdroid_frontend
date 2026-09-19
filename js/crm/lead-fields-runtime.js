@@ -506,9 +506,17 @@
         if (_allFieldsByCode.size === 0) return false;
         let changed = false;
         const wanted = {};
+        // Restore only from the ACTIVE set, not _allFieldsByCode — that map deliberately
+        // includes archived fields so chips can still render a human label for one, and using it
+        // here meant a filter persisted in localStorage came back to life after its field was
+        // retired in Settings. The server allowlists on ListLeadFieldsAsync(activeOnly: true) and
+        // now REFUSES a key it does not recognise, so restoring a retired field would 400 the
+        // leads list on load — the page would open broken, for a filter the user set weeks ago and
+        // an admin retired since.
+        const activeByCode = new Map(_fields.map(f => [f.code, f]));
         for (const [code, val] of Object.entries(values)) {
             if (!val) continue;
-            const f = _allFieldsByCode.get(code);
+            const f = activeByCode.get(code);
             if (!f) continue;
             // Validate the option still exists on the field, otherwise the
             // chip would render its raw code instead of the human label.

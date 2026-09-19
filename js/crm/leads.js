@@ -920,6 +920,9 @@ function canDeleteLead() {
 /**
  * Load leads from the API with optional filters
  */
+// Set while loadLeads is re-running after dropping a custom-field filter the server refused,
+// so a server that keeps refusing cannot drive an endless reload.
+let _healedUnknownKeys = false;
 async function loadLeads(page) {
     if (page) currentPage = page;
     const seq = ++_loadLeadsSeq;
@@ -943,14 +946,53 @@ async function loadLeads(page) {
         renderPagination();
     } catch (error) {
         if (seq !== _loadLeadsSeq) return; // stale failure — don't blank the latest view
+
+        // A filter naming a custom field that is no longer filterable. The server used to drop
+        // such a key and answer with every lead — a list that looked filtered and was not — and
+        // now refuses it by name. Refusing is right, but the user must not be left staring at an
+        // empty page over a filter they cannot see the problem with: a field they filtered by
+        // last week can be retired in Settings at any time, and a tab left open overnight is
+        // holding that filter still.
+        //
+        // So heal instead of reporting: drop exactly the keys the server named, say which ones in
+        // plain language, and re-run. Guarded by _healedUnknownKeys so a server that keeps
+        // refusing cannot put us in a retry loop.
+        const unknown = error?.status === 400 ? (error?.data?.unknown_custom_field_keys || []) : [];
+        if (unknown.length > 0 && !_healedUnknownKeys) {
+            _healedUnknownKeys = true;
+            const dropped = [];
+            const current = (typeof window.getAllLeadFieldsFilterValues === 'function')
+                ? window.getAllLeadFieldsFilterValues() : {};
+            for (const k of unknown) {
+                if (k in current) { delete current[k]; dropped.push(k); }
+            }
+            if (typeof window.setLeadFieldsFilterValues === 'function') {
+                window.setLeadFieldsFilterValues(current);
+            }
+            _persistFilters();
+            if (typeof Toast !== 'undefined') {
+                Toast.warning(dropped.length
+                    ? `Removed ${dropped.length} filter(s) for lead field(s) that no longer exist.`
+                    : 'Removed a filter for a lead field that no longer exists.');
+            }
+            await loadLeads(1);
+            return;
+        }
+
         console.error('Failed to load leads:', error);
         allLeads = [];
         totalLeads = 0;
         renderLeadsTable([]);
         renderPagination();
         if (typeof Toast !== 'undefined') {
-            Toast.error('Failed to load leads');
+            // Show the server's reason when it gave one — "Failed to load leads" tells a user
+            // nothing they can act on, and this endpoint's 400 names the offending key.
+            Toast.error(error?.status === 400 && error?.message ? error.message : 'Failed to load leads');
         }
+    } finally {
+        // One heal per genuine attempt: reset once a load settles so a LATER retirement is healed
+        // too, rather than the guard latching for the life of the page.
+        if (seq === _loadLeadsSeq) _healedUnknownKeys = false;
     }
 }
 
