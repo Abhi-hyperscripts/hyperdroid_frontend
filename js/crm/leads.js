@@ -1890,7 +1890,15 @@ document.addEventListener('click', (e) => {
 // ==================== Row identity helpers ====================
 // Deterministic avatar hue per lead so the same lead always wears the same
 // colour across pages and sessions.
-const _LEAD_AVATAR_HUES = [212, 262, 158, 24, 330, 190, 48, 288];
+// Avatar chips are deliberately ONE neutral tone.
+//
+// They used to hash the lead id into one of eight hues, which put magenta,
+// teal, olive and pink side by side in the list carrying no information at
+// all — a colour census of the visible rows found 12 distinct colours, most
+// of them this. Colour in a row should mean something, and the status pill is
+// the thing that means something; everything else competing with it is noise.
+// Kept as a function rather than inlined because lead-journey.js renders the
+// detail hero through the same call, and the two must not disagree.
 
 function leadInitials(lead) {
     const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ') ||
@@ -1899,11 +1907,9 @@ function leadInitials(lead) {
 }
 
 function leadAvatarBg(lead) {
-    const key = String(lead.id || lead.email || lead.phone || 'x');
-    let h = 0;
-    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
-    const hue = _LEAD_AVATAR_HUES[h % _LEAD_AVATAR_HUES.length];
-    return `linear-gradient(135deg, hsl(${hue} 55% 42%), hsl(${(hue + 28) % 360} 60% 30%))`;
+    // Argument kept: every call site passes a lead, and a signature change here
+    // would be a silent breakage in the other module that calls it.
+    return 'var(--ldk-avatar-bg, color-mix(in srgb, var(--text-primary) 8%, transparent))';
 }
 
 function leadTimeAgo(dateStr) {
@@ -3609,6 +3615,40 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     new MutationObserver(relocateActionsBar).observe(panel, { childList: true, subtree: true });
     relocateActionsBar();
+
+    // ── Overflow toggle for the quick-actions bar ───────────────────────────
+    // Ten buttons wrapped onto two rows at 1280 and clipped mid-word at 1440.
+    // Three stay out (four when telephony puts Call in reach); the rest sit
+    // behind this. Delegated from the panel rather than bound to the button,
+    // because relocateActionsBar above moves the bar on every re-render and a
+    // directly-bound handler would be lost with it.
+    panel.addEventListener('click', (e) => {
+        const t = e.target.closest('.lda-toggle');
+        if (!t) return;
+        const bar = t.closest('.lead-detail-actions');
+        if (!bar) return;
+        const open = bar.classList.toggle('lda-open');
+        t.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    // A toggle that opens onto nothing is worse than no toggle. Everything in
+    // the overflow can be hidden independently of this — navigation.js strips
+    // whatever the tenant has no licence for, lead-journey.js hides Need Help
+    // for roles with nobody to escalate to — so count what would ACTUALLY be
+    // revealed, reading inline display rather than offsetParent because the
+    // whole panel may be off-screen when this runs.
+    const syncToggle = () => {
+        const bar = panel.querySelector('.lead-detail-actions');
+        const btn = bar && bar.querySelector('.lda-toggle');
+        if (!bar || !btn) return;
+        const hidden = [...bar.querySelectorAll(':scope > .btn')].filter(b =>
+            b !== btn && b.getAttribute('data-lda') !== 'primary' && b.style.display !== 'none');
+        btn.style.display = hidden.length ? '' : 'none';
+        if (!hidden.length) { bar.classList.remove('lda-open'); btn.setAttribute('aria-expanded', 'false'); }
+    };
+    new MutationObserver(syncToggle).observe(panel, { childList: true, subtree: true,
+                                                      attributes: true, attributeFilter: ['style'] });
+    syncToggle();
 });
 
 // ═══ Grand capture wave (dashboard parity, multi-series) ════════════════════
@@ -3724,7 +3764,7 @@ async function loadLeadsWave() {
             : '';
         return fill +
             `<path class="draw-line" d="${line}" fill="none" stroke="${s.color}" stroke-width="2.2" ` +
-            `stroke-linejoin="round" stroke-linecap="round" opacity="0.95"/>`;
+            `stroke-linejoin="round" stroke-linecap="round" opacity="0.4"/>`;
     }).join('');
 
     host.innerHTML =

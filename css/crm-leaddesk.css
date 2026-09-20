@@ -781,3 +781,140 @@ body.crm-leads-page { --lp-chip-glass: rgba(255, 255, 255, 0.5); }
 @media (min-width: 769px) and (max-width: 1023px) {
   body.crm-leads-page { padding-top: 52px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   CALM PASS — client feedback: the leads page "is intimidating, so many
+   features". Visual inspection at 1440x900 and 1280x720, both themes, said the
+   feature COUNT was not the problem. The page looked noisy and slightly broken,
+   and people read unpolished as complicated. Six measured findings, fixed here.
+   Everything is scoped to body.crm-leads-page: .ldk-* is shared with Properties
+   and Calendar, which were not inspected and must not move.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. The wave chart was drawn straight THROUGH the tab labels ────────────
+   Measured: the chart spans y=52–181 and every segment tab sits at y=142–175 —
+   a full 33px overlap, so green and blue lines crossed "Contacted 213",
+   "Qualified 24" and "Converted 12". Worse in light theme, where the strokes
+   are fully saturated and the tabs are close to illegible.
+
+   The chart is meant to be the header's BACKDROP, and that idea is kept — it
+   just stops at the tab row now. Two independent guards, because either alone
+   leaves a way for the lines to reach the text: the band itself ends above the
+   tabs, AND the tab row paints its own surface. */
+body.crm-leads-page { --ldk-viewsrow-h: 44px; }
+
+body.crm-leads-page .ldk-hero .ldk-wavebg {
+  /* inset:0 above puts the chart behind the tab row; end it at the row's top
+     edge instead. Driven by the same variable the row's height uses, so the
+     two cannot drift apart. */
+  bottom: var(--ldk-viewsrow-h);
+}
+
+body.crm-leads-page .ldk-hero .ldk-viewsrow {
+  /* The hero rule deliberately runs this transparent so the wave shows through.
+     That is exactly the defect. Give the row back a surface — frosted, not flat,
+     so the page keeps its glass character — and the blur turns whatever is
+     behind it into a soft wash rather than legible competing strokes. */
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(1.08);
+  -webkit-backdrop-filter: blur(14px) saturate(1.08);
+}
+
+/* The legend used to be absolutely positioned at the hero's bottom-right, which
+   is precisely where the last tab lives — "LEAD FLOW · 30D · Captured ·
+   Contacted · Converted" landed on top of "Converted 12". It is now a flex item
+   at the end of the tab row (moved in the markup), so it takes its own space and
+   cannot collide with anything. */
+body.crm-leads-page .ldk-hero .ldk-wavelegend {
+  position: static;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+@media (max-width: 1279px) {
+  /* Below this the tab row needs its full width for the tabs themselves. */
+  body.crm-leads-page .ldk-hero .ldk-wavelegend { display: none; }
+}
+
+/* ── 2. Light-theme contrast on the line a rep actually scans ───────────────
+   --text-muted is #94a3b8 in light, which on these surfaces measures 2.48:1 —
+   and 2.03:1 on the selected row, where the selection tint darkens the ground
+   under it. WCAG AA wants 4.5. That line carries the disposition and the
+   recency ("Not Responding · touched 4d ago"), i.e. the two things the eye is
+   hunting for, so it is the worst possible place to save ink.
+
+   Scoped tokens rather than a change to --text-muted itself: that token is used
+   across every page in the product and this was measured on one. */
+body.crm-leads-page { --ldk-sub: #475569; }          /* 7.5:1 on the row ground */
+body.crm-leads-page { --ldk-avatar-bg: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+[data-theme="dark"] body.crm-leads-page { --ldk-sub: #9fb0c4; }
+
+body.crm-leads-page .ldk-row .lsub,
+body.crm-leads-page .ldk-row .ltime,
+body.crm-leads-page .ldk-listtools,
+body.crm-leads-page .ldk-count { color: var(--ldk-sub); }
+
+/* ── 3. Five font sizes in one row, none above 13px ─────────────────────────
+   Measured: 9px, 10px, 11.5px, 12px, 13px inside a single .ldk-row. When
+   everything is small and nothing is large the eye gets no entry point, so it
+   takes the whole screen in at once — which is what "overwhelming" feels like.
+   Three sizes, and the lead's NAME is now clearly the largest thing in the row
+   so the scan has somewhere to land. */
+body.crm-leads-page {
+  --ldk-fs-name: 14px;   /* the one thing you are looking for  */
+  --ldk-fs-body: 12px;   /* supporting detail                  */
+  --ldk-fs-micro: 10.5px;/* stamps: time, status pill          */
+}
+body.crm-leads-page .ldk-row .lname { font-size: var(--ldk-fs-name); }
+body.crm-leads-page .ldk-row .lsub  { font-size: var(--ldk-fs-body); }
+body.crm-leads-page .ldk-row .ltime { font-size: var(--ldk-fs-micro); }
+body.crm-leads-page .ldk-row .ldk-pill { font-size: var(--ldk-fs-micro); }
+body.crm-leads-page .ldk-listtools,
+body.crm-leads-page .ldk-sort { font-size: var(--ldk-fs-body); }
+
+/* ── 4. Avatar colour carried no information ────────────────────────────────
+   The circles were hue-hashed from the lead id, so a list showed magenta, teal,
+   olive and pink side by side meaning nothing at all — 12 distinct colours
+   competing in the list, most of them noise. The hash is gone (see
+   leadAvatarBg in leads.js); this keeps the chip readable and lets the status
+   pill be the only colour in the row that MEANS something. */
+body.crm-leads-page .ldk-row .lav {
+  color: var(--text-secondary);
+  font-weight: 600;
+  border: 1px solid var(--lp-glass-line, var(--border-color));
+}
+
+/* ── 5. Ten action buttons wrapping onto two rows ───────────────────────────
+   At 1440 the bar clipped mid-word ("E-ka…"); at 1280 it wrapped to two rows
+   and ate ~80px of the panel permanently. Collapsed to the three a rep presses
+   all day plus an overflow toggle.
+
+   Every button stays in the DOM with its id intact — calls.js, lead-journey.js
+   and navigation.js's data-requires-service gating all reach these by id and
+   toggle inline display, and moving them would have broken that silently. A
+   CSS rule hides the non-primary ones instead, which an inline display:none
+   from that gating still beats, so a button the tenant has no licence for stays
+   hidden even when the overflow is open. */
+/* The toggle is itself a .btn without data-lda, so the first draft of this rule
+   hid the very control that reveals the rest — caught by it measuring 0px wide
+   in the browser, not by reading it back. */
+body.crm-leads-page .lead-detail-actions:not(.lda-open) > .btn:not([data-lda="primary"]):not(.lda-toggle) {
+  display: none;
+}
+body.crm-leads-page .lead-detail-actions .lda-toggle::after {
+  content: 'More';
+}
+body.crm-leads-page .lead-detail-actions.lda-open .lda-toggle::after {
+  content: 'Fewer';
+}
+
+/* ── 6. A pipeline bar three pixels tall ────────────────────────────────────
+   .ldk-flowline rendered the status split as a 3px strip whose counts existed
+   only in tooltips — unreadable, unclickable, and duplicating the tab row
+   directly above it, which shows the same figures as text. Removed from the
+   markup; this is belt-and-braces if any path re-inserts it. Properties keeps
+   its own #prpFlowBar, which is why this is scoped. */
+body.crm-leads-page .ldk-flowline { display: none; }

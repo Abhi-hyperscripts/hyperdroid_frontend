@@ -134,7 +134,6 @@
         <div class="ldk-wavebg" id="ldkWave" hidden>
             <div class="ldk-wavechart" id="ldkWaveChart"></div>
         </div>
-        <span class="ldk-wavelegend"></span>
         <div class="ldk-wavetip" id="ldkWaveTip"></div>
 
         <!-- Header -->
@@ -239,6 +238,10 @@
         <!-- Views + anchored filter popover -->
         <div class="ldk-viewsrow">
             <div class="ldk-tabs" id="ldkTabs"></div>
+            <!-- Legend lives in the tab row, not floating over it. Absolutely
+                 positioned at the hero's bottom-right it landed on top of the
+                 "Converted 12" tab; as a flex item it takes its own space. -->
+            <span class="ldk-wavelegend"></span>
             <div id="leadsFiltersPanel" class="lp-filter-panel">
         <div class="crm-filter-bar crm-filter-bar--dimensions">
             <div class="crm-filter-group">
@@ -370,7 +373,10 @@
         </div><!-- /leadsFiltersPanel -->
         </div>
         </div><!-- /ldk-hero -->
-        <div class="ldk-flowline" id="lpFlowBar" aria-label="Pipeline by status"></div>
+        <!-- The 3px "Pipeline by status" strip was removed: its counts existed only
+             in tooltips, so it was unreadable and unclickable, and it duplicated the
+             tab row above which states the same numbers in words. loadLeadStats()
+             guards on getElementById, so it simply no-ops now. -->
         
 
         <!-- Filter by form answers — sidebar + values pane layout.
@@ -500,10 +506,10 @@
                 <button class="btn btn-sm btn-outline-success" onclick="openConvertModal(window._leadDetailId)" id="leadDetailConvertBtn" title="Create a deal in the pipeline and a contact from this lead">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M20 6 9 17l-5-5"/></svg>Convert to Deal
                 </button>
-                <button class="btn btn-sm btn-outline-primary" onclick="openStatusChangeModal(window._leadDetailId)">Change Status</button>
-                <button class="btn btn-sm btn-outline-primary" onclick="openLogActivityModal(window._leadDetailId)">Log Activity</button>
-                <button class="btn btn-sm btn-outline-primary" onclick="openScheduleFollowupModal(window._leadDetailId)">Schedule Follow-up</button>
-                <button class="btn btn-sm btn-outline-success" onclick="openLeadCallPicker(window._leadDetailId)" id="leadDetailCallBtn" style="display:none;">
+                <button class="btn btn-sm btn-outline-primary" data-lda="primary" onclick="openStatusChangeModal(window._leadDetailId)">Change Status</button>
+                <button class="btn btn-sm btn-outline-primary" data-lda="primary" onclick="openLogActivityModal(window._leadDetailId)">Log Activity</button>
+                <button class="btn btn-sm btn-outline-primary" data-lda="primary" onclick="openScheduleFollowupModal(window._leadDetailId)">Schedule Follow-up</button>
+                <button class="btn btn-sm btn-outline-success" data-lda="primary" onclick="openLeadCallPicker(window._leadDetailId)" id="leadDetailCallBtn" style="display:none;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
                     </svg>Call
@@ -526,6 +532,9 @@
                         <path d="M14 14h3v3M14 21h7M21 14v7M17 17h4"/>
                     </svg>QR Code
                 </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary lda-toggle"
+                        id="ldaMoreBtn" aria-expanded="false"
+                        title="Show the rest of the actions for this lead"></button>
             </div>
 
             <!-- Tabs. Eleven sections stacked vertically meant scrolling past Documents,
