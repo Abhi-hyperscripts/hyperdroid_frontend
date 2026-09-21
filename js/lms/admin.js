@@ -633,38 +633,28 @@ async function loadQuizAttempts() {
             });
         }
 
-        allQuizAttempts = [];
-
-        for (const course of courses) {
-            try {
-                // Get modules, then lessons with quizzes
-                const modules = await api.request(`/lms/courses/${course.id}/modules?includeLessons=true`);
-                const moduleList = Array.isArray(modules) ? modules : (modules.modules || []);
-
-                for (const mod of moduleList) {
-                    const lessons = mod.lessons || [];
-                    for (const lesson of lessons) {
-                        if (lesson.content_type === 'quiz' || lesson.contentType === 'quiz') {
-                            try {
-                                // Get quiz for this lesson
-                                const quiz = await api.request(`/lms/quizzes/lesson/${lesson.id}`);
-                                if (quiz && quiz.id) {
-                                    // Get all attempts
-                                    const attemptsResp = await api.request(`/lms/quizzes/${quiz.id}/attempts/all`);
-                                    const attempts = Array.isArray(attemptsResp) ? attemptsResp : (attemptsResp.attempts || []);
-                                    attempts.forEach(a => {
-                                        a._quizTitle = quiz.title || lesson.title;
-                                        a._courseTitle = course.title;
-                                        a._courseId = course.id;
-                                    });
-                                    allQuizAttempts.push(...attempts);
-                                }
-                            } catch { /* no quiz for this lesson */ }
-                        }
-                    }
-                }
-            } catch { /* error loading modules */ }
-        }
+        // ONE call. This used to walk every course, then every module, then every lesson,
+        // and it only looked at lessons whose content_type was 'quiz'. That filter is wrong:
+        // a quiz attaches to a lesson whatever that lesson's content type is, so attempts on
+        // quizzes sitting on text, video or scorm lessons never appeared here at all — this
+        // tab read empty while attempts existed. The same filter had already hidden work in
+        // the marking queue. The server now answers the question directly, so there is no
+        // longer a place for a filter like that to live.
+        const rows = await api.request('/lms/quizzes/attempts/all');
+        allQuizAttempts = (Array.isArray(rows) ? rows : []).map(r => ({
+            id: r.attemptId,
+            userName: r.userName,
+            userId: r.userId,
+            score: r.score,
+            maxScore: r.maxScore,
+            passed: r.passed,
+            submittedAt: r.submittedAt,
+            timeTakenSeconds: r.timeTakenSeconds,
+            requiresReview: r.requiresReview,
+            _quizTitle: r.quizTitle,
+            _courseTitle: r.courseTitle,
+            _courseId: r.courseId
+        }));
 
         quizAttemptsLoaded = true;
         renderQuizAttemptsTable();

@@ -63,7 +63,10 @@ function switchTab(tab) {
     const gradingPanel = document.getElementById('instructorGradingPanel');
     const authoringPanel = document.getElementById('assignmentAuthoringPanel');
     const peerPanel = document.getElementById('myPeerReviewsPanel');
-    const listCard = document.querySelector('.glass-card');
+    // By id, not by class. document.querySelector('.glass-card') returned whichever
+    // card happened to come first in the markup, and the detail view carries that class
+    // too — so this was one reordering away from hiding the wrong panel.
+    const listCard = document.getElementById('assignmentListCard');
 
     // Every panel off, then exactly one on. Toggling them individually is how a
     // third tab ends up showing two panels at once.
@@ -89,61 +92,46 @@ function switchTab(tab) {
 
 async function loadAssignments() {
     try {
-        // Get enrolled courses first
-        const enrollments = await api.request('/lms/enrollments/my');
-        const courses = enrollments.data || enrollments || [];
+        // ONE call. This used to ask GET /lms/courses/{id}/assignments once per enrolled
+        // course — a route that has never existed. It answered 404, the catch below swallowed
+        // it as "no assignments", and so the Pending, Submitted and Graded tabs were empty for
+        // every learner since this page was written. It also passed the ENROLMENT id where a
+        // course id belongs, so it asked the wrong question as well as the wrong route.
+        const rows = await api.request('/lms/assignments/my');
 
-        // Fetch assignments for each enrolled course
-        const assignmentPromises = courses.map(async (course) => {
-            try {
-                const courseId = course.course_id || course.id;
-                const resp = await api.request(`/lms/courses/${courseId}/assignments`);
-                const items = resp.data || resp || [];
-                return items.map(a => ({ ...a, course_title: course.course_title || course.title }));
-            } catch {
-                return [];
-            }
-        });
-
-        const results = await Promise.all(assignmentPromises);
-        allAssignments = results.flat();
-
-        // Fetch submission status for each assignment
-        await loadSubmissionStatuses();
+        // Mapped once, here, into the names the list and the detail view already read. Those
+        // renderers expected snake_case and a _submission shaped like {text, files, grade},
+        // none of which the API has ever returned — so the grade line rendered "undefined / 20"
+        // and the submitted text rendered "No text submitted." even when both existed.
+        allAssignments = (Array.isArray(rows) ? rows : []).map(r => ({
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            instructions: r.instructions,
+            max_score: r.maxScore,
+            due_date: r.dueDate,
+            allow_late: r.allowLate,
+            course_id: r.courseId,
+            course_title: r.courseTitle,
+            lesson_title: r.lessonTitle,
+            _status: r.status,
+            _submission: r.submissionId ? {
+                id: r.submissionId,
+                text: r.submissionText,
+                grade: r.score,
+                feedback: r.feedback,
+                submitted_at: r.submittedAt,
+                graded_at: r.gradedAt,
+                // file_urls is a plain array of URLs; the renderer wants something with a name.
+                files: (r.fileUrls || []).map(u => ({ name: String(u).split('/').pop(), url: u }))
+            } : null
+        }));
 
         renderAssignmentList();
     } catch (err) {
         console.error('Failed to load assignments:', err);
         document.getElementById('assignmentLoading').innerHTML =
             '<p style="color: var(--color-error);">Failed to load assignments.</p>';
-    }
-}
-
-async function loadSubmissionStatuses() {
-    const promises = allAssignments.map(async (assignment) => {
-        try {
-            const sub = await getMySubmission(assignment.id);
-            assignment._submission = sub;
-            if (sub && sub.grade != null) {
-                assignment._status = 'graded';
-            } else if (sub && sub.submitted_at) {
-                assignment._status = 'submitted';
-            } else {
-                assignment._status = 'pending';
-            }
-        } catch {
-            assignment._status = 'pending';
-            assignment._submission = null;
-        }
-    });
-    await Promise.all(promises);
-}
-
-async function getMySubmission(assignmentId) {
-    try {
-        return await api.request(`/lms/assignments/${assignmentId}/my-submission`);
-    } catch {
-        return null;
     }
 }
 
@@ -246,19 +234,67 @@ function showAssignmentDetail(id) {
             assignment._submission.feedback || 'No feedback provided.';
     }
 
+    renderPeerFeedback(assignment);
+
     // Reset file selection
     selectedFiles = [];
     document.getElementById('fileList').innerHTML = '';
     document.getElementById('submissionText').value = '';
 
-    document.getElementById('assignmentList').style.display = 'none';
+    // The WRAPPER, not the inner list. Hiding only the inner list left the card's
+    // padding behind as an empty bar floating above the assignment detail.
+    document.getElementById('assignmentListCard').style.display = 'none';
     document.getElementById('assignmentTabs').style.display = 'none';
     document.getElementById('assignmentDetail').style.display = '';
 }
 
+/**
+ * Peer feedback on the learner's OWN submission.
+ *
+ * Until this existed the loop was open at the end: an instructor could assign a reviewer, the
+ * reviewer could read the work and write a considered response, and the person it was written
+ * for never saw a word of it. The whole point of peer review is the last hop.
+ *
+ * Reviewers are not named. Peer review is conventionally blind to the author, and the endpoint
+ * returns an opaque user id anyway — printing that would be worse than useless.
+ */
+async function renderPeerFeedback(assignment) {
+    const block = document.getElementById('peerFeedbackBlock');
+    const list = document.getElementById('peerFeedbackList');
+    if (!block || !list) return;
+
+    const submissionId = assignment._submission && assignment._submission.id;
+    if (!submissionId) { block.style.display = 'none'; return; }
+
+    try {
+        const rows = await api.request(`/lms/learning/submissions/${submissionId}/peer-reviews`);
+        // Only COMPLETED reviews are shown. An assigned-but-unwritten review is not feedback,
+        // and rendering it as an empty card reads as a reviewer who had nothing to say.
+        const done = (Array.isArray(rows) ? rows : []).filter(r => r.status === 'completed');
+
+        if (done.length === 0) { block.style.display = 'none'; return; }
+
+        block.style.display = '';
+        list.innerHTML = done.map((r, i) => `
+            <div style="background: var(--bg-tertiary); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-2);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--space-2);">
+                    <span style="color: var(--text-muted); font-size: var(--font-size-sm);">Reviewer ${i + 1}</span>
+                    ${r.score !== null && r.score !== undefined
+                        ? `<span style="color: var(--text-primary); font-weight: var(--font-weight-medium);">${r.score} / ${assignment.max_score || 100}</span>`
+                        : ''}
+                </div>
+                <p style="color: var(--text-secondary); margin: 0;">${escapeHtml(r.feedback || 'No written feedback.')}</p>
+            </div>`).join('');
+    } catch (e) {
+        // A learner who cannot read the reviews is not an error worth shouting about on the
+        // page — the grade above is the part they came for.
+        block.style.display = 'none';
+    }
+}
+
 function backToList() {
     document.getElementById('assignmentDetail').style.display = 'none';
-    document.getElementById('assignmentList').style.display = '';
+    document.getElementById('assignmentListCard').style.display = '';
     document.getElementById('assignmentTabs').style.display = '';
     currentAssignment = null;
 }
@@ -325,25 +361,45 @@ async function submitAssignment() {
         return;
     }
 
+    const btn = document.querySelector('#submissionForm button');
+    const originalLabel = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+
     try {
-        const formData = new FormData();
-        if (text) formData.append('text', text);
-        selectedFiles.forEach(f => formData.append('files', f));
+        // JSON, not multipart. This used to POST a FormData of {text, files} and the
+        // endpoint answered 415 every time: it takes a JSON body of
+        // {submissionText, fileUrls}, and LMS stores no files of its own — an attachment
+        // is a Drive object referenced by URL. So submitting an assignment had never
+        // worked, for anyone, by any route through this page.
+        const fileUrls = [];
+        for (const f of selectedFiles) {
+            const result = await api.uploadDriveFileDirect(f);
+            // Drive has answered with several spellings over time; take the first that
+            // is actually present rather than assuming one and silently storing undefined.
+            const url = result.url || result.fileUrl || result.file_url
+                     || result.s3_key || result.s3Key || result.key;
+            if (!url) throw new Error(`Drive accepted "${f.name}" but returned no reference to it.`);
+            fileUrls.push(url);
+        }
 
         await api.request(`/lms/assignments/${currentAssignment.id}/submit`, {
             method: 'POST',
-            body: formData,
-            skipContentType: true
+            body: JSON.stringify({
+                submissionText: text || null,
+                fileUrls: fileUrls.length ? fileUrls : null
+            })
         });
 
         if (typeof showToast === 'function') showToast('Assignment submitted successfully!', 'success');
 
-        // Refresh
+        selectedFiles = [];
         backToList();
         await loadAssignments();
     } catch (err) {
         console.error('Failed to submit assignment:', err);
         if (typeof showToast === 'function') showToast('Failed to submit: ' + (err.message || 'Unknown error'), 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
     }
 }
 
@@ -370,27 +426,25 @@ async function loadGradingSubmissions() {
             });
         }
 
-        // For each course, get assignments then submissions
+        // Assignments come from the tenant-wide list, not from a per-course route. The
+        // per-course route this used to call (/lms/courses/{id}/assignments) does not exist,
+        // so the catch below swallowed a 404 for every course and this table was always empty
+        // — instructors could never grade an assignment from the UI at all.
         allSubmissions = [];
-        for (const course of courses) {
-            try {
-                const assignmentsResp = await api.request(`/lms/courses/${course.id}/assignments`);
-                const assignments = assignmentsResp.data || assignmentsResp || [];
+        const assignments = await api.request('/lms/assignments');
 
-                for (const assignment of assignments) {
-                    try {
-                        const subs = await api.request(`/lms/assignments/${assignment.id}/submissions`);
-                        const subList = Array.isArray(subs) ? subs : (subs.submissions || []);
-                        subList.forEach(s => {
-                            s._assignmentTitle = assignment.title;
-                            s._courseTitle = course.title;
-                            s._courseId = course.id;
-                            s._maxScore = assignment.max_score || 100;
-                        });
-                        allSubmissions.push(...subList);
-                    } catch { /* no submissions */ }
-                }
-            } catch { /* no assignments for this course */ }
+        for (const assignment of (Array.isArray(assignments) ? assignments : [])) {
+            try {
+                const subs = await api.request(`/lms/assignments/${assignment.id}/submissions`);
+                const subList = Array.isArray(subs) ? subs : (subs.submissions || []);
+                subList.forEach(s => {
+                    s._assignmentTitle = assignment.title;
+                    s._courseTitle = assignment.courseTitle;
+                    s._courseId = assignment.courseId;
+                    s._maxScore = assignment.maxScore ?? 100;
+                });
+                allSubmissions.push(...subList);
+            } catch { /* no submissions on this assignment */ }
         }
 
         renderGradingTable();
@@ -445,7 +499,7 @@ function renderGradingTable() {
                 <td>${statusBadge}</td>
                 <td>${scoreText}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="openPeerReviewAssign('${s.id}')" title="Peer review">Peer</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="openPeerReviewAssign('${s.id}', '${s._courseId}', '${escapeHtml(s.userId || s.user_id || '')}')" title="Peer review">Peer</button>
                     <button class="btn btn-sm btn-outline-primary" onclick="openGradeModal('${s.id}', '${s._maxScore}')" title="${isGraded ? 'Re-grade' : 'Grade'}">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -493,7 +547,10 @@ async function submitGrade() {
         });
         showToast('Submission graded successfully!', 'success');
         closeGradeModal();
-        await loadGradingSubmissions();
+        // Refresh BOTH lists. The learner-facing list is held in memory from page load,
+        // so refreshing only the grading table left the Graded tab empty immediately
+        // after grading — the mark was saved, and the screen said it had not been.
+        await Promise.all([loadGradingSubmissions(), loadAssignments()]);
     } catch (err) {
         console.error('Grading failed:', err);
         showToast(err.message || 'Failed to grade submission', 'error');

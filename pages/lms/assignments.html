@@ -65,7 +65,7 @@
         </div>
 
         <!-- Assignment List -->
-        <div class="glass-card" style="padding: var(--space-4);">
+        <div class="glass-card" id="assignmentListCard" style="padding: var(--space-4);">
             <div id="assignmentList" class="lms-tab-content">
                 <div class="lms-empty-state" id="assignmentLoading">
                     <p>Loading assignments...</p>
@@ -132,13 +132,13 @@
             </div>
         </div>
 
-        <div class="glassmorphic-modal" id="gradeModal" style="display:none;">
-            <div class="glassmorphic-modal-content" style="max-width:500px;">
-                <div class="glassmorphic-modal-header">
+        <div class="modal-overlay" id="gradeModal" style="display:none;">
+            <div class="modal-container" style="max-width:500px;">
+                <div class="modal-header">
                     <h4 id="gradeModalTitle">Grade Submission</h4>
-                    <button class="glassmorphic-modal-close" onclick="closeGradeModal()">&times;</button>
+                    <button class="modal-close" onclick="closeGradeModal()">&times;</button>
                 </div>
-                <div class="glassmorphic-modal-body">
+                <div class="modal-body">
                     <input type="hidden" id="gradeSubmissionId">
                     <div style="margin-bottom:var(--space-3);">
                         <label style="color:var(--text-secondary);font-size:0.8rem;">Learner</label>
@@ -242,6 +242,13 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- What peers said. Shown to the person whose work it is, separately from
+                         the instructor's mark, because the two carry different weight. -->
+                    <div id="peerFeedbackBlock" style="display:none; margin-top: var(--space-4);">
+                        <h4 style="color: var(--text-primary); margin: 0 0 var(--space-3) 0;">Peer feedback</h4>
+                        <div id="peerFeedbackList"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -289,7 +296,9 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="peerReviewerId">Ask someone to review this</label>
-                    <input type="text" id="peerReviewerId" class="form-control" placeholder="Their user id">
+                    <select id="peerReviewerId" class="form-control">
+                        <option value="">Loading the roster…</option>
+                    </select>
                 </div>
                 <button class="btn btn-sm btn-primary" onclick="assignPeerReviewer()">Assign reviewer</button>
                 <div style="margin-top:16px;" id="peerExistingReviews"></div>
@@ -303,6 +312,7 @@
             <div class="modal-header"><h3>Your review</h3>
                 <button class="modal-close" onclick="closeMyReview()">&times;</button></div>
             <div class="modal-body">
+                <div id="myReviewSubject"></div>
                 <div class="form-group"><label for="myReviewScore">Score (optional)</label>
                     <input type="number" id="myReviewScore" class="form-control" min="0" step="0.5"></div>
                 <div class="form-group"><label for="myReviewFeedback">Feedback</label>

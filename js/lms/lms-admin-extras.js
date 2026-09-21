@@ -307,33 +307,33 @@ async function loadMarkingQueue() {
     const tbody = document.getElementById('markingQueueBody');
     tbody.innerHTML = axEmptyRow(5, 'Loading…');
     try {
-        const courses = await api.request('/lms/courses');
-        const courseList = Array.isArray(courses) ? courses : (courses.data || []);
-        const pending = [];
+        // ONE call. This used to walk every course, then every module, then every lesson,
+        // asking each lesson whether it carried a quiz and each quiz for its attempts —
+        // O(lessons) requests to build a list that is usually empty, and because a lesson
+        // with no quiz answers 404, the ordinary case wrote an error per lesson into the
+        // console and buried anything real underneath it.
+        const rows = await api.request('/lms/quizzes/attempts/awaiting-review');
 
-        for (const course of courseList) {
-            let modules = [];
-            try { modules = await api.request(`/lms/courses/${course.id}/modules?includeLessons=true`); } catch (e) { continue; }
-            for (const m of (Array.isArray(modules) ? modules : [])) {
-                for (const lesson of (m.lessons || [])) {
-                    if (lesson.contentType !== 'quiz' && lesson.content_type !== 'quiz') continue;
-                    let quiz = null;
-                    try { quiz = await api.request(`/lms/quizzes/lesson/${lesson.id}`); } catch (e) { continue; }
-                    if (!quiz || !quiz.id) continue;
-                    let attempts = [];
-                    try { attempts = await api.request(`/lms/quizzes/${quiz.id}/attempts/all`); } catch (e) { continue; }
-                    for (const a of (Array.isArray(attempts) ? attempts : [])) {
-                        if (a.requiresReview) pending.push({ attempt: a, quiz, course });
-                    }
-                }
-            }
-        }
-
-        axQueue = pending;
+        // Kept in the {attempt, quiz, course} shape the grading modal already reads, so the
+        // server change stops here rather than rippling into openGrading and submitGrading.
+        axQueue = (Array.isArray(rows) ? rows : []).map(r => ({
+            attempt: {
+                id: r.attemptId,
+                userId: r.userId,
+                userName: r.userName,
+                score: r.score,
+                maxScore: r.maxScore,
+                answers: r.answers,
+                submittedAt: r.submittedAt
+            },
+            quiz: { id: r.quizId, title: r.quizTitle },
+            course: { id: r.courseId, title: r.courseTitle }
+        }));
         axQueueLoaded = true;
-        tbody.innerHTML = pending.length === 0
+
+        tbody.innerHTML = axQueue.length === 0
             ? axEmptyRow(5, 'Nothing is waiting to be marked.')
-            : pending.map((p, i) => `
+            : axQueue.map((p, i) => `
                 <tr>
                     <td>${axEscape(p.attempt.userName || p.attempt.userId)}</td>
                     <td>${axEscape(p.course.title)}</td>
