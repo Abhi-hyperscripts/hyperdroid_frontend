@@ -710,3 +710,73 @@ async function saveModulesAndLessons() {
         }
     }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COURSE SKILLS
+
+   GET/PUT /learning/courses/{id}/skills had no caller, so a skill could be
+   defined and never attached to anything — and GrantSkillsForCourse, which runs
+   on every completion, had nothing to grant.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+let csSkills = [];
+
+async function openCourseSkills() {
+    if (!courseId) { showToast('Save the course first', 'error'); return; }
+    document.getElementById('courseSkillsModal').style.display = 'flex';
+    await renderCourseSkills();
+}
+
+function closeCourseSkills() {
+    document.getElementById('courseSkillsModal').style.display = 'none';
+}
+
+async function renderCourseSkills() {
+    const host = document.getElementById('courseSkillsList');
+    host.innerHTML = '<p class="text-muted">Loading…</p>';
+    try {
+        csSkills = await api.request(`/lms/learning/courses/${courseId}/skills`);
+        host.innerHTML = csSkills.length === 0
+            ? '<p class="text-muted qb-hint">No skills attached. Finishing this course grants nothing yet.</p>'
+            : `<div class="qb-question-list">${csSkills.map(sk => `
+                <div class="qb-question-row">
+                    <div class="qb-question-main">
+                        <div class="qb-question-text">${escapeHtml(sk.name)}</div>
+                        <div class="qb-question-meta">
+                            <span>${escapeHtml(sk.category || 'Uncategorised')}</span>
+                            <span>granted at level ${sk.level}</span>
+                        </div>
+                    </div>
+                </div>`).join('')}</div>`;
+    } catch (e) {
+        host.innerHTML = '<p class="text-muted">Could not load the skills.</p>';
+    }
+}
+
+/**
+ * The skill is named, not picked from a list: there is no list-all-skills
+ * endpoint, and UpsertSkill is keyed on the name, so naming an existing skill
+ * reuses it rather than creating a duplicate.
+ */
+async function attachCourseSkill() {
+    const name = document.getElementById('courseSkillName').value.trim();
+    if (!name) { showToast('Name the skill', 'error'); return; }
+    const level = parseInt(document.getElementById('courseSkillLevel').value, 10) || 1;
+
+    try {
+        const created = await api.request('/lms/learning/skills', {
+            method: 'PUT',
+            body: JSON.stringify({ name, category: document.getElementById('courseSkillCategory').value.trim() || null })
+        });
+        const skillId = created.id || created.skillId || created;
+        await api.request(`/lms/learning/courses/${courseId}/skills`, {
+            method: 'PUT', body: JSON.stringify({ skillId, level })
+        });
+        document.getElementById('courseSkillName').value = '';
+        await renderCourseSkills();
+        showToast('Skill attached', 'success');
+    } catch (e) {
+        showToast(e.message || 'Could not attach the skill', 'error');
+    }
+}
