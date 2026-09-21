@@ -431,6 +431,12 @@ function renderBuilderLessons(lessons, moduleIdx) {
                 <button class="btn btn-sm btn-outline-secondary" onclick="moveLesson(${moduleIdx}, ${lessonIdx}, 'down')" title="Move down" ${lessonIdx === lessons.length - 1 ? 'disabled' : ''}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
+                ${lesson.content_type === 'quiz' ? `
+                <button class="btn btn-sm btn-outline-primary" onclick="openQuizBuilder('${lesson.id || ''}', '${escapeHtml(lesson.title).replace(/'/g, "\\'")}')"
+                        title="${lesson.id ? 'Add or edit this quiz\'s questions' : 'Save the course first — a quiz attaches to a saved lesson'}"
+                        ${lesson.id ? '' : 'disabled'}>
+                    Quiz
+                </button>` : ''}
                 <button class="btn btn-sm btn-outline-secondary" onclick="editLesson(${moduleIdx}, ${lessonIdx})" title="Edit">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>

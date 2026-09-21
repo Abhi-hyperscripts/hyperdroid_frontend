@@ -87,6 +87,12 @@
                     <iframe id="lessonDocument" title="Lesson Document"></iframe>
                 </div>
 
+                <!-- SCORM package (hidden by default). The iframe is created at launch time
+                     rather than sitting empty in the markup: SCORM content starts running the
+                     moment its document loads and immediately looks for window.API, so the
+                     data model has to be in memory BEFORE the frame exists. -->
+                <div class="lesson-scorm-wrapper" id="scormWrapper" style="display:none;"></div>
+
                 <!-- Rich Text Content (hidden by default) -->
                 <div class="lesson-text-content" id="textContentWrapper" style="display:none;">
                     <div id="lessonTextContent"></div>
@@ -128,6 +134,7 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/scorm-api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/lesson-viewer.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

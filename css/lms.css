@@ -1537,3 +1537,255 @@ body.lms-dashboard .section-header .section-title {
 @media (max-width: 768px) {
     .lms-two-col .lms-panel > div { max-height: none; overflow-y: visible; }
 }
+
+/* ─── Quiz builder ───────────────────────────────────────────────────────────
+   Authoring a quiz on a lesson. Sizes to its content and scrolls internally so
+   a long question list never scrolls the page behind the modal. */
+
+.qb-dialog {
+    max-width: 760px;
+    width: 100%;
+}
+
+.qb-dialog .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.qb-section {
+    padding: 16px 0;
+    border-top: 1px solid var(--border-color, #334155);
+}
+
+.qb-section:first-child {
+    border-top: none;
+    padding-top: 0;
+}
+
+.qb-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.qb-section-title {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary, #f1f5f9);
+}
+
+.qb-section-head .qb-section-title { margin-bottom: 0; }
+
+.qb-hint {
+    margin: 0;
+    font-size: 13px;
+}
+
+.qb-question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.qb-question-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 8px;
+    background: var(--bg-secondary, #172234);
+}
+
+.qb-question-index {
+    flex: 0 0 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--brand-primary, #2563eb);
+    color: #fff;
+}
+
+.qb-question-main { flex: 1 1 auto; min-width: 0; }
+
+.qb-question-text {
+    font-size: 13px;
+    color: var(--text-primary, #f1f5f9);
+    /* A long question wraps rather than pushing the actions off the row. */
+    overflow-wrap: anywhere;
+}
+
+.qb-question-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-secondary, #94a3b8);
+}
+
+.qb-question-actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.qb-manual-note {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+/* Keyed on data-theme, which is how this app themes. A prefers-color-scheme
+   rule reads the OS setting and disagrees with the product whenever the two
+   differ — which is exactly what happened here on a light OS. */
+:root[data-theme="dark"] .qb-manual-note {
+    background: #422006;
+    border-color: #854d0e;
+    color: #fde68a;
+}
+
+/* ─── Modals opened with an inline display:flex ──────────────────────────────
+   Ten modals across five LMS pages (admin, course-builder, discussions,
+   live-sessions, quiz) are opened by setting `element.style.display = 'flex'`
+   rather than by adding the glassmorphic `.active` class. On a body.dashboard
+   page that left them INVISIBLE AND UNCLICKABLE, for three reasons that stack:
+
+     1. styles.css forces `position: relative; z-index: 1` on every direct child
+        of body.dashboard whose class is not in a ~25-entry :not() chain.
+        `.modal-overlay` is not in that chain, so the dialog dropped into page
+        flow at the current scroll offset, under everything. That selector is
+        ~(0,25,1) and cannot be out-specified; !important is the documented
+        remedy, and editing the shared chain would arm the trap elsewhere.
+
+     2. glassmorphic-modal.css sets `.modal-overlay { opacity: 0 }` and restores
+        it only on `.active`. The inline display:flex defeats `display:none` but
+        nothing restored the opacity, so the modal was laid out and fully
+        transparent — clicking "Edit" on a lesson appeared to do nothing.
+
+     3. The panel itself had no surface. glassmorphic puts background, border,
+        radius and shadow on `.modal-content`, and this markup has no
+        `.modal-content`: it goes overlay > panel > header/body/footer directly.
+        The panel computed `background: rgba(0,0,0,0)`, so the page's own table
+        rows showed straight through the dialog.
+
+   TWO panel class names are in use — `.modal-container` on seven of the ten
+   (admin, discussions, live-sessions, quiz) and `.modal-dialog` on three
+   (course-builder) — so every selector here names both. Styling one leaves the
+   other seven transparent, which is exactly what the first pass did. */
+
+body.lms-dashboard .modal-overlay[style*="display: flex"],
+body.lms-dashboard .modal-overlay[style*="display:flex"] {
+    position: fixed !important;
+    z-index: 1200 !important;      /* above .slide-panel (1050) and its backdrop (1040) */
+    opacity: 1 !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    /* Room for the fixed navbar, so a tall dialog is never hidden beneath it. */
+    padding: 80px 20px 20px;
+}
+
+body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-dialog,
+body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-container,
+body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-dialog,
+body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 560px;
+    max-height: calc(100vh - 100px);
+    box-sizing: border-box;
+    overflow: hidden;
+    /* Theme variables, not literals: this app themes with <html data-theme>, so
+       a prefers-color-scheme rule reads the OS and gets it wrong — an earlier
+       version of this block painted a white panel onto the dark product. */
+    background: var(--bg-elevated, #1e293b);
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg, 0 10px 15px rgba(0, 0, 0, 0.5));
+    color: var(--text-primary, #f1f5f9);
+}
+
+/* The quiz builder holds a list and wants more room than a plain form dialog. */
+body.lms-dashboard .modal-overlay[style*="display: flex"] > .qb-dialog,
+body.lms-dashboard .modal-overlay[style*="display:flex"] > .qb-dialog {
+    max-width: 760px;
+}
+
+/* Header, body and footer: the dialog scrolls in its BODY only, so the title
+   stays put and the actions stay reachable on a long form. */
+body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-dialog > .modal-header,
+body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-container > .modal-header,
+body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-dialog > .modal-header,
+body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container > .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color, #334155);
+}
+
+body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-dialog > .modal-body,
+body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-container > .modal-body,
+body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-dialog > .modal-body,
+body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container > .modal-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 18px;
+}
+
+body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-dialog > .modal-footer,
+body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-container > .modal-footer,
+body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-dialog > .modal-footer,
+body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container > .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border-color, #334155);
+}
+
+/* The close control was rendering as a bare bordered box in the corner. */
+body.lms-dashboard .modal-overlay[style*="display: flex"] .modal-close,
+body.lms-dashboard .modal-overlay[style*="display:flex"] .modal-close {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    font-size: 20px;
+    line-height: 1;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary, #94a3b8);
+    cursor: pointer;
+}
+
+body.lms-dashboard .modal-overlay[style*="display: flex"] .modal-close:hover,
+body.lms-dashboard .modal-overlay[style*="display:flex"] .modal-close:hover {
+    background: var(--bg-tertiary, rgba(99, 102, 241, 0.10));
+    color: var(--text-primary, #f1f5f9);
+}

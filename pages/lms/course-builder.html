@@ -257,12 +257,74 @@
         </div>
     </div>
 
+
+    <!-- Quiz builder: authoring a quiz on a saved lesson -->
+    <div class="modal-overlay" id="quizBuilderModal" style="display:none;">
+        <div class="modal-dialog lms-modal-dialog qb-dialog">
+            <div class="modal-header">
+                <h3>Quiz &mdash; <span id="quizBuilderLessonName" class="text-muted"></span></h3>
+                <button class="modal-close" onclick="closeQuizBuilder()">&times;</button>
+            </div>
+            <div class="modal-body" id="quizBuilderBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeQuizBuilder()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- One question -->
+    <div class="modal-overlay" id="qbQuestionModal" style="display:none;">
+        <div class="modal-dialog lms-modal-dialog">
+            <div class="modal-header">
+                <h3 id="qbQuestionModalTitle">Add question</h3>
+                <button class="modal-close" onclick="qbCloseQuestion()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="qbQType">Type</label>
+                    <select id="qbQType" class="form-control" onchange="qbToggleQuestionFields()"></select>
+                </div>
+                <div class="form-group">
+                    <label for="qbQText">Question <span class="required">*</span></label>
+                    <textarea id="qbQText" class="form-control" rows="2" placeholder="What do you want to ask?"></textarea>
+                </div>
+                <div class="form-group" id="qbQOptionsGroup">
+                    <label for="qbQOptions">Options <span class="text-muted">(one per line)</span></label>
+                    <textarea id="qbQOptions" class="form-control" rows="4" placeholder="Water&#10;CO2&#10;Foam"></textarea>
+                </div>
+                <div class="form-group" id="qbQAnswerGroup">
+                    <label for="qbQAnswer">Correct answer <span class="required">*</span></label>
+                    <input type="text" id="qbQAnswer" class="form-control" placeholder="Must match one of the options exactly">
+                </div>
+                <p class="qb-manual-note" id="qbQManualNote" style="display:none;">
+                    This type is marked by hand. Until an instructor marks it, the attempt is held for
+                    review rather than counted as a fail &mdash; and its points still count toward the total.
+                </p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="qbQPoints">Points</label>
+                        <input type="number" id="qbQPoints" class="form-control" min="0" step="0.5" value="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="qbQExplanation">Explanation <span class="text-muted">(shown after the attempt)</span></label>
+                    <textarea id="qbQExplanation" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="qbCloseQuestion()">Cancel</button>
+                <button class="btn btn-primary" onclick="qbSaveQuestion()">Save question</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/quiz-builder.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/course-builder.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

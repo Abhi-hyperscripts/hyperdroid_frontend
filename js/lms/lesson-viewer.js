@@ -165,6 +165,8 @@ function renderContent() {
     document.getElementById('documentWrapper').style.display = 'none';
     document.getElementById('textContentWrapper').style.display = 'none';
     document.getElementById('lessonPlaceholder').style.display = 'none';
+    const scormWrap = document.getElementById('scormWrapper');
+    if (scormWrap) scormWrap.style.display = 'none';
 
     const type = lessonContentType();
 
@@ -175,12 +177,76 @@ function renderContent() {
         case 'document':
             renderDocumentViewer();
             break;
+        case 'scorm':
+            renderScormPlayer();
+            break;
         case 'text':
         default:
             renderTextContent();
             break;
     }
 }
+
+/**
+ * Launch a SCORM package.
+ *
+ * Order matters and is not negotiable: the data model must be fetched and installed on window.API
+ * BEFORE the iframe is created. SCORM content begins executing as soon as its document parses and
+ * calls LMSInitialize almost immediately; a frame created first would race the fetch, find an empty
+ * model, and treat the attempt as fresh — discarding the learner's suspend_data and restarting the
+ * course from the beginning.
+ */
+async function renderScormPlayer() {
+    const wrapper = document.getElementById('scormWrapper');
+    if (!wrapper) return;
+    wrapper.style.display = 'block';
+    wrapper.innerHTML = '<div class="lms-empty-state">Preparing course\u2026</div>';
+
+    if (typeof ScormRuntime === 'undefined') {
+        wrapper.innerHTML = '<div class="lms-empty-state">The SCORM player failed to load. '
+            + 'Refresh the page and try again.</div>';
+        return;
+    }
+
+    let launchUrl;
+    try {
+        launchUrl = await ScormRuntime.preload(currentLesson.id);
+    } catch (err) {
+        console.error('[scorm] launch failed', err);
+        wrapper.innerHTML = '<div class="lms-empty-state">'
+            + (err && err.status === 400
+                ? 'You are not enrolled in this course.'
+                : 'This course could not be started.') + '</div>';
+        return;
+    }
+
+    if (!launchUrl) {
+        wrapper.innerHTML = '<div class="lms-empty-state">No SCORM package has been uploaded '
+            + 'for this lesson yet.</div>';
+        return;
+    }
+
+    const frame = document.createElement('iframe');
+    frame.id = 'scormFrame';
+    frame.title = 'SCORM course content';
+    // allow-same-origin is required: the content reaches window.parent.API, which a fully sandboxed
+    // frame cannot do. allow-scripts alone would break every SCORM package in existence.
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+    frame.src = launchUrl;
+    wrapper.innerHTML = '';
+    wrapper.appendChild(frame);
+}
+
+/**
+ * Called by the adapter when a commit marks the lesson complete, so the surrounding UI catches up
+ * without the learner having to reload.
+ */
+window.onScormLessonComplete = function (lessonId, score) {
+    if (typeof Toast !== 'undefined') {
+        Toast.success(score != null ? `Lesson complete \u2014 score ${score}` : 'Lesson complete');
+    }
+    if (typeof updateProgress === 'function') updateProgress();
+};
 
 function initVideoPlayer() {
     const wrapper = document.getElementById('videoWrapper');
