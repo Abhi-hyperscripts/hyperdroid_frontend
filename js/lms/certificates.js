@@ -86,7 +86,8 @@ function renderCertificateGrid() {
                     </div>
 
                     <div style="display: flex; gap: var(--space-2);">
-                        <button class="btn btn-primary btn-sm" onclick="downloadPdf('${cert.id}')" style="flex: 1;">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); openCertificateDetail('${cert.id}')">Details</button>
+                    <button class="btn btn-primary btn-sm" onclick="downloadPdf('${cert.id}')" style="flex: 1;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                 <polyline points="7 10 12 15 17 10"/>

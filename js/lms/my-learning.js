@@ -119,6 +119,10 @@ function renderTable(enrollments) {
                     <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); window.location.href='course-detail.html?id=${courseId}'" style="font-size:0.72rem;padding:4px 12px">
                         ${isCompleted ? 'Review' : 'Continue'}
                     </button>
+                    <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); openLearnerProgress('${courseId}', null, '${escapeHtml(e.courseTitle || '')}')"
+                            style="font-size:0.72rem;padding:4px 12px" title="Your progress through this course">
+                        Progress
+                    </button>
                     ${isCompleted ? '' : `
                     <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); dropEnrollment('${e.id}', '${escapeHtml(e.courseTitle || '').replace(/'/g, "\\'")}')"
                             style="font-size:0.72rem;padding:4px 12px" title="Leave this course">

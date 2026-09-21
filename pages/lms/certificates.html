@@ -81,10 +81,20 @@
         </div>
     </div>
 
+<div class="modal-overlay" id="certDetailModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header"><h3>Certificate</h3>
+                <button class="modal-close" onclick="closeCertDetail()">&times;</button></div>
+            <div class="modal-body" id="certDetailBody"></div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeCertDetail()">Done</button></div>
+        </div>
+    </div>
+
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-insight-views.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/certificates.js?v=' + CACHE_VERSION + '"><\/script>');

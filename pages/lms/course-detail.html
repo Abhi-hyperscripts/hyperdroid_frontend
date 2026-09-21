@@ -15,6 +15,55 @@
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <div class="modal-overlay" id="editReviewModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header"><h3>Your review</h3>
+                <button class="modal-close" onclick="closeEditReview()">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="editReviewId">
+                <div class="form-group"><label for="editReviewRating">Rating</label>
+                    <select id="editReviewRating" class="form-control">
+                        <option value="5">5 — excellent</option>
+                        <option value="4">4 — good</option>
+                        <option value="3">3 — fair</option>
+                        <option value="2">2 — poor</option>
+                        <option value="1">1 — bad</option>
+                    </select></div>
+                <div class="form-group"><label for="editReviewText">What you thought</label>
+                    <textarea id="editReviewText" class="form-control" rows="4"></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditReview()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveMyReview()">Save</button>
+            </div>
+        </div>
+    </div>
+
+<div class="modal-overlay" id="rosterModal" style="display:none;">
+        <div class="modal-container qb-dialog">
+            <div class="modal-header"><h3>Who is enrolled</h3>
+                <button class="modal-close" onclick="closeRoster()">&times;</button></div>
+            <div class="modal-body">
+                <div class="crm-table-wrapper data-table-container">
+                    <table class="crm-table data-table">
+                        <thead><tr><th>Learner</th><th>Status</th><th>Progress</th><th>Enrolled</th><th></th></tr></thead>
+                        <tbody id="rosterBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeRoster()">Done</button></div>
+        </div>
+    </div>
+<div class="modal-overlay" id="progressModal" style="display:none;">
+        <div class="modal-container qb-dialog">
+            <div class="modal-header"><h3 id="progressModalWho">Progress</h3>
+                <button class="modal-close" onclick="closeProgressModal()">&times;</button></div>
+            <div class="modal-body" id="progressModalBody"></div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeProgressModal()">Done</button></div>
+        </div>
+    </div>
+
     <script>
         document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');
         document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');
@@ -212,6 +261,7 @@
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-insight-views.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/lmsRoles.js?v=' + CACHE_VERSION + '"><\/script>');

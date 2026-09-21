@@ -63,6 +63,20 @@ const lmsRoles = {
     /**
      * Check if user is LMS Admin
      */
+    /**
+     * The signed-in user's id, as the LMS stores it on rows (enrolments, reviews,
+     * submissions). Read from the token rather than passed around, and offered
+     * here so pages that need "is this mine?" do not each re-decode the JWT and
+     * each pick a different claim.
+     */
+    userId() {
+        const token = getAuthToken();
+        if (!token) return null;
+        const p = decodeJwtPayload(token);
+        return (p && (p.sub
+            || p['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'])) || null;
+    },
+
     isAdmin() {
         return this.hasRole('LMS_ADMIN');
     },

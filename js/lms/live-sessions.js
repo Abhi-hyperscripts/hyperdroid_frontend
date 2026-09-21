@@ -380,6 +380,7 @@ function renderSessionAdminActions(session) {
             </select>
             <div class="session-admin-buttons">
                 <button class="btn btn-sm btn-outline-secondary" onclick="openSessionAttendees('${session.id}')">Attendees</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="openSessionAttendance('${session.id}')" title="Who actually joined">Attendance</button>
                 <button class="btn btn-sm btn-outline-secondary" onclick="openSessionEditor('${session.id}')">Edit</button>
                 <button class="btn-icon danger" onclick="deleteSession('${session.id}')" title="Delete session">&times;</button>
             </div>

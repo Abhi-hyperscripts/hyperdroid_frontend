@@ -99,6 +99,9 @@ function applyRBAC() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     Duplicate
                 </button>
+                <button class="btn-outline-sm" onclick="openCourseRoster()" title="Who is enrolled on this course">
+                    Enrolled
+                </button>
                 <button class="btn-outline-sm" onclick="archiveCourse()" title="Archive this course — it stops appearing in the catalogue and nobody new can enrol">
                     Archive
                 </button>
@@ -349,8 +352,60 @@ function renderReviews() {
             </div>
             <div style="color:var(--color-warning);margin-bottom:4px">${renderStars(r.rating || 0)}</div>
             <p style="font-size:0.82rem;color:var(--text-secondary);margin:0;line-height:1.5">${escapeHtml(r.reviewText || '')}</p>
+            ${isMyReview(r) ? `
+            <div class="review-own-actions">
+                <button class="btn btn-sm btn-outline-secondary" onclick="editMyReview('${r.id}')">Edit</button>
+                <button class="btn-icon danger" onclick="deleteMyReview('${r.id}')" title="Delete your review">&times;</button>
+            </div>` : ''}
         </div>
     `).join('');
+}
+
+/**
+ * Only your OWN review gets edit and delete. The server enforces this too — the
+ * controller refuses a review that is not yours unless you are an admin — but
+ * showing a button that answers 403 is its own kind of broken.
+ */
+function isMyReview(r) {
+    const me = (typeof lmsRoles !== 'undefined' && lmsRoles.userId) ? lmsRoles.userId() : null;
+    return !!me && r.userId === me;
+}
+
+function editMyReview(reviewId) {
+    const r = reviewsData.find(x => x.id === reviewId);
+    if (!r) return;
+    document.getElementById('editReviewId').value = reviewId;
+    document.getElementById('editReviewRating').value = r.rating || 5;
+    document.getElementById('editReviewText').value = r.reviewText || '';
+    document.getElementById('editReviewModal').style.display = 'flex';
+}
+
+function closeEditReview() {
+    document.getElementById('editReviewModal').style.display = 'none';
+}
+
+async function saveMyReview() {
+    const id = document.getElementById('editReviewId').value;
+    const rating = parseInt(document.getElementById('editReviewRating').value, 10);
+    if (!(rating >= 1 && rating <= 5)) { showToast('Give a rating between 1 and 5', 'error'); return; }
+    try {
+        await api.request(`/lms/reviews/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ rating, reviewText: document.getElementById('editReviewText').value.trim() || null })
+        });
+        closeEditReview();
+        await loadReviews();
+        showToast('Review updated', 'success');
+    } catch (e) { showToast(e.message || 'Could not update your review', 'error'); }
+}
+
+async function deleteMyReview(reviewId) {
+    if (!confirm('Delete your review of this course?')) return;
+    try {
+        await api.request(`/lms/reviews/${reviewId}`, { method: 'DELETE' });
+        await loadReviews();
+        showToast('Review deleted', 'success');
+    } catch (e) { showToast(e.message || 'Could not delete your review', 'error'); }
 }
 
 function renderStars(rating) {
