@@ -119,6 +119,11 @@ function renderTable(enrollments) {
                     <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); window.location.href='course-detail.html?id=${courseId}'" style="font-size:0.72rem;padding:4px 12px">
                         ${isCompleted ? 'Review' : 'Continue'}
                     </button>
+                    ${isCompleted ? '' : `
+                    <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); dropEnrollment('${e.id}', '${escapeHtml(e.courseTitle || '').replace(/'/g, "\\'")}')"
+                            style="font-size:0.72rem;padding:4px 12px" title="Leave this course">
+                        Drop
+                    </button>`}
                 </td>
             </tr>
         `;
@@ -141,4 +146,26 @@ function escapeHtml(str) {
     // arrive from outside. Over-escaping is free in text context, where
     // &quot; renders as a plain quote.
     return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+
+/**
+ * Leaving a course.
+ *
+ * PUT enrollments/{id}/drop had no caller, so a learner assigned a course they
+ * did not need was stuck with it on their list for ever. Dropping is scoped to
+ * the caller server-side — one learner cannot drop another's mandatory training.
+ *
+ * A COMPLETED enrolment has no Drop button: dropping it would discard the record
+ * that the training was done, which is the opposite of what anyone wants.
+ */
+async function dropEnrollment(enrollmentId, courseTitle) {
+    if (!confirm(`Leave "${courseTitle}"?\n\nYour progress is kept, and you can enrol again later.`)) return;
+    try {
+        await api.request(`/lms/enrollments/${enrollmentId}/drop`, { method: 'PUT' });
+        showToast('You have left the course', 'success');
+        await loadPageData();
+    } catch (e) {
+        showToast(e.message || 'Could not leave the course', 'error');
+    }
 }
