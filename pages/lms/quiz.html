@@ -80,6 +80,13 @@
                         </div>
                     </div>
                     <button class="btn btn-primary" onclick="startQuiz()">Start Quiz</button>
+                    <!-- The attempt history existed with no way to reach it: openMyAttempts had
+                         no caller anywhere, so this modal could never open. A learner about to
+                         use one of a limited number of attempts is exactly who needs to see how
+                         the previous ones went. -->
+                    <button class="btn btn-outline-secondary" id="quizPastAttemptsBtn"
+                            style="display:none; margin-left: var(--space-2);"
+                            onclick="openMyAttempts(quizId, quizData && quizData.title)">Past attempts</button>
                 </div>
             </div>
         </div>

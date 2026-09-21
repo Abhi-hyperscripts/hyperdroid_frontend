@@ -52,15 +52,29 @@ async function loadQuizInfo() {
         const data = await api.request(`/lms/quizzes/${quizId}`);
         quizData = data;
 
+        // camelCase first. The API has always answered in camelCase; reading only snake_case
+        // meant every field on this screen rendered "-" even once the route existed.
+        const questionCount = data.questionCount ?? data.question_count;
+        const timeLimit = data.timeLimitMinutes ?? data.time_limit_minutes;
+        const passing = data.passingScore ?? data.passing_score;
+        const used = data.attemptsUsed ?? data.attempts_used;
+        const maxAttempts = data.maxAttempts ?? data.max_attempts;
+
         document.getElementById('quizBreadcrumb').textContent = data.title || 'Quiz';
         document.getElementById('quizTitle').textContent = data.title || 'Quiz';
         document.getElementById('quizDescription').textContent = data.description || '';
-        document.getElementById('quizQuestionCount').textContent = data.question_count || '-';
-        document.getElementById('quizTimeLimit').textContent = data.time_limit_minutes ? data.time_limit_minutes + ' min' : 'No limit';
-        document.getElementById('quizPassingScore').textContent = data.passing_score != null ? data.passing_score + '%' : '-';
-        document.getElementById('quizAttempts').textContent = data.attempts_used != null
-            ? `${data.attempts_used} / ${data.max_attempts || 'Unlimited'}`
+        document.getElementById('quizQuestionCount').textContent = questionCount ?? '-';
+        document.getElementById('quizTimeLimit').textContent = timeLimit ? timeLimit + ' min' : 'No limit';
+        document.getElementById('quizPassingScore').textContent = passing != null ? passing + '%' : '-';
+        // 0 is a real and important value here — a learner with no attempts left must see
+        // "0 / 3", so this tests for null rather than for truthiness.
+        document.getElementById('quizAttempts').textContent = used != null
+            ? `${used} / ${maxAttempts || 'Unlimited'}`
             : '-';
+
+        // Only offered once there is a history to look at.
+        const pastBtn = document.getElementById('quizPastAttemptsBtn');
+        if (pastBtn && used > 0) pastBtn.style.display = '';
 
         showScreen('quizStartScreen');
     } catch (err) {
@@ -69,14 +83,41 @@ async function loadQuizInfo() {
     }
 }
 
+/**
+ * One shape for a question, whatever the wire sends.
+ *
+ * options arrives as a JSONB string ("[\"Water\", \"CO2\"]"), not an array — calling .map on
+ * it throws, so a question whose type WAS recognised would have taken the page down rather
+ * than merely rendering blank.
+ */
+function normaliseQuestion(q) {
+    let options = q.options;
+    if (typeof options === 'string') {
+        try { options = JSON.parse(options); } catch (e) { options = []; }
+    }
+    if (!Array.isArray(options)) options = [];
+
+    return {
+        ...q,
+        question_text: q.questionText ?? q.question_text ?? '',
+        question_type: q.questionType ?? q.question_type ?? '',
+        options
+    };
+}
+
 // ==================== Start Quiz ====================
 
 async function startQuiz() {
     try {
         const response = await api.request(`/lms/quizzes/${quizId}/start`, { method: 'POST' });
-        attemptId = response.attempt_id;
-        questions = response.questions || [];
-        totalTime = (response.time_limit_minutes || quizData.time_limit_minutes || 0) * 60;
+        attemptId = response.attemptId ?? response.attempt_id;
+        // Normalised ONCE, here, into the names the rest of this file reads. The API answers in
+        // camelCase and stores options as a JSONB string, so the paper rendered "Q1. undefined"
+        // and "Unknown question type: undefined" for every question — and the options mapping
+        // would have thrown on a string the moment a type WAS recognised.
+        questions = (response.questions || []).map(normaliseQuestion);
+        totalTime = (response.timeLimitMinutes ?? response.time_limit_minutes
+                     ?? quizData.timeLimitMinutes ?? quizData.time_limit_minutes ?? 0) * 60;
         timeRemaining = totalTime;
         answers = {};
         currentIndex = 0;
@@ -262,11 +303,17 @@ async function submitQuiz() {
         timerInterval = null;
     }
 
+    // camelCase. The endpoint binds QuestionId, and ASP.NET's case-insensitive matching does
+    // NOT bridge snake_case — so "question_id" bound to Guid.Empty, matched no question, and
+    // every answer was discarded. Measured: the same paper scored 0/8 sent as question_id and
+    // 3/8 sent as questionId. Every quiz ever submitted from this page scored zero.
+    //
+    // attempt_id is not sent at all: the server finds the caller's own unsubmitted attempt,
+    // which is the only one it will accept, and a client-supplied id was never read.
     const payload = {
-        attempt_id: attemptId,
         answers: questions.map((q, i) => ({
-            question_id: q.id || q.question_id,
-            answer: answers[i] != null ? answers[i] : null
+            questionId: q.id || q.question_id,
+            answer: answerForWire(q, answers[i])
         }))
     };
 
@@ -283,25 +330,77 @@ async function submitQuiz() {
     }
 }
 
+/**
+ * The answer as the GRADER reads it.
+ *
+ * Choice questions are recorded here as the option's INDEX, because that is what the radio
+ * group needs to re-select it. The grader compares the answer to the stored correct answer as
+ * TEXT ("CO2"), case-insensitively — so sending the index would never match anything, and a
+ * learner who picked every right answer would still score zero.
+ */
+function answerForWire(q, saved) {
+    if (saved == null || saved === '') return null;
+
+    if (q.question_type === 'mcq' || q.question_type === 'multiple_choice') {
+        return typeof saved === 'number' ? (q.options[saved] ?? String(saved)) : String(saved);
+    }
+    if (q.question_type === 'true_false') {
+        // 0 is True, matching the ['True', 'False'] order the page renders.
+        return typeof saved === 'number' ? (saved === 0 ? 'True' : 'False') : String(saved);
+    }
+    return String(saved);
+}
+
 // ==================== Results ====================
 
-function renderResults(result) {
-    const passed = result.passed;
-    const score = result.score_percentage ?? result.score ?? 0;
-    const correct = result.correct_count ?? 0;
-    const total = result.total_questions ?? questions.length;
+/** Question types no grader can settle on its own — they wait for a person. */
+const MANUALLY_GRADED = ['short_answer', 'essay'];
 
-    document.getElementById('resultIcon').innerHTML = passed
+
+function renderResults(result) {
+    // The attempt sheet is the source of truth for what was right. correct_count and
+    // score_percentage have never been in this response — reading them showed "Correct 0"
+    // next to two correct answers, and printed the raw POINTS as a percentage ("3%" for
+    // 3 out of 8).
+    let sheet = [];
+    try {
+        sheet = typeof result.answers === 'string' ? JSON.parse(result.answers || '[]')
+              : (Array.isArray(result.answers) ? result.answers : []);
+    } catch (e) { sheet = []; }
+
+    const points = result.score ?? 0;
+    const maxPoints = result.maxScore ?? result.max_score ?? 0;
+    const pct = maxPoints > 0 ? (points / maxPoints) * 100 : 0;
+    const correct = sheet.filter(e => e.is_correct === true).length;
+    const total = sheet.length || result.total_questions || questions.length;
+
+    // An attempt holding an unmarked answer is UNDECIDED, not failed. Saying "Not Passed"
+    // to someone whose paper is still with a marker is both wrong and discouraging — and it
+    // throws away the whole point of tracking requiresReview.
+    const awaiting = result.requiresReview === true || result.requires_review === true;
+    const passed = result.passed === true;
+
+    const icon = awaiting
+        ? '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+        : passed
         ? '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
         : '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+    document.getElementById('resultIcon').innerHTML = icon;
 
-    document.getElementById('resultTitle').textContent = passed ? 'Congratulations!' : 'Not Passed';
-    document.getElementById('resultTitle').style.color = passed ? 'var(--color-success)' : 'var(--color-error)';
-    document.getElementById('resultSubtitle').textContent = passed
+    const title = document.getElementById('resultTitle');
+    title.textContent = awaiting ? 'Awaiting marking' : passed ? 'Congratulations!' : 'Not Passed';
+    title.style.color = awaiting ? 'var(--color-warning)'
+                      : passed ? 'var(--color-success)' : 'var(--color-error)';
+
+    document.getElementById('resultSubtitle').textContent = awaiting
+        ? 'One of your answers has to be marked by hand. Your result is not decided yet, and the points below do not include it.'
+        : passed
         ? 'You passed the quiz successfully.'
         : 'You did not meet the passing score. You may retry if attempts remain.';
 
-    document.getElementById('resultScore').textContent = Math.round(score) + '%';
+    // Points, not a bare percentage: "3 / 8" is what a learner can check against the paper.
+    document.getElementById('resultScore').textContent =
+        maxPoints > 0 ? `${points} / ${maxPoints}` : Math.round(pct) + '%';
     document.getElementById('resultCorrect').textContent = correct;
     document.getElementById('resultTotal').textContent = total;
 
@@ -311,7 +410,27 @@ function renderResults(result) {
     document.getElementById('resultTimeTaken').textContent = `${mins}m ${secs}s`;
 
     // Store review data if available
-    window._quizReviewData = result.review || result.answers || null;
+    // The PARSED sheet, joined to the paper. result.answers is a JSON string, so assigning it
+    // straight through made the review panel call .map on a string and throw — Review Answers
+    // did nothing at all. The sheet carries no question text, so each entry is matched back to
+    // the question it belongs to.
+    window._quizReviewData = sheet.length === 0 ? null : sheet.map(e => {
+        const q = questions.find(x => (x.id || x.question_id) === e.question_id) || {};
+        return {
+            question_text: q.question_text || '',
+            question_type: q.question_type || '',
+            options: q.options || [],
+            your_answer: e.answer,
+            correct_answer: e.correct_answer,
+            // An answer still awaiting a marker is neither right nor wrong yet, and null is
+            // what the renderer draws as "undecided". The grader writes is_correct false on a
+            // manually-graded answer simply because nothing has marked it — drawing that as a
+            // red "incorrect" stripe tells the learner they got it wrong before anyone looked.
+            is_correct: (awaiting && MANUALLY_GRADED.includes(q.question_type))
+                ? null
+                : (e.is_correct === undefined ? null : e.is_correct)
+        };
+    });
 
     showScreen('quizResults');
 }
@@ -334,7 +453,15 @@ function renderReviewAnswers(container) {
         return;
     }
 
-    const items = reviewData || questions.map((q, i) => ({
+    // Defensive: a caller that hands a JSON string (as this code used to) gets it parsed
+    // rather than throwing halfway down the render.
+    let parsed = reviewData;
+    if (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch (e) { parsed = null; }
+    }
+    if (!Array.isArray(parsed)) parsed = null;
+
+    const items = parsed || questions.map((q, i) => ({
         question_text: q.question_text,
         your_answer: answers[i],
         correct_answer: q.correct_answer,

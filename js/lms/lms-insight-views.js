@@ -169,15 +169,21 @@ async function openMyAttempts(quizId, quizTitle) {
         host.innerHTML = list.length === 0
             ? '<p class="text-muted qb-hint">You have not attempted this quiz yet.</p>'
             : `<div class="qb-question-list">${list.map((a, i) => {
-                // An attempt awaiting marking is NOT a fail — it is undecided.
-                const state = a.requiresReview ? 'awaiting marking'
+                // Neither an unfinished attempt nor one awaiting marking is a fail. An attempt
+                // that was never submitted has `passed` false only because that is the column
+                // default — calling it "not passed" tells the learner they sat it and lost.
+                const submitted = a.submittedAt || a.submitted_at;
+                const state = !submitted ? 'not finished'
+                            : a.requiresReview ? 'awaiting marking'
                             : a.passed ? 'passed' : 'not passed';
-                const cls = a.requiresReview ? 'badge-warning' : (a.passed ? 'badge-success' : '');
+                const cls = !submitted ? 'badge-warning'
+                          : a.requiresReview ? 'badge-warning'
+                          : (a.passed ? 'badge-success' : '');
                 return `
                 <div class="qb-question-row">
                     <span class="qb-question-index">${list.length - i}</span>
                     <div class="qb-question-main">
-                        <div class="qb-question-text">${a.score} / ${a.maxScore}</div>
+                        <div class="qb-question-text">${submitted ? `${a.score} / ${a.maxScore}` : 'No score yet'}</div>
                         <div class="qb-question-meta">
                             <span class="badge ${cls}">${state}</span>
                             <span>${ivDate(a.submittedAt || a.startedAt)}</span>

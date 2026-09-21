@@ -1687,6 +1687,7 @@ body.lms-dashboard .section-header .section-title {
    other seven transparent, which is exactly what the first pass did. */
 
 body.lms-dashboard .modal-overlay[style*="display: flex"],
+body.lms-dashboard .modal-overlay.active,
 body.lms-dashboard .modal-overlay[style*="display:flex"] {
     position: fixed !important;
     z-index: 1200 !important;      /* above .slide-panel (1050) and its backdrop (1040) */
@@ -1702,7 +1703,9 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] {
 }
 
 body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-dialog,
+body.lms-dashboard .modal-overlay.active > .modal-dialog,
 body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-container,
+body.lms-dashboard .modal-overlay.active > .modal-container,
 body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-dialog,
 body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container {
     pointer-events: auto;
@@ -1725,6 +1728,7 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container {
 
 /* The quiz builder holds a list and wants more room than a plain form dialog. */
 body.lms-dashboard .modal-overlay[style*="display: flex"] > .qb-dialog,
+body.lms-dashboard .modal-overlay.active > .qb-dialog,
 body.lms-dashboard .modal-overlay[style*="display:flex"] > .qb-dialog {
     max-width: 760px;
 }
@@ -1732,7 +1736,9 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] > .qb-dialog {
 /* Header, body and footer: the dialog scrolls in its BODY only, so the title
    stays put and the actions stay reachable on a long form. */
 body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-dialog > .modal-header,
+body.lms-dashboard .modal-overlay.active > .modal-dialog > .modal-header,
 body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-container > .modal-header,
+body.lms-dashboard .modal-overlay.active > .modal-container > .modal-header,
 body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-dialog > .modal-header,
 body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container > .modal-header {
     display: flex;
@@ -1745,7 +1751,9 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container > .m
 }
 
 body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-dialog > .modal-body,
+body.lms-dashboard .modal-overlay.active > .modal-dialog > .modal-body,
 body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-container > .modal-body,
+body.lms-dashboard .modal-overlay.active > .modal-container > .modal-body,
 body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-dialog > .modal-body,
 body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container > .modal-body {
     flex: 1 1 auto;
@@ -1754,7 +1762,9 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container > .m
 }
 
 body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-dialog > .modal-footer,
+body.lms-dashboard .modal-overlay.active > .modal-dialog > .modal-footer,
 body.lms-dashboard .modal-overlay[style*="display: flex"] > .modal-container > .modal-footer,
+body.lms-dashboard .modal-overlay.active > .modal-container > .modal-footer,
 body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-dialog > .modal-footer,
 body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container > .modal-footer {
     display: flex;
@@ -1768,6 +1778,7 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] > .modal-container > .m
 
 /* The close control was rendering as a bare bordered box in the corner. */
 body.lms-dashboard .modal-overlay[style*="display: flex"] .modal-close,
+body.lms-dashboard .modal-overlay.active .modal-close,
 body.lms-dashboard .modal-overlay[style*="display:flex"] .modal-close {
     flex: 0 0 auto;
     width: 30px;
@@ -1785,6 +1796,7 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] .modal-close {
 }
 
 body.lms-dashboard .modal-overlay[style*="display: flex"] .modal-close:hover,
+body.lms-dashboard .modal-overlay.active .modal-close:hover,
 body.lms-dashboard .modal-overlay[style*="display:flex"] .modal-close:hover {
     background: var(--bg-tertiary, rgba(99, 102, 241, 0.10));
     color: var(--text-primary, #f1f5f9);

@@ -689,9 +689,21 @@ function renderQuizAttemptsTable() {
     tbody.innerHTML = filtered.map(a => {
         const score = a.score != null ? `${Math.round(a.score)}%` : '-';
         const maxScore = a.maxScore || a.max_score;
-        const scoreDisplay = maxScore ? `${a.score ?? '-'} / ${maxScore}` : score;
         const passed = a.passed;
-        const passedBadge = passed === true
+        const submitted = a.submittedAt || a.submitted_at;
+        // No submission means no score to report. Rendering the column default as "0%" reads
+        // as a learner who answered everything wrong.
+        const scoreDisplay = !submitted ? '-'
+            : maxScore ? `${a.score ?? '-'} / ${maxScore}` : score;
+        // An attempt that was never submitted has not failed — it is still open, and `passed`
+        // is false only because that is the column default. Calling it "Failed" tells an
+        // administrator the learner sat the quiz and lost, which is not what happened. The
+        // same applies while a marker still has it: undecided is not a fail.
+        const passedBadge = !submitted
+            ? '<span class="status-badge status-pending">In progress</span>'
+            : (a.requiresReview === true || a.requires_review === true)
+            ? '<span class="status-badge status-pending">Awaiting marking</span>'
+            : passed === true
             ? '<span class="status-badge status-active">Passed</span>'
             : passed === false
                 ? '<span class="status-badge status-rejected">Failed</span>'
