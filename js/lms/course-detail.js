@@ -99,6 +99,9 @@ function applyRBAC() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     Duplicate
                 </button>
+                <button class="btn-outline-sm" onclick="archiveCourse()" title="Archive this course — it stops appearing in the catalogue and nobody new can enrol">
+                    Archive
+                </button>
                 <button class="btn-outline-sm" onclick="window.location.href='course-builder.html?id=${courseId}'" title="Edit course">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     Edit
@@ -392,4 +395,22 @@ function renderDiscussions() {
 
 function openNewDiscussion() {
     window.location.href = `discussions.html?courseId=${courseId}`;
+}
+
+
+/**
+ * Archive rather than delete. There is no DELETE for a course, deliberately:
+ * enrolments cascade from it, and an archived course keeps the training history
+ * of everyone who took it while disappearing from the catalogue.
+ */
+async function archiveCourse() {
+    if (!confirm('Archive this course?\n\nIt leaves the catalogue and nobody new can enrol. '
+               + 'Learners part-way through keep their progress.')) return;
+    try {
+        await api.request(`/lms/courses/${courseId}/archive`, { method: 'PUT' });
+        showToast('Course archived', 'success');
+        window.location.href = 'catalog.html';
+    } catch (e) {
+        showToast(e.message || 'Could not archive the course', 'error');
+    }
 }

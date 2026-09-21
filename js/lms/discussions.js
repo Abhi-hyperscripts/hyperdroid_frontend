@@ -175,16 +175,49 @@ async function showThread(threadId) {
  * Render a single reply
  */
 function renderReply(reply) {
-    const isSolution = reply.is_solution ? '<span class="solution-indicator">Solution</span>' : '';
+    const solved = reply.is_solution ?? reply.isSolution;
+    const isSolution = solved ? '<span class="solution-indicator">Solution</span>' : '';
     return `
-        <div class="reply-card ${reply.is_solution ? 'reply-solution' : ''}">
+        <div class="reply-card ${solved ? 'reply-solution' : ''}">
             <div class="reply-header">
                 <span class="reply-author">${escapeHtml(reply.author_name || 'Unknown')}</span>
                 <span class="reply-date">${formatDate(reply.created_at)}</span>
                 ${isSolution}
+                ${canMarkSolution() ? `
+                <button class="btn btn-sm ${solved ? 'btn-secondary' : 'btn-outline-secondary'} reply-solution-btn"
+                        onclick="toggleSolution('${reply.id}', ${!solved})"
+                        title="${solved ? 'No longer the answer' : 'Mark this as the answer'}">
+                    ${solved ? 'Unmark' : 'Mark as answer'}
+                </button>` : ''}
             </div>
             <div class="reply-body">${formatBody(reply.body || '')}</div>
         </div>`;
+}
+
+/**
+ * Marking an answer is an instructor's call. PUT replies/{id}/solution had no
+ * caller at all, so a thread could be answered and never resolved — the flag
+ * was rendered and could not be set.
+ */
+function canMarkSolution() {
+    return typeof lmsRoles !== 'undefined' && lmsRoles.isInstructor
+        ? lmsRoles.isInstructor()
+        : false;
+}
+
+async function toggleSolution(replyId, isSolution) {
+    try {
+        await api.request(`/lms/discussions/replies/${replyId}/solution`, {
+            method: 'PUT', body: JSON.stringify({ isSolution })
+        });
+        showToast(isSolution ? 'Marked as the answer' : 'No longer marked as the answer', 'success');
+        // showThread re-reads the thread and its replies — the function this page
+        // actually has. Guessing at a loadReplies()/openThread() that does not exist
+        // would have failed silently and looked like the button doing nothing.
+        if (currentThreadId) await showThread(currentThreadId);
+    } catch (e) {
+        showToast(e.message || 'Could not update the answer', 'error');
+    }
 }
 
 /**

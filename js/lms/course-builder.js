@@ -232,6 +232,7 @@ async function removeModule(idx) {
     // Re-order
     builderModules.forEach((m, i) => m.sort_order = i + 1);
     renderModulesList();
+    persistModuleOrder();
 }
 
 async function editModuleTitle(idx) {
@@ -241,12 +242,56 @@ async function editModuleTitle(idx) {
     renderModulesList();
 }
 
+/**
+ * Persisting an order change.
+ *
+ * The builder reorders in memory and saves the whole course on publish, which is
+ * fine for a new course. For a SAVED one the dedicated reorder endpoints are the
+ * honest way to do it: they renumber in a single statement rather than rewriting
+ * every module, and the change survives leaving the page without publishing.
+ * PUT .../modules/reorder and PUT .../lessons/reorder had no caller at all.
+ */
+async function persistModuleOrder() {
+    if (!courseId) return;   // an unsaved course has nothing to renumber yet
+    // The endpoint takes { items: [{ id, sortOrder }] } — positions, not a bare
+    // ordered list of ids. Sending the wrong shape binds to an empty Items and
+    // renumbers nothing, silently.
+    const items = builderModules
+        .filter(m => m.id)
+        .map((m, i) => ({ id: m.id, sortOrder: i + 1 }));
+    if (items.length < 2) return;
+    try {
+        await api.request(`/lms/courses/${courseId}/modules/reorder`, {
+            method: 'PUT', body: JSON.stringify({ items })
+        });
+    } catch (e) {
+        showToast('The new order could not be saved — it will apply when you publish.', 'error');
+    }
+}
+
+async function persistLessonOrder(moduleIdx) {
+    const module = builderModules[moduleIdx];
+    if (!module || !module.id) return;
+    const items = (module.lessons || [])
+        .filter(l => l.id)
+        .map((l, i) => ({ id: l.id, sortOrder: i + 1 }));
+    if (items.length < 2) return;
+    try {
+        await api.request(`/lms/modules/${module.id}/lessons/reorder`, {
+            method: 'PUT', body: JSON.stringify({ items })
+        });
+    } catch (e) {
+        showToast('The new order could not be saved — it will apply when you publish.', 'error');
+    }
+}
+
 function moveModule(idx, direction) {
     const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
     if (targetIdx < 0 || targetIdx >= builderModules.length) return;
     [builderModules[idx], builderModules[targetIdx]] = [builderModules[targetIdx], builderModules[idx]];
     builderModules.forEach((m, i) => m.sort_order = i + 1);
     renderModulesList();
+    persistModuleOrder();
 }
 
 // ─── Lesson Management ──────────────────────────────────────────────────────
@@ -273,6 +318,7 @@ function moveLesson(moduleIdx, lessonIdx, direction) {
     [lessons[lessonIdx], lessons[targetIdx]] = [lessons[targetIdx], lessons[lessonIdx]];
     lessons.forEach((l, i) => l.sort_order = i + 1);
     renderModulesList();
+    persistLessonOrder(moduleIdx);
 }
 
 // ─── Lesson Editor Modal ────────────────────────────────────────────────────
