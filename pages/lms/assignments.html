@@ -61,6 +61,7 @@
             <button class="lms-tab active" data-tab="pending" onclick="switchTab('pending')">Pending</button>
             <button class="lms-tab" data-tab="submitted" onclick="switchTab('submitted')">Submitted</button>
             <button class="lms-tab" data-tab="graded" onclick="switchTab('graded')">Graded</button>
+            <button class="lms-tab" data-tab="peer-reviews" onclick="switchTab('peer-reviews')">Peer Reviews</button>
         </div>
 
         <!-- Assignment List -->
@@ -103,6 +104,34 @@
         </div>
 
         <!-- Grade Modal -->
+
+        <!-- Authoring (instructor) -->
+        <div id="assignmentAuthoringPanel" style="display:none;">
+            <div class="glass-card" style="padding: var(--space-4);">
+                <div class="lms-section-head">
+                    <h2>Assignments</h2>
+                    <button class="btn btn-primary" onclick="showAssignmentEditor()">+ New Assignment</button>
+                </div>
+                <p class="text-muted lms-section-hint">An assignment belongs to a lesson &mdash; one per lesson.
+                   Learners see it once they reach that lesson.</p>
+                <div class="crm-table-wrapper data-table-container">
+                    <table class="crm-table data-table">
+                        <thead><tr><th>Title</th><th>Course</th><th>Lesson</th><th>Max score</th><th>Actions</th></tr></thead>
+                        <tbody id="authoringTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Peer reviews sent to me -->
+        <div id="myPeerReviewsPanel" style="display:none;">
+            <div class="glass-card" style="padding: var(--space-4);">
+                <div class="lms-section-head"><h2>Reviews sent to you</h2></div>
+                <p class="text-muted lms-section-hint">Work a colleague submitted that an instructor asked you to read.</p>
+                <div id="myPeerReviewsList" class="qb-question-list"></div>
+            </div>
+        </div>
+
         <div class="glassmorphic-modal" id="gradeModal" style="display:none;">
             <div class="glassmorphic-modal-content" style="max-width:500px;">
                 <div class="glassmorphic-modal-header">
@@ -218,6 +247,75 @@
         </div>
     </div>
 
+
+    <div class="modal-overlay" id="assignmentEditorModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header"><h3 id="assignmentEditorTitle">New Assignment</h3>
+                <button class="modal-close" onclick="closeAssignmentEditor()">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group" id="assignmentLessonGroup">
+                    <label for="assignmentLessonId">Lesson <span class="required">*</span></label>
+                    <select id="assignmentLessonId" class="form-control"></select>
+                </div>
+                <div class="form-group"><label for="assignmentTitle">Title <span class="required">*</span></label>
+                    <input type="text" id="assignmentTitle" class="form-control"></div>
+                <div class="form-group"><label for="assignmentDescription">Description</label>
+                    <textarea id="assignmentDescription" class="form-control" rows="2"></textarea></div>
+                <div class="form-group"><label for="assignmentInstructions">Instructions</label>
+                    <textarea id="assignmentInstructions" class="form-control" rows="3"
+                              placeholder="What the learner has to produce, and what good looks like."></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label for="assignmentMaxScore">Max score</label>
+                        <input type="number" id="assignmentMaxScore" class="form-control" min="1" value="100"></div>
+                    <div class="form-group"><label for="assignmentDueDays">Due (days after enrolling)</label>
+                        <input type="number" id="assignmentDueDays" class="form-control" min="1" placeholder="blank = no due date"></div>
+                </div>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="assignmentAllowLate" checked>
+                    <span>Accept late submissions</span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAssignmentEditor()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveAssignment()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="peerAssignModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header"><h3>Peer review</h3>
+                <button class="modal-close" onclick="closePeerAssign()">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="peerReviewerId">Ask someone to review this</label>
+                    <input type="text" id="peerReviewerId" class="form-control" placeholder="Their user id">
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="assignPeerReviewer()">Assign reviewer</button>
+                <div style="margin-top:16px;" id="peerExistingReviews"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closePeerAssign()">Done</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="myReviewModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header"><h3>Your review</h3>
+                <button class="modal-close" onclick="closeMyReview()">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label for="myReviewScore">Score (optional)</label>
+                    <input type="number" id="myReviewScore" class="form-control" min="0" step="0.5"></div>
+                <div class="form-group"><label for="myReviewFeedback">Feedback</label>
+                    <textarea id="myReviewFeedback" class="form-control" rows="4"
+                              placeholder="What worked, and what you would change."></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeMyReview()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitMyReview()">Submit review</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
@@ -225,6 +323,7 @@
         document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/lmsRoles.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/assignment-authoring.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/assignments.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

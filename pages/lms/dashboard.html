@@ -153,6 +153,12 @@
             <div class="lms-empty-state"><p>Loading...</p></div>
         </div>
 
+        <!-- What the learner has earned: points, streak, badges, skills -->
+        <div class="lms-section-header" style="margin-top:24px">
+            <h3>Your progress</h3>
+        </div>
+        <div id="learnerProgressPanel" class="learner-progress"></div>
+
         <!-- Quick Actions (role-based navigation) -->
         <div class="lms-section-header" style="margin-top:24px">
             <h3>Quick Actions</h3>
@@ -268,6 +274,7 @@
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/lmsRoles.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/learner-progress.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/dashboard.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

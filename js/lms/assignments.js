@@ -33,6 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add "Grading" tab
         const tabs = document.getElementById('assignmentTabs');
         if (tabs) {
+            const authoringTab = document.createElement('button');
+            authoringTab.className = 'lms-tab';
+            authoringTab.dataset.tab = 'authoring';
+            authoringTab.textContent = 'Manage';
+            authoringTab.onclick = () => switchTab('authoring');
+            document.getElementById('assignmentTabs').appendChild(authoringTab);
+
             const gradingTab = document.createElement('button');
             gradingTab.className = 'lms-tab';
             gradingTab.dataset.tab = 'grading';
@@ -54,14 +61,25 @@ function switchTab(tab) {
     });
 
     const gradingPanel = document.getElementById('instructorGradingPanel');
+    const authoringPanel = document.getElementById('assignmentAuthoringPanel');
+    const peerPanel = document.getElementById('myPeerReviewsPanel');
     const listCard = document.querySelector('.glass-card');
+
+    // Every panel off, then exactly one on. Toggling them individually is how a
+    // third tab ends up showing two panels at once.
+    [gradingPanel, authoringPanel, peerPanel].forEach(p => { if (p) p.style.display = 'none'; });
+    if (listCard) listCard.style.display = 'none';
 
     if (tab === 'grading') {
         if (gradingPanel) gradingPanel.style.display = '';
-        if (listCard) listCard.style.display = 'none';
         loadGradingSubmissions();
+    } else if (tab === 'authoring') {
+        if (authoringPanel) authoringPanel.style.display = '';
+        if (!aaLoaded) loadAssignmentAuthoring();
+    } else if (tab === 'peer-reviews') {
+        if (peerPanel) peerPanel.style.display = '';
+        if (!aaMyReviewsLoaded) loadMyPeerReviews();
     } else {
-        if (gradingPanel) gradingPanel.style.display = 'none';
         if (listCard) listCard.style.display = '';
         renderAssignmentList();
     }
@@ -427,6 +445,7 @@ function renderGradingTable() {
                 <td>${statusBadge}</td>
                 <td>${scoreText}</td>
                 <td>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="openPeerReviewAssign('${s.id}')" title="Peer review">Peer</button>
                     <button class="btn btn-sm btn-outline-primary" onclick="openGradeModal('${s.id}', '${s._maxScore}')" title="${isGraded ? 'Re-grade' : 'Grade'}">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>

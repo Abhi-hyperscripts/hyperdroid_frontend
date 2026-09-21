@@ -44,7 +44,8 @@ async function loadPageData() {
         await Promise.all([
             loadMyEnrollments(),
             loadLiveSessions(),
-            loadAnnouncements()
+            loadAnnouncements(),
+            loadLearnerProgress()
         ]);
     } catch (error) {
         console.error('Error loading dashboard:', error);
