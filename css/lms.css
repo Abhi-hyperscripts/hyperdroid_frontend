@@ -2116,3 +2116,19 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] .modal-close:hover {
     margin-right: 0;
     justify-content: start;
 }
+
+/* Attaching a bank to a quiz: bank, draw size, action — on one row. */
+.qb-pool-add {
+    display: grid;
+    grid-template-columns: 1fr 96px auto;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.qb-pool-add .form-control { width: 100%; }
+
+.badge-warning {
+    background: rgba(245, 158, 11, 0.16);
+    color: #fbbf24;
+}

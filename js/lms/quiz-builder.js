@@ -133,7 +133,93 @@ function qbRender() {
                 : `<div class="qb-question-list">${qbQuestions.map(qbRenderQuestionRow).join('')}</div>`}
         </div>`;
 
-    body.innerHTML = settings + questions;
+    body.innerHTML = settings + questions + (qbQuiz ? qbPoolsSection() : '');
+    if (qbQuiz) qbLoadPools();
+}
+
+/**
+ * Question pools. A pool attaches a BANK to this quiz and draws N questions from
+ * it at random per attempt, on top of the quiz's own fixed questions. Without
+ * this section a bank could be filled and never used — the draw existed, the
+ * admin API existed, and nothing could connect the two.
+ */
+function qbPoolsSection() {
+    return `
+        <div class="qb-section">
+            <div class="qb-section-head">
+                <h4 class="qb-section-title">Question pools</h4>
+            </div>
+            <p class="text-muted qb-hint">Draw random questions from a bank so no two attempts get the
+               same paper. Fixed questions above always appear; each pool adds its draw on top.</p>
+            <div id="qbPoolsList"></div>
+            <div class="qb-pool-add">
+                <select id="qbPoolBank" class="form-control"></select>
+                <input type="number" id="qbPoolDraw" class="form-control" min="1" value="5" title="How many to draw">
+                <button class="btn btn-sm btn-primary" onclick="qbAddPool()">Attach</button>
+            </div>
+        </div>`;
+}
+
+async function qbLoadPools() {
+    const host = document.getElementById('qbPoolsList');
+    const picker = document.getElementById('qbPoolBank');
+    if (!host) return;
+    try {
+        const [pools, banks] = await Promise.all([
+            api.request(`/lms/learning/quizzes/${qbQuiz.id}/pools`),
+            api.request('/lms/learning/question-banks').catch(() => [])
+        ]);
+
+        host.innerHTML = pools.length === 0
+            ? '<p class="text-muted qb-hint">No pools attached.</p>'
+            : `<div class="qb-question-list">${pools.map(p => `
+                <div class="qb-question-row">
+                    <div class="qb-question-main">
+                        <div class="qb-question-text">${qbEscape(p.bankName)}</div>
+                        <div class="qb-question-meta">
+                            <span>draws ${p.drawCount}</span>
+                            <span>${p.available} available</span>
+                            ${p.available < p.drawCount
+                                ? '<span class="badge badge-warning" title="The draw yields what the bank has rather than failing">bank is short</span>'
+                                : ''}
+                        </div>
+                    </div>
+                    <div class="qb-question-actions">
+                        <button class="btn-icon danger" onclick="qbRemovePool('${p.bankId}')" title="Detach">&times;</button>
+                    </div>
+                </div>`).join('')}</div>`;
+
+        const attached = new Set(pools.map(p => p.bankId));
+        const free = banks.filter(b => !attached.has(b.id));
+        picker.innerHTML = free.length
+            ? free.map(b => `<option value="${b.id}">${qbEscape(b.name)} (${b.questionCount})</option>`).join('')
+            : '<option value="">No banks available</option>';
+    } catch (e) {
+        host.innerHTML = '<p class="text-muted">Could not load the pools.</p>';
+    }
+}
+
+async function qbAddPool() {
+    const bankId = document.getElementById('qbPoolBank').value;
+    if (!bankId) { showToast('Create a question bank first', 'error'); return; }
+    const drawCount = parseInt(document.getElementById('qbPoolDraw').value, 10) || 1;
+    try {
+        const res = await api.request(`/lms/learning/quizzes/${qbQuiz.id}/pools`, {
+            method: 'PUT', body: JSON.stringify({ bankId, drawCount })
+        });
+        // The server warns rather than refusing when the bank holds fewer than the draw.
+        if (res && res.warning) showToast(res.warning, 'info');
+        else showToast('Pool attached', 'success');
+        await qbLoadPools();
+    } catch (e) { showToast(e.message || 'Could not attach the pool', 'error'); }
+}
+
+async function qbRemovePool(bankId) {
+    try {
+        await api.request(`/lms/learning/quizzes/${qbQuiz.id}/pools/${bankId}`, { method: 'DELETE' });
+        await qbLoadPools();
+        showToast('Pool detached', 'success');
+    } catch (e) { showToast(e.message || 'Could not detach the pool', 'error'); }
 }
 
 function qbRenderQuestionRow(q, idx) {
