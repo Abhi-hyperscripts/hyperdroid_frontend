@@ -477,6 +477,12 @@ function renderBuilderLessons(lessons, moduleIdx) {
                 <button class="btn btn-sm btn-outline-secondary" onclick="moveLesson(${moduleIdx}, ${lessonIdx}, 'down')" title="Move down" ${lessonIdx === lessons.length - 1 ? 'disabled' : ''}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
+                ${lesson.content_type === 'scorm' ? `
+                <button class="btn btn-sm btn-outline-primary" onclick="openScormUpload('${lesson.id || ''}', '${escapeHtml(lesson.title).replace(/'/g, "\\'")}')"
+                        title="${lesson.id ? 'Upload the SCORM package for this lesson' : 'Save the course first'}"
+                        ${lesson.id ? '' : 'disabled'}>
+                    SCORM
+                </button>` : ''}
                 ${lesson.content_type === 'quiz' ? `
                 <button class="btn btn-sm btn-outline-primary" onclick="openQuizBuilder('${lesson.id || ''}', '${escapeHtml(lesson.title).replace(/'/g, "\\'")}')"
                         title="${lesson.id ? 'Add or edit this quiz\'s questions' : 'Save the course first — a quiz attaches to a saved lesson'}"
@@ -778,5 +784,65 @@ async function attachCourseSkill() {
         showToast('Skill attached', 'success');
     } catch (e) {
         showToast(e.message || 'Could not attach the skill', 'error');
+    }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCORM PACKAGE UPLOAD
+
+   POST /scorm/lessons/{id}/package had no caller, so a SCORM lesson could be
+   created and never given a package: the runtime, the manifest parser and the
+   CMI store all existed with nothing to play.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+let scormLessonId = null;
+
+function openScormUpload(lessonId, lessonTitle) {
+    if (!lessonId) {
+        showToast('Save the course first — a package attaches to a saved lesson.', 'error');
+        return;
+    }
+    scormLessonId = lessonId;
+    document.getElementById('scormLessonName').textContent = lessonTitle || '';
+    document.getElementById('scormFile').value = '';
+    document.getElementById('scormBaseUrl').value = '';
+    document.getElementById('scormUploadStatus').innerHTML = '';
+    document.getElementById('scormUploadModal').style.display = 'flex';
+}
+
+function closeScormUpload() {
+    document.getElementById('scormUploadModal').style.display = 'none';
+    scormLessonId = null;
+}
+
+async function uploadScormPackage() {
+    const input = document.getElementById('scormFile');
+    const file = input.files && input.files[0];
+    if (!file) { showToast('Choose a .zip exported as SCORM 1.2', 'error'); return; }
+
+    const status = document.getElementById('scormUploadStatus');
+    // A video-heavy package is routinely 200 MB+, so say something during the wait
+    // rather than leaving a dead dialog.
+    status.innerHTML = `<p class="text-muted">Uploading ${escapeHtml(file.name)}
+        (${(file.size / 1048576).toFixed(1)} MB)… large packages take a while.</p>`;
+
+    const form = new FormData();
+    form.append('file', file);
+
+    const baseUrl = document.getElementById('scormBaseUrl').value.trim();
+    const query = baseUrl ? `?baseUrl=${encodeURIComponent(baseUrl)}` : '';
+
+    try {
+        const res = await api.request(`/lms/scorm/lessons/${scormLessonId}/package${query}`, {
+            method: 'POST', body: form
+        });
+        status.innerHTML = `<p class="scorm-ok">Package accepted${res && res.title
+            ? ` — ${escapeHtml(res.title)}` : ''}${res && res.version ? ` (SCORM ${escapeHtml(res.version)})` : ''}.</p>`;
+        showToast('SCORM package uploaded', 'success');
+    } catch (e) {
+        // The server's message is the useful one here: it names exactly why a zip
+        // was rejected (no imsmanifest.xml, SCORM 2004, and so on).
+        status.innerHTML = `<p class="scorm-bad">${escapeHtml(e.message || 'The package was rejected.')}</p>`;
     }
 }

@@ -48,6 +48,10 @@ async function openCourseRoster(courseIdArg) {
                                 onclick="openLearnerProgress('${id}', '${ivEsc(e.userId)}', '${ivEsc(e.userName || e.userId)}')">
                             Progress
                         </button>
+                        ${ivIsAdmin() ? `
+                        <button class="btn-icon danger"
+                                onclick="removeEnrollment('${e.id}', '${ivEsc(e.userName || e.userId)}', '${id}')"
+                                title="Remove this enrolment and everything recorded against it">&times;</button>` : ''}
                     </td>
                 </tr>`).join('');
     } catch (e) {
@@ -247,3 +251,28 @@ async function openSessionAttendance(sessionId) {
 }
 
 function closeAttendance() { document.getElementById('attendanceModal').style.display = 'none'; }
+
+
+function ivIsAdmin() {
+    return typeof lmsRoles !== 'undefined' && lmsRoles.isAdmin ? lmsRoles.isAdmin() : false;
+}
+
+/**
+ * Removing an enrolment outright. Admin only, and worth spelling out: this is
+ * NOT dropping. It deletes the row, and lesson progress, quiz attempts,
+ * assignment submissions and SCORM data cascade from it — the evidence that the
+ * training happened. Dropping is what you want in almost every case, which is
+ * why the confirmation says so.
+ */
+async function removeEnrollment(enrollmentId, who, courseIdArg) {
+    if (!confirm(`Delete ${who}'s enrolment?\n\n`
+               + 'This also deletes their lesson progress, quiz attempts and assignment '
+               + 'submissions for this course. If you only want them off the course, drop it instead.')) return;
+    try {
+        await api.request(`/lms/enrollments/${enrollmentId}`, { method: 'DELETE' });
+        showToast('Enrolment deleted', 'success');
+        await openCourseRoster(courseIdArg);
+    } catch (e) {
+        showToast(e.message || 'Could not delete the enrolment', 'error');
+    }
+}

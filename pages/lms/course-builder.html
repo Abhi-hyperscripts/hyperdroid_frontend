@@ -349,6 +349,33 @@
         </div>
     </div>
 
+
+    <div class="modal-overlay" id="scormUploadModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header"><h3>SCORM package &mdash; <span id="scormLessonName" class="text-muted"></span></h3>
+                <button class="modal-close" onclick="closeScormUpload()">&times;</button></div>
+            <div class="modal-body">
+                <p class="text-muted lms-section-hint">Export from your authoring tool as <strong>SCORM 1.2</strong>
+                   and upload the .zip. The manifest is read on upload, so a package that is not SCORM
+                   is refused here rather than failing for a learner mid-course.</p>
+                <div class="form-group">
+                    <label for="scormFile">Package (.zip) <span class="required">*</span></label>
+                    <input type="file" id="scormFile" class="form-control" accept=".zip,application/zip">
+                </div>
+                <div class="form-group">
+                    <label for="scormBaseUrl">Where the extracted files are served from</label>
+                    <input type="text" id="scormBaseUrl" class="form-control"
+                           placeholder="Leave blank unless you host the extracted package yourself">
+                </div>
+                <div id="scormUploadStatus"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeScormUpload()">Close</button>
+                <button class="btn btn-primary" onclick="uploadScormPackage()">Upload</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
