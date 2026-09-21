@@ -1789,3 +1789,41 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] .modal-close:hover {
     background: var(--bg-tertiary, rgba(99, 102, 241, 0.10));
     color: var(--text-primary, #f1f5f9);
 }
+
+/* ─── Admin section heads and hints ──────────────────────────────────────── */
+
+.lms-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+
+.lms-section-head h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.lms-section-hint {
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    max-width: 70ch;
+}
+
+/* The learner's own words, shown to whoever is marking. Preserves their line
+   breaks and scrolls rather than stretching the dialog to an essay's height. */
+.grading-answer {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 8px;
+    background: var(--bg-secondary, #172234);
+    color: var(--text-primary, #f1f5f9);
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-height: 180px;
+    overflow-y: auto;
+}

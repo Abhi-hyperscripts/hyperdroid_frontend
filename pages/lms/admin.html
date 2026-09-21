@@ -69,6 +69,10 @@
             <button class="lms-tab" data-tab="quiz-attempts" onclick="switchTab('quiz-attempts')">Quiz Attempts</button>
             <button class="lms-tab" data-tab="reviews" onclick="switchTab('reviews')">Reviews</button>
             <button class="lms-tab" data-tab="bulk-enroll" onclick="switchTab('bulk-enroll')">Bulk Enroll</button>
+            <button class="lms-tab" data-tab="question-banks" onclick="switchTab('question-banks')">Question Banks</button>
+            <button class="lms-tab" data-tab="marking" onclick="switchTab('marking')">Marking Queue</button>
+            <button class="lms-tab" data-tab="badges" onclick="switchTab('badges')">Badges</button>
+            <button class="lms-tab" data-tab="skills" onclick="switchTab('skills')">Skills</button>
         </div>
 
         <!-- Categories Tab -->
@@ -267,9 +271,193 @@
                 <div id="bulkEnrollResult" style="margin-top:12px;display:none;"></div>
             </div>
         </div>
+        <!-- Question banks -->
+        <div class="lms-tab-pane" id="tab-question-banks">
+            <div class="lms-section-head">
+                <h2>Question Banks</h2>
+                <button class="btn btn-primary" onclick="showBankModal()">+ Add Bank</button>
+            </div>
+            <p class="text-muted lms-section-hint">A bank holds reusable questions. Attach one to a quiz as a
+               pool and each attempt draws a different random selection from it.</p>
+            <div class="crm-table-wrapper data-table-container">
+                <table class="crm-table data-table">
+                    <thead><tr><th>Name</th><th>Description</th><th>Questions</th><th>Actions</th></tr></thead>
+                    <tbody id="questionBanksBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Marking queue -->
+        <div class="lms-tab-pane" id="tab-marking">
+            <div class="lms-section-head">
+                <h2>Marking Queue</h2>
+                <button class="btn btn-secondary" onclick="loadMarkingQueue()">Refresh</button>
+            </div>
+            <p class="text-muted lms-section-hint">Attempts holding a short-answer question wait here. Until one
+               is marked it is not a fail &mdash; it is undecided, and its points do not count.</p>
+            <div class="crm-table-wrapper data-table-container">
+                <table class="crm-table data-table">
+                    <thead><tr><th>Learner</th><th>Course</th><th>Quiz</th><th>Auto score</th><th>Actions</th></tr></thead>
+                    <tbody id="markingQueueBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Badges -->
+        <div class="lms-tab-pane" id="tab-badges">
+            <div class="lms-section-head">
+                <h2>Badges</h2>
+                <button class="btn btn-primary" onclick="showBadgeModal()">+ Add Badge</button>
+            </div>
+            <p class="text-muted lms-section-hint">Badges are awarded automatically as learners complete courses,
+               pass with high scores and keep a daily streak.</p>
+            <div class="crm-table-wrapper data-table-container">
+                <table class="crm-table data-table">
+                    <thead><tr><th>Badge</th><th>Code</th><th>Awarded for</th><th>Threshold</th><th>Points</th></tr></thead>
+                    <tbody id="badgesBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="lms-tab-pane" id="tab-skills">
+            <div class="lms-section-head">
+                <h2>Skills</h2>
+                <button class="btn btn-primary" onclick="showSkillModal()">+ Add Skill</button>
+            </div>
+            <p class="text-muted lms-section-hint">Attach a skill to a course and finishing that course grants it
+               to the learner at the level you set.</p>
+            <div class="crm-table-wrapper data-table-container">
+                <table class="crm-table data-table">
+                    <thead><tr><th>Skill</th><th>Category</th><th>Your level</th></tr></thead>
+                    <tbody id="skillsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+
     </div>
 
     <!-- Category Modal -->
+
+    <div class="modal-overlay" id="bankModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header"><h3>Add Question Bank</h3>
+                <button class="modal-close" onclick="closeBankModal()">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label for="bankName">Name <span class="required">*</span></label>
+                    <input type="text" id="bankName" class="form-control" placeholder="e.g. Fire safety pool"></div>
+                <div class="form-group"><label for="bankDescription">Description</label>
+                    <textarea id="bankDescription" class="form-control" rows="2"></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBankModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveBank()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="bankQuestionsModal" style="display:none;">
+        <div class="modal-container qb-dialog">
+            <div class="modal-header"><h3 id="bankQuestionsTitle">Bank questions</h3>
+                <button class="modal-close" onclick="closeBankQuestions()">&times;</button></div>
+            <div class="modal-body">
+                <div id="bankQuestionsList"></div>
+                <div style="margin-top:12px;">
+                    <button class="btn btn-sm btn-primary" onclick="showBankQuestionForm()">Add question</button>
+                </div>
+                <div id="bankQuestionForm" style="display:none; margin-top:16px;">
+                    <div class="form-group"><label for="bankQType">Type</label>
+                        <select id="bankQType" class="form-control" onchange="toggleBankQuestionFields()">
+                            <option value="mcq">Multiple choice</option>
+                            <option value="true_false">True / false</option>
+                            <option value="fill_blank">Fill in the blank</option>
+                            <option value="matching">Matching</option>
+                            <option value="short_answer">Short answer</option>
+                        </select></div>
+                    <div class="form-group"><label for="bankQText">Question <span class="required">*</span></label>
+                        <textarea id="bankQText" class="form-control" rows="2"></textarea></div>
+                    <div class="form-group" id="bankQOptionsGroup"><label for="bankQOptions">Options (one per line)</label>
+                        <textarea id="bankQOptions" class="form-control" rows="3"></textarea></div>
+                    <div class="form-group" id="bankQAnswerGroup"><label for="bankQAnswer">Correct answer</label>
+                        <input type="text" id="bankQAnswer" class="form-control"></div>
+                    <div class="form-group"><label for="bankQPoints">Points</label>
+                        <input type="number" id="bankQPoints" class="form-control" min="0" step="0.5" value="1"></div>
+                    <button class="btn btn-primary" onclick="saveBankQuestion()">Save question</button>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeBankQuestions()">Done</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="badgeModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header"><h3>Add Badge</h3>
+                <button class="modal-close" onclick="closeBadgeModal()">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label for="badgeCode">Code <span class="required">*</span></label>
+                        <input type="text" id="badgeCode" class="form-control" placeholder="first_course"></div>
+                    <div class="form-group"><label for="badgeIcon">Icon</label>
+                        <input type="text" id="badgeIcon" class="form-control" placeholder="🏅"></div>
+                </div>
+                <div class="form-group"><label for="badgeName">Name <span class="required">*</span></label>
+                    <input type="text" id="badgeName" class="form-control" placeholder="First course complete"></div>
+                <div class="form-group"><label for="badgeDescription">Description</label>
+                    <textarea id="badgeDescription" class="form-control" rows="2"></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label for="badgeCriteriaType">Awarded for</label>
+                        <select id="badgeCriteriaType" class="form-control">
+                            <option value="courses_completed">Courses completed</option>
+                            <option value="streak_days">Daily streak</option>
+                            <option value="points">Points earned</option>
+                            <option value="perfect_score">A perfect quiz score</option>
+                            <option value="manual">Awarded by hand</option>
+                        </select></div>
+                    <div class="form-group"><label for="badgeCriteriaValue">Threshold</label>
+                        <input type="number" id="badgeCriteriaValue" class="form-control" min="1" value="1"></div>
+                </div>
+                <div class="form-group"><label for="badgePoints">Points this badge is worth</label>
+                    <input type="number" id="badgePoints" class="form-control" min="0" value="0"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBadgeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveBadge()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="skillModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header"><h3>Add Skill</h3>
+                <button class="modal-close" onclick="closeSkillModal()">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label for="skillName">Name <span class="required">*</span></label>
+                    <input type="text" id="skillName" class="form-control" placeholder="e.g. Fire warden"></div>
+                <div class="form-group"><label for="skillCategory">Category</label>
+                    <input type="text" id="skillCategory" class="form-control" placeholder="e.g. Health &amp; safety"></div>
+                <div class="form-group"><label for="skillDescription">Description</label>
+                    <textarea id="skillDescription" class="form-control" rows="2"></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSkillModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSkill()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="gradingModal" style="display:none;">
+        <div class="modal-container qb-dialog">
+            <div class="modal-header"><h3 id="gradingTitle">Mark attempt</h3>
+                <button class="modal-close" onclick="closeGrading()">&times;</button></div>
+            <div class="modal-body" id="gradingBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeGrading()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitGrading()">Save marks</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="categoryModal" style="display: none;">
         <div class="modal-container">
             <div class="modal-header">
@@ -425,6 +613,7 @@
         document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/lmsRoles.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-admin-extras.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/admin.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

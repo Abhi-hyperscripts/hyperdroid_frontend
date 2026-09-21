@@ -65,6 +65,12 @@ function switchTab(tabName) {
     if (tabName === 'bulk-enroll' && !bulkEnrollCoursesLoaded) {
         loadBulkEnrollCourses();
     }
+    // Surfaces added with lms-admin-extras.js. Loaded on demand for the same reason
+    // as the tabs above: the marking queue in particular walks every course.
+    if (tabName === 'question-banks' && !axBanksLoaded) loadQuestionBanks();
+    if (tabName === 'marking' && !axQueueLoaded) loadMarkingQueue();
+    if (tabName === 'badges' && !axBadgesLoaded) loadBadges();
+    if (tabName === 'skills' && !axSkillsLoaded) loadSkills();
 }
 
 // ==================== Categories ====================
