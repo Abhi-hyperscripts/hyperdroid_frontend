@@ -2132,3 +2132,40 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] .modal-close:hover {
     background: rgba(245, 158, 11, 0.16);
     color: #fbbf24;
 }
+
+/* Path management: status and the ordered course list. */
+.path-admin-panel {
+    margin-top: 20px;
+    padding: 16px;
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 12px;
+    background: var(--bg-card, #1e293b);
+}
+
+.path-admin-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.path-admin-row label { font-size: 12.5px; color: var(--text-secondary, #94a3b8); }
+
+.path-admin-row .form-control {
+    width: auto;
+    min-width: 150px;
+    padding: 5px 9px;
+    font-size: 12.5px;
+}
+
+.path-admin-hint { font-size: 11.5px; }
+
+.path-add-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.path-add-row .form-control { width: 100%; }

@@ -165,6 +165,9 @@ async function showPathDetail(pathId) {
         // Course sequence
         renderCourseSequence(data.courses || []);
 
+        // Admin controls: status and the course list.
+        renderPathAdmin(data);
+
         // Admin/Instructor: show enrolled users
         if (typeof lmsRoles !== 'undefined') {
             lmsRoles.init();
@@ -361,3 +364,168 @@ window.addEventListener('popstate', () => {
         backToPathList();
     }
 });
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PATH MANAGEMENT
+
+   A path could be created and then never changed: PUT {id}/status and
+   PUT {id}/courses had no caller. So a path stayed a DRAFT for ever — invisible
+   to learners — and its course list was whatever it was created with. The two
+   things that make a path a path could not be done.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+let pmCurrentPathId = null;
+let pmAllCourses = [];
+let pmSelected = [];      // [{ courseId, title, sortOrder, isMandatory }]
+
+function pmCanManage() {
+    return typeof lmsRoles !== 'undefined' && lmsRoles.isAdmin ? lmsRoles.isAdmin() : false;
+}
+
+/** Rendered into the path detail once it is open, for admins only. */
+function renderPathAdmin(path) {
+    const host = document.getElementById('pathAdminPanel');
+    if (!host) return;
+    if (!pmCanManage()) { host.style.display = 'none'; return; }
+
+    pmCurrentPathId = path.id;
+    host.style.display = '';
+    host.innerHTML = `
+        <div class="lms-section-head">
+            <h3>Manage this path</h3>
+        </div>
+        <div class="path-admin-row">
+            <label for="pathStatusSelect">Status</label>
+            <select id="pathStatusSelect" class="form-control" onchange="setPathStatus(this.value)">
+                ${['draft', 'published', 'archived'].map(v =>
+                    `<option value="${v}" ${path.status === v ? 'selected' : ''}>${v}</option>`).join('')}
+            </select>
+            <span class="text-muted path-admin-hint">A draft path is invisible to learners.</span>
+        </div>
+        <div class="path-admin-row">
+            <button class="btn btn-sm btn-outline-secondary" onclick="openPathCourseEditor()">Edit course list</button>
+        </div>`;
+}
+
+async function setPathStatus(status) {
+    try {
+        await api.request(`/lms/learning-paths/${pmCurrentPathId}/status`, {
+            method: 'PUT', body: JSON.stringify({ status })
+        });
+        showToast(`Path ${status}`, 'success');
+    } catch (e) {
+        showToast(e.message || 'Could not change the status', 'error');
+    }
+}
+
+// ─── the course list ────────────────────────────────────────────────────────
+
+async function openPathCourseEditor() {
+    document.getElementById('pathCoursesModal').style.display = 'flex';
+    const host = document.getElementById('pathCoursesPicker');
+    host.innerHTML = '<p class="text-muted">Loading…</p>';
+
+    try {
+        const [courses, current] = await Promise.all([
+            api.request('/lms/courses'),
+            api.request(`/lms/learning-paths/${pmCurrentPathId}`)
+        ]);
+        pmAllCourses = Array.isArray(courses) ? courses : (courses.data || []);
+        pmSelected = (current.courses || []).map((c, i) => ({
+            courseId: c.courseId || c.course_id || c.id,
+            title: c.title || c.courseTitle || c.course_title || '',
+            sortOrder: c.sortOrder ?? c.sort_order ?? i,
+            isMandatory: (c.isMandatory ?? c.is_mandatory) !== false
+        })).sort((a, b) => a.sortOrder - b.sortOrder);
+        renderPathCoursePicker();
+    } catch (e) {
+        host.innerHTML = '<p class="text-muted">Could not load the courses.</p>';
+    }
+}
+
+function closePathCourses() {
+    document.getElementById('pathCoursesModal').style.display = 'none';
+}
+
+function renderPathCoursePicker() {
+    const chosen = new Set(pmSelected.map(s => s.courseId));
+    const available = pmAllCourses.filter(c => !chosen.has(c.id));
+
+    document.getElementById('pathCoursesPicker').innerHTML = `
+        <h4 class="qb-section-title">In this path (${pmSelected.length})</h4>
+        ${pmSelected.length === 0
+            ? '<p class="text-muted qb-hint">No courses yet. A path with no courses completes the moment a learner joins it.</p>'
+            : `<div class="qb-question-list">${pmSelected.map((s, i) => `
+                <div class="qb-question-row">
+                    <span class="qb-question-index">${i + 1}</span>
+                    <div class="qb-question-main">
+                        <div class="qb-question-text">${escapeHtml(s.title)}</div>
+                        <div class="qb-question-meta">
+                            <label class="checkbox-label" style="margin:0;font-size:11px;">
+                                <input type="checkbox" ${s.isMandatory ? 'checked' : ''}
+                                       onchange="pmToggleMandatory(${i}, this.checked)">
+                                <span>Required to complete the path</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="qb-question-actions">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="pmMove(${i}, -1)" ${i === 0 ? 'disabled' : ''}>↑</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="pmMove(${i}, 1)" ${i === pmSelected.length - 1 ? 'disabled' : ''}>↓</button>
+                        <button class="btn-icon danger" onclick="pmRemove(${i})" title="Remove">&times;</button>
+                    </div>
+                </div>`).join('')}</div>`}
+
+        <h4 class="qb-section-title" style="margin-top:16px;">Add a course</h4>
+        ${available.length === 0
+            ? '<p class="text-muted qb-hint">Every course is already in this path.</p>'
+            : `<div class="path-add-row">
+                <select id="pathAddCourse" class="form-control">
+                    ${available.map(c => `<option value="${c.id}">${escapeHtml(c.title)}</option>`).join('')}
+                </select>
+                <button class="btn btn-sm btn-primary" onclick="pmAddCourse()">Add</button>
+               </div>`}`;
+}
+
+function pmAddCourse() {
+    const id = document.getElementById('pathAddCourse').value;
+    const course = pmAllCourses.find(c => c.id === id);
+    if (!course) return;
+    pmSelected.push({ courseId: id, title: course.title, sortOrder: pmSelected.length, isMandatory: true });
+    renderPathCoursePicker();
+}
+
+function pmRemove(i) { pmSelected.splice(i, 1); pmResequence(); }
+
+function pmMove(i, delta) {
+    const j = i + delta;
+    if (j < 0 || j >= pmSelected.length) return;
+    [pmSelected[i], pmSelected[j]] = [pmSelected[j], pmSelected[i]];
+    pmResequence();
+}
+
+function pmToggleMandatory(i, value) { pmSelected[i].isMandatory = value; }
+
+/** sort_order is the path's sequence — it has to stay dense after a move or a
+ *  removal, or the order the learner sees drifts from the order shown here. */
+function pmResequence() {
+    pmSelected.forEach((s, i) => { s.sortOrder = i; });
+    renderPathCoursePicker();
+}
+
+async function savePathCourses() {
+    try {
+        await api.request(`/lms/learning-paths/${pmCurrentPathId}/courses`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                courses: pmSelected.map(s => ({
+                    courseId: s.courseId, sortOrder: s.sortOrder, isMandatory: s.isMandatory
+                }))
+            })
+        });
+        closePathCourses();
+        showToast('Course list saved', 'success');
+        await showPathDetail(pmCurrentPathId);
+    } catch (e) {
+        showToast(e.message || 'Could not save the course list', 'error');
+    }
+}
