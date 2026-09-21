@@ -82,9 +82,12 @@ function renderUpcomingSession(session) {
     const date = formatSessionDate(session.scheduled_at);
     const duration = session.duration_minutes ? `${session.duration_minutes} min` : '';
     const isLive = isSessionLive(session);
-    const statusBadge = isLive
-        ? '<span class="session-badge session-live">LIVE NOW</span>'
-        : '<span class="session-badge session-upcoming">Upcoming</span>';
+    const cancelled = isSessionCancelled(session);
+    const statusBadge = cancelled
+        ? '<span class="session-badge session-cancelled">Cancelled</span>'
+        : isLive
+            ? '<span class="session-badge session-live">LIVE NOW</span>'
+            : '<span class="session-badge session-upcoming">Upcoming</span>';
 
     return `
         <div class="session-card">
@@ -121,10 +124,14 @@ function renderUpcomingSession(session) {
             </div>
             ${session.description ? `<p class="session-description">${escapeHtml(truncate(session.description, 120))}</p>` : ''}
             <div class="session-card-footer">
-                <button class="btn btn-primary" onclick="joinSession('${session.id}')">
-                    ${isLive ? 'Join Now' : 'Register'}
-                </button>
+                ${cancelled
+                    ? '<span class="text-muted" style="font-size:12.5px;">This session was cancelled.</span>'
+                    : `<button class="btn btn-primary" onclick="${isLive ? `joinSession('${session.id}')` : `registerForSession('${session.id}')`}">
+                        ${isLive ? 'Join Now' : 'Register'}
+                       </button>
+                       ${isLive ? '' : `<button class="btn btn-secondary btn-sm" onclick="cancelSessionRegistration('${session.id}')">Cancel my seat</button>`}`}
             </div>
+            ${renderSessionAdminActions(session)}
         </div>`;
 }
 
@@ -277,11 +284,29 @@ async function scheduleSession() {
 
 // ==================== Utility Functions ====================
 
+/**
+ * Whether a learner can join right now.
+ *
+ * The STATUS the instructor set wins over the clock, in both directions. This
+ * used to read the scheduled time alone and ignore status entirely, which meant
+ * the field the backend keeps — and the control an instructor uses — changed
+ * nothing a learner could see: opening a session early did nothing, and a
+ * CANCELLED session still offered a join button at its scheduled hour.
+ */
 function isSessionLive(session) {
+    const status = session.status || session.Status;
+    if (status === 'live') return true;                       // opened by the instructor
+    if (status === 'cancelled' || status === 'completed') return false;
+
     const now = new Date();
-    const start = new Date(session.scheduled_at);
-    const end = new Date(start.getTime() + (session.duration_minutes || 60) * 60000);
+    const start = new Date(session.scheduled_at || session.scheduledAt);
+    const end = new Date(start.getTime() + (session.duration_minutes || session.durationMinutes || 60) * 60000);
     return now >= start && now <= end;
+}
+
+/** A cancelled session is not joinable and should not invite a registration. */
+function isSessionCancelled(session) {
+    return (session.status || session.Status) === 'cancelled';
 }
 
 function formatSessionDate(dateStr) {
@@ -312,4 +337,179 @@ function escapeHtml(str) {
 function truncate(str, len) {
     if (!str || str.length <= len) return str;
     return str.substring(0, len) + '...';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INSTRUCTOR CONTROLS
+   
+   The page could list sessions, create one and join it. Everything after that —
+   editing, cancelling, moving a session to 'live' so learners can actually get
+   in, registering for a seat, and seeing who registered — was backend-only:
+   five endpoints with no caller. A session could be scheduled and then never
+   touched again, and nobody could see who was coming.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** The statuses live_sessions.status accepts. NOT 'in_progress' — the column
+ *  rejects it, and the Copilot tool used to advertise it, which is how we found
+ *  the mismatch. 'live' is what makes a session joinable. */
+const SESSION_STATUSES = [
+    { value: 'scheduled', label: 'Scheduled' },
+    { value: 'live',      label: 'Live now' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'cancelled', label: 'Cancelled' }
+];
+
+function canManageSessions() {
+    // Same roles the endpoints require; hiding the controls from a learner keeps
+    // the page honest rather than offering buttons that answer 403.
+    return typeof lmsRoles !== 'undefined' && lmsRoles.isInstructorOrAbove
+        ? lmsRoles.isInstructorOrAbove()
+        : true;
+}
+
+function renderSessionAdminActions(session) {
+    if (!canManageSessions()) return '';
+    return `
+        <div class="session-admin-actions">
+            <select class="form-control form-control-sm session-status-select"
+                    onchange="setSessionStatus('${session.id}', this.value)"
+                    title="Move this session between states — learners can only join a LIVE session">
+                ${SESSION_STATUSES.map(s =>
+                    `<option value="${s.value}" ${session.status === s.value ? 'selected' : ''}>${s.label}</option>`
+                ).join('')}
+            </select>
+            <div class="session-admin-buttons">
+                <button class="btn btn-sm btn-outline-secondary" onclick="openSessionAttendees('${session.id}')">Attendees</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="openSessionEditor('${session.id}')">Edit</button>
+                <button class="btn-icon danger" onclick="deleteSession('${session.id}')" title="Delete session">&times;</button>
+            </div>
+        </div>`;
+}
+
+async function setSessionStatus(sessionId, status) {
+    try {
+        await api.request(`/lms/live-sessions/${sessionId}/status`, {
+            method: 'PUT', body: JSON.stringify({ status })
+        });
+        showToast(`Session marked ${status}`, 'success');
+        await loadSessions();
+    } catch (e) {
+        showToast(e.message || 'Could not change the status', 'error');
+        await loadSessions();   // put the dropdown back to the truth
+    }
+}
+
+async function deleteSession(sessionId) {
+    if (!confirm('Delete this session?\n\nIts registrations and attendance go with it.')) return;
+    try {
+        await api.request(`/lms/live-sessions/${sessionId}`, { method: 'DELETE' });
+        showToast('Session deleted', 'success');
+        await loadSessions();
+    } catch (e) { showToast(e.message || 'Could not delete the session', 'error'); }
+}
+
+// ─── edit ───────────────────────────────────────────────────────────────────
+
+let editingSessionId = null;
+
+async function openSessionEditor(sessionId) {
+    editingSessionId = sessionId;
+    try {
+        const s = await api.request(`/lms/live-sessions/${sessionId}`);
+        document.getElementById('editSessionTitle').value = s.title || '';
+        document.getElementById('editSessionDescription').value = s.description || '';
+        document.getElementById('editSessionDuration').value = s.durationMinutes || s.duration_minutes || 60;
+        document.getElementById('editSessionMeetingId').value = s.meetingId || s.meeting_id || '';
+        const when = s.scheduledAt || s.scheduled_at;
+        // datetime-local wants a local 'YYYY-MM-DDTHH:mm' with no zone suffix.
+        if (when) {
+            const d = new Date(when);
+            const pad = n => String(n).padStart(2, '0');
+            document.getElementById('editSessionWhen').value =
+                `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+        document.getElementById('editSessionModal').style.display = 'flex';
+    } catch (e) { showToast(e.message || 'Could not load the session', 'error'); }
+}
+
+function closeSessionEditor() {
+    document.getElementById('editSessionModal').style.display = 'none';
+    editingSessionId = null;
+}
+
+async function saveSessionEdit() {
+    const title = document.getElementById('editSessionTitle').value.trim();
+    if (!title) { showToast('The session needs a title', 'error'); return; }
+    const when = document.getElementById('editSessionWhen').value;
+    if (!when) { showToast('The session needs a date and time', 'error'); return; }
+
+    try {
+        await api.request(`/lms/live-sessions/${editingSessionId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                id: editingSessionId,
+                title,
+                description: document.getElementById('editSessionDescription').value.trim() || null,
+                scheduledAt: new Date(when).toISOString(),
+                durationMinutes: parseInt(document.getElementById('editSessionDuration').value, 10) || 60,
+                meetingId: document.getElementById('editSessionMeetingId').value.trim() || null
+            })
+        });
+        closeSessionEditor();
+        showToast('Session updated', 'success');
+        await loadSessions();
+    } catch (e) { showToast(e.message || 'Could not save the session', 'error'); }
+}
+
+// ─── attendees + registration ───────────────────────────────────────────────
+
+async function openSessionAttendees(sessionId) {
+    const host = document.getElementById('attendeesList');
+    document.getElementById('attendeesModal').style.display = 'flex';
+    host.innerHTML = '<p class="text-muted">Loading…</p>';
+    try {
+        const rows = await api.request(`/lms/learning/sessions/${sessionId}/registrations`);
+        host.innerHTML = rows.length === 0
+            ? '<p class="text-muted qb-hint">Nobody has registered yet.</p>'
+            : `<div class="qb-question-list">${rows.map(r => `
+                <div class="qb-question-row">
+                    <div class="qb-question-main">
+                        <div class="qb-question-text">${escapeHtml(r.userId)}</div>
+                        <div class="qb-question-meta">
+                            <span class="badge">${escapeHtml(r.status)}</span>
+                            <span>${new Date(r.registeredAt).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>`).join('')}</div>`;
+    } catch (e) {
+        host.innerHTML = '<p class="text-muted">Could not load the attendee list.</p>';
+    }
+}
+
+function closeAttendees() {
+    document.getElementById('attendeesModal').style.display = 'none';
+}
+
+/**
+ * Take a seat. The server decides registered vs waitlisted from the session's
+ * capacity — in one statement, so two learners racing for the last seat cannot
+ * both get it — and tells us which it was.
+ */
+async function registerForSession(sessionId) {
+    try {
+        const res = await api.request(`/lms/learning/sessions/${sessionId}/register`, { method: 'POST' });
+        const status = (res && (res.status || res.Status)) || 'registered';
+        showToast(status === 'waitlisted'
+            ? 'That session is full — you are on the waiting list and will be moved up if a seat frees.'
+            : 'You have a seat on that session.', 'success');
+        await loadSessions();
+    } catch (e) { showToast(e.message || 'Could not register', 'error'); }
+}
+
+async function cancelSessionRegistration(sessionId) {
+    try {
+        await api.request(`/lms/learning/sessions/${sessionId}/register`, { method: 'DELETE' });
+        showToast('Registration cancelled — the next person on the waiting list moves up.', 'success');
+        await loadSessions();
+    } catch (e) { showToast(e.message || 'Could not cancel', 'error'); }
 }
