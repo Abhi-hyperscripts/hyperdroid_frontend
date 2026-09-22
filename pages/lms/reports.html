@@ -152,13 +152,19 @@
         </div>
         <div class="charts-grid">
             <div class="chart-card">
-                <h4 class="chart-title">Enrollments Over Time</h4>
+                <!-- Named for what it plots. This is a doughnut of active vs completed
+                     enrolments RIGHT NOW — there is no time axis and no series, so
+                     "Over Time" invited a reader to see a trend that is not there. -->
+                <h4 class="chart-title">Enrollments by Status</h4>
                 <div style="position:relative;height:250px">
                     <canvas id="chartEnrollments"></canvas>
                 </div>
             </div>
             <div class="chart-card">
-                <h4 class="chart-title">Completion by Category</h4>
+                <!-- Not completion, and not by category: the bars are published courses,
+                     draft courses, learners and certificates — four different things
+                     counted across the platform. -->
+                <h4 class="chart-title">Platform Totals</h4>
                 <div style="position:relative;height:250px">
                     <canvas id="chartCompletion"></canvas>
                 </div>

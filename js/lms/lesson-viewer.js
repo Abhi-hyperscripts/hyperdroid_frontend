@@ -41,7 +41,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     lessonId = params.get('lessonId');
 
     if (!courseId || !lessonId) {
+        // A toast alone left the page reading "Loading lesson..." for ever once it faded,
+        // which looks like a hang rather than a bad link. Say so in place, and offer the
+        // way back when we at least know the course.
         showToast('Missing course or lesson ID', 'error');
+        const host = document.getElementById('lessonPlaceholder');
+        if (host) {
+            host.innerHTML = `
+                <div class="lms-empty-state" style="padding:48px 24px;text-align:center;">
+                    <p style="color:var(--text-primary);font-weight:600;margin-bottom:8px;">
+                        This link is missing the lesson.
+                    </p>
+                    <p style="color:var(--text-secondary);font-size:0.88rem;">
+                        Open the lesson from its course so the page knows which one to show.
+                    </p>
+                    ${courseId ? `<a class="btn btn-primary" style="margin-top:16px;display:inline-block;"
+                                     href="course-detail.html?id=${courseId}">Back to the course</a>` : ''}
+                </div>`;
+        }
+        const toc = document.getElementById('lessonToc');
+        if (toc) toc.innerHTML = '';
         return;
     }
 
@@ -82,6 +101,18 @@ async function loadCourseTOC() {
     }
 }
 
+/**
+ * Whether the CALLER has finished a lesson.
+ *
+ * The outline carries progressStatus per lesson. This used to read `lesson.is_completed`,
+ * which the response has never had, so no lesson was ever ticked however many the learner
+ * had finished.
+ */
+function isLessonComplete(lesson) {
+    const status = lesson.progressStatus || lesson.progress_status;
+    return status === 'completed';
+}
+
 function renderTOC() {
     const tocEl = document.getElementById('lessonToc');
     if (!modulesData || modulesData.length === 0) {
@@ -100,9 +131,9 @@ function renderTOC() {
             <div class="toc-module-lessons open">
                 ${(mod.lessons || []).map(lesson => `
                     <a href="lesson-viewer.html?courseId=${courseId}&lessonId=${lesson.id}"
-                       class="toc-lesson ${lesson.id === lessonId ? 'active' : ''} ${lesson.is_completed ? 'completed' : ''}">
+                       class="toc-lesson ${lesson.id === lessonId ? 'active' : ''} ${isLessonComplete(lesson) ? 'completed' : ''}">
                         <span class="toc-lesson-status">
-                            ${lesson.is_completed
+                            ${isLessonComplete(lesson)
                                 ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>'
                                 : '<span class="toc-lesson-dot"></span>'
                             }
@@ -136,6 +167,17 @@ function buildFlatLessonList() {
 async function loadLesson(id) {
     try {
         currentLesson = await api.request(`/lms/lessons/${id}`);
+
+        // GET /lessons/{id} returns the lesson, not this learner's progress on it. The
+        // outline already knows, so carry it across — otherwise "Mark Complete" offers
+        // itself again on a lesson the sidebar is ticking as done.
+        const inOutline = (modulesData || [])
+            .flatMap(m => m.lessons || [])
+            .find(l => l.id === id);
+        if (inOutline && !currentLesson.progressStatus) {
+            currentLesson.progressStatus = inOutline.progressStatus || inOutline.progress_status;
+        }
+
         document.title = `${escapeHtml(currentLesson.title)} - LMS | Ragenaizer`;
         renderContent();
         updateNavButtons();
@@ -323,7 +365,8 @@ function updateMarkCompleteButton() {
     const btn = document.getElementById('markCompleteBtn');
     if (!btn || !currentLesson) return;
 
-    if (currentLesson.is_completed) {
+    // Same field as the outline uses, so the button and the tick cannot disagree.
+    if (isLessonComplete(currentLesson)) {
         btn.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"/>
@@ -347,8 +390,14 @@ async function markComplete() {
         });
         showToast('Lesson marked as complete!', 'success');
 
-        // Update local state
-        if (currentLesson) currentLesson.is_completed = true;
+        // Update local state. The OUTLINE is what the tick and the progress bar are both
+        // computed from, so marking the lesson on `currentLesson` alone left the sidebar
+        // showing the old count until the next page load.
+        if (currentLesson) currentLesson.progressStatus = 'completed';
+        for (const mod of (modulesData || [])) {
+            const hit = (mod.lessons || []).find(l => l.id === lessonId);
+            if (hit) hit.progressStatus = 'completed';
+        }
         updateMarkCompleteButton();
 
         // Update TOC to show checkmark
@@ -356,7 +405,7 @@ async function markComplete() {
         if (tocLesson) tocLesson.classList.add('completed');
 
         // Refresh progress
-        await updateProgress();
+        updateProgress();
     } catch (error) {
         console.error('Error marking complete:', error);
         showToast('Failed to mark as complete', 'error');
@@ -390,15 +439,27 @@ async function autoSaveProgress() {
 
 // ─── Progress Bar ───────────────────────────────────────────────────────────
 
-async function updateProgress() {
-    try {
-        const status = await api.request(`/lms/enrollments/course/${courseId}/status`);
-        const pct = status.progress_percentage || 0;
-        document.getElementById('courseProgressFill').style.width = `${pct}%`;
-        document.getElementById('courseProgressText').textContent = `${Math.round(pct)}% complete`;
-    } catch (error) {
-        // Ignore — user may not be enrolled
-    }
+/**
+ * Progress, counted from the outline that is already on screen.
+ *
+ * This used to GET /lms/enrollments/course/{id}/status — a route that does not exist. It
+ * answered 404, the catch below dismissed it as "user may not be enrolled", and so the bar
+ * read 0% for everybody, for ever, no matter how much of the course they had done.
+ *
+ * Counting the lessons the caller has finished keeps the bar and the ticks beside it
+ * consistent by construction: they are now the same fact rendered twice.
+ */
+function updateProgress() {
+    const lessons = (modulesData || []).flatMap(m => m.lessons || []);
+    if (lessons.length === 0) return;
+
+    const done = lessons.filter(isLessonComplete).length;
+    const pct = Math.round((done / lessons.length) * 100);
+
+    const fill = document.getElementById('courseProgressFill');
+    const text = document.getElementById('courseProgressText');
+    if (fill) fill.style.width = `${pct}%`;
+    if (text) text.textContent = `${pct}% complete`;
 }
 
 // ─── Sidebar Toggle ─────────────────────────────────────────────────────────
