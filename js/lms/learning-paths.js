@@ -61,9 +61,26 @@ function renderPathCards() {
         return;
     }
 
+/**
+ * Minutes as a human duration. The field is estimatedDurationMinutes; the page read
+ * `estimated_duration`, which has never existed, so no path ever showed its length.
+ * Returns '' for 0 or missing so the caller can omit the element entirely rather than
+ * printing "0m" on a path nobody has estimated.
+ */
+function pathDuration(path) {
+    const mins = path.estimatedDurationMinutes ?? path.estimated_duration_minutes ?? 0;
+    if (!mins) return '';
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h ? (m ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+}
+
     container.innerHTML = allPaths.map(path => {
         const courseCount = path.course_count || path.courses?.length || 0;
-        const difficulty = path.difficulty || path.level || 'all';
+        // The field is difficultyLevel. Neither `difficulty` nor `level` has ever been on
+        // this response, so every path card showed the literal fallback "all" as its
+        // difficulty — including this one, which is 'beginner'.
+        const difficulty = path.difficultyLevel || path.difficulty_level || 'all';
         const progress = path.progress_percentage ?? path.progress ?? null;
         const isEnrolled = progress != null;
         const thumbnail = path.thumbnail_url || path.image_url || '';
@@ -96,7 +113,7 @@ function renderPathCards() {
                         <span style="color: var(--text-muted); font-size: var(--font-size-sm);">
                             ${courseCount} course${courseCount !== 1 ? 's' : ''}
                         </span>
-                        ${path.estimated_duration ? `<span style="color:var(--text-muted);font-size:var(--font-size-sm);">${path.estimated_duration}</span>` : ''}
+                        ${pathDuration(path) ? `<span style="color:var(--text-muted);font-size:var(--font-size-sm);">${pathDuration(path)}</span>` : ''}
                     </div>
 
                     ${isEnrolled ? `
@@ -132,7 +149,7 @@ async function showPathDetail(pathId) {
         document.getElementById('pathDifficulty').textContent = data.difficulty || data.level || 'All Levels';
         document.getElementById('pathCourseCount').textContent =
             `${data.courses?.length || data.course_count || 0} courses`;
-        document.getElementById('pathDuration').textContent = data.estimated_duration || '';
+        document.getElementById('pathDuration').textContent = pathDuration(data);
 
         // Thumbnail
         const thumbImg = document.getElementById('pathThumbnail');

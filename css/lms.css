@@ -264,6 +264,25 @@ body.lms-dashboard .crm-container {
     gap: 2px;
     border-bottom: 1px solid var(--border-color-light);
     margin-bottom: 16px;
+
+    /* The STRIP scrolls, not the page.
+       With eleven tabs this row is ~990px wide. Left to overflow, it widened
+       .crm-container instead — and that container is overflow-x: hidden, so
+       tapping a tab that sat off the right edge made the browser scroll the
+       CONTAINER to reveal it, dragging the heading and every card off to the
+       left with no scrollbar and no way back. Measured on a 390px viewport:
+       scrollLeft 280 of a 990px scrollWidth. Giving the strip its own scroll
+       keeps the overflow where it belongs. */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Tabs must not shrink into an unreadable column when the row scrolls. */
+.lms-tabs > .lms-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 .lms-tab {
