@@ -89,7 +89,10 @@ async function loadThreads() {
 function renderThreadCard(thread) {
     const date = formatDate(thread.created_at);
     const replyCount = thread.reply_count ?? 0;
-    const hasSolution = thread.has_solution ? '<span class="solution-indicator">Solved</span>' : '';
+    // Derived from the replies. thread.has_solution has never been on this response, so the
+    // "Solved" badge could not appear on a thread that HAD an accepted answer.
+    const solvedReply = (thread.replies || []).find(r => r.isSolution ?? r.is_solution);
+    const hasSolution = solvedReply ? '<span class="solution-indicator">Solved</span>' : '';
     const pinnedIcon = thread.is_pinned ? `
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="pinned-icon">
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
@@ -103,7 +106,7 @@ function renderThreadCard(thread) {
                 ${hasSolution}
             </div>
             <div class="thread-card-meta">
-                <span class="thread-author">${escapeHtml(thread.author_name || 'Unknown')}</span>
+                <span class="thread-author">${escapeHtml(thread.userName || thread.author_name || 'Unknown')}</span>
                 <span class="thread-date">${date}</span>
                 <span class="thread-replies">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -136,15 +139,18 @@ async function showThread(threadId) {
         // Render thread content
         document.getElementById('threadTitle').textContent = thread.title || '';
         document.getElementById('threadMeta').innerHTML = `
-            <span class="thread-author">${escapeHtml(thread.author_name || 'Unknown')}</span>
+            <span class="thread-author">${escapeHtml(thread.userName || thread.author_name || 'Unknown')}</span>
             <span class="thread-date">${formatDate(thread.created_at)}</span>`;
         document.getElementById('threadBody').innerHTML = formatBody(thread.body || '');
 
         // Render solution if present
         const solutionEl = document.getElementById('threadSolution');
-        if (thread.solution) {
+        // Same: there is no thread.solution. The accepted answer is the reply flagged
+        // isSolution, so the solution panel never rendered for any thread.
+        const solution = (thread.replies || []).find(r => r.isSolution ?? r.is_solution);
+        if (solution) {
             solutionEl.style.display = '';
-            document.getElementById('solutionContent').innerHTML = formatBody(thread.solution.body || '');
+            document.getElementById('solutionContent').innerHTML = formatBody(solution.body || '');
         } else {
             solutionEl.style.display = 'none';
         }
@@ -180,7 +186,7 @@ function renderReply(reply) {
     return `
         <div class="reply-card ${solved ? 'reply-solution' : ''}">
             <div class="reply-header">
-                <span class="reply-author">${escapeHtml(reply.author_name || 'Unknown')}</span>
+                <span class="reply-author">${escapeHtml(reply.userName || reply.author_name || 'Unknown')}</span>
                 <span class="reply-date">${formatDate(reply.created_at)}</span>
                 ${isSolution}
                 ${canMarkSolution() ? `

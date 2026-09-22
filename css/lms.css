@@ -2248,3 +2248,245 @@ body.lms-dashboard .modal-overlay[style*="display:flex"] .modal-close:hover {
 
 .scorm-ok  { margin: 10px 0 0; font-size: 12.5px; color: #4ade80; }
 .scorm-bad { margin: 10px 0 0; font-size: 12.5px; color: #f87171; line-height: 1.5; }
+
+/* =============================================================
+   DISCUSSIONS
+   -------------------------------------------------------------
+   The discussions page shipped with NO stylesheet at all: all 33
+   of its classes were undefined in every sheet it loads, so the
+   threads, the thread detail and the replies rendered as bare
+   unstyled text runs. Same shape as the live-sessions page, which
+   had the same problem.
+
+   Everything below uses the theme variables rather than literals,
+   because this app themes with <html data-theme> and a hard-coded
+   palette would be wrong in one of the two themes.
+   ============================================================= */
+
+.discussions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.discussion-thread-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.discussion-thread-card:hover {
+    border-color: var(--brand-primary);
+    transform: translateY(-1px);
+}
+
+.thread-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.thread-card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.thread-card-preview {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 6px 0 10px;
+    /* Two lines, then ellipsis — a long first post must not turn the
+       list into a wall of text. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.thread-card-meta,
+.thread-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.thread-author,
+.reply-author {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.thread-date,
+.reply-date {
+    color: var(--text-muted);
+}
+
+.thread-replies {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-muted);
+}
+
+.thread-count {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.pinned-icon {
+    color: var(--color-warning);
+    flex-shrink: 0;
+}
+
+.solution-indicator,
+.solution-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-success) 40%, transparent);
+}
+
+/* ─── one thread ─────────────────────────────────────────────── */
+
+.thread-detail-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.thread-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.thread-detail-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.35;
+}
+
+.thread-detail-body {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.65;
+    margin-top: 14px;
+    white-space: pre-wrap;
+}
+
+.thread-detail-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+/* The accepted answer, lifted out of the reply list so it reads as
+   the answer rather than as one reply among many. */
+.thread-solution {
+    border: 1px solid color-mix(in srgb, var(--color-success) 45%, transparent);
+    background: color-mix(in srgb, var(--color-success) 8%, transparent);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+}
+
+.solution-content {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    margin-top: 8px;
+    white-space: pre-wrap;
+}
+
+/* ─── replies ────────────────────────────────────────────────── */
+
+.replies-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.reply-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+
+/* An accepted answer keeps its green edge wherever it sits. */
+.reply-card.reply-solution {
+    border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+    background: color-mix(in srgb, var(--color-success) 8%, transparent);
+}
+
+.reply-body {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    margin-top: 8px;
+    white-space: pre-wrap;
+}
+
+.reply-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.reply-input-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 18px;
+    margin-top: 20px;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 90px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.form-textarea:focus {
+    border-color: var(--brand-primary);
+}
+
+@media (max-width: 640px) {
+    .thread-detail-header { flex-direction: column; }
+    .thread-card-meta,
+    .thread-detail-meta { gap: 10px; }
+}
