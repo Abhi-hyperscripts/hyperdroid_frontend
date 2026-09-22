@@ -157,6 +157,45 @@ function shareCertificate(certId, certNumber) {
 
 // ==================== Verify Certificate ====================
 
+/** The server's `status` in words a verifier can repeat to someone. */
+function reasonFor(result) {
+    switch (result && result.status) {
+        case 'revoked':
+            return 'This certificate was withdrawn by the issuing organisation. It no longer counts.';
+        case 'superseded':
+            return 'This certificate was replaced when the holder re-certified. Ask for the current one.';
+        case 'expired':
+            return result.validUntil
+                ? `This certificate lapsed on ${new Date(result.validUntil).toLocaleDateString()}.`
+                : 'This certificate has lapsed.';
+        default:
+            return null;
+    }
+}
+
+/**
+ * A settled NEGATIVE verdict — not an error. Shared by the "valid: false" response and the
+ * 404 path, so the two cannot drift into saying different things about the same outcome.
+ */
+function notValidMarkup(reason) {
+    const detail = reason
+        ? String(reason)
+        : 'No certificate found with this number.';
+    return `
+        <div style="background: var(--bg-tertiary); border-left: 3px solid var(--color-error); padding: var(--space-4); border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <strong style="color: var(--color-error);">Not a valid certificate</strong>
+            </div>
+            <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-top: var(--space-2);">
+                ${detail}
+            </p>
+        </div>
+    `;
+}
+
 async function verifyCertificate() {
     const input = document.getElementById('verifyCertNumber');
     const number = input.value.trim();
@@ -172,7 +211,10 @@ async function verifyCertificate() {
     try {
         const result = await api.request(`/lms/certificates/verify/${encodeURIComponent(number)}`);
 
-        if (result && result.valid) {
+        // isValid, not valid. The server computes IsValid (revoked / superseded / expired /
+        // in date) and serialises it as `isValid`; reading `result.valid` gave undefined for
+        // EVERY certificate, so a genuinely valid one was reported as invalid.
+        if (result && result.isValid) {
             resultDiv.innerHTML = `
                 <div style="background: var(--bg-tertiary); border-left: 3px solid var(--color-success); padding: var(--space-4); border-radius: var(--radius-md);">
                     <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2);">
@@ -182,30 +224,28 @@ async function verifyCertificate() {
                         <strong style="color: var(--color-success);">Valid Certificate</strong>
                     </div>
                     <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin: 0;">
-                        <strong>${result.holder_name || 'Learner'}</strong> completed
-                        <strong>${result.course_title || 'a course'}</strong>
-                        on ${result.issued_date ? new Date(result.issued_date).toLocaleDateString() : '-'}.
+                        <strong>${result.userName || 'Learner'}</strong> completed
+                        <strong>${result.courseTitle || 'a course'}</strong>
+                        on ${result.issuedAt ? new Date(result.issuedAt).toLocaleDateString() : '-'}.
                     </p>
                 </div>
             `;
         } else {
-            resultDiv.innerHTML = `
-                <div style="background: var(--bg-tertiary); border-left: 3px solid var(--color-error); padding: var(--space-4); border-radius: var(--radius-md);">
-                    <div style="display: flex; align-items: center; gap: var(--space-2);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                        </svg>
-                        <strong style="color: var(--color-error);">Invalid Certificate</strong>
-                    </div>
-                    <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-top: var(--space-2);">
-                        No certificate found with this number.
-                    </p>
-                </div>
-            `;
+            // `status` says WHY, so a verifier can state it: revoked, superseded or expired.
+            resultDiv.innerHTML = notValidMarkup(reasonFor(result));
         }
     } catch (err) {
+        // A certificate that does not exist answers 404, which api.request throws — so the
+        // "Invalid Certificate" branch above was UNREACHABLE and every unknown number got
+        // "Verification failed. Please try again." That invites a retry for a settled
+        // negative answer, which is the wrong thing to tell someone checking a credential.
+        const notFound = /not\s*found|404/i.test(err && err.message || '');
+        if (notFound) {
+            resultDiv.innerHTML = notValidMarkup();
+            return;
+        }
         console.error('Failed to verify certificate:', err);
-        resultDiv.innerHTML = `<p style="color: var(--color-error);">Verification failed. Please try again.</p>`;
+        resultDiv.innerHTML = `<p style="color: var(--color-error);">Could not reach the verification service. This is not a verdict on the certificate — try again.</p>`;
     }
 }
 

@@ -99,8 +99,10 @@ function applyRBAC() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     Duplicate
                 </button>
+                <!-- "Enrolled" read as a status, not a button, and collided with a stat
+                     card of the same name two rows below it. -->
                 <button class="btn-outline-sm" onclick="openCourseRoster()" title="Who is enrolled on this course">
-                    Enrolled
+                    Roster
                 </button>
                 <button class="btn-outline-sm" onclick="archiveCourse()" title="Archive this course — it stops appearing in the catalogue and nobody new can enrol">
                     Archive
@@ -145,6 +147,12 @@ async function loadInstructorStats() {
             document.getElementById('instrStatAvgScore').textContent =
                 stats.averageScore != null ? `${Math.round(stats.averageScore)}%` : '-';
             document.getElementById('instrStatActive').textContent = stats.activeEnrollments ?? 0;
+
+            // One number per fact. The general "Enrolled" card answers the same question
+            // as "Active Learners" here, and sat next to an all-time count of 3, so the
+            // page appeared to contradict itself.
+            const dupe = document.getElementById('statEnrolledCard');
+            if (dupe) dupe.style.display = 'none';
         }
     } catch (error) {
         console.error('Error loading instructor stats:', error);

@@ -151,6 +151,17 @@
                         </div>
                     </div>
                     <div class="form-row">
+                        <!-- Nothing in this builder ever set certificate_template_id, so no course
+                             could award a certificate — and because the save payload omitted the
+                             field, saving a course actively cleared it. -->
+                        <div class="form-group full-width">
+                            <label for="courseCertificateTemplate">Certificate awarded on completion</label>
+                            <select id="courseCertificateTemplate" class="form-select">
+                                <option value="">No certificate for this course</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group full-width">
                             <label for="courseTags">Tags (comma-separated)</label>
                             <input type="text" id="courseTags" class="form-control" placeholder="e.g. onboarding, compliance, leadership">

@@ -518,6 +518,22 @@ body.lms-dashboard .crm-container {
     transition: border-color 0.2s ease;
 }
 
+/* The filter bar is NOT a form field.
+   crm.css pins .crm-filter-group controls to height: 32px with padding: 0 — the two go
+   together. The block above is meant for course-builder and modal forms, but its selector
+   is more specific and it loads later, so it put 8px of vertical padding back onto a box
+   whose height had been fixed on the assumption of none: 8 + 20.4 line-height + 8 = 36.4px
+   of content inside 32px, which CLIPS the option text. Measured on the catalog filters.
+   Restoring horizontal padding only keeps both intents intact. */
+.crm-container .crm-filter-group input[type="text"],
+.crm-container .crm-filter-group input[type="number"],
+.crm-container .crm-filter-group input[type="date"],
+.crm-container .crm-filter-group select,
+.crm-container .crm-filter-group .form-control,
+.crm-container .crm-filter-group .form-select {
+    padding: 0 10px;
+}
+
 .crm-container input:focus,
 .crm-container textarea:focus,
 .crm-container select:focus,

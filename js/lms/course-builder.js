@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initBuilderTabs();
     await loadCategories();
+    await loadCertificateTemplates();
 
     courseId = new URLSearchParams(window.location.search).get('id');
     if (courseId) {
@@ -143,6 +144,28 @@ async function loadCategories() {
     }
 }
 
+/**
+ * Offer the tenant's certificate templates. A course only awards a certificate when
+ * certificate_template_id is set, and nothing in this builder ever set it — so no course
+ * could certify anybody, however many templates existed.
+ */
+async function loadCertificateTemplates() {
+    const select = document.getElementById('courseCertificateTemplate');
+    if (!select) return;
+    try {
+        const rows = await api.request('/lms/certificates/templates');
+        (Array.isArray(rows) ? rows : []).forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.name;
+            select.appendChild(opt);
+        });
+    } catch (error) {
+        // Not fatal — the course still saves, it just cannot be given a certificate here.
+        console.error('Error loading certificate templates:', error);
+    }
+}
+
 // ─── Init Form (new course) ─────────────────────────────────────────────────
 
 function initForm() {
@@ -165,6 +188,10 @@ async function loadCourseForEdit(id) {
         document.getElementById('courseDuration').value = durationMins > 0 ? (durationMins / 60) : '';
         document.getElementById('coursePassingScore').value = course.passingScore || course.passing_score || 70;
         document.getElementById('courseTags').value = (course.tags || []).join(', ');
+
+        const certTemplateId = course.certificateTemplateId || course.certificate_template_id;
+        const certSelect = document.getElementById('courseCertificateTemplate');
+        if (certSelect) certSelect.value = certTemplateId || '';
 
         // Category
         const catId = course.categoryId || course.category_id;
@@ -667,6 +694,9 @@ function gatherCoursePayload(status) {
         estimatedDurationMinutes: Math.round(durationHours * 60),
         enrollmentType: enrollmentType,
         passingScore: parseInt(document.getElementById('coursePassingScore').value) || 70,
+        // Must be SENT, not merely offered: the update statement writes this column
+        // unconditionally, so a payload that omitted it cleared any template the course had.
+        certificateTemplateId: document.getElementById('courseCertificateTemplate')?.value || null,
         tags: tags,
         status: status
     };

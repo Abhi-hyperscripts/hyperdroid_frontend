@@ -166,7 +166,9 @@ async function saveCategory() {
     btn.disabled = true;
 
     try {
-        const payload = { name, description: description || null, parent_id: parentId };
+        // camelCase. ASP.NET's case-insensitive binding does NOT bridge snake_case, so
+        // parent_id was dropped and every sub-category was created at the top level.
+        const payload = { name, description: description || null, parentId };
         if (id) {
             await api.request(`/lms/categories/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
             showToast('Category updated', 'success');
@@ -304,7 +306,9 @@ async function saveTrainingRule() {
     btn.disabled = true;
 
     try {
-        const payload = { name, course_id: courseId, target_type: targetType, trigger };
+        // camelCase — course_id and target_type were dropped, so a rule was saved with no
+        // course attached and its target silently fell back to the "all" default.
+        const payload = { name, courseId, targetType, trigger };
         if (id) {
             await api.request(`/lms/training-rules/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
             showToast('Training rule updated', 'success');
@@ -430,7 +434,10 @@ async function saveCertTemplate() {
     btn.disabled = true;
 
     try {
-        const payload = { name, html_template: htmlTemplate };
+        // camelCase. html_template did not bind, HtmlTemplate is REQUIRED, so this answered
+        // 400 every time: creating a certificate template was impossible. No template meant
+        // no course could award a certificate, so certificates were unreachable end to end.
+        const payload = { name, htmlTemplate };
         if (id) {
             await api.request(`/lms/certificates/templates/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
             showToast('Template updated', 'success');
@@ -552,7 +559,9 @@ async function saveAnnouncement() {
     btn.disabled = true;
 
     try {
-        const payload = { title, body: body || null, is_published: isPublished };
+        // camelCase — is_published was dropped and IsPublished defaults to TRUE, so an
+        // announcement saved as a draft published itself.
+        const payload = { title, body: body || null, isPublished };
         if (id) {
             await api.request(`/lms/announcements/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
             showToast('Announcement updated', 'success');

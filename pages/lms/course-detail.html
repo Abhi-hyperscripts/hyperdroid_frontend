@@ -117,7 +117,10 @@
                     </div>
                     <div class="stat-text">
                         <div class="stat-value" id="instrStatEnrollments">-</div>
-                        <div class="stat-label">Enrollments</div>
+                        <!-- "Enrollments" alone sat beside an "Enrolled" card holding a
+                             DIFFERENT number (3 vs 2 — this one counts dropped enrolments).
+                             Two labels a reader cannot tell apart, disagreeing. -->
+                        <div class="stat-label">Enrollments (all time)</div>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -179,7 +182,9 @@
                     <div class="stat-label">Duration</div>
                 </div>
             </div>
-            <div class="stat-card">
+            <!-- Hidden for instructors and admins: the panel above already answers this,
+                 with the active/all-time split spelled out. -->
+            <div class="stat-card" id="statEnrolledCard">
                 <div class="stat-icon hours">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>

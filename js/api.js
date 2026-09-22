@@ -1,3 +1,39 @@
+/**
+ * Give every camelCase key a snake_case ALIAS, in place, recursively.
+ *
+ * The aliases are non-enumerable, so Object.keys, JSON.stringify, spread and for..in see
+ * exactly what the server sent. Nothing that serialises an object back to the API can
+ * therefore pick the alias up by accident — the extra name exists only for property reads.
+ *
+ * Only adds a name that is not already present: a payload that genuinely carries both
+ * spellings keeps the server's own value for each.
+ */
+function _aliasSnakeCase(node, depth) {
+    depth = depth || 0;
+    if (!node || typeof node !== 'object' || depth > 6) return node;
+
+    if (Array.isArray(node)) {
+        for (const item of node) _aliasSnakeCase(item, depth + 1);
+        return node;
+    }
+
+    for (const key of Object.keys(node)) {
+        const value = node[key];
+        if (value && typeof value === 'object') _aliasSnakeCase(value, depth + 1);
+
+        const snake = key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+        if (snake === key || Object.prototype.hasOwnProperty.call(node, snake)) continue;
+        try {
+            Object.defineProperty(node, snake, {
+                get() { return this[key]; },
+                enumerable: false,
+                configurable: true
+            });
+        } catch (e) { /* frozen or exotic object — leave it exactly as it came */ }
+    }
+    return node;
+}
+
 class API {
     constructor() {
         // Safely get auth token - config.js must be loaded first
@@ -356,6 +392,16 @@ class API {
                 apiErr.data = data;
                 throw apiErr;
             }
+
+            // LMS pages read a mixture of spellings. Measured 2026-09-22: ~60 reads across
+            // 8 LMS files ask for snake_case (session.scheduled_at, cert.issued_at,
+            // lesson.content_url, thread.author_name …) while every LMS endpoint answers
+            // camelCase, so each of those rendered undefined or "-". Aliasing at this one
+            // boundary fixes the class; patching 60 call sites would leave the 61st.
+            //
+            // Scoped to /lms/ on purpose — other services in this fleet genuinely speak
+            // snake_case, and this must not reshape their payloads.
+            if (endpoint.startsWith('/lms/')) _aliasSnakeCase(data);
 
             return data;
         } catch (error) {
