@@ -394,10 +394,52 @@
             try {
                 const cf = typeof lead.custom_fields === 'string' ? JSON.parse(lead.custom_fields || '{}') : (lead.custom_fields || {});
                 const resolveDef = typeof window.getLeadFieldDef === 'function' ? window.getLeadFieldDef : null;
+
+                // A CUSTOM FIELD THAT RESTATES A BUILT-IN COLUMN IS NOT A CUSTOM FIELD.
+                //
+                // A lead-form payload arrives as custom_fields AND is mapped onto the
+                // lead's own columns, so a key like `company_name` is stored twice.
+                // The panel then printed "Arclight Retail Pvt Ltd" under About →
+                // Company and again under Custom fields, which reads as ordinary form
+                // data leaking into the section — because that is exactly what it is.
+                //
+                // Suppressed only when the value MATCHES the column already on screen.
+                // If they have diverged, the custom value is still shown: hiding a
+                // value that disagrees with its column would hide the interesting case.
+                const _norm = (x) => String(x == null ? '' : x).trim().toLowerCase().replace(/\s+/g, ' ');
+                const _digits = (x) => String(x == null ? '' : x).replace(/\D/g, '').slice(-10);
+                const _fullName = [lead.first_name, lead.last_name].filter(Boolean).join(' ');
+                const BUILTIN_ECHO = {
+                    companyname: lead.company_name,   company: lead.company_name,
+                    email: lead.email,                emailaddress: lead.email,
+                    workemail: lead.email,
+                    phone: lead.phone,                phonenumber: lead.phone,
+                    mobile: lead.phone,               mobilenumber: lead.phone,
+                    contactnumber: lead.phone,        whatsappnumber: lead.phone,
+                    altphone: lead.alternate_phone,   alternatephone: lead.alternate_phone,
+                    firstname: lead.first_name,       lastname: lead.last_name,
+                    fullname: _fullName,              name: _fullName,
+                    jobtitle: lead.job_title,         designation: lead.job_title,
+                    city: lead.city,                  state: lead.state,
+                    country: lead.country,            pincode: lead.pincode,
+                    zip: lead.pincode,                address: lead.address,
+                    website: lead.website,            productinterest: lead.product_interest,
+                };
+                const echoesABuiltIn = (key, val) => {
+                    if (typeof val !== 'string' && typeof val !== 'number') return false;
+                    const builtIn = BUILTIN_ECHO[String(key).toLowerCase().replace(/[^a-z0-9]/g, '')];
+                    if (!builtIn) return false;
+                    return _norm(builtIn) === _norm(val)
+                        || (_digits(builtIn).length === 10 && _digits(builtIn) === _digits(val));
+                };
                 for (const [k, v] of Object.entries(cf)) {
                     if (!v) continue;
                     if (Array.isArray(v) && v.length === 0) continue;   // an empty checklist is not an answer
                     const def = resolveDef ? resolveDef(k) : null;
+                    // Only an UNDEFINED key can be a raw payload echo — a key the
+                    // tenant deliberately defined in Settings is theirs to show,
+                    // whatever it happens to hold.
+                    if (!def && echoesABuiltIn(k, v)) continue;
                     // Per-field opt-out. Defaults to showing, because every field
                     // appeared here before the flag existed — but a 25-item product
                     // checklist is exactly what a tenant will want to switch off.
