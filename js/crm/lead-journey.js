@@ -382,7 +382,15 @@
             // _allFieldsByCode map populated by lead-fields-runtime.js so
             // historical values still render with their human label even
             // after the field is soft-deleted from Settings).
+            // Two buffers, not one. A checklist panel spans BOTH grid columns
+            // and a plain field spans one, so interleaving them in source order
+            // strands a lone half-width card between two full-width panels —
+            // which is what "Company Name" looked like, sitting orphaned in the
+            // middle of the section. Plain fields are emitted first so they pack
+            // the two columns; the full-width panels then stack cleanly below.
             let customFieldsHtml = '';
+            let plainFieldsHtml = '';
+            let checklistFieldsHtml = '';
             try {
                 const cf = typeof lead.custom_fields === 'string' ? JSON.parse(lead.custom_fields || '{}') : (lead.custom_fields || {});
                 const resolveDef = typeof window.getLeadFieldDef === 'function' ? window.getLeadFieldDef : null;
@@ -417,7 +425,7 @@
                     // broken: `display:contents` on the tail wrapper out-specifies
                     // the `[hidden]` display:none, so the "hidden" chips rendered
                     // anyway, and the button removed itself. A panel that simply
-                    // scrolls past four rows cannot be in a wrong state.
+                    // wraps cannot be in a wrong state.
                     if (Array.isArray(v)) {
                         const chip = (val) => {
                             const opt = def ? (def.options || []).find(o => o.code === val) : null;
@@ -427,7 +435,7 @@
                             return `<span class="ld-chip">${sw}${esc(opt ? opt.label : String(val))}</span>`;
                         };
 
-                        customFieldsHtml += `
+                        checklistFieldsHtml += `
                             <div class="lead-detail-item is-checklist">
                                 <div class="ld-chips-head">
                                     <span class="lead-detail-label">${esc(fieldLabel)}</span>
@@ -438,9 +446,10 @@
                         continue;
                     }
 
-                    customFieldsHtml += `<div class="lead-detail-item"><span class="lead-detail-label">${esc(fieldLabel)}</span><span>${renderValue(v)}</span></div>`;
+                    plainFieldsHtml += `<div class="lead-detail-item"><span class="lead-detail-label">${esc(fieldLabel)}</span><span>${renderValue(v)}</span></div>`;
                 }
             } catch {}
+            customFieldsHtml = plainFieldsHtml + checklistFieldsHtml;
 
             // Hero: identity + live badges + one-tap contact. Everything else
             // groups into labelled sections below (empty sections vanish).
