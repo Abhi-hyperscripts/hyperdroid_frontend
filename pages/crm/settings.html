@@ -4883,6 +4883,20 @@
                         <input type="checkbox" id="lfShowTab" checked>
                         <span>Show as table column</span>
                     </label>
+                    <!-- The only one of these that leaves the building. Unchecked by
+                         default, and kept visually apart from the internal toggles so
+                         nobody ticks it by pattern-matching down the column. -->
+                    <label class="checkbox-row" style="display:flex;align-items:flex-start;gap:8px;margin-top:6px;padding-top:10px;border-top:1px solid var(--border-color);">
+                        <input type="checkbox" id="lfShowCard" style="margin-top:2px;">
+                        <span>
+                            Show on the customer's QR card
+                            <small style="display:block;color:var(--text-muted);font-size:11px;line-height:1.5;margin-top:2px;">
+                                Publishes this field's answer on the public page the lead's QR
+                                code opens. Anyone holding that link can read it — leave off for
+                                anything you would not print on the proposal.
+                            </small>
+                        </span>
+                    </label>
                 </div>
 
                 <hr style="margin:18px 0; border-color:var(--border-color);">

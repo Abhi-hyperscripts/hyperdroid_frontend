@@ -122,6 +122,8 @@
         document.getElementById('lfShowFil').checked = true;
         document.getElementById('lfShowTab').checked = true;
         document.getElementById('lfShowDet').checked = true;
+        // Publishing to the public card is never the default for a new field.
+        document.getElementById('lfShowCard').checked = false;
         renderDraftOptions();
         if (typeof openModal === 'function') openModal('leadFieldModal');
         else document.getElementById('leadFieldModal').classList.add('active');
@@ -144,6 +146,7 @@
         document.getElementById('lfShowFil').checked = !!f.show_in_lead_filter;
         document.getElementById('lfShowTab').checked = !!f.show_in_leads_table;
         document.getElementById('lfShowDet').checked = f.show_in_lead_detail !== false;
+        document.getElementById('lfShowCard').checked = f.show_on_customer_card === true;
         renderDraftOptions();
         if (typeof openModal === 'function') openModal('leadFieldModal');
         else document.getElementById('leadFieldModal').classList.add('active');
@@ -230,6 +233,7 @@
         const showFil = document.getElementById('lfShowFil').checked;
         const showTab = document.getElementById('lfShowTab').checked;
         const showDet = document.getElementById('lfShowDet').checked;
+        const showCard = document.getElementById('lfShowCard').checked;
         if (!label) { Toast?.error('Label is required'); return; }
 
         const saveBtn = document.getElementById('lfSaveBtn');
@@ -249,6 +253,7 @@
                         show_in_lead_filter: showFil,
                         show_in_leads_table: showTab,
                         show_in_lead_detail: showDet,
+                        show_on_customer_card: showCard,
                     }),
                 });
                 // 2) Sync options. Existing options that disappeared from
@@ -300,6 +305,7 @@
                         show_in_lead_filter: showFil,
                         show_in_leads_table: showTab,
                         show_in_lead_detail: showDet,
+                        show_on_customer_card: showCard,
                         sort_order: _fields.length,
                         options: _draftOptions
                             .filter(o => o.code && o.label)

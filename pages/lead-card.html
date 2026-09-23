@@ -512,6 +512,97 @@
             margin: 0 auto;
             max-width: 380px;
         }
+        /* ── STATE blocks — the reason the page exists ──────────────────
+           A card on a proposal answers "where do things stand", so the
+           status leads and everything under it is the evidence for it. */
+        .state {
+            margin-top: clamp(34px, 6vh, 56px);
+            border: 1px solid var(--line2);
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(var(--scrim), .035), rgba(var(--scrim), .012));
+            padding: 22px 24px;
+        }
+        .state-head {
+            display: flex; align-items: center; gap: 11px;
+            font-size: 19px; font-weight: 600; letter-spacing: -.01em; color: var(--text);
+        }
+        .state-dot {
+            width: 9px; height: 9px; border-radius: 50%; flex: none;
+            background: var(--muted); box-shadow: 0 0 10px currentColor;
+        }
+        .state[data-tone="action"]  .state-dot { background: var(--violet2); color: var(--violet2); }
+        .state[data-tone="good"]    .state-dot { background: var(--mint);    color: var(--mint); }
+        .state[data-tone="waiting"] .state-dot { background: var(--sky);     color: var(--sky); }
+        .state-detail {
+            margin: 9px 0 0; padding-left: 20px;
+            font-size: 15px; line-height: 1.6; color: var(--text-2);
+        }
+
+        .block {
+            margin-top: 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 18px 20px;
+            background: rgba(var(--scrim), .022);
+        }
+        .block-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; font-weight: 600; letter-spacing: 2.2px;
+            text-transform: uppercase; color: var(--dim);
+            margin-bottom: 11px;
+        }
+        .block-title {
+            font-size: 17px; font-weight: 600; color: var(--text);
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .block-line {
+            margin: 7px 0 0; font-size: 14.5px; line-height: 1.6; color: var(--muted);
+        }
+        .block-line a { color: var(--sky); text-decoration: none; border-bottom: 1px solid rgba(56,189,248,.35); }
+
+        .pill {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+            padding: 3px 9px; border-radius: 999px;
+            border: 1px solid var(--line2); color: var(--muted); white-space: nowrap;
+        }
+        .pill--good    { color: var(--mint);    border-color: rgba(52,211,153,.4); }
+        .pill--action  { color: var(--violet2); border-color: rgba(167,139,250,.45); }
+        .pill--waiting { color: var(--sky);     border-color: rgba(56,189,248,.4); }
+
+        /* The date a visit happens, sized like the fact it is. */
+        .when {
+            display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+            margin-top: 2px;
+        }
+        .when-day  { font-size: 26px; font-weight: 600; letter-spacing: -.02em; color: var(--text); }
+        .when-time { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--cyan); }
+
+        .doc-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+            padding: 11px 0; border-bottom: 1px solid var(--line);
+            font-size: 14.5px; color: var(--text-2);
+        }
+        .doc-row:last-child { border-bottom: 0; padding-bottom: 0; }
+        .doc-name { overflow-wrap: anywhere; }
+
+        @media (max-width: 580px) {
+            .state { padding: 18px 17px; }
+            .state-head { font-size: 17px; }
+            .state-detail { padding-left: 0; }
+            .block { padding: 15px 16px; }
+            .when-day { font-size: 22px; }
+        }
+
+        .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+        .chip {
+            font-size: 13.5px; line-height: 1.5;
+            padding: 4px 11px; border-radius: 8px;
+            border: 1px solid var(--line2);
+            background: rgba(var(--scrim), .035);
+            color: var(--text-2); white-space: nowrap;
+        }
+
     </style>
 </head>
 <body>
@@ -550,6 +641,14 @@
         function renderFieldValue(f) {
             const raw = f.value || '';
             const safe = escapeHtml(raw);
+            // A checklist is not a sentence. Twenty-five product names joined
+            // with commas is a paragraph nobody reads; one chip per pick is the
+            // same answer at a glance. The server sends the picks as a LIST so
+            // this never has to split on ", " — an option label may contain one.
+            if (Array.isArray(f.values) && f.values.length) {
+                return `<span class="chips">${f.values
+                    .map(v => `<span class="chip">${escapeHtml(v)}</span>`).join('')}</span>`;
+            }
             switch (f.type) {
                 case 'tel':   return `<a href="tel:${escapeHtml(raw.replace(/[^+\d]/g, ''))}">${safe}</a>`;
                 case 'email': return `<a href="mailto:${escapeHtml(raw)}">${safe}</a>`;
@@ -615,12 +714,117 @@
             `;
         }
 
+        // ── the state blocks ───────────────────────────────────────────────
+        //
+        // This page used to read the customer's own record back at them — their
+        // email, both phone numbers, their full address. They learned nothing,
+        // and a printed QR that anyone picked up disclosed all of it. What a
+        // customer wants from a code on a proposal is the state of the thing:
+        // is my quote still valid, when is the visit, did they get my PAN card,
+        // who do I call.
+
+        const DATE_FMT = { day: 'numeric', month: 'long', year: 'numeric' };
+        const TIME_FMT = { hour: 'numeric', minute: '2-digit' };
+        const asDate = (v) => v ? new Date(v) : null;
+        const fmtDate = (v) => { const d = asDate(v); return d ? d.toLocaleDateString(undefined, DATE_FMT) : ''; };
+        const fmtTime = (v) => { const d = asDate(v); return d ? d.toLocaleTimeString(undefined, TIME_FMT) : ''; };
+
+        const AGREEMENT_PILL = {
+            signed:   ['good',    'Signed'],
+            sent:     ['action',  'Awaiting signature'],
+            viewed:   ['action',  'Awaiting signature'],
+            expired:  ['waiting', 'Expired'],
+            declined: ['waiting', 'Declined'],
+            cancelled:['waiting', 'Withdrawn'],
+        };
+        const DOC_PILL = {
+            verified: ['good',    'Verified'],
+            received: ['waiting', 'With us'],
+            rejected: ['action',  'Needs another copy'],
+        };
+        const pill = (map, key) => {
+            const [tone, label] = map[key] || ['', key || ''];
+            return `<span class="pill${tone ? ' pill--' + tone : ''}">${escapeHtml(label)}</span>`;
+        };
+
+        function renderStatus(status) {
+            if (!status?.headline) return '';
+            return `
+                <div class="state" data-tone="${escapeHtml(status.tone || 'neutral')}">
+                    <div class="state-head"><i class="state-dot"></i>${escapeHtml(status.headline)}</div>
+                    ${status.detail ? `<p class="state-detail">${escapeHtml(status.detail)}</p>` : ''}
+                </div>
+            `;
+        }
+
+        function renderAgreement(a) {
+            if (!a) return '';
+            // Only an OPEN request has a validity date worth printing. Telling
+            // somebody a signed contract "is valid until" a date invites them to
+            // think it stops being signed.
+            const isOpen = a.status === 'sent' || a.status === 'viewed';
+            const line = a.status === 'signed' && a.signed_at
+                ? `Signed on ${escapeHtml(fmtDate(a.signed_at))}.`
+                : isOpen
+                    ? `Sent ${escapeHtml(fmtDate(a.sent_at))} · valid until ${escapeHtml(fmtDate(a.expires_at))}.`
+                    : `Sent ${escapeHtml(fmtDate(a.sent_at))}.`;
+            return `
+                <div class="block">
+                    <div class="block-eyebrow">Your proposal</div>
+                    <div class="block-title">${escapeHtml(a.title)}${pill(AGREEMENT_PILL, a.status)}</div>
+                    <p class="block-line">${line}</p>
+                </div>
+            `;
+        }
+
+        function renderAppointment(ap) {
+            if (!ap) return '';
+            // A map link, not an address typed out for copying — the customer is
+            // holding a phone, and the next thing they want is directions.
+            const place = ap.location
+                ? `<a href="https://maps.google.com/?q=${encodeURIComponent(ap.location)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ap.location)}</a>`
+                : '';
+            const join = ap.meeting_url
+                ? `<a href="${escapeHtml(ap.meeting_url)}" target="_blank" rel="noopener noreferrer">Join the meeting</a>`
+                : '';
+            const bits = [place, join, ap.with_name ? `With ${escapeHtml(ap.with_name)}` : ''].filter(Boolean);
+            return `
+                <div class="block">
+                    <div class="block-eyebrow">Your next appointment</div>
+                    <div class="block-title">${escapeHtml(ap.title)}</div>
+                    <div class="when">
+                        <span class="when-day">${escapeHtml(fmtDate(ap.starts_at))}</span>
+                        <span class="when-time">${escapeHtml(fmtTime(ap.starts_at))} – ${escapeHtml(fmtTime(ap.ends_at))}</span>
+                    </div>
+                    ${bits.length ? `<p class="block-line">${bits.join(' · ')}</p>` : ''}
+                </div>
+            `;
+        }
+
+        function renderDocuments(docs) {
+            if (!docs?.length) return '';
+            const rows = docs.map(d => `
+                <div class="doc-row">
+                    <span class="doc-name">${escapeHtml(d.file_name)}</span>
+                    ${pill(DOC_PILL, d.status)}
+                </div>
+            `).join('');
+            return `
+                <div class="block">
+                    <div class="block-eyebrow">What we have from you</div>
+                    ${rows}
+                </div>
+            `;
+        }
+
         function renderCard(card) {
             const fullName = (card.lead_name || '').trim() || 'Customer';
             const tenantPhrase = card.tenant_display_name
-                ? `Your <strong>${escapeHtml(card.tenant_display_name)}</strong> account, saved for whenever you need it.`
-                : `Your account, saved for whenever you need it.`;
-            const sectionsHtml = (card.sections || []).map(renderSection).join('');
+                ? `Where things stand with <strong>${escapeHtml(card.tenant_display_name)}</strong>.`
+                : `Where things stand.`;
+            // `asks` is the only place the lead's own answers appear, and the
+            // server publishes a field there only when the tenant said to.
+            const asksHtml = card.asks ? renderSection(card.asks, 0) : '';
             const repHtml = renderRep(card.assigned_rep);
 
             document.getElementById('content-mount').innerHTML = `
@@ -630,9 +834,11 @@
                     <p class="sub">${tenantPhrase}</p>
                     <span class="ref">${escapeHtml(card.lead_ref_id)}</span>
                 </div>
-                <div class="data">
-                    ${sectionsHtml}
-                </div>
+                ${renderStatus(card.status)}
+                ${renderAgreement(card.agreement)}
+                ${renderAppointment(card.appointment)}
+                ${renderDocuments(card.documents)}
+                ${asksHtml ? `<div class="data">${asksHtml}</div>` : ''}
                 ${repHtml}
             `;
 
@@ -664,8 +870,11 @@
             if (!token) { renderEmpty('No card identifier was provided in the link.'); return; }
             try {
                 const forceLive = params.get('api') === 'live';
+                // https, not http — the local CRM binds TLS on 5112 and plain
+                // http on 5113, so the http form never connected and this page
+                // could only ever be tested against production.
                 const apiBase = (location.hostname === 'localhost' && !forceLive)
-                    ? 'http://localhost:5112'
+                    ? 'https://localhost:5112'
                     : 'https://crm.ragenaizer.com';
                 const resp = await fetch(`${apiBase}/api/public/lead-card/${encodeURIComponent(token)}`, {
                     method: 'GET', credentials: 'omit', referrerPolicy: 'no-referrer',
