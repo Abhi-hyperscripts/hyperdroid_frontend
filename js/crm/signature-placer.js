@@ -27,6 +27,11 @@ const SignaturePlacer = (() => {
     // deliberate drag, and a zero-area box stamps nothing while looking placed.
     const MIN_FRACTION = 0.02;
 
+    // The box a click drops: roughly 180 x 50pt on A4, which is the size of a
+    // signature line on a printed contract.
+    const DEFAULT_W = 0.30;
+    const DEFAULT_H = 0.06;
+
     /**
      * PDF.js comes from the shared loader — see js/pdfjs-loader.js for why the
      * worker setting must not be duplicated.
@@ -47,16 +52,18 @@ const SignaturePlacer = (() => {
             const back = document.createElement('div');
             back.className = 'sigp-place-back';
             back.innerHTML = `
-                <div class="sigp-place" role="dialog" aria-modal="true" aria-label="Mark where to sign">
+                <div class="sigp-place" role="dialog" aria-modal="true" aria-label="Mark where to sign" tabindex="-1">
                     <div class="sigp-place-head">
-                        <div>
+                        <div class="sigp-place-title">
                             <b>Mark where they sign</b>
-                            <span>Drag a box onto each place the signature should appear.</span>
+                            <span data-hint>Click the document to drop a signature box, or drag to size one.</span>
                         </div>
                         <div class="sigp-place-actions">
-                            <span class="sigp-place-count" data-count>0 places</span>
+                            <span class="sigp-place-count is-empty" data-count>Nothing marked yet</span>
                             <button type="button" class="sigp-quiet" data-cancel>Cancel</button>
-                            <button type="button" class="sigp-send" data-done>Use these places</button>
+                            <button type="button" class="sigp-send" data-done>Save without places</button>
+                            <button type="button" class="sigp-place-x" data-close
+                                    aria-label="Close without saving" title="Close without saving">&times;</button>
                         </div>
                     </div>
                     <div class="sigp-place-body" data-pages>
@@ -68,13 +75,50 @@ const SignaturePlacer = (() => {
             const pagesHost = back.querySelector('[data-pages]');
             const countEl = back.querySelector('[data-count]');
 
-            const close = (result) => { back.remove(); resolve(result); };
-            back.querySelector('[data-cancel]').addEventListener('click', () => close(null));
-            back.querySelector('[data-done]').addEventListener('click', () => close(fields));
-            back.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(null); });
+            const hintEl = back.querySelector('[data-hint]');
+            const doneEl = back.querySelector('[data-done]');
 
+            // Escape was bound to the BACKDROP, which nothing ever focuses, so
+            // the key did nothing. Bound on the document and removed on close.
+            const onKey = (e) => { if (e.key === 'Escape') close(null); };
+            const close = (result) => {
+                document.removeEventListener('keydown', onKey);
+                back.remove();
+                resolve(result);
+            };
+            document.addEventListener('keydown', onKey);
+            back.querySelector('[data-cancel]').addEventListener('click', () => close(null));
+            back.querySelector('[data-close]').addEventListener('click', () => close(null));
+            back.querySelector('[data-done]').addEventListener('click', () => close(fields));
+            back.querySelector('.sigp-place').focus();
+
+            // ⭐ THE HEADER IS THE ONLY FEEDBACK THERE IS.
+            //
+            // Three things say the same number, because a rep who has just
+            // dragged five boxes needs to see that the dialog agrees before
+            // they will trust the button: the count pill, the hint line (which
+            // names the PAGES, so a box dropped on the wrong one is visible
+            // without scrolling), and the primary button's own label.
+            //
+            // The button is never disabled. Clearing every box and saving is a
+            // real intention — "remove the places I marked earlier" — and a
+            // disabled button at zero makes that impossible to express.
             const syncCount = () => {
-                countEl.textContent = fields.length === 1 ? '1 place' : `${fields.length} places`;
+                const n = fields.length;
+                countEl.textContent = n === 0
+                    ? 'Nothing marked yet'
+                    : `${n} place${n === 1 ? '' : 's'} marked`;
+                countEl.classList.toggle('is-empty', n === 0);
+
+                const pages = [...new Set(fields.map((f) => f.page))].sort((a, b) => a - b);
+                hintEl.textContent = n === 0
+                    ? 'Click the document to drop a signature box, or drag to size one.'
+                    : `On page${pages.length === 1 ? '' : 's'} ${pages.join(', ')}.`
+                      + ' Drag to add more, or use the × on a box to remove it.';
+
+                doneEl.textContent = n === 0
+                    ? 'Save without places'
+                    : `Save ${n} place${n === 1 ? '' : 's'}`;
             };
             syncCount();
 
@@ -213,9 +257,27 @@ const SignaturePlacer = (() => {
                 kind: 'signature',
             };
 
-            // A stray click is not a placement. Ignored silently — a toast on
-            // every mis-click would be worse than the miss.
-            if (field.w < MIN_FRACTION || field.h < MIN_FRACTION) return;
+            // ⭐⭐⭐ A SMALL DRAG IS A CLICK-TO-PLACE, NOT A SILENT NO-OP.
+            //
+            // This used to `return` whenever the rectangle came out under 2% of
+            // the page in either direction, on the theory that it was a stray
+            // click. But a signature LINE is thin, and a rep tracing one drags a
+            // box a few pixels tall — so the boxes they cared most about were
+            // exactly the ones thrown away, with no box drawn, no message, and a
+            // counter still reading zero. "I marked five places and it says 0."
+            //
+            // A pointer that went down on the page is an intention either way.
+            // Under the threshold it now drops a default-sized box centred on
+            // the gesture (clamped inside the page), which is also what makes a
+            // plain CLICK work — the interaction every e-signature tool has.
+            if (field.w < MIN_FRACTION || field.h < MIN_FRACTION) {
+                const cx = (left + width / 2) / r.width;
+                const cy = (top + height / 2) / r.height;
+                field.w = DEFAULT_W;
+                field.h = DEFAULT_H;
+                field.x = Math.max(0, Math.min(cx - DEFAULT_W / 2, 1 - DEFAULT_W));
+                field.y = Math.max(0, Math.min(cy - DEFAULT_H / 2, 1 - DEFAULT_H));
+            }
 
             fields.push(field);
             drawBox(wrap, field, fields, syncCount);

@@ -355,14 +355,36 @@
   padding: 14px 18px; border-bottom: 1px solid var(--border-color);
   background: var(--bg-secondary);
 }
+.sigp-place-head { flex-wrap: wrap; }
+.sigp-place-title { min-width: 220px; flex: 1; }
 .sigp-place-head b { display: block; font-size: 14px; color: var(--text-primary); }
 .sigp-place-head span { font-size: 12px; color: var(--text-secondary); }
 .sigp-place-actions { display: flex; align-items: center; gap: 10px; }
 .sigp-place-count {
   font-size: 12px; font-weight: 600; color: var(--brand-primary);
   padding: 3px 9px; border-radius: var(--border-radius-full, 999px);
-  background: var(--bg-tertiary);
+  background: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 38%, transparent);
+  white-space: nowrap;
 }
+/* Nothing marked is a NEUTRAL state, not an accented one — the pill only turns
+   brand-coloured once it has a number worth reading. */
+.sigp-place-count.is-empty {
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+  font-weight: 500;
+}
+/* The close affordance the dialog never had. Cancel says the same thing, but a
+   modal with no × in the corner reads as one you cannot get out of. */
+.sigp-place-x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; margin-left: 2px; padding: 0;
+  border: 1px solid var(--border-color); border-radius: 6px;
+  background: transparent; color: var(--text-secondary);
+  font-size: 17px; line-height: 1; cursor: pointer;
+}
+.sigp-place-x:hover { color: var(--text-primary); border-color: var(--text-muted); }
 
 /* The pages scroll; each is a positioning context for the boxes drawn on it. */
 .sigp-place-body {
