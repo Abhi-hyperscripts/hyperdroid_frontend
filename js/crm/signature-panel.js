@@ -554,15 +554,47 @@ const SignaturePanel = (() => {
         // an Authorization header and the certificate opens as a blank popup
         // that has no token. The blob URL it yields is same-origin with the
         // opener, so the popup can embed it.
+        // ⭐⭐⭐ THE STAMPED COPY FIRST — THE ORIGINAL IS THE FALLBACK, NOT THE ANSWER.
+        //
+        // The backend stamps the mark into every placed box and stores the
+        // result as its own file, and `/signature-requests/{id}/signed-document`
+        // serves it. This page asked for `/entity-documents/{id}/download`
+        // instead — the ORIGINAL — so the embedded PDF showed an empty
+        // signature line under a heading that said SIGNED, while the mark sat
+        // in its own block below. The stamped copy existed the whole time;
+        // nothing ever requested it.
+        //
+        // The bytes are fetched HERE, in the parent, because the download needs
+        // an Authorization header and the certificate opens as a blank popup
+        // that has no token. The blob URL it yields is same-origin with the
+        // opener, so the popup can embed it.
+        const base = (typeof CONFIG !== 'undefined' && CONFIG.crmApiBaseUrl) || '/api';
+        const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
+        const fetchAsBlobUrl = async (path) => {
+            const res = await fetch(`${base}${path}`,
+                { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+            return res.ok ? URL.createObjectURL(await res.blob()) : null;
+        };
+
         let documentUrl = null;
-        if (cert.document_id) {
+        let documentIsStamped = false;
+
+        // `has_signed_document` only says a copy was stored. The fetch can still
+        // come back empty, so the flag gates the attempt and the RESULT decides
+        // what the page claims.
+        if (cert.has_signed_document) {
             try {
-                const base = (typeof CONFIG !== 'undefined' && CONFIG.crmApiBaseUrl) || '/api';
-                const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
-                const res = await fetch(
-                    `${base}/entity-documents/${encodeURIComponent(cert.document_id)}/download`,
-                    { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-                if (res.ok) documentUrl = URL.createObjectURL(await res.blob());
+                documentUrl = await fetchAsBlobUrl(
+                    `/signature-requests/${encodeURIComponent(id)}/signed-document`);
+                documentIsStamped = !!documentUrl;
+            } catch (e) {
+                console.error('Could not fetch the stamped copy:', e);
+            }
+        }
+        if (!documentUrl && cert.document_id) {
+            try {
+                documentUrl = await fetchAsBlobUrl(
+                    `/entity-documents/${encodeURIComponent(cert.document_id)}/download`);
             } catch (e) {
                 // Not fatal: the rest of the certificate is still the evidence.
                 console.error('Could not fetch the signed document:', e);
@@ -607,11 +639,22 @@ const SignaturePanel = (() => {
                  </tr>`).join('')}</tbody>
                </table>
                <p class="total">Total <b>${esc(money(snap.grand_total != null ? snap.grand_total : snap.subtotal))}</b></p>`
-            : `<p class="file">Document signed: <b>${esc(snap.file_name || cert.title)}</b>
+            : `<p class="file">${documentIsStamped ? 'Signed document' : 'Document signed'}:
+                 <b>${esc(snap.file_name || cert.title)}</b>
                  ${documentUrl ? `<a class="open" href="${esc(documentUrl)}" target="_blank" rel="noopener">Open</a>` : ''}</p>
                ${documentUrl
-                    ? `<iframe class="doc" src="${esc(documentUrl)}" title="The signed document"></iframe>`
-                    : '<p class="muted">The document itself could not be loaded just now — the record below still stands.</p>'}`;
+                    ? `<iframe class="doc" src="${esc(documentUrl)}" title="${documentIsStamped
+                        ? 'The signed document, with the signature stamped in'
+                        : 'The original document'}"></iframe>`
+                    : '<p class="muted">The document itself could not be loaded just now — the record below still stands.</p>'}
+               ${documentUrl && !documentIsStamped
+                    // ⭐ SAY WHICH FILE THIS IS. Showing the original under a
+                    // SIGNED heading with no word about it is how somebody
+                    // concludes the signature was lost.
+                    ? '<p class="muted">This is the original document — no stamped copy exists for it yet, so '
+                      + 'the signature below is not drawn into the page. Use “Produce signed copy” on the '
+                      + 'request to render one.</p>'
+                    : ''}`;
 
         // The mark: an image when drawn, the name in a hand when typed.
         const mark = cert.signature_kind === 'drawn' && cert.signature_data
