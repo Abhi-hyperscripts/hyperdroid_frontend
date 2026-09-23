@@ -4851,6 +4851,21 @@
                     <label style="font-size:13px;">Description (optional)</label>
                     <input type="text" id="lfDescription" class="form-control" placeholder="Helps your team know when to set this field" maxlength="240">
                 </div>
+                <!-- Multi-select turns a single-pick field into a checklist: the rep can tick
+                     several options on one lead, which is what "what did they ask for on the
+                     call" actually needs. The column and the whole backend path already
+                     supported this; nothing in the UI could ever switch it on. -->
+                <label class="checkbox-row" style="display:flex;align-items:flex-start;gap:9px;margin-top:10px;padding:11px 13px;border:1px solid var(--border-color-light);border-radius:8px;">
+                    <input type="checkbox" id="lfMulti" style="margin-top:2px;">
+                    <span style="font-size:13px;line-height:1.5;">
+                        <strong>Allow more than one option (checklist)</strong><br>
+                        <span style="color:var(--text-secondary);font-size:12px;">
+                            Options appear as tick boxes and the rep can choose several &mdash; for example a
+                            list of products a customer asked about during a call. Leave this off for a
+                            field that should only ever hold one value, like Budget Band.
+                        </span>
+                    </span>
+                </label>
                 <div class="form-grid form-grid-3" style="margin-top:8px;font-size:13px;">
                     <label class="checkbox-row" style="display:flex;align-items:center;gap:8px;">
                         <input type="checkbox" id="lfShowAct" checked>
@@ -4859,6 +4874,10 @@
                     <label class="checkbox-row" style="display:flex;align-items:center;gap:8px;">
                         <input type="checkbox" id="lfShowFil" checked>
                         <span>Show in filter bar</span>
+                    </label>
+                    <label class="checkbox-row" style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" id="lfShowDet" checked>
+                        <span>Show on lead detail</span>
                     </label>
                     <label class="checkbox-row" style="display:flex;align-items:center;gap:8px;">
                         <input type="checkbox" id="lfShowTab" checked>

@@ -232,6 +232,9 @@
         }
     }
 
+    // Expanding a capped checklist. Delegated and attached once, because the
+    // detail pane is rebuilt from an HTML string on every lead selection —
+    // per-render listeners would leak one per click.
     function closeLogActivityModal() {
         document.getElementById('logActivityOverlay').classList.remove('active');
         _logActivityLeadId = null;
@@ -385,7 +388,12 @@
                 const resolveDef = typeof window.getLeadFieldDef === 'function' ? window.getLeadFieldDef : null;
                 for (const [k, v] of Object.entries(cf)) {
                     if (!v) continue;
+                    if (Array.isArray(v) && v.length === 0) continue;   // an empty checklist is not an answer
                     const def = resolveDef ? resolveDef(k) : null;
+                    // Per-field opt-out. Defaults to showing, because every field
+                    // appeared here before the flag existed — but a 25-item product
+                    // checklist is exactly what a tenant will want to switch off.
+                    if (def && def.show_in_lead_detail === false) continue;
                     const fieldLabel = def ? def.label : k.replace(/_/g, ' ');
                     const renderValue = (val) => {
                         if (!def) return esc(String(val));
@@ -396,8 +404,41 @@
                             : '';
                         return `${sw}${esc(opt.label)}`;
                     };
-                    const valueHtml = Array.isArray(v) ? v.map(renderValue).join(', ') : renderValue(v);
-                    customFieldsHtml += `<div class="lead-detail-item"><span class="lead-detail-label">${esc(fieldLabel)}</span><span>${valueHtml}</span></div>`;
+                    // A CHECKLIST IS NOT A SENTENCE.
+                    //
+                    // Rendered as "Wood, Pooja Samagri, Teak Wood, …" inside a
+                    // half-width field box, twenty-five products are a cramped run
+                    // of prose nobody can scan. A checklist gets its own full-width
+                    // panel and renders every pick as a chip, so the rep reads what
+                    // the customer asked for at a glance.
+                    //
+                    // Every chip is in the DOM — there is no hidden tail and no
+                    // "+N more" button. The previous attempt had both, and both were
+                    // broken: `display:contents` on the tail wrapper out-specifies
+                    // the `[hidden]` display:none, so the "hidden" chips rendered
+                    // anyway, and the button removed itself. A panel that simply
+                    // scrolls past four rows cannot be in a wrong state.
+                    if (Array.isArray(v)) {
+                        const chip = (val) => {
+                            const opt = def ? (def.options || []).find(o => o.code === val) : null;
+                            const sw = opt && opt.color
+                                ? `<i class="ld-chip-dot" style="background:${esc(opt.color)};"></i>`
+                                : '';
+                            return `<span class="ld-chip">${sw}${esc(opt ? opt.label : String(val))}</span>`;
+                        };
+
+                        customFieldsHtml += `
+                            <div class="lead-detail-item is-checklist">
+                                <div class="ld-chips-head">
+                                    <span class="lead-detail-label">${esc(fieldLabel)}</span>
+                                    <span class="ld-chip-count">${v.length} selected</span>
+                                </div>
+                                <div class="ld-chips">${v.map(chip).join('')}</div>
+                            </div>`;
+                        continue;
+                    }
+
+                    customFieldsHtml += `<div class="lead-detail-item"><span class="lead-detail-label">${esc(fieldLabel)}</span><span>${renderValue(v)}</span></div>`;
                 }
             } catch {}
 

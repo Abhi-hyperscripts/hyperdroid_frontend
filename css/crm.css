@@ -2140,6 +2140,123 @@ body.crm-dashboard .crm-container {
     flex-shrink: 0;
 }
 
+/* ── checklist (multi-select) options ───────────────────────────────────
+   A pill that toggles one of many needs to say so BEFORE it is touched —
+   otherwise a rep reads a row of pills as "pick one" and stops at the
+   first tick. The square box is the affordance that says "choose any". */
+.la-option-grid.is-multi .la-option {
+    border-radius: 8px;
+}
+.la-option-tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border: 1.5px solid var(--border-color);
+    border-radius: 3px;
+    background: transparent;
+    transition: background 0.12s, border-color 0.12s;
+}
+.la-option-grid.is-multi .la-option:hover .la-option-tick {
+    border-color: var(--brand-primary);
+}
+.la-option.is-on .la-option-tick {
+    background: #fff;
+    border-color: #fff;
+}
+/* The check mark is drawn, not a glyph, so it stays crisp at 14px and
+   needs no icon font. */
+.la-option.is-on .la-option-tick::after {
+    content: '';
+    width: 4px;
+    height: 8px;
+    margin-top: -2px;
+    border: solid var(--brand-primary);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+.la-q-hint {
+    color: var(--text-secondary);
+    font-size: 0.78em;
+}
+
+/* ── long checklists ────────────────────────────────────────────────────
+   Measured with 33 options and 25 ticked: the pills bar grew to 226px
+   (seven rows, each repeating the field name) and squeezed the options
+   pane to 198px — three rows of a thirty-three item list, on a live call.
+   The cap, the count and the search below are what make that usable. */
+
+.la-q-toolbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: -2px 0 8px;
+}
+.la-q-hint b { color: var(--text-primary); font-weight: 600; }
+
+.la-q-clear {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--brand-primary);
+    font-size: 0.78em;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.la-q-clear:hover { text-decoration: underline; }
+
+.la-q-search {
+    width: 100%;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    color: var(--text-primary);
+    font-size: 0.83em;
+    font-family: inherit;
+    outline: none;
+}
+.la-q-search:focus { border-color: var(--brand-primary); }
+
+/* Count beside the field name in the left rail, so a rep can see at a
+   glance which questions they have already answered. */
+.la-q-count {
+    margin-left: auto;
+    min-width: 20px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--brand-primary);
+    color: #fff;
+    font-size: 0.7em;
+    font-weight: 600;
+    text-align: center;
+}
+.la-q-item { display: flex; align-items: center; gap: 8px; }
+
+.la-pill.is-count .la-pill-n {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--brand-primary);
+    color: #fff;
+    font-size: 0.72em;
+    font-weight: 600;
+}
+
+/* The pills bar can never again eat the modal. */
+#laPillsBar {
+    max-height: 92px;
+    overflow-y: auto;
+}
+
 @media (max-width: 720px) {
     .gm-body.la-fa-body {
         grid-template-columns: 1fr;
@@ -6534,6 +6651,72 @@ body.crm-leads-page .lead-detail-grid {
   gap: 8px;
 }
 body.crm-leads-page .lead-detail-item { display: flex; flex-direction: column; gap: 3px; }
+
+/* ── a checklist on the lead detail ───────────────────────
+   Twenty-five product names comma-joined inside a half-width box was a run
+   of prose nobody could scan. The checklist gets its own full-width panel:
+   a header line carrying the field name and how many are ticked, then every
+   pick as a chip. EVERY chip is in the DOM — past four rows the chip area
+   scrolls, so there is no hidden tail and no reveal button to get wrong. */
+body.crm-leads-page .lead-detail-item.is-checklist {
+  grid-column: 1 / -1;
+  gap: 0;
+  padding: 9px 12px 10px;
+}
+body.crm-leads-page .ld-chips-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  margin-bottom: 9px;
+  border-bottom: 1px solid var(--lp-glass-line);
+}
+body.crm-leads-page .ld-chips-head .lead-detail-label { flex: 1; }
+body.crm-leads-page .ld-chip-count {
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-primary);
+  white-space: nowrap;
+}
+body.crm-leads-page .ld-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  /* The drawer itself scrolls, so a nested scroller here would hide picks
+     behind an affordance nobody sees. The list wraps in full; the cap is a
+     safety valve for a pathological catalogue, not the normal case — 25
+     products on a phone come to ~240px and never reach it. */
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+body.crm-leads-page .ld-chips::-webkit-scrollbar { width: 5px; }
+body.crm-leads-page .ld-chips::-webkit-scrollbar-thumb {
+  background: var(--lp-glass-line);
+  border-radius: 999px;
+}
+body.crm-leads-page .ld-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 7px;
+  background: var(--bg-card);
+  border: 1px solid var(--lp-glass-line);
+  color: var(--text-primary);
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+body.crm-leads-page .ld-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 body.crm-leads-page .lead-detail-label {
   font-size: 10.5px;
   letter-spacing: 0.06em;

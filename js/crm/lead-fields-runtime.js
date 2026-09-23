@@ -679,25 +679,44 @@
             const changed = {};
             const removed = [];
             const changeNotes = [];
+            // Compare as SETS, so one code path serves both arities. A checklist
+            // that went from {Wood} to {Wood, Pooja Samagri} must read as
+            // "added Pooja Samagri", not "Wood → Wood,Pooja Samagri" — the note
+            // on the activity is what somebody reads back weeks later.
+            const asList = (v) => v == null || v === '' ? []
+                : (Array.isArray(v) ? v.filter(x => x !== '' && x != null) : [v]);
+            const labelOf = (f, code) => {
+                const o = (f.options || []).find(x => x.code === code);
+                return o ? o.label : code;
+            };
+
             for (const f of fields) {
-                const wasSet = original[f.code];
-                const nowSet = _activityChips[f.code];
-                if (nowSet && nowSet !== wasSet) {
-                    changed[f.code] = nowSet;
-                    const wasOpt = (f.options || []).find(o => o.code === wasSet);
-                    const nowOpt = (f.options || []).find(o => o.code === nowSet);
-                    const nowLabel = nowOpt ? nowOpt.label : nowSet;
-                    if (wasSet) {
-                        const wasLabel = wasOpt ? wasOpt.label : wasSet;
-                        changeNotes.push(`${f.label}: ${wasLabel} → ${nowLabel}`);
-                    } else {
-                        changeNotes.push(`${f.label}: ${nowLabel}`);
-                    }
-                } else if (wasSet && !nowSet) {
+                const was = asList(original[f.code]);
+                const now = asList(_activityChips[f.code]);
+
+                const added   = now.filter(c => !was.includes(c));
+                const dropped = was.filter(c => !now.includes(c));
+                if (added.length === 0 && dropped.length === 0) continue;
+
+                if (now.length === 0) {
                     removed.push(f.code);
-                    const wasOpt = (f.options || []).find(o => o.code === wasSet);
-                    const wasLabel = wasOpt ? wasOpt.label : wasSet;
-                    changeNotes.push(`${f.label}: ${wasLabel} → (cleared)`);
+                } else {
+                    // Preserve the field's own shape: a checklist stays an array even
+                    // when one item is ticked, so it never degrades to a scalar.
+                    changed[f.code] = f.is_multi_select ? now : now[0];
+                }
+
+                if (f.is_multi_select) {
+                    const parts = [];
+                    if (added.length)   parts.push(`+${added.map(c => labelOf(f, c)).join(', ')}`);
+                    if (dropped.length) parts.push(`−${dropped.map(c => labelOf(f, c)).join(', ')}`);
+                    changeNotes.push(`${f.label}: ${parts.join('  ')}`);
+                } else if (now.length === 0) {
+                    changeNotes.push(`${f.label}: ${labelOf(f, was[0])} → (cleared)`);
+                } else if (was.length) {
+                    changeNotes.push(`${f.label}: ${labelOf(f, was[0])} → ${labelOf(f, now[0])}`);
+                } else {
+                    changeNotes.push(`${f.label}: ${labelOf(f, now[0])}`);
                 }
             }
             const leadId = _activityLeadId;
@@ -715,6 +734,23 @@
             } finally {
                 if (ta && originalSummary !== null) ta.value = originalSummary;
             }
+
+            // Only write the field changes if the ACTIVITY actually saved.
+            //
+            // submitLogActivity refuses on its own validation (a call needs a
+            // Disposition) by simply returning — no throw — so this used to run
+            // regardless. The rep was told "Pick a Disposition", no activity was
+            // logged, and the ticked products were silently saved anyway. Worse,
+            // on the retry the diff was empty, so the activity that finally did
+            // save carried NO record of what was ticked. The note and the values
+            // ended up in different places, which is exactly what this feature
+            // exists to prevent.
+            //
+            // A successful submit calls closeLogActivityModal(), which drops
+            // .active off the overlay — a refusal leaves it open.
+            const stillOpen = document.getElementById('logActivityOverlay')?.classList.contains('active');
+            if (stillOpen) return;
+
             if (!leadId || (Object.keys(changed).length === 0 && removed.length === 0)) return;
             await persistCustomFields(leadId, changed, removed);
             // origSubmit fires `loadLeads()` before our PUT lands, so the
@@ -772,26 +808,75 @@
         }
 
         let activeCode = '__type';
+        const _optionSearch = {};   // { fieldCode: query } — per field, cleared with the modal
 
-        const getVal = (f) => f.selectId
-            ? (document.getElementById(f.selectId)?.value || '')
-            : (_activityChips[f.code] || '');
-        const setVal = (f, v) => {
+        /* ── value access ───────────────────────────────────────────────────
+           Everything below goes through these four helpers, which is what
+           made adding checklists cheap: a multi-select field holds an ARRAY
+           in _activityChips, a single-pick field holds a string, and the
+           renderers never need to know which. Built-in dropdowns (Type /
+           Outcome / Disposition) are always single and round-trip through
+           their hidden <select>. */
+
+        const isMulti = (f) => !f.selectId && !!f.is_multi_select;
+
+        /** Always an array, whatever the field's arity — one shape to render. */
+        const getVals = (f) => {
+            if (f.selectId) {
+                const v = document.getElementById(f.selectId)?.value || '';
+                return v ? [v] : [];
+            }
+            const v = _activityChips[f.code];
+            if (v == null || v === '') return [];
+            return Array.isArray(v) ? v.filter(x => x !== '' && x != null) : [v];
+        };
+
+        const isSet = (f) => getVals(f).length > 0;
+
+        /** Tick or untick ONE option. On a single-pick field this replaces. */
+        const toggleVal = (f, code) => {
             if (f.selectId) {
                 const sel = document.getElementById(f.selectId);
-                if (sel) sel.value = v || '';
-            } else {
-                if (v) _activityChips[f.code] = v;
-                else delete _activityChips[f.code];
+                if (!sel) return;
+                // A required built-in (Type) cannot be cleared by re-clicking, only swapped.
+                sel.value = (f.required || sel.value !== code) ? code : '';
+                return;
             }
+            if (isMulti(f)) {
+                const cur = getVals(f);
+                const next = cur.includes(code) ? cur.filter(c => c !== code) : [...cur, code];
+                if (next.length) _activityChips[f.code] = next;
+                else delete _activityChips[f.code];
+                return;
+            }
+            const was = getVals(f)[0];
+            if (was === code) delete _activityChips[f.code];
+            else _activityChips[f.code] = code;
+        };
+
+        /** Clear the whole field, or just one option of a checklist. */
+        const clearVal = (f, code) => {
+            if (f.selectId) {
+                const sel = document.getElementById(f.selectId);
+                if (sel) sel.value = '';
+                return;
+            }
+            if (isMulti(f) && code) {
+                const next = getVals(f).filter(c => c !== code);
+                if (next.length) _activityChips[f.code] = next;
+                else delete _activityChips[f.code];
+                return;
+            }
+            delete _activityChips[f.code];
         };
 
         function renderList() {
             list.innerHTML = allFields.map(f => `
                 <button type="button" role="tab"
-                        class="la-q-item ${f.code === activeCode ? 'is-active' : ''} ${getVal(f) ? 'is-set' : ''}"
+                        class="la-q-item ${f.code === activeCode ? 'is-active' : ''} ${isSet(f) ? 'is-set' : ''}"
                         data-la-field="${escapeAttr(f.code)}">
                     <span class="la-q-label">${escapeHtml(f.label)}${f.required ? '<span class="la-q-required">*</span>' : ''}</span>
+                    ${isMulti(f) && getVals(f).length ? `<span class="la-q-count">${getVals(f).length}</span>` : ''}
                 </button>
             `).join('');
             list.querySelectorAll('[data-la-field]').forEach(btn => {
@@ -806,58 +891,135 @@
         function renderValues() {
             const f = allFields.find(x => x.code === activeCode);
             if (!f) { valsPane.innerHTML = ''; return; }
-            const current = getVal(f);
+            const current = getVals(f);
+            const multi = isMulti(f);
             const opts = (f.options || []).filter(o => o.code !== '');
+            // A long list needs finding, not scanning. 33 products is a wall of
+            // pills; the rep is on a live call and cannot read it.
+            const SEARCHABLE_FROM = 10;
+            const searchable = multi && opts.length >= SEARCHABLE_FROM;
+            const q = (_optionSearch[f.code] || '').trim().toLowerCase();
+            const shown = q
+                ? opts.filter(o => o.label.toLowerCase().includes(q) || o.code.toLowerCase().includes(q))
+                : opts;
+
             valsPane.innerHTML = `
                 <div class="la-q-title">${escapeHtml(f.label)}${f.required ? '<span class="la-q-required">*</span>' : ''}</div>
+                ${multi ? `<div class="la-q-toolbar">
+                    <span class="la-q-hint">${current.length
+                        ? `<b>${current.length}</b> of ${opts.length} ticked`
+                        : 'Tick everything that applies.'}</span>
+                    ${current.length ? `<button type="button" class="la-q-clear" data-la-clear-all>Clear all</button>` : ''}
+                </div>` : ''}
+                ${searchable ? `<input type="search" class="la-q-search" data-la-search
+                                       placeholder="Search ${opts.length} options…"
+                                       value="${escapeAttr(_optionSearch[f.code] || '')}"
+                                       aria-label="Search options">` : ''}
                 ${opts.length === 0
                     ? '<div class="la-q-empty">No options configured.</div>'
-                    : `<div class="la-option-grid">${opts.map(o => {
+                    : shown.length === 0
+                    ? `<div class="la-q-empty">Nothing matches &ldquo;${escapeHtml(q)}&rdquo;.</div>`
+                    : `<div class="la-option-grid${multi ? ' is-multi' : ''}">${shown.map(o => {
+                        const on = current.includes(o.code);
                         const swatch = o.color
                             ? `<span class="la-option-swatch" style="background:${escapeAttr(o.color)};"></span>`
                             : '';
-                        return `<button type="button" class="la-option ${o.code === current ? 'is-on' : ''}" data-la-option="${escapeAttr(o.code)}">${swatch}${escapeHtml(o.label)}</button>`;
+                        // A checklist option carries a real tick box, so it reads as
+                        // "choose any" rather than "choose one" before it is touched.
+                        const tick = multi ? `<span class="la-option-tick" aria-hidden="true"></span>` : '';
+                        return `<button type="button" role="${multi ? 'checkbox' : 'radio'}" aria-checked="${on}"
+                                        class="la-option ${on ? 'is-on' : ''}"
+                                        data-la-option="${escapeAttr(o.code)}">${tick}${swatch}${escapeHtml(o.label)}</button>`;
                     }).join('')}</div>`}
             `;
             valsPane.querySelectorAll('[data-la-option]').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const code = btn.getAttribute('data-la-option');
-                    const wasOn = code === getVal(f);
-                    // Required field (Type) can't be cleared by re-clicking — only swapped.
-                    setVal(f, (f.required || !wasOn) ? code : '');
+                    toggleVal(f, btn.getAttribute('data-la-option'));
                     renderList();
                     renderValues();
                     renderPills();
                 });
             });
+
+            const clearBtn = valsPane.querySelector('[data-la-clear-all]');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    clearVal(f);
+                    renderList();
+                    renderValues();
+                    renderPills();
+                });
+            }
+
+            const search = valsPane.querySelector('[data-la-search]');
+            if (search) {
+                // Re-rendering the whole pane on each keystroke would blur the input
+                // after the first letter, so the caret is restored explicitly.
+                search.addEventListener('input', () => {
+                    _optionSearch[f.code] = search.value;
+                    const pos = search.selectionStart;
+                    renderValues();
+                    const again = valsPane.querySelector('[data-la-search]');
+                    if (again) { again.focus(); again.setSelectionRange(pos, pos); }
+                });
+            }
         }
 
         function renderPills() {
-            const set = allFields.filter(f => getVal(f));
+            const set = allFields.filter(isSet);
             if (set.length === 0) {
                 pillsBar.innerHTML = '<span class="la-pills-empty">No values picked yet — click a field on the left to set one.</span>';
                 return;
             }
-            pillsBar.innerHTML = set.map(f => {
-                const v = getVal(f);
-                const opt = (f.options || []).find(o => o.code === v);
-                const label = opt ? opt.label : v;
-                const swatch = opt && opt.color
-                    ? `<span class="la-option-swatch" style="background:${escapeAttr(opt.color)};margin-right:2px;"></span>`
-                    : '';
-                return `
-                    <span class="la-pill" data-la-pill="${escapeAttr(f.code)}" ${f.required ? 'data-required="true"' : ''}>
-                        ${swatch}<span class="la-pill-q">${escapeHtml(f.label)}:</span><span class="la-pill-v">${escapeHtml(label)}</span>
-                        ${f.required ? '' : `<button type="button" class="la-pill-x" data-la-pill-x="${escapeAttr(f.code)}" aria-label="Clear ${escapeAttr(f.label)}">×</button>`}
-                    </span>
-                `;
+            // A checklist collapses to ONE pill once it passes a handful.
+            //
+            // One pill per tick reads well at two or three. Measured at 25 of 33
+            // options it produced seven rows, each repeating "Product Checklist:",
+            // and crushed the options pane to three visible rows. Past the
+            // threshold the pill becomes a count that opens the field, and the
+            // options pane — where every tick is already visible and clickable —
+            // is where individual items are removed.
+            const PILL_COLLAPSE_AT = 4;
+
+            pillsBar.innerHTML = set.flatMap(f => {
+                const vals = getVals(f);
+                const multi = isMulti(f);
+
+                if (multi && vals.length >= PILL_COLLAPSE_AT) {
+                    return [`
+                        <span class="la-pill is-count" data-la-pill="${escapeAttr(f.code)}">
+                            <span class="la-pill-q">${escapeHtml(f.label)}</span>
+                            <span class="la-pill-n">${vals.length}</span>
+                            <button type="button" class="la-pill-x" data-la-pill-x="${escapeAttr(f.code)}"
+                                    aria-label="Clear all ${escapeAttr(f.label)}">×</button>
+                        </span>
+                    `];
+                }
+
+                return vals.map(v => {
+                    const opt = (f.options || []).find(o => o.code === v);
+                    const label = opt ? opt.label : v;
+                    const swatch = opt && opt.color
+                        ? `<span class="la-option-swatch" style="background:${escapeAttr(opt.color)};margin-right:2px;"></span>`
+                        : '';
+                    const x = f.required ? '' : `<button type="button" class="la-pill-x"
+                            data-la-pill-x="${escapeAttr(f.code)}"
+                            ${multi ? `data-la-pill-opt="${escapeAttr(v)}"` : ''}
+                            aria-label="Remove ${escapeAttr(label)}">×</button>`;
+                    return `
+                        <span class="la-pill" data-la-pill="${escapeAttr(f.code)}" ${f.required ? 'data-required="true"' : ''}>
+                            ${swatch}<span class="la-pill-q">${escapeHtml(f.label)}:</span><span class="la-pill-v">${escapeHtml(label)}</span>
+                            ${x}
+                        </span>
+                    `;
+                });
             }).join('');
             pillsBar.querySelectorAll('[data-la-pill-x]').forEach(b => {
                 b.addEventListener('click', e => {
                     e.stopPropagation();
                     const code = b.getAttribute('data-la-pill-x');
                     const f = allFields.find(x => x.code === code);
-                    setVal(f, '');
+                    clearVal(f, b.getAttribute('data-la-pill-opt') || null);
                     renderList();
                     if (activeCode === code) renderValues();
                     renderPills();

@@ -117,9 +117,11 @@
         document.getElementById('lfFieldId').value = '';
         document.getElementById('lfLabel').value = '';
         document.getElementById('lfDescription').value = '';
+        document.getElementById('lfMulti').checked = false;
         document.getElementById('lfShowAct').checked = true;
         document.getElementById('lfShowFil').checked = true;
         document.getElementById('lfShowTab').checked = true;
+        document.getElementById('lfShowDet').checked = true;
         renderDraftOptions();
         if (typeof openModal === 'function') openModal('leadFieldModal');
         else document.getElementById('leadFieldModal').classList.add('active');
@@ -137,9 +139,11 @@
         document.getElementById('lfFieldId').value = f.id;
         document.getElementById('lfLabel').value = f.label;
         document.getElementById('lfDescription').value = f.description || '';
+        document.getElementById('lfMulti').checked = !!f.is_multi_select;
         document.getElementById('lfShowAct').checked = !!f.show_in_activity_log;
         document.getElementById('lfShowFil').checked = !!f.show_in_lead_filter;
         document.getElementById('lfShowTab').checked = !!f.show_in_leads_table;
+        document.getElementById('lfShowDet').checked = f.show_in_lead_detail !== false;
         renderDraftOptions();
         if (typeof openModal === 'function') openModal('leadFieldModal');
         else document.getElementById('leadFieldModal').classList.add('active');
@@ -221,9 +225,11 @@
         const code = document.getElementById('lfCode').value.trim();
         const label = document.getElementById('lfLabel').value.trim();
         const description = document.getElementById('lfDescription').value.trim();
+        const isMulti = document.getElementById('lfMulti').checked;
         const showAct = document.getElementById('lfShowAct').checked;
         const showFil = document.getElementById('lfShowFil').checked;
         const showTab = document.getElementById('lfShowTab').checked;
+        const showDet = document.getElementById('lfShowDet').checked;
         if (!label) { Toast?.error('Label is required'); return; }
 
         const saveBtn = document.getElementById('lfSaveBtn');
@@ -235,9 +241,14 @@
                     method: 'PUT',
                     body: JSON.stringify({
                         label, description: description || null,
+                        // Must be SENT, not merely read: UpdateCustomLeadFieldRequest carries
+                        // this property, so omitting it binds false and would silently turn a
+                        // checklist back into a single-pick field on the next edit.
+                        is_multi_select: isMulti,
                         show_in_activity_log: showAct,
                         show_in_lead_filter: showFil,
                         show_in_leads_table: showTab,
+                        show_in_lead_detail: showDet,
                     }),
                 });
                 // 2) Sync options. Existing options that disappeared from
@@ -284,10 +295,11 @@
                     method: 'POST',
                     body: JSON.stringify({
                         code, label, description: description || null,
-                        is_multi_select: false,
+                        is_multi_select: isMulti,
                         show_in_activity_log: showAct,
                         show_in_lead_filter: showFil,
                         show_in_leads_table: showTab,
+                        show_in_lead_detail: showDet,
                         sort_order: _fields.length,
                         options: _draftOptions
                             .filter(o => o.code && o.label)
