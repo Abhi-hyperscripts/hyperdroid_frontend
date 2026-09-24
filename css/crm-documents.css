@@ -314,7 +314,10 @@
      the other's buttons, so the answer is NO OVERLAP EITHER WAY. --docv-top is
      measured in JS when the viewer opens rather than hardcoded at 52px, so it
      notices if the navbar ever changes height or is absent on a page. */
-  inset: var(--docv-top, 0px) 0 0 0;
+  /* The extra 14px is the difference between "below the navbar" and "not
+     glued to it". Clearing the nav was the correctness fix; this is the part
+     that makes it LOOK cleared, which is what was actually being reported. */
+  inset: calc(var(--docv-top, 0px) + 14px) 0 0 0;
   z-index: 1200 !important;
   background: rgba(8, 12, 14, .72);
   display: flex;
@@ -326,6 +329,9 @@
   display: flex;
   flex-direction: column;
   width: min(1040px, 100%);
+  /* min(), so it can never exceed the backdrop's padded box — and being
+     slightly shorter than that box is deliberate: the centred dialog then
+     leaves a little air above and below rather than filling edge to edge. */
   height: min(90vh, 100%);
   background: var(--bg-primary);
   border: 1px solid var(--border-color);

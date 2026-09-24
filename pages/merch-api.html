@@ -34,16 +34,16 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
-    <script src="../js/sw-version.js?v=3057"></script>
+    <script src="../js/sw-version.js?v=3059"></script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <link rel="stylesheet" href="../css/theme.css?v=3057">
-    <link rel="stylesheet" href="../css/landing.css?v=3057">
+    <link rel="stylesheet" href="../css/theme.css?v=3059">
+    <link rel="stylesheet" href="../css/landing.css?v=3059">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/landing-desk.css?v=3057">
-    <link rel="stylesheet" href="../css/compare-desk.css?v=3057">
+    <link rel="stylesheet" href="../css/landing-desk.css?v=3059">
+    <link rel="stylesheet" href="../css/compare-desk.css?v=3059">
 </head>
 <body class="landing-page desk-landing commerce-desk cmp-desk api-docs" data-hero-wave="merch-api">
 
@@ -372,7 +372,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">The failure that looks like data</span><span class="dk-ldesc">If a catalogue read times out and you render "this shop has nothing to sell", you have made a claim about the merchant&#x27;s business on the strength of a network blip. The same mistake on <code>/api/shopper/orders</code> tells a customer their orders are gone; on <code>/api/returns</code> it tells them they cannot file one. Keep "we could not load this" and "there is none" as different states in your UI &mdash; it is one boolean, and it is the difference between a retry and a support ticket.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#60A5FA">
-          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved. Send your own <code>idempotencyKey</code> and the retry is matched on exactly that key, for as long as the order exists. Omit it and the match is made on the basket itself &mdash; same buyer, same lines, same coupon &mdash; for at least 30 minutes and at most 60. Beyond that the same basket is treated as a new order, which is what lets a shopper re-order their usual cart.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved. A retry is matched for at least 30 minutes and at most 60 &mdash; the window is a wall-clock bucket and both the current and previous one are checked. Send your own <code>idempotencyKey</code> and the match is made on that key plus the basket, so a resubmit collapses and a genuinely new purchase of the same cart under a fresh key does not. Omit it and the match is made on the basket alone: same buyer, same lines, same coupon, same gift card. Past the window the same basket is a new order, which is what lets a shopper re-order their usual cart. If you need exactly-once beyond an hour, keep your own record of what you have already placed.</span></span>
         </div>
       </div>
     </section>
@@ -1807,11 +1807,11 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/payment/create-order</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">Price the basket server-side and open a payment against it. Answers <code>409</code> with <code>availableQty</code> when a line asks for more units than are in stock &mdash; the same body <code>checkout</code> returns, and now also reachable on a fully gift-covered or 100%-off basket, which places immediately rather than opening a payment. The amount is computed from live prices, coupons and gift cards — the client never states what it owes.</p>
+              <p class="mk-desc">Price the basket server-side and open a payment against it. Answers <code>409</code> with <code>availableQty</code> when a line asks for more units than are in stock &mdash; the same body <code>checkout</code> returns, and now also reachable on a fully gift-covered or 100%-off basket, which places immediately rather than opening a payment. The amount is computed from live prices, coupons and gift cards &mdash; the client never states what it owes. <strong>This route is for card/UPI/netbanking only</strong>; place a cash-on-delivery order at <code>/api/checkout</code> instead. The shared request body therefore carries two fields that behave differently here: <code>paymentMethod</code> is not how you choose the tender &mdash; its only effect is to select a COD-rated courier quote, so sending <code>&quot;cod&quot;</code> on a card payment charges your shopper the wrong delivery rate. And <code>idempotencyKey</code> is read only on the fully-covered &#8377;0 branch, which places an order outright; on the normal prepaid branch a repeat call opens a second gateway order (harmless &mdash; the unused one expires), and the order itself is de-duplicated at <code>payment/verify</code>.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/payment/create-order \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;string&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;string&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;paymentMethod&quot;:&quot;cod&quot;,&quot;idempotencyKey&quot;:&quot;string&quot;,&quot;couponCode&quot;:&quot;SAVE10&quot;,&quot;giftCardCode&quot;:&quot;GIFT500&quot;,&quot;shippingRateId&quot;:&quot;string&quot;}&#x27;</pre>
+  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;string&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;string&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;idempotencyKey&quot;:&quot;string&quot;,&quot;couponCode&quot;:&quot;SAVE10&quot;,&quot;giftCardCode&quot;:&quot;GIFT500&quot;,&quot;shippingRateId&quot;:&quot;string&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   "lines": [
@@ -2374,7 +2374,7 @@ curl -D - -o /dev/null \
       });
     })();
   </script>
-  <script src="../js/landing-hero-wave.js?v=3057"></script>
-  <script src="../js/features-menu.js?v=3057"></script>
+  <script src="../js/landing-hero-wave.js?v=3059"></script>
+  <script src="../js/features-menu.js?v=3059"></script>
 </body>
 </html>

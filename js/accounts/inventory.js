@@ -228,9 +228,45 @@ let itemRenderLimit = ITEM_PAGE;
 /// render thousands of rows for its handful of matches, which is the bug this exists to avoid.
 function resetItemWindow() { itemRenderLimit = ITEM_PAGE; }
 
+// ⭐ THE COLUMN FILTER GETS THE DATA, NOT THE DOM.
+//
+// This grid renders 150 of 7,834 rows, so a filter reading the rendered table
+// would hide rows in the window and silently ignore the rest — it would look
+// like it worked. TableFilter refuses to attach to a windowed table unless it
+// is handed the real array, which is what this does. The column indexes match
+// the <thead> in inventory.html; the Actions column is skipped by the module.
+let itemColumnFilter = null;   // predicate from TableFilter, or null
+
+function registerItemColumnFilter() {
+    if (typeof TableFilter === 'undefined') return;
+    const table = document.getElementById('itemsTable')?.closest('table');
+    if (!table || table.dataset.tfilWired === '1') return;
+    table.dataset.tfilWired = '1';
+    TableFilter.register(table, {
+        rows: () => items,
+        valueOf: (i, col) => {
+            switch (col) {
+                case 0: return i.sku;
+                case 1: return i.name;
+                case 2: return i.category_name || '-';
+                case 3: return i.item_type === 'goods'
+                    ? (i.tracking_mode === 'serial' ? 'Goods · serial' : 'Goods') : 'Service';
+                case 4: return fmtMoney(i.sale_price);
+                case 5: return i.track_inventory ? String(i.qty_on_hand) : '—';
+                case 6: return i.track_inventory ? fmtMoney(i.avg_cost) : '—';
+                case 7: return i.warranty_months ? i.warranty_months + ' mo' : '-';
+                case 8: return i.is_active ? 'Active' : 'Inactive';
+                default: return '';
+            }
+        },
+        apply: (predicate) => { itemColumnFilter = predicate; resetItemWindow(); renderItems(); },
+    });
+}
+
 function renderItems() {
     const tb = document.getElementById('itemsTable');
     if (!tb) return;
+    registerItemColumnFilter();
     const raw = document.getElementById('itemSearch')?.value || '';
     const q = raw.toLowerCase();
 
@@ -238,7 +274,10 @@ function renderItems() {
     // the part we happen to hold. See the note on ITEM_FIRST_PAGE.
     if (!itemsComplete && q) { serverSearchItems(raw.trim()); return; }
 
-    const rows = items.filter(i => (!q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)) && matchesVis(i));
+    const rows = items.filter(i =>
+        (!q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q))
+        && matchesVis(i)
+        && (!itemColumnFilter || itemColumnFilter(i)));
     renderItemRows(rows, q, { fromServer: false });
 }
 
@@ -247,7 +286,9 @@ function renderItemRows(rows, q, opts) {
     if (!tb) return;
     // A server search has already applied the search; the visibility chips are
     // client-side either way.
-    if (opts && opts.fromServer) rows = rows.filter(matchesVis);
+    if (opts && opts.fromServer) {
+        rows = rows.filter(i => matchesVis(i) && (!itemColumnFilter || itemColumnFilter(i)));
+    }
     if (!rows.length) {
         tb.innerHTML = q
             ? `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-secondary);">No item matches “${esc(q)}”.</td></tr>`

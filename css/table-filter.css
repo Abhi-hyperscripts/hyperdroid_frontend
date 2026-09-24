@@ -1,0 +1,95 @@
+/* ── Excel-style column filters ────────────────────────────────────────────
+   Paired with js/table-filter.js. The funnel lives in the <th>; the dropdown
+   is appended to <body> so no table's overflow can clip it. */
+
+.tfil-th { position: relative; white-space: nowrap; }
+
+.tfil-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; margin-left: 6px; padding: 0;
+  vertical-align: middle;
+  border: 0; border-radius: 4px;
+  background: transparent; color: var(--text-muted);
+  cursor: pointer; opacity: .45;
+  transition: opacity .15s ease, color .15s ease, background .15s ease;
+}
+.tfil-th:hover .tfil-btn { opacity: 1; }
+.tfil-btn:hover { color: var(--brand-primary); background: var(--bg-tertiary); }
+.tfil-btn:focus-visible { opacity: 1; outline: 2px solid var(--brand-primary); outline-offset: 1px; }
+
+/* A column that IS filtering says so permanently — the whole point of the
+   funnel icon in a spreadsheet is that you can see which columns are on. */
+.tfil-th.tfil-on .tfil-btn { opacity: 1; color: var(--brand-primary); }
+.tfil-th.tfil-on::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 2px; background: var(--brand-primary);
+}
+
+.tfil-menu {
+  /* !important for the same reason the document viewer needs it: styles.css
+     forces position:relative and z-index:1 on body.dashboard's children, and
+     nothing here can out-specify a ~25-entry :not() chain. */
+  position: fixed !important;
+  z-index: 1300 !important;
+  width: min(300px, calc(100vw - 24px));
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px;
+  background: var(--bg-card, var(--bg-primary));
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: var(--shadow-2xl, 0 18px 40px rgba(0,0,0,.35));
+}
+
+.tfil-sort { display: flex; gap: 6px; }
+.tfil-sort button {
+  flex: 1; padding: 6px 8px; font: inherit; font-size: 12px;
+  border: 1px solid var(--border-color); border-radius: 6px;
+  background: transparent; color: var(--text-secondary); cursor: pointer;
+}
+.tfil-sort button:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+.tfil-search {
+  width: 100%; padding: 7px 9px; font: inherit; font-size: 13px;
+  border: 1px solid var(--border-color); border-radius: 6px;
+  background: var(--bg-tertiary); color: var(--text-primary);
+}
+
+.tfil-tools { display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.tfil-tools button {
+  padding: 0; border: 0; background: none; font: inherit; font-size: 11.5px;
+  color: var(--brand-primary); cursor: pointer; text-decoration: underline;
+}
+.tfil-count { margin-left: auto; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.tfil-list {
+  max-height: 260px; overflow-y: auto; overscroll-behavior: contain;
+  border: 1px solid var(--border-color); border-radius: 6px;
+  padding: 4px;
+}
+.tfil-opt {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 6px; border-radius: 4px;
+  font-size: 13px; color: var(--text-primary); cursor: pointer;
+}
+.tfil-opt:hover { background: var(--bg-tertiary); }
+.tfil-opt input { flex: none; }
+/* The value can be long; the count must never be pushed off the edge. */
+.tfil-v { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tfil-n {
+  flex: none; font-size: 11px; color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.tfil-empty { margin: 8px; font-size: 12.5px; color: var(--text-secondary); text-align: center; }
+
+.tfil-foot { display: flex; justify-content: flex-end; }
+.tfil-apply {
+  padding: 6px 14px; font: inherit; font-size: 12.5px; font-weight: 600;
+  border: 0; border-radius: 6px;
+  background: var(--brand-primary); color: #fff; cursor: pointer;
+}
+.tfil-apply:hover { background: var(--brand-primary-hover, var(--brand-primary)); }
+
+@media (max-width: 640px) {
+  .tfil-menu { width: calc(100vw - 20px); }
+  .tfil-list { max-height: 45vh; }
+}
