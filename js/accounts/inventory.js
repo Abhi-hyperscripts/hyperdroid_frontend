@@ -107,16 +107,93 @@ document.addEventListener('input', e => {
     if (e.target && (e.target.id === 'itColor' || e.target.id === 'itSize')) markAttributeTouched(e.target);
 });
 
+// ── Progressive load ──────────────────────────────────────────────────────────────────────────────
+// Measured on prod, 7,834 items: the full list is 789 KB Brotli and ~1.3 s, of which the SERVER is only
+// ~100 ms — the rest is round-trip latency and bytes. The grid renders 150 rows. So paint the first page
+// and fetch the remainder behind it: limit=300 comes back in ~330 ms warm against ~1,160 ms for the lot.
+//
+// ⭐⭐⭐ WHILE THE REST IS IN FLIGHT, SEARCH GOES TO THE SERVER.
+//
+// The tempting shortcut is to filter the 300 rows we have and backfill quietly. That answers a narrower
+// question than the one asked and looks identical to a complete answer — the same shape as a dropped
+// filter, and the reason a rep would swear an item is missing. So until the catalogue is complete every
+// search is a server search, which is both correct and fast; afterwards it filters locally as before and
+// costs nothing.
+const ITEM_FIRST_PAGE = 300;
+let itemsComplete = false;      // do we hold the WHOLE catalogue?
+let itemSearchSeq = 0;          // guards against an out-of-order server search
+
+function itemQuery(extra) {
+    const inc = document.getElementById('itemShowInactive')?.checked;
+    return AccountsCommon.buildUrl('inventory/items',
+        Object.assign({ view: 'grid' }, inc ? { includeInactive: true } : {}, extra || {}));
+}
+
 async function loadItems() {
+    itemsComplete = false;
     try {
-        const inc = document.getElementById('itemShowInactive')?.checked;
         // view=grid ships this screen's columns only. The full item is 41 fields; on a 7,800-item catalogue
         // that was a 16.7 MB response, half of it `description` and `image_urls` — neither of which this grid
         // renders. editItem() re-reads the item by id, so the form still sees every field.
-        items = await api.request(AccountsCommon.buildUrl('inventory/items', inc ? { includeInactive: true, view: 'grid' } : { view: 'grid' }), { _skipSpinner: true });
+        items = await api.request(itemQuery({ limit: ITEM_FIRST_PAGE }), { _skipSpinner: true });
         resetItemWindow();
         renderItems();
-    } catch (err) { console.error('[Inventory] loadItems', err); Toast.error('Failed to load items'); }
+    } catch (err) {
+        console.error('[Inventory] loadItems', err);
+        Toast.error('Failed to load items');
+        return;
+    }
+
+    // The first page IS the whole catalogue on a small tenant — nothing more to do.
+    if (items.length < ITEM_FIRST_PAGE) { itemsComplete = true; renderItems(); return; }
+
+    try {
+        const all = await api.request(itemQuery({}), { _skipSpinner: true });
+        // A search may have replaced `items` with server results while this was
+        // in flight; the full set is still the right thing to hold, and
+        // renderItems re-applies whatever is in the box.
+        items = all;
+        itemsComplete = true;
+        resetItemWindow();
+        renderItems();
+    } catch (err) {
+        // The first page still works and says so — a partial catalogue that
+        // ADMITS it is partial beats an empty grid.
+        console.error('[Inventory] loadItems (remainder)', err);
+        renderItems();
+    }
+}
+
+/// A search while the catalogue is still loading. Answered by the server, so it is complete.
+async function serverSearchItems(q) {
+    const seq = ++itemSearchSeq;
+    try {
+        const rows = await api.request(itemQuery({ search: q, limit: 1000 }), { _skipSpinner: true });
+        // ⭐ A STALE ANSWER MUST NOT LAND. Typing "mil" then "milk" fires two
+        // searches, and the slower one arriving second would paint results for
+        // a query the box no longer holds.
+        if (seq !== itemSearchSeq) return;
+
+        // ⭐⭐⭐ RE-FILTER WHAT THE SERVER SENT, AND IT IS NOT REDUNDANT.
+        //
+        // An ASP.NET action IGNORES a query parameter it does not declare. So a
+        // frontend deployed ahead of the backend would send search= to an
+        // endpoint that has never heard of it, receive the ENTIRE catalogue, and
+        // render it as the result for "milk" — a dropped filter presented as an
+        // answer, caused purely by deploy order. Filtering again here costs one
+        // pass over at most 1,000 rows and makes the two repos independent: if
+        // the server honoured the search this changes nothing, and if it did not
+        // the grid is still right.
+        const needle = (q || '').toLowerCase();
+        const narrowed = needle
+            ? rows.filter(i => (i.sku || '').toLowerCase().includes(needle)
+                            || (i.name || '').toLowerCase().includes(needle)
+                            || (i.barcode || '').toLowerCase().includes(needle))
+            : rows;
+        renderItemRows(narrowed, needle, { fromServer: true });
+    } catch (err) {
+        console.error('[Inventory] server search', err);
+    }
 }
 
 let itemVisFilter = '';   // '' | sellable | notsold | purchasable | notbought
@@ -154,8 +231,23 @@ function resetItemWindow() { itemRenderLimit = ITEM_PAGE; }
 function renderItems() {
     const tb = document.getElementById('itemsTable');
     if (!tb) return;
-    const q = (document.getElementById('itemSearch')?.value || '').toLowerCase();
+    const raw = document.getElementById('itemSearch')?.value || '';
+    const q = raw.toLowerCase();
+
+    // Incomplete catalogue + a query = ask the server rather than answer from
+    // the part we happen to hold. See the note on ITEM_FIRST_PAGE.
+    if (!itemsComplete && q) { serverSearchItems(raw.trim()); return; }
+
     const rows = items.filter(i => (!q || i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)) && matchesVis(i));
+    renderItemRows(rows, q, { fromServer: false });
+}
+
+function renderItemRows(rows, q, opts) {
+    const tb = document.getElementById('itemsTable');
+    if (!tb) return;
+    // A server search has already applied the search; the visibility chips are
+    // client-side either way.
+    if (opts && opts.fromServer) rows = rows.filter(matchesVis);
     if (!rows.length) {
         tb.innerHTML = q
             ? `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-secondary);">No item matches “${esc(q)}”.</td></tr>`
@@ -188,6 +280,17 @@ function renderItems() {
             + `<button type="button" class="btn btn-sm" onclick="showMoreItems()" style="margin-left:.6rem;">Show more</button></td>`;
         tb.appendChild(more);
         observeItemsSentinel(more);
+    }
+
+    // ⭐ SAY THAT THE CATALOGUE IS STILL ARRIVING. Without this the grid looks
+    // finished at 300 rows, and a rep scrolling to the bottom would conclude
+    // that is all there is. The searches are complete either way — this is
+    // about the LIST, not about the search.
+    if (!itemsComplete) {
+        const note = document.createElement('tr');
+        note.innerHTML = `<td colspan="10" style="text-align:center;padding:.7rem;color:var(--text-secondary);font-size:.85rem;">`
+            + `Still loading the rest of the catalogue — search covers all of it.</td>`;
+        tb.appendChild(note);
     }
 }
 

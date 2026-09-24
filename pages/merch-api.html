@@ -34,16 +34,16 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
-    <script src="../js/sw-version.js?v=3056"></script>
+    <script src="../js/sw-version.js?v=3057"></script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <link rel="stylesheet" href="../css/theme.css?v=3056">
-    <link rel="stylesheet" href="../css/landing.css?v=3056">
+    <link rel="stylesheet" href="../css/theme.css?v=3057">
+    <link rel="stylesheet" href="../css/landing.css?v=3057">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/landing-desk.css?v=3056">
-    <link rel="stylesheet" href="../css/compare-desk.css?v=3056">
+    <link rel="stylesheet" href="../css/landing-desk.css?v=3057">
+    <link rel="stylesheet" href="../css/compare-desk.css?v=3057">
 </head>
 <body class="landing-page desk-landing commerce-desk cmp-desk api-docs" data-hero-wave="merch-api">
 
@@ -248,10 +248,10 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname"><code>invoicePdfUrl</code> is <code>null</code> today &mdash; render <code>invoiceId</code> instead</span><span class="dk-ldesc">The tax invoice is issued and stored by Ragenaizer Accounts, and this storefront has no route that can serve it, so the field is reserved and arrives <code>null</code> on every order. Do not build a download button from it. Show <code>invoiceId</code>: that is the number the confirmation email carries and the one a shopper quotes to the merchant. We will not generate a PDF here to fill the gap &mdash; a second document competing with the real GST invoice is worse than no button.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#FBBF24">
-          <span class="dk-lmid"><span class="dk-lname">Send each scalar filter at most once</span><span class="dk-ldesc">Repeated query values are COMBINED before binding, and a comma is a group separator &mdash; so <code>?minPrice=1&amp;minPrice=0&amp;minPrice=0</code> binds <code>"1,0,0"</code> and filters at <b>100</b>, hiding every cheaper product behind an ordinary <code>200</code>. <code>/api/catalog</code> and <code>/api/catalog/facets</code> therefore refuse a repeated <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>sort</code>, <code>locale</code>, <code>page</code> or <code>pageSize</code> with <code>400</code> naming the parameter. <code>brand</code>, <code>color</code>, <code>size</code>, <code>attr</code> and <code>ids</code> are lists and repeat freely. Replace a filter value rather than appending it.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">Send each scalar filter at most once</span><span class="dk-ldesc">Repeated query values are COMBINED before binding, and a comma is a group separator &mdash; so <code>?minPrice=1&amp;minPrice=0&amp;minPrice=0</code> binds <code>"1,0,0"</code> and filters at <b>100</b>, hiding every cheaper product behind an ordinary <code>200</code>. <code>/api/catalog</code> and <code>/api/catalog/facets</code> therefore refuse a repeated <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>sort</code>, <code>locale</code>, <code>page</code> or <code>pageSize</code> with <code>400</code>. <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>sort</code> and <code>locale</code> name the offending parameter in the message; <code>page</code>, <code>pageSize</code> and <code>inStock</code> are refused earlier, while the request is being read, so those carry the generic error envelope instead. <code>brand</code>, <code>color</code>, <code>size</code>, <code>attr</code> and <code>ids</code> are lists and repeat freely. Replace a filter value rather than appending it.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#38BDF8">
-          <span class="dk-lmid"><span class="dk-lname">A cart line&#x27;s <code>qty</code> must be a whole number of at least 1</span><span class="dk-ldesc">Every endpoint that takes <code>lines</code> &mdash; <code>checkout</code>, <code>payment/create-order</code>, <code>shipping/quote</code>, <code>coupon/validate</code>, <code>discounts/auto</code>, <code>discounts/bxgy</code>, <code>subscriptions</code> &mdash; refuses a line whose <code>qty</code> is <code>0</code>, negative, or above <code>100000</code>. <code>checkout</code>, <code>payment/create-order</code>, <code>subscriptions</code> and <code>shipping/quote</code> answer <code>400</code> with <code>{"error":"One of the items has an invalid quantity."}</code>; the three preview routes (<code>coupon/validate</code>, <code>discounts/auto</code>, <code>discounts/bxgy</code>) answer <code>200</code> with the preview simply not applying, because a preview never fails a request. The delivery quote is NOT a preview in this sense: it is the figure checkout charges, so it refuses whatever checkout refuses. <b>Remove a line rather than sending <code>qty: 0</code>.</b> The number you send is the number that is priced, charged and invoiced &mdash; nothing is silently rounded up to one unit or down to the ceiling.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">A cart line&#x27;s <code>qty</code> must be a whole number of at least 1</span><span class="dk-ldesc">Every endpoint that takes <code>lines</code> &mdash; <code>checkout</code>, <code>payment/create-order</code>, <code>shipping/quote</code>, <code>coupon/validate</code>, <code>discounts/auto</code>, <code>discounts/bxgy</code>, <code>subscriptions</code> &mdash; refuses a line whose <code>qty</code> is <code>0</code>, negative, or above <code>100000</code>. <code>checkout</code>, <code>payment/create-order</code>, <code>subscriptions</code> and <code>shipping/quote</code> answer <code>400</code> with <code>{"error":"One of the items has an invalid quantity."}</code>; the three preview routes (<code>coupon/validate</code>, <code>discounts/auto</code>, <code>discounts/bxgy</code>) answer <code>200</code> with the preview simply not applying, because a preview never fails a request. The delivery quote is NOT a preview in this sense: it is the figure checkout charges, so it refuses whatever checkout refuses. <b>Remove a line rather than sending <code>qty: 0</code>.</b> The one exception is <code>POST /api/cart/save</code>, which stores a basket for an abandoned-cart reminder and clamps rather than refusing, because a malformed line should not cost the shopper the reminder. The number you send is the number that is priced, charged and invoiced &mdash; nothing is silently rounded up to one unit or down to the ceiling.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#F59E0B">
           <span class="dk-lmid"><span class="dk-lname">Sign-in itself is anonymous, obviously &mdash; and the document says so</span><span class="dk-ldesc"><code>register</code>, <code>login</code>, <code>google</code>, <code>password/forgot</code> and <code>password/reset</code> are where a token comes from, so none of them requires one. They are the only <code>/api/shopper/*</code> routes without a padlock, and the spec marks them that way: a generated client calls them without credentials.</span></span>
@@ -372,7 +372,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">The failure that looks like data</span><span class="dk-ldesc">If a catalogue read times out and you render "this shop has nothing to sell", you have made a claim about the merchant&#x27;s business on the strength of a network blip. The same mistake on <code>/api/shopper/orders</code> tells a customer their orders are gone; on <code>/api/returns</code> it tells them they cannot file one. Keep "we could not load this" and "there is none" as different states in your UI &mdash; it is one boolean, and it is the difference between a retry and a support ticket.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#60A5FA">
-          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved. Send your own <code>idempotencyKey</code> and the retry is matched on exactly that key, for as long as the order exists. Omit it and the match is made on the basket itself &mdash; same buyer, same lines, same coupon &mdash; for at least 30 minutes and at most 60. Beyond that the same basket is treated as a new order, which is what lets a shopper re-order their usual cart.</span></span>
         </div>
       </div>
     </section>
@@ -1293,18 +1293,18 @@ curl -D - -o /dev/null \
   "invoiceId": "INV-2026-00142",
   "orderRef": "ORD-2026-00142",
   "status": "confirmed",
-  "orderStatus": "confirmed",
+  "orderStatus": "shipped",
   "refundState": "none",
   "total": 985.6,
   "invoicePdfUrl": null,
   "createdAt": "2026-08-21T09:14:03Z",
   "awb": "SRTP0012345678",
   "trackingUrl": "https://www.delhivery.com/track/package/SRTP0012345678",
-  "fulfillmentStatus": "unfulfilled",
+  "fulfillmentStatus": "fulfilled",
   "carrier": "Delhivery",
   "trackingNumber": "SRTP0012345678",
-      "fulfilledAt": null,
-  "cancelledAt": "2026-08-22T17:45:12Z"
+  "fulfilledAt": "2026-08-22T17:45:12Z",
+  "cancelledAt": null
 }</pre>
             </div>
           </details>
@@ -1313,7 +1313,7 @@ curl -D - -o /dev/null \
             <div class="mk-epbody">
               <p class="mk-desc">An order&#x27;s current status and timeline, for the confirmation page.</p>
               <div class="mk-sub">Try it</div>
-              <pre class="mk-curl">curl https://your-shop.example.com/api/orders/ITM-001</pre>
+              <pre class="mk-curl">curl https://your-shop.example.com/api/orders/3fa85f64-5717-4562-b3fc-2c963f66afa6</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
               </ul>
@@ -1324,18 +1324,18 @@ curl -D - -o /dev/null \
     "invoiceId": "INV-2026-00142",
     "orderRef": "ORD-2026-00142",
     "status": "confirmed",
-    "orderStatus": "confirmed",
+    "orderStatus": "shipped",
     "refundState": "none",
     "total": 985.6,
     "invoicePdfUrl": null,
     "createdAt": "2026-08-21T09:14:03Z",
     "awb": "SRTP0012345678",
     "trackingUrl": "https://www.delhivery.com/track/package/SRTP0012345678",
-    "fulfillmentStatus": "unfulfilled",
+    "fulfillmentStatus": "fulfilled",
     "carrier": "Delhivery",
     "trackingNumber": "SRTP0012345678",
-      "fulfilledAt": null,
-    "cancelledAt": "2026-08-22T17:45:12Z"
+    "fulfilledAt": "2026-08-22T17:45:12Z",
+    "cancelledAt": null
   },
   "events": [
     {
@@ -1718,18 +1718,18 @@ curl -D - -o /dev/null \
     "invoiceId": "INV-2026-00142",
     "orderRef": "ORD-2026-00142",
     "status": "confirmed",
-    "orderStatus": "confirmed",
+    "orderStatus": "shipped",
     "refundState": "none",
     "total": 985.6,
     "invoicePdfUrl": null,
     "createdAt": "2026-08-21T09:14:03Z",
     "awb": "SRTP0012345678",
     "trackingUrl": "https://www.delhivery.com/track/package/SRTP0012345678",
-    "fulfillmentStatus": "unfulfilled",
+    "fulfillmentStatus": "fulfilled",
     "carrier": "Delhivery",
     "trackingNumber": "SRTP0012345678",
-      "fulfilledAt": null,
-    "cancelledAt": "2026-08-22T17:45:12Z"
+    "fulfilledAt": "2026-08-22T17:45:12Z",
+    "cancelledAt": null
   }
 ]</pre>
             </div>
@@ -1807,7 +1807,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/payment/create-order</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">Price the basket server-side and open a payment against it. The amount is computed from live prices, coupons and gift cards — the client never states what it owes.</p>
+              <p class="mk-desc">Price the basket server-side and open a payment against it. Answers <code>409</code> with <code>availableQty</code> when a line asks for more units than are in stock &mdash; the same body <code>checkout</code> returns, and now also reachable on a fully gift-covered or 100%-off basket, which places immediately rather than opening a payment. The amount is computed from live prices, coupons and gift cards — the client never states what it owes.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/payment/create-order \
   -H &quot;Content-Type: application/json&quot; \
@@ -1829,7 +1829,6 @@ curl -D - -o /dev/null \
     "state": "DL",
     "pincode": "110001"
   },
-  "paymentMethod": "cod",
   "idempotencyKey": "9f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
   "couponCode": "SAVE10",
   "giftCardCode": "GIFT500",
@@ -2375,7 +2374,7 @@ curl -D - -o /dev/null \
       });
     })();
   </script>
-  <script src="../js/landing-hero-wave.js?v=3056"></script>
-  <script src="../js/features-menu.js?v=3056"></script>
+  <script src="../js/landing-hero-wave.js?v=3057"></script>
+  <script src="../js/features-menu.js?v=3057"></script>
 </body>
 </html>
