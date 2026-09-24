@@ -661,6 +661,23 @@
             .spinner { animation-duration: 3s; }
             .execution-rule, .pad-guide, .pad-wrap { transition: none; }
         }
+        /* ── the one-time code gate ───────────────────────────────── */
+        .otp-gate { padding: 2rem 0 .5rem; max-width: 34rem; }
+        .otp-gate h1 { margin: 0 0 .6rem; }
+        .otp-lede { color: var(--muted); line-height: 1.6; margin: 0 0 1.4rem; }
+        .otp-step { margin-top: 1.4rem; display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
+        .otp-step label { flex-basis: 100%; font-size: .82rem; color: var(--muted); }
+        .otp-step input {
+            width: 8.5rem; padding: .7rem .9rem; font-size: 1.35rem; letter-spacing: .35em;
+            font-family: var(--mono, ui-monospace, monospace); text-align: center;
+            border: 1px solid var(--line); border-radius: 8px;
+            background: var(--field, transparent); color: inherit;
+        }
+        .btn-quiet {
+            background: none; border: 0; color: var(--muted);
+            font: inherit; font-size: .86rem; cursor: pointer; text-decoration: underline;
+        }
+        .btn-quiet:hover { color: inherit; }
     </style>
 </head>
 <body>
@@ -707,6 +724,11 @@
         </div>
 
         <!-- the document -->
+        <!-- The authentication gate. Its own state, not a section of the
+             document card, because until the code passes the server has sent
+             nothing about the document for that card to hold. -->
+        <div class="card" id="otpState" hidden></div>
+
         <div class="card" id="documentState" hidden>
             <div class="card-head">
                 <p class="caption">For execution</p>

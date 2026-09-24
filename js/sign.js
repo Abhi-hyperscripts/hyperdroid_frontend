@@ -58,6 +58,13 @@
 
     // ─── transport ──────────────────────────────────────────────────────────
 
+    /**
+     * Proof of a passed one-time code. Held in memory only — like the token, it
+     * is a bearer credential, and the whole point of taking the token out of the
+     * address bar applies to this just as much.
+     */
+    let session = null;
+
     async function post(path, body) {
         const res = await fetch(`${api()}/signing/${path}`, {
             method: 'POST',
@@ -111,7 +118,7 @@
     }
 
     function show(id) {
-        ['loadingState', 'errorState', 'documentState', 'doneState'].forEach((s) => {
+        ['loadingState', 'errorState', 'documentState', 'doneState', 'otpState'].forEach((s) => {
             const el = $(s);
             if (el) el.hidden = s !== id;
         });
@@ -266,7 +273,7 @@
 
         let doc;
         try {
-            doc = await post('document', { token });
+            doc = await post('document', { token, session });
         } catch (e) {
             viewer.innerHTML = '';
             viewer.appendChild(Object.assign(document.createElement('p'), {
@@ -610,6 +617,7 @@
         try {
             await post('sign', {
                 token,
+                session,
                 signature_kind: mode,
                 signature_data: mode === 'drawn' ? pad.toDataUrl() : typedName,
                 typed_name: typedName,
@@ -667,6 +675,99 @@
 
     // ─── boot ───────────────────────────────────────────────────────────────
 
+    /**
+     * ⭐⭐⭐ THE ONE-TIME CODE, AND WHY IT IS A SEPARATE SCREEN.
+     *
+     * The link travels however the rep chose to send it — WhatsApp, a forwarded
+     * email, a message read over somebody's shoulder. Possession of it was the
+     * whole of the old authentication, and the certificate had to describe that
+     * honestly. A code mailed to the address on the request is the cheapest
+     * thing that turns "whoever held the link" into "whoever controls that
+     * mailbox", and it needs no third party.
+     *
+     * The server sends NOTHING about the document until the code passes — not
+     * the title, not the snapshot, not even the signer's name. So this screen
+     * cannot be a section of the signing page that the page hides; it is what
+     * the page IS until the session exists.
+     */
+    async function renderOtpGate() {
+        const hint = view.otp_destination_hint || 'your email address';
+        $('otpState').innerHTML = `
+            <div class="otp-gate">
+                <h1>Confirm it is you</h1>
+                <p class="otp-lede">Before this document opens we will email a 6-digit code to
+                   <b>${esc(hint)}</b>.</p>
+                <button type="button" class="btn-primary" id="otpSend">Email me the code</button>
+                <div class="otp-step" id="otpStep" hidden>
+                    <label for="otpCode">Enter the code</label>
+                    <input type="text" id="otpCode" inputmode="numeric" autocomplete="one-time-code"
+                           maxlength="6" placeholder="000000">
+                    <button type="button" class="btn-primary" id="otpVerify" disabled>Confirm</button>
+                    <button type="button" class="btn-quiet" id="otpResend">Send it again</button>
+                </div>
+                <p class="err" id="otpError" hidden></p>
+            </div>`;
+
+        const err = (msg) => {
+            const el = document.getElementById('otpError');
+            el.textContent = msg; el.hidden = !msg;
+        };
+
+        const send = async (button) => {
+            button.disabled = true;
+            const original = button.textContent;
+            button.textContent = 'Sending…';
+            err('');
+            try {
+                const res = await post('send-code', { token });
+                document.getElementById('otpStep').hidden = false;
+                document.getElementById('otpCode').focus();
+                if (res && res.destination) {
+                    document.querySelector('.otp-lede').innerHTML =
+                        `We emailed a 6-digit code to <b>${esc(res.destination)}</b>. `
+                      + 'It expires in 10 minutes.';
+                }
+                button.hidden = true;
+            } catch (e) {
+                err(e.message || 'We could not send the code just now.');
+                button.disabled = false;
+                button.textContent = original;
+            }
+        };
+
+        document.getElementById('otpSend').addEventListener('click', (e) => send(e.currentTarget));
+        document.getElementById('otpResend').addEventListener('click', (e) => send(e.currentTarget));
+
+        const code = document.getElementById('otpCode');
+        const verify = document.getElementById('otpVerify');
+        code.addEventListener('input', () => {
+            code.value = code.value.replace(/\D/g, '').slice(0, 6);
+            verify.disabled = code.value.length !== 6;
+        });
+        code.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && code.value.length === 6) verify.click();
+        });
+
+        verify.addEventListener('click', async () => {
+            verify.disabled = true;
+            verify.textContent = 'Checking…';
+            err('');
+            try {
+                const res = await post('verify-code', { token, code: code.value });
+                session = res.session;
+
+                // Re-open with the session: this second call is the first time
+                // anything about the document crosses the wire.
+                view = await post('open', { token, session });
+                render();
+            } catch (e) {
+                err(e.message || 'That code did not work.');
+                verify.disabled = false;
+                verify.textContent = 'Confirm';
+            }
+        });
+    }
+
     async function boot() {
         const params = new URLSearchParams(window.location.search);
         token = (params.get('t') || '').trim();
@@ -694,6 +795,7 @@
             return;
         }
 
+        if (view && view.requires_otp) { renderOtpGate(); show('otpState'); return; }
         render();
     }
 

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Verify a signed document · Ragenaizer</title>
+
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --violet:#7C3AED; --violet2:#A78BFA; --sky:#38BDF8; --cyan:#22D3EE;
+            --mint:#34D399; --amber:#FBBF24; --rose:#FB7185;
+            --bg:#040509; --surface:#0E1018; --line:#1F2236; --line2:#2A2E47;
+            --text:#F4F3FA; --text-2:#D6D3E6; --muted:#A6A2C2; --dim:#6B6889;
+            --scrim:255,255,255;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 3rem 1.25rem 5rem;
+            background: var(--bg); color: var(--text);
+            font-family: 'Inter Tight', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+        }
+        .wrap { max-width: 44rem; margin: 0 auto; }
+        .eyebrow {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 10px; letter-spacing: 2.4px; text-transform: uppercase;
+            color: var(--muted); margin: 0 0 .8rem;
+        }
+        h1 {
+            font-family: Fraunces, Georgia, serif; font-weight: 300;
+            font-size: clamp(2rem, 6vw, 2.9rem); line-height: 1.1; margin: 0 0 .7rem;
+        }
+        .lede { color: var(--text-2); margin: 0 0 2.4rem; max-width: 34rem; }
+
+        .panel {
+            border: 1px solid var(--line2); border-radius: 14px;
+            background: linear-gradient(180deg, rgba(var(--scrim),.035), rgba(var(--scrim),.012));
+            padding: 1.4rem 1.5rem; margin-bottom: 1rem;
+        }
+        .panel h2 {
+            font-size: .78rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+            color: var(--muted); margin: 0 0 .9rem;
+        }
+        label { display: block; font-size: .84rem; color: var(--muted); margin-bottom: .45rem; }
+        input[type="text"] {
+            width: 100%; padding: .75rem .9rem; font-size: 1rem;
+            font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .12em;
+            border: 1px solid var(--line2); border-radius: 9px;
+            background: rgba(var(--scrim),.04); color: var(--text);
+        }
+        input[type="file"] { color: var(--muted); font-size: .9rem; width: 100%; }
+        .drop {
+            border: 1px dashed var(--line2); border-radius: 10px;
+            padding: 1.5rem 1rem; text-align: center; color: var(--muted);
+            cursor: pointer; transition: border-color .18s ease, color .18s ease;
+        }
+        .drop:hover, .drop.over { border-color: var(--violet2); color: var(--text-2); }
+        .btn {
+            margin-top: 1rem; padding: .75rem 1.4rem; font: inherit; font-weight: 600;
+            border: 0; border-radius: 9px; background: var(--violet); color: #fff; cursor: pointer;
+        }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .or {
+            display: flex; align-items: center; gap: 1rem; margin: 1.4rem 0;
+            color: var(--dim); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase;
+        }
+        .or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+        .result { margin-top: 2rem; }
+        .verdict {
+            display: flex; align-items: flex-start; gap: .85rem;
+            padding: 1.1rem 1.25rem; border-radius: 12px; border: 1px solid var(--line2);
+        }
+        .verdict .mark { font-size: 1.4rem; line-height: 1.2; flex: none; }
+        .verdict b { display: block; font-size: 1.05rem; margin-bottom: .2rem; }
+        .verdict p { margin: 0; font-size: .9rem; color: var(--text-2); }
+        .v-good    { border-color: rgba(52,211,153,.45);  background: rgba(52,211,153,.07); }
+        .v-bad     { border-color: rgba(251,113,133,.45); background: rgba(251,113,133,.07); }
+        .v-unknown { border-color: rgba(251,191,36,.45);  background: rgba(251,191,36,.07); }
+
+        dl { display: grid; grid-template-columns: auto 1fr; gap: .55rem 1.4rem; margin: 1.6rem 0 0; font-size: .92rem; }
+        dt { color: var(--muted); }
+        dd { margin: 0; font-weight: 500; }
+        code {
+            font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .76rem;
+            background: rgba(var(--scrim),.06); padding: .12rem .35rem; border-radius: 4px;
+            overflow-wrap: anywhere;
+        }
+        .note { font-size: .82rem; color: var(--dim); margin-top: 2rem; line-height: 1.6; }
+        .err { color: var(--rose); font-size: .9rem; margin-top: 1rem; }
+
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <p class="eyebrow">Ragenaizer</p>
+        <h1>Verify a signed document</h1>
+        <p class="lede">Check that a document you have received is the one that was signed, who
+           signed it, and when. You do not need an account.</p>
+
+        <div class="panel">
+            <h2>Check a file you are holding</h2>
+            <label for="file">Choose the PDF — it stays on your device</label>
+            <div class="drop" id="drop">
+                <span id="dropText">Drop the PDF here, or click to choose</span>
+                <input type="file" id="file" accept="application/pdf" hidden>
+            </div>
+        </div>
+
+        <div class="or">or</div>
+
+        <div class="panel">
+            <h2>Look it up by code</h2>
+            <label for="code">The verification code printed on the certificate</label>
+            <input type="text" id="code" placeholder="ABCD-EFGH-JKMN" maxlength="20" autocomplete="off">
+            <button type="button" class="btn" id="lookup" disabled>Look it up</button>
+        </div>
+
+        <div class="err" id="error" hidden></div>
+        <div class="result" id="result" hidden></div>
+
+        <p class="note" id="privacyNote">
+            <b>Your file is not uploaded.</b> The page computes a SHA-256 fingerprint of it in your
+            browser and sends only those 64 characters — enough to answer the question, and not a
+            copy of your document.
+        </p>
+    </div>
+
+    <script>
+    (() => {
+        'use strict';
+
+        // The CRM API origin. The signing service is public here by design:
+        // somebody checking a contract is not a user of ours.
+        const API = location.hostname === 'localhost'
+            ? 'https://localhost:5112'
+            : 'https://crm.ragenaizer.com';
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (t) => String(t ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+        const when = (v) => v
+            ? new Date(v).toLocaleString(undefined,
+                { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : '—';
+
+        const showError = (msg) => {
+            $('result').hidden = true;
+            $('error').textContent = msg;
+            $('error').hidden = !msg;
+        };
+
+        /**
+         * ⭐⭐⭐ THE FILE NEVER LEAVES THE DEVICE.
+         *
+         * Asking somebody to upload a contract to find out whether it is genuine
+         * is both a privacy cost they should not have to pay and a reason not to
+         * bother checking at all. WebCrypto hashes it here; 64 hex characters
+         * travel, which is the whole of what the answer needs.
+         *
+         * crypto.subtle is only available on a secure origin, so a page served
+         * over plain http cannot do this — it says so rather than failing mutely.
+         */
+        async function sha256(file) {
+            if (!window.crypto || !crypto.subtle) {
+                throw new Error('This browser cannot fingerprint files on a non-secure connection. '
+                              + 'Open this page over https, or use the verification code instead.');
+            }
+            const buf = await file.arrayBuffer();
+            const digest = await crypto.subtle.digest('SHA-256', buf);
+            return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function ask(body) {
+            const res = await fetch(`${API}/api/signing/verify-document`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+                credentials: 'omit',
+                referrerPolicy: 'no-referrer',
+            });
+            let payload = null;
+            try { payload = await res.json(); } catch { /* a body is not guaranteed */ }
+            if (res.status === 404) return null;
+            if (!res.ok) throw new Error((payload && payload.error) || 'Something went wrong.');
+            return payload;
+        }
+
+        function verdictFor(v) {
+            // ⭐ THREE VERDICTS, NOT TWO. "matches" is null when the record was
+            // looked up by code and no file was offered — reporting that as a
+            // mismatch would call every genuine contract a forgery.
+            if (v.matches === true) {
+                const which = v.matched_copy === 'original'
+                    ? 'This is the document that was sent for signature — the original, before the '
+                    + 'signature was stamped into it.'
+                    : 'This is the signed document on record. It has not been altered since.';
+                return { cls: 'v-good', mark: '✓', head: 'This file matches the record', body: which };
+            }
+            if (v.matches === false) {
+                return {
+                    cls: 'v-bad', mark: '✕',
+                    head: 'This file does NOT match',
+                    body: 'A record exists for this document, but the file you have is not the one on '
+                        + 'record — it has been changed, or it is a different copy. Ask the sender for '
+                        + 'the signed copy from their system.',
+                };
+            }
+            return {
+                cls: 'v-unknown', mark: '•',
+                head: 'Record found',
+                body: 'These are the details on record. To check a particular file as well, choose it '
+                    + 'above and the page will compare it.',
+            };
+        }
+
+        function render(v) {
+            $('error').hidden = true;
+            if (!v) {
+                showError('No signed document matches that. Check the code, or ask the sender to '
+                        + 'send you the signed copy from their system.');
+                return;
+            }
+
+            const verdict = verdictFor(v);
+            $('result').innerHTML = `
+                <div class="verdict ${verdict.cls}">
+                    <span class="mark">${verdict.mark}</span>
+                    <span><b>${esc(verdict.head)}</b><p>${esc(verdict.body)}</p></span>
+                </div>
+                <dl>
+                    <dt>Document</dt><dd>${esc(v.title)}</dd>
+                    <dt>Status</dt><dd>${esc(v.status)}</dd>
+                    <dt>Signed by</dt><dd>${esc(v.signer_name)}</dd>
+                    <dt>Signed at</dt><dd>${esc(when(v.signed_at))}</dd>
+                    <dt>Authenticated by</dt><dd>${esc(v.auth_method_description || '')}</dd>
+                    ${v.verification_code
+                        ? `<dt>Verification code</dt><dd><code>${esc(v.verification_code)}</code></dd>` : ''}
+                    ${v.signed_document_sha256
+                        ? `<dt>Signed copy SHA-256</dt><dd><code>${esc(v.signed_document_sha256)}</code></dd>` : ''}
+                    ${v.document_sha256
+                        ? `<dt>Original SHA-256</dt><dd><code>${esc(v.document_sha256)}</code></dd>` : ''}
+                </dl>
+                ${v.statutory_class ? `<p class="note">When this was sent it was flagged as a class the
+                   First Schedule of the IT Act, 2000 excludes from electronic signature. The sender
+                   was shown that and chose to proceed.</p>` : ''}`;
+            $('result').hidden = false;
+        }
+
+        // ── the file path ───────────────────────────────────────────────────
+        const drop = $('drop');
+        const file = $('file');
+
+        drop.addEventListener('click', () => file.click());
+        drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+        drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+        drop.addEventListener('drop', (e) => {
+            e.preventDefault();
+            drop.classList.remove('over');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) check(e.dataTransfer.files[0]);
+        });
+        file.addEventListener('change', () => { if (file.files[0]) check(file.files[0]); });
+
+        async function check(f) {
+            $('dropText').textContent = `Fingerprinting ${f.name}…`;
+            showError('');
+            try {
+                const hash = await sha256(f);
+                $('dropText').textContent = f.name;
+                render(await ask({ sha256: hash, code: $('code').value || null }));
+            } catch (e) {
+                $('dropText').textContent = 'Drop the PDF here, or click to choose';
+                showError(e.message || 'That file could not be read.');
+            }
+        }
+
+        // ── the code path ───────────────────────────────────────────────────
+        const code = $('code');
+        const lookup = $('lookup');
+        code.addEventListener('input', () => {
+            lookup.disabled = code.value.replace(/[^a-z0-9]/gi, '').length < 8;
+        });
+        code.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !lookup.disabled) lookup.click();
+        });
+        lookup.addEventListener('click', async () => {
+            lookup.disabled = true;
+            const original = lookup.textContent;
+            lookup.textContent = 'Checking…';
+            showError('');
+            try {
+                render(await ask({ code: code.value }));
+            } catch (e) {
+                showError(e.message || 'Something went wrong.');
+            } finally {
+                lookup.textContent = original;
+                lookup.disabled = false;
+            }
+        });
+
+        // A code can be linked directly: /pages/verify.html?c=ABCD-EFGH-JKMN
+        const params = new URLSearchParams(location.search);
+        if (params.get('c')) {
+            code.value = params.get('c');
+            lookup.disabled = false;
+            lookup.click();
+        }
+    })();
+    </script>
+</body>
+</html>

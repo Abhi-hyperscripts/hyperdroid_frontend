@@ -420,10 +420,47 @@ const SignaturePanel = (() => {
         const submit = container.querySelector('[data-sig-form] button[type="submit"]');
         if (submit) { submit.disabled = true; submit.textContent = 'Creating…'; }
 
+        // ⭐⭐⭐ THE FIRST SCHEDULE WARNING IS A REFUSAL THE REP CAN ANSWER.
+        //
+        // The server refuses once when the title looks like a will, a trust
+        // deed, a power of attorney, a negotiable instrument or a conveyance of
+        // immovable property — classes the IT Act's First Schedule puts outside
+        // electronic signature altogether. Detection is a heuristic over a
+        // filename, so it cannot be final: "Will Smith — service agreement" is
+        // not a will. The rep reads what was detected and decides, and their
+        // decision is stored on the request and written into the audit trail.
+        //
+        // Deliberately a full Confirm rather than a toast: this is the one
+        // refusal on this form that is about the law rather than about a field,
+        // and it must be read rather than dismissed.
+        const post = async () => api.request('/crm/signature-requests', {
+            method: 'POST', body: JSON.stringify(body),
+        });
+
         try {
-            const created = await api.request('/crm/signature-requests', {
-                method: 'POST', body: JSON.stringify(body),
-            });
+            let created;
+            try {
+                created = await post();
+            } catch (e) {
+                const msg = e.message || '';
+                if (!msg.includes('First Schedule')) throw e;
+
+                const proceed = await Confirm.show({
+                    title: 'This may not be signable electronically',
+                    message: msg,
+                    type: 'warning',
+                    confirmText: 'I understand — send anyway',
+                    cancelText: 'Cancel',
+                });
+                if (!proceed) {
+                    st.sending = false;
+                    if (submit) { submit.disabled = false; submit.textContent = 'Create signing link'; }
+                    return;
+                }
+                body.acknowledge_statutory_exclusion = true;
+                created = await post();
+            }
+
             st.sending = false;
             st.formOpen = false;
             await load(container);
@@ -604,6 +641,10 @@ const SignaturePanel = (() => {
         const win = window.open('', '_blank', 'width=860,height=900');
         if (!win) { Toast.error('Allow pop-ups to view the signed copy'); return; }
 
+        // Built in the parent, where CONFIG lives — the certificate opens as a
+        // blank popup with no scripts of its own.
+        const VERIFY_PAGE_URL = `${location.origin}/pages/verify.html`;
+
         const snap = cert.snapshot || {};
 
         // ⭐ ONE MONEY FORMATTER, AND IT LIVES IN currencies.js.
@@ -699,6 +740,13 @@ const SignaturePanel = (() => {
           li{margin:.3rem 0}li b{color:#1d262b}
           .muted{color:#8797a0}
           .foot{margin-top:2rem;padding-top:1rem;border-top:1px solid #e7edee;font-size:.78rem;color:#8797a0}
+          .warn{margin:.9rem 0 0;padding:.7rem .9rem;border-left:3px solid #b8860b;background:#fdf6e3;
+                font-size:.82rem;color:#6b5711;line-height:1.5}
+          .annex{margin-top:2.4rem;padding-top:1.4rem;border-top:2px solid #1d262b;page-break-before:always}
+          .annex h2{margin-top:0}
+          .annex ol{font-size:.86rem;color:#1d262b}
+          .annex .sigline{margin-top:2rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem;font-size:.82rem}
+          .annex .sigline div{border-top:1px solid #1d262b;padding-top:.4rem;color:#5b6a72}
           @media print{body{background:#fff;padding:0}.sheet{border:0;max-width:none}}
         </style></head><body><div class="sheet">
           <p class="eyebrow">Signed copy</p>
@@ -719,8 +767,30 @@ const SignaturePanel = (() => {
             <dd>${esc(when(cert.signed_at || cert.declined_at))}</dd>
             ${cert.signer_ip ? `<dt>From address</dt><dd>${esc(cert.signer_ip)}</dd>` : ''}
             ${cert.decline_reason ? `<dt>Reason given</dt><dd>${esc(cert.decline_reason)}</dd>` : ''}
-            <dt>Document fingerprint</dt><dd><code>${esc(cert.content_hash)}</code></dd>
+            <dt>Authenticated by</dt><dd>${esc(cert.auth_method_description || 'Possession of the private signing link')}</dd>
+            ${cert.verification_code ? `<dt>Verification code</dt><dd><code>${esc(cert.verification_code)}</code></dd>` : ''}
+            <!-- ⭐ TWO FINGERPRINTS, NAMED FOR WHAT THEY ACTUALLY COVER.
+                 This block used to show content_hash alone under the label
+                 "Document fingerprint", and the footer called it a hash of the
+                 document. For a document request content_hash is a hash of the
+                 file's NAME, TYPE and SIZE — it could not have detected the file
+                 changing. document_sha256 is over the bytes; where it is absent
+                 the page now says so instead of letting the other one stand in. -->
+            ${cert.document_sha256
+                ? `<dt>Document SHA-256</dt><dd><code>${esc(cert.document_sha256)}</code></dd>`
+                : cert.document_id
+                    ? `<dt>Document SHA-256</dt><dd class="muted">Not recorded — this request predates
+                         byte-level fingerprinting.</dd>`
+                    : ''}
+            ${cert.signed_document_sha256
+                ? `<dt>Signed copy SHA-256</dt><dd><code>${esc(cert.signed_document_sha256)}</code></dd>` : ''}
+            <dt>Record fingerprint</dt><dd><code>${esc(cert.content_hash)}</code></dd>
           </dl>
+          ${cert.statutory_class ? `<p class="warn">This document was flagged when it was sent as
+             ${esc(cert.statutory_class_description || 'a class listed in the First Schedule')}.
+             The First Schedule of the IT Act, 2000 excludes that class from the Act's
+             electronic-signature provisions. The sender was shown this and chose to proceed
+             on ${esc(when(cert.statutory_ack_at))}.</p>` : ''}
 
           <h2>Audit trail</h2>
           <ol>${(cert.trail || []).map((e) => `<li>
@@ -728,9 +798,66 @@ const SignaturePanel = (() => {
             ${e.ip ? ` from ${esc(e.ip)}` : ''}${e.detail ? ` — ${esc(e.detail)}` : ''}
           </li>`).join('')}</ol>
 
-          <p class="foot">Signed electronically through Ragenaizer. The fingerprint above is a
-             SHA-256 of the document exactly as it was shown to the signer; it changes if a single
-             character of that document changes.</p>
+          ${cert.status === 'signed' ? `
+          <!-- ⭐ SECTION 63(4) IS WHAT GETS AN ELECTRONIC RECORD ADMITTED.
+               The Bharatiya Sakshya Adhiniyam, 2023 replaced the Evidence Act on
+               1 July 2024, and s.63 carries forward what s.65B did: an electronic
+               record generally is not received in evidence without a certificate
+               identifying it, describing how it was produced, and signed by
+               somebody responsible for the system. Every particular below is one
+               this CRM actually holds — what it cannot supply is the name and the
+               signature of that person, which is why those are blanks and not
+               pre-filled. A certificate we signed on the tenant's behalf would be
+               worth nothing. -->
+          <div class="annex">
+            <h2>Annexure — certificate under Section 63(4), Bharatiya Sakshya Adhiniyam, 2023</h2>
+            <p style="font-size:.86rem">To be completed and signed by a person occupying a responsible
+               official position in relation to the operation of the relevant device or the management
+               of the relevant activities. The particulars in items 1–4 are produced by the system.</p>
+            <ol>
+              <li><b>The electronic record:</b> "${esc(cert.title)}", signature request
+                  <code>${esc(cert.id)}</code>${cert.verification_code
+                    ? `, verification code <code>${esc(cert.verification_code)}</code>` : ''}.
+                  ${cert.document_sha256
+                    ? `SHA-256 of the record as sent: <code>${esc(cert.document_sha256)}</code>.` : ''}
+                  ${cert.signed_document_sha256
+                    ? `SHA-256 of the signed copy: <code>${esc(cert.signed_document_sha256)}</code>.` : ''}</li>
+              <li><b>Manner of production:</b> produced by the Ragenaizer CRM electronic signing
+                  service. The record was uploaded to the tenant's document store, fingerprinted,
+                  and served over TLS to the signer through a single-use link. The signer was
+                  authenticated by ${esc((cert.auth_method_description || '').toLowerCase())},
+                  confirmed their intention to sign electronically, and applied a
+                  ${esc(cert.signature_kind === 'drawn' ? 'drawn' : 'typed')} signature on
+                  ${esc(when(cert.signed_at))}${cert.signer_ip ? ` from ${esc(cert.signer_ip)}` : ''}.</li>
+              <li><b>Device particulars:</b> Ragenaizer CRM application servers and PostgreSQL
+                  database operated for this tenant; signer-side device reported as
+                  <code>${esc(cert.signer_user_agent || 'not recorded')}</code>.</li>
+              <li><b>Events recorded:</b> ${(cert.trail || []).length} entries, listed in the audit
+                  trail above, each with its time and originating address.</li>
+              <li><b>Statement:</b> during the material period the computer output was produced by
+                  the device in the ordinary course of activities regularly carried on; information
+                  of that kind was regularly fed into it; the device was operating properly, and
+                  where it was not, that did not affect the accuracy of the record; and the
+                  information is derived from information fed into it in the ordinary course.
+                  <i>(Strike out or qualify anything that is not so.)</i></li>
+            </ol>
+            <div class="sigline">
+              <div>Name and designation</div>
+              <div>Signature and date</div>
+            </div>
+          </div>` : ''}
+
+          <p class="foot">Signed electronically through Ragenaizer.
+             ${cert.document_sha256
+                ? `The <b>document SHA-256</b> is taken over the file's own bytes when it was sent, and
+                   is checked again when the signer opens it and when they sign — it changes if the
+                   file changes at all. The <b>record fingerprint</b> covers this request record.`
+                : `The <b>record fingerprint</b> covers this request record — the document's name, type
+                   and size, not its contents. This request predates byte-level fingerprinting of the
+                   file itself.`}
+             ${cert.verification_code
+                ? `Anyone holding the signed PDF can check it at <b>${esc(VERIFY_PAGE_URL)}</b> using the
+                   verification code above, without an account.` : ''}</p>
         </div></body></html>`);
         win.document.close();
     }
