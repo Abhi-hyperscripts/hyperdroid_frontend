@@ -304,7 +304,17 @@
      correctly, looks right, and is unclickable underneath the lead panel's
      own backdrop at 1040. */
   position: fixed !important;
-  inset: 0;
+  /* ⭐⭐⭐ IT STARTS BELOW THE NAVBAR, AND z-index CANNOT SETTLE THIS.
+     The shared .navbar is position:fixed, z-index 999999. At inset:0 this
+     dialog slid UNDER it — its header butted against the nav strip and the
+     top of the document was eaten. Raising the dialog above 999999 fixes the
+     look and creates the mirror image, which ekart.css already learned the
+     hard way: the dialog head then lies across the nav strip and every nav
+     control underneath is visible, enabled and inert. Whichever wins swallows
+     the other's buttons, so the answer is NO OVERLAP EITHER WAY. --docv-top is
+     measured in JS when the viewer opens rather than hardcoded at 52px, so it
+     notices if the navbar ever changes height or is absent on a page. */
+  inset: var(--docv-top, 0px) 0 0 0;
   z-index: 1200 !important;
   background: rgba(8, 12, 14, .72);
   display: flex;

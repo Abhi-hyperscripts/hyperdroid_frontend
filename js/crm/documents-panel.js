@@ -380,6 +380,13 @@ const DocumentsPanel = (() => {
                 <div class="docv-body"><p class="docv-loading">Opening…</p></div>
             </div>`;
         back.querySelector('.docv-name').textContent = (doc && doc.file_name) || 'Document';
+
+        // Measured, not assumed — see the note on .docv-back. getBoundingClientRect
+        // gives the navbar's real bottom edge, which is 0 on a page that has none.
+        const nav = document.querySelector('.navbar');
+        const navBottom = nav ? Math.max(0, Math.round(nav.getBoundingClientRect().bottom)) : 0;
+        back.style.setProperty('--docv-top', `${navBottom}px`);
+
         document.body.appendChild(back);
 
         const onKey = (e) => { if (e.key === 'Escape') closeViewer(); };
