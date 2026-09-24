@@ -34,16 +34,16 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
-    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="../js/sw-version.js?v=3056"></script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="stylesheet" href="../css/theme.css?v=3056">
+    <link rel="stylesheet" href="../css/landing.css?v=3056">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script>document.write('<link rel="stylesheet" href="../css/landing-desk.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../css/compare-desk.css?v=' + CACHE_VERSION + '">');</script>
+    <link rel="stylesheet" href="../css/landing-desk.css?v=3056">
+    <link rel="stylesheet" href="../css/compare-desk.css?v=3056">
 </head>
 <body class="landing-page desk-landing commerce-desk cmp-desk api-docs" data-hero-wave="merch-api">
 
@@ -251,7 +251,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">Send each scalar filter at most once</span><span class="dk-ldesc">Repeated query values are COMBINED before binding, and a comma is a group separator &mdash; so <code>?minPrice=1&amp;minPrice=0&amp;minPrice=0</code> binds <code>"1,0,0"</code> and filters at <b>100</b>, hiding every cheaper product behind an ordinary <code>200</code>. <code>/api/catalog</code> and <code>/api/catalog/facets</code> therefore refuse a repeated <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>sort</code>, <code>locale</code>, <code>page</code> or <code>pageSize</code> with <code>400</code> naming the parameter. <code>brand</code>, <code>color</code>, <code>size</code>, <code>attr</code> and <code>ids</code> are lists and repeat freely. Replace a filter value rather than appending it.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#38BDF8">
-          <span class="dk-lmid"><span class="dk-lname">A cart line&#x27;s <code>qty</code> must be a whole number of at least 1</span><span class="dk-ldesc">Every endpoint that takes <code>lines</code> &mdash; <code>checkout</code>, <code>payment/create-order</code>, <code>shipping/quote</code>, <code>coupon/validate</code>, <code>discounts/auto</code>, <code>discounts/bxgy</code>, <code>subscriptions</code> &mdash; refuses a line whose <code>qty</code> is <code>0</code>, negative, or above <code>100000</code>. The charging routes answer <code>400</code> with <code>{"error":"One of the items has an invalid quantity."}</code>; the preview routes answer <code>200</code> with the preview simply not applying, because a preview never fails a request. <b>Remove a line rather than sending <code>qty: 0</code>.</b> The number you send is the number that is priced, charged and invoiced &mdash; nothing is silently rounded up to one unit or down to the ceiling.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">A cart line&#x27;s <code>qty</code> must be a whole number of at least 1</span><span class="dk-ldesc">Every endpoint that takes <code>lines</code> &mdash; <code>checkout</code>, <code>payment/create-order</code>, <code>shipping/quote</code>, <code>coupon/validate</code>, <code>discounts/auto</code>, <code>discounts/bxgy</code>, <code>subscriptions</code> &mdash; refuses a line whose <code>qty</code> is <code>0</code>, negative, or above <code>100000</code>. <code>checkout</code>, <code>payment/create-order</code>, <code>subscriptions</code> and <code>shipping/quote</code> answer <code>400</code> with <code>{"error":"One of the items has an invalid quantity."}</code>; the three preview routes (<code>coupon/validate</code>, <code>discounts/auto</code>, <code>discounts/bxgy</code>) answer <code>200</code> with the preview simply not applying, because a preview never fails a request. The delivery quote is NOT a preview in this sense: it is the figure checkout charges, so it refuses whatever checkout refuses. <b>Remove a line rather than sending <code>qty: 0</code>.</b> The number you send is the number that is priced, charged and invoiced &mdash; nothing is silently rounded up to one unit or down to the ceiling.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#F59E0B">
           <span class="dk-lmid"><span class="dk-lname">Sign-in itself is anonymous, obviously &mdash; and the document says so</span><span class="dk-ldesc"><code>register</code>, <code>login</code>, <code>google</code>, <code>password/forgot</code> and <code>password/reset</code> are where a token comes from, so none of them requires one. They are the only <code>/api/shopper/*</code> routes without a padlock, and the spec marks them that way: a generated client calls them without credentials.</span></span>
@@ -1267,7 +1267,6 @@ curl -D - -o /dev/null \
   "orderRef": "ORD-2026-00142",
   "status": "confirmed",
   "orderStatus": "confirmed",
-  "refundState": "none",
   "total": 985.6,
   "invoicePdfUrl": null,
   "giftCardApplied": 0.0,
@@ -1304,7 +1303,7 @@ curl -D - -o /dev/null \
   "fulfillmentStatus": "unfulfilled",
   "carrier": "Delhivery",
   "trackingNumber": "SRTP0012345678",
-  "fulfilledAt": "2026-08-23T06:30:00Z",
+      "fulfilledAt": null,
   "cancelledAt": "2026-08-22T17:45:12Z"
 }</pre>
             </div>
@@ -1335,7 +1334,7 @@ curl -D - -o /dev/null \
     "fulfillmentStatus": "unfulfilled",
     "carrier": "Delhivery",
     "trackingNumber": "SRTP0012345678",
-    "fulfilledAt": "2026-08-23T06:30:00Z",
+      "fulfilledAt": null,
     "cancelledAt": "2026-08-22T17:45:12Z"
   },
   "events": [
@@ -1729,7 +1728,7 @@ curl -D - -o /dev/null \
     "fulfillmentStatus": "unfulfilled",
     "carrier": "Delhivery",
     "trackingNumber": "SRTP0012345678",
-    "fulfilledAt": "2026-08-23T06:30:00Z",
+      "fulfilledAt": null,
     "cancelledAt": "2026-08-22T17:45:12Z"
   }
 ]</pre>
@@ -1872,7 +1871,6 @@ curl -D - -o /dev/null \
   "orderRef": "ORD-2026-00142",
   "status": "confirmed",
   "orderStatus": "confirmed",
-  "refundState": "none",
   "total": 985.6,
   "invoicePdfUrl": null,
   "giftCardApplied": 0.0,
@@ -2377,7 +2375,7 @@ curl -D - -o /dev/null \
       });
     })();
   </script>
-  <script>document.write('<script src="../js/landing-hero-wave.js?v=' + CACHE_VERSION + '"><\/script>');</script>
-  <script>document.write('<script src="../js/features-menu.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+  <script src="../js/landing-hero-wave.js?v=3056"></script>
+  <script src="../js/features-menu.js?v=3056"></script>
 </body>
 </html>

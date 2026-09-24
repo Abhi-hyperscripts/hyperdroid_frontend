@@ -55,9 +55,9 @@
     <p class="hint">Every scan lands instantly in the counter's bill.<br>Keep this page open while scanning.<br><span id="buildNo" style="opacity:0.6;"></span></p>
 
     <script>window.CACHE_VERSION = Date.now();</script>
-    <script>document.write('<script src="/js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
-    <script>document.write('<script src="/js/config.js?v=' + CACHE_VERSION + '"><\/script>');
-document.write('<script src="/js/rail-rbac.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-version.js?v=3056"></script>
+<script src="/js/config.js?v=3056"></script>
+<script src="/js/rail-rbac.js?v=3056"></script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <!-- zbar-wasm + polyfill: gives every browser (iOS Safari, Samsung Internet…) a native-style
          BarcodeDetector backed by the zbar engine — far stronger at 1D retail barcodes (EAN/UPC)
@@ -83,6 +83,8 @@ document.write('<script src="/js/rail-rbac.js?v=' + CACHE_VERSION + '"><\/script
     <!-- ?fresh= (not ?v=) on purpose: the service worker strips ?v= from its cache key and
          serves the STALE cached copy, so phones kept running old scanner code. An unstripped
          param makes every load a cache miss → always fetched from the network. -->
-    <script>document.write('<script src="/js/accounts/scanner.js?fresh=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>
+document.write('<script src="/js/accounts/scanner.js?fresh=' + CACHE_VERSION + '"><\/script>');
+</script>
 </body>
 </html>
