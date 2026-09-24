@@ -46,3 +46,10 @@ jobs:
       # stylesheet after a deploy, with no error and no failing request.
       - name: Check static asset versions match SW_VERSION
         run: node scripts/check-asset-version.js
+
+      # A page that renders a table without the column filter has a feature
+      # missing with nothing to indicate it — the rollout that prompted this
+      # guard reported "67 pages done" while the page the filter was written
+      # for had neither half.
+      - name: Check every .data-table page loads the column filter
+        run: node scripts/check-table-filter-pairs.js

@@ -34,16 +34,16 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
-    <script src="../js/sw-version.js?v=3059"></script>
+    <script src="../js/sw-version.js?v=3060"></script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <link rel="stylesheet" href="../css/theme.css?v=3059">
-    <link rel="stylesheet" href="../css/landing.css?v=3059">
+    <link rel="stylesheet" href="../css/theme.css?v=3060">
+    <link rel="stylesheet" href="../css/landing.css?v=3060">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/landing-desk.css?v=3059">
-    <link rel="stylesheet" href="../css/compare-desk.css?v=3059">
+    <link rel="stylesheet" href="../css/landing-desk.css?v=3060">
+    <link rel="stylesheet" href="../css/compare-desk.css?v=3060">
 </head>
 <body class="landing-page desk-landing commerce-desk cmp-desk api-docs" data-hero-wave="merch-api">
 
@@ -239,7 +239,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">Render <code>orderStatus</code>, not <code>status</code></span><span class="dk-ldesc"><code>status</code> is the PLACEMENT-TIME payment state and is never written again, so a cancelled order reads <code>"confirmed"</code> there forever and so does a shipped one &mdash; cancellation and shipping live in <code>fulfillmentStatus</code>. Every order shape now also carries <b><code>orderStatus</code></b>: <code>"cancelled" | "shipped" | "failed" | "confirmed" | "processing"</code>, already resolved. It is on the order, on the order list, on guest lookup and on the checkout and verify replies. <code>status</code> is unchanged for existing clients.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#A78BFA">
-          <span class="dk-lmid"><span class="dk-lname"><code>refundState</code> says whether the money actually came back</span><span class="dk-ldesc">Cancelling raises a credit note in the merchant&#x27;s books, and that can be refused &mdash; on a tax-exclusive store it always is. <code>refundState</code> is <code>"none"</code> (nothing to refund), <code>"credited"</code> (the invoice was reversed) or <code>"pending"</code> (cancelled, reversal not completed). <b>Render <code>"pending"</code> as &ldquo;refund being processed&rdquo;, never as refunded</b> &mdash; an order can read cancelled while the merchant still holds a live receivable.</span></span>
+          <span class="dk-lmid"><span class="dk-lname"><code>refundState</code> says whether the money actually came back</span><span class="dk-ldesc">Cancelling raises a credit note in the merchant&#x27;s books, and that can be refused &mdash; on a tax-exclusive store it always is. <code>refundState</code> is <code>"none"</code> (nothing to refund), <code>"credited"</code> (the invoice was reversed in full), <code>"partial"</code> (only part of it was &mdash; a return on a cart mixing physical and digital lines credits the physical ones only) or <code>"pending"</code> (cancelled, reversal not completed). It is on the order, on the order list and on guest lookup &mdash; <b>not</b> on the checkout and verify replies, which describe a placement that has nothing to refund yet. <b>Render <code>"pending"</code> as &ldquo;refund being processed&rdquo;, never as refunded</b> &mdash; an order can read cancelled while the merchant still holds a live receivable.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#FB7185">
           <span class="dk-lmid"><span class="dk-lname">Some baskets can never be bought: <code>400</code> with <code>mixedCart</code></span><span class="dk-ldesc">A cart that mixes tax-inclusive and tax-exclusive products cannot be put on one invoice, so both <code>checkout</code> and <code>payment/create-order</code> refuse it with <code>400</code> and <code>{"mixedCart":true}</code>. It is PERMANENT and specific to that basket &mdash; do not retry it, and do not treat it as <code>storeUnavailable</code>, which means the opposite. Ask the shopper to order those items separately.</span></span>
@@ -2374,7 +2374,7 @@ curl -D - -o /dev/null \
       });
     })();
   </script>
-  <script src="../js/landing-hero-wave.js?v=3059"></script>
-  <script src="../js/features-menu.js?v=3059"></script>
+  <script src="../js/landing-hero-wave.js?v=3060"></script>
+  <script src="../js/features-menu.js?v=3060"></script>
 </body>
 </html>
