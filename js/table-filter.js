@@ -1,14 +1,24 @@
 /**
- * EXCEL-STYLE COLUMN FILTERS FOR .data-table
- * ==========================================
+ * EXCEL-STYLE COLUMN FILTERS FOR EVERY DATA GRID
+ * ==============================================
  * Click a column header's funnel: a checkbox list of that column's distinct
  * values, a search box over them, Select all / Clear, and sort A→Z / Z→A.
  * Several columns combine with AND, exactly as a spreadsheet does.
  *
- * Attaches itself to every `.data-table` on the page and needs no per-page
- * wiring — the same approach table-cards.js uses, and for the same reason:
- * there are 67 pages and a change that has to be made 67 times is a change
- * that will be made 60 times.
+ * Attaches itself to every grid on the page and needs no per-page wiring — the
+ * same approach table-cards.js uses, and for the same reason: there are 67
+ * pages and a change that has to be made 67 times is a change that will be
+ * made 60 times.
+ *
+ * ⭐ "EVERY GRID" IS A LIST, AND THE LIST IS THE BUG.
+ *
+ * `.data-table` is the house style, but it is not the only one: HRMS
+ * self-service, CRM analytics and the HRMS bulk-import preview each grew their
+ * own class, and asking "why don't those tables have the filter?" is how the
+ * gap was found — by the user, not by me. So the classes are enumerated here
+ * ONCE and `scripts/check-table-filter-pairs.js` reads this same list back out
+ * of this file, which means a new grid class cannot be added to the product
+ * without either joining the list or failing the build.
  *
  * ⭐⭐⭐ THE ONE THING THIS MUST NEVER DO IS FILTER THE WRONG SET.
  *
@@ -35,6 +45,10 @@
 const TableFilter = (() => {
     'use strict';
 
+    // The grid classes in this product. Keep in sync with the guard — it parses
+    // this array literal, so keep it a plain list of string literals.
+    const GRID_CLASSES = ['data-table', 'ess-table', 'ana-table', 'bulk-import-table'];
+
     // Columns that are controls rather than data. Same keywords table-cards.js
     // uses to find the actions column, so the two agree about what a column is.
     const SKIP_HEADERS = ['actions', 'action', ''];
@@ -49,6 +63,7 @@ const TableFilter = (() => {
     const adapters = new WeakMap();   // table element → { rows, valueOf, apply }
     const state = new WeakMap();      // table element → { [colIndex]: Set(values) }
     let openMenu = null;
+    let placeMenu = null;             // the open menu's re-position callback
 
     const esc = (t) => String(t ?? '')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -90,6 +105,12 @@ const TableFilter = (() => {
         openMenu.remove();
         openMenu = null;
         document.removeEventListener('keydown', onKey, true);
+        if (placeMenu) {
+            // Capture phase on BOTH, to match how they were added.
+            window.removeEventListener('scroll', placeMenu, true);
+            window.removeEventListener('resize', placeMenu);
+            placeMenu = null;
+        }
     }
     function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); closeMenu(); } }
 
@@ -207,9 +228,73 @@ const TableFilter = (() => {
 
         menu.querySelector('[data-done]').addEventListener('click', closeMenu);
 
-        const r = th.getBoundingClientRect();
-        menu.style.top = `${Math.round(r.bottom + 4)}px`;
-        menu.style.left = `${Math.round(Math.min(r.left, window.innerWidth - menu.offsetWidth - 12))}px`;
+        /**
+         * ⭐ THE MENU IS `position: fixed`, SO IT DOES NOT SCROLL WITH ITS HEADER.
+         *
+         * Placing it once at open time looks right for exactly as long as
+         * nothing moves. Scroll the page — or the table's own horizontal
+         * scroller, which is why this listens in the CAPTURE phase rather than
+         * only on window — and the dropdown stays welded to the viewport while
+         * the column slides out from under it. Reported as "the dropdown is
+         * detached from its parent when the mouse is scrolled", which is
+         * precisely what it is.
+         *
+         * Fixed positioning is still the right call: the menu has to escape the
+         * `overflow` on every table wrapper here, and `body.dashboard`'s
+         * exclusion chain forces `position: relative` on anything left inside
+         * the flow. So it stays fixed and TRACKS the header instead.
+         */
+        const place = () => {
+            const r = th.getBoundingClientRect();
+
+            // Header scrolled out of sight: there is nothing to point at, so
+            // hide rather than leave a menu hovering over unrelated rows.
+            if (r.bottom < 0 || r.top > window.innerHeight ||
+                r.right < 0 || r.left > window.innerWidth) {
+                menu.style.visibility = 'hidden';
+                return;
+            }
+            menu.style.visibility = '';
+
+            // ⭐ SIZE IT TO THE SPACE, THEN PLACE IT — in that order.
+            //
+            // Placing a fixed-height menu below a header near the fold pushes
+            // Done off the bottom of the screen, where it cannot be clicked and
+            // cannot be scrolled to (the menu is fixed; the page scrolls behind
+            // it). So the menu gets a max-height first and its value list
+            // shrinks to fit, which is what keeps the footer reachable at any
+            // viewport height.
+            const GAP = 4, EDGE = 8;
+            const below = window.innerHeight - r.bottom - GAP - EDGE;
+            const above = r.top - GAP - EDGE;
+            const wanted = menu.scrollHeight;
+            const flip = below < Math.min(wanted, 360) && above > below;
+
+            // ⭐ THE FLOOR IS ON THE MENU, BUT THE THING THAT MUST STAY USABLE
+            // IS THE LIST. A 180px floor sounds generous until you subtract the
+            // sort row, the search box, the tools row and the footer — measured
+            // at 300px viewport height it left the value list 21 pixels tall:
+            // in the viewport, footer clickable, and completely unusable. So
+            // the floor is the height a menu actually needs, and if neither
+            // side has that much the menu is clamped into the viewport and
+            // allowed to overlap its own header rather than shrink to a sliver.
+            const NEEDED = Math.min(300, window.innerHeight - 2 * EDGE);
+            const room = Math.max(NEEDED, flip ? above : below);
+
+            menu.style.maxHeight = `${Math.round(room)}px`;
+            const h = Math.min(menu.offsetHeight, room);
+            const w = menu.offsetWidth;
+
+            let top = flip ? r.top - GAP - h : r.bottom + GAP;
+            top = Math.max(EDGE, Math.min(top, window.innerHeight - h - EDGE));
+            const left = Math.max(EDGE, Math.min(r.left, window.innerWidth - w - 12));
+            menu.style.top = `${Math.round(top)}px`;
+            menu.style.left = `${Math.round(left)}px`;
+        };
+        place();
+        placeMenu = place;
+        window.addEventListener('scroll', place, true);
+        window.addEventListener('resize', place);
 
         openMenu = menu;
         setTimeout(() => {
@@ -303,8 +388,10 @@ const TableFilter = (() => {
         });
     }
 
+    const GRID_SELECTOR = GRID_CLASSES.map(c => `table.${c}`).join(',');
+
     function enhanceAll(root) {
-        (root || document).querySelectorAll('table.data-table').forEach(enhance);
+        (root || document).querySelectorAll(GRID_SELECTOR).forEach(enhance);
     }
 
     /**
@@ -332,5 +419,5 @@ const TableFilter = (() => {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();
 
-    return { enhance, enhanceAll, register, clear, apply };
+    return { enhance, enhanceAll, register, clear, apply, GRID_CLASSES };
 })();

@@ -34,16 +34,16 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
-    <script src="../js/sw-version.js?v=3061"></script>
+    <script src="../js/sw-version.js?v=3062"></script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <link rel="stylesheet" href="../css/theme.css?v=3061">
-    <link rel="stylesheet" href="../css/landing.css?v=3061">
+    <link rel="stylesheet" href="../css/theme.css?v=3062">
+    <link rel="stylesheet" href="../css/landing.css?v=3062">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/landing-desk.css?v=3061">
-    <link rel="stylesheet" href="../css/compare-desk.css?v=3061">
+    <link rel="stylesheet" href="../css/landing-desk.css?v=3062">
+    <link rel="stylesheet" href="../css/compare-desk.css?v=3062">
 </head>
 <body class="landing-page desk-landing commerce-desk cmp-desk api-docs" data-hero-wave="merch-api">
 
@@ -239,7 +239,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">Render <code>orderStatus</code>, not <code>status</code></span><span class="dk-ldesc"><code>status</code> is the PLACEMENT-TIME payment state and is never written again, so a cancelled order reads <code>"confirmed"</code> there forever and so does a shipped one &mdash; cancellation and shipping live in <code>fulfillmentStatus</code>. Every order shape now also carries <b><code>orderStatus</code></b>: <code>"cancelled" | "shipped" | "failed" | "confirmed" | "processing"</code>, already resolved. It is on the order, on the order list, on guest lookup and on the checkout and verify replies. <code>status</code> is unchanged for existing clients.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#A78BFA">
-          <span class="dk-lmid"><span class="dk-lname"><code>refundState</code> says whether the money actually came back</span><span class="dk-ldesc">Cancelling raises a credit note in the merchant&#x27;s books, and that can be refused &mdash; on a tax-exclusive store it always is. <code>refundState</code> is <code>"none"</code> (nothing to refund), <code>"credited"</code> (the invoice was reversed in full), <code>"partial"</code> (only part of it was &mdash; a return on a cart mixing physical and digital lines credits the physical ones only) or <code>"pending"</code> (cancelled, reversal not completed). It is on the order, on the order list and on guest lookup &mdash; <b>not</b> on the checkout and verify replies, which describe a placement that has nothing to refund yet. <b>Render <code>"pending"</code> as &ldquo;refund being processed&rdquo;, never as refunded</b> &mdash; an order can read cancelled while the merchant still holds a live receivable.</span></span>
+          <span class="dk-lmid"><span class="dk-lname"><code>refundState</code> says whether the money actually came back</span><span class="dk-ldesc">Cancelling raises a credit note in the merchant&#x27;s books, and that can be refused &mdash; on a tax-exclusive store it always is. <code>refundState</code> is <code>"none"</code> (nothing to refund), <code>"credited"</code> (the invoice was reversed in full), <code>"partial"</code> (only part of it was &mdash; a return on a cart mixing physical and digital lines credits the physical ones only) or <code>"pending"</code> (cancelled, reversal not completed). It is on the order, on the order list and on guest lookup &mdash; <b>not</b> on the checkout and verify replies. Those two carry <code>orderStatus</code> but not this field, so read the order itself before telling a shopper anything about their money. <b>Render <code>"pending"</code> as &ldquo;refund being processed&rdquo;, never as refunded</b> &mdash; an order can read cancelled while the merchant still holds a live receivable.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#FB7185">
           <span class="dk-lmid"><span class="dk-lname">Some baskets can never be bought: <code>400</code> with <code>mixedCart</code></span><span class="dk-ldesc">A cart that mixes tax-inclusive and tax-exclusive products cannot be put on one invoice, so both <code>checkout</code> and <code>payment/create-order</code> refuse it with <code>400</code> and <code>{"mixedCart":true}</code>. It is PERMANENT and specific to that basket &mdash; do not retry it, and do not treat it as <code>storeUnavailable</code>, which means the opposite. Ask the shopper to order those items separately.</span></span>
@@ -372,7 +372,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">The failure that looks like data</span><span class="dk-ldesc">If a catalogue read times out and you render "this shop has nothing to sell", you have made a claim about the merchant&#x27;s business on the strength of a network blip. The same mistake on <code>/api/shopper/orders</code> tells a customer their orders are gone; on <code>/api/returns</code> it tells them they cannot file one. Keep "we could not load this" and "there is none" as different states in your UI &mdash; it is one boolean, and it is the difference between a retry and a support ticket.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#60A5FA">
-          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved. A retry is matched for at least 30 minutes and at most 60 &mdash; the window is a wall-clock bucket and both the current and previous one are checked. Send your own <code>idempotencyKey</code> and the match is made on that key plus the basket, so a resubmit collapses and a genuinely new purchase of the same cart under a fresh key does not. Omit it and the match is made on the basket alone: same buyer, same lines, same coupon, same gift card. Past the window the same basket is a new order, which is what lets a shopper re-order their usual cart. If you need exactly-once beyond an hour, keep your own record of what you have already placed.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved. On <code>checkout</code> and <code>payment/create-order</code>, send your own <code>idempotencyKey</code> and the retry is matched on that key <em>plus the basket</em>, with no time limit &mdash; a resubmit of the same cart collapses onto the one order for as long as that order exists. Change the cart under the same key and you get a new order, not the old one, so a key held in <code>localStorage</code> across an abandoned attempt cannot hand back lines the shopper has since removed. Omit the key and the match is made on the basket alone &mdash; same buyer, same lines, same coupon, same gift card &mdash; for at least 30 minutes and at most 60, because that fallback is bucketed on the wall clock and both the current and previous bucket are checked. Past that window the same basket is a new order, which is what lets a shopper re-order their usual cart. <b>Subscriptions are different</b>: <code>subscriptions</code> keys on the buyer and the plan with no time component at all, so the first schedule claims that key permanently and a later POST returns it.</span></span>
         </div>
       </div>
     </section>
@@ -2374,7 +2374,7 @@ curl -D - -o /dev/null \
       });
     })();
   </script>
-  <script src="../js/landing-hero-wave.js?v=3061"></script>
-  <script src="../js/features-menu.js?v=3061"></script>
+  <script src="../js/landing-hero-wave.js?v=3062"></script>
+  <script src="../js/features-menu.js?v=3062"></script>
 </body>
 </html>
