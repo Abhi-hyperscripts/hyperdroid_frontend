@@ -1138,7 +1138,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/storefront/register</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">A themed storefront announces its identity and theme catalogue here, on boot and periodically. It lets the admin panel render its theme picker from the connected storefront&#x27;s own themes, and lets the shop tell an official storefront apart from a custom headless front end. <strong>The bundled storefront image calls this for you — a custom front end does not need it</strong>, and ignoring it costs you nothing but the admin theme picker.</p>
+              <p class="mk-desc">A themed storefront announces its identity and theme catalogue here, on boot and periodically. It lets the admin panel render its theme picker from the connected storefront&#x27;s own themes, and lets the shop tell an official storefront apart from a custom headless front end. <strong>The bundled storefront image calls this for you — a custom front end does not need it</strong>, and ignoring it costs you nothing but the admin theme picker. <code>storefront</code> and <code>version</code> are required (<code>400</code> without them); themes with no usable key or name are dropped, duplicates keep the first, and at most 200 are kept. A registration lasts 15 minutes, so a real storefront heartbeats every 5.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/storefront/register \
   -H &quot;Content-Type: application/json&quot; \
@@ -1254,15 +1254,15 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/orders/lookup</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">Guest order lookup by email plus an order reference. Both must match, and it is rate limited, so it cannot be used to enumerate other people&#x27;s orders.</p>
+              <p class="mk-desc">Guest order lookup by email plus a reference. The reference is any one of: the order number the order page shows (<code>#2CEE6A8F</code> &mdash; the first eight characters of the order id, with or without the <code>#</code>, any case), the invoice id, the order reference printed in the confirmation email, or the order&#x27;s own id. Both halves must match, and the call is rate limited, so it cannot enumerate other people&#x27;s orders. Every miss is the same <code>404</code> with <code>phoneRequired: true</code> &mdash; offer a phone field and resend with <code>phone</code>: when the address changed hands after the order was placed, the last four digits of the phone typed at checkout must match too. The order&#x27;s own id sent as the reference needs no phone.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/orders/lookup \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;reference&quot;:&quot;SO-1A2B3C4D&quot;}&#x27;</pre>
+  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;reference&quot;:&quot;#2CEE6A8F&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   &quot;email&quot;: &quot;shopper@example.com&quot;,
-  &quot;reference&quot;: &quot;SO-1A2B3C4D&quot;
+  &quot;reference&quot;: &quot;#2CEE6A8F&quot;
 }</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
@@ -1822,7 +1822,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/payment/verify</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">Verify the signed payment result and create the order. Idempotent per payment, so a retried or duplicated callback cannot produce two orders.</p>
+              <p class="mk-desc">Verify the signed payment result and create the order. Idempotent per payment, so a retried or duplicated callback cannot produce two orders. On a store where online payment is switched off it answers <code>400</code> ("Payment is not configured") before anything else &mdash; check <code>/api/payment/config</code> first.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/payment/verify \
   -H &quot;Content-Type: application/json&quot; \
@@ -1870,7 +1870,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep" open>
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/returns</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The signed-in shopper&#x27;s own return requests and their status.</p>
+              <p class="mk-desc">The signed-in shopper&#x27;s own return requests and their status. Refused with <code>400</code> for an order that was cancelled (already refunded), never completed, has no invoice, or is digital-only; <code>404</code> for an order that is not this shopper&#x27;s; <code>409</code> when a return is already in progress. An order that has not shipped yet is accepted &mdash; the merchant decides in the admin.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl https://your-shop.example.com/api/returns \
   -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
@@ -1932,7 +1932,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep" open>
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/subscriptions</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The signed-in shopper&#x27;s recurring orders.</p>
+              <p class="mk-desc">The signed-in shopper&#x27;s recurring orders. Only tax-exclusive items can be subscribed: a line priced tax-inclusive (an MRP item) answers <code>400</code> naming the item, so hide the subscribe control on MRP products. <code>409</code> with <code>subscriptionId</code> + <code>status</code> when one already exists under your key.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl https://your-shop.example.com/api/subscriptions \
   -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
