@@ -34,16 +34,16 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
-    <script src="../js/sw-version.js?v=3063"></script>
+    <script src="../js/sw-version.js?v=3064"></script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <link rel="stylesheet" href="../css/theme.css?v=3063">
-    <link rel="stylesheet" href="../css/landing.css?v=3063">
+    <link rel="stylesheet" href="../css/theme.css?v=3064">
+    <link rel="stylesheet" href="../css/landing.css?v=3064">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/landing-desk.css?v=3063">
-    <link rel="stylesheet" href="../css/compare-desk.css?v=3063">
+    <link rel="stylesheet" href="../css/landing-desk.css?v=3064">
+    <link rel="stylesheet" href="../css/compare-desk.css?v=3064">
 </head>
 <body class="landing-page desk-landing commerce-desk cmp-desk api-docs" data-hero-wave="merch-api">
 
@@ -364,7 +364,7 @@ python3 -m http.server 5610</pre>
           <tr><td><code>502</code></td><td>The store reached its books and the books refused or did not answer &mdash; an order that could not be placed, a payment captured but not yet confirmed (<code>payment/verify</code> says whether that is <code>permanent</code>).</td><td>Read the flag. <code>permanent: false</code> means "check Track order in a minute"; <code>true</code> means the shopper must contact the store.</td></tr>
           <tr><td><code>503</code> + <code>storeUnavailable</code></td><td>The shop could not reach its own books &mdash; a lapsed licence, an upstream blip. Nothing is wrong with your request.</td><td>Say the shop is temporarily unavailable and offer a retry. Do not show "no products" or "no orders".</td></tr>
         </table>
-        <p class="mk-note">There is no <code>Retry-After</code> header; the limit window is a fixed minute, so retry after the next minute boundary. A <code>503</code> with <code>needsSetup: true</code> is a store that has not finished first-run setup &mdash; treat it like <code>storeUnavailable</code>.</p>
+        <p class="mk-note">Every <code>503</code> carries a <code>Retry-After</code> header in seconds &mdash; 60 for a transient failure, 300 when the store is closed on a licence lapse &mdash; so honour that rather than backing off on your own schedule. A <code>429</code> carries <b>no</b> <code>Retry-After</code>; its limit window is a fixed minute, so retry after the next minute boundary. A <code>503</code> with <code>needsSetup: true</code> is a store that has not finished first-run setup &mdash; treat it like <code>storeUnavailable</code>.</p>
       </div>
 
       <div class="dk-list">
@@ -372,7 +372,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">The failure that looks like data</span><span class="dk-ldesc">If a catalogue read times out and you render "this shop has nothing to sell", you have made a claim about the merchant&#x27;s business on the strength of a network blip. The same mistake on <code>/api/shopper/orders</code> tells a customer their orders are gone; on <code>/api/returns</code> it tells them they cannot file one. Keep "we could not load this" and "there is none" as different states in your UI &mdash; it is one boolean, and it is the difference between a retry and a support ticket.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#60A5FA">
-          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved. On <code>checkout</code> and <code>payment/create-order</code>, send your own <code>idempotencyKey</code> and the retry is matched on that key <em>plus the basket</em>, with no time limit &mdash; a resubmit of the same cart collapses onto the one order for as long as that order exists. Change the cart under the same key and you get a new order, not the old one, so a key held in <code>localStorage</code> across an abandoned attempt cannot hand back lines the shopper has since removed. Omit the key and the match is made on the basket alone &mdash; same buyer, same lines, same coupon, same gift card &mdash; for at least 30 minutes and at most 60, because that fallback is bucketed on the wall clock and both the current and previous bucket are checked. Past that window the same basket is a new order, which is what lets a shopper re-order their usual cart. <b>Subscriptions are different</b>: <code>subscriptions</code> keys on the buyer and the plan with no time component at all, so the first schedule claims that key permanently and a later POST returns it.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved. Where an order is PLACED &mdash; <code>checkout</code>, and the fully gift-covered &#8377;0 branch of <code>payment/create-order</code> &mdash; your own <code>idempotencyKey</code> is matched together with the basket, with no time limit: a resubmit of the same cart collapses onto the one order for as long as that order exists, and changing the cart under the same key gives you a new order rather than the old one, so a key held in <code>localStorage</code> across an abandoned attempt cannot hand back lines the shopper has since removed. Omit the key and the match is on the basket alone &mdash; same buyer, same lines, same coupon, same gift card &mdash; for at least 30 minutes and at most 60, because that fallback is bucketed on the wall clock and both the current and previous bucket are checked; past that window the same basket is a new order, which is what lets a shopper re-order their usual cart. <b>Two exceptions worth knowing.</b> The ordinary prepaid path of <code>payment/create-order</code> does not read the key at all &mdash; it opens a gateway order under a fresh reference every time. <code>payment/verify</code> then de-duplicates per <em>gateway order</em>, not per basket, so two <code>create-order</code> calls are two independent payments: if both are paid, both are invoiced. Do not retry this call blindly &mdash; a second call also takes a second gift-card hold that nothing releases, so the shopper can be refused by their own first attempt. And <code>subscriptions</code> keys on the buyer and the plan with no time component, so while a schedule is live a repeat POST answers with it; once you cancel, the same cart can be subscribed again.</span></span>
         </div>
       </div>
     </section>
@@ -1304,7 +1304,12 @@ curl -D - -o /dev/null \
   "carrier": "Delhivery",
   "trackingNumber": "SRTP0012345678",
   "fulfilledAt": "2026-08-22T17:45:12Z",
-  "cancelledAt": null
+  "cancelledAt": null,
+  "placedAt": "2026-08-21T09:13:51Z",
+  "amountDue": 985.6,
+  "giftCardApplied": 0,
+  "paymentMethod": "cod",
+  "amountUncollected": false
 }</pre>
             </div>
           </details>
@@ -1335,7 +1340,12 @@ curl -D - -o /dev/null \
     "carrier": "Delhivery",
     "trackingNumber": "SRTP0012345678",
     "fulfilledAt": "2026-08-22T17:45:12Z",
-    "cancelledAt": null
+    "cancelledAt": null,
+    "placedAt": "2026-08-21T09:13:51Z",
+    "amountDue": 985.6,
+    "giftCardApplied": 0,
+    "paymentMethod": "cod",
+    "amountUncollected": false
   },
   "events": [
     {
@@ -1348,6 +1358,16 @@ curl -D - -o /dev/null \
       "itemId": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
       "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
       "url": "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"
+    }
+  ],
+  "items": [
+    {
+      "itemId": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
+      "name": "Aurora Desk Lamp",
+      "qty": 2,
+      "price": 449.0,
+      "imageUrl": "https://cdn.example.com/items/aurora-lamp.jpg",
+      "isDigital": false
     }
   ]
 }</pre>
@@ -1729,7 +1749,12 @@ curl -D - -o /dev/null \
     "carrier": "Delhivery",
     "trackingNumber": "SRTP0012345678",
     "fulfilledAt": "2026-08-22T17:45:12Z",
-    "cancelledAt": null
+    "cancelledAt": null,
+    "placedAt": "2026-08-21T09:13:51Z",
+    "amountDue": 985.6,
+    "giftCardApplied": 0,
+    "paymentMethod": "cod",
+    "amountUncollected": false
   }
 ]</pre>
             </div>
@@ -1807,7 +1832,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/payment/create-order</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">Price the basket server-side and open a payment against it. Answers <code>409</code> with <code>availableQty</code> when a line asks for more units than are in stock &mdash; the same body <code>checkout</code> returns, and now also reachable on a fully gift-covered or 100%-off basket, which places immediately rather than opening a payment. The amount is computed from live prices, coupons and gift cards &mdash; the client never states what it owes. <strong>This route is for card/UPI/netbanking only</strong>; place a cash-on-delivery order at <code>/api/checkout</code> instead. The shared request body therefore carries two fields that behave differently here: <code>paymentMethod</code> is not how you choose the tender &mdash; its only effect is to select a COD-rated courier quote, so sending <code>&quot;cod&quot;</code> on a card payment charges your shopper the wrong delivery rate. And <code>idempotencyKey</code> is read only on the fully-covered &#8377;0 branch, which places an order outright; on the normal prepaid branch a repeat call opens a second gateway order (harmless &mdash; the unused one expires), and the order itself is de-duplicated at <code>payment/verify</code>.</p>
+              <p class="mk-desc">Price the basket server-side and open a payment against it. Answers <code>409</code> with <code>availableQty</code> when a line asks for more units than are in stock &mdash; the same body <code>checkout</code> returns, and now also reachable on a basket a gift card or a 100%-off coupon covers entirely. <strong>A &#8377;0 basket returns a different shape</strong>: it places the order immediately instead of opening a payment, and answers <code>{"freeOrder": true, "orderId": "&hellip;", "replayed": false}</code> &mdash; no <code>razorpayOrderId</code>, no <code>amount</code>. Branch on <code>freeOrder</code> before reading anything else, and send the shopper straight to the order page rather than to the gateway. <code>replayed</code> is true when your call collapsed onto an order that already existed. The amount is computed from live prices, coupons and gift cards &mdash; the client never states what it owes. <strong>This route is for card/UPI/netbanking only</strong>; place a cash-on-delivery order at <code>/api/checkout</code> instead. The shared request body therefore carries two fields that behave differently here: <code>paymentMethod</code> is not how you choose the tender &mdash; its only effect is to select a COD-rated courier quote, so sending <code>&quot;cod&quot;</code> on a card payment charges your shopper the wrong delivery rate. And <code>idempotencyKey</code> is read only on the fully-covered &#8377;0 branch, which places an order outright; on the normal prepaid branch a repeat call opens a second gateway order <em>and takes a second gift-card hold that nothing releases</em>, so the shopper can be refused by their own first attempt. Do not retry this call. If you lost the response, do not re-send it and do not start a second payment either &mdash; poll <code>GET /api/orders/lookup</code> (or the shopper&#x27;s order list) first, and only open a new payment if no order appears. The first attempt&#x27;s gift-card hold lapses on its own after 15 minutes.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/payment/create-order \
   -H &quot;Content-Type: application/json&quot; \
@@ -1838,6 +1863,7 @@ curl -D - -o /dev/null \
               <pre class="mk-json">{
   "razorpayOrderId": "order_PjK2mNqR8sT1vX",
   "amount": 98560,
+  "total": 985.6,
   "currency": "INR",
   "keyId": "rzp_live_A1b2C3d4E5f6G7",
   "name": "Your Store",
@@ -2049,7 +2075,9 @@ curl -D - -o /dev/null \
   "frequency": "monthly",
   "status": "paused",
   "nextRun": "2026-09-21T00:00:00Z",
-  "createdAt": "2026-08-21T09:14:03Z"
+  "createdAt": "2026-08-21T09:14:03Z",
+  "access": null,
+  "accessPendingPayment": false
 }</pre>
             </div>
           </details>
@@ -2374,7 +2402,7 @@ curl -D - -o /dev/null \
       });
     })();
   </script>
-  <script src="../js/landing-hero-wave.js?v=3063"></script>
-  <script src="../js/features-menu.js?v=3063"></script>
+  <script src="../js/landing-hero-wave.js?v=3064"></script>
+  <script src="../js/features-menu.js?v=3064"></script>
 </body>
 </html>

@@ -53,3 +53,9 @@ jobs:
       # for had neither half.
       - name: Check every .data-table page loads the column filter
         run: node scripts/check-table-filter-pairs.js
+
+      # Same shape, written before the same mistake could be made a third time:
+      # the row-actions menu has three parts, and anchored-menu.js is a hard
+      # dependency of both menu modules — a page missing it throws on first open.
+      - name: Check every actions-cell page loads the row-actions menu
+        run: node scripts/check-row-actions-pairs.js

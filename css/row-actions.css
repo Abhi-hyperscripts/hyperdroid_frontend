@@ -1,0 +1,53 @@
+/* ── Row actions: two icons and an overflow menu ───────────────────────────
+   Paired with js/row-actions.js, which needs js/anchored-menu.js. */
+
+/* The controls moved out of the cell still live in the cell — moving them into
+   the menu would break any listener the page attached to the node. */
+.rowact-stash { display: none !important; }
+
+.rowact-more { position: relative; }
+.rowact-more[aria-expanded="true"] { color: var(--brand-primary); background: var(--bg-tertiary); }
+
+.rowact-menu {
+  /* !important for the same reason the filter menu needs it: styles.css forces
+     position:relative and z-index:1 on body.dashboard's children through a
+     ~25-entry :not() chain, and nothing here can out-specify it. */
+  position: fixed !important;
+  z-index: 1300 !important;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 24px));
+  display: flex; flex-direction: column;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 5px;
+  background: var(--bg-card, var(--bg-primary));
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: var(--shadow-2xl, 0 18px 40px rgba(0,0,0,.35));
+}
+
+.rowact-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border: 0; border-radius: 6px;
+  background: transparent;
+  font: inherit; font-size: 13px; text-align: left;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rowact-item:hover { background: var(--bg-tertiary); }
+.rowact-item:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: -2px; }
+
+.rowact-ico {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; color: var(--text-muted);
+}
+.rowact-item:hover .rowact-ico { color: inherit; }
+.rowact-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+
+/* An action that posts to the ledger or destroys a document must not look like
+   View. It is separated from the safe actions and it is named in red. */
+.rowact-sep { height: 1px; margin: 5px 4px; background: var(--border-color); }
+.rowact-danger, .rowact-danger .rowact-ico { color: var(--color-error); }
+.rowact-danger:hover { background: var(--color-error); color: var(--text-inverse); }
+.rowact-danger:hover .rowact-ico { color: var(--text-inverse); }

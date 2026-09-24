@@ -77,9 +77,7 @@ const TableFilter = (() => {
     const state = new WeakMap();      // table element → { [colIndex]: Set(values) }
     const bars = new WeakMap();       // table element → its "filters active" bar
     let applying = false;             // re-entrancy guard for the observer
-    let openMenu = null;
-    let placeMenu = null;             // the open menu's re-position callback
-    let awayHandler = null;           // the open menu's click-outside handler
+    let openMenu = null;              // the menu element, for re-entrancy checks
 
     const esc = (t) => String(t ?? '')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -116,44 +114,14 @@ const TableFilter = (() => {
 
     // ─── the dropdown ───────────────────────────────────────────────────────
 
-    function closeMenu() {
-        if (!openMenu) return;
-        openMenu.remove();
-        openMenu = null;
-        document.removeEventListener('keydown', onKey, true);
-        /**
-         * ⭐⭐⭐ EVERY LISTENER THIS MENU ADDED DIES WITH THIS MENU.
-         *
-         * The click-outside handler used to remove itself only on the path
-         * where it actually fired — an outside click. Close the menu any OTHER
-         * way (Done, Escape, or opening a different column, which calls
-         * closeMenu first) and it stayed on `document` forever, holding a
-         * closure over a menu that no longer exists.
-         *
-         * The next menu's first click then hit that stale handler, which asked
-         * `oldMenu.contains(target)` — false, because the target is in the NEW
-         * menu — and closed the live menu. Measured on the receivables grid:
-         * the checkbox did toggle and `change` did fire, but the menu vanished
-         * before commit could paint, and re-opening showed every value ticked
-         * again. Reported as "the mouse clicks don't check/uncheck the
-         * checkboxes", which is exactly what it looks like.
-         *
-         * It survived testing because ONE open per page load never leaks: the
-         * first menu is always the one the stale handler belongs to. Every
-         * reload hid it again, which is why it looked fine after each resize.
-         */
-        if (awayHandler) {
-            document.removeEventListener('click', awayHandler);
-            awayHandler = null;
-        }
-        if (placeMenu) {
-            // Capture phase on BOTH, to match how they were added.
-            window.removeEventListener('scroll', placeMenu, true);
-            window.removeEventListener('resize', placeMenu);
-            placeMenu = null;
-        }
-    }
-    function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); closeMenu(); } }
+    /**
+     * Positioning, scroll-tracking and dismissal all live in anchored-menu.js.
+     * They used to live here, and the rules they encode — track the anchor in
+     * the capture phase, size before placing, and remove EVERY listener the
+     * menu added — were each learned from a defect. Keeping one implementation
+     * is the only way the row-actions menu cannot rediscover them.
+     */
+    function closeMenu() { AnchoredMenu.close(); }
 
     function distinctValues(table, colIndex) {
         const ad = adapters.get(table);
@@ -204,7 +172,6 @@ const TableFilter = (() => {
             <div class="tfil-foot">
                 <button type="button" class="tfil-done" data-done>Done</button>
             </div>`;
-        document.body.appendChild(menu);
 
         const list = menu.querySelector('.tfil-list');
         const countEl = menu.querySelector('.tfil-count');
@@ -269,84 +236,11 @@ const TableFilter = (() => {
 
         menu.querySelector('[data-done]').addEventListener('click', closeMenu);
 
-        /**
-         * ⭐ THE MENU IS `position: fixed`, SO IT DOES NOT SCROLL WITH ITS HEADER.
-         *
-         * Placing it once at open time looks right for exactly as long as
-         * nothing moves. Scroll the page — or the table's own horizontal
-         * scroller, which is why this listens in the CAPTURE phase rather than
-         * only on window — and the dropdown stays welded to the viewport while
-         * the column slides out from under it. Reported as "the dropdown is
-         * detached from its parent when the mouse is scrolled", which is
-         * precisely what it is.
-         *
-         * Fixed positioning is still the right call: the menu has to escape the
-         * `overflow` on every table wrapper here, and `body.dashboard`'s
-         * exclusion chain forces `position: relative` on anything left inside
-         * the flow. So it stays fixed and TRACKS the header instead.
-         */
-        const place = () => {
-            const r = th.getBoundingClientRect();
-
-            // Header scrolled out of sight: there is nothing to point at, so
-            // hide rather than leave a menu hovering over unrelated rows.
-            if (r.bottom < 0 || r.top > window.innerHeight ||
-                r.right < 0 || r.left > window.innerWidth) {
-                menu.style.visibility = 'hidden';
-                return;
-            }
-            menu.style.visibility = '';
-
-            // ⭐ SIZE IT TO THE SPACE, THEN PLACE IT — in that order.
-            //
-            // Placing a fixed-height menu below a header near the fold pushes
-            // Done off the bottom of the screen, where it cannot be clicked and
-            // cannot be scrolled to (the menu is fixed; the page scrolls behind
-            // it). So the menu gets a max-height first and its value list
-            // shrinks to fit, which is what keeps the footer reachable at any
-            // viewport height.
-            const GAP = 4, EDGE = 8;
-            const below = window.innerHeight - r.bottom - GAP - EDGE;
-            const above = r.top - GAP - EDGE;
-            const wanted = menu.scrollHeight;
-            const flip = below < Math.min(wanted, 360) && above > below;
-
-            // ⭐ THE FLOOR IS ON THE MENU, BUT THE THING THAT MUST STAY USABLE
-            // IS THE LIST. A 180px floor sounds generous until you subtract the
-            // sort row, the search box, the tools row and the footer — measured
-            // at 300px viewport height it left the value list 21 pixels tall:
-            // in the viewport, footer clickable, and completely unusable. So
-            // the floor is the height a menu actually needs, and if neither
-            // side has that much the menu is clamped into the viewport and
-            // allowed to overlap its own header rather than shrink to a sliver.
-            const NEEDED = Math.min(300, window.innerHeight - 2 * EDGE);
-            const room = Math.max(NEEDED, flip ? above : below);
-
-            menu.style.maxHeight = `${Math.round(room)}px`;
-            const h = Math.min(menu.offsetHeight, room);
-            const w = menu.offsetWidth;
-
-            let top = flip ? r.top - GAP - h : r.bottom + GAP;
-            top = Math.max(EDGE, Math.min(top, window.innerHeight - h - EDGE));
-            const left = Math.max(EDGE, Math.min(r.left, window.innerWidth - w - 12));
-            menu.style.top = `${Math.round(top)}px`;
-            menu.style.left = `${Math.round(left)}px`;
-        };
-        place();
-        placeMenu = place;
-        window.addEventListener('scroll', place, true);
-        window.addEventListener('resize', place);
-
         openMenu = menu;
-        setTimeout(() => {
-            // The menu may already be gone by the time this runs (open then
-            // immediately close); registering then would leak the very handler
-            // the comment in closeMenu is about.
-            if (openMenu !== menu) return;
-            awayHandler = (e) => { if (!menu.contains(e.target)) closeMenu(); };
-            document.addEventListener('click', awayHandler);
-        }, 0);
-        document.addEventListener('keydown', onKey, true);
+        AnchoredMenu.show(th, menu, {
+            minHeight: 300,                       // chrome + a usable value list
+            onClose: () => { if (openMenu === menu) openMenu = null; }
+        });
         menu.querySelector('.tfil-search').focus();
     }
 
