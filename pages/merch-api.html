@@ -232,6 +232,12 @@ python3 -m http.server 5610</pre>
         <div class="dk-lrow" style="--mod:#4ADE80">
           <span class="dk-lmid"><span class="dk-lname">Guest checkout is a first-class path, not a fallback</span><span class="dk-ldesc"><code>POST /api/checkout</code> and the whole payment flow take no token. A guest finds their order afterwards with <code>POST /api/orders/lookup</code> (email + order reference) or by the order&#x27;s own id. Sending a token where one is optional is still useful &mdash; the order is then linked to that shopper and appears in their history &mdash; but nothing refuses you for omitting it.</span></span>
         </div>
+        <div class="dk-lrow" style="--mod:#F472B6">
+          <span class="dk-lmid"><span class="dk-lname">A closed store answers <code>503</code> with <code>storeUnavailable</code> on every route</span><span class="dk-ldesc">A shop trades only while the merchant&#x27;s Ragenaizer <b>Accounts</b> licence is active &mdash; Accounts is what turns an order into an invoice, a GST document and a stock movement, so a shop that cannot book what it sells is closed. When it lapses, <b>every</b> endpoint here answers <code>503</code> with <code>{"error":"This store is currently unavailable. Please try again later.","storeUnavailable":true}</code> and a <code>Retry-After</code> header. Handle that one shape globally rather than per call. <code>GET /api/theme</code> keeps answering so you can still render the shop&#x27;s branding on your own &ldquo;temporarily unavailable&rdquo; page. The same <code>storeUnavailable</code> flag already appears on transient upstream failures, so one handler covers both.</span></span>
+        </div>
+        <div class="dk-lrow" style="--mod:#38BDF8">
+          <span class="dk-lmid"><span class="dk-lname">A cart line&#x27;s <code>qty</code> must be a whole number of at least 1</span><span class="dk-ldesc">Every endpoint that takes <code>lines</code> &mdash; <code>checkout</code>, <code>payment/create-order</code>, <code>shipping/quote</code>, <code>coupon/validate</code>, <code>discounts/auto</code>, <code>discounts/bxgy</code>, <code>subscriptions</code> &mdash; refuses a line whose <code>qty</code> is <code>0</code>, negative, or above <code>100000</code>. The charging routes answer <code>400</code> with <code>{"error":"One of the items has an invalid quantity."}</code>; the preview routes answer <code>200</code> with the preview simply not applying, because a preview never fails a request. <b>Remove a line rather than sending <code>qty: 0</code>.</b> The number you send is the number that is priced, charged and invoiced &mdash; nothing is silently rounded up to one unit or down to the ceiling.</span></span>
+        </div>
         <div class="dk-lrow" style="--mod:#F59E0B">
           <span class="dk-lmid"><span class="dk-lname">Sign-in itself is anonymous, obviously &mdash; and the document says so</span><span class="dk-ldesc"><code>register</code>, <code>login</code>, <code>google</code>, <code>password/forgot</code> and <code>password/reset</code> are where a token comes from, so none of them requires one. They are the only <code>/api/shopper/*</code> routes without a padlock, and the spec marks them that way: a generated client calls them without credentials.</span></span>
         </div>
@@ -1210,7 +1216,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/checkout</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">Place a Cash-on-Delivery order. Works for a guest with inline customer details or for a signed-in shopper. Online payment uses the payment endpoints instead, because there the order must not exist until the money is verified.</p>
+              <p class="mk-desc">Place a Cash-on-Delivery order. Works for a guest with inline customer details or for a signed-in shopper. Online payment uses the payment endpoints instead, because there the order must not exist until the money is verified. Answers <code>409</code> when a line asks for more units than are in stock, with the same body the online path returns: <code>{"error":"Only 3 of one of your items is left. …","availableQty":3}</code> &mdash; show <code>availableQty</code> and let the shopper adjust. Stock is reserved for the moment of placement and released straight after, so two shoppers cannot both buy the last unit.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/checkout \
   -H &quot;Content-Type: application/json&quot; \
@@ -1335,14 +1341,16 @@ curl -D - -o /dev/null \
   -H &quot;Authorization: Bearer $TOKEN&quot; \
   -H &quot;Content-Type: application/json&quot; \
   -d &#x27;{&quot;reason&quot;:&quot;Ordered the wrong size&quot;}&#x27;</pre>
-              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>. Returns <code>409</code> if the order has already shipped, and <code>404</code> if it is not yours.</p>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>. Returns <code>403</code> if the order belongs to another account, <code>404</code> if there is no such order, and <code>400</code> with an <code>error</code> message if it has already shipped (request a return instead), is already cancelled, was never completed, or is digital and already delivered. <code>refund</code> is the amount credited in the merchant&#x27;s books (the credit note raised against the invoice); the shopper&#x27;s card or UPI refund is issued by the merchant separately &mdash; the shop does not call the payment gateway. <code>refundBlocked</code> is <code>true</code> when the books refused the reversal and a person has to issue it.</p>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   "reason": "Seal was broken on arrival."
 }</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
-  "ok": true
+  "ok": true,
+  "refund": 468.0,
+  "refundBlocked": false
 }</pre>
             </div>
           </details>
