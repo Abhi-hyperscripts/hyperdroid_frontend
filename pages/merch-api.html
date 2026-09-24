@@ -235,6 +235,9 @@ python3 -m http.server 5610</pre>
         <div class="dk-lrow" style="--mod:#F472B6">
           <span class="dk-lmid"><span class="dk-lname">A closed store answers <code>503</code> with <code>storeUnavailable</code> on every route</span><span class="dk-ldesc">A shop trades only while the merchant&#x27;s Ragenaizer <b>Accounts</b> licence is active &mdash; Accounts is what turns an order into an invoice, a GST document and a stock movement, so a shop that cannot book what it sells is closed. When it lapses, <b>every</b> endpoint here answers <code>503</code> with <code>{"error":"This store is currently unavailable. Please try again later.","storeUnavailable":true}</code> and a <code>Retry-After</code> header. Handle that one shape globally rather than per call. <code>GET /api/theme</code> keeps answering so you can still render the shop&#x27;s branding on your own &ldquo;temporarily unavailable&rdquo; page. The same <code>storeUnavailable</code> flag already appears on transient upstream failures, so one handler covers both.</span></span>
         </div>
+        <div class="dk-lrow" style="--mod:#94A3B8">
+          <span class="dk-lmid"><span class="dk-lname"><code>invoicePdfUrl</code> is <code>null</code> today &mdash; render <code>invoiceId</code> instead</span><span class="dk-ldesc">The tax invoice is issued and stored by Ragenaizer Accounts, and this storefront has no route that can serve it, so the field is reserved and arrives <code>null</code> on every order. Do not build a download button from it. Show <code>invoiceId</code>: that is the number the confirmation email carries and the one a shopper quotes to the merchant. We will not generate a PDF here to fill the gap &mdash; a second document competing with the real GST invoice is worse than no button.</span></span>
+        </div>
         <div class="dk-lrow" style="--mod:#38BDF8">
           <span class="dk-lmid"><span class="dk-lname">A cart line&#x27;s <code>qty</code> must be a whole number of at least 1</span><span class="dk-ldesc">Every endpoint that takes <code>lines</code> &mdash; <code>checkout</code>, <code>payment/create-order</code>, <code>shipping/quote</code>, <code>coupon/validate</code>, <code>discounts/auto</code>, <code>discounts/bxgy</code>, <code>subscriptions</code> &mdash; refuses a line whose <code>qty</code> is <code>0</code>, negative, or above <code>100000</code>. The charging routes answer <code>400</code> with <code>{"error":"One of the items has an invalid quantity."}</code>; the preview routes answer <code>200</code> with the preview simply not applying, because a preview never fails a request. <b>Remove a line rather than sending <code>qty: 0</code>.</b> The number you send is the number that is priced, charged and invoiced &mdash; nothing is silently rounded up to one unit or down to the ceiling.</span></span>
         </div>
@@ -344,7 +347,7 @@ python3 -m http.server 5610</pre>
           <tr><td><code>401</code></td><td>No token, one that has expired, or &mdash; with <code>sessionEnded: true</code> &mdash; one ended by a password change, a reset or sign-out-everywhere.</td><td>Send them back through sign-in and retry. Never treat it as "you have nothing".</td></tr>
           <tr><td><code>403</code></td><td>The token is valid but this account may not do that &mdash; today only <code>password/change</code> on an account whose address now belongs to someone else.</td><td>Show the message; there is nothing to retry.</td></tr>
           <tr><td><code>404</code></td><td>Genuinely absent &mdash; no such product, no such order.</td><td>Render an empty state. This <em>is</em> a definite answer.</td></tr>
-          <tr><td><code>409</code></td><td>The state moved under you: an order already shipped, a gift card already spent, a duplicate submission.</td><td>Re-read and show the current state. Do not blindly retry.</td></tr>
+          <tr><td><code>409</code></td><td>The state moved under you: a return already in progress, a gift card already spent, not enough stock left for the quantity asked (the body carries <code>availableQty</code>).</td><td>Re-read and show the current state. Do not blindly retry.</td></tr>
           <tr><td><code>429</code></td><td>Rate limited. Login, checkout and payment are throttled per client.</td><td><strong>Back off and retry.</strong> This is not a failure &mdash; treating it as one turns a slow moment into a lost sale.</td></tr>
           <tr><td><code>502</code></td><td>The store reached its books and the books refused or did not answer &mdash; an order that could not be placed, a payment captured but not yet confirmed (<code>payment/verify</code> says whether that is <code>permanent</code>).</td><td>Read the flag. <code>permanent: false</code> means "check Track order in a minute"; <code>true</code> means the shopper must contact the store.</td></tr>
           <tr><td><code>503</code> + <code>storeUnavailable</code></td><td>The shop could not reach its own books &mdash; a lapsed licence, an upstream blip. Nothing is wrong with your request.</td><td>Say the shop is temporarily unavailable and offer a retry. Do not show "no products" or "no orders".</td></tr>
@@ -757,17 +760,17 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/events</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">Report a small batch of funnel events (viewed, added to cart, and so on) for the merchant&#x27;s analytics. Unknown event types are ignored rather than rejected.</p>
+              <p class="mk-desc">Report a small batch of funnel events for the merchant&#x27;s analytics. <b><code>type</code> must be one of <code>page_view</code>, <code>product_view</code>, <code>add_to_cart</code> or <code>checkout_start</code></b> &mdash; any other value is DROPPED and the response still says <code>ok</code>, so check <code>recorded</code> against the number of events you sent rather than the status code. Unknown event types are ignored rather than rejected.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/events \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;sessionId&quot;:&quot;string&quot;,&quot;events&quot;:[{&quot;type&quot;:&quot;view&quot;,&quot;itemId&quot;:&quot;ITM-001&quot;}]}&#x27;</pre>
+  -d &#x27;{&quot;sessionId&quot;:&quot;sess_7f3a91c2b8d4&quot;,&quot;events&quot;:[{&quot;type&quot;:&quot;product_view&quot;,&quot;itemId&quot;:&quot;ITM-001&quot;}]}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   "sessionId": "sess_7f3a91c2b8d4",
   "events": [
     {
-      "type": "view",
+      "type": "product_view",
       "itemId": "16a8357b-4fa1-40ff-a70c-43094daee1d4"
     }
   ]
@@ -857,7 +860,7 @@ curl -D - -o /dev/null \
   "reviews": [
     {
       "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
-      "author": "Priya S.",
+      "reviewer": "Priya S.",
       "rating": 5,
       "title": "Exactly as described",
       "body": "Genuinely cold pressed — the aroma is unmistakable. Repeat purchase.",
@@ -1251,7 +1254,7 @@ curl -D - -o /dev/null \
   "orderRef": "ORD-2026-00142",
   "status": "paid",
   "total": 985.6,
-  "invoicePdfUrl": "https://yourshop.com/invoices/INV-2026-00142.pdf",
+  "invoicePdfUrl": null,
   "giftCardApplied": 0.0,
   "amountDue": 985.6
 }</pre>
@@ -1277,7 +1280,7 @@ curl -D - -o /dev/null \
   "orderRef": "ORD-2026-00142",
   "status": "paid",
   "total": 985.6,
-  "invoicePdfUrl": "https://yourshop.com/invoices/INV-2026-00142.pdf",
+  "invoicePdfUrl": null,
   "createdAt": "2026-08-21T09:14:03Z",
   "awb": "SRTP0012345678",
   "trackingUrl": "https://www.delhivery.com/track/package/SRTP0012345678",
@@ -1306,7 +1309,7 @@ curl -D - -o /dev/null \
     "orderRef": "ORD-2026-00142",
     "status": "paid",
     "total": 985.6,
-    "invoicePdfUrl": "https://yourshop.com/invoices/INV-2026-00142.pdf",
+    "invoicePdfUrl": null,
     "createdAt": "2026-08-21T09:14:03Z",
     "awb": "SRTP0012345678",
     "trackingUrl": "https://www.delhivery.com/track/package/SRTP0012345678",
@@ -1685,7 +1688,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/shopper/orders</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The signed-in shopper&#x27;s order history. Requires a shopper token.</p>
+              <p class="mk-desc">The signed-in shopper&#x27;s order history, newest first. Requires a shopper token. <b>Returns at most the 100 most recent orders, and takes no paging or filter parameters</b> &mdash; any query string is ignored rather than refused, so do not build a pager against it. For an older order, look it up by its reference with <code>POST /api/orders/lookup</code>.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl https://your-shop.example.com/api/shopper/orders \
   -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
@@ -1698,7 +1701,7 @@ curl -D - -o /dev/null \
     "orderRef": "ORD-2026-00142",
     "status": "paid",
     "total": 985.6,
-    "invoicePdfUrl": "https://yourshop.com/invoices/INV-2026-00142.pdf",
+    "invoicePdfUrl": null,
     "createdAt": "2026-08-21T09:14:03Z",
     "awb": "SRTP0012345678",
     "trackingUrl": "https://www.delhivery.com/track/package/SRTP0012345678",
@@ -1848,7 +1851,7 @@ curl -D - -o /dev/null \
   "orderRef": "ORD-2026-00142",
   "status": "paid",
   "total": 985.6,
-  "invoicePdfUrl": "https://yourshop.com/invoices/INV-2026-00142.pdf",
+  "invoicePdfUrl": null,
   "giftCardApplied": 0.0,
   "amountDue": 985.6
 }</pre>

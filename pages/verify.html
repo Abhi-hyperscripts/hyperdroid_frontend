@@ -228,8 +228,15 @@
         function render(v) {
             $('error').hidden = true;
             if (!v) {
-                showError('No signed document matches that. Check the code, or ask the sender to '
-                        + 'send you the signed copy from their system.');
+                // ⭐ THE ADVICE NAMES THE LIKELY CAUSE. A bare "no match" is read
+                // as "this is a forgery", and the commonest reason is neither:
+                // they dropped the UNSIGNED original, which is shared with every
+                // other customer who got the same template and therefore cannot
+                // identify a record on its own.
+                showError('No signed document matches that. If you dropped the original rather than '
+                        + 'the signed copy, enter the verification code from the certificate as well '
+                        + '— an unsigned template is the same file for everyone who received it, so '
+                        + 'it cannot identify a record by itself.');
                 return;
             }
 
