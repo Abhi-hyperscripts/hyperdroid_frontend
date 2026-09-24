@@ -76,7 +76,7 @@
            spelling (26 uses to 10 of "e-commerce"). -->
       <h1 class="dk-h1">Build your own<br>ecommerce.</h1>
       <p class="dk-sub">Merch ships with thirty-two designs, and if none of them is what you want, the front end is replaceable. The shop that ships with it is just one consumer of this HTTP API and holds no privileged access &mdash; so anything it does, your own front end can do, in React, Vue, Svelte, Flutter or a native app, while the invoices, the FIFO stock and the books stay exactly as they are.</p>
-      <p class="dk-replaces"><b>Forty-six endpoints, on your own domain.</b> Your store serves its own OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>. This page is the same surface, so you can read it before installing anything.</p>
+      <p class="dk-replaces"><b>Fifty-six endpoints, on your own domain.</b> Your store serves its own OpenAPI document at <code>/api/openapi.json</code> and a browsable page at <code>/api/docs</code>. This page is the same surface, so you can read it before installing anything.</p>
       <div class="dk-actions">
         <a class="dk-btn1" href="https://github.com/Abhi-hyperscripts/merch-reference-storefront">Get the starter storefront &rarr;</a>
         <a class="dk-btn2" href="merch.html">About Merch</a>
@@ -183,10 +183,10 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">You can call it straight from the browser</span><span class="dk-ldesc">The store answers every origin, method and header, on purpose &mdash; so a front end on a different domain to the store needs no proxy of its own. Because the credential is an <code>Authorization</code> header and not a cookie, nothing depends on the two sharing a site.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#F87171">
-          <span class="dk-lmid"><span class="dk-lname">Every failure is the same JSON shape</span><span class="dk-ldesc">A failed call answers <code>{"error": "&hellip;"}</code>, with a message written to be shown to a shopper as-is. <code>400</code> is a rejected request, <code>401</code> a missing or expired token, <code>404</code> an unknown id, <code>429</code> rate limiting, and <code>503</code> the store being temporarily unreachable &mdash; that last one adds <code>"storeUnavailable": true</code> so you can tell it apart from an ordinary refusal and retry rather than blame the shopper.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">Every failure is the same JSON shape</span><span class="dk-ldesc">A failed call answers <code>{"error": "&hellip;"}</code>, with a message written to be shown to a shopper as-is. <code>400</code> is a rejected request, <code>401</code> a missing or expired token, <code>404</code> an unknown id, <code>429</code> rate limiting, and <code>503</code> the store being temporarily unreachable &mdash; that last one adds <code>"storeUnavailable": true</code> so you can tell it apart from an ordinary refusal and retry rather than blame the shopper. Refusals a client should branch on carry a boolean flag beside <code>error</code> &mdash; <code>exists</code>, <code>weakPassword</code>, <code>invalidLink</code>, <code>useForgotPassword</code>, <code>sessionEnded</code>, <code>phoneRequired</code>, <code>needsSetup</code> and so on &mdash; and the OpenAPI document declares that <code>Error</code> shape on every error response, so a generated client can switch on the flag instead of parsing prose.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#FB923C">
-          <span class="dk-lmid"><span class="dk-lname">Sign-in, checkout and payment are rate limited</span><span class="dk-ldesc">Per client IP, in fixed one-minute windows: 15 for sign-in, 25 for checkout and payment, 90 for cart previews like coupons and gift cards, 120 for product-by-id. Over the line answers <code>429</code> in the usual error shape. The catalogue, collections and blog are not limited, so a browse-heavy front end is not penalised.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">Everything is rate limited, browsing most generously</span><span class="dk-ldesc">Per client IP, in fixed one-minute windows: <strong>15</strong> for sign-in, register, Google, every password route, sign-out-everywhere, gift-card checks, guest order lookup and posting a review; <strong>25</strong> for checkout, payment, creating or changing a return or subscription, and cancelling an order; <strong>90</strong> for cart previews, shipping quotes, cart save and the signed-in account reads and writes; <strong>120</strong> for browsing, events and reading an order. Over the line answers <code>429</code> in the usual error shape. There is no <code>Retry-After</code>; the window is fixed, so retry after the next minute boundary.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#2DD4BF">
               <span class="dk-lmid"><span class="dk-lname">Every timestamp is ISO&nbsp;8601 in UTC</span><span class="dk-ldesc">Dates come back as <code>2026-08-09T00:00:00Z</code> &mdash; always UTC with the trailing <code>Z</code>, never the store&rsquo;s local time, so convert to the shopper&rsquo;s zone in your own front end. <code>new Date(value)</code> parses them directly. The field name is not a reliable signal: alongside <code>createdAt</code>, <code>updatedAt</code>, <code>fulfilledAt</code>, <code>cancelledAt</code> and <code>resolvedAt</code> there are <code>nextRun</code> on a subscription and <code>at</code> on an order event, which carry the same format without the suffix.</span></span>
@@ -206,21 +206,23 @@ python3 -m http.server 5610</pre>
         <div class="mk-flow">
           <div class="mk-flowhead"><span class="mk-flownum">1</span> Getting a token</div>
           <ol class="mk-steps">
-            <li>Read <code>GET /api/auth/config</code> first. It answers <code>{ google: { enabled, clientId } }</code>.</li>
-            <li>If <code>enabled</code> is false the merchant has not set Google up. <strong>Render a guest-only shop</strong> &mdash; do not show a sign-in button that cannot work.</li>
-            <li>If it is true, run Google Sign-In with that <code>clientId</code>, then POST the resulting ID token to <code>/api/shopper/google</code>. You get a shopper token back.</li>
-            <li>Send it as <code>Authorization: Bearer &lt;token&gt;</code> on the calls listed below.</li>
+            <li>Read <code>GET /api/auth/config</code> first. It answers <code>{ google: { enabled, clientId }, password: { enabled, resetByEmail, resetOrigin } }</code>.</li>
+            <li><strong>Email and password always work.</strong> <code>POST /api/shopper/register</code> with <code>{ email, password, name?, phone? }</code> creates the account and signs it in; <code>POST /api/shopper/login</code> signs an existing one in. Both answer <code>{ token, shopper }</code>. Passwords are 8 to 128 characters with no composition rules.</li>
+            <li>If <code>google.enabled</code> is true, also offer Google Sign-In with that <code>clientId</code> and POST the ID token to <code>/api/shopper/google</code>. Same reply shape.</li>
+            <li>Forgotten password: <code>POST /api/shopper/password/forgot</code> with the address and the absolute URL of <em>your</em> reset page, built on <code>password.resetOrigin</code>. The email link is that URL with <code>?token=&hellip;</code>; your page posts the token and the new password to <code>/api/shopper/password/reset</code> and is signed in. Show the control whenever <code>resetByEmail</code> is true.</li>
+            <li>Send the token as <code>Authorization: Bearer &lt;token&gt;</code> on the calls listed below. It is valid for 30 days; <code>POST /api/shopper/sessions/revoke</code> ends every session everywhere and hands this device a fresh one.</li>
           </ol>
-          <p class="mk-note"><strong>Google is the only way in.</strong> There is no email/password registration, no OTP and no magic link. If your merchant&#x27;s customers do not use Google, plan a guest-only experience &mdash; every money path still works.</p>
+          <p class="mk-note"><strong>Three doors, one token.</strong> A wrong password, an unknown address and a Google-only account with no password all answer the same <code>401</code> on <code>login</code> &mdash; do not try to tell them apart. A password change or reset ends every other session: those tokens then answer <code>401</code> with <code>sessionEnded: true</code>, and the right response is to sign in again, not to treat the shopper as a guest.</p>
         </div>
 
         <div class="mk-flow">
           <div class="mk-flowhead"><span class="mk-flownum">2</span> What needs one</div>
-          <p>Seventeen of the forty-six. They are exactly the calls that read or change something belonging to a person, and each is marked <code>security: bearer</code> in the OpenAPI document, so a generated client attaches the token for you.</p>
+          <p>Nineteen of the fifty-six. They are exactly the calls that read or change something belonging to a person, and each is marked <code>security: bearer</code> in the OpenAPI document, so a generated client attaches the token for you.</p>
           <ul class="mk-steps">
             <li><strong>The shopper&#x27;s own records</strong> &mdash; <code>/api/shopper/me</code>, <code>/orders</code>, <code>/addresses</code> (all four verbs), <code>/wishlist</code>.</li>
             <li><strong>Their commitments</strong> &mdash; <code>/api/subscriptions</code> (list, create, pause/resume/cancel) and <code>/api/returns</code> (list, create).</li>
             <li><strong>Acts only an owner may perform</strong> &mdash; <code>POST /api/orders/{id}/cancel</code> and <code>POST /api/products/{itemId}/reviews</code>.</li>
+            <li><strong>The credential itself</strong> &mdash; <code>POST /api/shopper/password/change</code> and <code>POST /api/shopper/sessions/revoke</code>.</li>
           </ul>
           <p class="mk-note">Everything else &mdash; the catalogue, search, collections, blog, reviews (reading), shipping quotes, coupon and gift-card previews, checkout, payment and order lookup &mdash; is anonymous.</p>
         </div>
@@ -231,7 +233,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">Guest checkout is a first-class path, not a fallback</span><span class="dk-ldesc"><code>POST /api/checkout</code> and the whole payment flow take no token. A guest finds their order afterwards with <code>POST /api/orders/lookup</code> (email + order reference) or by the order&#x27;s own id. Sending a token where one is optional is still useful &mdash; the order is then linked to that shopper and appears in their history &mdash; but nothing refuses you for omitting it.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#F59E0B">
-          <span class="dk-lmid"><span class="dk-lname">Sign-in itself is anonymous, obviously &mdash; and the document says so</span><span class="dk-ldesc"><code>POST /api/shopper/google</code> is where a token comes from, so it does not require one. It is the single exception to the <code>/api/shopper/*</code> rule, and it is marked correctly in the spec: a generated client will call it without credentials.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">Sign-in itself is anonymous, obviously &mdash; and the document says so</span><span class="dk-ldesc"><code>register</code>, <code>login</code>, <code>google</code>, <code>password/forgot</code> and <code>password/reset</code> are where a token comes from, so none of them requires one. They are the only <code>/api/shopper/*</code> routes without a padlock, and the spec marks them that way: a generated client calls them without credentials.</span></span>
         </div>
       </div>
     </section>
@@ -326,20 +328,22 @@ python3 -m http.server 5610</pre>
 
     <section class="dk-section dk-reveal" id="errors">
       <div class="dk-kicker">When it does not work</div>
-      <h2 class="dk-h2">Six status codes, and one of them is not a failure.</h2>
+      <h2 class="dk-h2">Eight status codes, and one of them is not a failure.</h2>
       <p class="dk-lede">Every one of these is documented per-operation in the OpenAPI document, so a generated client can branch on them. The distinction worth internalising: <strong>a 4xx is an answer about your request; a 5xx or a timeout is the absence of an answer.</strong> Rendering the second as though it were the first is the single most common way a storefront lies to a shopper.</p>
 
       <div class="mk-flow">
         <table class="mk-table">
           <tr><th>Status</th><th>Means</th><th>What your front end should do</th></tr>
           <tr><td><code>400</code></td><td>The request is malformed or the basket is not sellable &mdash; an unpriced item, a bad pincode, an empty cart.</td><td>Show the message. It is written for the shopper, not for you.</td></tr>
-          <tr><td><code>401</code></td><td>No token, or one that has expired.</td><td>Send them back through sign-in and retry. Never treat it as "you have nothing".</td></tr>
+          <tr><td><code>401</code></td><td>No token, one that has expired, or &mdash; with <code>sessionEnded: true</code> &mdash; one ended by a password change, a reset or sign-out-everywhere.</td><td>Send them back through sign-in and retry. Never treat it as "you have nothing".</td></tr>
+          <tr><td><code>403</code></td><td>The token is valid but this account may not do that &mdash; today only <code>password/change</code> on an account whose address now belongs to someone else.</td><td>Show the message; there is nothing to retry.</td></tr>
           <tr><td><code>404</code></td><td>Genuinely absent &mdash; no such product, no such order.</td><td>Render an empty state. This <em>is</em> a definite answer.</td></tr>
           <tr><td><code>409</code></td><td>The state moved under you: an order already shipped, a gift card already spent, a duplicate submission.</td><td>Re-read and show the current state. Do not blindly retry.</td></tr>
           <tr><td><code>429</code></td><td>Rate limited. Login, checkout and payment are throttled per client.</td><td><strong>Back off and retry.</strong> This is not a failure &mdash; treating it as one turns a slow moment into a lost sale.</td></tr>
+          <tr><td><code>502</code></td><td>The store reached its books and the books refused or did not answer &mdash; an order that could not be placed, a payment captured but not yet confirmed (<code>payment/verify</code> says whether that is <code>permanent</code>).</td><td>Read the flag. <code>permanent: false</code> means "check Track order in a minute"; <code>true</code> means the shopper must contact the store.</td></tr>
           <tr><td><code>503</code> + <code>storeUnavailable</code></td><td>The shop could not reach its own books &mdash; a lapsed licence, an upstream blip. Nothing is wrong with your request.</td><td>Say the shop is temporarily unavailable and offer a retry. Do not show "no products" or "no orders".</td></tr>
         </table>
-        <p class="mk-note">There is no <code>Retry-After</code> header today, so choose your own back-off &mdash; a couple of seconds, doubling, is plenty. If you want the header, ask and we will add it.</p>
+        <p class="mk-note">There is no <code>Retry-After</code> header; the limit window is a fixed minute, so retry after the next minute boundary. A <code>503</code> with <code>needsSetup: true</code> is a store that has not finished first-run setup &mdash; treat it like <code>storeUnavailable</code>.</p>
       </div>
 
       <div class="dk-list">
@@ -378,7 +382,7 @@ python3 -m http.server 5610</pre>
 
     <section class="dk-section dk-reveal" id="endpoints">
       <div class="dk-kicker">The surface</div>
-      <h2 class="dk-h2">Forty-six endpoints, all documented.</h2>
+      <h2 class="dk-h2">Fifty-six endpoints, all documented.</h2>
       <p class="dk-lede">Grouped the way a front end consumes them. Open any one for a runnable curl, what it does, its parameters, and the JSON going in and out. The shapes are illustrative &mdash; field names and types are real, the values are placeholders.</p>
       <!-- Filter. Injected markup is minimal and the control is HIDDEN until the script boots (mk-find
            gets .is-on), so with JS off the page is exactly what it was: plain, scrollable, complete. -->
@@ -395,11 +399,11 @@ python3 -m http.server 5610</pre>
       </div>
       <div class="mk-eps">
         <section class="mk-group">
-          <h3 class="mk-gname">Storefront <span>18 endpoints</span></h3>
+          <h3 class="mk-gname">Storefront <span>22 endpoints</span></h3>
           <details class="mk-ep" open>
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/catalog</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The product list, returned as a bare array &mdash; there is no envelope, and there is none when you page either. Omit <code>page</code> and <code>pageSize</code> and one call gives you the whole visible catalogue, exactly as it always has. Add them and you get that page, still as a plain array, with the counts in the <code>X-Total-Count</code> and <code>X-Total-Pages</code> response headers &mdash; both CORS-exposed, so a front end on another origin can read them. <code>pageSize</code> defaults to 24 and is capped at 200; a page below 1 is treated as the first, and a page past the end is an empty array rather than the last page, so an infinite scroll stops instead of repeating. Paging is applied after variant folding, so pages never overlap or skip a card. It does <strong>not</strong> apply to the <code>ids</code> form below, which resolves cart lines and would silently drop items if it were sliced. Optional query: <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>locale</code>, and <code>sort</code>, which accepts exactly <code>price_asc</code>, <code>price_desc</code> or <code>name</code> &mdash; any other value is ignored rather than rejected, so a typo silently returns catalogue order. Products that share a variant group fold to one card here; use the variants endpoint to expand it. Prices and stock are live from the merchant&#x27;s books, and hidden products are already excluded.</p>
+              <p class="mk-desc">The product list, returned as a bare array &mdash; there is no envelope, and there is none when you page either. Omit <code>page</code> and <code>pageSize</code> and one call gives you the whole visible catalogue, exactly as it always has. Add them and you get that page, still as a plain array, with the counts in the <code>X-Total-Count</code> and <code>X-Total-Pages</code> response headers &mdash; both CORS-exposed, so a front end on another origin can read them. <code>pageSize</code> defaults to 24 and is capped at 200; a page below 1 is treated as the first, and a page past the end is an empty array rather than the last page, so an infinite scroll stops instead of repeating. Paging is applied after variant folding, so pages never overlap or skip a card. It does <strong>not</strong> apply to the <code>ids</code> form below, which resolves cart lines and would silently drop items if it were sliced. Optional query: <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>locale</code>, and <code>sort</code>, which accepts exactly <code>price_asc</code>, <code>price_desc</code> or <code>name</code> &mdash; any other value is ignored rather than rejected, so a typo silently returns catalogue order. The filter-rail parameters: <code>brand</code> (comma-separated slugs, ids or names), <code>color</code> and <code>size</code> (comma-separated values), and <code>attr</code> (repeatable <code>key:value</code>, any attribute the merchant defined &mdash; <code>attr=material:Cotton&amp;attr=fit:Slim</code>). Several values of one key mean <em>either</em>; different keys all apply. Limits: 12 attribute keys, 40 values per key, keys up to 60 and values up to 200 characters; anything past that, or an <code>attr</code> without <code>key:value</code>, answers <code>400</code> rather than being ignored. Pair it with <code>/api/catalog/facets</code> for the counts. Products that share a variant group fold to one card here; use the variants endpoint to expand it. Prices and stock are live from the merchant&#x27;s books, and hidden products are already excluded.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl https://your-shop.example.com/api/catalog
 
@@ -419,6 +423,10 @@ curl -D - -o /dev/null \
               
                 <li><code>page</code> <span class="mk-loc">query</span> <span class="mk-ty">integer</span></li>
                 <li><code>pageSize</code> <span class="mk-loc">query</span> <span class="mk-ty">integer</span></li>
+                <li><code>brand</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>color</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>size</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>attr</code> <span class="mk-loc">query</span> <span class="mk-ty">string[]</span></li>
               </ul>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">[
@@ -460,6 +468,41 @@ curl -D - -o /dev/null \
     ]
   }
 ]</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/catalog/facets</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The counts a filter rail is built from, for the <strong>same query</strong> <code>/api/catalog</code> takes (<code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>brand</code>, <code>color</code>, <code>size</code>, <code>attr</code>). Each dimension is counted with every constraint applied except its own, so a shopper who picked Red still sees how many Blue there are, and <code>price</code> is the range of the result <em>without</em> the price band, so a slider can always be widened again. Brands and categories are counted per product card, attribute values per variant. Every list holds at most 100 entries, most common first. What a facet shows is what the filter matches: send <code>categories[].name</code> back verbatim as <code>category=</code>, and a brand&#x27;s <code>slug</code> as <code>brand=</code>. <code>price</code> is <code>null</code> only when nothing matches even with the band removed. Over-cap or malformed filters answer <code>400</code>.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl &quot;https://your-shop.example.com/api/catalog/facets?category=Edible%20Oils&amp;color=Red&quot;</pre>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>search</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>category</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>minPrice</code> <span class="mk-loc">query</span> <span class="mk-ty">number</span></li>
+                <li><code>maxPrice</code> <span class="mk-loc">query</span> <span class="mk-ty">number</span></li>
+                <li><code>inStock</code> <span class="mk-loc">query</span> <span class="mk-ty">boolean</span></li>
+                <li><code>brand</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>color</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>size</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>attr</code> <span class="mk-loc">query</span> <span class="mk-ty">string[]</span></li>
+                <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+              </ul>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  "total": 37,
+  "brands": [
+    { "id": "41b34130-6ecb-4a0b-ac7d-96b0ffb41913", "name": "24 Mantra", "slug": "24-mantra", "count": 12 }
+  ],
+  "categories": [
+    { "name": "Edible Oils", "count": 25 }
+  ],
+  "attributes": [
+    { "key": "colour", "values": [ { "value": "Red", "count": 9 }, { "value": "Blue", "count": 4 } ] },
+    { "key": "size", "values": [ { "value": "1 ltr", "count": 7 } ] }
+  ],
+  "price": { "min": 199.0, "max": 1299.0 }
+}</pre>
             </div>
           </details>
           <details class="mk-ep">
@@ -846,6 +889,53 @@ curl -D - -o /dev/null \
             </div>
           </details>
           <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/recently-viewed</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The viewer&#x27;s recently viewed products, most recent first, resolved against the live catalogue so retired items drop out. A guest needs <code>sessionId</code> (the same id your analytics events use) &mdash; without one the call answers <code>400</code>. With a shopper token the account&#x27;s history is merged in, so the list follows a sign-in across devices. <code>limit</code> defaults to 12, maximum 24.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl &quot;https://your-shop.example.com/api/recently-viewed?sessionId=s_8f3a2c&amp;limit=8&quot;</pre>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>sessionId</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+                <li><code>limit</code> <span class="mk-loc">query</span> <span class="mk-ty">integer</span></li>
+                <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+              </ul>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  "products": [ {
+      "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
+      "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
+      "imageUrls": ["https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"],
+      "category": "Edible Oils",
+      "price": 468.0,
+      "mrp": 520.0,
+      "availability": "in_stock",
+      "brandName": "24 Mantra",
+      "brandSlug": "24-mantra",
+      "isDigital": false
+    } ]
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/recently-viewed</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Record that the viewer opened a product. Send <code>itemId</code> and the same <code>sessionId</code> the analytics events use; add the shopper token when signed in and the view is recorded against the account too, so guests and signed-in shoppers both get a list. Call it from the product page; the home page&#x27;s <code>recentlyViewed</code> section reads it back.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/recently-viewed \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;itemId&quot;:&quot;16a8357b-4fa1-40ff-a70c-43094daee1d4&quot;,&quot;sessionId&quot;:&quot;s_8f3a2c&quot;}&#x27;</pre>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  "itemId": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
+  "sessionId": "s_8f3a2c"
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  "ok": true
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shipping/quote</code></summary>
             <div class="mk-epbody">
               <p class="mk-desc">The delivery cost for a destination pincode and basket. This is the FINAL figure checkout will charge, resolved the same way the order is priced, so the number shown is the number billed. <strong>READ <code>options</code>, NOT <code>available</code>.</strong> Despite the name, <code>available</code> reports only whether a LIVE COURIER RATE was found &mdash; a store on flat-rate shipping, or one that has not connected a courier account, answers <code>available: false</code> on every quote while shipping perfectly happily. Wiring that flag to &ldquo;we cannot deliver to your pincode&rdquo; tells most shoppers of most stores that the shop does not serve them. <code>options</code> is always populated and is the real answer; <code>shipping</code> is the cheapest option&rsquo;s amount.</p>
@@ -956,6 +1046,92 @@ curl -D - -o /dev/null \
   "priceListId": null,
   "storefrontMode": "auto",
   "homeSections": []
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/homepage</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">The home page the merchant composed in the admin, already resolved: an ordered list of the sections they switched on, each carrying the data it renders, so a front end walks the list and draws each section by its <code>type</code> instead of composing a home page in code. A banner section can sit anywhere in the order, and more than once, so "banner at the top, the middle and the bottom" is three banner sections. Types and the arm each carries: <code>banner</code> &rarr; <code>banners</code> (live ones only, with an optional <code>imageMobileUrl</code> for narrow screens); <code>browseCategories</code> and <code>categoryCarousel</code> &rarr; <code>categories</code>; <code>brandsCarousel</code> &rarr; <code>brands</code>; <code>featuredProducts</code>, <code>newArrivals</code> (newest to this store), <code>bestSellers</code> (units sold in the last 30 days) and <code>homepageProducts</code> (the merchant&#x27;s picks, optionally narrowed to categories) &rarr; <code>products</code>; <code>categoryProducts</code> &rarr; <code>groups</code>, one <code>{ slug, name, products }</code> per category; <code>recentlyViewed</code> carries nothing &mdash; fetch <code>/api/recently-viewed</code> for the viewer at hand. Every other arm is <code>null</code>. <code>title</code> and <code>limit</code> are the merchant&#x27;s. Bounded: 12 banners per slot, 12 category rows per section, 600 products on the page. Cached about a minute after an admin change.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl &quot;https://your-shop.example.com/api/homepage?locale=hi&quot;</pre>
+              <div class="mk-sub">Parameters</div><ul class="mk-params">
+                <li><code>locale</code> <span class="mk-loc">query</span> <span class="mk-ty">string</span></li>
+              </ul>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  "sections": [
+    {
+      "id": "top-banner",
+      "type": "banner",
+      "title": "Big deals this week",
+      "banners": [
+        {
+          "id": "cf68d1e4-0af0-47b1-915a-9edccf149b3a",
+          "title": "Monsoon sale",
+          "imageUrl": "https://cdn.yourshop.com/banners/monsoon-1600x600.jpg",
+          "imageMobileUrl": "https://cdn.yourshop.com/banners/monsoon-800x600.jpg",
+          "link": "/shop",
+          "alt": "Monsoon sale banner"
+        }
+      ],
+      "categories": null, "brands": null, "products": null, "groups": null
+    },
+    {
+      "id": "browse",
+      "type": "browseCategories",
+      "title": "Browse Categories",
+      "categories": [
+        { "slug": "edible-oils", "name": "Edible Oils", "count": 25, "imageUrl": "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png" }
+      ]
+    },
+    {
+      "id": "brands",
+      "type": "brandsCarousel",
+      "title": "Shop by Brand",
+      "brands": [
+        { "slug": "24-mantra", "name": "24 Mantra", "count": 41, "logoUrl": "https://cdn.yourshop.com/brands/24-mantra.png" }
+      ]
+    },
+    {
+      "id": "best",
+      "type": "bestSellers",
+      "title": "Best sellers",
+      "limit": 8,
+      "products": [ {
+      "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
+      "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
+      "imageUrls": ["https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"],
+      "category": "Edible Oils",
+      "price": 468.0,
+      "mrp": 520.0,
+      "availability": "in_stock",
+      "brandName": "24 Mantra",
+      "brandSlug": "24-mantra",
+      "isDigital": false
+    } ]
+    },
+    {
+      "id": "cat-products",
+      "type": "categoryProducts",
+      "title": "Shop by aisle",
+      "groups": [
+        { "slug": "tea", "name": "Tea", "products": [ {
+      "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
+      "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
+      "imageUrls": ["https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"],
+      "category": "Edible Oils",
+      "price": 468.0,
+      "mrp": 520.0,
+      "availability": "in_stock",
+      "brandName": "24 Mantra",
+      "brandSlug": "24-mantra",
+      "isDigital": false
+    } ] }
+      ]
+    },
+    { "id": "recent", "type": "recentlyViewed", "title": "Recently viewed", "limit": 8 }
+  ]
 }</pre>
             </div>
           </details>
@@ -1172,11 +1348,11 @@ curl -D - -o /dev/null \
           </details>
         </section>
         <section class="mk-group">
-          <h3 class="mk-gname">Shopper accounts <span>12 endpoints</span></h3>
+          <h3 class="mk-gname">Shopper accounts <span>18 endpoints</span></h3>
           <details class="mk-ep" open>
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/auth/config</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">Which sign-in methods this shop offers, so the front end knows whether to render a Google button. The client id it returns is public by design.</p>
+              <p class="mk-desc">Which sign-in methods this shop offers. <code>google.enabled</code> says whether to render a Google button (the client id is public by design). <code>password.enabled</code> is always true. <code>password.resetByEmail</code> says whether the shop has outgoing email configured with a public origin &mdash; show the forgot-password control when it is, and let that call&#x27;s reply say whether sending is paused. <code>password.resetOrigin</code> is the origin your reset page must sit on: build the <code>resetUrl</code> from it, never from the browser&#x27;s address bar.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl https://your-shop.example.com/api/auth/config</pre>
               <div class="mk-sub">Response</div>
@@ -1184,7 +1360,153 @@ curl -D - -o /dev/null \
   "google": {
     "enabled": true,
     "clientId": "812345678901-ab1cd2ef3gh4ij5kl6mn7op8qr9st0uv.apps.googleusercontent.com"
+  },
+  "password": {
+    "enabled": true,
+    "resetByEmail": true,
+    "resetOrigin": "https://your-shop.example.com"
   }
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/register</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Create a shopper account with an email address and a password (8 to 128 characters, no composition rules); <code>name</code> and <code>phone</code> are optional. Answers the same <code>{ token, shopper }</code> as sign-in, so the shopper is signed in at once. <code>409</code> with <code>exists: true</code> when the address already has an account &mdash; a Google sign-in counts, a guest checkout does not; tell them to sign in or use forgot-password (the reply does not say which kind of account it is). Earlier guest orders under the address are <em>not</em> attached here; they attach after a password reset proves the inbox (or at once on a Google sign-in). <code>400</code> with <code>weakPassword: true</code> for the length rule.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/register \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;password&quot;:&quot;correct horse battery&quot;,&quot;name&quot;:&quot;Priya Sharma&quot;}&#x27;</pre>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  "email": "shopper@example.com",
+  "password": "correct horse battery",
+  "name": "Priya Sharma",
+  "phone": "9999999999"
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaG9wcGVyIn0.7Qf1m0Zt3xR",
+  "shopper": {
+    "id": "4e6b0a92-8d17-42f5-b3c9-7a05e2d81f34",
+    "email": "shopper@example.com",
+    "name": "Priya Sharma",
+    "phone": "9999999999",
+    "emailDetached": false
+  },
+  "passwordDropped": false
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/login</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Sign in with email and password. Returns the shopper token to send as <code>Authorization: Bearer</code> on account calls, plus a profile brief. A wrong password, an unknown address and an account that has no password (Google-only) all answer the <strong>same</strong> <code>401</code> with <code>{ "error": "Email or password is incorrect." }</code> &mdash; do not try to tell them apart. <code>passwordDropped</code> is always false on this door. The token is valid for 30 days.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/login \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;password&quot;:&quot;correct horse battery&quot;}&#x27;</pre>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  "email": "shopper@example.com",
+  "password": "correct horse battery"
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaG9wcGVyIn0.7Qf1m0Zt3xR",
+  "shopper": {
+    "id": "4e6b0a92-8d17-42f5-b3c9-7a05e2d81f34",
+    "email": "shopper@example.com",
+    "name": "Priya Sharma",
+    "phone": "9999999999",
+    "emailDetached": false
+  },
+  "passwordDropped": false
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/password/forgot</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Start a password reset. Send the address and <code>resetUrl</code>, the absolute URL of <em>your</em> reset page: it must be on the store&#x27;s configured public origin (<code>password.resetOrigin</code> from <code>/api/auth/config</code> &mdash; same scheme, host and port, or <code>400</code>), at most 500 characters, with no fragment and no <code>token</code> parameter of its own. When the address has an account and the shop can send mail, an email goes out whose link is that URL with <code>?token=&hellip;</code> appended, valid once for one hour; five requests per address per hour. <strong>Always answers <code>ok</code>.</strong> <code>emailed</code> reports whether the shop <em>can</em> send email &mdash; never whether this address has an account or whether a message went out. <code>sendingPaused: true</code> means mail is configured but pausing after failures: say "try again shortly". Tell the shopper "if an account exists for that address, a link is on its way", never "we sent you an email".</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/password/forgot \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;resetUrl&quot;:&quot;https://your-shop.example.com/account/reset&quot;}&#x27;</pre>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  "email": "shopper@example.com",
+  "resetUrl": "https://your-shop.example.com/account/reset"
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  "ok": true,
+  "emailed": true,
+  "sendingPaused": false
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/password/reset</code></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Finish a password reset with the <code>token</code> your reset page read from its URL and the new password. Signs the shopper in on success (same reply as login) and ends every other session on the account. <code>400</code> with <code>invalidLink: true</code> when the token is unknown, already used or older than an hour &mdash; retrying cannot help, offer "request a new link"; <code>400</code> with <code>weakPassword: true</code> for the 8&ndash;128 rule. A successful reset also attaches that address&#x27;s guest orders from the last 30 days to the account, because the inbox is now proven.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/password/reset \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;token&quot;:&quot;&lt;token from the email link&gt;&quot;,&quot;newPassword&quot;:&quot;a new long password&quot;}&#x27;</pre>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  "token": "3f9c1b2e7a4d5f608b1c2d3e4f5a6b7c",
+  "newPassword": "a new long password"
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaG9wcGVyIn0.7Qf1m0Zt3xR",
+  "shopper": {
+    "id": "4e6b0a92-8d17-42f5-b3c9-7a05e2d81f34",
+    "email": "shopper@example.com",
+    "name": "Priya Sharma",
+    "phone": "9999999999",
+    "emailDetached": false
+  },
+  "passwordDropped": false
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/password/change</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Change the signed-in shopper&#x27;s password, given the current one. Every <em>other</em> session ends the moment it changes; the reply carries a fresh token for this device &mdash; keep using it. The <code>400</code>s are flagged: <code>useForgotPassword</code> (the account has no password yet &mdash; it signed up with Google &mdash; and its first password must come through the reset email, so a stolen token cannot become a permanent credential), <code>wrongCurrentPassword</code>, <code>samePassword</code>, <code>weakPassword</code>. <code>403</code> when the address now belongs to another account; <code>409</code> when the password changed elsewhere while this call ran (sign in again).</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/password/change \
+  -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;currentPassword&quot;:&quot;correct horse battery&quot;,&quot;newPassword&quot;:&quot;a new long password&quot;}&#x27;</pre>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Request body</div>
+              <pre class="mk-json">{
+  "currentPassword": "correct horse battery",
+  "newPassword": "a new long password"
+}</pre>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  "ok": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaG9wcGVyIn0.Nn3wT0k3n"
+}</pre>
+            </div>
+          </details>
+          <details class="mk-ep">
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/sessions/revoke</code><span class="mk-auth">token</span></summary>
+            <div class="mk-epbody">
+              <p class="mk-desc">Sign out everywhere: ends every session of the signed-in shopper, including the one that called, and returns a fresh token for this device. Needs no password, so it is the one revocation lever an account that signed in with Google only (or a store that cannot send reset emails) has against a token copied from a lost device. Older tokens answer <code>401</code> with <code>sessionEnded: true</code> from here on. It works on a recycled-address account too, where the replacement expires when the presented token would have.</p>
+              <div class="mk-sub">Try it</div>
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/sessions/revoke \
+  -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
+              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+              <div class="mk-sub">Response</div>
+              <pre class="mk-json">{
+  "ok": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaG9wcGVyIn0.Nn3wT0k3n"
 }</pre>
             </div>
           </details>
@@ -1308,15 +1630,13 @@ curl -D - -o /dev/null \
             </div>
           </details>
           <details class="mk-ep">
-            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/google</code><span class="mk-auth">token</span></summary>
+            <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/shopper/google</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">Sign in with a Google ID token. The token is verified server-side and the shopper is found or created from the verified email. Returns a shopper JWT.</p>
+              <p class="mk-desc">Sign in with a Google ID token. The token is verified server-side and the shopper is found or created from the verified email; earlier guest orders under that address (last 30 days) attach at once, because Google proved the inbox. Returns a shopper JWT. <code>passwordDropped: true</code> means this was the first Google sign-in on an address that had a password but no Google link yet: that password is gone (whoever set it may not be this person) and every older session has ended &mdash; say so on the spot and point at forgot-password. <code>400</code> when Google is off or the credential is missing, <code>401</code> when it does not verify, <code>503</code> with <code>storeUnavailable</code> when Google itself is unreachable (offer a retry).</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/google \
-  -H &quot;Authorization: Bearer $TOKEN&quot; \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;credential&quot;:&quot;string&quot;}&#x27;</pre>
-              <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
+  -d &#x27;{&quot;credential&quot;:&quot;&lt;google id token&gt;&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   "credential": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjB"
@@ -1325,18 +1645,20 @@ curl -D - -o /dev/null \
               <pre class="mk-json">{
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaG9wcGVyIn0.7Qf1m0Zt3xR",
   "shopper": {
-    "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
+    "id": "4e6b0a92-8d17-42f5-b3c9-7a05e2d81f34",
     "email": "shopper@example.com",
-    "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
-    "phone": "9999999999"
-  }
+    "name": "Priya Sharma",
+    "phone": "9999999999",
+    "emailDetached": false
+  },
+  "passwordDropped": false
 }</pre>
             </div>
           </details>
           <details class="mk-ep">
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/shopper/me</code><span class="mk-auth">token</span></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The signed-in shopper&#x27;s profile. Requires a shopper token.</p>
+              <p class="mk-desc">The signed-in shopper&#x27;s profile. <code>linked</code> is true once they are a customer in the merchant&#x27;s books (they have bought). <code>emailDetached: true</code> with <code>email: ""</code> means the address was recycled to another account: show "this address now belongs to another account &mdash; contact the store" rather than a blank line, and expect checkout to need a typed email. Requires a shopper token.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl https://your-shop.example.com/api/shopper/me \
   -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
@@ -1347,7 +1669,8 @@ curl -D - -o /dev/null \
   "email": "shopper@example.com",
   "name": "Priya Sharma",
   "phone": "9999999999",
-  "linked": true
+  "linked": true,
+  "emailDetached": false
 }</pre>
             </div>
           </details>
@@ -1841,7 +2164,7 @@ curl -D - -o /dev/null \
     })();
 
     /* ── Endpoint filter ────────────────────────────────────────────────────────
-       Why this exists: 39 of the 46 endpoint blocks are COLLAPSED by default, which
+       Why this exists: 49 of the 56 endpoint blocks are COLLAPSED by default, which
        puts about 63% of this page's text inside closed <details>. Chrome's
        find-in-page expands those; Firefox and Safari do not — so for a large share
        of readers the browser's own Ctrl+F cannot reach two-thirds of the reference,
