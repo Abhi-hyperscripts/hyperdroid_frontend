@@ -136,12 +136,20 @@ const DocumentsPanel = (() => {
 
     function docMarkup(d, canReview) {
         const id = esc(d.id);
+        const canPreview = !!previewKindOf(d);
         const status = String(d.status || 'received');
         const reviewer = d.reviewed_by_name || d.reviewed_by_user_id;
         return `
         <article class="docp-item is-${esc(status)}" data-doc-id="${id}">
             <div class="docp-item-main">
-                <span class="docp-item-name" title="${esc(d.file_name)}">${esc(d.file_name)}</span>
+                ${canPreview
+                    // The NAME is the control, because that is what a reader
+                    // reaches for. The eye below repeats it for anyone scanning
+                    // the action row; a format we cannot draw gets neither,
+                    // rather than a button whose only outcome is an apology.
+                    ? `<button type="button" class="docp-item-name is-openable" data-act="preview" data-id="${id}"
+                               title="Open ${esc(d.file_name)}">${esc(d.file_name)}</button>`
+                    : `<span class="docp-item-name" title="${esc(d.file_name)}">${esc(d.file_name)}</span>`}
                 <span class="docp-item-type">${esc(labelFor(d.doc_type))}</span>
             </div>
             <div class="docp-item-meta">
@@ -152,6 +160,10 @@ const DocumentsPanel = (() => {
             </div>
             ${d.review_note ? `<p class="docp-item-note">${esc(d.review_note)}${reviewer ? ` — ${esc(reviewer)}` : ''}</p>` : ''}
             <div class="docp-item-actions">
+                ${canPreview ? `
+                <button type="button" class="docp-act" data-act="preview" data-id="${id}" title="Open">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>` : ''}
                 <button type="button" class="docp-act" data-act="download" data-id="${id}" title="Download">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </button>
@@ -287,6 +299,174 @@ const DocumentsPanel = (() => {
      * presigned S3 URL handed to the browser would be a shareable credential
      * for somebody's PAN card that outlives the session.
      */
+    /**
+     * ⭐⭐⭐ WHAT MAY BE RENDERED IS DECIDED HERE, NOT BY THE FILE.
+     *
+     * The download endpoint sends `Content-Disposition: attachment` and
+     * `X-Content-Type-Options: nosniff` on purpose: an uploaded .html or .svg
+     * that rendered in our origin would be stored XSS against whoever opened
+     * somebody's "PAN card". Fetching the bytes and making our own blob URL
+     * walks straight past that header — it only governs navigation — so the
+     * mitigation has to be re-made on this side rather than assumed.
+     *
+     * It is re-made as a WHITELIST OF THREE, keyed on the extension (which is
+     * what the upload control actually constrains) and never on the stored
+     * content type, which came from the client. The blob is then constructed
+     * with the type THIS function chose, so the bytes cannot become an HTML
+     * document however they were uploaded or whatever they contain.
+     *
+     * SVG is excluded even though it is an image: it is a document format with
+     * script in it, and the upload control does not accept it anyway.
+     */
+    const PREVIEW_KINDS = {
+        pdf:  { kind: 'pdf',   mime: 'application/pdf' },
+        png:  { kind: 'image', mime: 'image/png' },
+        jpg:  { kind: 'image', mime: 'image/jpeg' },
+        jpeg: { kind: 'image', mime: 'image/jpeg' },
+        webp: { kind: 'image', mime: 'image/webp' },
+        gif:  { kind: 'image', mime: 'image/gif' },
+        txt:  { kind: 'text',  mime: 'text/plain' },
+    };
+
+    function previewKindOf(doc) {
+        const name = String((doc && doc.file_name) || '');
+        const dot = name.lastIndexOf('.');
+        if (dot < 0) return null;
+        return PREVIEW_KINDS[name.slice(dot + 1).toLowerCase()] || null;
+    }
+
+    let _viewer = null;
+
+    function closeViewer() {
+        if (!_viewer) return;
+        // ⭐ REVOKED, ALWAYS. A 25 MB blob held by an object URL stays in memory
+        // for the life of the tab, and this panel is opened lead after lead.
+        try { URL.revokeObjectURL(_viewer.url); } catch (_) {}
+        document.removeEventListener('keydown', _viewer.onKey);
+        _viewer.back.remove();
+        _viewer = null;
+    }
+
+    /**
+     * Read it here instead of downloading it and opening it somewhere else.
+     *
+     * The bytes come through the same authenticated fetch as the download —
+     * a presigned S3 URL handed to the browser would be a shareable credential
+     * for somebody's identity document that outlives the session, which is the
+     * reason download() works this way too.
+     */
+    async function preview(container, id) {
+        const st = mounted.get(container);
+        const doc = st.docs.find(d => d.id === id);
+        const type = previewKindOf(doc);
+        if (!type) {
+            // Reached only if a row offers the control for a format we cannot
+            // draw; the markup does not, so this is the belt to that braces.
+            Toast.error('This format cannot be previewed here — download it instead.');
+            return;
+        }
+
+        const back = document.createElement('div');
+        back.className = 'docv-back';
+        back.innerHTML = `
+            <div class="docv" role="dialog" aria-modal="true" aria-label="Document preview" tabindex="-1">
+                <div class="docv-head">
+                    <span class="docv-name"></span>
+                    <div class="docv-actions">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-docv="download">Download</button>
+                        <button type="button" class="docv-x" data-docv="close" aria-label="Close">&times;</button>
+                    </div>
+                </div>
+                <div class="docv-body"><p class="docv-loading">Opening…</p></div>
+            </div>`;
+        back.querySelector('.docv-name').textContent = (doc && doc.file_name) || 'Document';
+        document.body.appendChild(back);
+
+        const onKey = (e) => { if (e.key === 'Escape') closeViewer(); };
+        document.addEventListener('keydown', onKey);
+        back.addEventListener('click', (e) => { if (e.target === back) closeViewer(); });
+        back.querySelector('[data-docv="close"]').addEventListener('click', closeViewer);
+        back.querySelector('[data-docv="download"]').addEventListener('click', () => download(container, id));
+        back.querySelector('.docv').focus();
+        _viewer = { back, url: null, onKey };
+
+        const body = back.querySelector('.docv-body');
+        try {
+            const base = (typeof CONFIG !== 'undefined' && CONFIG.crmApiBaseUrl) || '/api';
+            const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
+            const res = await fetch(`${base}/entity-documents/${encodeURIComponent(id)}/download`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            if (!res.ok) throw new Error(res.status === 404
+                ? 'That document is no longer available'
+                : 'That document could not be opened');
+
+            // Closed while the bytes were in flight — do not paint over a
+            // viewer the user has already dismissed, or open a second one.
+            if (!_viewer || _viewer.back !== back) return;
+
+            if (type.kind === 'text') {
+                // textContent, never innerHTML: a .txt file is untrusted input
+                // that happens to be readable.
+                const pre = document.createElement('pre');
+                pre.className = 'docv-text';
+                pre.textContent = await res.text();
+                body.innerHTML = '';
+                body.appendChild(pre);
+                return;
+            }
+
+            // The type is OURS, not the server's — see the comment on
+            // PREVIEW_KINDS.
+            const blob = new Blob([await res.arrayBuffer()], { type: type.mime });
+            const url = URL.createObjectURL(blob);
+            _viewer.url = url;
+
+            body.innerHTML = '';
+            if (type.kind === 'image') {
+                const img = document.createElement('img');
+                img.className = 'docv-img';
+                img.alt = (doc && doc.file_name) || 'Document';
+                img.src = url;
+                body.appendChild(img);
+            } else {
+                const frame = document.createElement('iframe');
+                frame.className = 'docv-frame';
+                frame.title = (doc && doc.file_name) || 'Document';
+                // ⭐⭐⭐ NO sandbox ATTRIBUTE, AND THAT IS A MEASURED DECISION.
+                //
+                // It was here first, as "defence in depth". Chrome renders PDFs
+                // through an internal viewer that is itself a scripted document,
+                // so a sandbox without allow-scripts does not harden the frame —
+                // it turns the viewer off. Measured side by side: identical
+                // valid PDF, sandboxed frame showed the broken-file icon, plain
+                // frame rendered with pages, zoom and print. And the sandbox
+                // could not be loosened into usefulness either: allow-scripts
+                // together with allow-same-origin is documented as equivalent to
+                // no sandbox at all.
+                //
+                // What actually prevents the stored-XSS this replaced the
+                // download header's protection with is the line above: the Blob
+                // is constructed with the type PREVIEW_KINDS chose, so these
+                // bytes are an application/pdf resource whatever was uploaded
+                // and whatever the stored content type claims. A decorative
+                // attribute that silently disables the feature is worse than no
+                // attribute, because the next reader trusts it.
+                frame.src = url;
+                body.appendChild(frame);
+            }
+        } catch (e) {
+            console.error('Failed to preview document:', e);
+            if (_viewer && _viewer.back === back) {
+                body.innerHTML = '';
+                const msg = document.createElement('p');
+                msg.className = 'docv-failed';
+                msg.textContent = (e && e.message) || 'That document could not be opened.';
+                body.appendChild(msg);
+            }
+        }
+    }
+
     async function download(container, id) {
         const st = mounted.get(container);
         const doc = st.docs.find(d => d.id === id);
@@ -478,6 +658,7 @@ const DocumentsPanel = (() => {
             if (btn.dataset.docp === 'upload') return upload(container);
             const id = btn.getAttribute('data-id');
             switch (btn.getAttribute('data-act')) {
+                case 'preview': return preview(container, id);
                 case 'download': return download(container, id);
                 case 'verify': return review(container, id, 'verified');
                 case 'reject': return review(container, id, 'rejected');
