@@ -2,6 +2,34 @@
    Paired with js/table-filter.js. The funnel lives in the <th>; the dropdown
    is appended to <body> so no table's overflow can clip it. */
 
+/* ⭐ We hide rows with OUR class, never with the inline `display` property —
+   nine page scripts here already write `tr.style.display` on rows, and two
+   owners of one property means each silently undoes the other. `!important`
+   because the card layout in table-cards.css sets a display on rows too. */
+tr.tfil-hide { display: none !important; }
+
+/* An active filter has to be visible and escapable. A filter on a column that
+   is scrolled off to the right is invisible, and then every OTHER column's
+   filter looks broken, because the two AND together. */
+.tfil-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 0 0 8px; padding: 7px 12px;
+  border: 1px solid var(--brand-primary);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+.tfil-bar b { color: var(--text-primary); font-weight: 600; }
+.tfil-bar-clear {
+  margin-left: auto; padding: 4px 10px;
+  font: inherit; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border-color); border-radius: 6px;
+  background: var(--bg-card, var(--bg-primary)); color: var(--brand-primary);
+  cursor: pointer;
+}
+.tfil-bar-clear:hover { border-color: var(--brand-primary); }
+
 .tfil-th { position: relative; white-space: nowrap; }
 
 .tfil-btn {

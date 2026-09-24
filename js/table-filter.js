@@ -60,10 +60,26 @@ const TableFilter = (() => {
     // boxes by default.
     const MAX_DISTINCT = 300;
 
+    /**
+     * ⭐⭐⭐ HIDE WITH A CLASS, NOT WITH `style.display`.
+     *
+     * The first cut wrote `tr.style.display` directly. That property is not
+     * ours: nine page scripts here already write it on table rows
+     * (auth/admin.js, crm/settings.js, hrms/payroll.js, procurement/items.js,
+     * accounts/budgets.js, three research pages). Two owners of one property
+     * means the column filter silently UNHIDES rows the page deliberately hid,
+     * and the page's own filter silently un-hides ours. A class we own cannot
+     * collide with a page that owns the inline style.
+     */
+    const HIDE_CLASS = 'tfil-hide';
+
     const adapters = new WeakMap();   // table element → { rows, valueOf, apply }
     const state = new WeakMap();      // table element → { [colIndex]: Set(values) }
+    const bars = new WeakMap();       // table element → its "filters active" bar
+    let applying = false;             // re-entrancy guard for the observer
     let openMenu = null;
     let placeMenu = null;             // the open menu's re-position callback
+    let awayHandler = null;           // the open menu's click-outside handler
 
     const esc = (t) => String(t ?? '')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -105,6 +121,31 @@ const TableFilter = (() => {
         openMenu.remove();
         openMenu = null;
         document.removeEventListener('keydown', onKey, true);
+        /**
+         * ⭐⭐⭐ EVERY LISTENER THIS MENU ADDED DIES WITH THIS MENU.
+         *
+         * The click-outside handler used to remove itself only on the path
+         * where it actually fired — an outside click. Close the menu any OTHER
+         * way (Done, Escape, or opening a different column, which calls
+         * closeMenu first) and it stayed on `document` forever, holding a
+         * closure over a menu that no longer exists.
+         *
+         * The next menu's first click then hit that stale handler, which asked
+         * `oldMenu.contains(target)` — false, because the target is in the NEW
+         * menu — and closed the live menu. Measured on the receivables grid:
+         * the checkbox did toggle and `change` did fire, but the menu vanished
+         * before commit could paint, and re-opening showed every value ticked
+         * again. Reported as "the mouse clicks don't check/uncheck the
+         * checkboxes", which is exactly what it looks like.
+         *
+         * It survived testing because ONE open per page load never leaks: the
+         * first menu is always the one the stale handler belongs to. Every
+         * reload hid it again, which is why it looked fine after each resize.
+         */
+        if (awayHandler) {
+            document.removeEventListener('click', awayHandler);
+            awayHandler = null;
+        }
         if (placeMenu) {
             // Capture phase on BOTH, to match how they were added.
             window.removeEventListener('scroll', placeMenu, true);
@@ -298,11 +339,12 @@ const TableFilter = (() => {
 
         openMenu = menu;
         setTimeout(() => {
-            document.addEventListener('click', function away(e) {
-                if (menu.contains(e.target)) return;
-                document.removeEventListener('click', away);
-                closeMenu();
-            });
+            // The menu may already be gone by the time this runs (open then
+            // immediately close); registering then would leak the very handler
+            // the comment in closeMenu is about.
+            if (openMenu !== menu) return;
+            awayHandler = (e) => { if (!menu.contains(e.target)) closeMenu(); };
+            document.addEventListener('click', awayHandler);
         }, 0);
         document.addEventListener('keydown', onKey, true);
         menu.querySelector('.tfil-search').focus();
@@ -324,16 +366,69 @@ const TableFilter = (() => {
         const active = Object.keys(st).length;
         const ad = adapters.get(table);
 
-        if (ad) {
-            ad.apply(active ? (row => matches(table, i => ad.valueOf(row, i))) : null);
-        } else {
-            for (const tr of dataRows(table)) {
-                tr.style.display = matches(table, i => cellText(tr, i)) ? '' : 'none';
+        applying = true;
+        try {
+            let shown = 0, total = 0;
+            if (ad) {
+                ad.apply(active ? (row => matches(table, i => ad.valueOf(row, i))) : null);
+            } else {
+                for (const tr of dataRows(table)) {
+                    total++;
+                    const ok = matches(table, i => cellText(tr, i));
+                    if (ok) shown++;
+                    tr.classList.toggle(HIDE_CLASS, !ok);
+                }
             }
+
+            headerCells(table).forEach((th, i) => th.classList.toggle('tfil-on', !!st[i]));
+            table.classList.toggle('tfil-any', active > 0);
+            syncBar(table, st, shown, total);
+        } finally {
+            // Release after the observer has drained this batch of mutations.
+            setTimeout(() => { applying = false; }, 0);
+        }
+    }
+
+    /**
+     * ⭐ THE BAR EXISTS BECAUSE A FILTER YOU CANNOT SEE READS AS A BROKEN ONE.
+     *
+     * Measured on the receivables grid: STATUS and CUSTOMER were both
+     * filtering, and only STATUS had been opened. Two filters AND together, so
+     * ticking values in one of them barely changes the table — reported,
+     * entirely fairly, as "check/uncheck does nothing". The funnel does turn
+     * blue on a filtering column, but that column can be scrolled off to the
+     * right, which makes the only evidence invisible.
+     *
+     * So an active filter now announces itself above the table, names every
+     * column involved, says how many rows survive, and offers one click to
+     * undo all of it.
+     */
+    function syncBar(table, st, shown, total) {
+        const cols = Object.keys(st);
+        let bar = bars.get(table);
+
+        if (!cols.length) {
+            if (bar) { bar.remove(); bars.delete(table); }
+            return;
+        }
+        if (!bar || !bar.isConnected) {
+            bar = document.createElement('div');
+            bar.className = 'tfil-bar';
+            bar.innerHTML = '<span class="tfil-bar-txt"></span>' +
+                '<button type="button" class="tfil-bar-clear">Clear all filters</button>';
+            bar.querySelector('.tfil-bar-clear').addEventListener('click', () => clear(table));
+            bars.set(table, bar);
+        }
+        if (bar.parentNode !== table.parentNode || bar.nextElementSibling !== table) {
+            table.parentNode.insertBefore(bar, table);
         }
 
-        headerCells(table).forEach((th, i) => th.classList.toggle('tfil-on', !!st[i]));
-        table.classList.toggle('tfil-any', active > 0);
+        const ths = headerCells(table);
+        const names = cols.map(i => (ths[i]?.innerText || `Column ${+i + 1}`).trim()).join(', ');
+        const adapted = adapters.has(table);
+        bar.querySelector('.tfil-bar-txt').innerHTML =
+            `Filtered by <b>${esc(names)}</b>` +
+            (adapted ? '' : ` &middot; showing ${shown} of ${total} rows`);
     }
 
     function sortBy(table, colIndex, dir) {
@@ -352,6 +447,7 @@ const TableFilter = (() => {
     function clear(table) {
         state.set(table, {});
         apply(table);
+        closeMenu();
     }
 
     // ─── attaching ──────────────────────────────────────────────────────────
@@ -412,12 +508,31 @@ const TableFilter = (() => {
 
     // Tables are rendered asynchronously on nearly every page here, so watch for
     // them the way table-cards.js does rather than betting on DOMContentLoaded.
+    /**
+     * ⭐ A RE-RENDER MUST NOT SILENTLY DROP THE FILTER.
+     *
+     * Pages here rebuild a tbody whenever data refreshes. The new rows carry
+     * none of our marking, so without this the table quietly shows everything
+     * while the header still says it is filtering — a filtered-looking grid
+     * with unfiltered data, which is the worst of the three possible states.
+     */
+    function reapplyAll(root) {
+        (root || document).querySelectorAll(GRID_SELECTOR).forEach(t => {
+            const st = state.get(t);
+            if (st && Object.keys(st).length) apply(t);
+        });
+    }
+
     function start() {
         enhanceAll();
-        new MutationObserver(() => enhanceAll()).observe(document.body, { childList: true, subtree: true });
+        new MutationObserver(() => {
+            if (applying) return;           // our own writes, not a page render
+            enhanceAll();
+            reapplyAll();
+        }).observe(document.body, { childList: true, subtree: true });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();
 
-    return { enhance, enhanceAll, register, clear, apply, GRID_CLASSES };
+    return { enhance, enhanceAll, register, clear, apply, GRID_CLASSES, HIDE_CLASS };
 })();
