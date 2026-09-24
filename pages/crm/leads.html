@@ -357,6 +357,20 @@
                     <option value="">All campaigns</option>
                 </select>
             </div>
+            <!-- ⭐ ITS OWN FILTER, NOT A PSEUDO-STATUS.
+                 "Follow up scheduled" and "Help requested" ride on the Status
+                 dropdown because a lead is only ever in one of them. Paperwork
+                 is orthogonal — "Qualified AND has documents" is the question a
+                 rep chasing files actually asks, and a pseudo-status could not
+                 express it. -->
+            <div class="crm-filter-group">
+                <label for="filterHasDocuments">Documents</label>
+                <select id="filterHasDocuments" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">Any</option>
+                    <option value="true">Has at least one</option>
+                    <option value="false">Nothing attached</option>
+                </select>
+            </div>
         </div>
 
         <!-- Custom-filters row: tenant-defined dropdowns from Settings →

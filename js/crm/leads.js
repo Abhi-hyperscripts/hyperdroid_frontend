@@ -42,9 +42,13 @@ let leadStatusDropdown = null;
 // Persisted to localStorage, tenant-scoped so two tenants on the same
 // browser can't see each other's saved view.
 const _FILTER_STORAGE_KEY_BASE = 'crm.leads.filters.v1';
+// ⭐ A NEW FILTER CONTROL MUST JOIN THIS LIST OR IT IS HALF-WIRED.
+// Everything here is saved, restored and cleared together. A control left out
+// applies on the current page, vanishes on reload, and survives "Clear all" —
+// three separate wrong behaviours from one omission.
 const _PERSISTED_FILTER_IDS = [
     'filterStatus', 'filterSource', 'filterSearch',
-    'filterEmailStatus', 'filterCampaign',
+    'filterEmailStatus', 'filterCampaign', 'filterHasDocuments',
     'filterDateFrom', 'filterDateTo', 'filterDateMode',
     'filterTeam', 'filterOwner'
 ];
@@ -1469,6 +1473,12 @@ function buildFilterParams() {
     if (emailStatus) params.set('emailStatus', emailStatus);
     if (campaignId) params.set('campaignId', campaignId);
 
+    // Paperwork. "true" = at least one document attached, whatever its review
+    // state — a rejected file is still a file, and the lead it belongs to is
+    // exactly the one somebody needs to chase.
+    const hasDocsEl = document.getElementById('filterHasDocuments');
+    if (hasDocsEl && hasDocsEl.value) params.set('hasDocuments', hasDocsEl.value);
+
     // Created-date range. Either endpoint optional — empty = no bound.
     // Format: YYYY-MM-DD (date input native value). Backend converts to a
     // half-open interval [from 00:00, to+1day 00:00) so a same-day filter
@@ -1622,6 +1632,10 @@ const _LP_CHIP_SELECTS = [
     { id: 'filterOwner', label: 'Owner' },
     { id: 'filterEmailStatus', label: 'Email' },
     { id: 'filterCampaign', label: 'Campaign' },
+    // Same reason as the persisted-ids list: a filter with no chip is one the
+    // rep cannot see is on, and the chip row is the only place a closed panel
+    // explains why the list looks short.
+    { id: 'filterHasDocuments', label: 'Documents' },
 ];
 
 function _lpSelectedText(el, value) {
