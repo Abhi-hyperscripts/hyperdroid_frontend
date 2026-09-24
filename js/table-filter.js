@@ -113,6 +113,18 @@ const TableFilter = (() => {
         const chosen = st[colIndex];                 // Set, or undefined = no filter
         const pairs = distinctValues(table, colIndex);
 
+        // ⭐⭐⭐ THE TICKED SET LIVES HERE, NOT IN THE CHECKBOXES.
+        //
+        // Two bugs came from reading state off the DOM. Typing in the value
+        // search REDRAWS the list, so ticks made before the search were thrown
+        // away and silently restored to the committed set — the user watched
+        // their choices undo themselves. And reading only the drawn boxes on
+        // apply treated every value scrolled past as unticked.
+        //
+        // One Set, owned by the menu, is the answer to both: the checkboxes
+        // render it, they never define it.
+        const working = new Set(chosen ? [...chosen] : pairs.map(([v]) => v));
+
         const menu = document.createElement('div');
         menu.className = 'tfil-menu';
         menu.innerHTML = `
@@ -128,59 +140,72 @@ const TableFilter = (() => {
             </div>
             <div class="tfil-list" role="group"></div>
             <div class="tfil-foot">
-                <button type="button" class="tfil-apply" data-apply>Apply</button>
+                <button type="button" class="tfil-done" data-done>Done</button>
             </div>`;
         document.body.appendChild(menu);
 
         const list = menu.querySelector('.tfil-list');
         const countEl = menu.querySelector('.tfil-count');
 
+        /**
+         * ⭐ APPLIED ON EVERY TICK, NOT ON A BUTTON.
+         *
+         * The first cut only filtered when Apply was pressed, so ticking a box
+         * changed the box and nothing else — reported, fairly, as "check/uncheck
+         * doesn't work". The table now answers immediately and Done just closes
+         * the menu, which is also what makes the counts worth reading: you can
+         * see the effect of each value as you go.
+         */
+        const commit = () => {
+            const next = state.get(table) || {};
+            if (working.size === pairs.length) delete next[colIndex];   // all = no filter
+            else next[colIndex] = new Set(working);
+            state.set(table, next);
+            apply(table);
+        };
+
         const draw = (needle) => {
             const n = (needle || '').toLowerCase();
             const shown = pairs.filter(([v]) => !n || v.toLowerCase().includes(n));
-            list.innerHTML = shown.map(([v, c]) => {
-                const on = !chosen || chosen.has(v);
-                return `<label class="tfil-opt">
-                    <input type="checkbox" value="${esc(v)}"${on ? ' checked' : ''}>
+            list.innerHTML = shown.map(([v, c]) => `<label class="tfil-opt">
+                    <input type="checkbox" value="${esc(v)}"${working.has(v) ? ' checked' : ''}>
                     <span class="tfil-v">${esc(v)}</span><span class="tfil-n">${c}</span>
-                </label>`;
-            }).join('') || '<p class="tfil-empty">No value matches.</p>';
-            countEl.textContent = `${shown.length} of ${pairs.length}`;
+                </label>`).join('') || '<p class="tfil-empty">No value matches.</p>';
+            countEl.textContent = `${working.size} of ${pairs.length}`;
         };
         draw('');
 
+        // Delegated, because draw() replaces these nodes on every search.
+        list.addEventListener('change', (e) => {
+            const cb = e.target.closest('input[type="checkbox"]');
+            if (!cb) return;
+            if (cb.checked) working.add(cb.value); else working.delete(cb.value);
+            countEl.textContent = `${working.size} of ${pairs.length}`;
+            commit();
+        });
+
         menu.querySelector('.tfil-search').addEventListener('input', (e) => draw(e.target.value));
-        menu.querySelector('[data-all]').addEventListener('click', () =>
-            list.querySelectorAll('input').forEach(i => { i.checked = true; }));
-        menu.querySelector('[data-none]').addEventListener('click', () =>
-            list.querySelectorAll('input').forEach(i => { i.checked = false; }));
+
+        // Select all / Clear act on EVERY value, not just the drawn ones —
+        // otherwise "Clear" during a search would leave the hidden ones ticked
+        // while saying it had cleared them.
+        menu.querySelector('[data-all]').addEventListener('click', () => {
+            pairs.forEach(([v]) => working.add(v));
+            draw(menu.querySelector('.tfil-search').value);
+            commit();
+        });
+        menu.querySelector('[data-none]').addEventListener('click', () => {
+            working.clear();
+            draw(menu.querySelector('.tfil-search').value);
+            commit();
+        });
 
         menu.querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => {
             sortBy(table, colIndex, b.getAttribute('data-sort'));
             closeMenu();
         }));
 
-        menu.querySelector('[data-apply]').addEventListener('click', () => {
-            // ⭐ THE TICKED SET IS READ FROM THE WHOLE LIST, NOT THE VISIBLE ONE.
-            //
-            // The value search narrows what is DRAWN. Reading only the drawn
-            // boxes would treat every value scrolled past as unticked, so
-            // searching "oil", ticking one and applying would silently drop
-            // every other category the user had never touched.
-            const drawn = new Map([...list.querySelectorAll('input')].map(i => [i.value, i.checked]));
-            const picked = new Set();
-            for (const [v] of pairs) {
-                const wasOn = !chosen || chosen.has(v);
-                const now = drawn.has(v) ? drawn.get(v) : wasOn;
-                if (now) picked.add(v);
-            }
-            const next = state.get(table) || {};
-            if (picked.size === pairs.length) delete next[colIndex];   // all ticked = no filter
-            else next[colIndex] = picked;
-            state.set(table, next);
-            apply(table);
-            closeMenu();
-        });
+        menu.querySelector('[data-done]').addEventListener('click', closeMenu);
 
         const r = th.getBoundingClientRect();
         menu.style.top = `${Math.round(r.bottom + 4)}px`;

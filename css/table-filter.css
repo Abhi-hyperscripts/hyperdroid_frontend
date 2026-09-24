@@ -82,12 +82,15 @@
 .tfil-empty { margin: 8px; font-size: 12.5px; color: var(--text-secondary); text-align: center; }
 
 .tfil-foot { display: flex; justify-content: flex-end; }
-.tfil-apply {
+.tfil-done {
   padding: 6px 14px; font: inherit; font-size: 12.5px; font-weight: 600;
   border: 0; border-radius: 6px;
   background: var(--brand-primary); color: #fff; cursor: pointer;
 }
-.tfil-apply:hover { background: var(--brand-primary-hover, var(--brand-primary)); }
+.tfil-done:hover { background: var(--brand-primary-hover, var(--brand-primary)); }
+/* Filtering is live, so this only dismisses — it must not look like the thing
+   that makes the filter happen, or people will hunt for it. */
+.tfil-foot { margin-top: 2px; }
 
 @media (max-width: 640px) {
   .tfil-menu { width: calc(100vw - 20px); }
