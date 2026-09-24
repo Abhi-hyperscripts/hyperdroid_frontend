@@ -247,6 +247,9 @@ python3 -m http.server 5610</pre>
         <div class="dk-lrow" style="--mod:#94A3B8">
           <span class="dk-lmid"><span class="dk-lname"><code>invoicePdfUrl</code> is <code>null</code> today &mdash; render <code>invoiceId</code> instead</span><span class="dk-ldesc">The tax invoice is issued and stored by Ragenaizer Accounts, and this storefront has no route that can serve it, so the field is reserved and arrives <code>null</code> on every order. Do not build a download button from it. Show <code>invoiceId</code>: that is the number the confirmation email carries and the one a shopper quotes to the merchant. We will not generate a PDF here to fill the gap &mdash; a second document competing with the real GST invoice is worse than no button.</span></span>
         </div>
+        <div class="dk-lrow" style="--mod:#FBBF24">
+          <span class="dk-lmid"><span class="dk-lname">Send each scalar filter at most once</span><span class="dk-ldesc">Repeated query values are COMBINED before binding, and a comma is a group separator &mdash; so <code>?minPrice=1&amp;minPrice=0&amp;minPrice=0</code> binds <code>"1,0,0"</code> and filters at <b>100</b>, hiding every cheaper product behind an ordinary <code>200</code>. <code>/api/catalog</code> and <code>/api/catalog/facets</code> therefore refuse a repeated <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>sort</code>, <code>locale</code>, <code>page</code> or <code>pageSize</code> with <code>400</code> naming the parameter. <code>brand</code>, <code>color</code>, <code>size</code>, <code>attr</code> and <code>ids</code> are lists and repeat freely. Replace a filter value rather than appending it.</span></span>
+        </div>
         <div class="dk-lrow" style="--mod:#38BDF8">
           <span class="dk-lmid"><span class="dk-lname">A cart line&#x27;s <code>qty</code> must be a whole number of at least 1</span><span class="dk-ldesc">Every endpoint that takes <code>lines</code> &mdash; <code>checkout</code>, <code>payment/create-order</code>, <code>shipping/quote</code>, <code>coupon/validate</code>, <code>discounts/auto</code>, <code>discounts/bxgy</code>, <code>subscriptions</code> &mdash; refuses a line whose <code>qty</code> is <code>0</code>, negative, or above <code>100000</code>. The charging routes answer <code>400</code> with <code>{"error":"One of the items has an invalid quantity."}</code>; the preview routes answer <code>200</code> with the preview simply not applying, because a preview never fails a request. <b>Remove a line rather than sending <code>qty: 0</code>.</b> The number you send is the number that is priced, charged and invoiced &mdash; nothing is silently rounded up to one unit or down to the ceiling.</span></span>
         </div>
@@ -675,6 +678,7 @@ curl -D - -o /dev/null \
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   "code": "SAVE10",
+  "email": "shopper@example.com",
   "lines": [
     {
       "itemId": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
@@ -1261,7 +1265,9 @@ curl -D - -o /dev/null \
   "id": "7c4d1e88-9a02-4f31-b6c5-2d81e0aa93f4",
   "invoiceId": "INV-2026-00142",
   "orderRef": "ORD-2026-00142",
-  "status": "paid",
+  "status": "confirmed",
+  "orderStatus": "confirmed",
+  "refundState": "none",
   "total": 985.6,
   "invoicePdfUrl": null,
   "giftCardApplied": 0.0,
@@ -1287,7 +1293,9 @@ curl -D - -o /dev/null \
   "id": "7c4d1e88-9a02-4f31-b6c5-2d81e0aa93f4",
   "invoiceId": "INV-2026-00142",
   "orderRef": "ORD-2026-00142",
-  "status": "paid",
+  "status": "confirmed",
+  "orderStatus": "confirmed",
+  "refundState": "none",
   "total": 985.6,
   "invoicePdfUrl": null,
   "createdAt": "2026-08-21T09:14:03Z",
@@ -1316,7 +1324,9 @@ curl -D - -o /dev/null \
     "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
     "invoiceId": "INV-2026-00142",
     "orderRef": "ORD-2026-00142",
-    "status": "paid",
+    "status": "confirmed",
+    "orderStatus": "confirmed",
+    "refundState": "none",
     "total": 985.6,
     "invoicePdfUrl": null,
     "createdAt": "2026-08-21T09:14:03Z",
@@ -1708,7 +1718,9 @@ curl -D - -o /dev/null \
     "id": "7c4d1e88-9a02-4f31-b6c5-2d81e0aa93f4",
     "invoiceId": "INV-2026-00142",
     "orderRef": "ORD-2026-00142",
-    "status": "paid",
+    "status": "confirmed",
+    "orderStatus": "confirmed",
+    "refundState": "none",
     "total": 985.6,
     "invoicePdfUrl": null,
     "createdAt": "2026-08-21T09:14:03Z",
@@ -1858,7 +1870,9 @@ curl -D - -o /dev/null \
   "id": "7c4d1e88-9a02-4f31-b6c5-2d81e0aa93f4",
   "invoiceId": "INV-2026-00142",
   "orderRef": "ORD-2026-00142",
-  "status": "paid",
+  "status": "confirmed",
+  "orderStatus": "confirmed",
+  "refundState": "none",
   "total": 985.6,
   "invoicePdfUrl": null,
   "giftCardApplied": 0.0,

@@ -40,3 +40,9 @@ jobs:
       # break because of something unrelated in the dependency graph.
       - name: Check CSS custom properties
         run: node scripts/check-css-tokens.js
+
+      # Same shape and the same reason: invisible at runtime. A page whose
+      # static ?v= literal has drifted from SW_VERSION serves a stale
+      # stylesheet after a deploy, with no error and no failing request.
+      - name: Check static asset versions match SW_VERSION
+        run: node scripts/check-asset-version.js
