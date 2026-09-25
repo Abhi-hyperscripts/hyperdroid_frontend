@@ -844,12 +844,16 @@ curl -D - -o /dev/null \
   "title": "Size",
   "options": [
     {
-      "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
-      "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
-      "label": "1 ltr",
-      "price": 468.0,
-      "availability": "in_stock",
-      "current": true
+      "id": "standard",
+      "name": "Standard delivery",
+      "amount": 99.0,
+      "etaDays": 4
+    },
+    {
+      "id": "express",
+      "name": "Express delivery",
+      "amount": 249.0,
+      "etaDays": 2
     }
   ]
 }</pre>
@@ -984,12 +988,16 @@ curl -D - -o /dev/null \
   "etaDays": 3,
   "options": [
     {
-      "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
-      "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
-      "amount": 49.0,
-      "etaMin": 2,
-      "etaMax": 4,
-      "live": true
+      "id": "standard",
+      "name": "Standard delivery",
+      "amount": 99.0,
+      "etaDays": 4
+    },
+    {
+      "id": "express",
+      "name": "Express delivery",
+      "amount": 249.0,
+      "etaDays": 2
     }
   ]
 }</pre>
@@ -1172,11 +1180,11 @@ curl -D - -o /dev/null \
   "themes": [
     {
       "key": "editorial-modern",
-      "name": "Priya Sharma",
+      "name": "Aurora",
       "vertical": "grocery",
       "emoji": "🛒",
       "blurb": "Editorial layout with a large hero and category rail.",
-      "archetype": "editorial",
+      "archetype": "bento",
       "colors": {
         "primary": "#1F2937",
         "primaryHover": "#111827",
@@ -1197,9 +1205,9 @@ curl -D - -o /dev/null \
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
   "ok": true,
-  "storefront": "rzc-official",
+  "storefront": "acme-storefront",
   "version": "1.4.0",
-  "themes": 2
+  "themes": 1
 }</pre>
             </div>
           </details>
@@ -1220,7 +1228,7 @@ curl -D - -o /dev/null \
   "lines": [
     {
       "itemId": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
-      "name": "Priya Sharma",
+      "name": "Aurora Desk Lamp",
       "qty": 2,
       "price": 468.0
     }
@@ -1328,7 +1336,7 @@ curl -D - -o /dev/null \
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
   "order": {
-    "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
+    "id": "9c1f4d2a-77b3-4e58-9a21-0c5e6f8b3d41",
     "invoiceId": "INV-2026-00142",
     "orderRef": "ORD-2026-00142",
     "status": "confirmed",
@@ -1617,7 +1625,7 @@ curl -D - -o /dev/null \
             <div class="mk-epbody">
               <p class="mk-desc">Remove one of the shopper&#x27;s saved addresses.</p>
               <div class="mk-sub">Try it</div>
-              <pre class="mk-curl">curl -X DELETE https://your-shop.example.com/api/shopper/addresses/ITM-001 \
+              <pre class="mk-curl">curl -X DELETE https://your-shop.example.com/api/shopper/addresses/16a8357b-4fa1-40ff-a70c-43094daee1d4 \
   -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
@@ -1634,7 +1642,7 @@ curl -D - -o /dev/null \
             <div class="mk-epbody">
               <p class="mk-desc">Update one of the shopper&#x27;s saved addresses.</p>
               <div class="mk-sub">Try it</div>
-              <pre class="mk-curl">curl -X PUT https://your-shop.example.com/api/shopper/addresses/ITM-001 \
+              <pre class="mk-curl">curl -X PUT https://your-shop.example.com/api/shopper/addresses/16a8357b-4fa1-40ff-a70c-43094daee1d4 \
   -H &quot;Authorization: Bearer $TOKEN&quot; \
   -H &quot;Content-Type: application/json&quot; \
   -d &#x27;{&quot;name&quot;:&quot;Priya Sharma&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;line&quot;:&quot;12 Nehru Place&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;,&quot;makeDefault&quot;:false}&#x27;</pre>
@@ -1663,7 +1671,7 @@ curl -D - -o /dev/null \
             <div class="mk-epbody">
               <p class="mk-desc">Mark a saved address as the shopper&#x27;s default for checkout.</p>
               <div class="mk-sub">Try it</div>
-              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/addresses/ITM-001/default \
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/addresses/16a8357b-4fa1-40ff-a70c-43094daee1d4/default \
   -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
@@ -2058,7 +2066,7 @@ curl -D - -o /dev/null \
             <div class="mk-epbody">
               <p class="mk-desc">Change a subscription&#x27;s state. The operation is one of pause, resume or cancel.</p>
               <div class="mk-sub">Try it</div>
-              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/subscriptions/ITM-001/pause \
+              <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/subscriptions/16a8357b-4fa1-40ff-a70c-43094daee1d4/pause \
   -H &quot;Authorization: Bearer $TOKEN&quot;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
