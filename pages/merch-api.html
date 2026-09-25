@@ -371,6 +371,9 @@ python3 -m http.server 5610</pre>
         <div class="dk-lrow" style="--mod:#F87171">
           <span class="dk-lmid"><span class="dk-lname">The failure that looks like data</span><span class="dk-ldesc">If a catalogue read times out and you render "this shop has nothing to sell", you have made a claim about the merchant&#x27;s business on the strength of a network blip. The same mistake on <code>/api/shopper/orders</code> tells a customer their orders are gone; on <code>/api/returns</code> it tells them they cannot file one. Keep "we could not load this" and "there is none" as different states in your UI &mdash; it is one boolean, and it is the difference between a retry and a support ticket.</span></span>
         </div>
+        <div class="dk-lrow" style="--mod:#F59E0B">
+          <span class="dk-lmid"><span class="dk-lname">At most ONE discount applies &mdash; never add them up</span><span class="dk-ldesc">There are three preview endpoints &mdash; <code>discounts/auto</code>, <code>discounts/bxgy</code> and <code>coupons/validate</code> &mdash; and they are <b>not</b> independent. A valid coupon voids both automatic discounts; otherwise a BXGY offer beats the automatic amount. A cart summary that sums what the three previews return will show a figure the gateway does not ask for. Price from the one that wins, or simply show the figure <code>checkout</code> / <code>payment/create-order</code> comes back with &mdash; the server is authoritative and re-resolves every discount at placement.</span></span>
+        </div>
         <div class="dk-lrow" style="--mod:#60A5FA">
           <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved. Where an order is PLACED &mdash; <code>checkout</code>, and the &#8377;0 branch (a gift card or a 100%-off coupon covering the whole basket) of <code>payment/create-order</code> &mdash; your own <code>idempotencyKey</code> is matched together with the basket, with no time limit &mdash; and on <code>checkout</code> the basket includes the delivery choice, so changing that starts a new order. (On a &#8377;0 basket delivery is free by definition, so the choice is not part of the match there and a retry collapses whatever it says.): a resubmit of the same cart collapses onto the one order for as long as that order exists, and changing the cart under the same key gives you a new order rather than the old one, so a key held in <code>localStorage</code> across an abandoned attempt cannot hand back lines the shopper has since removed. Omit the key and the match is on the basket alone &mdash; same buyer, same lines, same coupon, same gift card, same payment method and <em>same delivery choice</em> (<code>shippingRateId</code> &mdash; one of the <code>id</code> values from <code>POST /api/shipping/quote</code> &rarr; <code>options[]</code>; omit it and the cheapest is used) &mdash; for at least 30 minutes and at most 60, because that fallback is bucketed on the wall clock and both the current and previous bucket are checked; past that window the same basket is a new order, which is what lets a shopper re-order their usual cart. <b>Two exceptions worth knowing.</b> The ordinary prepaid path of <code>payment/create-order</code> does not read the key at all &mdash; it opens a gateway order under a fresh reference every time. <code>payment/verify</code> then de-duplicates per <em>gateway order</em>, not per basket, so two <code>create-order</code> calls are two independent payments: if both are paid, both are invoiced. Do not retry this call blindly &mdash; a second call also takes a second gift-card hold that nothing releases, so the shopper can be refused by their own first attempt. And <code>subscriptions</code> keys on the buyer and the plan with no time component, so while a schedule is live a repeat POST answers with it; once you cancel, the same cart can be subscribed again.</span></span>
         </div>
@@ -511,18 +514,49 @@ curl -D - -o /dev/null \
               </ul>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
-  "total": 37,
+  "total": 25,
   "brands": [
-    { "id": "41b34130-6ecb-4a0b-ac7d-96b0ffb41913", "name": "24 Mantra", "slug": "24-mantra", "count": 12 }
+    {
+      "id": "41b34130-6ecb-4a0b-ac7d-96b0ffb41913",
+      "name": "24 Mantra",
+      "slug": "24-mantra",
+      "count": 12
+    }
   ],
   "categories": [
-    { "name": "Edible Oils", "count": 25 }
+    {
+      "name": "Edible Oils",
+      "count": 25
+    }
   ],
   "attributes": [
-    { "key": "colour", "values": [ { "value": "Red", "count": 9 }, { "value": "Blue", "count": 4 } ] },
-    { "key": "size", "values": [ { "value": "1 ltr", "count": 7 } ] }
+    {
+      "key": "colour",
+      "values": [
+        {
+          "value": "Red",
+          "count": 9
+        },
+        {
+          "value": "Blue",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "key": "size",
+      "values": [
+        {
+          "value": "1 ltr",
+          "count": 7
+        }
+      ]
+    }
   ],
-  "price": { "min": 199.0, "max": 1299.0 }
+  "price": {
+    "min": 199.0,
+    "max": 1299.0
+  }
 }</pre>
             </div>
           </details>
@@ -579,7 +613,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/categories</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The category facets present in the catalogue, for building navigation or a filter rail.</p>
+              <p class="mk-desc">The category facets present in the catalogue, for building navigation or a filter rail. Each rail echoes straight back as a query parameter: a category as <code>category=</code>, a brand as <code>brand=</code> (its <code>slug</code>, or its <code>id</code>), a price band as <code>minPrice=</code>/<code>maxPrice=</code>, and an ATTRIBUTE as <code>attr=key:value</code> &mdash; repeat the parameter for more than one, e.g. <code>?attr=colour:Red&amp;attr=size:1%20ltr</code>. Send the <code>key</code> exactly as the facet gave it: the spelling is stable while the shopper ticks boxes, and an unrecognised key is ignored rather than refused, so a typo silently returns the unfiltered list.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl https://your-shop.example.com/api/categories</pre>
               <div class="mk-sub">Response</div>
@@ -844,16 +878,20 @@ curl -D - -o /dev/null \
   "title": "Size",
   "options": [
     {
-      "id": "standard",
-      "name": "Standard delivery",
-      "amount": 99.0,
-      "etaDays": 4
+      "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
+      "name": "1 ltr",
+      "label": "Size",
+      "price": 449.0,
+      "availability": "in_stock",
+      "current": true
     },
     {
-      "id": "express",
-      "name": "Express delivery",
-      "amount": 249.0,
-      "etaDays": 2
+      "id": "4b21e9c7-0d55-4a13-8f6e-2ac7d9b41e30",
+      "name": "2 ltr",
+      "label": "Size",
+      "price": 849.0,
+      "availability": "in_stock",
+      "current": false
     }
   ]
 }</pre>
@@ -991,13 +1029,17 @@ curl -D - -o /dev/null \
       "id": "standard",
       "name": "Standard delivery",
       "amount": 99.0,
-      "etaDays": 4
+      "etaMin": 3,
+      "etaMax": 5,
+      "live": false
     },
     {
       "id": "express",
       "name": "Express delivery",
       "amount": 249.0,
-      "etaDays": 2
+      "etaMin": 1,
+      "etaMax": 2,
+      "live": true
     }
   ]
 }</pre>
@@ -1105,14 +1147,24 @@ curl -D - -o /dev/null \
           "alt": "Monsoon sale banner"
         }
       ],
-      "categories": null, "brands": null, "products": null, "groups": null
+      "categories": null,
+      "brands": null,
+      "products": null,
+      "groups": null,
+      "limit": null,
+      "categorySlugs": null
     },
     {
       "id": "browse",
       "type": "browseCategories",
       "title": "Browse Categories",
       "categories": [
-        { "slug": "edible-oils", "name": "Edible Oils", "count": 25, "imageUrl": "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png" }
+        {
+          "slug": "edible-oils",
+          "name": "Edible Oils",
+          "count": 25,
+          "imageUrl": "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"
+        }
       ]
     },
     {
@@ -1120,7 +1172,12 @@ curl -D - -o /dev/null \
       "type": "brandsCarousel",
       "title": "Shop by Brand",
       "brands": [
-        { "slug": "24-mantra", "name": "24 Mantra", "count": 41, "logoUrl": "https://cdn.yourshop.com/brands/24-mantra.png" }
+        {
+          "slug": "24-mantra",
+          "name": "24 Mantra",
+          "count": 41,
+          "logoUrl": "https://cdn.yourshop.com/brands/24-mantra.png"
+        }
       ]
     },
     {
@@ -1128,39 +1185,56 @@ curl -D - -o /dev/null \
       "type": "bestSellers",
       "title": "Best sellers",
       "limit": 8,
-      "products": [ {
-      "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
-      "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
-      "imageUrls": ["https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"],
-      "category": "Edible Oils",
-      "price": 468.0,
-      "mrp": 520.0,
-      "availability": "in_stock",
-      "brandName": "24 Mantra",
-      "brandSlug": "24-mantra",
-      "isDigital": false
-    } ]
+      "products": [
+        {
+          "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
+          "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
+          "imageUrls": [
+            "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"
+          ],
+          "category": "Edible Oils",
+          "price": 468.0,
+          "mrp": 520.0,
+          "availability": "in_stock",
+          "brandName": "24 Mantra",
+          "brandSlug": "24-mantra",
+          "isDigital": false
+        }
+      ]
     },
     {
       "id": "cat-products",
       "type": "categoryProducts",
       "title": "Shop by aisle",
       "groups": [
-        { "slug": "tea", "name": "Tea", "products": [ {
-      "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
-      "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
-      "imageUrls": ["https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"],
-      "category": "Edible Oils",
-      "price": 468.0,
-      "mrp": 520.0,
-      "availability": "in_stock",
-      "brandName": "24 Mantra",
-      "brandSlug": "24-mantra",
-      "isDigital": false
-    } ] }
+        {
+          "slug": "tea",
+          "name": "Tea",
+          "products": [
+            {
+              "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
+              "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
+              "imageUrls": [
+                "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"
+              ],
+              "category": "Edible Oils",
+              "price": 468.0,
+              "mrp": 520.0,
+              "availability": "in_stock",
+              "brandName": "24 Mantra",
+              "brandSlug": "24-mantra",
+              "isDigital": false
+            }
+          ]
+        }
       ]
     },
-    { "id": "recent", "type": "recentlyViewed", "title": "Recently viewed", "limit": 8 }
+    {
+      "id": "recent",
+      "type": "recentlyViewed",
+      "title": "Recently viewed",
+      "limit": 8
+    }
   ]
 }</pre>
             </div>
@@ -1221,7 +1295,7 @@ curl -D - -o /dev/null \
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/cart/save \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;name&quot;:&quot;Priya Sharma&quot;,&quot;qty&quot;:2,&quot;price&quot;:0.0}]}&#x27;</pre>
+  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;name&quot;:&quot;Aurora Desk Lamp&quot;,&quot;qty&quot;:2,&quot;price&quot;:0.0}]}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   "email": "shopper@example.com",
@@ -1336,7 +1410,7 @@ curl -D - -o /dev/null \
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
   "order": {
-    "id": "9c1f4d2a-77b3-4e58-9a21-0c5e6f8b3d41",
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "invoiceId": "INV-2026-00142",
     "orderRef": "ORD-2026-00142",
     "status": "confirmed",
@@ -2040,7 +2114,7 @@ curl -D - -o /dev/null \
     "pincode": "110001"
   },
   "frequency": "monthly",
-  "title": "Exactly as described"
+  "title": "Weekly groceries"
 }</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
@@ -2050,13 +2124,7 @@ curl -D - -o /dev/null \
   "status": "active",
   "nextRun": "2026-09-21T00:00:00Z",
   "createdAt": "2026-08-21T09:14:03Z",
-  "access": [
-    {
-      "itemId": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
-      "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
-      "url": "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"
-    }
-  ],
+  "access": [],
   "accessPendingPayment": false
 }</pre>
             </div>
