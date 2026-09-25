@@ -105,6 +105,7 @@ const RowActions = (() => {
         moreBtn.setAttribute('aria-expanded', 'true');
         AnchoredMenu.show(moreBtn, menu, {
             minHeight: 160,
+            align: 'end',        // Actions is the last column: hang it leftward.
             onClose: () => moreBtn.setAttribute('aria-expanded', 'false')
         });
     }

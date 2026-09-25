@@ -34,16 +34,16 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
-    <script src="../js/sw-version.js?v=3064"></script>
+    <script src="../js/sw-version.js?v=3065"></script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <link rel="stylesheet" href="../css/theme.css?v=3064">
-    <link rel="stylesheet" href="../css/landing.css?v=3064">
+    <link rel="stylesheet" href="../css/theme.css?v=3065">
+    <link rel="stylesheet" href="../css/landing.css?v=3065">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/landing-desk.css?v=3064">
-    <link rel="stylesheet" href="../css/compare-desk.css?v=3064">
+    <link rel="stylesheet" href="../css/landing-desk.css?v=3065">
+    <link rel="stylesheet" href="../css/compare-desk.css?v=3065">
 </head>
 <body class="landing-page desk-landing commerce-desk cmp-desk api-docs" data-hero-wave="merch-api">
 
@@ -233,7 +233,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">Guest checkout is a first-class path, not a fallback</span><span class="dk-ldesc"><code>POST /api/checkout</code> and the whole payment flow take no token. A guest finds their order afterwards with <code>POST /api/orders/lookup</code> (email + order reference) or by the order&#x27;s own id. Sending a token where one is optional is still useful &mdash; the order is then linked to that shopper and appears in their history &mdash; but nothing refuses you for omitting it.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#F472B6">
-          <span class="dk-lmid"><span class="dk-lname">A closed store answers <code>503</code> with <code>storeUnavailable</code> on every route</span><span class="dk-ldesc">A shop trades only while the merchant&#x27;s Ragenaizer <b>Accounts</b> licence is active &mdash; Accounts is what turns an order into an invoice, a GST document and a stock movement, so a shop that cannot book what it sells is closed. When it lapses, <b>every</b> endpoint here answers <code>503</code> with <code>{"error":"This store is currently unavailable. Please try again later.","storeUnavailable":true}</code> and a <code>Retry-After</code> header. Handle that one shape globally rather than per call. <code>GET /api/theme</code> keeps answering so you can still render the shop&#x27;s branding on your own &ldquo;temporarily unavailable&rdquo; page. The same <code>storeUnavailable</code> flag already appears on transient upstream failures, so one handler covers both.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">A closed store answers <code>503</code> with <code>storeUnavailable</code> on every selling route</span><span class="dk-ldesc">A shop trades only while the merchant&#x27;s Ragenaizer <b>Accounts</b> licence is active &mdash; Accounts is what turns an order into an invoice, a GST document and a stock movement, so a shop that cannot book what it sells is closed. When it lapses, <b>every selling</b> endpoint here answers <code>503</code> with <code>{"error":"This store is currently unavailable. Please try again later.","storeUnavailable":true}</code> and a <code>Retry-After</code> header. Handle that one shape globally rather than per call. The one exception is <code>GET /api/theme</code>, which keeps answering <code>200</code> precisely so you can still render the shop&#x27;s branding on your own &ldquo;temporarily unavailable&rdquo; page &mdash; so do not treat a 200 from it as evidence the store is open. The same <code>storeUnavailable</code> flag already appears on transient upstream failures, so one handler covers both.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#22D3EE">
           <span class="dk-lmid"><span class="dk-lname">Render <code>orderStatus</code>, not <code>status</code></span><span class="dk-ldesc"><code>status</code> is the PLACEMENT-TIME payment state and is never written again, so a cancelled order reads <code>"confirmed"</code> there forever and so does a shipped one &mdash; cancellation and shipping live in <code>fulfillmentStatus</code>. Every order shape now also carries <b><code>orderStatus</code></b>: <code>"cancelled" | "shipped" | "failed" | "confirmed" | "processing"</code>, already resolved. It is on the order, on the order list, on guest lookup and on the checkout and verify replies. <code>status</code> is unchanged for existing clients.</span></span>
@@ -372,7 +372,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">The failure that looks like data</span><span class="dk-ldesc">If a catalogue read times out and you render "this shop has nothing to sell", you have made a claim about the merchant&#x27;s business on the strength of a network blip. The same mistake on <code>/api/shopper/orders</code> tells a customer their orders are gone; on <code>/api/returns</code> it tells them they cannot file one. Keep "we could not load this" and "there is none" as different states in your UI &mdash; it is one boolean, and it is the difference between a retry and a support ticket.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#60A5FA">
-          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved. Where an order is PLACED &mdash; <code>checkout</code>, and the fully gift-covered &#8377;0 branch of <code>payment/create-order</code> &mdash; your own <code>idempotencyKey</code> is matched together with the basket, with no time limit: a resubmit of the same cart collapses onto the one order for as long as that order exists, and changing the cart under the same key gives you a new order rather than the old one, so a key held in <code>localStorage</code> across an abandoned attempt cannot hand back lines the shopper has since removed. Omit the key and the match is on the basket alone &mdash; same buyer, same lines, same coupon, same gift card &mdash; for at least 30 minutes and at most 60, because that fallback is bucketed on the wall clock and both the current and previous bucket are checked; past that window the same basket is a new order, which is what lets a shopper re-order their usual cart. <b>Two exceptions worth knowing.</b> The ordinary prepaid path of <code>payment/create-order</code> does not read the key at all &mdash; it opens a gateway order under a fresh reference every time. <code>payment/verify</code> then de-duplicates per <em>gateway order</em>, not per basket, so two <code>create-order</code> calls are two independent payments: if both are paid, both are invoiced. Do not retry this call blindly &mdash; a second call also takes a second gift-card hold that nothing releases, so the shopper can be refused by their own first attempt. And <code>subscriptions</code> keys on the buyer and the plan with no time component, so while a schedule is live a repeat POST answers with it; once you cancel, the same cart can be subscribed again.</span></span>
+          <span class="dk-lmid"><span class="dk-lname">Writes are idempotent where it matters</span><span class="dk-ldesc">Order placement and subscription creation are de-duplicated upstream, so a retry after a lost response does not create a second order or a second billing schedule. That is what makes a 429 or a dropped connection safe to retry on the paths where money is involved. Where an order is PLACED &mdash; <code>checkout</code>, and the &#8377;0 branch (a gift card or a 100%-off coupon covering the whole basket) of <code>payment/create-order</code> &mdash; your own <code>idempotencyKey</code> is matched together with the basket, with no time limit &mdash; and on <code>checkout</code> the basket includes the delivery choice, so changing that starts a new order. (On a &#8377;0 basket delivery is free by definition, so the choice is not part of the match there and a retry collapses whatever it says.): a resubmit of the same cart collapses onto the one order for as long as that order exists, and changing the cart under the same key gives you a new order rather than the old one, so a key held in <code>localStorage</code> across an abandoned attempt cannot hand back lines the shopper has since removed. Omit the key and the match is on the basket alone &mdash; same buyer, same lines, same coupon, same gift card, same payment method and <em>same delivery choice</em> (<code>shippingRateId</code> &mdash; one of the <code>id</code> values from <code>POST /api/shipping/quote</code> &rarr; <code>options[]</code>; omit it and the cheapest is used) &mdash; for at least 30 minutes and at most 60, because that fallback is bucketed on the wall clock and both the current and previous bucket are checked; past that window the same basket is a new order, which is what lets a shopper re-order their usual cart. <b>Two exceptions worth knowing.</b> The ordinary prepaid path of <code>payment/create-order</code> does not read the key at all &mdash; it opens a gateway order under a fresh reference every time. <code>payment/verify</code> then de-duplicates per <em>gateway order</em>, not per basket, so two <code>create-order</code> calls are two independent payments: if both are paid, both are invoiced. Do not retry this call blindly &mdash; a second call also takes a second gift-card hold that nothing releases, so the shopper can be refused by their own first attempt. And <code>subscriptions</code> keys on the buyer and the plan with no time component, so while a schedule is live a repeat POST answers with it; once you cancel, the same cart can be subscribed again.</span></span>
         </div>
       </div>
     </section>
@@ -892,7 +892,7 @@ curl -D - -o /dev/null \
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/products/ITM-001/reviews \
   -H &quot;Authorization: Bearer $TOKEN&quot; \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;rating&quot;:5,&quot;title&quot;:&quot;string&quot;,&quot;body&quot;:&quot;string&quot;}&#x27;</pre>
+  -d &#x27;{&quot;rating&quot;:5,&quot;title&quot;:&quot;Weekly groceries&quot;,&quot;body&quot;:&quot;Arrived quickly and exactly as described.&quot;}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>itemId</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
@@ -1196,7 +1196,10 @@ curl -D - -o /dev/null \
 }</pre>
               <div class="mk-sub">Response</div>
               <pre class="mk-json">{
-  "ok": true
+  "ok": true,
+  "storefront": "rzc-official",
+  "version": "1.4.0",
+  "themes": 2
 }</pre>
             </div>
           </details>
@@ -1210,7 +1213,7 @@ curl -D - -o /dev/null \
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/cart/save \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;name&quot;:&quot;string&quot;,&quot;qty&quot;:2,&quot;price&quot;:0.0}]}&#x27;</pre>
+  -d &#x27;{&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;name&quot;:&quot;Priya Sharma&quot;,&quot;qty&quot;:2,&quot;price&quot;:0.0}]}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   "email": "shopper@example.com",
@@ -1236,7 +1239,7 @@ curl -D - -o /dev/null \
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/checkout \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;string&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;string&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;paymentMethod&quot;:&quot;cod&quot;,&quot;idempotencyKey&quot;:&quot;string&quot;,&quot;couponCode&quot;:&quot;SAVE10&quot;,&quot;giftCardCode&quot;:&quot;GIFT500&quot;,&quot;shippingRateId&quot;:&quot;string&quot;}&#x27;</pre>
+  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;Priya Sharma&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;12 Nehru Place&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;paymentMethod&quot;:&quot;cod&quot;,&quot;idempotencyKey&quot;:&quot;replace-with-a-uuid-you-generate&quot;,&quot;couponCode&quot;:&quot;SAVE10&quot;,&quot;giftCardCode&quot;:&quot;GIFT500&quot;,&quot;shippingRateId&quot;:&quot;standard&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   "lines": [
@@ -1349,24 +1352,18 @@ curl -D - -o /dev/null \
   },
   "events": [
     {
-      "type": "payment_captured",
+      "type": "placed",
       "at": "2026-08-21T09:14:03Z"
     }
   ],
-  "access": [
-    {
-      "itemId": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
-      "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
-      "url": "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"
-    }
-  ],
+  "access": [],
   "items": [
     {
       "itemId": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
-      "name": "Aurora Desk Lamp",
+      "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
       "qty": 2,
       "price": 449.0,
-      "imageUrl": "https://cdn.example.com/items/aurora-lamp.jpg",
+      "imageUrl": "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png",
       "isDigital": false
     }
   ]
@@ -1590,7 +1587,7 @@ curl -D - -o /dev/null \
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/shopper/addresses \
   -H &quot;Authorization: Bearer $TOKEN&quot; \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;name&quot;:&quot;string&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;line&quot;:&quot;12 Nehru Place&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;,&quot;makeDefault&quot;:false}&#x27;</pre>
+  -d &#x27;{&quot;name&quot;:&quot;Priya Sharma&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;line&quot;:&quot;12 Nehru Place&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;,&quot;makeDefault&quot;:false}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
@@ -1640,7 +1637,7 @@ curl -D - -o /dev/null \
               <pre class="mk-curl">curl -X PUT https://your-shop.example.com/api/shopper/addresses/ITM-001 \
   -H &quot;Authorization: Bearer $TOKEN&quot; \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;name&quot;:&quot;string&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;line&quot;:&quot;12 Nehru Place&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;,&quot;makeDefault&quot;:false}&#x27;</pre>
+  -d &#x27;{&quot;name&quot;:&quot;Priya Sharma&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;line&quot;:&quot;12 Nehru Place&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;,&quot;makeDefault&quot;:false}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>id</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
@@ -1832,11 +1829,11 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-post">POST</span><code class="mk-path">/api/payment/create-order</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">Price the basket server-side and open a payment against it. Answers <code>409</code> with <code>availableQty</code> when a line asks for more units than are in stock &mdash; the same body <code>checkout</code> returns, and now also reachable on a basket a gift card or a 100%-off coupon covers entirely. <strong>A &#8377;0 basket returns a different shape</strong>: it places the order immediately instead of opening a payment, and answers <code>{"freeOrder": true, "orderId": "&hellip;", "replayed": false}</code> &mdash; no <code>razorpayOrderId</code>, no <code>amount</code>. Branch on <code>freeOrder</code> before reading anything else, and send the shopper straight to the order page rather than to the gateway. <code>replayed</code> is true when your call collapsed onto an order that already existed. The amount is computed from live prices, coupons and gift cards &mdash; the client never states what it owes. <strong>This route is for card/UPI/netbanking only</strong>; place a cash-on-delivery order at <code>/api/checkout</code> instead. The shared request body therefore carries two fields that behave differently here: <code>paymentMethod</code> is not how you choose the tender &mdash; its only effect is to select a COD-rated courier quote, so sending <code>&quot;cod&quot;</code> on a card payment charges your shopper the wrong delivery rate. And <code>idempotencyKey</code> is read only on the fully-covered &#8377;0 branch, which places an order outright; on the normal prepaid branch a repeat call opens a second gateway order <em>and takes a second gift-card hold that nothing releases</em>, so the shopper can be refused by their own first attempt. Do not retry this call. If you lost the response, do not re-send it and do not start a second payment either &mdash; poll <code>GET /api/orders/lookup</code> (or the shopper&#x27;s order list) first, and only open a new payment if no order appears. The first attempt&#x27;s gift-card hold lapses on its own after 15 minutes.</p>
+              <p class="mk-desc">Price the basket server-side and open a payment against it. Answers <code>409</code> with <code>availableQty</code> when a line asks for more units than are in stock &mdash; the same body <code>checkout</code> returns, and now also reachable on a basket a gift card or a 100%-off coupon covers entirely. <strong>A &#8377;0 basket returns a different shape</strong>: it places the order immediately instead of opening a payment, and answers <code>{"freeOrder": true, "orderId": "&hellip;", "replayed": false}</code> &mdash; no <code>razorpayOrderId</code>, no <code>amount</code>. Branch on <code>freeOrder</code> before reading anything else, and send the shopper straight to the order page rather than to the gateway. <code>replayed</code> is true when your call collapsed onto an order that already existed. The amount is computed from live prices, coupons and gift cards &mdash; the client never states what it owes. <strong>This route is for card/UPI/netbanking only</strong>; place a cash-on-delivery order at <code>/api/checkout</code> instead. The shared request body therefore carries two fields that behave differently here: <code>paymentMethod</code> is not how you choose the tender &mdash; its only effect is to select a COD-rated courier quote, so sending <code>&quot;cod&quot;</code> on a card payment charges your shopper the wrong delivery rate. And <code>idempotencyKey</code> is read only on the fully-covered &#8377;0 branch, which places an order outright; on the normal prepaid branch a repeat call opens a second gateway order <em>and takes a second gift-card hold that nothing releases</em>, so the shopper can be refused by their own first attempt. Do not retry this call. On this branch no order exists yet &mdash; the order is created at <code>payment/verify</code>, after the shopper pays &mdash; so looking for one will always find nothing and is not a safe test. If you lost the response, <b>keep the <code>razorpayOrderId</code> you were given</b> and resume the shopper on that same gateway order; if you no longer have it, wait out the first attempt&#x27;s 15-minute gift-card hold before opening a new payment, or the shopper is refused by their own reservation. Once a payment has been made, <code>verify</code> is safe to replay and answers the same order every time.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/payment/create-order \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;string&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;string&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;idempotencyKey&quot;:&quot;string&quot;,&quot;couponCode&quot;:&quot;SAVE10&quot;,&quot;giftCardCode&quot;:&quot;GIFT500&quot;,&quot;shippingRateId&quot;:&quot;string&quot;}&#x27;</pre>
+  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;Priya Sharma&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;12 Nehru Place&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;idempotencyKey&quot;:&quot;replace-with-a-uuid-you-generate&quot;,&quot;couponCode&quot;:&quot;SAVE10&quot;,&quot;giftCardCode&quot;:&quot;GIFT500&quot;,&quot;shippingRateId&quot;:&quot;standard&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   "lines": [
@@ -1882,7 +1879,7 @@ curl -D - -o /dev/null \
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/payment/verify \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;razorpayOrderId&quot;:&quot;string&quot;,&quot;razorpayPaymentId&quot;:&quot;string&quot;,&quot;razorpaySignature&quot;:&quot;string&quot;}&#x27;</pre>
+  -d &#x27;{&quot;razorpayOrderId&quot;:&quot;order_PjK2mNqR8sT1vX&quot;,&quot;razorpayPaymentId&quot;:&quot;pay_PjK3xQ7bV2wL9m&quot;,&quot;razorpaySignature&quot;:&quot;9f1c2d3e4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f9a0b1c2d3e4f5&quot;}&#x27;</pre>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
   "razorpayOrderId": "order_PjK2mNqR8sT1vX",
@@ -1959,7 +1956,7 @@ curl -D - -o /dev/null \
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/returns \
   -H &quot;Authorization: Bearer $TOKEN&quot; \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;orderId&quot;:&quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,&quot;reason&quot;:&quot;string&quot;}&#x27;</pre>
+  -d &#x27;{&quot;orderId&quot;:&quot;3fa85f64-5717-4562-b3fc-2c963f66afa6&quot;,&quot;reason&quot;:&quot;Ordered the wrong size&quot;}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
@@ -2015,7 +2012,7 @@ curl -D - -o /dev/null \
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/subscriptions \
   -H &quot;Authorization: Bearer $TOKEN&quot; \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;string&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;string&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;frequency&quot;:&quot;string&quot;,&quot;title&quot;:&quot;string&quot;}&#x27;</pre>
+  -d &#x27;{&quot;lines&quot;:[{&quot;itemId&quot;:&quot;ITM-001&quot;,&quot;qty&quot;:2}],&quot;customer&quot;:{&quot;name&quot;:&quot;Priya Sharma&quot;,&quot;email&quot;:&quot;shopper@example.com&quot;,&quot;phone&quot;:&quot;9999999999&quot;,&quot;address&quot;:&quot;12 Nehru Place&quot;,&quot;city&quot;:&quot;New Delhi&quot;,&quot;state&quot;:&quot;DL&quot;,&quot;pincode&quot;:&quot;110001&quot;},&quot;frequency&quot;:&quot;monthly&quot;,&quot;title&quot;:&quot;Weekly groceries&quot;}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Request body</div>
               <pre class="mk-json">{
@@ -2076,7 +2073,7 @@ curl -D - -o /dev/null \
   "status": "paused",
   "nextRun": "2026-09-21T00:00:00Z",
   "createdAt": "2026-08-21T09:14:03Z",
-  "access": null,
+  "access": [],
   "accessPendingPayment": false
 }</pre>
             </div>
@@ -2402,7 +2399,7 @@ curl -D - -o /dev/null \
       });
     })();
   </script>
-  <script src="../js/landing-hero-wave.js?v=3064"></script>
-  <script src="../js/features-menu.js?v=3064"></script>
+  <script src="../js/landing-hero-wave.js?v=3065"></script>
+  <script src="../js/features-menu.js?v=3065"></script>
 </body>
 </html>

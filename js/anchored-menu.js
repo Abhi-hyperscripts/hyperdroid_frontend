@@ -61,29 +61,51 @@ const AnchoredMenu = (() => {
     /**
      * Show `el` anchored to `anchor`.
      *   minHeight — the smallest height at which this menu is still usable.
+     *   align     — 'start' hangs the menu rightward from the anchor's left
+     *               edge (right for a menu on the left of the page, like a
+     *               column-header funnel); 'end' hangs it leftward from the
+     *               anchor's RIGHT edge, which is what a trailing column wants
+     *               — the Actions column is always last, so a start-aligned
+     *               menu there juts out toward the screen edge and reads as
+     *               detached from the button that opened it.
+     *               Either way the opposite edge is tried if the preferred one
+     *               does not fit, and clamping is the final guarantee.
      *   onClose   — called after the menu is torn down.
      */
-    function show(anchor, el, { minHeight = 300, onClose = null } = {}) {
+    function show(anchor, el, { minHeight = 300, align = 'start', onClose = null } = {}) {
         close();
         document.body.appendChild(el);
 
         const place = () => {
             const r = anchor.getBoundingClientRect();
 
+            /**
+             * ⭐ THE VIEWPORT IS clientWidth, NOT innerWidth.
+             *
+             * `window.innerWidth` INCLUDES the scrollbar. On a platform with
+             * classic (non-overlay) scrollbars — Windows, and the Windows VM
+             * this is often viewed in — that is ~15px of width the page cannot
+             * paint into, so clamping to innerWidth puts the right edge of the
+             * menu underneath the scrollbar and it reads as clipped. macOS
+             * overlay scrollbars are 0px wide, which is exactly why this does
+             * not reproduce here and did reproduce for the user.
+             */
+            const VW = document.documentElement.clientWidth;
+            const VH = document.documentElement.clientHeight;
+
             // Anchor scrolled out of sight: nothing to point at, so hide rather
             // than leave a menu hovering over unrelated content.
-            if (r.bottom < 0 || r.top > window.innerHeight ||
-                r.right < 0 || r.left > window.innerWidth) {
+            if (r.bottom < 0 || r.top > VH || r.right < 0 || r.left > VW) {
                 el.style.visibility = 'hidden';
                 return;
             }
             el.style.visibility = '';
 
-            const below = window.innerHeight - r.bottom - GAP - EDGE;
+            const below = VH - r.bottom - GAP - EDGE;
             const above = r.top - GAP - EDGE;
             const wanted = el.scrollHeight;
             const flip = below < Math.min(wanted, 360) && above > below;
-            const needed = Math.min(minHeight, window.innerHeight - 2 * EDGE);
+            const needed = Math.min(minHeight, VH - 2 * EDGE);
             const room = Math.max(needed, flip ? above : below);
 
             el.style.maxHeight = `${Math.round(room)}px`;
@@ -91,8 +113,24 @@ const AnchoredMenu = (() => {
             const w = el.offsetWidth;
 
             let top = flip ? r.top - GAP - h : r.bottom + GAP;
-            top = Math.max(EDGE, Math.min(top, window.innerHeight - h - EDGE));
-            const left = Math.max(EDGE, Math.min(r.left, window.innerWidth - w - 12));
+            top = Math.max(EDGE, Math.min(top, VH - h - EDGE));
+
+            /**
+             * ⭐ HORIZONTAL FLIP, the mirror of the vertical one.
+             *
+             * Left-aligning to the anchor is right for a menu on the left of
+             * the page. The Actions column is the LAST column, so its menus
+             * open against the right edge, where left-aligning means the menu
+             * runs off and then gets clamped — which detaches it from the
+             * button that opened it. Hanging it leftward from the anchor's
+             * RIGHT edge is both what a trailing dropdown should do and what
+             * keeps it on screen. Clamping stays as the final guarantee.
+             */
+            let left = align === 'end' ? r.right - w : r.left;
+            if (left + w > VW - EDGE) left = r.right - w;     // does not fit rightward
+            if (left < EDGE) left = r.left;                   // nor leftward
+            left = Math.max(EDGE, Math.min(left, VW - w - EDGE));
+
             el.style.top = `${Math.round(top)}px`;
             el.style.left = `${Math.round(left)}px`;
         };
