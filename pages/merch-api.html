@@ -535,7 +535,7 @@ curl -D - -o /dev/null \
       "values": [
         {
           "value": "Red",
-          "count": 9
+          "count": 25
         },
         {
           "value": "Blue",
@@ -613,7 +613,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/categories</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The category facets present in the catalogue, for building navigation or a filter rail. Each rail echoes straight back as a query parameter: a category as <code>category=</code>, a brand as <code>brand=</code> (its <code>slug</code>, or its <code>id</code>), a price band as <code>minPrice=</code>/<code>maxPrice=</code>, and an ATTRIBUTE as <code>attr=key:value</code> &mdash; repeat the parameter for more than one, e.g. <code>?attr=colour:Red&amp;attr=size:1%20ltr</code>. Send the <code>key</code> exactly as the facet gave it: the spelling is stable while the shopper ticks boxes, and an unrecognised key is ignored rather than refused, so a typo silently returns the unfiltered list.</p>
+              <p class="mk-desc">The category facets present in the catalogue, for building navigation or a filter rail. Each rail echoes straight back as a query parameter: a category as <code>category=</code>, a brand as <code>brand=</code> (its <code>slug</code>, or its <code>id</code>), a price band as <code>minPrice=</code>/<code>maxPrice=</code>, and an ATTRIBUTE as <code>attr=key:value</code> &mdash; repeat the parameter for more than one, e.g. <code>?attr=colour:Red&amp;attr=size:1%20ltr</code>. Send the <code>key</code> exactly as the facet gave it: the spelling is stable while the shopper ticks boxes. An unrecognised key is <strong>not</strong> ignored &mdash; nothing carries it, so the filter matches nothing and the reply is an empty list with <code>200</code>, not a refusal. A typo therefore looks like &ldquo;this store has none of those&rdquo;; compare <code>total</code> against an unfiltered call before showing a shopper an empty rail.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl https://your-shop.example.com/api/categories</pre>
               <div class="mk-sub">Response</div>
@@ -934,7 +934,7 @@ curl -D - -o /dev/null \
               <pre class="mk-curl">curl -X POST https://your-shop.example.com/api/products/ITM-001/reviews \
   -H &quot;Authorization: Bearer $TOKEN&quot; \
   -H &quot;Content-Type: application/json&quot; \
-  -d &#x27;{&quot;rating&quot;:5,&quot;title&quot;:&quot;Weekly groceries&quot;,&quot;body&quot;:&quot;Arrived quickly and exactly as described.&quot;}&#x27;</pre>
+  -d &#x27;{&quot;rating&quot;:5,&quot;title&quot;:&quot;Exactly as described&quot;,&quot;body&quot;:&quot;Genuinely cold pressed — the aroma is unmistakable. Repeat purchase.&quot;}&#x27;</pre>
               <p class="mk-note">Requires <code>Authorization: Bearer &lt;shopper token&gt;</code>.</p>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
                 <li><code>itemId</code> <span class="mk-loc">path</span> <span class="mk-ty">string</span> <em>required</em></li>
@@ -968,11 +968,16 @@ curl -D - -o /dev/null \
   "products": [ {
       "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
       "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
+      "description": "Pure, unrefined oil extracted from premium organic peanuts using traditional cold-pressing methods.",
       "imageUrls": ["https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"],
       "category": "Edible Oils",
+      "unit": "pcs",
       "price": 468.0,
       "mrp": 520.0,
+      "taxNote": "incl. GST",
       "availability": "in_stock",
+      "qtyHint": 12,
+      "featured": true,
       "brandName": "24 Mantra",
       "brandSlug": "24-mantra",
       "isDigital": false
@@ -1124,7 +1129,7 @@ curl -D - -o /dev/null \
           <details class="mk-ep">
             <summary><span class="mk-verb mk-get">GET</span><code class="mk-path">/api/homepage</code></summary>
             <div class="mk-epbody">
-              <p class="mk-desc">The home page the merchant composed in the admin, already resolved: an ordered list of the sections they switched on, each carrying the data it renders, so a front end walks the list and draws each section by its <code>type</code> instead of composing a home page in code. A banner section can sit anywhere in the order, and more than once, so "banner at the top, the middle and the bottom" is three banner sections. Types and the arm each carries: <code>banner</code> &rarr; <code>banners</code> (live ones only, with an optional <code>imageMobileUrl</code> for narrow screens); <code>browseCategories</code> and <code>categoryCarousel</code> &rarr; <code>categories</code>; <code>brandsCarousel</code> &rarr; <code>brands</code>; <code>featuredProducts</code>, <code>newArrivals</code> (newest to this store), <code>bestSellers</code> (units sold in the last 30 days) and <code>homepageProducts</code> (the merchant&#x27;s picks, optionally narrowed to categories) &rarr; <code>products</code>; <code>categoryProducts</code> &rarr; <code>groups</code>, one <code>{ slug, name, products }</code> per category; <code>recentlyViewed</code> carries nothing &mdash; fetch <code>/api/recently-viewed</code> for the viewer at hand. Every other arm is <code>null</code>. <code>title</code> and <code>limit</code> are the merchant&#x27;s. Bounded: 12 banners per slot, 12 category rows per section, 600 products on the page. Cached about a minute after an admin change.</p>
+              <p class="mk-desc">The home page the merchant composed in the admin, already resolved: an ordered list of the sections they switched on, each carrying the data it renders, so a front end walks the list and draws each section by its <code>type</code> instead of composing a home page in code. A banner section can sit anywhere in the order, and more than once, so "banner at the top, the middle and the bottom" is three banner sections. Types and the arm each carries: <code>banner</code> &rarr; <code>banners</code> (live ones only, with an optional <code>imageMobileUrl</code> for narrow screens); <code>browseCategories</code> and <code>categoryCarousel</code> &rarr; <code>categories</code>; <code>brandsCarousel</code> &rarr; <code>brands</code>; <code>featuredProducts</code>, <code>newArrivals</code> (newest to this store), <code>bestSellers</code> (units sold in the last 30 days) and <code>homepageProducts</code> (the merchant&#x27;s picks, optionally narrowed to categories) &rarr; <code>products</code>; <code>categoryProducts</code> &rarr; <code>groups</code>, one <code>{ slug, name, products }</code> per category; <code>recentlyViewed</code> carries nothing &mdash; fetch <code>/api/recently-viewed</code> for the viewer at hand. Every other arm is <code>null</code> &mdash; <strong>present on the wire, not absent</strong>, so a strict client can read <code>section.products</code> on any section and get <code>null</code> rather than a missing key. The sample below spells all ten arms out on the first section only, and trims the null ones from the rest so the shape stays readable. <code>title</code> and <code>limit</code> are the merchant&#x27;s. Bounded: 12 banners per slot, 12 category rows per section, 600 products on the page. Cached about a minute after an admin change.</p>
               <div class="mk-sub">Try it</div>
               <pre class="mk-curl">curl &quot;https://your-shop.example.com/api/homepage?locale=hi&quot;</pre>
               <div class="mk-sub">Parameters</div><ul class="mk-params">
@@ -1189,13 +1194,18 @@ curl -D - -o /dev/null \
         {
           "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
           "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
+          "description": "Pure, unrefined oil extracted from premium organic peanuts using traditional cold-pressing methods.",
           "imageUrls": [
             "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"
           ],
           "category": "Edible Oils",
+          "unit": "pcs",
           "price": 468.0,
           "mrp": 520.0,
+          "taxNote": "incl. GST",
           "availability": "in_stock",
+          "qtyHint": 12,
+          "featured": true,
           "brandName": "24 Mantra",
           "brandSlug": "24-mantra",
           "isDigital": false
@@ -1214,13 +1224,18 @@ curl -D - -o /dev/null \
             {
               "id": "16a8357b-4fa1-40ff-a70c-43094daee1d4",
               "name": "24 Mantra Cold Pressed Organic Groundnut Oil 1 ltr",
+              "description": "Pure, unrefined oil extracted from premium organic peanuts using traditional cold-pressing methods.",
               "imageUrls": [
                 "https://cdn.yourshop.com/product/6476/groundnut-oil-1l.png"
               ],
               "category": "Edible Oils",
+              "unit": "pcs",
               "price": 468.0,
               "mrp": 520.0,
+              "taxNote": "incl. GST",
               "availability": "in_stock",
+              "qtyHint": 12,
+              "featured": true,
               "brandName": "24 Mantra",
               "brandSlug": "24-mantra",
               "isDigital": false
@@ -1436,6 +1451,10 @@ curl -D - -o /dev/null \
     {
       "type": "placed",
       "at": "2026-08-21T09:14:03Z"
+    },
+    {
+      "type": "fulfilled",
+      "at": "2026-08-22T11:40:12Z"
     }
   ],
   "access": [],
@@ -2081,7 +2100,9 @@ curl -D - -o /dev/null \
     "frequency": "monthly",
     "status": "active",
     "nextRun": "2026-09-21T00:00:00Z",
-    "createdAt": "2026-08-21T09:14:03Z"
+    "createdAt": "2026-08-21T09:14:03Z",
+    "access": [],
+    "accessPendingPayment": false
   }
 ]</pre>
             </div>
