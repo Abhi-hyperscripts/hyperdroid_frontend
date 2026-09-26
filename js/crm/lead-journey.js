@@ -514,6 +514,19 @@
             const srcDetailLabel =
                 ['facebook', 'landing_page'].includes(lead.lead_source_type || lead.lead_source)
                     ? 'Form' : 'Source name';
+            // ⭐ DON'T PRINT THE SAME STRING TWICE.
+            //
+            // A tenant whose Meta forms are wired up gets lead_source
+            // "facebook" and lead_source_name "FB · <page> · <form> [<id>]" —
+            // two different facts, both worth a row. But leads seeded or
+            // imported with the SOURCE NAME in lead_source (which is what the
+            // demo tenant has, and what a CSV import produces) make the two
+            // rows identical, and a detail panel that says the same thing
+            // twice reads as a bug rather than as information.
+            const srcShown = lead.lead_source ? String(fmtSource(lead.lead_source)) : '';
+            const srcDetail = lead.lead_source_name || '';
+            const showSrcDetail = srcDetail &&
+                srcDetail.trim().toLowerCase() !== srcShown.trim().toLowerCase();
             const section = (title, rows) => rows.join('')
                 ? `<div class="ld-sect">${title}</div><div class="lead-detail-grid">${rows.join('')}</div>`
                 : '';
@@ -550,7 +563,7 @@
                 ${section('About', [
                     item('Company', lead.company_name ? esc(lead.company_name) : ''),
                     item('Job title', lead.job_title ? esc(lead.job_title) : ''),
-                    item('Source', lead.lead_source ? esc(fmtSource(lead.lead_source)) : ''),
+                    item('Source', srcShown ? esc(srcShown) : ''),
                     // WHICH form, not just "facebook".
                     //
                     // Two Lead Ad forms on the same page are two different
@@ -560,7 +573,7 @@
                     // only ever says the channel; the form's identity lives in
                     // the connected lead_sources row, which is the tenant's own
                     // label or the auto "FB · <page> · <form> [<id>]".
-                    item(srcDetailLabel, lead.lead_source_name ? esc(lead.lead_source_name) : ''),
+                    item(srcDetailLabel, showSrcDetail ? esc(srcDetail) : ''),
                     item('Campaign', lead.campaign_name ? esc(lead.campaign_name) : ''),
                     item('Alt. phone', lead.alternate_phone ? crmPhoneLink(lead.alternate_phone) : ''),
                     item('Website', lead.website ? esc(lead.website) : ''),
