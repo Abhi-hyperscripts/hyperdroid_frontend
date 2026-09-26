@@ -34,16 +34,16 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>window.CACHE_VERSION = Date.now();</script>
-    <script src="../js/sw-version.js?v=3065"></script>
+    <script src="../js/sw-version.js?v=3066"></script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
-    <link rel="stylesheet" href="../css/theme.css?v=3065">
-    <link rel="stylesheet" href="../css/landing.css?v=3065">
+    <link rel="stylesheet" href="../css/theme.css?v=3066">
+    <link rel="stylesheet" href="../css/landing.css?v=3066">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/landing-desk.css?v=3065">
-    <link rel="stylesheet" href="../css/compare-desk.css?v=3065">
+    <link rel="stylesheet" href="../css/landing-desk.css?v=3066">
+    <link rel="stylesheet" href="../css/compare-desk.css?v=3066">
 </head>
 <body class="landing-page desk-landing commerce-desk cmp-desk api-docs" data-hero-wave="merch-api">
 
@@ -245,7 +245,7 @@ python3 -m http.server 5610</pre>
           <span class="dk-lmid"><span class="dk-lname">Some baskets can never be bought: <code>400</code> with <code>mixedCart</code></span><span class="dk-ldesc">A cart that mixes tax-inclusive and tax-exclusive products cannot be put on one invoice, so both <code>checkout</code> and <code>payment/create-order</code> refuse it with <code>400</code> and <code>{"mixedCart":true}</code>. It is PERMANENT and specific to that basket &mdash; do not retry it, and do not treat it as <code>storeUnavailable</code>, which means the opposite. Ask the shopper to order those items separately.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#94A3B8">
-          <span class="dk-lmid"><span class="dk-lname"><code>invoicePdfUrl</code> is <code>null</code> today &mdash; render <code>invoiceId</code> instead</span><span class="dk-ldesc">The tax invoice is issued and stored by Ragenaizer Accounts, and this storefront has no route that can serve it, so the field is reserved and arrives <code>null</code> on every order. Do not build a download button from it. Show <code>invoiceId</code>: that is the number the confirmation email carries and the one a shopper quotes to the merchant. We will not generate a PDF here to fill the gap &mdash; a second document competing with the real GST invoice is worse than no button.</span></span>
+          <span class="dk-lmid"><span class="dk-lname"><code>invoicePdfUrl</code> is a link you can follow &mdash; for the signed-in owner only</span><span class="dk-ldesc">The tax invoice is issued and stored by Ragenaizer Accounts, and the storefront now serves it at <code>GET /api/orders/{id}/invoice.pdf</code> &mdash; which is exactly what <code>invoicePdfUrl</code> contains, so follow the field verbatim rather than building the path yourself. It needs the shopper&#x27;s own <code>Authorization: Bearer</code> token: another account gets <code>403</code> and an anonymous caller <code>401</code>, because the document carries a name, a delivery address and a phone number. It is <code>null</code> until Accounts has issued the invoice (a placement that failed upstream, or an order still being booked) &mdash; treat null as &ldquo;not yet&rdquo; and keep showing <code>invoiceId</code>, which is the number the confirmation email carries. A transient upstream failure answers <code>503</code>, never <code>404</code>: the shopper is entitled to this document, so &ldquo;try again&rdquo; is the honest reply and a missing-invoice <code>404</code> would not be.</span></span>
         </div>
         <div class="dk-lrow" style="--mod:#FBBF24">
           <span class="dk-lmid"><span class="dk-lname">Send each scalar filter at most once</span><span class="dk-ldesc">Repeated query values are COMBINED before binding, and a comma is a group separator &mdash; so <code>?minPrice=1&amp;minPrice=0&amp;minPrice=0</code> binds <code>"1,0,0"</code> and filters at <b>100</b>, hiding every cheaper product behind an ordinary <code>200</code>. <code>/api/catalog</code> and <code>/api/catalog/facets</code> therefore refuse a repeated <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>inStock</code>, <code>sort</code>, <code>locale</code>, <code>page</code> or <code>pageSize</code> with <code>400</code>. <code>search</code>, <code>category</code>, <code>minPrice</code>, <code>maxPrice</code>, <code>sort</code> and <code>locale</code> name the offending parameter in the message; <code>page</code>, <code>pageSize</code> and <code>inStock</code> are refused earlier, while the request is being read, so those carry the generic error envelope instead. <code>brand</code>, <code>color</code>, <code>size</code>, <code>attr</code> and <code>ids</code> are lists and repeat freely. Replace a filter value rather than appending it.</span></span>
@@ -2496,7 +2496,7 @@ curl -D - -o /dev/null \
       });
     })();
   </script>
-  <script src="../js/landing-hero-wave.js?v=3065"></script>
-  <script src="../js/features-menu.js?v=3065"></script>
+  <script src="../js/landing-hero-wave.js?v=3066"></script>
+  <script src="../js/features-menu.js?v=3066"></script>
 </body>
 </html>

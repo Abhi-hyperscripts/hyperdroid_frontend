@@ -505,6 +505,15 @@
                 ? `<div class="lead-detail-item ${extraCls}"><span class="lead-detail-label">${label}</span><span>${valueHtml}</span></div>`
                 : '';
             const dateOnly = (v) => v ? new Date(v).toLocaleDateString() : '';
+            // leads.js owns formatSource; this panel also renders on pages that
+            // may not load it, so fall back to the raw value rather than throw.
+            const fmtSource = (v) => typeof formatSource === 'function' ? formatSource(v) : v;
+            // Label the named source for what it actually is. "Form" is right
+            // for a Meta Lead Ad or a landing page; for a sheet or a webhook
+            // feed it is just the source's name.
+            const srcDetailLabel =
+                ['facebook', 'landing_page'].includes(lead.lead_source_type || lead.lead_source)
+                    ? 'Form' : 'Source name';
             const section = (title, rows) => rows.join('')
                 ? `<div class="ld-sect">${title}</div><div class="lead-detail-grid">${rows.join('')}</div>`
                 : '';
@@ -541,7 +550,17 @@
                 ${section('About', [
                     item('Company', lead.company_name ? esc(lead.company_name) : ''),
                     item('Job title', lead.job_title ? esc(lead.job_title) : ''),
-                    item('Source', lead.lead_source ? esc(lead.lead_source) : ''),
+                    item('Source', lead.lead_source ? esc(fmtSource(lead.lead_source)) : ''),
+                    // WHICH form, not just "facebook".
+                    //
+                    // Two Lead Ad forms on the same page are two different
+                    // campaigns with different intent and different scripts —
+                    // a rep ringing a "book a demo" lead the way they'd ring a
+                    // "download the guide" lead is working blind. lead_source
+                    // only ever says the channel; the form's identity lives in
+                    // the connected lead_sources row, which is the tenant's own
+                    // label or the auto "FB · <page> · <form> [<id>]".
+                    item(srcDetailLabel, lead.lead_source_name ? esc(lead.lead_source_name) : ''),
                     item('Campaign', lead.campaign_name ? esc(lead.campaign_name) : ''),
                     item('Alt. phone', lead.alternate_phone ? crmPhoneLink(lead.alternate_phone) : ''),
                     item('Website', lead.website ? esc(lead.website) : ''),
