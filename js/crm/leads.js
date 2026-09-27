@@ -1579,13 +1579,70 @@ function buildFilterParams() {
 let _leadsSortBy = 'created';
 let _leadsSortDir = '';   // '' = backend default (created desc)
 
-function toggleLeadsSort(col) {
-    _leadsSortBy = col;
-    _leadsSortDir = _leadsSortDir === '' ? 'asc' : (_leadsSortDir === 'asc' ? 'desc' : '');
+// The orderings the list can be put in. `by` maps to the backend's sortBy
+// (created = leads.created_at, activity = the latest activity's timestamp);
+// both are real timestamps, so same-day rows order by time of day rather than
+// collapsing together.
+const LEADS_SORTS = [
+    { by: 'created',  dir: 'desc', label: 'Created',       text: 'Newest first' },
+    { by: 'created',  dir: 'asc',  label: 'Created',       text: 'Oldest first' },
+    { by: 'activity', dir: 'desc', label: 'Last activity', text: 'Most recently worked' },
+    { by: 'activity', dir: 'asc',  label: 'Last activity', text: 'Longest untouched' },
+    { by: 'created',  dir: '',     label: 'Created',       text: 'Default — unassigned first' },
+];
+
+function _syncLeadsSortButton() {
+    const opt = LEADS_SORTS.find(o => o.by === _leadsSortBy && o.dir === _leadsSortDir);
+    const lbl = document.getElementById('leadsSortLabel');
     const ind = document.getElementById('sortIndCreated');
+    if (lbl) lbl.textContent = opt ? opt.label : 'Created';
     if (ind) ind.textContent = _leadsSortDir === 'asc' ? '▲' : (_leadsSortDir === 'desc' ? '▼' : '');
+}
+
+function setLeadsSort(by, dir) {
+    _leadsSortBy = by;
+    _leadsSortDir = dir;
+    _syncLeadsSortButton();
     loadLeads(1);
 }
+
+/**
+ * ⭐ A MENU, BECAUSE A THREE-STATE TOGGLE CANNOT SAY WHAT IT IS DOING.
+ *
+ * This was one button cycling blank → ▲ → ▼, which offered exactly one
+ * ordering and gave no way to see the others — the backend has supported
+ * sorting by last-activity all along with nothing in the UI reaching it. It
+ * also made the default indistinguishable from "no sort applied", which is how
+ * a work-queue ordering gets mistaken for a broken date sort.
+ */
+function openLeadsSortMenu(ev) {
+    if (ev) ev.stopPropagation();
+    const btn = document.getElementById('leadsSortBtn');
+    if (!btn || typeof AnchoredMenu === 'undefined') return;
+    if (AnchoredMenu.isOpen()) { AnchoredMenu.close(); return; }
+
+    const menu = document.createElement('div');
+    menu.className = 'rowact-menu ldk-sortmenu';
+    menu.setAttribute('role', 'menu');
+    menu.innerHTML = LEADS_SORTS.map((o, i) => {
+        const on = o.by === _leadsSortBy && o.dir === _leadsSortDir;
+        return `<button type="button" role="menuitem" class="rowact-item${on ? ' is-on' : ''}" data-i="${i}">
+                    <span class="rowact-ico">${on ? '✓' : ''}</span>
+                    <span class="rowact-label">${escapeHtml(o.label)} · ${escapeHtml(o.text)}</span>
+                </button>`;
+    }).join('');
+    menu.addEventListener('click', (e) => {
+        const item = e.target.closest('.rowact-item');
+        if (!item) return;
+        const o = LEADS_SORTS[+item.dataset.i];
+        AnchoredMenu.close();
+        if (o) setLeadsSort(o.by, o.dir);
+    });
+    AnchoredMenu.show(btn, menu, { minHeight: 200 });
+}
+
+// Kept: the old header-click entry point, now a jump straight to the menu.
+function toggleLeadsSort() { openLeadsSortMenu(); }
 
 // The widget panel is a summoned popover — closed by default; the chip strip
 // in the toolbar carries the filter state at a glance.

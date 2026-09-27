@@ -918,3 +918,10 @@ body.crm-leads-page .lead-detail-actions.lda-open .lda-toggle::after {
    markup; this is belt-and-braces if any path re-inserts it. Properties keeps
    its own #prpFlowBar, which is why this is scoped. */
 body.crm-leads-page .ldk-flowline { display: none; }
+
+/* The list-ordering menu. Shares the row-actions menu shell (row-actions.css)
+   so there is one popup look in the product, plus a tick for the active
+   ordering — which is what makes the work-queue default legible as a CHOICE
+   rather than as "no sort applied". */
+.ldk-sortmenu .rowact-ico { font-size: 12px; color: var(--brand-primary); }
+.ldk-sortmenu .rowact-item.is-on .rowact-label { color: var(--text-primary); font-weight: 600; }
