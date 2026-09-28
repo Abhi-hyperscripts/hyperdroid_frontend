@@ -1900,9 +1900,35 @@ function ldkRow(lead) {
             </div>
             <div class="lright">
                 <span class="ldk-pill p-${lead.status || 'new'}">${formatStatus(lead.status)}</span>
-                <span class="ltime" title="${formatDate(lead.created_at)}">${leadTimeAgo(lead.created_at)}</span>
+                ${ldkRowTime(lead)}
             </div>
         </div>`;
+}
+
+/**
+ * ⭐ THE TIME COLUMN MUST SHOW THE TIME THE LIST IS SORTED BY.
+ *
+ * It always showed created_at. Order the list by Last activity and that column
+ * has no reason to be monotonic — so a lead created a month ago but worked an
+ * hour ago sits between two leads created yesterday, and the list reads as a
+ * broken sort. Reported exactly that way, with a screenshot where the ordering
+ * was in fact correct: the row text ran 59m → 3h → 2d → 2d, and only the
+ * unrelated column looked wrong.
+ *
+ * Showing an unsorted date next to a sorted list is a claim the list isn't
+ * making. The column now follows the sort key, and the tooltip names which
+ * date it is, so the top-to-bottom reading is always monotonic.
+ */
+function ldkRowTime(lead) {
+    const byActivity = _leadsSortBy === 'activity' && _leadsSortDir !== '';
+    const value = byActivity ? lead.last_interaction_at : lead.created_at;
+    const label = byActivity ? 'Last activity' : 'Created';
+    // Never-touched leads have no activity timestamp. The backend sorts them
+    // NULLS LAST, so they cluster at the end rather than scattering; '—' says
+    // "no activity" instead of dashing a date the lead genuinely lacks.
+    const text = value ? leadTimeAgo(value) : '—';
+    const title = value ? `${label}: ${formatDate(value)}` : `${label}: never`;
+    return `<span class="ltime" title="${escapeHtml(title)}">${escapeHtml(text)}</span>`;
 }
 
 // The narrative line: the most decision-relevant fact about this lead, in
