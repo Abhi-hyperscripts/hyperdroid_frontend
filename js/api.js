@@ -789,6 +789,18 @@ class API {
         return this.request(`/tenants/${tenantId}/license`, { method: 'DELETE' });
     }
 
+    /**
+     * Issue a NEW password for a sub-tenant's super admin. Platform operator only.
+     *
+     * Returned ONCE — Auth keeps only a hash — so a caller that does not show it has destroyed it.
+     */
+    async resetTenantAdminPassword(tenantId, reason) {
+        return this.request(`/tenants/${tenantId}/reset-admin-password`, {
+            method: 'POST',
+            body: JSON.stringify({ reason: reason || null })
+        });
+    }
+
     async modifyTenantLicence(tenantId, { days, maxUsers, serviceIds, expiryDate } = {}) {
         const body = {};
         if (days != null) body.days = days;

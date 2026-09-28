@@ -786,7 +786,10 @@
     </style>
 
     <div class="modal" id="extendLicenceModal">
-        <div class="modal-dialog modal-sm">
+        <!-- modal-lg, not modal-sm: Bootstrap caps modal-sm at 300px, which had 18 app
+             checkboxes, two date controls, a seat count and three footer buttons fighting for
+             the width. -->
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h3>Change Licence</h3>
@@ -845,6 +848,11 @@
                          hit while reaching for Apply. -->
                     <button class="btn btn-danger" id="revokeLicenceBtn" onclick="revokeLicence()">Revoke now</button>
                     <div style="display:flex;gap:8px;">
+                        <!-- Sits with the other operator verbs because it is one: the super admin's
+                             password exists in readable form for a single moment, when the licence is
+                             applied, and a sub-tenant address is often not a real mailbox, so the
+                             self-service reset reaches nobody. -->
+                        <button class="btn btn-secondary" id="resetAdminPwdBtn" onclick="resetTenantAdminPassword()">Reset admin password</button>
                         <button class="btn btn-secondary" onclick="closeModal('extendLicenceModal')">Cancel</button>
                         <button class="btn btn-primary" id="extendLicenceBtn" onclick="submitExtendLicence()">Apply changes</button>
                     </div>

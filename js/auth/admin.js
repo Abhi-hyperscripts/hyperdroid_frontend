@@ -3249,6 +3249,93 @@ async function revokeLicence() {
     }
 }
 
+/**
+ * Issue a NEW password for this sub-tenant's super admin.
+ *
+ * The password comes back ONCE — Auth keeps only a hash — so it is rendered into the modal with a
+ * copy button and left there, rather than shown in a toast that clears itself.
+ */
+async function resetTenantAdminPassword() {
+    const tenantId = document.getElementById('extendLicenceTenantId').value;
+    const tenantName = document.getElementById('extendLicenceTenantName').textContent;
+    const btn = document.getElementById('resetAdminPwdBtn');
+    const result = document.getElementById('extendLicenceResult');
+
+    const confirmed = await Confirm.show({
+        type: 'danger',
+        title: 'Reset admin password',
+        message: `Issue a new password for the super admin of "${tenantName}"?\n\n`
+            + `\u2022 Their current password stops working immediately\n`
+            + `\u2022 Everyone signed in as that admin is logged out\n`
+            + `\u2022 The new password is shown ONCE \u2014 copy it before closing\n`
+            + `\u2022 Nothing else about the licence or their data changes`,
+        confirmText: 'Reset it',
+        cancelText: 'Leave it alone'
+    });
+    if (!confirmed) return;
+
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Resetting…';
+
+    try {
+        const response = await api.resetTenantAdminPassword(tenantId);
+        result.style.display = 'block';
+        result.style.background = 'var(--color-success-bg, #e8f7ee)';
+        result.style.color = 'var(--color-text-primary, #123)';
+        // Built with textContent, not an HTML string: this page has no global escaper (the ones
+        // that exist are closure-scoped), and the codebase's escaper does not escape quotes.
+        result.replaceChildren();
+        const h = document.createElement('div');
+        h.style.fontWeight = '600'; h.style.marginBottom = '6px';
+        h.textContent = 'New password issued';
+
+        const emailRow = document.createElement('div');
+        emailRow.style.marginBottom = '4px';
+        emailRow.append('Email: ');
+        const emailCode = document.createElement('code');
+        emailCode.style.userSelect = 'all';
+        emailCode.textContent = response.superAdminEmail || '-';
+        emailRow.append(emailCode);
+
+        const pwdRow = document.createElement('div');
+        pwdRow.style.display = 'flex'; pwdRow.style.alignItems = 'center'; pwdRow.style.gap = '8px';
+        pwdRow.append('Password: ');
+        const pwdCode = document.createElement('code');
+        pwdCode.id = 'resetPwdValue';
+        pwdCode.style.userSelect = 'all'; pwdCode.style.fontSize = '14px';
+        pwdCode.textContent = response.generatedPassword || '';
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button'; copyBtn.className = 'btn btn-sm btn-secondary';
+        copyBtn.textContent = 'Copy';
+        copyBtn.onclick = () => copyResetPassword(copyBtn);
+        pwdRow.append(pwdCode, copyBtn);
+
+        const note = document.createElement('div');
+        note.style.marginTop = '8px'; note.style.opacity = '.85';
+        note.textContent = 'Copy it now — it cannot be shown again.';
+
+        result.append(h, emailRow, pwdRow, note);
+    } catch (error) {
+        result.style.display = 'block';
+        result.style.background = 'var(--color-error-bg, #fee)';
+        result.style.color = 'var(--color-error, #c00)';
+        result.textContent = error.message || 'Could not reset the admin password.';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+    }
+}
+
+function copyResetPassword(btn) {
+    const v = document.getElementById('resetPwdValue')?.textContent || '';
+    navigator.clipboard.writeText(v).then(() => {
+        const was = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = was; }, 1500);
+    });
+}
+
 async function submitExtendLicence() {
     const tenantId = document.getElementById('extendLicenceTenantId').value;
     const result = document.getElementById('extendLicenceResult');
