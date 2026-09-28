@@ -3285,37 +3285,51 @@ async function resetTenantAdminPassword() {
         result.style.color = 'var(--color-text-primary, #123)';
         // Built with textContent, not an HTML string: this page has no global escaper (the ones
         // that exist are closure-scoped), and the codebase's escaper does not escape quotes.
+        //
+        // Styled inline rather than with .btn/.btn-secondary. Those are theme classes sized for a
+        // modal footer: dropped in here they stretched to fill the flex row and painted their label
+        // the same colour as this panel's background, so the control read as an empty box. The row
+        // also has to keep its label on one line — a bare text node is a flex item and "Password:"
+        // was being squeezed into "Passwo / rd:".
         result.replaceChildren();
-        const h = document.createElement('div');
-        h.style.fontWeight = '600'; h.style.marginBottom = '6px';
-        h.textContent = 'New password issued';
 
-        const emailRow = document.createElement('div');
-        emailRow.style.marginBottom = '4px';
-        emailRow.append('Email: ');
-        const emailCode = document.createElement('code');
-        emailCode.style.userSelect = 'all';
-        emailCode.textContent = response.superAdminEmail || '-';
-        emailRow.append(emailCode);
+        const heading = document.createElement('div');
+        heading.style.cssText = 'font-weight:600;margin-bottom:8px;';
+        heading.textContent = 'New password issued';
 
-        const pwdRow = document.createElement('div');
-        pwdRow.style.display = 'flex'; pwdRow.style.alignItems = 'center'; pwdRow.style.gap = '8px';
-        pwdRow.append('Password: ');
-        const pwdCode = document.createElement('code');
-        pwdCode.id = 'resetPwdValue';
-        pwdCode.style.userSelect = 'all'; pwdCode.style.fontSize = '14px';
-        pwdCode.textContent = response.generatedPassword || '';
+        const mkRow = (labelText, value) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:nowrap;';
+            const label = document.createElement('span');
+            label.style.cssText = 'white-space:nowrap;flex:0 0 auto;opacity:.8;';
+            label.textContent = labelText;
+            const code = document.createElement('code');
+            code.style.cssText = 'user-select:all;word-break:break-all;flex:0 1 auto;';
+            code.textContent = value;
+            row.append(label, code);
+            return { row, code };
+        };
+
+        const emailRow = mkRow('Email:', response.superAdminEmail || '-');
+        const pwdRow = mkRow('Password:', response.generatedPassword || '');
+        pwdRow.code.id = 'resetPwdValue';
+        pwdRow.code.style.fontSize = '15px';
+        pwdRow.code.style.fontWeight = '600';
+
         const copyBtn = document.createElement('button');
-        copyBtn.type = 'button'; copyBtn.className = 'btn btn-sm btn-secondary';
+        copyBtn.type = 'button';
+        copyBtn.style.cssText =
+            'flex:0 0 auto;padding:4px 10px;font-size:12px;line-height:1.4;cursor:pointer;' +
+            'border:1px solid rgba(0,0,0,.25);border-radius:4px;background:#fff;color:#123;';
         copyBtn.textContent = 'Copy';
         copyBtn.onclick = () => copyResetPassword(copyBtn);
-        pwdRow.append(pwdCode, copyBtn);
+        pwdRow.row.append(copyBtn);
 
         const note = document.createElement('div');
-        note.style.marginTop = '8px'; note.style.opacity = '.85';
+        note.style.cssText = 'margin-top:8px;opacity:.85;';
         note.textContent = 'Copy it now — it cannot be shown again.';
 
-        result.append(h, emailRow, pwdRow, note);
+        result.append(heading, emailRow.row, pwdRow.row, note);
     } catch (error) {
         result.style.display = 'block';
         result.style.background = 'var(--color-error-bg, #fee)';
