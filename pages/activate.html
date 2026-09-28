@@ -268,7 +268,26 @@
                         <h2>Tenant Activated!</h2>
                         <p class="subtitle" id="tenantNameDisplay">Your tenant has been successfully activated.</p>
 
-                        <div class="credentials-box">
+                        <div class="credentials-box" id="alreadyActiveBox" style="display:none;">
+                            <h4>Already activated</h4>
+                            <div class="credential-row">
+                                <span class="credential-label" id="alreadyActiveMessage" style="line-height:1.5;"></span>
+                            </div>
+                            <div class="credential-row">
+                                <span class="credential-label">Sign in as</span>
+                                <span class="credential-value">
+                                    <span id="alreadyActiveEmail">-</span>
+                                    <button type="button" class="copy-btn" onclick="copyToClipboard('alreadyActiveEmail')" title="Copy email">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                                            <path d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5" stroke="currentColor" stroke-width="2"/>
+                                        </svg>
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="credentials-box" id="credentialsBox">
                             <h4>Super Admin Credentials</h4>
                             <div class="credential-row">
                                 <span class="credential-label">Email</span>
@@ -296,7 +315,7 @@
                             </div>
                         </div>
 
-                        <div class="warning-text">
+                        <div class="warning-text" id="saveCredsWarning">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M12 9V13M12 17H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0377 2.66667 10.2679 4L3.33975 16C2.56995 17.3333 3.53223 19 5.07183 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>

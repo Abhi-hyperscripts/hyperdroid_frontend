@@ -1358,6 +1358,27 @@
                             </button>
                         </div>
                         <div class="token-value" id="licenseToken"></div>
+
+                        <!-- Shown only when applying this licence CREATED the super admin. Auth mints
+                             the password at that moment, returns it once and stores only a hash, so
+                             this is the single opportunity to read it. -->
+                        <div id="adminCredsPanel" style="display:none;margin-top:16px;padding:14px 16px;border:1px solid var(--border-color,#e5e7eb);border-radius:8px;background:var(--bg-secondary,#f9fafb);">
+                            <div style="font-weight:600;margin-bottom:10px;">Super admin sign-in</div>
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                                <span style="min-width:90px;opacity:.75;">Email</span>
+                                <code id="adminCredsEmail" style="user-select:all;"></code>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="min-width:90px;opacity:.75;">Password</span>
+                                <code id="adminCredsPassword" style="user-select:all;"></code>
+                                <button type="button" class="btn btn-sm" onclick="copyAdminPassword(this)">Copy</button>
+                            </div>
+                            <div style="margin-top:10px;font-size:13px;opacity:.8;">
+                                Save this now — it is shown only here, only once. It cannot be recovered
+                                from the activate-licence page, because the tenant already holds a licence
+                                by then. If it is lost, the admin must use Forgot password.
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -2009,6 +2030,40 @@
          * customer and their data. The copy says what actually happens — access stops, sessions are
          * revoked, data is kept — because an operator clicking this needs to know it is reversible.
          */
+        /**
+         * Reset a sub-tenant's super admin password.
+         *
+         * The password comes back ONCE — Auth stores only a hash — so it is shown in a prompt the
+         * operator must copy from, not a toast that disappears.
+         */
+        async function resetSubTenantAdmin(btn) {
+            const tenantId = btn.dataset.tenantId;
+            const tenantName = btn.dataset.tenantName || 'this tenant';
+
+            if (!confirm(`Issue a NEW password for the super admin of "${tenantName}"?\n\n` +
+                         `Their current password stops working immediately and every signed-in session ` +
+                         `for that admin is ended. The new password is shown once.`)) return;
+
+            const reason = prompt('Reason (recorded in the audit log):', 'Admin cannot receive reset email') || null;
+
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            try {
+                const result = await api.resetSubTenantAdminPassword(tenantId, reason);
+                window.prompt(
+                    `New password for ${result.superAdminEmail || tenantName}.\n` +
+                    `Copy it now — it cannot be shown again.`,
+                    result.generatedPassword || '');
+                if (typeof showToast === 'function') showToast('Admin password reset', 'success');
+            } catch (e) {
+                if (typeof showToast === 'function') showToast(e.message, 'error');
+                else alert(e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        }
+
         async function cancelSubTenant(btn) {
             const { tenantId, tenantName, platformId } = btn.dataset;
 
@@ -2522,6 +2577,15 @@
             }
         }
 
+        function copyAdminPassword(btn) {
+            const v = document.getElementById('adminCredsPassword').textContent;
+            navigator.clipboard.writeText(v).then(() => {
+                const was = btn.textContent;
+                btn.textContent = 'Copied';
+                setTimeout(() => { btn.textContent = was; }, 1500);
+            });
+        }
+
         async function generateLicense() {
             const tenantId = document.getElementById('licenseTenantId').value;
             const startDate = document.getElementById('licenseStartDate').value;
@@ -2582,6 +2646,21 @@
 
                 // Update token display
                 document.getElementById('licenseToken').textContent = result.encryptedToken;
+
+                // Applying the licence is what CREATES the tenant's super admin, and Auth returns
+                // that user's one-time password in this response. It used to be dropped here, so a
+                // freshly created tenant admin had no way to sign in: the activate page cannot show
+                // it later (by then the tenant holds a licence, so activation is an upgrade and
+                // deliberately returns nothing). Null on an upgrade, which is correct — that admin
+                // already has a password.
+                const credsPanel = document.getElementById('adminCredsPanel');
+                if (credsPanel && result.generatedPassword) {
+                    document.getElementById('adminCredsEmail').textContent = result.superAdminEmail || '-';
+                    document.getElementById('adminCredsPassword').textContent = result.generatedPassword;
+                    credsPanel.style.display = '';
+                } else if (credsPanel) {
+                    credsPanel.style.display = 'none';
+                }
 
                 // Update summary dates
                 document.getElementById('successStartDate').textContent = new Date(startDate).toLocaleDateString('en-US', {
@@ -3047,6 +3126,15 @@
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="23 4 23 10 17 10"></polyline>
                                     <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                            </button>
+                            <button class="btn-icon-sm"
+                                    data-tenant-id="${tenant.id}"
+                                    data-tenant-name="${attrText(tenant.tenantName)}"
+                                    onclick="resetSubTenantAdmin(this)" data-tooltip="Reset admin password">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                                 </svg>
                             </button>
                             <button class="btn-icon-sm btn-icon-danger"

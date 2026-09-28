@@ -55,8 +55,29 @@ function showActivationSuccess(data, activationForm, successCard) {
     const displayName = data.organizationName || data.tenantName;
     document.getElementById('tenantNameDisplay').textContent =
         `"${displayName}" has been successfully activated.`;
-    document.getElementById('adminEmail').textContent = data.superAdminEmail;
-    document.getElementById('adminPassword').textContent = data.generatedPassword;
+    // A tenant that ALREADY had a licence is an upgrade, not a first activation: the server
+    // replaces the licence and deliberately returns no password, because the super admin already
+    // has one and issuing a fresh one here would either be a lie or a silent password reset. It
+    // says so with `wasUpgrade`. This page used to ignore that and write `undefined` into the
+    // password row, so the operator saw a blank credential and assumed the activation had half
+    // failed. Say what actually happened instead.
+    const isUpgrade = data.wasUpgrade === true || !data.generatedPassword;
+    document.getElementById('credentialsBox').style.display = isUpgrade ? 'none' : '';
+    const upgradeBox = document.getElementById('alreadyActiveBox');
+    if (upgradeBox) upgradeBox.style.display = isUpgrade ? '' : 'none';
+    const saveWarning = document.getElementById('saveCredsWarning');
+    if (saveWarning) saveWarning.style.display = isUpgrade ? 'none' : '';   // "save these now" is false when there is nothing new to save
+
+    if (isUpgrade) {
+        document.getElementById('alreadyActiveMessage').textContent =
+            (data.message || 'This tenant was already activated.') +
+            ' The super admin password was shown once, when the tenant was first activated, and cannot be' +
+            ' shown again. Sign in with the existing password, or use Forgot password to set a new one.';
+        document.getElementById('alreadyActiveEmail').textContent = data.superAdminEmail || '-';
+    } else {
+        document.getElementById('adminEmail').textContent = data.superAdminEmail;
+        document.getElementById('adminPassword').textContent = data.generatedPassword;
+    }
 
     // Populate license info
     document.getElementById('infoOrgName').textContent = data.organizationName || '-';

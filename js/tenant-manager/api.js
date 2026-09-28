@@ -156,6 +156,22 @@ class TenantManagerAPI {
         return body;
     }
 
+    /**
+     * Issue a NEW password for a sub-tenant's super admin. Returned ONCE — only a hash is stored,
+     * so if the caller does not show it here it cannot be recovered.
+     */
+    async resetSubTenantAdminPassword(tenantId, reason) {
+        const response = await fetch(`${this.baseUrl}${CONFIG.endpoints.tenants}/${tenantId}/reset-admin-password`, {
+            method: 'POST',
+            headers: this._getHeaders(),
+            body: JSON.stringify({ reason: reason || null })
+        });
+
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.message || 'Failed to reset the admin password');
+        return body;
+    }
+
     /** Move a sub-tenant onto a different plan. Also how a cancelled tenant is brought back on. */
     async changeSubTenantPlan(tenantId, planId) {
         const response = await fetch(`${this.baseUrl}${CONFIG.endpoints.tenants}/${tenantId}/change-plan`, {
