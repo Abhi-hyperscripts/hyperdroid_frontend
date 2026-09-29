@@ -1467,6 +1467,14 @@ class API {
         });
     }
 
+    /** Publish a Drive file to a permanent anonymous URL, or take it down. */
+    async setFilePublic(fileId, isPublic) {
+        return this.request(`/drive/files/${fileId}/public`, {
+            method: 'PUT',
+            body: JSON.stringify({ isPublic })
+        });
+    }
+
     // Sharing operations
     async createShareLink(itemId, itemType, accessType = 'download', expiryHours = 0, password = null, allowAnonymous = true, maxDownloads = 0) {
         return this.request('/drive/share', {

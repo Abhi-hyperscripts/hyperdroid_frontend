@@ -650,6 +650,7 @@ function renderTableView(folders, files) {
                 <span class="table-file-icon">${icon}</span>
                 <span>${escapeHtml(f.fileName)}</span>
                 ${f.shares?.length ? formatShareBadge(f.shares).replace(/font-size:[^;]*;?/,'font-size:10px;').replace(/padding:[^;]*;?/,'padding:1px 5px;') : ''}
+                ${f.isPublic ? '<span class="drive-public-badge" title="Published to the web — anyone with the link can read this, no login">PUBLIC</span>' : ''}
             </div></td>
             <td style="color:var(--text-secondary);font-size:0.8rem;">${typeLabel}</td>
             <td style="color:var(--text-secondary);font-size:0.8rem;">${formatBytes(f.fileSize)}</td>
@@ -658,6 +659,7 @@ function renderTableView(folders, files) {
                 <button class="action-btn" onclick="event.stopPropagation(); downloadFile('${f.fileId}')" data-tooltip="Download"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
                 <button class="action-btn" onclick="event.stopPropagation(); shareItem('${f.fileId}', 'file', '${escapeHtml(f.fileName)}')" data-tooltip="Share"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
                 <button class="action-btn" onclick="event.stopPropagation(); renameItem('${f.fileId}', 'file', '${escapeHtml(f.fileName)}')" data-tooltip="Rename"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button class="action-btn" onclick="event.stopPropagation(); toggleFilePublic('${f.fileId}', ${f.isPublic ? 'true' : 'false'}, '${escapeHtml(f.fileName)}')" data-tooltip="${f.isPublic ? 'Unpublish from web' : 'Publish to web'}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></button>
                 <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${f.fileId}', 'file', '${escapeHtml(f.fileName)}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
             </td>
         </tr>`;
@@ -714,6 +716,123 @@ async function toggleStarFile(fileId, currentState) {
         console.error('[Drive] Star toggle failed:', e);
         Toast.error('Failed to update star');
     }
+}
+
+/**
+ * Publish a file to the web, or take it back down.
+ *
+ * ⭐ PUBLISHING IS CONFIRMED; UNPUBLISHING IS NOT.
+ *
+ * The two directions are not symmetrical. Publishing makes a file readable by
+ * anyone who has the URL, with no login, for as long as it stays published —
+ * and this Drive holds contracts, payslips and interview recordings alongside
+ * the website images this feature exists for. Unpublishing only ever removes
+ * access, so it needs no ceremony.
+ */
+async function toggleFilePublic(fileId, currentlyPublic, fileName) {
+    if (!currentlyPublic) {
+        const ok = await DriveConfirm({
+            title: 'Publish to the web?',
+            message: `“${fileName}” will be readable by ANYONE with the link — no login, no expiry — until you unpublish it. Only publish files you are happy to put on a public website.`,
+            confirmText: 'Publish',
+            danger: true
+        });
+        if (!ok) return;
+    }
+    try {
+        const result = await api.setFilePublic(fileId, !currentlyPublic);
+        if (result && result.success) {
+            const file = cachedFiles.find(f => f.fileId === fileId);
+            if (file) {
+                file.isPublic = !currentlyPublic;
+                file.publicUrl = result.publicUrl || null;
+            }
+            renderDriveContents(cachedFolders, cachedFiles);
+            if (!currentlyPublic && result.publicUrl) {
+                try { await navigator.clipboard.writeText(result.publicUrl);
+                      Toast.success('Published — URL copied to clipboard'); }
+                catch { Toast.success('Published to the web'); }
+            } else {
+                Toast.success('Unpublished — the link is now dead');
+            }
+        } else {
+            Toast.error((result && result.message) || 'Could not change publication');
+        }
+    } catch (e) {
+        console.error('[Drive] publish toggle failed:', e);
+        Toast.error('Could not change publication');
+    }
+}
+
+/**
+ * A small confirm that does not depend on the page's modal stack.
+ * Resolves true/false; Escape and the backdrop both cancel.
+ */
+function DriveConfirm({ title, message, confirmText = 'Confirm', danger = false }) {
+    return new Promise(resolve => {
+        const wrap = document.createElement('div');
+        wrap.className = 'drive-confirm-backdrop';
+        wrap.innerHTML = `
+            <div class="drive-confirm" role="dialog" aria-modal="true">
+                <h3>${escapeHtml(title)}</h3>
+                <p>${escapeHtml(message)}</p>
+                <div class="drive-confirm-actions">
+                    <button type="button" class="btn btn-outline" data-cancel>Cancel</button>
+                    <button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-ok>${escapeHtml(confirmText)}</button>
+                </div>
+            </div>`;
+        const done = (v) => { document.removeEventListener('keydown', onKey, true); wrap.remove(); resolve(v); };
+        const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+        wrap.addEventListener('click', (e) => { if (e.target === wrap) done(false); });
+        wrap.querySelector('[data-cancel]').addEventListener('click', () => done(false));
+        wrap.querySelector('[data-ok]').addEventListener('click', () => done(true));
+        document.addEventListener('keydown', onKey, true);
+        document.body.appendChild(wrap);
+        wrap.querySelector('[data-ok]').focus();
+    });
+}
+
+/**
+ * Export this folder's files as a spreadsheet: name, type, size, and the
+ * public URL where one exists.
+ *
+ * ⭐ IT REPORTS, IT DOES NOT PUBLISH. Every file in the folder is listed, and
+ * the URL column is blank for anything unpublished — because the alternative,
+ * publishing whatever is in the folder so the column can be filled, is exactly
+ * how a folder of interview recordings ends up on the open web.
+ */
+function exportFolderUrls() {
+    const files = cachedFiles || [];
+    if (!files.length) { Toast.error('Nothing to export in this folder'); return; }
+    if (typeof XLSX === 'undefined') { Toast.error('Spreadsheet library did not load'); return; }
+
+    const rows = [['File name', 'Type', 'Size (bytes)', 'Uploaded', 'Published', 'Public URL']];
+    let published = 0;
+    for (const f of files) {
+        if (f.isPublic) published++;
+        rows.push([
+            f.fileName || '',
+            f.contentType || '',
+            f.fileSize ?? '',
+            f.createdAt ? new Date(f.createdAt).toISOString() : '',
+            f.isPublic ? 'yes' : 'no',
+            f.isPublic ? (f.publicUrl || '') : ''
+        ]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 42 }, { wch: 22 }, { wch: 14 }, { wch: 22 }, { wch: 10 }, { wch: 78 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Files');
+    // The breadcrumb's last crumb is the folder we are in; at the root it reads
+    // "My Drive". Read from the DOM rather than a variable, because folderStack
+    // carries ids only — there is no folder-name state to borrow.
+    const crumb = document.querySelector('#breadcrumb .cur');
+    const folderName = ((crumb && crumb.textContent.trim()) || 'drive')
+        .replace(/[\\\/:*?"<>|]/g, '-').trim().slice(0, 60) || 'drive';
+    XLSX.writeFile(wb, `${folderName}-urls.xlsx`);
+    Toast.success(published
+        ? `Exported ${files.length} files — ${published} with a public URL`
+        : `Exported ${files.length} files — none published yet, so the URL column is empty`);
 }
 
 function createFolderCard(folder) {

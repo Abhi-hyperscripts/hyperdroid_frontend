@@ -964,3 +964,30 @@
     font-size: .88rem;
     max-width: 70ch;
 }
+
+/* A published file is readable by anyone with the link, so it says so on the
+   row rather than only inside a menu. */
+.drive-public-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 6px;
+  border-radius: 4px; font-size: 9px; font-weight: 700; letter-spacing: .04em;
+  background: var(--color-warning); color: var(--text-inverse);
+  vertical-align: middle;
+}
+
+/* Confirm used before publishing. Fixed + high z-index for the same reason the
+   filter and row-action menus are: body.dashboard's exclusion chain forces
+   position:relative on anything left in the flow. */
+.drive-confirm-backdrop {
+  position: fixed !important; inset: 0; z-index: 1400 !important;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.55); padding: 16px;
+}
+.drive-confirm {
+  width: min(460px, 100%); padding: 20px;
+  background: var(--bg-card, var(--bg-primary));
+  border: 1px solid var(--border-color); border-radius: 12px;
+  box-shadow: var(--shadow-2xl, 0 18px 40px rgba(0,0,0,.35));
+}
+.drive-confirm h3 { margin: 0 0 8px; font-size: 16px; color: var(--text-primary); }
+.drive-confirm p { margin: 0 0 16px; font-size: 13.5px; line-height: 1.5; color: var(--text-secondary); }
+.drive-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
