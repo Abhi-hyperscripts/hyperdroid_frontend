@@ -1475,6 +1475,14 @@ class API {
         });
     }
 
+    /** Publish or unpublish every file in a folder; later uploads inherit it. */
+    async setFolderPublic(folderId, isPublic) {
+        return this.request(`/drive/folders/${folderId}/public`, {
+            method: 'PUT',
+            body: JSON.stringify({ isPublic })
+        });
+    }
+
     // Sharing operations
     async createShareLink(itemId, itemType, accessType = 'download', expiryHours = 0, password = null, allowAnonymous = true, maxDownloads = 0) {
         return this.request('/drive/share', {

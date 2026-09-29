@@ -624,6 +624,7 @@ function renderTableView(folders, files) {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--color-warning)" stroke="var(--color-warning)" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                 <span>${escapeHtml(f.folderName)}</span>
                 ${f.shares?.length ? formatShareBadge(f.shares).replace(/font-size:[^;]*;?/,'font-size:10px;').replace(/padding:[^;]*;?/,'padding:1px 5px;') : ''}
+                ${f.isPublic ? '<span class="drive-public-badge" title="Folder published — every file in it is readable by anyone with the link, and new uploads will be too">PUBLIC</span>' : ''}
             </div></td>
             <td style="color:var(--text-secondary);font-size:0.8rem;">Folder</td>
             <td style="color:var(--text-secondary);font-size:0.8rem;">${f.fileCount} files, ${formatBytes(f.totalSize)}</td>
@@ -631,6 +632,7 @@ function renderTableView(folders, files) {
             <td class="actions-cell">
                 <button class="action-btn" onclick="event.stopPropagation(); navigateToFolder('${f.folderId}')" data-tooltip="Open"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></button>
                 <button class="action-btn" onclick="event.stopPropagation(); shareItem('${f.folderId}', 'folder', '${escapeHtml(f.folderName)}')" data-tooltip="Share"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+                <button class="action-btn" onclick="event.stopPropagation(); toggleFolderPublic('${f.folderId}', ${f.isPublic ? 'true' : 'false'}, '${escapeHtml(f.folderName)}', ${f.fileCount || 0})" data-tooltip="${f.isPublic ? 'Unpublish folder' : 'Publish whole folder to web'}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></button>
                 <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${f.folderId}', 'folder', '${escapeHtml(f.folderName)}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
             </td>
         </tr>`;
@@ -719,6 +721,42 @@ async function toggleStarFile(fileId, currentState) {
 }
 
 /**
+ * Publish or unpublish a WHOLE FOLDER.
+ *
+ * Per-file publication does not scale — a folder of a thousand website images
+ * cannot be ticked one row at a time — so the folder is the unit, and the
+ * folder's own flag is what later uploads inherit. Publish the folder once and
+ * image 1001, uploaded next month, is live on arrival; unpublish it and the
+ * whole folder goes dark, including anything added since.
+ */
+async function toggleFolderPublic(folderId, currentlyPublic, folderName, fileCount) {
+    const n = Number(fileCount) || 0;
+    const ok = await DriveConfirm({
+        title: currentlyPublic ? 'Unpublish this folder?' : 'Publish the whole folder?',
+        message: currentlyPublic
+            ? `Every file in “${folderName}” will stop being served. Any links already on a website will break immediately.`
+            : `All ${n} file${n === 1 ? '' : 's'} in “${folderName}” will be readable by ANYONE with the link — no login, no expiry — and anything you upload into this folder later will be published automatically. Only do this for a folder of web assets.`,
+        confirmText: currentlyPublic ? 'Unpublish folder' : `Publish ${n} file${n === 1 ? '' : 's'}`,
+        danger: !currentlyPublic
+    });
+    if (!ok) return;
+    try {
+        const result = await api.setFolderPublic(folderId, !currentlyPublic);
+        if (result && result.success) {
+            await loadDriveContents();
+            Toast.success(currentlyPublic
+                ? `Folder unpublished — ${result.filesChanged} file(s) taken down`
+                : `Folder published — ${result.filesChanged} file(s) now live`);
+        } else {
+            Toast.error((result && result.message) || 'Could not change publication');
+        }
+    } catch (e) {
+        console.error('[Drive] folder publish toggle failed:', e);
+        Toast.error('Could not change publication');
+    }
+}
+
+/**
  * Publish a file to the web, or take it back down.
  *
  * ⭐ PUBLISHING IS CONFIRMED; UNPUBLISHING IS NOT.
@@ -772,6 +810,20 @@ function DriveConfirm({ title, message, confirmText = 'Confirm', danger = false 
     return new Promise(resolve => {
         const wrap = document.createElement('div');
         wrap.className = 'drive-confirm-backdrop';
+        // ⭐ INLINE, NOT ONLY IN THE STYLESHEET.
+        //
+        // This dialog is the last thing between a click and publishing a file to
+        // the open web, so it must not depend on a stylesheet having loaded. It
+        // shipped once with the CSS still propagating and rendered as plain text
+        // at the BOTTOM of the page — no backdrop, no centring, the Publish
+        // button sitting under the file list where it reads as part of the page
+        // rather than as a decision. A confirm you can miss is not a confirm.
+        // The class stays for theming; these are the floor.
+        Object.assign(wrap.style, {
+            position: 'fixed', inset: '0', zIndex: '2147483000',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,.6)', padding: '16px'
+        });
         wrap.innerHTML = `
             <div class="drive-confirm" role="dialog" aria-modal="true">
                 <h3>${escapeHtml(title)}</h3>
@@ -781,6 +833,18 @@ function DriveConfirm({ title, message, confirmText = 'Confirm', danger = false 
                     <button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-ok>${escapeHtml(confirmText)}</button>
                 </div>
             </div>`;
+        const box = wrap.querySelector('.drive-confirm');
+        Object.assign(box.style, {
+            width: 'min(460px, 100%)', padding: '20px', borderRadius: '12px',
+            background: 'var(--bg-card, var(--bg-primary, #1a1d24))',
+            border: '1px solid var(--border-color, rgba(255,255,255,.14))',
+            boxShadow: '0 18px 40px rgba(0,0,0,.45)'
+        });
+        box.querySelector('h3').style.margin = '0 0 8px';
+        box.querySelector('p').style.cssText = 'margin:0 0 16px;line-height:1.5;';
+        Object.assign(box.querySelector('.drive-confirm-actions').style,
+            { display: 'flex', justifyContent: 'flex-end', gap: '8px' });
+
         const done = (v) => { document.removeEventListener('keydown', onKey, true); wrap.remove(); resolve(v); };
         const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
         wrap.addEventListener('click', (e) => { if (e.target === wrap) done(false); });
