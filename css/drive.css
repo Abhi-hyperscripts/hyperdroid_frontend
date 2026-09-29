@@ -991,3 +991,14 @@
 .drive-confirm h3 { margin: 0 0 8px; font-size: 16px; color: var(--text-primary); }
 .drive-confirm p { margin: 0 0 16px; font-size: 13.5px; line-height: 1.5; color: var(--text-secondary); }
 .drive-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+/* The outline button inherits its colour from the page surface, which inside
+   this modal rendered dark-on-dark — Cancel was an empty box. */
+.drive-confirm-actions .btn-outline { color: var(--text-primary); border-color: var(--border-color); background: transparent; }
+.drive-confirm-actions .btn-outline:hover { background: var(--bg-tertiary); }
+
+/* The copy-link control only appears on published files, so it is tinted to
+   read as "this one is live" rather than as another grey glyph. */
+.action-btn-public { color: var(--color-warning); }
+.drive-public-badge[role="button"] { cursor: pointer; border: 0; }
+.drive-public-badge[role="button"]:hover { filter: brightness(1.15); }
+.drive-public-badge:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 1px; }

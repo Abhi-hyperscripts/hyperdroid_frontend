@@ -652,12 +652,13 @@ function renderTableView(folders, files) {
                 <span class="table-file-icon">${icon}</span>
                 <span>${escapeHtml(f.fileName)}</span>
                 ${f.shares?.length ? formatShareBadge(f.shares).replace(/font-size:[^;]*;?/,'font-size:10px;').replace(/padding:[^;]*;?/,'padding:1px 5px;') : ''}
-                ${f.isPublic ? '<span class="drive-public-badge" title="Published to the web — anyone with the link can read this, no login">PUBLIC</span>' : ''}
+                ${f.isPublic ? `<span class="drive-public-badge" role="button" tabindex="0" onclick="event.stopPropagation(); copyPublicLink('${f.fileId}')" title="Published — click to copy the public link">PUBLIC</span>` : ''}
             </div></td>
             <td style="color:var(--text-secondary);font-size:0.8rem;">${typeLabel}</td>
             <td style="color:var(--text-secondary);font-size:0.8rem;">${formatBytes(f.fileSize)}</td>
             <td style="color:var(--text-secondary);font-size:0.8rem;white-space:nowrap;">${uploaded}</td>
             <td class="actions-cell">
+                ${f.isPublic ? `<button class="action-btn action-btn-public" onclick="event.stopPropagation(); copyPublicLink('${f.fileId}')" data-tooltip="Copy public link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>` : ''}
                 <button class="action-btn" onclick="event.stopPropagation(); downloadFile('${f.fileId}')" data-tooltip="Download"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
                 <button class="action-btn" onclick="event.stopPropagation(); shareItem('${f.fileId}', 'file', '${escapeHtml(f.fileName)}')" data-tooltip="Share"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
                 <button class="action-btn" onclick="event.stopPropagation(); renameItem('${f.fileId}', 'file', '${escapeHtml(f.fileName)}')" data-tooltip="Rename"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -717,6 +718,30 @@ async function toggleStarFile(fileId, currentState) {
     } catch (e) {
         console.error('[Drive] Star toggle failed:', e);
         Toast.error('Failed to update star');
+    }
+}
+
+/**
+ * Copy a published file's public URL.
+ *
+ * The URL is the entire point of publishing — it goes into an <img> on somebody
+ * else's website — so getting it must not mean opening a menu, or exporting a
+ * spreadsheet to read one cell. The control only exists on files that ARE
+ * published, so it can never hand back a link that 404s.
+ */
+async function copyPublicLink(fileId) {
+    const file = (cachedFiles || []).find(f => f.fileId === fileId);
+    if (!file || !file.isPublic || !file.publicUrl) {
+        Toast.error('This file is not published');
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(file.publicUrl);
+        Toast.success('Public link copied');
+    } catch {
+        // Clipboard is blocked outside a secure context or without permission;
+        // show the URL so it can still be copied by hand rather than failing mute.
+        window.prompt('Copy this public link:', file.publicUrl);
     }
 }
 
@@ -844,6 +869,26 @@ function DriveConfirm({ title, message, confirmText = 'Confirm', danger = false 
         box.querySelector('p').style.cssText = 'margin:0 0 16px;line-height:1.5;';
         Object.assign(box.querySelector('.drive-confirm-actions').style,
             { display: 'flex', justifyContent: 'flex-end', gap: '8px' });
+
+        // ⭐ CANCEL HAS TO BE READABLE, and .btn-outline was not.
+        //
+        // The page's outline button takes its colour from the surface it
+        // normally sits on; inside this modal it rendered dark-on-dark and the
+        // word "Cancel" was invisible — an empty box beside a red Publish
+        // button. On a confirm whose whole job is to offer a way OUT, the escape
+        // route being the unreadable half is the worst one to lose.
+        const cancelBtn = box.querySelector('[data-cancel]');
+        Object.assign(cancelBtn.style, {
+            padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
+            font: 'inherit', fontWeight: '600', background: 'transparent',
+            border: '1px solid var(--border-color, rgba(255,255,255,.28))',
+            color: 'var(--text-primary, #e8eaed)'
+        });
+        Object.assign(box.querySelector('[data-ok]').style, {
+            padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
+            font: 'inherit', fontWeight: '600', border: '0', color: '#fff',
+            background: danger ? 'var(--color-error, #e5484d)' : 'var(--brand-primary, #2563eb)'
+        });
 
         const done = (v) => { document.removeEventListener('keydown', onKey, true); wrap.remove(); resolve(v); };
         const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
