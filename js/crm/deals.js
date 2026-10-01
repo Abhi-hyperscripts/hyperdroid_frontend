@@ -1422,15 +1422,43 @@ function markDealLost(dealId) {
             Are you sure you want to mark this deal as <strong style="color: var(--color-danger);">Lost</strong>?
         </p>
         <div class="mb-3" style="margin-top: 12px;">
-            <label for="lostReason" class="form-label">Reason (optional)</label>
-            <textarea class="form-control" id="lostReason" rows="2" placeholder="Why was this deal lost?"></textarea>
+            <label for="lostReasonSelect" class="form-label">Reason for losing this deal *</label>
+            <select id="lostReasonSelect" class="form-select">
+                <option value="">Select reason...</option>
+                <option value="Price too high">Price too high</option>
+                <option value="Not interested">Not interested</option>
+                <option value="Competitor won">Competitor won</option>
+                <option value="No budget">No budget</option>
+                <option value="Bad timing">Bad timing</option>
+                <option value="No response">No response</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="text" id="lostReason" class="form-control" placeholder="Specify reason..."
+                   style="display:none;margin-top:8px;">
         </div>
     `;
-    document.getElementById('stageChangeConfirmBtn').className = 'btn btn-danger';
-    document.getElementById('stageChangeConfirmBtn').innerHTML = `
+    const btn = document.getElementById('stageChangeConfirmBtn');
+    btn.className = 'btn btn-danger';
+    btn.innerHTML = `
         <span class="btn-spinner" id="stageChangeSpinner" style="display:none;"></span>
         Mark as Lost
     `;
+
+    /* ⭐ THE REASON IS REQUIRED, AND IT IS A PICKLIST.
+       It used to be an optional free-text box, and the result was measurable:
+       on the live tenant, 13 of 13 lost deals carried no reason at all, while
+       leads — whose modal has always required a pick from this same list —
+       carried 145. "Why do we lose?" cannot be answered from a field nobody is
+       asked to fill. The options are the lead list verbatim so the two sources
+       group together in the Lost-reasons chart rather than splitting into
+       near-duplicate wording. */
+    const sel = document.getElementById('lostReasonSelect');
+    const custom = document.getElementById('lostReason');
+    const gate = () => { btn.disabled = !sel.value || (sel.value === 'Other' && !custom.value.trim()); };
+    sel.onchange = () => { custom.style.display = sel.value === 'Other' ? '' : 'none'; gate(); };
+    custom.oninput = gate;
+    gate();
+
     openModal('stageChangeModal');
 }
 
@@ -1449,7 +1477,16 @@ async function confirmStageChange() {
             await api.request(`/crm/deals/${dealId}/won`, { method: 'POST' });
             Toast.success('Deal marked as Won!');
         } else if (action === 'lost') {
-            const reason = document.getElementById('lostReason')?.value?.trim() || '';
+            const sel = document.getElementById('lostReasonSelect');
+            const reason = sel?.value === 'Other'
+                ? (document.getElementById('lostReason')?.value?.trim() || '')
+                : (sel?.value || '');
+            if (!reason) {
+                Toast.error('Please select a reason');
+                confirmBtn.disabled = false;
+                if (spinner) spinner.style.display = 'none';
+                return;
+            }
             await api.request(`/crm/deals/${dealId}/lost`, {
                 method: 'POST',
                 body: JSON.stringify({ reason })
