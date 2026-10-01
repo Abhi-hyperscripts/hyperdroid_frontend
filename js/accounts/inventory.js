@@ -104,7 +104,7 @@ async function loadTaxConfigs() {
 // first input is what distinguishes "the user cleared it" from "the user never looked at it".
 function markAttributeTouched(el) { if (el) el.dataset.touched = '1'; }
 document.addEventListener('input', e => {
-    if (e.target && (e.target.id === 'itColor' || e.target.id === 'itSize')) markAttributeTouched(e.target);
+    if (e.target && (e.target.id === 'itColor' || e.target.id === 'itSize' || e.target.id === 'itColorCode')) markAttributeTouched(e.target);
 });
 
 // ── Progressive load ──────────────────────────────────────────────────────────────────────────────
@@ -452,10 +452,11 @@ async function editItem(id) {
     // The "touched" flag is cleared so that merely viewing an item and saving cannot remove a colour the
     // importer set; only an actual edit marks them for submission.
     const attrs = i.attributes || {};
-    [['itColor', 'color'], ['itSize', 'size']].forEach(([elId, key]) => {
+    [['itColor', 'color'], ['itSize', 'size'], ['itColorCode', 'color_code']].forEach(([elId, key]) => {
         const el = document.getElementById(elId);
         if (el) { el.value = attrs[key] || ''; delete el.dataset.touched; }
     });
+    paintColorCodeSwatch();
     document.getElementById('itBarcode').value = i.barcode || '';
     document.getElementById('itUnit').value = i.unit;
     document.getElementById('itPurchaseUnit').value = i.purchase_unit || '';
@@ -479,7 +480,55 @@ async function editItem(id) {
     AccountsCommon.showFormPage('itemModal');
 }
 
+
+/* ── Colour code ────────────────────────────────────────────────────────────────────────────
+   The storefront paints this straight into a style attribute, so anything that is not a hex
+   literal is refused. The backend refuses it too — this is the copy that tells the shopkeeper
+   BEFORE the save round-trips, not a substitute for it. #RGB, #RRGGBB and #RRGGBBAA are the only
+   shapes a browser reads as a colour. */
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+function colorCodeError() {
+    const el = document.getElementById('itColorCode');
+    if (!el) return '';
+    const v = el.value.trim();
+    if (!v) return '';                     // blank is legal: the shop works the shade out from the name
+    return HEX_COLOR_RE.test(v) ? '' : 'Enter a hex colour like #1a1a1a, or leave it blank.';
+}
+
+/* The swatch is the point of the field: a shopkeeper typing a hex cannot otherwise tell what they
+   have chosen, and "#6b7030" means nothing to anyone. */
+function paintColorCodeSwatch() {
+    const el = document.getElementById('itColorCode');
+    const dot = document.getElementById('itColorCodeSwatch');
+    const err = document.getElementById('itColorCodeError');
+    if (!el || !dot) return;
+    const v = el.value.trim();
+    const bad = colorCodeError();
+    dot.style.background = (!bad && v) ? v : 'transparent';
+    if (err) {
+        err.textContent = bad;
+        err.style.display = bad ? '' : 'none';
+    }
+    el.classList.toggle('is-invalid', !!bad);
+}
+
+document.addEventListener('input', (e) => {
+    if (e.target && e.target.id === 'itColorCode') paintColorCodeSwatch();
+});
+
+
 async function saveItem() {
+    // ⭐ Refuse BEFORE the request, not after. The backend refuses a non-hex colour code too, but the save
+    // posts a dozen other fields with it — bouncing the whole item for a typo in an optional field, with the
+    // error arriving as a toast, is a worse way to learn than the field saying so as you type.
+    const badColorCode = colorCodeError();
+    if (badColorCode) {
+        paintColorCodeSwatch();
+        document.getElementById('itColorCode')?.focus();
+        Toast.error(badColorCode);
+        return;
+    }
     const id = document.getElementById('itemId').value;
     const payload = {
         sku: document.getElementById('itSku').value.trim(),
@@ -515,8 +564,9 @@ async function saveItem() {
         // use, so an edit that never touches these fields cannot wipe them.
         attributes: (() => {
             const out = {};
-            ['color', 'size'].forEach(k => {
-                const el = document.getElementById(k === 'color' ? 'itColor' : 'itSize');
+            const FIELD = { color: 'itColor', size: 'itSize', color_code: 'itColorCode' };
+            ['color', 'size', 'color_code'].forEach(k => {
+                const el = document.getElementById(FIELD[k]);
                 if (el && el.dataset.touched === '1') out[k] = el.value.trim();
             });
             return Object.keys(out).length ? out : null;
