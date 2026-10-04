@@ -26,12 +26,18 @@ let dealCompanyDropdown = null;
 // Members can edit basic fields on owned deals but not value/stage/won/lost/delete
 // UNLESS the tenant-level `allow_member_deal_edits` setting is on.
 let myTeamRole = 'member';
+/* SUPERADMIN is tracked separately from the collapsed 'admin' role below.
+   Reopening a closed deal is restricted to superadmins, and myTeamRole
+   cannot express that: it maps SUPERADMIN and CRM_ADMIN onto the same
+   value, which is exactly the distinction the backend guard turns on. */
+let isSuperadmin = false;
 let allowMemberDealEdits = false;
 
 async function loadMyRole() {
     try {
         const user = api.getUser();
-        if (user?.roles?.includes('CRM_ADMIN') || user?.roles?.includes('SUPERADMIN')) {
+        isSuperadmin = !!user?.roles?.includes('SUPERADMIN');
+        if (user?.roles?.includes('CRM_ADMIN') || isSuperadmin) {
             myTeamRole = 'admin';
             return;
         }
@@ -1288,8 +1294,14 @@ async function editDeal(dealId) {
         const oldStageReadonly = document.getElementById('dealStageReadonly');
         if (oldStageReadonly) oldStageReadonly.remove();
 
-        // Members: stage shown as read-only text (same treatment as terminal stages).
-        if ((isTerminal || lockFinancial) && stageContainer) {
+        /* ⭐ A SUPERADMIN KEEPS THE STAGE PICKER ON A CLOSED DEAL.
+           Sales close the wrong card and somebody has to be able to undo it.
+           The kanban drag already reaches the backend for this — there was
+           never a client-side terminal block there — so locking the field
+           here only hid the path that explains itself. The backend is still
+           the authority and refuses everyone else. */
+        const stageLocked = (isTerminal && !isSuperadmin) || lockFinancial;
+        if (stageLocked && stageContainer) {
             const stageReadonly = document.createElement('div');
             stageReadonly.id = 'dealStageReadonly';
             const memberLockColor = 'var(--text-secondary)';
