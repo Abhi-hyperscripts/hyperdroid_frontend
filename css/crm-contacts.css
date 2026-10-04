@@ -80,6 +80,16 @@ body.crm-contacts-page .rail-item.active { background: color-mix(in srgb, #F472B
 /* ── hero: title + count + search ─────────────────────────────────────────── */
 .rlx-hero {
   position: relative;
+  /* ⭐ MUST OUTRANK .rlx-wrap, which follows it in the DOM.
+     styles.css stamps `position: relative; z-index: 1` on EVERY direct child
+     of body.dashboard (the long :not() exclusion chain), so the hero and the
+     content wrap below it are equal-z siblings — and equal z means the LATER
+     one paints on top. That made the hero a stacking context whose contents
+     could not escape it: the filter dropdowns open downward out of the hero
+     and were painted UNDER the table, their own z-index: 10001 trapped. The
+     option looked visible and did nothing — a <td> was taking the click.
+     Any popup anchored in this header depends on this line. */
+  z-index: 2;
   border-bottom: 1px solid var(--rlx-line);
   margin-bottom: 20px;
 }

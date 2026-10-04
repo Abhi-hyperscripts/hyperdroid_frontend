@@ -45,6 +45,24 @@ function createsStackingContext(el, cs) {
     if (cs.mixBlendMode && cs.mixBlendMode !== 'normal') return true;
     if (/transform|opacity|filter/.test(cs.willChange || '')) return true;
     if (/paint|layout|strict|content/.test(cs.contain || '')) return true;
+    // ⭐ THE TEXTBOOK CASE, and it was the one missing: a positioned element
+    //    with any z-index is a stacking context. This list had every exotic
+    //    trigger (backdrop-filter, mix-blend-mode, contain) and not the one
+    //    that actually covers most of this app — styles.css stamps
+    //    `position: relative; z-index: 1` on EVERY direct child of
+    //    body.dashboard, so a page's header and its content wrap are
+    //    equal-z siblings and the later one paints over the earlier one's
+    //    descendants. A filter dropdown in such a header opened correctly,
+    //    looked perfect, and did nothing: the click landed on a <td> of the
+    //    table below, because the menu's own z-index: 10001 cannot escape
+    //    the context its ancestor opened. Measured on CRM Contacts.
+    if (cs.position !== 'static' && cs.zIndex !== 'auto') return true;
+    // A flex/grid ITEM with a z-index is a stacking context even while
+    // position: static — the only case where z-index bites without position.
+    if (cs.zIndex !== 'auto' && el.parentElement) {
+        const pd = getComputedStyle(el.parentElement).display;
+        if (pd.indexOf('flex') !== -1 || pd.indexOf('grid') !== -1) return true;
+    }
     return false;
 }
 
