@@ -142,35 +142,217 @@ function populateCompanyDropdown() {
 
 // ─── Rendering ──────────────────────────────────────────────────────────────
 
-function renderContacts(list) {
-    // Rolodex grid. `list` defaults to the full set; filterContacts passes a
-    // filtered array (no more global-swap hack).
+/* ── View / filter / page state ──────────────────────────────────────────────
+   Cards answer "who is this person" at a glance; the table answers "show me
+   all of them, filtered, a page at a time". Both render from ONE filtered set
+   (getFilteredContacts), so the two views and the header count can never
+   disagree about how many contacts match. */
+let contactsView = localStorage.getItem('crmContactsView') || 'cards';
+let contactsPage = 1;
+let contactsPageSize = parseInt(localStorage.getItem('crmContactsPageSize'), 10) || 25;
+const CONTACTS_PAGE_SIZES = [25, 50, 100, 250, 500];
+
+function setContactsView(mode) {
+    contactsView = mode === 'table' ? 'table' : 'cards';
+    localStorage.setItem('crmContactsView', contactsView);
+    renderContacts();
+}
+
+function clearContactFilters() {
+    ['contactSearch', 'contactFilterCompany', 'contactFilterSource', 'contactFilterReach']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    contactsPage = 1;
+    renderContacts();
+}
+
+function changeContactsPageSize(n) {
+    contactsPageSize = parseInt(n, 10) || 25;
+    localStorage.setItem('crmContactsPageSize', String(contactsPageSize));
+    contactsPage = 1;
+    renderContacts();
+}
+
+function gotoContactsPage(n) {
+    contactsPage = Math.max(1, n);
+    renderContacts();
+    document.querySelector('.rlx-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* The ONE place that decides which contacts are on screen. */
+function getFilteredContacts() {
+    const q = (document.getElementById('contactSearch')?.value || '').trim().toLowerCase();
+    const co = document.getElementById('contactFilterCompany')?.value || '';
+    const src = document.getElementById('contactFilterSource')?.value || '';
+    const reach = document.getElementById('contactFilterReach')?.value || '';
+
+    return contacts.filter(c => {
+        if (q) {
+            const hay = [
+                `${c.first_name || ''} ${c.last_name || ''}`, c.email, c.phone, c.mobile,
+                getCompanyName(c.company_id), c.job_title,
+            ].map(v => (v || '').toLowerCase());
+            if (!hay.some(v => v.includes(q))) return false;
+        }
+        if (co && String(c.company_id || '') !== co) return false;
+        if (src && (c.contact_source || 'manual') !== src) return false;
+        if (reach) {
+            const hasPhone = !!(c.phone || c.mobile);
+            const hasEmail = !!c.email;
+            if (reach === 'phone' && !hasPhone) return false;
+            if (reach === 'email' && !hasEmail) return false;
+            if (reach === 'none' && (hasPhone || hasEmail)) return false;
+        }
+        return true;
+    });
+}
+
+/* Options come from the data on screen, not a hardcoded list — a tenant whose
+   contacts all arrived from Facebook should not be offered five dead sources. */
+function populateContactFilterOptions() {
+    const srcEl = document.getElementById('contactFilterSource');
+    if (srcEl) {
+        const keep = srcEl.value;
+        const sources = [...new Set(contacts.map(c => c.contact_source || 'manual'))].sort();
+        srcEl.innerHTML = '<option value="">All sources</option>' +
+            sources.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+        srcEl.value = keep;
+    }
+    const coEl = document.getElementById('contactFilterCompany');
+    if (coEl) {
+        const keep = coEl.value;
+        const used = [...new Set(contacts.map(c => c.company_id).filter(Boolean))];
+        const named = used.map(id => ({ id, name: getCompanyName(id) || '—' }))
+                          .sort((a, b) => a.name.localeCompare(b.name));
+        coEl.innerHTML = '<option value="">All companies</option>' +
+            named.map(c => `<option value="${escapeHtml(String(c.id))}">${escapeHtml(c.name)}</option>`).join('');
+        coEl.value = keep;
+    }
+}
+
+function renderContacts() {
     const grid = document.getElementById('contactsGrid');
+    const tableWrap = document.getElementById('contactsTableWrap');
     const emptyState = document.getElementById('emptyState');
     if (!grid) return;
 
-    const rows = Array.isArray(list) ? list : contacts;
+    populateContactFilterOptions();
+
     const countEl = document.getElementById('rlxCount');
     if (countEl) countEl.textContent = contacts.length || '0';
 
+    // Nothing in the tenant at all — the onboarding empty state, not a filter miss.
     if (!contacts.length) {
         grid.innerHTML = '';
         grid.style.display = 'none';
-        emptyState.style.display = 'block';
+        if (tableWrap) tableWrap.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+        renderContactsPagination(0, 0);
         renderContactsHeroWave();
         return;
     }
-    grid.style.display = 'grid';
-    emptyState.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'none';
 
-    if (!rows.length) {
-        grid.innerHTML = `<div class="rlx-empty">No contacts match your search</div>`;
+    const rows = getFilteredContacts();
+    const total = rows.length;
+
+    // A filter can leave the current page beyond the end; clamp rather than
+    // render an empty page the user has to click their way out of.
+    const pages = Math.max(1, Math.ceil(total / contactsPageSize));
+    if (contactsPage > pages) contactsPage = pages;
+    const start = (contactsPage - 1) * contactsPageSize;
+    const pageRows = rows.slice(start, start + contactsPageSize);
+
+    const isTable = contactsView === 'table';
+    grid.style.display = isTable ? 'none' : 'grid';
+    if (tableWrap) tableWrap.style.display = isTable ? '' : 'none';
+    document.getElementById('rlxViewCards')?.setAttribute('aria-pressed', String(!isTable));
+    document.getElementById('rlxViewTable')?.setAttribute('aria-pressed', String(isTable));
+    document.getElementById('rlxViewCards')?.classList.toggle('active', !isTable);
+    document.getElementById('rlxViewTable')?.classList.toggle('active', isTable);
+
+    if (!total) {
+        const msg = '<div class="rlx-empty">No contacts match your filters</div>';
+        if (isTable) {
+            document.getElementById('contactsTableBody').innerHTML =
+                '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-secondary)">No contacts match your filters</td></tr>';
+        } else {
+            grid.innerHTML = msg;
+        }
+        renderContactsPagination(0, 0);
         renderContactsHeroWave();
         return;
     }
 
-    grid.innerHTML = rows.map(contact => renderContactCard(contact)).join('');
+    if (isTable) renderContactsTable(pageRows);
+    else grid.innerHTML = pageRows.map(contact => renderContactCard(contact)).join('');
+
+    renderContactsPagination(total, pages);
     renderContactsHeroWave();
+}
+
+function renderContactsTable(rows) {
+    const body = document.getElementById('contactsTableBody');
+    if (!body) return;
+    body.innerHTML = rows.map(c => {
+        const name = escapeHtml(`${c.first_name || ''} ${c.last_name || ''}`.trim()) || '—';
+        const phone = c.phone || c.mobile || '';
+        const company = getCompanyName(c.company_id) || '';
+        return `<tr style="cursor:pointer;" onclick="openContactDetailPanel('${c.id}')">
+            <td><div class="table-name-cell">
+                <span class="rlx-av rlx-av-sm" style="background:${contactAvatarBg(c)}">${escapeHtml(getInitials(c.first_name, c.last_name))}</span>
+                <span>${name}</span>
+            </div></td>
+            <td>${escapeHtml(c.job_title || '') || '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td>${escapeHtml(company) || '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td>${phone ? crmPhoneLink(phone) : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td>${c.email ? `<a href="mailto:${escapeHtml(c.email)}" onclick="event.stopPropagation()">${escapeHtml(c.email)}</a>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td>${escapeHtml(c.contact_source || 'manual')}</td>
+            <td style="white-space:nowrap;">${contactTimeAgo(c.created_at)}</td>
+            <td class="actions-cell">
+                <button class="action-btn" onclick="event.stopPropagation(); openContactDetailPanel('${c.id}')" data-tooltip="Open"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button class="action-btn" onclick="event.stopPropagation(); openEditContactModal('${c.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                ${canDeleteContact() ? `<button class="action-btn action-btn-danger" onclick="event.stopPropagation(); openDeleteModal('${c.id}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>` : ''}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function renderContactsPagination(total, pages) {
+    const el = document.getElementById('contactsPagination');
+    if (!el) return;
+    if (!total) { el.innerHTML = ''; return; }
+
+    /* Native select, deliberately — data-no-sd. This control is rebuilt on every
+       render, and the auto-converter's widget loses its listeners to exactly
+       that pattern (see the leads Rows control, which shipped broken because of
+       it). A search box over five numbers was never useful anyway. */
+    const sizes = CONTACTS_PAGE_SIZES.map(n =>
+        `<option value="${n}"${n === contactsPageSize ? ' selected' : ''}>${n}</option>`).join('');
+    const from = (contactsPage - 1) * contactsPageSize + 1;
+    const to = Math.min(contactsPage * contactsPageSize, total);
+
+    let btns = '';
+    if (pages > 1) {
+        btns += `<button class="crm-page-btn" ${contactsPage === 1 ? 'disabled' : ''} onclick="gotoContactsPage(${contactsPage - 1})">‹</button>`;
+        for (let i = 1; i <= pages; i++) {
+            if (i === 1 || i === pages || Math.abs(i - contactsPage) <= 1) {
+                btns += `<button class="crm-page-btn${i === contactsPage ? ' active' : ''}" onclick="gotoContactsPage(${i})">${i}</button>`;
+            } else if (Math.abs(i - contactsPage) === 2) {
+                btns += `<span class="crm-page-ellipsis">…</span>`;
+            }
+        }
+        btns += `<button class="crm-page-btn" ${contactsPage === pages ? 'disabled' : ''} onclick="gotoContactsPage(${contactsPage + 1})">›</button>`;
+    }
+
+    el.innerHTML = `
+        <label class="crm-pagesize">Rows
+            <select onchange="changeContactsPageSize(this.value)" class="form-control crm-pagesize-select"
+                    data-no-sd="true" aria-label="Contacts per page">${sizes}</select>
+        </label>
+        <div class="crm-pagination-center">
+            <span class="crm-pagination-info">${from}–${to} of ${total}</span>
+            ${btns}
+        </div>`;
 }
 
 // One contact = one identity card: avatar hue, name, role @ company,
@@ -320,31 +502,14 @@ function getInitials(firstName, lastName) {
 
 // ─── Search / Filter ────────────────────────────────────────────────────────
 
+/* Any filter change: back to page 1 and re-render.
+   It no longer computes its own matching set. It used to, and renderContacts
+   had a second copy for the unfiltered case — two definitions of "matches",
+   free to drift, and the header count was read from one while the grid was
+   drawn from the other. getFilteredContacts is now the only one. */
 function filterContacts() {
-    const query = document.getElementById('contactSearch').value.toLowerCase().trim();
-
-    if (!query) {
-        renderContacts();
-        return;
-    }
-
-    const filtered = contacts.filter(c => {
-        const fullName = `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase();
-        const email = (c.email || '').toLowerCase();
-        const phone = (c.phone || '').toLowerCase();
-        const mobile = (c.mobile || '').toLowerCase();
-        const companyName = (getCompanyName(c.company_id) || '').toLowerCase();
-        const jobTitle = (c.job_title || '').toLowerCase();
-
-        return fullName.includes(query) ||
-               email.includes(query) ||
-               phone.includes(query) ||
-               mobile.includes(query) ||
-               companyName.includes(query) ||
-               jobTitle.includes(query);
-    });
-
-    renderContacts(filtered);
+    contactsPage = 1;
+    renderContacts();
 }
 
 // ─── Modal: Create ──────────────────────────────────────────────────────────

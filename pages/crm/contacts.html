@@ -14,30 +14,30 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
     <title>Contacts - CRM | Ragenaizer</title>
     <script>window.CACHE_VERSION = Date.now();</script>
-    <script src="../../js/sw-version.js?v=3082"></script>
+    <script src="../../js/sw-version.js?v=3083"></script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../../css/theme.css?v=3082">
-    <link rel="stylesheet" href="../../css/styles.css?v=3082">
-    <link rel="stylesheet" href="../../css/crm.css?v=3082">
-    <link rel="stylesheet" href="../../css/glass-cards.css?v=3082">
-    <link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=3082">
-    <link rel="stylesheet" href="../../css/table-cards.css?v=3082">
-    <link rel="stylesheet" href="../../css/table-filter.css?v=3082">
-    <link rel="stylesheet" href="../../css/row-actions.css?v=3082">
-    <link rel="stylesheet" href="../../css/searchable-dropdown.css?v=3082">
-    <link rel="stylesheet" href="../../css/slide-panel.css?v=3082">
-    <link rel="stylesheet" href="../../css/crm-lead-import.css?v=3082">
-    <link rel="stylesheet" href="../../css/crm-contacts.css?v=3082">
-    <link rel="stylesheet" href="../../css/crm-notes.css?v=3082">
+    <link rel="stylesheet" href="../../css/theme.css?v=3083">
+    <link rel="stylesheet" href="../../css/styles.css?v=3083">
+    <link rel="stylesheet" href="../../css/crm.css?v=3083">
+    <link rel="stylesheet" href="../../css/glass-cards.css?v=3083">
+    <link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=3083">
+    <link rel="stylesheet" href="../../css/table-cards.css?v=3083">
+    <link rel="stylesheet" href="../../css/table-filter.css?v=3083">
+    <link rel="stylesheet" href="../../css/row-actions.css?v=3083">
+    <link rel="stylesheet" href="../../css/searchable-dropdown.css?v=3083">
+    <link rel="stylesheet" href="../../css/slide-panel.css?v=3083">
+    <link rel="stylesheet" href="../../css/crm-lead-import.css?v=3083">
+    <link rel="stylesheet" href="../../css/crm-contacts.css?v=3083">
+    <link rel="stylesheet" href="../../css/crm-notes.css?v=3083">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script src="../../js/theme.js?v=3082"></script>
+    <script src="../../js/theme.js?v=3083"></script>
 </head>
 <body class="dashboard crm-page crm-contacts-page">
-    <script src="/js/button-spinner.js?v=3082"></script>
+    <script src="/js/button-spinner.js?v=3083"></script>
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="../home.html">
@@ -129,11 +129,64 @@
                 <input type="text" id="contactSearch" placeholder="Search contacts by name, email, phone, company..." oninput="filterContacts()">
             </div>
         </div>
+
+        <!-- Cards answer "who is this person" at a glance; the table answers
+             "show me all of them, sorted, filtered, a page at a time". Both
+             read the same filtered set, so the count never disagrees. -->
+        <div class="rlx-toolbar">
+            <div class="rlx-viewtoggle" role="group" aria-label="View">
+                <button type="button" id="rlxViewCards" class="rlx-vbtn" onclick="setContactsView('cards')" aria-pressed="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    Cards
+                </button>
+                <button type="button" id="rlxViewTable" class="rlx-vbtn" onclick="setContactsView('table')" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    Table
+                </button>
+            </div>
+            <div class="rlx-filters">
+                <label class="rlx-f">Company
+                    <select id="contactFilterCompany" class="form-select form-select-sm" onchange="filterContacts()">
+                        <option value="">All companies</option>
+                    </select>
+                </label>
+                <label class="rlx-f">Source
+                    <select id="contactFilterSource" class="form-select form-select-sm" onchange="filterContacts()">
+                        <option value="">All sources</option>
+                    </select>
+                </label>
+                <label class="rlx-f">Reachable
+                    <select id="contactFilterReach" class="form-select form-select-sm" onchange="filterContacts()">
+                        <option value="">Any</option>
+                        <option value="phone">Has a phone</option>
+                        <option value="email">Has an email</option>
+                        <option value="none">Missing both</option>
+                    </select>
+                </label>
+                <button type="button" class="rlx-clear" onclick="clearContactFilters()">Clear</button>
+            </div>
+        </div>
     </header>
 
     <div class="rlx-wrap">
         <!-- Identity card grid — populated by JavaScript -->
         <div class="rlx-grid" id="contactsGrid"></div>
+
+        <!-- Table view. .data-table so it inherits the column filters and the
+             row-actions overflow menu this page already loads. -->
+        <div class="rlx-tablewrap" id="contactsTableWrap" style="display:none;">
+            <table class="data-table" id="contactsTable">
+                <thead>
+                    <tr>
+                        <th>Name</th><th>Role</th><th>Company</th>
+                        <th>Phone</th><th>Email</th><th>Source</th><th>Added</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="contactsTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="crm-pagination" id="contactsPagination"></div>
 
         <!-- Empty State -->
         <div class="rlx-empty" id="emptyState" style="display: none;">
@@ -323,23 +376,23 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
-        <script src="../../js/config.js?v=3082"></script>
-        <script src="../../js/rail-rbac.js?v=3082"></script>
-        <script src="../../js/api.js?v=3082"></script>
-        <script src="../../js/navigation.js?v=3082"></script>
-        <script src="../../js/toast.js?v=3082"></script>
-        <script src="../../js/tooltip.js?v=3082"></script>
-        <script src="../../js/table-cards.js?v=3082"></script>
-        <script src="../../js/anchored-menu.js?v=3082"></script>
-        <script src="../../js/table-filter.js?v=3082"></script>
-        <script src="../../js/row-actions.js?v=3082"></script>
-        <script src="../../js/searchable-dropdown.js?v=3082"></script>
-        <script src="../../js/auto-searchable-select.js?v=3082"></script>
-        <script src="../../js/crm/phone-link.js?v=3082"></script>
-        <script src="../../js/crm/related-panel.js?v=3082"></script>
-        <script src="../../js/crm/ekart-access-modal.js?v=3082"></script>
-    <script src="../../js/crm/contacts.js?v=3082"></script>
+        <script src="../../js/config.js?v=3083"></script>
+        <script src="../../js/rail-rbac.js?v=3083"></script>
+        <script src="../../js/api.js?v=3083"></script>
+        <script src="../../js/navigation.js?v=3083"></script>
+        <script src="../../js/toast.js?v=3083"></script>
+        <script src="../../js/tooltip.js?v=3083"></script>
+        <script src="../../js/table-cards.js?v=3083"></script>
+        <script src="../../js/anchored-menu.js?v=3083"></script>
+        <script src="../../js/table-filter.js?v=3083"></script>
+        <script src="../../js/row-actions.js?v=3083"></script>
+        <script src="../../js/searchable-dropdown.js?v=3083"></script>
+        <script src="../../js/auto-searchable-select.js?v=3083"></script>
+        <script src="../../js/crm/phone-link.js?v=3083"></script>
+        <script src="../../js/crm/related-panel.js?v=3083"></script>
+        <script src="../../js/crm/ekart-access-modal.js?v=3083"></script>
+    <script src="../../js/crm/contacts.js?v=3083"></script>
     <!-- AI Copilot Widget -->
-    <script src="../../embed/widget.js?v=3082" data-mode="copilot" data-service="crm" data-title="Sales Assistant"></script>
+    <script src="../../embed/widget.js?v=3083" data-mode="copilot" data-service="crm" data-title="Sales Assistant"></script>
 </body>
 </html>
