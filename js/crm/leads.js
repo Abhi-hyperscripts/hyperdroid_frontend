@@ -1257,6 +1257,17 @@ async function loadLeadStats() {
 const _LDK_TABS = [
     { label: 'All', status: '', key: 'total_leads' },
     { label: 'Unworked new', status: 'new', key: 'new_leads' },
+    // Assigned sits between new and contacted in the pipeline, and it is where
+    // most of a tenant's book lives once auto-assignment is on — 215 of 674 on
+    // the live tenant, 200 of them never touched. Without this tab the only way
+    // to see work that has an owner but no activity was the Filters panel.
+    //
+    // Status, not status-plus-untouched, deliberately: every sibling tab is a
+    // pure status and 'Unworked new' is too (status = new, 49 of its 50 never
+    // touched). A tab that silently added a second predicate would make its
+    // count disagree with the funnel segment of the same name. Untouched-first
+    // ordering is one click away in the sort menu.
+    { label: 'Assigned', status: 'assigned', key: 'assigned' },
     { label: 'My follow-ups', status: 'follow_up_scheduled', key: null, flame: true },
     { label: 'Contacted', status: 'contacted', key: 'contacted' },
     { label: 'Qualified', status: 'qualified', key: 'qualified' },
