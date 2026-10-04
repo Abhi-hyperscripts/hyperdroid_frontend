@@ -353,7 +353,20 @@ const SearchableDropdown = (function() {
                 // line row whose dropdown used a generated id, so the constructor's same-id teardown can't catch
                 // it). Without this, the instance lingers in the registry with this persistent listener forever.
                 if (!this.container || !this.container.isConnected) { this._teardownListeners(); return; }
-                if (this.isOpen && !this.container.contains(e.target)) {
+                // ⭐ THE LINKED <select> IS NOT "OUTSIDE" — IT IS US.
+                //
+                // `container` is the .sd-auto-container we insert as a SIBLING of the
+                // native <select>, so the select itself is not inside it. That matters
+                // because of label activation: a <label> wrapping (or `for`-pointing at)
+                // the select makes the browser forward a real click from anywhere in the
+                // label to the select — as a TRUSTED event, on a display:none element.
+                // The widget lives inside that same label, so one physical click became
+                // two: ours (opens) and the forwarded one (reads as outside, closes).
+                // Measured on CRM Contacts: open at t+1.8ms, shut at t+2.4ms. The menu
+                // flashed and the filter looked dead, with nothing in the console.
+                // Any auto-converted select with a label was un-openable this way.
+                if (this.isOpen && !this.container.contains(e.target) &&
+                    e.target !== this.linkedSelect) {
                     this.close();
                 }
             };

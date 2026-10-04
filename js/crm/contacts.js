@@ -159,8 +159,20 @@ function setContactsView(mode) {
 }
 
 function clearContactFilters() {
+    // These three selects are auto-converted to searchable dropdowns, which means
+    // the <select> the filter READS from is hidden and a widget shows the label.
+    // Clearing only `el.value` resets the filter and leaves "facebook" sitting in
+    // the box — the list and the control disagree, and the user cannot tell which
+    // one is lying. setValue(.., false) updates the widget WITHOUT firing change,
+    // so we still render exactly once at the end instead of once per select.
     ['contactSearch', 'contactFilterCompany', 'contactFilterSource', 'contactFilterReach']
-        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+            const sd = (typeof SearchableDropdown !== 'undefined' && SearchableDropdown.getInstance)
+                ? SearchableDropdown.getInstance(id) : null;
+            if (sd) sd.setValue('', false);
+        });
     contactsPage = 1;
     renderContacts();
 }
@@ -208,7 +220,24 @@ function getFilteredContacts() {
 
 /* Options come from the data on screen, not a hardcoded list — a tenant whose
    contacts all arrived from Facebook should not be offered five dead sources. */
+let contactFilterOptionsKey = null;
+
 function populateContactFilterOptions() {
+    // renderContacts() runs on every view toggle, page step and filter change,
+    // and this used to rewrite both <select>s' innerHTML each time. Replacing the
+    // options of a converted dropdown churns the widget that is watching them
+    // (MutationObserver) for no reason at all — the option set only changes when
+    // the CONTACTS change. So derive a key first and bail when nothing moved.
+    // The company options are LABELLED from `companies`, which is fetched separately
+    // and can land after this has already run — key on contacts alone and those
+    // labels stay frozen at the em-dash placeholder forever.
+    const key = contacts.map(c => (c.contact_source || 'manual') + '\u0001' + (c.company_id || ''))
+                        .sort().join('\u0002')
+              + '\u0003' + (companies || []).map(c => c.id + '\u0001' + (c.company_name || ''))
+                        .sort().join('\u0002');
+    if (key === contactFilterOptionsKey) return;
+    contactFilterOptionsKey = key;
+
     const srcEl = document.getElementById('contactFilterSource');
     if (srcEl) {
         const keep = srcEl.value;
