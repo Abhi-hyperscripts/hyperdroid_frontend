@@ -48,7 +48,7 @@ const _FILTER_STORAGE_KEY_BASE = 'crm.leads.filters.v1';
 // three separate wrong behaviours from one omission.
 const _PERSISTED_FILTER_IDS = [
     'filterStatus', 'filterSource', 'filterSearch',
-    'filterEmailStatus', 'filterCampaign', 'filterHasDocuments',
+    'filterEmailStatus', 'filterCampaign', 'filterHasDocuments', 'filterUntouched',
     'filterDateFrom', 'filterDateTo', 'filterDateMode',
     'filterTeam', 'filterOwner'
 ];
@@ -1489,6 +1489,8 @@ function buildFilterParams() {
     // exactly the one somebody needs to chase.
     const hasDocsEl = document.getElementById('filterHasDocuments');
     if (hasDocsEl && hasDocsEl.value) params.set('hasDocuments', hasDocsEl.value);
+    const untouchedEl = document.getElementById('filterUntouched');
+    if (untouchedEl && untouchedEl.value) params.set('untouched', untouchedEl.value);
 
     // Created-date range. Either endpoint optional — empty = no bound.
     // Format: YYYY-MM-DD (date input native value). Backend converts to a
@@ -1750,6 +1752,7 @@ const _LP_CHIP_SELECTS = [
     // rep cannot see is on, and the chip row is the only place a closed panel
     // explains why the list looks short.
     { id: 'filterHasDocuments', label: 'Documents' },
+    { id: 'filterUntouched', label: 'Worked' },
 ];
 
 function _lpSelectedText(el, value) {
