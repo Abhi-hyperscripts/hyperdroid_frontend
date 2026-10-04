@@ -1654,14 +1654,60 @@ function toggleLeadsFiltersPanel() {
     if (btn) btn.classList.toggle('active', open);
 }
 
+function _closeLeadsFiltersPanel() {
+    document.getElementById('leadsFiltersPanel')?.classList.remove('open');
+    document.getElementById('filtersToggleBtn')?.classList.remove('active');
+}
+
+/**
+ * ⭐ WHY AN OUTSIDE-CLICK CLOSER NEEDED MORE THAN `panel.contains(target)`.
+ *
+ * The comment that used to sit here said a portal'd popover made this
+ * "unreliable", and left Done / Escape / the toggle as the only exits — so
+ * every use of the panel ended with a trip to a button in the corner.
+ *
+ * The hazard it names is real, and it is why the naive version must not ship:
+ * the panel's own widgets render their popups OUTSIDE it in the DOM.
+ *
+ *   · flatpickr is configured `appendTo: document.body`, so the calendar for
+ *     "Pick start date" is a sibling of the panel, not a child.
+ *   · searchable-dropdown promotes a clipped menu to `body >
+ *     .searchable-dropdown-menu--portaled` to escape the panel's overflow.
+ *
+ * So `panel.contains(e.target)` is false for a click on a date cell or a
+ * dropdown option, and a closer built on it alone would slam the panel shut the
+ * instant somebody picked a date — worse than the problem it fixes, because the
+ * picked value is lost along with the panel.
+ *
+ * Treating those popovers as part of the panel is the whole fix. The list is
+ * explicit rather than "anything at body level", so a genuine click on the page
+ * behind still closes.
+ */
+const _LP_PANEL_PORTALS = [
+    '.flatpickr-calendar',
+    '.searchable-dropdown-menu',
+    '.searchable-dropdown-container',
+    '.tfil-menu',
+    '.rowact-menu',
+].join(',');
+
 function _restoreFiltersPanelState() {
-    // Escape closes the panel (portal'd date/select popovers make an
-    // outside-click closer unreliable, so Esc + Done + toggle are the exits).
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            document.getElementById('leadsFiltersPanel')?.classList.remove('open');
-            document.getElementById('filtersToggleBtn')?.classList.remove('active');
-        }
+        if (e.key === 'Escape') _closeLeadsFiltersPanel();
+    });
+
+    // mousedown, not click: a dropdown option REMOVES its menu on selection, so
+    // by click time the target can already be detached and the portal test
+    // becomes unreliable in exactly the case it exists for.
+    document.addEventListener('mousedown', (e) => {
+        const panel = document.getElementById('leadsFiltersPanel');
+        if (!panel || !panel.classList.contains('open')) return;
+        if (panel.contains(e.target)) return;
+        if (e.target.closest?.(_LP_PANEL_PORTALS)) return;
+        // The toggle owns its own open/close; closing here too would make it
+        // close-then-reopen on every press and the button would look dead.
+        if (e.target.closest?.('#filtersToggleBtn')) return;
+        _closeLeadsFiltersPanel();
     });
 }
 
