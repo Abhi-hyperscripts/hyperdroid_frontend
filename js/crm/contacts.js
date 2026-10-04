@@ -247,7 +247,6 @@ function renderContacts() {
         if (tableWrap) tableWrap.style.display = 'none';
         if (emptyState) emptyState.style.display = 'block';
         renderContactsPagination(0, 0);
-        renderContactsHeroWave();
         return;
     }
     if (emptyState) emptyState.style.display = 'none';
@@ -279,7 +278,6 @@ function renderContacts() {
             grid.innerHTML = msg;
         }
         renderContactsPagination(0, 0);
-        renderContactsHeroWave();
         return;
     }
 
@@ -287,7 +285,6 @@ function renderContacts() {
     else grid.innerHTML = pageRows.map(contact => renderContactCard(contact)).join('');
 
     renderContactsPagination(total, pages);
-    renderContactsHeroWave();
 }
 
 function renderContactsTable(rows) {
@@ -424,68 +421,6 @@ function contactTimeAgo(dateStr) {
     if (days < 30) return days + 'd ago';
     if (days < 365) return Math.floor(days / 30) + 'mo ago';
     return Math.floor(days / 365) + 'y ago';
-}
-
-// Hero wave: contacts created per day over the last 30-90 days.
-function renderContactsHeroWave() {
-    const band = document.getElementById('rlxWave');
-    const capEl = document.getElementById('rlxWaveCap');
-    if (!band) return;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const countIn = days => {
-        const from = new Date(today); from.setDate(today.getDate() - (days - 1));
-        return contacts.filter(c => c.created_at && new Date(c.created_at) >= from).length;
-    };
-    const DAYS = countIn(30) > 0 ? 30 : (countIn(90) > 0 ? 90 : 0);
-    if (DAYS === 0) { band.hidden = true; if (capEl) capEl.textContent = ''; return; }
-    const start = new Date(today); start.setDate(today.getDate() - (DAYS - 1));
-    const buckets = new Array(DAYS).fill(0);
-    contacts.forEach(c => {
-        if (!c.created_at) return;
-        const d = new Date(c.created_at); d.setHours(0, 0, 0, 0);
-        const idx = Math.round((d - start) / 86400000);
-        if (idx >= 0 && idx < DAYS) buckets[idx]++;
-    });
-    if (buckets.every(v => v === 0)) { band.hidden = true; if (capEl) capEl.textContent = ''; return; }
-    const W = 1200, H = 100, padT = 56, padB = 6;
-    const ih = H - padT - padB;
-    const yMax = Math.max(...buckets) * 1.15 || 1;
-    const x = i => (i / (DAYS - 1)) * W;
-    const y = v => padT + ih - (v / yMax) * ih;
-    const pts = buckets.map((v, i) => [x(i), y(v)]);
-    const n = pts.length;
-    const dx = [], m = [];
-    for (let i = 0; i < n - 1; i++) { dx.push(pts[i + 1][0] - pts[i][0]); m.push((pts[i + 1][1] - pts[i][1]) / dx[i]); }
-    const t = [m[0]];
-    for (let i = 1; i < n - 1; i++) t.push((m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2);
-    t.push(m[n - 2]);
-    for (let i = 0; i < n - 1; i++) {
-        if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; }
-        else {
-            const a = t[i] / m[i], b = t[i + 1] / m[i];
-            const s2 = a * a + b * b;
-            if (s2 > 9) { const tau = 3 / Math.sqrt(s2); t[i] = tau * a * m[i]; t[i + 1] = tau * b * m[i]; }
-        }
-    }
-    let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
-    for (let i = 0; i < n - 1; i++) {
-        const h = dx[i];
-        d += ' C' + (pts[i][0] + h / 3).toFixed(1) + ',' + (pts[i][1] + t[i] * h / 3).toFixed(1) +
-             ' ' + (pts[i + 1][0] - h / 3).toFixed(1) + ',' + (pts[i + 1][1] - t[i + 1] * h / 3).toFixed(1) +
-             ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
-    }
-    const area = d + ' L' + W + ',' + H + ' L0,' + H + ' Z';
-    band.innerHTML =
-        '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">' +
-        '<defs><linearGradient id="rlxWaveFill" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0" stop-color="var(--brand-primary)" stop-opacity="0.22"/>' +
-        '<stop offset="1" stop-color="var(--brand-primary)" stop-opacity="0"/>' +
-        '</linearGradient></defs>' +
-        '<path d="' + area + '" fill="url(#rlxWaveFill)" stroke="none"/>' +
-        '<path d="' + d + '" fill="none" stroke="var(--brand-primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>' +
-        '</svg>';
-    band.hidden = false;
-    if (capEl) capEl.textContent = 'New contacts/day · ' + DAYS + 'd';
 }
 
 function getCompanyName(companyId) {

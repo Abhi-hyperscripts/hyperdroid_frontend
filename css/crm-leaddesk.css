@@ -643,7 +643,7 @@ body.crm-leads-page .searchable-dropdown-menu {
   text-transform: uppercase;
   color: var(--text-muted);
 }
-.ldk-wavechart { position: absolute; inset: 0; }
+.ldk-wavechart { position: absolute; inset: 0; pointer-events: none; }
 .ldk-wavechart svg { width: 100%; height: 100%; display: block; }
 .ldk-wavetip {
   position: absolute;
@@ -698,7 +698,7 @@ body.crm-leads-page { --wave-s2: #16a34a; --wave-s3: #7c3aed; }
    Bars go transparent (no glass smear over the line); empty header zones
    pass pointer events through to the chart for the crosshair. */
 .ldk-hero { position: relative; flex-shrink: 0; }
-.ldk-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.ldk-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .ldk-wavebg[hidden] { display: none; }
 .ldk-hero .ldk-appbar,
 .ldk-hero .ldk-viewsrow {

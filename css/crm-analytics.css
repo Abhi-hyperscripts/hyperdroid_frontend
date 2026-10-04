@@ -590,7 +590,7 @@ body.crm-analytics-page .rail-item.active { background: color-mix(in srgb, #34d3
   border-bottom: 1px solid var(--anx-line);
   margin-bottom: 4px;
 }
-.anx-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.anx-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .anx-wavebg[hidden] { display: none; }
 .anx-wavebg svg { width: 100%; height: 100%; display: block; }
 .anx-wavecap {

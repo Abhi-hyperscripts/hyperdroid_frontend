@@ -80,7 +80,7 @@ body.crm-myday-page .rail-item.active { background: color-mix(in srgb, #4CC9F0 1
   position: relative;
   border-bottom: 1px solid var(--mdp-line);
 }
-.mdp-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.mdp-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .mdp-wavebg[hidden] { display: none; }
 .mdp-wavebg svg { width: 100%; height: 100%; display: block; }
 .mdp-wavecap {

@@ -77,39 +77,14 @@ body.crm-contacts-page .rail-item span { font-size: 9px; letter-spacing: 0.02em;
 body.crm-contacts-page .rail-item:hover { color: var(--text-secondary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
 body.crm-contacts-page .rail-item.active { background: color-mix(in srgb, #F472B6 13%, transparent); color: #F472B6; }
 
-/* ── hero: title + count + search over the contacts-created wave ──────────── */
+/* ── hero: title + count + search ─────────────────────────────────────────── */
 .rlx-hero {
   position: relative;
   border-bottom: 1px solid var(--rlx-line);
   margin-bottom: 20px;
 }
-/* ⭐ DECORATION MUST NEVER TAKE A CLICK.
-   This spans the whole hero (inset: 0), so anything placed in the hero
-   without its own stacking context sits UNDER it and the wave swallows
-   every press. .rlx-headrow had been working around that with z-index +
-   a pointer-events dance; the view toggle added beside it had not, and
-   the Table button was simply dead — Playwright named the culprit:
-   "<svg> from <div id=rlxWave> subtree intercepts pointer events".
-   Fixing the background rather than each sibling means the next thing
-   added to this hero cannot inherit the same bug. */
-.rlx-wavebg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.rlx-wavebg[hidden] { display: none; }
-.rlx-wavebg svg { width: 100%; height: 100%; display: block; }
-.rlx-wavecap {
-  position: absolute;
-  right: 30px;
-  bottom: 12px;
-  z-index: 2;
-  font-family: var(--font-family-mono);
-  font-size: 10px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  pointer-events: none;
-}
 .rlx-headrow {
   position: relative;
-  z-index: 1;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -118,9 +93,7 @@ body.crm-contacts-page .rail-item.active { background: color-mix(in srgb, #F472B
   max-width: 1600px;
   margin: 0 auto;
   padding: 24px 30px 18px;
-  pointer-events: none;
 }
-.rlx-headrow > * { pointer-events: auto; }
 .rlx-id { display: flex; align-items: baseline; gap: 10px; }
 .rlx-hero h1 {
   margin: 0;
@@ -303,7 +276,6 @@ body.crm-contacts-page .rail-item.active { background: color-mix(in srgb, #F472B
 .rlx-empty a:hover { text-decoration: underline; }
 
 @media (max-width: 1023px) {
-  .rlx-wavebg, .rlx-wavecap { display: none; }
   .rlx-headrow { padding: 16px 16px 12px; }
   .rlx-search { min-width: 0; width: 100%; flex-basis: 100%; }
   .rlx-wrap { padding: 0 16px 48px; }
@@ -334,9 +306,6 @@ body.crm-contacts-page .rail-item.active { background: color-mix(in srgb, #F472B
    filtered, a page at a time". The toolbar carries the switch and the filters
    for both, so the controls do not move when the view does. */
 .rlx-toolbar {
-  /* Above the hero wave, like .rlx-headrow — otherwise the controls paint
-     behind the decoration even once it stops taking clicks. */
-  position: relative; z-index: 1;
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 12px; margin-top: 14px;
 }
