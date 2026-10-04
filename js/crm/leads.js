@@ -2574,9 +2574,24 @@ function renderPagination() {
     const sizeOptions = PAGE_SIZE_OPTIONS.map(n =>
         `<option value="${n}"${n === pageSize ? ' selected' : ''}>${n}</option>`
     ).join('');
+    /* ⭐ data-no-sd: this one stays a NATIVE select.
+       Reported as "this dropdown to select number of rows is not opening", and
+       it genuinely did not: the auto-converter had replaced it with a
+       searchable dropdown whose markup was in the DOM — all six options
+       present — while a click, real or synthetic, left aria-expanded="false".
+       The widget had no live listeners.
+       Why it loses them here and not elsewhere: this control lives INSIDE the
+       pagination container, which renderPagination rebuilds wholesale via
+       innerHTML on every load, filter and tab change. Every rebuild discards
+       the converted DOM the instance was bound to and inserts a fresh <select>
+       for the observer to convert again — a race the rest of the page never
+       runs, because its selects are rendered once.
+       Opting out removes the class of bug rather than timing around it, and
+       costs nothing: a search box over six numbers was never useful. */
     const sizeSelector = `
         <label class="crm-pagesize">Rows
-            <select onchange="changePageSize(this.value)" class="form-control crm-pagesize-select">
+            <select onchange="changePageSize(this.value)" class="form-control crm-pagesize-select"
+                    data-no-sd="true" aria-label="Rows per page">
                 ${sizeOptions}
             </select>
         </label>`;
