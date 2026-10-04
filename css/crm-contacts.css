@@ -88,8 +88,12 @@ body.crm-contacts-page .rail-item.active { background: color-mix(in srgb, #F472B
      could not escape it: the filter dropdowns open downward out of the hero
      and were painted UNDER the table, their own z-index: 10001 trapped. The
      option looked visible and did nothing — a <td> was taking the click.
-     Any popup anchored in this header depends on this line. */
-  z-index: 2;
+     Any popup anchored in this header depends on this line.
+     !important is not laziness here, it is the only thing that WORKS: that
+     global selector carries 25 :not() pseudo-classes, so its specificity is
+     (0,26,1) and no realistic selector for this element can outrank it.
+     Measured — the plain `z-index: 2` loaded fine and computed to 1. */
+  z-index: 2 !important;
   border-bottom: 1px solid var(--rlx-line);
   margin-bottom: 20px;
 }
