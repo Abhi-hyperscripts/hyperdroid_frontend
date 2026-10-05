@@ -46,6 +46,8 @@ const _FILTER_STORAGE_KEY_BASE = 'crm.leads.filters.v1';
 // Everything here is saved, restored and cleared together. A control left out
 // applies on the current page, vanishes on reload, and survives "Clear all" —
 // three separate wrong behaviours from one omission.
+let _reanchorOnNextRender = false;
+
 const _PERSISTED_FILTER_IDS = [
     'filterStatus', 'filterSource', 'filterSearch',
     'filterEmailStatus', 'filterCampaign', 'filterHasDocuments', 'filterUntouched',
@@ -1946,6 +1948,16 @@ async function loadCampaignFilter() {
  */
 function applyFilters() {
     currentPage = 1;
+    // ⭐ Only a DELIBERATE filter change may re-anchor the detail pane.
+    //
+    // The pane is pinned by the crm_openLeadId session key, which
+    // openLeadDetailPanel re-writes every time a lead is opened. That key also
+    // carries the My Day / Calls hand-off, where a lead is opened ON PURPOSE
+    // even though the saved filters exclude it — so it must keep pinning there.
+    // Clearing it unconditionally would throw the user off the very lead they
+    // clicked through to see. This flag separates "the user just narrowed the
+    // list" from "another page asked us to open this one".
+    _reanchorOnNextRender = true;
     // Snapshot the current filter widgets to localStorage so a reload or any
     // refresh-triggering action restores the same view. See _persistFilters.
     _persistFilters();
@@ -1993,10 +2005,14 @@ function renderLeadsTable(leads) {
                 ${cta}
             </div>`;
         // Nothing matched, so nothing can legitimately be open: a lead left in
-        // the pane here is one the filter has definitively excluded.
-        if (window._leadDetailId && typeof closeLeadDetailPanel === 'function') {
+        // the pane here is one the filter has definitively excluded. Gated on
+        // the same flag as above — a hand-off from My Day opens a lead on
+        // purpose and must not be closed out from under the user.
+        if (_reanchorOnNextRender && window._leadDetailId &&
+            typeof closeLeadDetailPanel === 'function') {
             closeLeadDetailPanel();
         }
+        _reanchorOnNextRender = false;
         return;
     }
 
@@ -2019,8 +2035,24 @@ function renderLeadsTable(leads) {
     // fixed at the anchor rather than in the band filter that exposed it.
     const stillListed = window._leadDetailId &&
         host.querySelector(`.ldk-row[data-lead-id="${window._leadDetailId}"]`);
+    const reanchor = _reanchorOnNextRender;
+    _reanchorOnNextRender = false;
+
     if (stillListed) {
         ldkHighlightRow(window._leadDetailId);
+    } else if (window._leadDetailId && reanchor) {
+        // The open lead did not survive the filter the user just applied. The
+        // sticky key points at it, so it has to go or it pins the pane to a
+        // lead the list no longer contains.
+        try { sessionStorage.removeItem('crm_openLeadId'); } catch (_) {}
+        const first = host.querySelector('.ldk-row[data-lead-id]');
+        if (window.innerWidth > 1023 && first) {
+            openLeadDetailPanel(first.getAttribute('data-lead-id'));
+        } else if (typeof closeLeadDetailPanel === 'function') {
+            // Narrow screens have no side-by-side pane to move to; stop
+            // asserting the excluded lead rather than silently swap it.
+            closeLeadDetailPanel();
+        }
     } else if (window.innerWidth > 1023 && !sessionStorage.getItem('crm_openLeadId')) {
         const first = host.querySelector('.ldk-row[data-lead-id]');
         if (first) openLeadDetailPanel(first.getAttribute('data-lead-id'));
