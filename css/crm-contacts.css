@@ -355,7 +355,69 @@ body.crm-contacts-page .rail-item.active { background: color-mix(in srgb, #F472B
 
 /* Wide content scrolls inside its own container so the page never scrolls
    sideways on a narrow screen. */
-.rlx-tablewrap { overflow-x: auto; margin-top: 16px; }
+/* ── table rows ────────────────────────────────────────────────────────────
+   The rows were double-height because the phone cell wrapped: the number on one
+   line, the WhatsApp glyph on the next. Nothing else in the row needs two lines,
+   so every row paid for that one cell. Keeping the phone on a single line is
+   most of the density win here; the rest is making the eye land on the person
+   rather than on seven competing blue underlines and a row of em-dashes. */
+.rlx-tablewrap {
+  overflow: auto;
+  margin-top: 16px;
+  /* A scrollport of its own, so the header can stick to it. Sticky resolves
+     against the nearest SCROLLING ancestor — with plain overflow-x the header
+     would scroll away with the page and the columns would go unlabelled
+     exactly when the list is long enough to need them. */
+  max-height: calc(100vh - 250px);
+}
+.rlx-tablewrap table { border-collapse: separate; border-spacing: 0; }
+#contactsTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bg-secondary);
+}
+#contactsTable tbody td {
+  padding: 8px 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-color);
+}
+#contactsTable tbody tr:last-child td { border-bottom: 0; }
+.rlx-row { cursor: pointer; }
+.rlx-row:hover td { background: var(--bg-hover); }
+.rlx-nm { font-weight: 600; color: var(--text-primary); }
+
+/* One line, and digits that line up down the column. */
+.tc-phone { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tc-added { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-muted); }
+.tc-role, .tc-company { color: var(--text-secondary); }
+
+/* An underline on every row is noise; the link still announces itself on hover. */
+.tc-email a { color: var(--text-secondary); text-decoration: none; }
+.tc-email a:hover { color: var(--brand-primary); text-decoration: underline; }
+
+/* "facebook" as bare text read like data the user had typed. A chip says it is
+   a category, and stops the column competing with the name for attention. */
+.rlx-chip {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  font-size: 11px;
+  letter-spacing: .02em;
+  text-transform: capitalize;
+  color: var(--text-secondary);
+}
+
+/* Placeholders should recede, not line up as a column of dashes. */
+.rlx-dash { color: var(--text-muted); opacity: .5; }
+
+/* Present, so they are discoverable, but quiet until the row is under the
+   cursor — otherwise 3 icons x 25 rows is the loudest thing on the page. */
+#contactsTable .actions-cell .action-btn { opacity: .55; transition: opacity .12s ease; }
+#contactsTable tr:hover .actions-cell .action-btn,
+#contactsTable .actions-cell .action-btn:focus-visible { opacity: 1; }
 .rlx-av-sm { width: 26px; height: 26px; font-size: 10px; flex: none; }
 .rlx-tablewrap .table-name-cell { display: flex; align-items: center; gap: 8px; }
 

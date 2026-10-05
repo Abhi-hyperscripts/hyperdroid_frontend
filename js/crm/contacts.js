@@ -319,21 +319,27 @@ function renderContacts() {
 function renderContactsTable(rows) {
     const body = document.getElementById('contactsTableBody');
     if (!body) return;
+    const dash = '<span class="rlx-dash">—</span>';
     body.innerHTML = rows.map(c => {
         const name = escapeHtml(`${c.first_name || ''} ${c.last_name || ''}`.trim()) || '—';
         const phone = c.phone || c.mobile || '';
         const company = getCompanyName(c.company_id) || '';
-        return `<tr style="cursor:pointer;" onclick="openContactDetailPanel('${c.id}')">
-            <td><div class="table-name-cell">
+        const source = escapeHtml(c.contact_source || 'manual');
+        /* The whole row opens the contact, but the row ALSO carries real links —
+           tel:, mailto:, WhatsApp — and action buttons. Without this guard a call
+           both dialled AND opened the panel behind it. Let anything interactive
+           win; only bare cell space counts as "open this contact". */
+        return `<tr class="rlx-row" onclick="if(!event.target.closest('a,button')) openContactDetailPanel('${c.id}')">
+            <td class="tc-name"><div class="table-name-cell">
                 <span class="rlx-av rlx-av-sm" style="background:${contactAvatarBg(c)}">${escapeHtml(getInitials(c.first_name, c.last_name))}</span>
-                <span>${name}</span>
+                <span class="rlx-nm">${name}</span>
             </div></td>
-            <td>${escapeHtml(c.job_title || '') || '<span style="color:var(--text-muted)">—</span>'}</td>
-            <td>${escapeHtml(company) || '<span style="color:var(--text-muted)">—</span>'}</td>
-            <td>${phone ? crmPhoneLink(phone) : '<span style="color:var(--text-muted)">—</span>'}</td>
-            <td>${c.email ? `<a href="mailto:${escapeHtml(c.email)}" onclick="event.stopPropagation()">${escapeHtml(c.email)}</a>` : '<span style="color:var(--text-muted)">—</span>'}</td>
-            <td>${escapeHtml(c.contact_source || 'manual')}</td>
-            <td style="white-space:nowrap;">${contactTimeAgo(c.created_at)}</td>
+            <td class="tc-role">${escapeHtml(c.job_title || '') || dash}</td>
+            <td class="tc-company">${escapeHtml(company) || dash}</td>
+            <td class="tc-phone">${phone ? crmPhoneLink(phone, { showIcon: false }) : dash}</td>
+            <td class="tc-email">${c.email ? `<a href="mailto:${escapeHtml(c.email)}" onclick="event.stopPropagation()">${escapeHtml(c.email)}</a>` : dash}</td>
+            <td class="tc-source"><span class="rlx-chip">${source}</span></td>
+            <td class="tc-added">${contactTimeAgo(c.created_at) || dash}</td>
             <td class="actions-cell">
                 <button class="action-btn" onclick="event.stopPropagation(); openContactDetailPanel('${c.id}')" data-tooltip="Open"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                 <button class="action-btn" onclick="event.stopPropagation(); openEditContactModal('${c.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
