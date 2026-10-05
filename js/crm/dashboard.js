@@ -558,7 +558,7 @@ function setBarWidth(id, percent) {
 
 const STATUS_ORDER = ['new', 'assigned', 'contacted', 'qualified', 'follow_up', 'opportunity', 'negotiation', 'won', 'lost', 'unqualified'];
 const STATUS_LABELS = {
-    new: 'New', assigned: 'Assigned', contacted: 'Contacted', qualified: 'Qualified',
+    new: 'New', assigned: 'Assigned', contacted: 'Work In Progress', qualified: 'Qualified',
     unqualified: 'Unqualified', follow_up: 'Follow Up', opportunity: 'Opportunity',
     negotiation: 'Negotiation', won: 'Won', lost: 'Lost'
 };

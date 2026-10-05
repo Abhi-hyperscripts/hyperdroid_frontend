@@ -16,7 +16,7 @@
     const STATUS_LABELS = {
         new:         'New',
         assigned:    'Assigned',
-        contacted:   'Contacted',
+        contacted:   'Work In Progress',
         qualified:   'Qualified',
         unqualified: 'Unqualified',
         // No 'lost'. It is not a lead status — retired when Won/Lost moved to

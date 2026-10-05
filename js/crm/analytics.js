@@ -561,7 +561,7 @@ function renderDailyChart() {
 }
 
 function trendLabel(m) {
-    return ({ leads: 'New leads', contacted: 'Contacted', qualified: 'Qualified', won: 'Won', won_value: 'Won value', activities: 'Activities' })[m] || m;
+    return ({ leads: 'New leads', contacted: 'Work In Progress', qualified: 'Qualified', won: 'Won', won_value: 'Won value', activities: 'Activities' })[m] || m;
 }
 
 function renderEngagementDistribution() {

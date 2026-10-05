@@ -897,7 +897,7 @@ async function loadAutoStatusToggle() {
 
 function autoStatusHintText(enabled) {
     return enabled
-        ? 'On — when a connected call (any provider) reaches a lead in Assigned, the system flips it to Contacted automatically.'
+        ? 'On — any manual work on a lead in New or Assigned (a call, a note, a follow-up, a disposition, a document) moves it to Work In Progress automatically.'
         : "Off — reps must manually change the lead status after every call.";
 }
 

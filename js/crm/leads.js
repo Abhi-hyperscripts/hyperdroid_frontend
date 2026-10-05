@@ -1224,7 +1224,7 @@ function refreshLeadView() {
 const _LP_FLOW_STAGES = [
     { key: 'new_leads', status: 'new', label: 'New', color: '#3b82f6' },
     { key: 'assigned', status: 'assigned', label: 'Assigned', color: '#6366f1' },
-    { key: 'contacted', status: 'contacted', label: 'Contacted', color: '#eab308' },
+    { key: 'contacted', status: 'contacted', label: 'Work In Progress', color: '#eab308' },
     { key: 'qualified', status: 'qualified', label: 'Qualified', color: '#22c55e' },
     { key: 'unqualified', status: 'unqualified', label: 'Unqualified', color: '#9ca3af' },
     { key: 'converted', status: 'converted', label: 'Converted', color: '#8b5cf6' },
@@ -1269,7 +1269,7 @@ const _LDK_TABS = [
     // ordering is one click away in the sort menu.
     { label: 'Assigned', status: 'assigned', key: 'assigned' },
     { label: 'My follow-ups', status: 'follow_up_scheduled', key: null, flame: true },
-    { label: 'Contacted', status: 'contacted', key: 'contacted' },
+    { label: 'Work In Progress', status: 'contacted', key: 'contacted' },
     { label: 'Qualified', status: 'qualified', key: 'qualified' },
     { label: 'Converted', status: 'converted', key: 'converted' },
 ];
@@ -2492,7 +2492,7 @@ function formatStatus(status) {
     const labels = {
         'new': 'New',
         'assigned': 'Assigned',
-        'contacted': 'Contacted',
+        'contacted': 'Work In Progress',
         'qualified': 'Qualified',
         'unqualified': 'Unqualified',
         'converted': 'Converted'
@@ -3849,7 +3849,7 @@ async function loadLeadsWave() {
 
     const SERIES = [
         { key: 'created_at',         label: 'Captured',  color: 'var(--brand-primary)', fill: true  },
-        { key: 'first_contact_date', label: 'Contacted', color: 'var(--wave-s2, #16a34a)', fill: false },
+        { key: 'first_contact_date', label: 'First contact', color: 'var(--wave-s2, #16a34a)', fill: false },
         { key: 'converted_at',       label: 'Converted', color: 'var(--wave-s3, #7c3aed)', fill: false },
     ];
 

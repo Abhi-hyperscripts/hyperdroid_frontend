@@ -28,7 +28,7 @@
     const STATUSES = [
         { code: 'new',         label: 'New',         hint: 'Just imported / created — no team assignment yet' },
         { code: 'assigned',    label: 'Assigned',    hint: 'Picked up by a team' },
-        { code: 'contacted',   label: 'Contacted',   hint: 'Rep made first contact' },
+        { code: 'contacted',   label: 'Work In Progress', hint: 'Rep has worked the lead — called, noted, booked a follow-up…' },
         { code: 'qualified',   label: 'Qualified',   hint: 'Marked as a real prospect' },
         { code: 'unqualified', label: 'Unqualified', hint: 'Dead lead — no follow-up' },
         { code: 'converted',   label: 'Converted',   hint: 'Won — became a customer' },
