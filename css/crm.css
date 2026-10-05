@@ -7144,3 +7144,31 @@ body.crm-leads-page .lp-toolbar .crm-filter-group--no-label { flex-shrink: 0; di
    beside a follow-up completed two days later, and nothing on screen said the
    badge was older. */
 .crm-disp-age { opacity: .7; font-weight: 400; margin-left: 5px; }
+
+/* ── Response-time band toggles ───────────────────────────────────────────
+   Three discrete bands, not a range: the lead panel paints the same three
+   colours, so the filter names what the reader already sees. They combine —
+   orange+red answers "slower than four hours". */
+.rb-bands { display: inline-flex; gap: 4px; }
+.rb-band {
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font: inherit; font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: border-color .12s ease, color .12s ease, background .12s ease;
+}
+.rb-band:hover { color: var(--text-primary); }
+/* Unpressed shows only a hint of its colour, so the row reads as one control
+   rather than three permanently-lit lights. */
+.rb-green  { border-color: color-mix(in srgb, var(--color-success) 35%, var(--border-color)); }
+.rb-orange { border-color: color-mix(in srgb, var(--color-warning) 35%, var(--border-color)); }
+.rb-red    { border-color: color-mix(in srgb, var(--color-error)   35%, var(--border-color)); }
+.rb-band[aria-pressed="true"] { color: var(--text-inverse); }
+.rb-green[aria-pressed="true"]  { background: var(--color-success); border-color: var(--color-success); }
+.rb-orange[aria-pressed="true"] { background: var(--color-warning); border-color: var(--color-warning); }
+.rb-red[aria-pressed="true"]    { background: var(--color-error);   border-color: var(--color-error); }
+.rb-band:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }

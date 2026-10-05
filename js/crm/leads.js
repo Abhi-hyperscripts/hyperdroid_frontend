@@ -49,6 +49,7 @@ const _FILTER_STORAGE_KEY_BASE = 'crm.leads.filters.v1';
 const _PERSISTED_FILTER_IDS = [
     'filterStatus', 'filterSource', 'filterSearch',
     'filterEmailStatus', 'filterCampaign', 'filterHasDocuments', 'filterUntouched',
+    'filterResponseBand',
     'filterDateFrom', 'filterDateTo', 'filterDateMode',
     'filterTeam', 'filterOwner'
 ];
@@ -1492,6 +1493,12 @@ function buildFilterParams() {
     const untouchedEl = document.getElementById('filterUntouched');
     if (untouchedEl && untouchedEl.value) params.set('untouched', untouchedEl.value);
 
+    // Response-time bands, comma-separated. The backend treats an unknown band
+    // as no filter rather than as a band matching nothing, so a stale stored
+    // value can never silently empty the list.
+    const rbEl = document.getElementById('filterResponseBand');
+    if (rbEl && rbEl.value) params.set('responseBand', rbEl.value);
+
     // Created-date range. Either endpoint optional — empty = no bound.
     // Format: YYYY-MM-DD (date input native value). Backend converts to a
     // half-open interval [from 00:00, to+1day 00:00) so a same-day filter
@@ -1760,6 +1767,51 @@ function _lpSelectedText(el, value) {
     return opt ? opt.textContent.trim() : value;
 }
 
+// ── Response-time bands ──────────────────────────────────────────────────
+// The hidden input is the single source of truth; the buttons are painted
+// FROM it, never the other way round. That is what lets clearAllFilters (which
+// only knows how to blank an input's value) reset the control correctly, and
+// what lets a persisted value restore with the right buttons lit.
+const _RB_BANDS = ['green', 'orange', 'red'];
+const _RB_LABEL = { green: '< 4h', orange: '4–10h', red: '> 10h' };
+
+function _rbValue() {
+    const el = document.getElementById('filterResponseBand');
+    if (!el || !el.value) return [];
+    return el.value.split(',').map(v => v.trim()).filter(v => _RB_BANDS.includes(v));
+}
+
+function _syncResponseBandUI() {
+    const on = new Set(_rbValue());
+    document.querySelectorAll('.rb-band').forEach(b => {
+        b.setAttribute('aria-pressed', String(on.has(b.dataset.band)));
+    });
+}
+
+function toggleResponseBand(band) {
+    const el = document.getElementById('filterResponseBand');
+    if (!el || !_RB_BANDS.includes(band)) return;
+    const on = new Set(_rbValue());
+    if (on.has(band)) on.delete(band); else on.add(band);
+    // Canonical order, so "red,green" and "green,red" are the same stored value
+    // and the persisted string does not depend on click order.
+    el.value = _RB_BANDS.filter(b => on.has(b)).join(',');
+    _syncResponseBandUI();
+    applyFilters();
+}
+
+function clearResponseBandFilter() {
+    const el = document.getElementById('filterResponseBand');
+    if (el) el.value = '';
+    _syncResponseBandUI();
+    applyFilters();
+}
+
+document.addEventListener('click', (e) => {
+    const b = e.target.closest?.('.rb-band');
+    if (b && b.dataset.band) { e.preventDefault(); toggleResponseBand(b.dataset.band); }
+});
+
 function clearOneLeadFilter(id) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -1787,6 +1839,13 @@ function clearLeadCustomFilters() {
 }
 
 function renderActiveFilterChips() {
+    // Paint the band buttons from the hidden input HERE rather than hooking
+    // clearAllFilters and the restore path separately. This runs on every
+    // filter render, so the buttons cannot drift from the value that is
+    // actually being sent — including after Clear all, which only knows how
+    // to blank an input, and after a persisted filter is restored on load.
+    _syncResponseBandUI();
+
     const host = document.getElementById('lpActiveChips');
     if (!host) return;
     if (_isSearchScopeAll()) { host.innerHTML = ''; return; }
@@ -1795,6 +1854,14 @@ function renderActiveFilterChips() {
     const chip = (label, valueText, clearCall) =>
         `<span class="lp-chip"><i>${escapeHtml(label)}</i>${escapeHtml(valueText)}` +
         `<button type="button" onclick="${clearCall}" aria-label="Remove ${escapeHtml(label)} filter">×</button></span>`;
+
+    // Not a <select>, so it needs its own chip — and it needs one for exactly
+    // the reason the list above gives: a filter with no chip is one the rep
+    // cannot see is on.
+    const rbOn = _rbValue();
+    if (rbOn.length) {
+        chips.push(chip('Response', rbOn.map(b => _RB_LABEL[b]).join(' + '), 'clearResponseBandFilter()'));
+    }
 
     for (const def of _LP_CHIP_SELECTS) {
         const el = document.getElementById(def.id);
