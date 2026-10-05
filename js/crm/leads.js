@@ -1992,6 +1992,11 @@ function renderLeadsTable(leads) {
                 <p>${msg}</p>
                 ${cta}
             </div>`;
+        // Nothing matched, so nothing can legitimately be open: a lead left in
+        // the pane here is one the filter has definitively excluded.
+        if (window._leadDetailId && typeof closeLeadDetailPanel === 'function') {
+            closeLeadDetailPanel();
+        }
         return;
     }
 
@@ -1999,7 +2004,22 @@ function renderLeadsTable(leads) {
 
     // Keep the workspace anchored: re-highlight the open lead, or open the
     // first row so the right pane is never a dead placeholder on desktop.
-    if (window._leadDetailId) {
+    //
+    // ⭐ ONLY IF THE OPEN LEAD SURVIVED THE FILTER.
+    //
+    // This used to re-highlight window._leadDetailId unconditionally. When the
+    // open lead was not in the new result the highlight matched nothing and the
+    // panel went on displaying it — so filtering to "response > 10h" left a 3h
+    // lead sitting in the detail pane, in green, next to a list of red ones.
+    // Reported exactly that way, and read (reasonably) as the filter being
+    // broken. The filter was right; the panel was asserting a lead the filter
+    // had just excluded.
+    //
+    // Not specific to response time: every filter had this, which is why it is
+    // fixed at the anchor rather than in the band filter that exposed it.
+    const stillListed = window._leadDetailId &&
+        host.querySelector(`.ldk-row[data-lead-id="${window._leadDetailId}"]`);
+    if (stillListed) {
         ldkHighlightRow(window._leadDetailId);
     } else if (window.innerWidth > 1023 && !sessionStorage.getItem('crm_openLeadId')) {
         const first = host.querySelector('.ldk-row[data-lead-id]');
