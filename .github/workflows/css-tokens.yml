@@ -64,6 +64,7 @@ jobs:
       # individual. The person-then-company naming chain used to be copied per
       # site and reached 3 of ~10, so one lead read "Digital Ultras" in the list
       # and "UNKNOWN" in the detail header. It now lives in one helper — which
-      # makes loading that helper a hard dependency of every calling page.
-      - name: Check every page calling leadDisplayName loads the helper first
-        run: node scripts/check-lead-name-pairs.js
+      # makes loading that helper a hard dependency of every calling page. The
+      # guard is table-driven, so a new shared helper is covered from day one.
+      - name: Check every page loads the shared helpers it calls, first
+        run: node scripts/check-helper-pairs.js

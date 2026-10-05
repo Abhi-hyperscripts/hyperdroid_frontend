@@ -7113,3 +7113,34 @@ body.crm-leads-page .lp-toolbar .crm-filter-group--no-label { flex-shrink: 0; di
     .ld-tab span { display: none; }
     .ld-tab { padding: 9px 12px; }
 }
+
+/* ── "How did it go?" — the shared Mark-complete prompt ───────────────────── */
+.fuc-overlay {
+  position: fixed; inset: 0; z-index: 1000000;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--bg-primary) 72%, transparent);
+  padding: 20px;
+}
+.fuc-modal {
+  width: 100%; max-width: 420px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px 22px 18px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+.fuc-title { margin: 0 0 4px; font-size: 1.05rem; color: var(--text-primary); }
+.fuc-sub { margin: 0 0 14px; font-size: 12.5px; line-height: 1.45; color: var(--text-secondary); }
+.fuc-label {
+  display: block; margin: 12px 0 5px;
+  font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted);
+}
+.fuc-opt { text-transform: none; letter-spacing: 0; opacity: .75; }
+.fuc-modal .form-select, .fuc-modal .form-control { width: 100%; }
+.fuc-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+/* The disposition badge carries the date it was set. Without it the badge
+   silently contradicts a newer timeline entry — a lead read "Not Responding"
+   beside a follow-up completed two days later, and nothing on screen said the
+   badge was older. */
+.crm-disp-age { opacity: .7; font-weight: 400; margin-left: 5px; }

@@ -851,6 +851,11 @@
             return;
         }
 
+        // Ask how it went BEFORE disabling anything — a cancelled prompt must
+        // leave the row exactly as it was.
+        const body = await CrmFollowupComplete.prompt({ defaultNotes: 'Marked done from My Day' });
+        if (!body) return;
+
         btn.disabled = true;
         const original = btn.textContent;
         btn.textContent = '…';
@@ -858,7 +863,7 @@
             await api.request(`/crm/leads/followups/${encodeURIComponent(fid)}/complete`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ completed_notes: 'Marked done from My Day' })
+                body: JSON.stringify(body)
             });
             row.classList.add('is-done');
             if (typeof Toast !== 'undefined') Toast.success('Follow-up marked done');

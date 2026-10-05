@@ -545,7 +545,7 @@
                     <div class="ld-hero-main">
                         <div class="ld-hero-badges">
                             <span class="crm-status-badge status-${lead.status}">${formatStatus(lead.status)}</span>
-                            ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}">${formatDisposition(lead.disposition)}</span>` : ''}
+                            ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}" title="${esc(dispositionTitle(lead))}">${formatDisposition(lead.disposition)}${dispositionAge(lead)}</span>` : ''}
                             ${lead.team_name ? `<span class="crm-team-badge">${esc(lead.team_name)}</span>` : ''}
                             ${lead.lead_number ? `<span class="crm-lead-number">${esc(lead.lead_number)}</span>` : ''}
                         </div>
@@ -1532,16 +1532,50 @@
         }
     };
 
+    /**
+     * The badge is the last recorded CALL OUTCOME, not the last action, so it
+     * can legitimately be older than the newest timeline entry — which is
+     * exactly how a lead came to advertise "Not Responding" above a follow-up
+     * completed two days later. Dating it makes that visible instead of
+     * misleading. No date is shown when the backend does not know one
+     * (dispositions set before the column existed): an invented date would be
+     * worse than none.
+     */
+    function dispositionAge(lead) {
+        const at = lead.disposition_set_at || lead.dispositionSetAt;
+        if (!at) return '';
+        const d = new Date(at);
+        if (isNaN(d)) return '';
+        const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+        if (days < 1) return '';                       // today — the badge is current, don't clutter it
+        const ago = days < 30 ? days + 'd'
+                  : days < 365 ? Math.floor(days / 30) + 'mo'
+                  : Math.floor(days / 365) + 'y';
+        return `<span class="crm-disp-age">· ${ago}</span>`;
+    }
+
+    function dispositionTitle(lead) {
+        const at = lead.disposition_set_at || lead.dispositionSetAt;
+        if (!at) return 'Last recorded call outcome';
+        const d = new Date(at);
+        if (isNaN(d)) return 'Last recorded call outcome';
+        return 'Last recorded call outcome — set ' + d.toLocaleString();
+    }
+
     window.completeFollowupFromTimeline = async function(btn) {
         const fid = btn.getAttribute('data-followup-id');
         if (!fid) return;
+
+        const body = await CrmFollowupComplete.prompt({ defaultNotes: 'Marked complete from lead timeline' });
+        if (!body) return;
+
         btn.disabled = true;
         const originalText = btn.textContent;
         btn.textContent = '…';
         try {
             await api.request(`/crm/leads/followups/${fid}/complete`, {
                 method: 'PUT',
-                body: JSON.stringify({ completed_notes: 'Marked complete from lead timeline' })
+                body: JSON.stringify(body)
             });
             if (window._leadDetailId) openLeadDetailPanel(window._leadDetailId);
             // The leads list behind the panel caches next_followup_date; without
