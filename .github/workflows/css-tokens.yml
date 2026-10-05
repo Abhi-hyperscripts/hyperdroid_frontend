@@ -59,3 +59,11 @@ jobs:
       # dependency of both menu modules — a page missing it throws on first open.
       - name: Check every actions-cell page loads the row-actions menu
         run: node scripts/check-row-actions-pairs.js
+
+      # A lead is not always a person: imported B2B lists carry a company and no
+      # individual. The person-then-company naming chain used to be copied per
+      # site and reached 3 of ~10, so one lead read "Digital Ultras" in the list
+      # and "UNKNOWN" in the detail header. It now lives in one helper — which
+      # makes loading that helper a hard dependency of every calling page.
+      - name: Check every page calling leadDisplayName loads the helper first
+        run: node scripts/check-lead-name-pairs.js

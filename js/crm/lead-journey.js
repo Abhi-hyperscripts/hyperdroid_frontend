@@ -49,7 +49,7 @@
                 ).join('');
             }
 
-            const fullName = [lead?.first_name, lead?.last_name].filter(Boolean).join(' ').trim() || '(no name)';
+            const fullName = leadDisplayName(lead, { fallback: '(no name)' });
             const leadNumber = lead?.lead_number || '';
             const who = leadNumber ? `${leadNumber} · ${fullName}` : fullName;
             document.getElementById('statusChangeSubtitle').innerHTML =
@@ -374,7 +374,7 @@
         try {
             // Load lead details
             const lead = await api.request(`/crm/leads/${leadId}`);
-            const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unknown';
+            const name = leadDisplayName(lead, { fallback: lead.lead_number || 'Unknown' });
             document.getElementById('leadDetailName').textContent = name;
 
             // Parse custom fields. Resolve codes against the tenant's

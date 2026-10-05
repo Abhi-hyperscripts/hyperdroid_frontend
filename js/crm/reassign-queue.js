@@ -102,7 +102,7 @@
             </button>` : '';
 
         const rows = (g.leads || []).map((l, li) => {
-            const name = `${esc(l.first_name || '')} ${esc(l.last_name || '')}`.trim() || '(no name)';
+            const name = esc(leadDisplayName(l, { fallback: '(no name)' }));
             const formerOwner = esc(l.owner_name || l.owner_user_id || 'unknown');
             const bucket = l.bucket || 'orphaned';
             const formerOwnerCell = bucket === 'unassigned'

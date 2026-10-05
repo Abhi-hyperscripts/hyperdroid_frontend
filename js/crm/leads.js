@@ -1942,8 +1942,7 @@ function renderLeadsTable(leads) {
 
 // One lead = one story row: identity, a computed narrative line, status, age.
 function ldkRow(lead) {
-    const name = ([lead.first_name, lead.last_name].filter(Boolean).join(' ') ||
-                  lead.company_name || lead.company || '—');
+    const name = leadDisplayName(lead);
     const flame = lead.next_followup_date ? '<span class="ldk-flame" title="Follow-up scheduled">⚑</span>' : '';
     const xfer = lead.has_pending_transfer ? '<span class="ldk-xfer" title="Transfer pending approval">⇄</span>' : '';
     const checked = selectedLeadIds.has(lead.id) ? 'checked' : '';
@@ -2058,9 +2057,7 @@ document.addEventListener('click', (e) => {
 // detail hero through the same call, and the two must not disagree.
 
 function leadInitials(lead) {
-    const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ') ||
-                 lead.company_name || lead.company || '?';
-    return name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    return leadNameInitials(lead);
 }
 
 function leadAvatarBg(lead) {
@@ -3249,7 +3246,7 @@ async function openReassignModal(leadId) {
     const lead = allLeads.find(l => l.id === leadId);
     if (!lead) return;
 
-    const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ');
+    const name = leadDisplayName(lead);
     document.getElementById('reassignLeadName').textContent = `${name} (${lead.lead_number || ''})`;
 
     const sel = document.getElementById('reassignTargetMember');
@@ -3301,7 +3298,8 @@ function openConvertModal(leadId) {
     convertingLeadId = leadId;
     const lead = allLeads.find(l => l.id === leadId);
     if (lead) {
-        document.getElementById('convertDealName').value = `${lead.first_name || ''} ${lead.last_name || ''} - Deal`.trim();
+        document.getElementById('convertDealName').value =
+            `${leadDisplayName(lead, { fallback: lead.lead_number || 'Lead' })} - Deal`;
     }
     document.getElementById('convertDealValue').value = '';
     openModal('convertLeadModal');
@@ -3436,7 +3434,7 @@ function renderLatestSummaryCell(lead) {
     const typeLabel = formatSummaryTypeLabel(rawType);
     const typePillClass = rawType === 'email' ? 'crm-summary-type-pill type-email' : 'crm-summary-type-pill';
     const typePill = typeLabel ? `<span class="${typePillClass}">${escapeHtml(typeLabel)}</span>` : '';
-    const safeName = escapeHtml(`${lead.first_name || ''} ${lead.last_name || ''}`.trim() || (lead.lead_number || 'this lead'));
+    const safeName = escapeHtml(leadDisplayName(lead, { fallback: lead.lead_number || 'this lead' }));
     // Wrap long descriptions across 2 lines instead of letting an unbroken
     // 500-char string blow out the column width. word-break:break-word keeps
     // CJK / no-space text from overflowing; -webkit-line-clamp limits to 2
