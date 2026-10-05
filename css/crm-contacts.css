@@ -320,8 +320,15 @@ body.crm-contacts-page .rail-item.active { background: color-mix(in srgb, #F472B
    filtered, a page at a time". The toolbar carries the switch and the filters
    for both, so the controls do not move when the view does. */
 .rlx-toolbar {
+  /* Same container as .rlx-headrow above it and .rlx-wrap below: 1600px
+     centred with 30px gutters. Without this the row spanned the full hero
+     width while everything around it stayed inside the gutter — the view
+     toggle sat flush against the left edge and Clear ran off the right. */
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 2px 30px 18px;
   display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px; margin-top: 14px;
+  flex-wrap: wrap; gap: 12px;
 }
 .rlx-viewtoggle { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px;
   background: var(--bg-tertiary); border: 1px solid var(--border-color); }
@@ -353,7 +360,7 @@ body.crm-contacts-page .rail-item.active { background: color-mix(in srgb, #F472B
 .rlx-tablewrap .table-name-cell { display: flex; align-items: center; gap: 8px; }
 
 @media (max-width: 760px) {
-  .rlx-toolbar { flex-direction: column; align-items: stretch; }
+  .rlx-toolbar { flex-direction: column; align-items: stretch; padding: 2px 16px 12px; }
   .rlx-filters { width: 100%; }
   .rlx-f { flex: 1 1 140px; }
 }
