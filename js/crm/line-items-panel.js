@@ -1395,14 +1395,99 @@ const LineItemsPanel = (() => {
         }
     }
 
+    // ─── Viewing the raised quotation ───────────────────────────────────────
+    //
+    // ⭐ A BUTTON THAT SAYS "VIEW" HAS TO SHOW THE DOCUMENT.
+    //
+    // This used to POST /quotation again and toast "Quotation DRAFT-… already
+    // exists for this deal" — a sentence about a document, where the rep asked
+    // for the document. Reported exactly that way.
+    //
+    // Everything needed was already built and switched off: CRM has the
+    // endpoint, the business layer, the gRPC client and the proto;
+    // AccountsService implements GetProformaInvoicePdf. Only the opt-in flag
+    // Accounts__ProformaReadEnabled was unset in production.
+    //
+    // The PDF needs the Authorization header, so it cannot be a plain href —
+    // it is fetched, turned into a blob URL, shown in an iframe, and offered
+    // for download from the same blob. The URL is revoked on close so a rep who
+    // opens twenty quotes in a session does not leak twenty documents.
+    function closeQuotePdf() {
+        const el = document.getElementById('lipPdfOverlay');
+        if (!el) return;
+        const url = el.dataset.objectUrl;
+        if (url) { try { URL.revokeObjectURL(url); } catch (_) {} }
+        el.remove();
+        document.removeEventListener('keydown', _pdfEsc, true);
+    }
+
+    function _pdfEsc(e) { if (e.key === 'Escape') { e.stopPropagation(); closeQuotePdf(); } }
+
+    function showQuotePdf(objectUrl, fileName) {
+        closeQuotePdf();
+        const el = document.createElement('div');
+        el.id = 'lipPdfOverlay';
+        el.className = 'lip-pdf-overlay';
+        el.dataset.objectUrl = objectUrl;
+        el.innerHTML =
+            '<div class="lip-pdf-modal" role="dialog" aria-modal="true" aria-label="Quotation">' +
+              '<div class="lip-pdf-head">' +
+                '<span class="lip-pdf-name"></span>' +
+                '<span class="lip-pdf-actions">' +
+                  '<a class="btn btn-sm btn-primary" data-lip-pdf="download">Download</a>' +
+                  '<button type="button" class="btn btn-sm btn-outline-secondary" data-lip-pdf="close">Close</button>' +
+                '</span>' +
+              '</div>' +
+              '<iframe class="lip-pdf-frame" title="Quotation"></iframe>' +
+            '</div>';
+        document.body.appendChild(el);
+        el.querySelector('.lip-pdf-name').textContent = fileName;
+        const dl = el.querySelector('[data-lip-pdf="download"]');
+        dl.href = objectUrl;
+        dl.setAttribute('download', fileName);
+        el.querySelector('.lip-pdf-frame').src = objectUrl;
+        el.querySelector('[data-lip-pdf="close"]').addEventListener('click', closeQuotePdf);
+        el.addEventListener('mousedown', e => { if (e.target === el) closeQuotePdf(); });
+        document.addEventListener('keydown', _pdfEsc, true);
+    }
+
+    async function viewQuotation(container) {
+        const st = mounted.get(container);
+        const btn = container.querySelector('[data-lip="quote"]');
+        const original = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = 'Opening…'; }
+        try {
+            const res = await fetch(
+                `${CONFIG.crmApiBaseUrl}/deals/${encodeURIComponent(st.dealId)}/quotation/pdf`,
+                { headers: { Authorization: `Bearer ${api.token}` } });
+
+            if (!res.ok) {
+                // A deployment with the read switched off answers 400 with a
+                // sentence. Say it, then fall back to the quote page rather
+                // than leaving the rep with a button that did nothing.
+                let why = '';
+                try { why = (await res.json()).error || ''; } catch (_) {}
+                Toast.error(why || 'Could not open the quotation');
+                window.location.href = `quote.html?deal=${encodeURIComponent(st.dealId)}`;
+                return;
+            }
+
+            const blob = await res.blob();
+            const name = st.quotationNumber
+                ? `Quotation-${st.quotationNumber}.pdf`
+                : 'Quotation.pdf';
+            showQuotePdf(URL.createObjectURL(blob), name);
+        } catch (e) {
+            console.error('Failed to open the quotation PDF:', e);
+            Toast.error(e.message || 'Could not open the quotation');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = original; }
+        }
+    }
+
     async function raiseQuotation(container) {
         const st = mounted.get(container);
         const btn = container.querySelector('[data-lip="quote"]');
-        // ⭐ WHICH HALF OF "VIEW / RE-FETCH" WAS CLICKED.
-        //
-        // Captured BEFORE the request, because the request sets hasQuotation
-        // and would make every click look like a view.
-        const wasViewing = !!st.hasQuotation;
         if (btn) btn.disabled = true;
         try {
             const result = await api.request(
@@ -1442,30 +1527,6 @@ const LineItemsPanel = (() => {
             // caveat inside a success line is how it gets skimmed past.
             if (result.conversion_warning) Toast.info(result.conversion_warning);
 
-            // ⭐ A BUTTON THAT SAYS "VIEW" HAS TO SHOW SOMETHING.
-            //
-            // Once a quotation exists this button reads "View / re-fetch
-            // quotation", and it did only the re-fetch: it posted, toasted
-            // "Quotation DRAFT-… already exists for this deal", and left the
-            // rep exactly where they were. Reported as "it shows this toast but
-            // doesn't show the quotation", which is precisely right — the label
-            // promised a document and delivered a sentence about one.
-            //
-            // The re-fetch half is real and still runs: the POST returns the
-            // document's CURRENT number and amount from Accounts and the panel
-            // re-renders with them. Then we go and show it, which is the same
-            // destination as the "Open the full quote" link above, so both
-            // affordances land in the same place and the quote page's back link
-            // returns to this deal.
-            //
-            // Only on the view path. A first raise stays put on purpose: the
-            // success and the conversion warning are new information the rep
-            // should read, and navigating away would wipe both off the screen.
-            if (wasViewing) {
-                window.location.href =
-                    `quote.html?deal=${encodeURIComponent(st.dealId)}`;
-                return;
-            }
         } catch (e) {
             console.error('Failed to raise the quotation:', e);
             Toast.error(e.message || 'Could not raise the quotation');
@@ -1569,7 +1630,16 @@ const LineItemsPanel = (() => {
             }
 
             if (e.target.closest('[data-lip="save"]')) return save(container);
-            if (e.target.closest('[data-lip="quote"]')) return raiseQuotation(container);
+            if (e.target.closest('[data-lip="quote"]')) {
+                // Two halves, two actions. With a quotation already raised the
+                // button says "View / re-fetch", and viewing is a GET of the
+                // document — not another POST whose only visible result was a
+                // toast saying it already existed.
+                const st0 = mounted.get(container);
+                return st0 && st0.hasQuotation
+                    ? viewQuotation(container)
+                    : raiseQuotation(container);
+            }
             if (e.target.closest('[data-lip="quote-pdf"]')) return openQuotationPdf(container);
 
             const pick = e.target.closest('[data-lip="pick"]');
