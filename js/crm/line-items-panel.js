@@ -6,16 +6,35 @@
  * document anybody can send a customer, and not one Finance can post against a
  * revenue account either.
  *
- *   GET  /crm/deals/{id}/line-items    the lines and what they come to
- *   PUT  /crm/deals/{id}/line-items    replace the whole set
- *   POST /crm/deals/{id}/quotation     raise (or re-fetch) the proforma
+ *   GET  /crm/{owner}/{id}/line-items    the lines and what they come to
+ *   PUT  /crm/{owner}/{id}/line-items    replace the whole set
+ *   POST /crm/{owner}/{id}/quotation     raise (or re-fetch) the proforma
  *
  * ⭐ WHEN LINES EXIST THEY ARE THE ONLY AUTHORITY ON THE DEAL VALUE.
  * The server recomputes deal_value from the lines and REFUSES a manual value
  * while any line exists. This panel says so plainly, because a value box that
  * silently rejects what you type is worse than one that is visibly locked.
  *
+ * ⭐⭐⭐ {owner} IS `deals` OR `leads`, AND THAT IS THE WHOLE LEAD FEATURE.
+ *
+ * Quoting used to require a deal, so a rep who wanted to send a price had to put
+ * an opportunity in the pipeline first — a forecast entry created as a side
+ * effect of sending a quotation. A lead now carries its own lines and its own
+ * quotation (owner decision, 2026-10-06) and STAYS a lead.
+ *
+ * This panel was NOT copied for that. A second copy would be the same
+ * arithmetic, the same rounding rule, the same unpriced-line judgement and the
+ * same PDF-blob dance written twice — and every one of those has its own ⭐
+ * comment above explaining a defect that came from exactly that kind of
+ * duplication. So the owner is one field on the state and one segment in the
+ * URL; everything else is shared by construction.
+ *
+ * Two things genuinely differ, and both are stated where they happen: a lead's
+ * own value is NOT recomputed from its lines, and a lead has no full-page quote
+ * screen to link out to.
+ *
  * Usage:  LineItemsPanel.mount(el, deal, { canEdit: true });
+ *         LineItemsPanel.mount(el, lead, { canEdit: true, ownerKind: 'lead' });
  */
 const LineItemsPanel = (() => {
     'use strict';
@@ -25,6 +44,20 @@ const LineItemsPanel = (() => {
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
     const mounted = new WeakMap();
+
+    /**
+     * ⭐ THE OWNER'S PATH SEGMENT, DERIVED IN ONE PLACE.
+     *
+     * Ten call sites interpolated `deals/${st.dealId}` directly. Left that way,
+     * teaching the panel about leads meant editing ten string literals and
+     * being right ten times — and the one that was missed would send a lead's
+     * save to /deals/{leadId}, which is a 404 if you are lucky and somebody
+     * else's quote if you are not. So the id and its collection travel
+     * together and nothing downstream reassembles them.
+     */
+    function ownerPath(state) {
+        return `${state.ownerKind === 'lead' ? 'leads' : 'deals'}/${encodeURIComponent(state.ownerId)}`;
+    }
 
     const MAX_LINES = 200;
     const MAX_DESCRIPTION = 500;
@@ -310,8 +343,8 @@ const LineItemsPanel = (() => {
                     ? `<span class="lip-total" data-lip="total">${esc(headline)}</span>`
                     : ''}
             </div>
-            ${state.showOpenFull ? `
-            <a class="lip-open-full" href="quote.html?deal=${esc(state.dealId)}">
+            ${state.showOpenFull && state.ownerKind !== 'lead' ? `
+            <a class="lip-open-full" href="quote.html?deal=${esc(state.ownerId)}">
                 Open the full quote
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
             </a>` : ''}
@@ -319,19 +352,36 @@ const LineItemsPanel = (() => {
             <details class="crm-help crm-help-sm"${state.helpOpen ? ' open' : ''}>
                 <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>What is this? — Line items</summary>
                 <div class="crm-help-body">
+                    ${state.ownerKind === 'lead' ? `
+                    <p>What you are quoting this lead for, line by line. These same lines become
+                       the quotation you send them, so they should read the way you want them to
+                       read on the document.</p>
+                    <p><em>This does not change the lead's estimated value, and it does not create
+                       a deal. Your estimate is your own judgement about the opportunity; a quote
+                       is one price you put in front of them.</em></p>` : `
                     <p>What this deal is made up of, line by line. These same lines become the
                        quotation you send the customer, so they should read the way you want
                        them to read on the document.</p>
                     <p><em>While there are lines here, they set the deal's value — the value field
                        above follows this total and cannot be typed over. Remove every line to go
-                       back to pricing the deal by hand.</em></p>
+                       back to pricing the deal by hand.</em></p>`}
                 </div>
             </details>
 
             ${lines.length > 0 ? `
             <p class="lip-authority">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                This deal is priced by its lines. The deal value follows this total.
+                ${state.ownerKind === 'lead'
+                    // ⭐⭐⭐ A CLAIM THAT IS TRUE FOR A DEAL AND FALSE FOR A LEAD.
+                    //
+                    // Measured in the browser on the first lead save: the banner read "This deal
+                    // is priced by its lines. The deal value follows this total." above a lead
+                    // whose estimated_value the server had deliberately left untouched. Nothing
+                    // errored and the figure was right — the SENTENCE was wrong, which is the
+                    // harder kind to notice, and it told the rep their forecast number had just
+                    // moved when it had not.
+                    ? 'This quote is priced by its lines. The lead\'s own estimated value is left as you set it.'
+                    : 'This deal is priced by its lines. The deal value follows this total.'}
             </p>` : ''}
 
             ${!canEdit ? `
@@ -341,13 +391,17 @@ const LineItemsPanel = (() => {
 
             ${state.loadFailed ? `
             <p class="lip-none lip-load-failed">
-                These lines could not be loaded, so this is not what the deal is priced at.
-                Nothing here can be saved until they load — reopen the deal to try again.
+                These lines could not be loaded, so this is not what is being quoted.
+                Nothing here can be saved until they load — reopen the ${state.ownerKind} to try again.
             </p>
             ` : lines.length === 0 ? `
-            <p class="lip-none">${canEdit
-                ? 'No lines yet — this deal is priced by the value on it. Add a line to itemise it.'
-                : 'This deal is priced by the value on it, not by line items.'}</p>
+            <p class="lip-none">${state.ownerKind === 'lead'
+                ? (canEdit
+                    ? 'Nothing quoted yet. Add a line to price what this lead is asking for — it stays a lead, no deal is created.'
+                    : 'Nothing has been quoted for this lead yet.')
+                : (canEdit
+                    ? 'No lines yet — this deal is priced by the value on it. Add a line to itemise it.'
+                    : 'This deal is priced by the value on it, not by line items.')}</p>
             ` : `
             <div class="lip-lines">
                 <div class="lip-head-row" aria-hidden="true">
@@ -388,7 +442,12 @@ const LineItemsPanel = (() => {
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                             Open the quotation
                         </button>` : ''}
-                    <p class="lip-hint">Raising it again returns the same document — a deal has one quotation.</p>
+                    <p class="lip-hint">Raising it again returns the same document — a ${state.ownerKind}
+                       has one quotation.</p>
+                ` : state.ownerKind === 'lead' ? `
+                    <p class="lip-hint">A quotation is raised in Accounts from these lines, addressed to this
+                       lead as a prospect — no customer record is created and the lead stays a lead. Raising
+                       it again returns the same document.</p>
                 ` : `
                     <p class="lip-hint">A quotation is raised in Accounts from these lines. It is the same
                        document the deal raises automatically when it is won, so raising it now does not
@@ -907,6 +966,7 @@ const LineItemsPanel = (() => {
         // The item carries its own (Accounts is single-currency per tenant) and
         // that wins; this is only the fallback when it sends none.
         const currency = (mounted.get(container) || {}).currency;
+        const ownerKind = (mounted.get(container) || {}).ownerKind || 'deal';
         const items = await searchCatalogue('');
 
         const overlay = document.createElement('div');
@@ -1032,10 +1092,18 @@ const LineItemsPanel = (() => {
             const blocked = rows.length > 0 && rows.every(wrongCurrency);
             if (blocked) {
                 const ccy = rows[0].currency;
+                // ⚠️ AND THE ACTION DIFFERS BY OWNER. A deal carries its own currency, so the
+                // rep can change it. A lead does not — its quote is denominated in the tenant's
+                // currency — so telling them to change "the lead's currency" would send them
+                // looking for a field that is not there. The action is then somebody else's.
                 list.insertAdjacentHTML('afterbegin', `
                     <div class="lip-picker-blocked">
-                        <strong>This deal is in ${esc(currency)}; the catalogue is priced in ${esc(ccy)}.</strong>
-                        Change the deal's currency to ${esc(ccy)} to add products to it.
+                        <strong>This quote is in ${esc(currency)}; the catalogue is priced in ${esc(ccy)}.</strong>
+                        ${ownerKind === 'lead'
+                            ? `A lead is quoted in your tenant's currency. Ask whoever maintains the
+                               catalogue to price it in ${esc(currency)}, or change the tenant's currency
+                               in Settings.`
+                            : `Change the deal's currency to ${esc(ccy)} to add products to it.`}
                     </div>`);
             }
         };
@@ -1270,7 +1338,7 @@ const LineItemsPanel = (() => {
         // and a fact held only in the DOM does not survive a render.
         if (st.loadFailed) {
             Toast.error('These lines never loaded, so saving now would replace them with nothing. '
-                      + 'Reopen the deal and try again.');
+                      + `Reopen the ${st.ownerKind} and try again.`);
             return;
         }
 
@@ -1279,7 +1347,7 @@ const LineItemsPanel = (() => {
         if (btn) btn.disabled = true;
         try {
             const result = await api.request(
-                `/crm/deals/${encodeURIComponent(st.dealId)}/line-items`,
+                `/crm/${ownerPath(st)}/line-items`,
                 {
                     method: 'PUT',
                     body: JSON.stringify({
@@ -1305,7 +1373,9 @@ const LineItemsPanel = (() => {
             applyTotals(st, result);
             render(container);
             Toast.success(typed.length === 0
-                ? 'Lines removed — this deal is priced by its value again'
+                ? (st.ownerKind === 'lead'
+                    ? 'Lines removed — this lead has no priced quote now'
+                    : 'Lines removed — this deal is priced by its value again')
                 : 'Lines saved');
 
             // Tell whoever mounted us that the lines moved. The quote page uses
@@ -1317,9 +1387,18 @@ const LineItemsPanel = (() => {
             // reloading it keeps the panel's own state, and a stale value on
             // screen beside a new total is exactly the kind of disagreement
             // that makes people distrust the number.
+            // ⭐⭐ A LEAD'S VALUE DID NOT MOVE, SO SAY NOTHING.
+            //
+            // The server deliberately leaves leads.estimated_value alone when the lines change:
+            // a rep's estimate of the opportunity and a priced quote are different claims, and a
+            // quotation does not supersede a judgement nobody asked us to overwrite. Firing this
+            // event for a lead would make the list repaint a chip with the LINE TOTAL in it —
+            // announcing a figure the database does not hold, which is the same shape as the
+            // measured $300,000 → $0 defect the guard below was written for.
+            if (st.ownerKind !== 'lead')
             document.dispatchEvent(new CustomEvent('crm:deal-value-changed', {
                 detail: {
-                    dealId: st.dealId,
+                    dealId: st.ownerId,
                     // ⭐⭐ NO LINES MEANS THE VALUE DID NOT MOVE — DO NOT CLAIM IT DID.
                     //
                     // Removing every line hands pricing back to the deal's own
@@ -1377,7 +1456,7 @@ const LineItemsPanel = (() => {
             const base = (typeof CONFIG !== 'undefined' && CONFIG.crmApiBaseUrl) || '/api';
             const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
             const res = await fetch(
-                `${base}/deals/${encodeURIComponent(st.dealId)}/quotation/pdf`,
+                `${base}/${ownerPath(st)}/quotation/pdf`,
                 { headers: token ? { Authorization: `Bearer ${token}` } : {} });
 
             if (!res.ok) {
@@ -1477,7 +1556,7 @@ const LineItemsPanel = (() => {
         if (btn) { btn.disabled = true; btn.textContent = 'Issuing…'; }
         try {
             const res = await api.request(
-                `/crm/deals/${encodeURIComponent(st.dealId)}/quotation/issue`, { method: 'POST' });
+                `/crm/${ownerPath(st)}/quotation/issue`, { method: 'POST' });
 
             // The number changed in Accounts; the panel must show the new one or
             // it goes on advertising the placeholder the rep just replaced.
@@ -1498,7 +1577,7 @@ const LineItemsPanel = (() => {
         if (btn) { btn.disabled = true; btn.textContent = 'Opening…'; }
         try {
             const res = await fetch(
-                `${CONFIG.crmApiBaseUrl}/deals/${encodeURIComponent(st.dealId)}/quotation/pdf`,
+                `${CONFIG.crmApiBaseUrl}/${ownerPath(st)}/quotation/pdf`,
                 { headers: { Authorization: `Bearer ${api.token}` } });
 
             if (!res.ok) {
@@ -1508,7 +1587,12 @@ const LineItemsPanel = (() => {
                 let why = '';
                 try { why = (await res.json()).error || ''; } catch (_) {}
                 Toast.error(why || 'Could not open the quotation');
-                window.location.href = `quote.html?deal=${encodeURIComponent(st.dealId)}`;
+                // The full-page quote screen is a DEAL screen. A lead has nowhere to fall back
+                // to, and sending it to quote.html?deal=<leadId> would open an empty deal page
+                // on top of a message the rep has not read yet.
+                if (st.ownerKind !== 'lead') {
+                    window.location.href = `quote.html?deal=${encodeURIComponent(st.ownerId)}`;
+                }
                 return;
             }
 
@@ -1531,7 +1615,7 @@ const LineItemsPanel = (() => {
         if (btn) btn.disabled = true;
         try {
             const result = await api.request(
-                `/crm/deals/${encodeURIComponent(st.dealId)}/quotation`, { method: 'POST' });
+                `/crm/${ownerPath(st)}/quotation`, { method: 'POST' });
 
             st.hasQuotation = true;
             st.quotationNumber = result.proforma_number || null;
@@ -1551,7 +1635,7 @@ const LineItemsPanel = (() => {
                 ? ` for ${money(result.total_amount, result.currency || st.currency)}`
                 : '';
             Toast.success(result.already_existed
-                ? `Quotation ${result.proforma_number || ''}${raisedFor} already exists for this deal`.trim()
+                ? `Quotation ${result.proforma_number || ''}${raisedFor} already exists for this ${st.ownerKind}`.trim()
                 : `Quotation ${result.proforma_number || ''}${raisedFor} raised`.trim());
 
             // ⭐ THE QUOTE WORKED; THE INVOICE IT BECOMES MIGHT NOT.
@@ -1589,7 +1673,7 @@ const LineItemsPanel = (() => {
     async function load(container) {
         const st = mounted.get(container);
         try {
-            const result = await api.request(`/crm/deals/${encodeURIComponent(st.dealId)}/line-items`);
+            const result = await api.request(`/crm/${ownerPath(st)}/line-items`);
             st.lines = result.lines || [];
             st.currency = result.currency || st.currency;
             applyTotals(st, result);
@@ -1616,7 +1700,13 @@ const LineItemsPanel = (() => {
         if (!container || !deal) return;
         const prev = mounted.get(container);
         mounted.set(container, {
-            dealId: deal.id,
+            // `deal` is a deal OR a lead — see the header. The caller says which; defaulting to
+            // 'deal' keeps every existing call site (deals.js, quote.js) exactly as it was.
+            ownerKind: opts.ownerKind === 'lead' ? 'lead' : 'deal',
+            ownerId: deal.id,
+            // A lead carries no currency column. The server answers with the tenant's resolved
+            // currency on the first load, so this is only what the panel paints for the one
+            // frame before that lands — never a figure it keeps.
             currency: deal.currency || 'INR',
             canEdit: opts.canEdit !== false,
             // Fired after a successful save. Added for the quote page, which

@@ -26,6 +26,13 @@ const ROOT = path.resolve(__dirname, '..');
 const PAIRS = [
   { helper: 'js/crm/lead-name.js',         call: /\b(leadDisplayName|leadNameInitials)\s*\(/ },
   { helper: 'js/crm/followup-complete.js', call: /\bCrmFollowupComplete\s*\./ },
+  // The quote panel. Shared by the Deals page, the full-page quote screen and — since the
+  // lead Quotation tab (2026-10-06) — the lead detail pane. Three callers on three pages is
+  // exactly the population this guard exists for: the panel is mounted behind
+  // `typeof LineItemsPanel !== 'undefined'`, so a page that forgets the script does not throw.
+  // It silently renders no Quotation tab content at all, which is the quietest possible
+  // failure for the one panel that puts a price in front of a customer.
+  { helper: 'js/crm/line-items-panel.js',  call: /\bLineItemsPanel\s*\./ },
 ];
 
 function walk(dir, ext, out = []) {

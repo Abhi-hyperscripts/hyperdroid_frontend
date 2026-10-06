@@ -17,45 +17,53 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
-    <script src="../../js/sw-version.js?v=3102"></script>
+    <script src="../../js/sw-version.js?v=3103"></script>
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" href="../../css/theme.css?v=3102">
-    <link rel="stylesheet" href="../../css/styles.css?v=3102">
-    <link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=3102">
-<link rel="stylesheet" href="../../css/crm.css?v=3102">
-        <link rel="stylesheet" href="../../css/crm-leaddesk.css?v=3102">
-    <link rel="stylesheet" href="../../css/glass-cards.css?v=3102">
-    <link rel="stylesheet" href="../../css/table-cards.css?v=3102">
-    <link rel="stylesheet" href="../../css/table-filter.css?v=3102">
-    <link rel="stylesheet" href="../../css/row-actions.css?v=3102">
-    <link rel="stylesheet" href="../../css/searchable-dropdown.css?v=3102">
-    <link rel="stylesheet" href="../../css/slide-panel.css?v=3102">
-    <link rel="stylesheet" href="../../css/crm-notes.css?v=3102">
-<link rel="stylesheet" href="../../css/crm-documents.css?v=3102">
-    <link rel="stylesheet" href="../../css/crm-signatures.css?v=3102">
-    <link rel="stylesheet" href="../../css/crm-appointments.css?v=3102">
-    <link rel="stylesheet" href="../../css/crm-lead-import.css?v=3102">
-    <link rel="stylesheet" href="../../css/sequences.css?v=3102">
+    <link rel="stylesheet" href="../../css/theme.css?v=3103">
+    <link rel="stylesheet" href="../../css/styles.css?v=3103">
+    <link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=3103">
+<link rel="stylesheet" href="../../css/crm.css?v=3103">
+        <link rel="stylesheet" href="../../css/crm-leaddesk.css?v=3103">
+    <link rel="stylesheet" href="../../css/glass-cards.css?v=3103">
+    <link rel="stylesheet" href="../../css/table-cards.css?v=3103">
+    <link rel="stylesheet" href="../../css/table-filter.css?v=3103">
+    <link rel="stylesheet" href="../../css/row-actions.css?v=3103">
+    <link rel="stylesheet" href="../../css/searchable-dropdown.css?v=3103">
+    <link rel="stylesheet" href="../../css/slide-panel.css?v=3103">
+    <link rel="stylesheet" href="../../css/crm-notes.css?v=3103">
+<link rel="stylesheet" href="../../css/crm-documents.css?v=3103">
+    <link rel="stylesheet" href="../../css/crm-signatures.css?v=3103">
+    <link rel="stylesheet" href="../../css/crm-appointments.css?v=3103">
+    <!-- The Quotation tab. Its CSS is NOT optional decoration: .lip-picker-overlay carries
+         `position: fixed !important; z-index: 1200 !important` specifically to outrank
+         styles.css's blanket `body.dashboard > :not(…) { position: relative; z-index: 1 }`.
+         Without this file the product picker renders in the page flow, underneath the lead
+         slide-panel's scrim — plainly on screen, dimmed, and every click landing on the scrim.
+         A stylesheet shipped without its JS (or the reverse) is guarded by
+         scripts/check-helper-pairs.js; this pairing is a stylesheet the JS cannot work without. -->
+    <link rel="stylesheet" href="../../css/crm-line-items.css?v=3103">
+    <link rel="stylesheet" href="../../css/crm-lead-import.css?v=3103">
+    <link rel="stylesheet" href="../../css/sequences.css?v=3103">
     <!-- TinyMCE 7 community (replaces Quill) — used by the shared email
          composer (js/shared/email-composer.js) and any other rich-text
          editor on this page. -->
     <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js" referrerpolicy="origin"></script>
     <!-- Shared email-composer modal (Email-service look + feel, Outlook /
          Slack-like single composer reused by reply, new-from-lead, etc) -->
-    <link rel="stylesheet" href="../../css/email-composer.css?v=3102">
-    <script src="../../js/shared/email-composer.js?v=3102"></script>
+    <link rel="stylesheet" href="../../css/email-composer.css?v=3103">
+    <script src="../../js/shared/email-composer.js?v=3103"></script>
     <!-- Flatpickr — needed because <input type="datetime-local"> on macOS Safari
          shows calendar-only popup with no time controls. HRMSDatePicker wraps
          Flatpickr and supports data-enable-time="true" on type="date" inputs. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="../../css/flatpickr-custom.css?v=3102">
+    <link rel="stylesheet" href="../../css/flatpickr-custom.css?v=3103">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="../../js/theme.js?v=3102"></script>
+    <script src="../../js/theme.js?v=3103"></script>
 </head>
 <body class="dashboard crm-page crm-leads-page">
-    <script src="/js/button-spinner.js?v=3102"></script>
+    <script src="/js/button-spinner.js?v=3103"></script>
     <nav class="navbar">
         <div class="navbar-brand">
             <a href="../home.html">
@@ -601,6 +609,10 @@
                 <button type="button" class="ld-tab"        data-pane="activity"     onclick="switchLeadTab(this)" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Activity</span></button>
                 <button type="button" class="ld-tab"        data-pane="documents"    onclick="switchLeadTab(this)" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg><span>Documents</span></button>
                 <button type="button" class="ld-tab"        data-pane="appointments" onclick="switchLeadTab(this)" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Appointments</span></button>
+                <!-- Quoting used to require a deal, so pricing something for a prospect meant
+                     putting an opportunity in the pipeline first. A lead now carries its own
+                     lines and its own quotation and stays a lead. -->
+                <button type="button" class="ld-tab"        data-pane="quotation"    onclick="switchLeadTab(this)" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Quotation</span></button>
             </div>
 
             <div class="ld-pane" data-pane="overview">
@@ -644,6 +656,12 @@
             <div class="ld-pane" data-pane="appointments" hidden>
                 <div class="panel-section">
                     <div id="leadAppointmentsPanel"></div>
+                </div>
+            </div>
+
+            <div class="ld-pane" data-pane="quotation" hidden>
+                <div class="panel-section">
+                    <div id="leadLineItemsPanel"></div>
                 </div>
             </div>
 
@@ -1667,52 +1685,59 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
-        <script src="../../js/config.js?v=3102"></script>
-        <script src="../../js/rail-rbac.js?v=3102"></script>
-        <script src="../../js/api.js?v=3102"></script>
-        <script src="../../js/navigation.js?v=3102"></script>
-        <script src="../../js/toast.js?v=3102"></script>
-        <script src="../../js/table-cards.js?v=3102"></script>
-        <script src="../../js/anchored-menu.js?v=3102"></script>
-        <script src="../../js/table-filter.js?v=3102"></script>
-        <script src="../../js/row-actions.js?v=3102"></script>
-        <script src="../../js/table-resize.js?v=3102"></script>
-        <script src="../../js/searchable-dropdown.js?v=3102"></script>
-        <script src="../../js/hrms/hrms-datepicker.js?v=3102"></script>
-        <script src="../../js/auto-searchable-select.js?v=3102"></script>
-        <script src="../../js/tooltip.js?v=3102"></script>
-        <script src="../../js/crm/setup-guard.js?v=3102"></script>
-        <script src="../../js/crm/form-answers-filter.js?v=3102"></script>
-        <script src="../../js/crm/phone-link.js?v=3102"></script>
+        <script src="../../js/config.js?v=3103"></script>
+        <script src="../../js/rail-rbac.js?v=3103"></script>
+        <script src="../../js/api.js?v=3103"></script>
+        <script src="../../js/navigation.js?v=3103"></script>
+        <script src="../../js/toast.js?v=3103"></script>
+        <script src="../../js/table-cards.js?v=3103"></script>
+        <script src="../../js/anchored-menu.js?v=3103"></script>
+        <script src="../../js/table-filter.js?v=3103"></script>
+        <script src="../../js/row-actions.js?v=3103"></script>
+        <script src="../../js/table-resize.js?v=3103"></script>
+        <script src="../../js/searchable-dropdown.js?v=3103"></script>
+        <script src="../../js/hrms/hrms-datepicker.js?v=3103"></script>
+        <script src="../../js/auto-searchable-select.js?v=3103"></script>
+        <script src="../../js/tooltip.js?v=3103"></script>
+        <script src="../../js/crm/setup-guard.js?v=3103"></script>
+        <script src="../../js/crm/form-answers-filter.js?v=3103"></script>
+        <script src="../../js/crm/phone-link.js?v=3103"></script>
         <script>
         // BEFORE leads.js and lead-journey.js: both render money through
         // tenantMoney, which lives here so the locale rule exists once.
         </script>
-        <script src="../../js/crm/currencies.js?v=3102"></script>
-        <script src="../../js/crm/lead-name.js?v=3102"></script>
-        <script src="../../js/crm/leads.js?v=3102"></script>
-        <script src="../../js/crm/lead-fields-runtime.js?v=3102"></script>
-        <script src="../../js/crm/lead-discovery.js?v=3102"></script>
-        <script src="../../js/crm/lead-import.js?v=3102"></script>
-        <script src="../../js/crm/notes-panel.js?v=3102"></script>
-        <script src="../../js/crm/documents-panel.js?v=3102"></script>
-        <script src="../../js/crm/signature-panel.js?v=3102"></script>
-        <script src="../../js/pdfjs-loader.js?v=3102"></script>
-        <script src="../../js/crm/signature-placer.js?v=3102"></script>
-        <script src="../../js/crm/appointments-panel.js?v=3102"></script>
-        <script src="../../js/crm/activities-panel.js?v=3102"></script>
-        <script src="../../js/crm/lead-history-panel.js?v=3102"></script>
-        <script src="../../js/crm/followup-complete.js?v=3102"></script>
-        <script src="../../js/crm/lead-journey.js?v=3102"></script>
-        <script src="../../js/crm/lead-qr-modal.js?v=3102"></script>
-    <script src="../../js/crm/ekart-access-modal.js?v=3102"></script>
-        <script src="../../js/crm/bulk-whatsapp-modal.js?v=3102"></script>
+        <script src="../../js/crm/currencies.js?v=3103"></script>
+        <script src="../../js/crm/lead-name.js?v=3103"></script>
+        <script src="../../js/crm/leads.js?v=3103"></script>
+        <script src="../../js/crm/lead-fields-runtime.js?v=3103"></script>
+        <script src="../../js/crm/lead-discovery.js?v=3103"></script>
+        <script src="../../js/crm/lead-import.js?v=3103"></script>
+        <script src="../../js/crm/notes-panel.js?v=3103"></script>
+        <script src="../../js/crm/documents-panel.js?v=3103"></script>
+        <script src="../../js/crm/signature-panel.js?v=3103"></script>
+        <script src="../../js/pdfjs-loader.js?v=3103"></script>
+        <script src="../../js/crm/signature-placer.js?v=3103"></script>
+        <script src="../../js/crm/appointments-panel.js?v=3103"></script>
+        <script src="../../js/crm/activities-panel.js?v=3103"></script>
+        <script src="../../js/crm/lead-history-panel.js?v=3103"></script>
+        <script src="../../js/crm/followup-complete.js?v=3103"></script>
+        <script>
+        // BEFORE lead-journey.js, which mounts it: a page that calls a shared panel without
+        // loading it throws at click time, which in this codebase has repeatedly meant a
+        // feature that silently does nothing. scripts/check-helper-pairs.js enforces the
+        // pairing and the order.
+        </script>
+        <script src="../../js/crm/line-items-panel.js?v=3103"></script>
+        <script src="../../js/crm/lead-journey.js?v=3103"></script>
+        <script src="../../js/crm/lead-qr-modal.js?v=3103"></script>
+    <script src="../../js/crm/ekart-access-modal.js?v=3103"></script>
+        <script src="../../js/crm/bulk-whatsapp-modal.js?v=3103"></script>
         <script>
         // bulk-whatsapp-tracker.js is loaded dynamically by navigation.js
         // on every CRM page (so the chip follows the rep across pages).
         </script>
-        <script src="../../js/crm/calls.js?v=3102"></script>
+        <script src="../../js/crm/calls.js?v=3103"></script>
     <!-- AI Copilot Widget -->
-    <script src="../../embed/widget.js?v=3102" data-mode="copilot" data-service="crm" data-title="Sales Assistant"></script>
+    <script src="../../embed/widget.js?v=3103" data-mode="copilot" data-service="crm" data-title="Sales Assistant"></script>
 </body>
 </html>

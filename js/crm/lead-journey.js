@@ -377,6 +377,26 @@
             const name = leadDisplayName(lead, { fallback: lead.lead_number || 'Unknown' });
             document.getElementById('leadDetailName').textContent = name;
 
+            // ⭐⭐⭐ THE QUOTATION TAB — mounted HERE, after the lead has loaded.
+            //
+            // Every other panel above is mounted before the fetch because an id is all it
+            // needs. This one is not: the panel paints "Quotation raised — PI-2026-00017" from
+            // accounts_proforma_number, and whether the Issue button exists at all from whether
+            // that number is a DRAFT- placeholder. Mounted early it would be handed an id and
+            // nothing else, so a lead with a quotation would render as a lead with none — and
+            // the rep would press Raise on a document that already exists.
+            //
+            // canEdit is deliberately NOT the deal's financial gate. That gate exists because a
+            // deal's lines ARE its forecast value and the tenant can choose whether members may
+            // move it. A lead's lines move nothing (its estimated_value is left exactly as the
+            // rep typed it), so importing the gate would stop a member quoting their own lead —
+            // which is the feature. The server agrees: SetLeadLineItemsAsync has no such check.
+            if (typeof LineItemsPanel !== 'undefined') {
+                LineItemsPanel.mount(
+                    document.getElementById('leadLineItemsPanel'), lead,
+                    { ownerKind: 'lead', canEdit: true, showOpenFull: false });
+            }
+
             // Parse custom fields. Resolve codes against the tenant's
             // schema (active or archived — `getLeadFieldDef` uses the
             // _allFieldsByCode map populated by lead-fields-runtime.js so
