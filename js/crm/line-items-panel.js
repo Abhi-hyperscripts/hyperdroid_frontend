@@ -1398,6 +1398,11 @@ const LineItemsPanel = (() => {
     async function raiseQuotation(container) {
         const st = mounted.get(container);
         const btn = container.querySelector('[data-lip="quote"]');
+        // ⭐ WHICH HALF OF "VIEW / RE-FETCH" WAS CLICKED.
+        //
+        // Captured BEFORE the request, because the request sets hasQuotation
+        // and would make every click look like a view.
+        const wasViewing = !!st.hasQuotation;
         if (btn) btn.disabled = true;
         try {
             const result = await api.request(
@@ -1436,6 +1441,31 @@ const LineItemsPanel = (() => {
             // success is real and the rep should read it as one, and burying a
             // caveat inside a success line is how it gets skimmed past.
             if (result.conversion_warning) Toast.info(result.conversion_warning);
+
+            // ⭐ A BUTTON THAT SAYS "VIEW" HAS TO SHOW SOMETHING.
+            //
+            // Once a quotation exists this button reads "View / re-fetch
+            // quotation", and it did only the re-fetch: it posted, toasted
+            // "Quotation DRAFT-… already exists for this deal", and left the
+            // rep exactly where they were. Reported as "it shows this toast but
+            // doesn't show the quotation", which is precisely right — the label
+            // promised a document and delivered a sentence about one.
+            //
+            // The re-fetch half is real and still runs: the POST returns the
+            // document's CURRENT number and amount from Accounts and the panel
+            // re-renders with them. Then we go and show it, which is the same
+            // destination as the "Open the full quote" link above, so both
+            // affordances land in the same place and the quote page's back link
+            // returns to this deal.
+            //
+            // Only on the view path. A first raise stays put on purpose: the
+            // success and the conversion warning are new information the rep
+            // should read, and navigating away would wipe both off the screen.
+            if (wasViewing) {
+                window.location.href =
+                    `quote.html?deal=${encodeURIComponent(st.dealId)}`;
+                return;
+            }
         } catch (e) {
             console.error('Failed to raise the quotation:', e);
             Toast.error(e.message || 'Could not raise the quotation');
