@@ -432,6 +432,7 @@ const LineItemsPanel = (() => {
 
             ${!accountsLicensed() ? '' : `
             <div class="lip-quote">
+                ${recipientBlock(state)}
                 ${hasQuotation ? `
                     <p class="lip-quote-done">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -464,6 +465,63 @@ const LineItemsPanel = (() => {
                    the figures are right: an issued quotation can no longer be deleted there.</p>` : ''}
             </div>`}
         </div>`;
+    }
+
+    /**
+     * ⭐⭐⭐ WHO THE QUOTATION IS ADDRESSED TO, WHEN THE LEAD DOES NOT KNOW.
+     *
+     * A lead's company name, person name and tax id come from a web form, an ad platform or a
+     * spreadsheet. They are routinely missing and routinely WRONG — the form never asked for a
+     * company, or the person typed their own name into it. The quotation is a document the
+     * prospect keeps and the invoice it becomes is a tax document, so the rep states the
+     * counterparty here (owner, 2026-10-06) rather than first going to correct a CRM record they
+     * may not be sure about.
+     *
+     * Prefilled from the lead and fully editable. Blank means "use what the lead holds", so a rep
+     * who changes nothing gets exactly the old behaviour.
+     *
+     * SHOWN ONLY BEFORE THE DOCUMENT EXISTS. The raise is deduped on the lead, so a second raise
+     * returns the SAME proforma and ignores anything typed here — one lead, one quotation, which
+     * is what stops a retry sending a second quote. Offering an editable form that silently did
+     * nothing would be worse than not offering one, so once it is raised the block is replaced by
+     * a line saying so and the button to go read the actual document.
+     */
+    function recipientBlock(state) {
+        if (state.ownerKind !== 'lead') return '';
+
+        const r = state.recipient || {};
+        if (state.hasQuotation) {
+            return `
+            <p class="lip-hint lip-recipient-locked">
+                The quotation is already raised, so who it is addressed to is fixed on the
+                document. Open it to see what it says.
+            </p>`;
+        }
+
+        const f = (key, label, placeholder, extra = '') => `
+            <label class="lip-rcp-f">
+                <span>${esc(label)}</span>
+                <input type="text" class="form-control form-control-sm"
+                       data-lip-rcp="${esc(key)}" value="${esc(r[key] || '')}"
+                       placeholder="${esc(placeholder)}"${extra}>
+            </label>`;
+
+        return `
+        <details class="lip-recipient"${state.recipientOpen ? ' open' : ''}>
+            <summary>Quote to — <strong>${esc(r.company_name || r.contact_name || 'this lead')}</strong></summary>
+            <div class="lip-rcp-grid">
+                ${f('company_name', 'Company name', 'Who is being billed')}
+                ${f('contact_name', 'Contact person', 'Printed as “Attn:” on the document')}
+                ${f('gstin', 'GSTIN', 'e.g. 27AAECN1234A1Z5', ' maxlength="15" autocapitalize="characters"')}
+                ${f('email', 'Email', 'Needed to turn this into an invoice')}
+                ${f('phone', 'Phone', 'Needed to turn this into an invoice')}
+                ${f('address', 'Address', 'Billing address')}
+            </div>
+            <p class="lip-hint">
+                Prefilled from the lead — correct anything that is wrong or missing. This is used
+                for the quotation only; the lead itself is not changed.
+            </p>
+        </details>`;
     }
 
     /**
@@ -1614,8 +1672,23 @@ const LineItemsPanel = (() => {
         const btn = container.querySelector('[data-lip="quote"]');
         if (btn) btn.disabled = true;
         try {
+            // The recipient the rep stated. Sent only for a lead — a deal is addressed from its
+            // company RECORD, which is the thing to correct there, and inventing a second place
+            // to type a customer's name would be two sources for one fact.
+            const body = st.ownerKind === 'lead' && st.recipient
+                ? JSON.stringify({
+                    company_name: (st.recipient.company_name || '').trim() || null,
+                    contact_name: (st.recipient.contact_name || '').trim() || null,
+                    gstin:        (st.recipient.gstin        || '').trim() || null,
+                    email:        (st.recipient.email        || '').trim() || null,
+                    phone:        (st.recipient.phone        || '').trim() || null,
+                    address:      (st.recipient.address      || '').trim() || null,
+                  })
+                : undefined;
+
             const result = await api.request(
-                `/crm/${ownerPath(st)}/quotation`, { method: 'POST' });
+                `/crm/${ownerPath(st)}/quotation`,
+                body ? { method: 'POST', body } : { method: 'POST' });
 
             st.hasQuotation = true;
             st.quotationNumber = result.proforma_number || null;
@@ -1730,6 +1803,27 @@ const LineItemsPanel = (() => {
             // predates that read has nothing to serve. The backend reports the
             // capability; the panel never guesses at it.
             quotationPdfAvailable: false,
+            // ⭐ PREFILLED FROM THE LEAD, THEN OWNED BY THE FORM.
+            //
+            // Held on the state rather than read off the DOM at raise time, because this panel
+            // re-renders on every line save and a value living only in an input does not survive
+            // one — the same rule the help panel's open state and the save button learned.
+            // company_name falls back to the person, mirroring the server's recipient chain, so
+            // the prefill is what WOULD be sent if nothing is typed.
+            recipient: opts.ownerKind === 'lead' ? {
+                company_name: deal.company_name || '',
+                contact_name: [deal.first_name, deal.last_name].filter(Boolean).join(' '),
+                gstin: '',
+                email: deal.email || '',
+                phone: deal.phone || '',
+                address: [deal.address, deal.city, deal.state, deal.pincode, deal.country]
+                    .filter(Boolean).join(', '),
+            } : null,
+            // Open when the lead cannot name itself — that is precisely when the rep has to type
+            // something, and a collapsed form they never open is a feature that does not exist.
+            recipientOpen: opts.ownerKind === 'lead'
+                && !deal.company_name
+                && !`${deal.first_name || ''}${deal.last_name || ''}`.trim(),
             bound: prev ? prev.bound : false,
         });
 
@@ -1787,7 +1881,20 @@ const LineItemsPanel = (() => {
             if (e.target.matches('[data-lip-field="quantity"], [data-lip-field="unit_price"]')) {
                 refreshTotals(container);
             }
+            // Recipient fields are captured as they are typed, for the re-render reason above.
+            const rcp = e.target.closest('[data-lip-rcp]');
+            if (rcp) {
+                const st0 = mounted.get(container);
+                if (st0 && st0.recipient) st0.recipient[rcp.dataset.lipRcp] = rcp.value;
+            }
         });
+
+        // <details> keeps "open" in the DOM, and every render rebuilds it.
+        container.addEventListener('toggle', (e) => {
+            if (!e.target.classList || !e.target.classList.contains('lip-recipient')) return;
+            const st0 = mounted.get(container);
+            if (st0) st0.recipientOpen = e.target.open;
+        }, true);
     }
 
     // lineTotal and round2 are exported so anything else showing these numbers

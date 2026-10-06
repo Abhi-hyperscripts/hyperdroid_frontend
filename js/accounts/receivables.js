@@ -1133,6 +1133,7 @@ async function editInvoice(id) {
         // E-invoice panel only makes sense for issued (non-draft) invoices. Runs AFTER
         // _setInvoiceModalReadOnly so its buttons aren't caught by the disable-all sweep.
         if (!isDraft) renderEInvoicePanel(inv);
+        if (!isDraft) renderEwayBillPanel(inv);
         else { const p = document.getElementById('customerInvoiceModal')?.querySelector('.einvoice-panel'); if (p) p.remove(); }
 
         AccountsCommon.showFormPage('customerInvoiceModal');
@@ -3678,4 +3679,161 @@ async function deleteSalesOrder(id) {
         Toast.success('Draft order deleted');
         loadSalesOrders();
     } catch (err) { Toast.error(err?.message || 'Failed to delete order'); }
+}
+
+
+// ── e-Way Bill panel on the invoice ──────────────────────────────────────────────────────────────
+// Sits beside the e-invoice panel and is deliberately separate: a different government system, and a
+// bill has a LIFE after it is raised — Part-B when the vehicle is known, a new vehicle after a
+// breakdown, an extension when the journey runs long, cancellation within the day. Buttons appear for
+// what is actually possible NOW; the rules are also enforced on the server, which owns the refusals.
+let _ewbStatus = null;
+
+async function loadEwbStatusOnce() {
+    if (_ewbStatus) return _ewbStatus;
+    try { _ewbStatus = await api.request(AccountsCommon.buildUrl('ewaybill/settings/status'), { _skipSpinner: true }); }
+    catch { _ewbStatus = { enabled: false, configured: false }; }
+    return _ewbStatus;
+}
+
+function ewbValidityNote(rec) {
+    if (!rec || !rec.valid_upto) return '';
+    const left = new Date(rec.valid_upto) - new Date();
+    if (left <= 0) return ' <span style="color:var(--color-error);">Expired.</span>';
+    const hrs = Math.floor(left / 3600000);
+    return hrs < 24 ? ` <span style="color:var(--color-warning);">Expires in ${hrs} h.</span>` : '';
+}
+
+async function renderEwayBillPanel(inv) {
+    const modal = document.getElementById('customerInvoiceModal');
+    if (!modal) return;
+    const body = modal.querySelector('.acc-form') || modal.querySelector('.acc-form-page__inner') || modal.querySelector('.modal-body');
+    if (!body) return;
+    modal.querySelector('.ewb-panel')?.remove();
+
+    const st = (inv.status || '').toLowerCase();
+    if (st === 'draft' || st === 'cancelled') return;
+
+    const status = await loadEwbStatusOnce();
+    // Nothing is set up: say nothing rather than show a dead button on every invoice.
+    if (!status.enabled && !status.configured) return;
+
+    const panel = document.createElement('div');
+    panel.className = 'ewb-panel';
+    panel.style.cssText = 'background:var(--bg-card-hover);border:1px solid var(--border-color);border-radius:8px;padding:14px 16px;margin-bottom:14px;';
+    panel.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <strong style="font-size:0.9rem;color:var(--text-primary);">E-Way Bill</strong>
+        <span class="ewb-status" style="font-size:0.75rem;color:var(--text-secondary);">Checking…</span>
+      </div>
+      <div class="ewb-detail" style="margin-top:10px;font-size:0.82rem;color:var(--text-secondary);"></div>`;
+    const einv = modal.querySelector('.einvoice-panel');
+    if (einv && einv.parentElement === body) einv.insertAdjacentElement('afterend', panel);
+    else body.insertBefore(panel, body.firstChild);
+
+    const statusEl = panel.querySelector('.ewb-status');
+    const detailEl = panel.querySelector('.ewb-detail');
+    const isAdmin = accountsRoles.isAdmin();
+
+    let rec = null;
+    try { rec = await api.request(AccountsCommon.buildUrl(`ewaybill/for/invoice/${inv.id}`), { _skipSpinner: true }); }
+    catch { rec = null; }
+
+    if (rec && rec.ewb_no) {
+        const cancelled = (rec.status || '') === 'cancelled';
+        const within24h = (new Date() - new Date(rec.ewb_date)) < 24 * 3600000;
+        statusEl.innerHTML = cancelled
+            ? '<span style="color:var(--color-error);">● Cancelled</span>'
+            : '<span style="color:var(--color-success);">● Raised</span>';
+        detailEl.innerHTML = `
+            <div><strong style="color:var(--text-primary);">${AccountsCommon.escapeHtml(rec.ewb_no)}</strong>
+                 · raised ${AccountsCommon.formatDate(rec.ewb_date)}
+                 ${rec.valid_upto ? `· valid to ${AccountsCommon.formatDate(rec.valid_upto)}` : ''}${ewbValidityNote(rec)}</div>
+            ${rec.vehicle_no ? `<div style="margin-top:4px;">Vehicle ${AccountsCommon.escapeHtml(rec.vehicle_no)}${rec.transporter_id ? ` · transporter ${AccountsCommon.escapeHtml(rec.transporter_id)}` : ''}</div>` : ''}
+            ${cancelled || !isAdmin ? '' : `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-sm btn-secondary" onclick="promptEwbPartB('${rec.id}','${inv.id}')">Update vehicle</button>
+                <button class="btn btn-sm btn-secondary" onclick="promptEwbExtend('${rec.id}','${inv.id}')">Extend validity</button>
+                ${within24h ? `<button class="btn btn-sm btn-danger" onclick="promptEwbCancel('${rec.id}','${inv.id}')">Cancel</button>` : ''}
+              </div>`}
+            ${cancelled || within24h || isAdmin === false ? '' : '<div style="margin-top:6px;font-size:0.78rem;">Past the 24-hour window, so it can no longer be cancelled.</div>'}`;
+        return;
+    }
+
+    statusEl.innerHTML = '<span style="color:var(--text-secondary);">● Not raised</span>';
+    if (!status.enabled) {
+        detailEl.textContent = 'E-way bills are set up but switched off (Taxation → e-Way Bill).';
+        return;
+    }
+    const below = status.threshold_value && Number(inv.total_amount) < Number(status.threshold_value);
+    detailEl.innerHTML = `Raise an e-way bill for the movement of these goods.
+        ${below ? `<div style="margin-top:4px;">This invoice is below your ₹${Number(status.threshold_value).toLocaleString('en-IN')} threshold, so one is usually not required — you can still raise one.</div>` : ''}
+        ${isAdmin ? `<div style="margin-top:10px;"><button class="btn btn-sm btn-primary" onclick="promptEwbGenerate('${inv.id}')">Raise e-way bill</button></div>` : ''}`;
+}
+
+/// A small prompt-based flow rather than a bespoke modal: these are rare, operator-driven actions and
+/// the server owns every rule, so the UI only has to collect the fields and show the refusal.
+async function promptEwbGenerate(invoiceId) {
+    const distance = prompt('Approximate road distance in km (0 lets the portal work it out from the pincodes):', '0');
+    if (distance === null) return;
+    const vehicle = prompt('Vehicle number (leave blank if a transporter will fill in Part-B):', '');
+    if (vehicle === null) return;
+    const transporter = vehicle.trim() ? '' : (prompt('Transporter ID (GSTIN or TRANSIN) — needed when there is no vehicle yet:', '') || '');
+    try {
+        const rec = await api.request(AccountsCommon.buildUrl('ewaybill/generate'), {
+            method: 'POST',
+            body: JSON.stringify({ source_type: 'invoice', source_id: invoiceId, trans_distance: parseInt(distance || '0', 10) || 0, vehicle_no: vehicle.trim() || null, transporter_id: transporter.trim() || null, trans_mode: '1' })
+        });
+        Toast.success(`E-way bill ${rec.ewb_no} raised`);
+        await refreshEwbPanel(invoiceId);
+    } catch (e) { Toast.error(e.message || 'Could not raise the e-way bill'); }
+}
+
+async function promptEwbPartB(recordId, invoiceId) {
+    const vehicle = prompt('New vehicle number:', '');
+    if (!vehicle) return;
+    const place = prompt('Place the vehicle is changing at:', '') || '';
+    const reason = prompt('Reason — 1 first time, 2 breakdown, 3 transhipment, 4 other:', '2') || '2';
+    const remarks = prompt('Remarks:', '') || '';
+    try {
+        await api.request(AccountsCommon.buildUrl(`ewaybill/${recordId}/part-b`), {
+            method: 'POST',
+            body: JSON.stringify({ vehicle_no: vehicle, from_place: place, reason_code: reason, reason_remarks: remarks, trans_mode: '1' })
+        });
+        Toast.success('Part-B updated');
+        await refreshEwbPanel(invoiceId);
+    } catch (e) { Toast.error(e.message || 'Could not update Part-B'); }
+}
+
+async function promptEwbExtend(recordId, invoiceId) {
+    const remaining = prompt('Remaining distance in km:', '');
+    if (remaining === null) return;
+    const place = prompt('Where is the consignment now?', '') || '';
+    const reason = prompt('Reason — 1 natural calamity, 2 law and order, 3 transhipment, 4 accident, 99 other:', '99') || '99';
+    const remarks = prompt('Remarks:', '') || '';
+    try {
+        await api.request(AccountsCommon.buildUrl(`ewaybill/${recordId}/extend`), {
+            method: 'POST',
+            body: JSON.stringify({ remaining_distance: parseFloat(remaining || '0') || 0, from_place: place, extn_reason_code: reason, extn_remarks: remarks, consignment_status: 'M', trans_mode: '1' })
+        });
+        Toast.success('Validity extended');
+        await refreshEwbPanel(invoiceId);
+    } catch (e) { Toast.error(e.message || 'Could not extend the e-way bill'); }
+}
+
+async function promptEwbCancel(recordId, invoiceId) {
+    const reason = prompt('Reason — 1 duplicate, 2 order cancelled, 3 data entry mistake, 4 other:', '2');
+    if (reason === null) return;
+    const remarks = prompt('Remarks:', '') || '';
+    if (!confirm('Cancel this e-way bill on the government portal? This cannot be undone.')) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`ewaybill/${recordId}/cancel`), { method: 'POST', body: JSON.stringify({ reason_code: reason, remarks }) });
+        Toast.success('E-way bill cancelled');
+        await refreshEwbPanel(invoiceId);
+    } catch (e) { Toast.error(e.message || 'Could not cancel the e-way bill'); }
+}
+
+async function refreshEwbPanel(invoiceId) {
+    try {
+        const inv = await api.request(AccountsCommon.buildUrl(`customer-invoices/${invoiceId}`), { _skipSpinner: true });
+        await renderEwayBillPanel(inv);
+    } catch { /* cosmetic-default: the action already succeeded and was toasted; a stale panel refreshes on reopen */ }
 }

@@ -1274,3 +1274,62 @@
     padding-left: 10px;
     color: var(--text-primary);
 }
+
+/* ── "Quote to" — stating the counterparty when the lead does not know ──
+ *
+ * A lead's company name, person name and tax id arrive from a web form or an ad
+ * platform and are routinely missing or wrong. The rep corrects them at the
+ * moment of raising, on the document, without editing the lead record.
+ *
+ * A <details> rather than an always-open form: on a lead that already names
+ * itself this is reassurance, not work, and six inputs sitting permanently above
+ * the Raise button would bury it. It opens itself when the lead CANNOT name
+ * itself — the case where typing something is mandatory. */
+.lip-recipient {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  padding: 8px 10px;
+}
+.lip-recipient > summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.lip-recipient > summary::-webkit-details-marker { display: none; }
+.lip-recipient > summary::before {
+  content: "";
+  width: 0; height: 0;
+  border-left: 4px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.15s ease;
+  flex: none;
+}
+.lip-recipient[open] > summary::before { transform: rotate(90deg); }
+.lip-recipient > summary strong { color: var(--text-primary); font-weight: 600; }
+
+/* Two columns where there is room, one when there is not — this panel also
+ * renders inside a 438px drawer, where a two-column grid of labelled inputs
+ * squeezes the values down to a few characters. */
+.lip-rcp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px 10px;
+  margin: 10px 0 8px;
+}
+.lip-rcp-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.lip-rcp-f > span {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+/* The address is the one field that regularly runs long. */
+.lip-rcp-f:last-child { grid-column: 1 / -1; }
+
+.lip-recipient-locked { font-style: italic; }

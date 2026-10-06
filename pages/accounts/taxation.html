@@ -145,6 +145,9 @@
                             <button class="sidebar-btn" data-tab="e-invoicing" id="eInvoicingTab" data-admin-only>
                                 <span class="nav-number">8</span><span class="nav-label">e-Invoicing (IRP)</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="e-way-bill" id="eWayBillTab" data-admin-only>
+                                <span class="nav-number">9</span><span class="nav-label">e-Way Bill</span>
+                            </button>
                         </div>
                     </div>
 
@@ -591,6 +594,93 @@
                                     <button type="submit" class="btn btn-primary">Save</button>
                                     <button type="button" class="btn btn-secondary" onclick="testEInvoiceConnection()">Test connection</button>
                                     <span id="einvTestResult" style="font-size:0.82rem;color:var(--text-secondary);"></span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="e-way-bill">
+                    <div class="glass-card">
+                        <div class="glass-card-body">
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+                                <div>
+                                    <h4 style="margin-bottom:0.25rem;">e-Way Bill</h4>
+                                    <p style="font-size:0.85rem;color:var(--text-secondary);margin:0;max-width:720px;">
+                                        Raises e-way bills for invoices and delivery challans, and keeps them current — Part-B when the vehicle is
+                                        known, a new vehicle after a breakdown, an extension when the journey runs long, cancellation within 24 hours.
+                                        This is a <strong>separate</strong> registration from e-invoicing: on the e-way bill portal, use
+                                        Registration → API (or → GSP) to create an API user, then paste its credentials here, test, and enable.
+                                    </p>
+                                </div>
+                                <div id="ewbStatusChip" style="font-size:0.8rem;color:var(--text-secondary);white-space:nowrap;"></div>
+                            </div>
+                            <form id="ewbSettingsForm" onsubmit="event.preventDefault(); saveEwbSettings();">
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="ewbEnvironment">Environment</label>
+                                        <select id="ewbEnvironment" class="form-control" onchange="onEwbEnvironmentChange()">
+                                            <option value="sandbox">Sandbox (testing)</option>
+                                            <option value="nic">Production (NIC)</option>
+                                            <option value="custom">Custom / GSP pass-through URL</option>
+                                        </select>
+                                        <small class="form-hint">Start on the sandbox; switch to production once your API user is live there.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ewbBaseUrl">API base URL</label>
+                                        <input type="url" id="ewbBaseUrl" class="form-control" placeholder="https://…" readonly>
+                                        <small class="form-hint">Ends at the API version (…/ewaybillapi/v1.03). Editable only for a custom / GSP URL.</small>
+                                    </div>
+                                </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="ewbClientId">Client ID</label>
+                                        <input type="text" id="ewbClientId" class="form-control" autocomplete="off" placeholder="Issued by the e-way bill system / GSP">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ewbClientSecret">Client secret</label>
+                                        <input type="password" id="ewbClientSecret" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep the stored secret">
+                                        <small class="form-hint" id="ewbClientSecretHint"></small>
+                                    </div>
+                                </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="ewbUser">API user name</label>
+                                        <input type="text" id="ewbUser" class="form-control" autocomplete="off" placeholder="The API user created on the e-way bill portal">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ewbPassword">API password</label>
+                                        <input type="password" id="ewbPassword" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep the stored password">
+                                        <small class="form-hint" id="ewbPasswordHint"></small>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ewbPublicKey">e-Way Bill public key</label>
+                                    <textarea id="ewbPublicKey" class="form-control" rows="4" spellcheck="false" placeholder="-----BEGIN PUBLIC KEY-----&#10;… paste the key downloaded from the e-way bill portal (sandbox and production differ) …"></textarea>
+                                    <small class="form-hint">Encrypts your login. PEM or bare base64 — exactly as the portal provides it. This is a different key from the IRP's.</small>
+                                </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="ewbTransporterId">Default transporter ID</label>
+                                        <input type="text" id="ewbTransporterId" class="form-control" autocomplete="off" placeholder="15-char GSTIN or 12-char TRANSIN (optional)">
+                                        <small class="form-hint">Used when a document does not name one, so a transporter can fill in Part-B.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ewbThreshold">Threshold value (₹)</label>
+                                        <input type="number" id="ewbThreshold" class="form-control" step="0.01" min="0" placeholder="50000">
+                                        <small class="form-hint">The statutory floor is ₹50,000; some states set their own for movement inside the state.</small>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="checkbox-label" style="display:flex;align-items:center;gap:0.5rem;">
+                                        <input type="checkbox" id="ewbEnabled"> <span>Enabled</span>
+                                    </label>
+                                    <small class="form-hint">Cannot be switched on until every field above is filled in — the save will say which are missing.</small>
+                                </div>
+                                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                    <button type="button" class="btn btn-secondary" onclick="testEwbConnection()">Test connection</button>
+                                    <span id="ewbTestResult" style="font-size:0.85rem;color:var(--text-secondary);"></span>
                                 </div>
                             </form>
                         </div>

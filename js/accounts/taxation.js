@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         'gstr-2b': 'GSTR-2B Match',
         'tds-return': 'TDS Return',
         'e-invoicing': 'e-Invoicing (IRP)',
+        'e-way-bill': 'e-Way Bill',
         'tax-calculator': 'Tax Calculator',
         'tax-ledger': 'Tax Ledger'
     };
@@ -100,6 +101,7 @@ function onTabSwitch(tabId) {
             break;
         case 'tds-return':      setDefaultDatesAndGenerate('tdsFrom', 'tdsTo', generateTDSReturn); break;
         case 'e-invoicing':     loadEInvoiceSettings(); break;
+        case 'e-way-bill':      loadEwbSettings(); break;
         case 'tax-calculator':  populateCalcConfigSelect(); break;
         case 'tax-ledger':      loadTaxLedger(); break;
     }
@@ -1510,4 +1512,93 @@ async function testEInvoiceConnection() {
         res.ok ? Toast.success('IRP connection OK') : Toast.error('IRP connection failed');
     } catch (e) { r.style.color = 'var(--color-error)'; r.textContent = e.message || 'Test failed'; }
     await loadEInvoiceSettings();
+}
+
+
+// ── e-Way Bill ───────────────────────────────────────────────────────────────────────────────────
+// A SEPARATE government system from the IRP, with its own registration, credentials and base URL —
+// which is why this is its own tab rather than more fields on the e-invoicing one. The base URL ends
+// at the API version so a GSP with a different prefix is reachable by choosing "custom".
+const EWB_BASE_URLS = {
+    sandbox: 'https://ewaybillgst.gov.in/egstapi/ewaybillapi/v1.03',
+    nic: 'https://api.ewaybillgst.gov.in/ewaybillapi/v1.03'
+};
+
+function onEwbEnvironmentChange() {
+    const env = document.getElementById('ewbEnvironment').value;
+    const url = document.getElementById('ewbBaseUrl');
+    if (env === 'custom') { if (Object.values(EWB_BASE_URLS).includes(url.value)) url.value = ''; url.readOnly = false; url.focus(); }
+    else { url.readOnly = true; url.value = EWB_BASE_URLS[env]; }
+}
+
+async function loadEwbSettings() {
+    try {
+        const s = await api.request(AccountsCommon.buildUrl('ewaybill/settings'), { _skipSpinner: true });
+        const env = s.environment || 'sandbox';
+        document.getElementById('ewbEnvironment').value = env;
+        document.getElementById('ewbBaseUrl').value = s.base_url || EWB_BASE_URLS[env] || '';
+        document.getElementById('ewbBaseUrl').readOnly = env !== 'custom';
+        document.getElementById('ewbClientId').value = s.client_id || '';
+        document.getElementById('ewbUser').value = s.api_username || '';
+        document.getElementById('ewbTransporterId').value = s.default_transporter_id || '';
+        document.getElementById('ewbThreshold').value = s.threshold_value != null ? s.threshold_value : 50000;
+        document.getElementById('ewbEnabled').checked = !!s.enabled;
+        // The public key is never echoed back by the API, so the box starts empty and blank means keep.
+        document.getElementById('ewbPublicKey').value = '';
+        document.getElementById('ewbPublicKey').placeholder = s.has_public_key
+            ? 'A key is stored. Paste a new one only to replace it.'
+            : '-----BEGIN PUBLIC KEY-----\n… paste the key downloaded from the e-way bill portal …';
+        document.getElementById('ewbClientSecret').value = '';
+        document.getElementById('ewbPassword').value = '';
+        document.getElementById('ewbClientSecretHint').textContent = s.has_client_secret ? 'A secret is stored. Type a new one only to replace it.' : 'Not set yet.';
+        document.getElementById('ewbPasswordHint').textContent = s.has_api_password ? 'A password is stored. Type a new one only to replace it.' : 'Not set yet.';
+        const chip = document.getElementById('ewbStatusChip');
+        const testTxt = s.last_test_at ? `Last test ${AccountsCommon.formatDate(s.last_test_at)}: ${s.last_test_ok ? 'OK' : 'failed'}` : 'Never tested';
+        const state = s.enabled ? 'Enabled' : (s.configured ? 'Configured, not enabled' : 'Not configured');
+        chip.innerHTML = `<span style="color:${s.enabled ? 'var(--color-success)' : 'var(--text-secondary)'};">● ${state}</span> · ${AccountsCommon.escapeHtml(testTxt)}`;
+        const r = document.getElementById('ewbTestResult');
+        r.textContent = s.last_error ? `Last error: ${s.last_error}` : (s.missing ? `Still needed: ${s.missing}` : '');
+        r.style.color = s.last_error ? 'var(--color-error)' : 'var(--text-secondary)';
+    } catch (e) { Toast.error(e.message || 'Could not load e-way bill settings'); }
+}
+
+function readEwbForm() {
+    return {
+        enabled: document.getElementById('ewbEnabled').checked,
+        environment: document.getElementById('ewbEnvironment').value,
+        base_url: document.getElementById('ewbBaseUrl').value.trim(),
+        public_key: document.getElementById('ewbPublicKey').value.trim(),
+        client_id: document.getElementById('ewbClientId').value.trim(),
+        client_secret: document.getElementById('ewbClientSecret').value,
+        api_username: document.getElementById('ewbUser').value.trim(),
+        api_password: document.getElementById('ewbPassword').value,
+        default_transporter_id: document.getElementById('ewbTransporterId').value.trim(),
+        threshold_value: parseFloat(document.getElementById('ewbThreshold').value || '50000')
+    };
+}
+
+async function saveEwbSettings() {
+    try {
+        await api.request(AccountsCommon.buildUrl('ewaybill/settings'), { method: 'PUT', body: JSON.stringify(readEwbForm()) });
+        Toast.success('e-Way Bill settings saved');
+    } catch (e) {
+        // "Saved, but NOT enabled" is a real save with the switch refused — say exactly that, not "failed".
+        (e.message || '').startsWith('Saved') ? Toast.warning(e.message) : Toast.error(e.message || 'Save failed');
+    }
+    await loadEwbSettings();
+}
+
+async function testEwbConnection() {
+    const r = document.getElementById('ewbTestResult');
+    // Save first so the test runs against what is on screen, not what was stored a minute ago.
+    try { await api.request(AccountsCommon.buildUrl('ewaybill/settings'), { method: 'PUT', body: JSON.stringify(readEwbForm()) }); }
+    catch (e) { if (!(e.message || '').startsWith('Saved')) { Toast.error(e.message || 'Save failed'); return; } }
+    r.style.color = 'var(--text-secondary)'; r.textContent = 'Contacting the e-way bill system…';
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('ewaybill/settings/test'), { method: 'POST' });
+        r.style.color = res.ok ? 'var(--color-success)' : 'var(--color-error)';
+        r.textContent = res.ok ? `✓ ${res.message}` : `✗ ${res.message}`;
+        res.ok ? Toast.success('e-Way Bill connection OK') : Toast.error('e-Way Bill connection failed');
+    } catch (e) { r.style.color = 'var(--color-error)'; r.textContent = e.message || 'Test failed'; }
+    await loadEwbSettings();
 }
