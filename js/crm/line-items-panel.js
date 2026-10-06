@@ -398,6 +398,11 @@ const LineItemsPanel = (() => {
                 <button type="button" class="btn btn-sm ${hasQuotation ? 'btn-secondary' : 'btn-primary'}" data-lip="quote">
                     ${hasQuotation ? 'View / re-fetch quotation' : 'Raise quotation'}
                 </button>` : ''}
+                ${canEdit && isDraftQuote(state) ? `
+                <button type="button" class="btn btn-sm btn-primary" data-lip="issue">Issue quotation</button>
+                <p class="lip-hint">This quotation is still a DRAFT — it carries a placeholder number and
+                   the PDF is stamped DRAFT. Issuing it draws the official number in Accounts. Do it once
+                   the figures are right: an issued quotation can no longer be deleted there.</p>` : ''}
             </div>`}
         </div>`;
     }
@@ -1395,6 +1400,20 @@ const LineItemsPanel = (() => {
         }
     }
 
+    /**
+     * Is the raised quotation still a draft?
+     *
+     * Read from the NUMBER rather than by fetching the document, because Accounts
+     * guarantees the two cannot disagree: "a proforma that is not a draft never
+     * holds a DRAFT- number, and a number is never drawn for a row that can still
+     * be deleted." The placeholder IS the draft marker, and the panel already has
+     * it — so this costs no extra request on every render.
+     */
+    function isDraftQuote(state) {
+        return !!state.hasQuotation &&
+               /^DRAFT-/i.test(String(state.quotationNumber || ''));
+    }
+
     // ─── Viewing the raised quotation ───────────────────────────────────────
     //
     // ⭐ A BUTTON THAT SAYS "VIEW" HAS TO SHOW THE DOCUMENT.
@@ -1449,6 +1468,27 @@ const LineItemsPanel = (() => {
         el.querySelector('[data-lip-pdf="close"]').addEventListener('click', closeQuotePdf);
         el.addEventListener('mousedown', e => { if (e.target === el) closeQuotePdf(); });
         document.addEventListener('keydown', _pdfEsc, true);
+    }
+
+    async function issueQuotation(container) {
+        const st = mounted.get(container);
+        const btn = container.querySelector('[data-lip="issue"]');
+        const original = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = 'Issuing…'; }
+        try {
+            const res = await api.request(
+                `/crm/deals/${encodeURIComponent(st.dealId)}/quotation/issue`, { method: 'POST' });
+
+            // The number changed in Accounts; the panel must show the new one or
+            // it goes on advertising the placeholder the rep just replaced.
+            st.quotationNumber = res.proforma_number || st.quotationNumber;
+            render(container);
+            Toast.success(`Quotation issued as ${res.proforma_number}`);
+        } catch (e) {
+            console.error('Failed to issue the quotation:', e);
+            Toast.error(e.message || 'Could not issue the quotation');
+            if (btn) { btn.disabled = false; btn.textContent = original; }
+        }
     }
 
     async function viewQuotation(container) {
@@ -1630,6 +1670,7 @@ const LineItemsPanel = (() => {
             }
 
             if (e.target.closest('[data-lip="save"]')) return save(container);
+            if (e.target.closest('[data-lip="issue"]')) return issueQuotation(container);
             if (e.target.closest('[data-lip="quote"]')) {
                 // Two halves, two actions. With a quotation already raised the
                 // button says "View / re-fetch", and viewing is a GET of the
