@@ -15,6 +15,23 @@
  * Both tabs price the SAME LINES. There is one money path; this is a second way
  * of printing it, not a second quote.
  *
+ * ⭐⭐⭐ AND THIS TAB IS STANDALONE — IT CARRIES THE LINE EDITOR TOO.
+ *
+ * The first version rendered only the document and told the rep "add a line on
+ * the Proforma tab first". The owner's verdict (2026-10-08): "quite awkward
+ * that we have to save line item in proforma and then quote will appear — it
+ * should be stand alone quotation thing." They are right. A rep's natural act
+ * is "quote this customer"; being sent to a tab named after an accounting
+ * document they may never raise is backwards, and it makes the Quotation tab
+ * look broken on every lead that has not been through Proforma.
+ *
+ * ⚠️ THE EDITOR IS THE SAME PANEL OVER THE SAME ROWS — NOT A SECOND SET.
+ * Giving quotations their own lines would be a second money path: the same
+ * totals, the same Accounts call and the same rules written twice, free to
+ * disagree. So this mounts LineItemsPanel on crm_deal_line_items exactly as the
+ * Proforma tab does, and re-renders the document when it saves. Edit here or
+ * there; it is one quote either way.
+ *
  * ⭐⭐⭐ THE DOCUMENT RENDERS IN A SANDBOXED IFRAME, AND THE SANDBOX FLAGS ARE
  * EXACT.
  *
@@ -60,8 +77,10 @@
     function mount(container, lead, options) {
         if (!container) return;
         const st = {
+            lead,
             leadId: lead && (lead.id || lead.Id),
             leadName: (lead && (lead.company_name || lead.first_name)) || 'this lead',
+            linesMounted: false,
             html: null,
             unresolved: [],
             error: null,
@@ -116,15 +135,22 @@
         }
 
         if (st.error) {
+            // ⭐ THE EDITOR STAYS ON SCREEN. The commonest "error" here is "this
+            // lead has no lines yet", which is not a failure — it is the
+            // starting state, and the fix is the box directly underneath. A
+            // bare error with a Try again button would send the rep looking for
+            // another tab, which is the awkwardness this tab exists to remove.
             container.innerHTML = `
                 <div class="qtp-wrap">
                     <h4 class="qtp-title">Quotation</h4>
                     <p class="qtp-empty">${esc(st.error)}</p>
+                    <div class="qtp-lines"></div>
                     <p class="qtp-hint">The quotation is your own document, on your own
                        letterhead. It prices the same lines as the Proforma tab — one quote, two
                        ways of printing it.</p>
                     <button type="button" class="btn btn-sm btn-secondary" data-qtp="retry">Try again</button>
                 </div>`;
+            mountLines(container);
             return;
         }
 
@@ -137,6 +163,10 @@
                         <button type="button" class="btn btn-sm btn-primary" data-qtp="pdf">Download PDF</button>
                     </div>
                 </div>
+
+                <!-- The same lines the Proforma tab prices, editable here so this
+                     tab stands on its own. Saving re-renders the document below. -->
+                <div class="qtp-lines"></div>
 
                 ${st.unresolved.length ? `
                 <div class="qtp-unresolved">
@@ -164,6 +194,40 @@
         // verbatim with no quoting rules in play.
         const frame = container.querySelector('.qtp-frame');
         if (frame) frame.srcdoc = st.html || '';
+
+        mountLines(container);
+    }
+
+    /**
+     * Put the line editor on this tab, over the SAME rows the Proforma tab edits.
+     *
+     * ⚠️ RE-MOUNTED ON EVERY RENDER, AND THAT IS DELIBERATE. render() replaces
+     * this container's innerHTML, so the previous panel's DOM — and the
+     * listeners bound to it — are gone. Keeping a flag and skipping the mount
+     * would leave an empty div where the editor was, which is the silent
+     * half-dead control this codebase has been bitten by before
+     * (cloneNode copies attributes, not listeners).
+     *
+     * ⭐ onSaved RE-RENDERS THE DOCUMENT. Without it the rep saves a line, sees
+     * the total change in the editor, and the quotation underneath still shows
+     * the old figures — two numbers for one quote on one screen, which is
+     * exactly the disagreement that makes people stop trusting the document.
+     */
+    function mountLines(container) {
+        const st = state.get(container);
+        const host = container.querySelector('.qtp-lines');
+        if (!st || !host || typeof LineItemsPanel === 'undefined') return;
+
+        LineItemsPanel.mount(host, st.lead, {
+            ownerKind: 'lead',
+            canEdit: st.canEdit,
+            showOpenFull: false,
+            // Raising and issuing a proforma belongs to the Proforma tab. A
+            // "Raise proforma" button under a quotation offers to produce a
+            // different document than the one on screen.
+            showQuoteActions: false,
+            onSaved: () => load(container),
+        });
     }
 
     function bind(container) {

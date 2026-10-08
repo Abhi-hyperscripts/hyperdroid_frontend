@@ -1370,6 +1370,18 @@
 }
 
 /*
+ * The line editor, on the Quotation tab as well as the Proforma one, so this
+ * tab stands on its own. Separated from the document below it by a rule
+ * rather than a card, because they are two stages of one job — price it, then
+ * look at what the customer will read — not two unrelated panels.
+ */
+.qtp-lines {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+.qtp-lines:empty { display: none; border-bottom: 0; padding-bottom: 0; }
+
+/*
  * The document itself. A fixed, generous height rather than auto: the frame is
  * sandboxed without allow-scripts, so nothing inside it can report its own
  * height back, and a short frame on a two-page quotation would hide the totals.

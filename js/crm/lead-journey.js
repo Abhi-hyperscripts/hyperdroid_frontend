@@ -2070,6 +2070,24 @@
         // the panel scrolled past the content that just appeared, which reads as an empty tab.
         const body = document.querySelector('#leadDetailPanel .panel-body');
         if (body) body.scrollTop = 0;
+
+        // ⭐⭐ PROFORMA AND QUOTATION EDIT THE SAME LINES, SO ARRIVING AT ONE MUST
+        // SHOW WHAT THE OTHER JUST DID.
+        //
+        // Both tabs carry the line editor over crm_deal_line_items — deliberately,
+        // so neither tab depends on visiting the other. The cost of that choice is
+        // two views of one set of rows, and panes stay mounted (see above), so a
+        // rep who adds a line on Proforma and switches to Quotation would
+        // otherwise read last-render's lines and a document priced from them.
+        //
+        // Refreshing on ARRIVAL rather than broadcasting on save keeps it to one
+        // request, at the moment the stale view is about to be looked at.
+        if (pane === 'quotation' && typeof QuotationPanel !== 'undefined') {
+            QuotationPanel.reload(document.getElementById('leadQuotationPanel'));
+        } else if (pane === 'proforma' && typeof LineItemsPanel !== 'undefined'
+                   && typeof LineItemsPanel.reload === 'function') {
+            LineItemsPanel.reload(document.getElementById('leadLineItemsPanel'));
+        }
     }
 
     function printLeadTimeline() {

@@ -441,7 +441,7 @@ const LineItemsPanel = (() => {
             ${listPriceNote(state)}
             ${totalsBlock(state, subtotal)}
 
-            ${!accountsLicensed() ? '' : `
+            ${(!accountsLicensed() || state.showQuoteActions === false) ? '' : `
             <div class="lip-quote">
                 ${recipientBlock(state)}
                 ${hasQuotation ? `
@@ -1907,6 +1907,15 @@ const LineItemsPanel = (() => {
             // is unreachable. So the drawer offers a way OUT to the full page.
             // The quote page passes false: a link back to itself is furniture.
             showOpenFull: opts.showOpenFull !== false,
+            // ⭐ THE ACCOUNTS CONTROLS ARE NOT ALWAYS THIS PANEL'S BUSINESS.
+            //
+            // The lead's Quotation tab mounts this panel for its LINE EDITOR so
+            // that tab stands on its own — but raising and issuing a proforma
+            // belongs to the Proforma tab, and a "Raise proforma" button sitting
+            // under a quotation is an offer to produce a different document than
+            // the one on screen. Default stays true so every existing caller
+            // (deals, the quote page, the Proforma tab) is unchanged.
+            showQuoteActions: opts.showQuoteActions !== false,
             lines: [],
             hasQuotation: !!deal.has_quotation,
             quotationNumber: deal.accounts_proforma_number || null,
@@ -2015,5 +2024,29 @@ const LineItemsPanel = (() => {
     // lineTotal and round2 are exported so anything else showing these numbers
     // uses the same arithmetic rather than re-deriving the rounding rule the
     // server actually applies.
-    return { mount, lineTotal, round2, sum };
+    /**
+     * Re-read the lines for an already-mounted panel.
+     *
+     * ⭐ ADDED FOR THE TWO-TAB CASE (2026-10-08). The lead pane now carries this
+     * panel on BOTH the Proforma and Quotation tabs — deliberately, so neither
+     * tab depends on visiting the other — and panes stay mounted when you switch
+     * between them. Without a way to re-read, a rep who adds a line on one tab
+     * reads last-render's lines on the other.
+     *
+     * Re-mounting instead would work and is worse: it would throw away the
+     * recipient form's typed values and the help panel's open state, both of
+     * which deliberately live on the panel's state precisely because they must
+     * survive a re-render.
+     *
+     * A no-op on a container that was never mounted, so a caller does not have
+     * to know which tabs exist on its page.
+     */
+    function reload(container) {
+        // `mounted`, not `state` — there is a local named `state` in the render
+        // helpers, and keying off the wrong one would make this a silent no-op.
+        if (!container || !mounted.has(container)) return;
+        return load(container);
+    }
+
+    return { mount, reload, lineTotal, round2, sum };
 })();
