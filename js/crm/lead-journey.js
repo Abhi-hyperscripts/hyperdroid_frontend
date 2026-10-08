@@ -377,13 +377,13 @@
             const name = leadDisplayName(lead, { fallback: lead.lead_number || 'Unknown' });
             document.getElementById('leadDetailName').textContent = name;
 
-            // ⭐⭐⭐ THE QUOTATION TAB — mounted HERE, after the lead has loaded.
+            // ⭐⭐⭐ THE PROFORMA TAB — mounted HERE, after the lead has loaded.
             //
             // Every other panel above is mounted before the fetch because an id is all it
-            // needs. This one is not: the panel paints "Quotation raised — PI-2026-00017" from
+            // needs. This one is not: the panel paints "Proforma raised — PI-2026-00017" from
             // accounts_proforma_number, and whether the Issue button exists at all from whether
             // that number is a DRAFT- placeholder. Mounted early it would be handed an id and
-            // nothing else, so a lead with a quotation would render as a lead with none — and
+            // nothing else, so a lead with a proforma would render as a lead with none — and
             // the rep would press Raise on a document that already exists.
             //
             // canEdit is deliberately NOT the deal's financial gate. That gate exists because a

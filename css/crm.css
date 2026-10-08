@@ -7173,7 +7173,7 @@ body.crm-leads-page .lp-toolbar .crm-filter-group--no-label { flex-shrink: 0; di
 .rb-red[aria-pressed="true"]    { background: var(--color-error);   border-color: var(--color-error); }
 .rb-band:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
 
-/* ── Quotation PDF viewer ─────────────────────────────────────────────────
+/* ── Proforma PDF viewer ─────────────────────────────────────────────────
    The PDF needs an Authorization header, so it cannot be a plain link — it is
    fetched and shown from a blob URL. Sized generously because the thing being
    read is a document, not a dialog. */

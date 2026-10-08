@@ -19,8 +19,8 @@
  *
  * Quoting used to require a deal, so a rep who wanted to send a price had to put
  * an opportunity in the pipeline first — a forecast entry created as a side
- * effect of sending a quotation. A lead now carries its own lines and its own
- * quotation (owner decision, 2026-10-06) and STAYS a lead.
+ * effect of sending a proforma. A lead now carries its own lines and its own
+ * proforma (owner decision, 2026-10-06) and STAYS a lead.
  *
  * This panel was NOT copied for that. A second copy would be the same
  * arithmetic, the same rounding rule, the same unpriced-line judgement and the
@@ -74,7 +74,7 @@ const LineItemsPanel = (() => {
      * ⭐ MIRRORS DealLineMath ON THE SERVER, INCLUDING THE ORDER OF OPERATIONS.
      *
      * The deal total is the sum of ROUNDED line totals, not the rounded sum.
-     * The two differ, and the quotation the customer receives prints the LINES —
+     * The two differ, and the proforma the customer receives prints the LINES —
      * so a header rounded independently could disagree with the column of
      * numbers directly beneath it, in a document somebody is being asked to pay
      * against.
@@ -365,13 +365,13 @@ const LineItemsPanel = (() => {
                 <div class="crm-help-body">
                     ${state.ownerKind === 'lead' ? `
                     <p>What you are quoting this lead for, line by line. These same lines become
-                       the quotation you send them, so they should read the way you want them to
+                       the proforma you send them, so they should read the way you want them to
                        read on the document.</p>
                     <p><em>This does not change the lead's estimated value, and it does not create
                        a deal. Your estimate is your own judgement about the opportunity; a quote
                        is one price you put in front of them.</em></p>` : `
                     <p>What this deal is made up of, line by line. These same lines become the
-                       quotation you send the customer, so they should read the way you want
+                       proforma you send the customer, so they should read the way you want
                        them to read on the document.</p>
                     <p><em>While there are lines here, they set the deal's value — the value field
                        above follows this total and cannot be typed over. Remove every line to go
@@ -447,43 +447,43 @@ const LineItemsPanel = (() => {
                 ${hasQuotation ? `
                     <p class="lip-quote-done">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                        Quotation raised${quotationNumber ? ` — <strong>${esc(quotationNumber)}</strong>` : ''}
+                        Proforma raised${quotationNumber ? ` — <strong>${esc(quotationNumber)}</strong>` : ''}
                     </p>
                     ${state.quotationPdfAvailable ? `
                         <button type="button" class="lip-quote-open" data-lip="quote-pdf">
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                            Open the quotation
+                            Open the proforma
                         </button>` : ''}
                     <p class="lip-hint">Raising it again returns the same document — a ${state.ownerKind}
-                       has one quotation.</p>
+                       has one proforma.</p>
                 ` : state.ownerKind === 'lead' ? `
-                    <p class="lip-hint">A quotation is raised in Accounts from these lines, addressed to this
+                    <p class="lip-hint">A proforma is raised in Accounts from these lines, addressed to this
                        lead as a prospect — no customer record is created and the lead stays a lead. Raising
                        it again returns the same document.</p>
                 ` : `
-                    <p class="lip-hint">A quotation is raised in Accounts from these lines. It is the same
+                    <p class="lip-hint">A proforma is raised in Accounts from these lines. It is the same
                        document the deal raises automatically when it is won, so raising it now does not
                        create a second one.</p>
                 `}
                 ${canEdit ? `
                 <button type="button" class="btn btn-sm ${hasQuotation ? 'btn-secondary' : 'btn-primary'}" data-lip="quote">
-                    ${hasQuotation ? 'View / re-fetch quotation' : 'Raise quotation'}
+                    ${hasQuotation ? 'View / re-fetch proforma' : 'Raise proforma'}
                 </button>` : ''}
                 ${canEdit && isDraftQuote(state) ? `
-                <button type="button" class="btn btn-sm btn-primary" data-lip="issue">Issue quotation</button>
-                <p class="lip-hint">This quotation is still a DRAFT — it carries a placeholder number and
+                <button type="button" class="btn btn-sm btn-primary" data-lip="issue">Issue proforma</button>
+                <p class="lip-hint">This proforma is still a DRAFT — it carries a placeholder number and
                    the PDF is stamped DRAFT. Issuing it draws the official number in Accounts. Do it once
-                   the figures are right: an issued quotation can no longer be deleted there.</p>` : ''}
+                   the figures are right: an issued proforma can no longer be deleted there.</p>` : ''}
             </div>`}
         </div>`;
     }
 
     /**
-     * ⭐⭐⭐ WHO THE QUOTATION IS ADDRESSED TO, WHEN THE LEAD DOES NOT KNOW.
+     * ⭐⭐⭐ WHO THE PROFORMA IS ADDRESSED TO, WHEN THE LEAD DOES NOT KNOW.
      *
      * A lead's company name, person name and tax id come from a web form, an ad platform or a
      * spreadsheet. They are routinely missing and routinely WRONG — the form never asked for a
-     * company, or the person typed their own name into it. The quotation is a document the
+     * company, or the person typed their own name into it. The proforma is a document the
      * prospect keeps and the invoice it becomes is a tax document, so the rep states the
      * counterparty here (owner, 2026-10-06) rather than first going to correct a CRM record they
      * may not be sure about.
@@ -492,7 +492,7 @@ const LineItemsPanel = (() => {
      * who changes nothing gets exactly the old behaviour.
      *
      * SHOWN ONLY BEFORE THE DOCUMENT EXISTS. The raise is deduped on the lead, so a second raise
-     * returns the SAME proforma and ignores anything typed here — one lead, one quotation, which
+     * returns the SAME proforma and ignores anything typed here — one lead, one proforma, which
      * is what stops a retry sending a second quote. Offering an editable form that silently did
      * nothing would be worse than not offering one, so once it is raised the block is replaced by
      * a line saying so and the button to go read the actual document.
@@ -505,7 +505,7 @@ const LineItemsPanel = (() => {
         // ⭐⭐⭐ A TYPO HAS A WAY BACK, UNTIL THE DOCUMENT IS ISSUED.
         //
         // The raise is deduped on the lead, so raising again returns the SAME document and ignores
-        // anything retyped — which is why this block used to go read-only the moment a quotation
+        // anything retyped — which is why this block used to go read-only the moment a proforma
         // existed, and why a rep who misspelled the company was simply stuck.
         //
         // While it is still a DRAFT the correction goes through a different door
@@ -517,7 +517,7 @@ const LineItemsPanel = (() => {
         if (issued) {
             return `
             <p class="lip-hint lip-recipient-locked">
-                This quotation is issued, so who it is addressed to is fixed on the document.
+                This proforma is issued, so who it is addressed to is fixed on the document.
                 Open it to see what it says.
             </p>`;
         }
@@ -532,7 +532,7 @@ const LineItemsPanel = (() => {
 
         return `
         <details class="lip-recipient"${state.recipientOpen || state.hasQuotation ? ' open' : ''}>
-            <summary>Quote to — <strong>${esc(r.company_name || r.contact_name || 'this lead')}</strong></summary>
+            <summary>Addressed to — <strong>${esc(r.company_name || r.contact_name || 'this lead')}</strong></summary>
             <div class="lip-rcp-grid">
                 ${f('company_name', 'Company name', 'Who is being billed')}
                 ${f('contact_name', 'Contact person', 'Printed as “Attn:” on the document')}
@@ -545,13 +545,13 @@ const LineItemsPanel = (() => {
             <button type="button" class="btn btn-sm btn-secondary" data-lip="fix-recipient"${
                 state.fixingRecipient ? ' disabled' : ''}>Update who it is addressed to</button>
             <p class="lip-hint">
-                The quotation is still a draft, so this can still be corrected. Changing the GSTIN
+                The proforma is still a draft, so this can still be corrected. Changing the GSTIN
                 moves the place of supply and re-costs the document. Once it is issued the
                 recipient is fixed.
             </p>` : `
             <p class="lip-hint">
                 Prefilled from the lead — correct anything that is wrong or missing. This is used
-                for the quotation only; the lead itself is not changed.
+                for the proforma only; the lead itself is not changed.
             </p>`}
         </details>`;
     }
@@ -559,13 +559,13 @@ const LineItemsPanel = (() => {
     /**
      * Is this tenant licensed for Accounts?
      *
-     * ⭐ THE QUOTATION IS NOT CRM'S WORK. "Raise quotation" posts to CRM, which creates a PROFORMA IN
+     * ⭐ THE PROFORMA IS NOT CRM'S WORK. "Raise proforma" posts to CRM, which creates a PROFORMA IN
      * ACCOUNTS over gRPC. A tenant who bought CRM and not Accounts was offered the button anyway, and
      * Accounts now refuses it — correctly, but only after the click.
      *
      * The catalogue picker on this same panel needs no such gate: catalogueIsAvailable() already asks the
      * backend whether a catalogue exists and hides itself when the answer is no or the call fails, so a
-     * licence refusal already reads to it as "not right now". Only the quotation block was asserting a
+     * licence refusal already reads to it as "not right now". Only the proforma block was asserting a
      * capability it had not checked.
      *
      * Fails OPEN via hasLicensedService — see its comment. The server is the boundary; this only saves the
@@ -1481,7 +1481,7 @@ const LineItemsPanel = (() => {
             //
             // The server deliberately leaves leads.estimated_value alone when the lines change:
             // a rep's estimate of the opportunity and a priced quote are different claims, and a
-            // quotation does not supersede a judgement nobody asked us to overwrite. Firing this
+            // proforma does not supersede a judgement nobody asked us to overwrite. Firing this
             // event for a lead would make the list repaint a chip with the LINE TOTAL in it —
             // announcing a figure the database does not hold, which is the same shape as the
             // measured $300,000 → $0 defect the guard below was written for.
@@ -1527,7 +1527,7 @@ const LineItemsPanel = (() => {
     }
 
     /**
-     * Open the quotation PDF.
+     * Open the proforma PDF.
      *
      * ⭐ FETCHED WITH THE TOKEN, NOT LINKED TO.
      *
@@ -1550,7 +1550,7 @@ const LineItemsPanel = (() => {
                 { headers: token ? { Authorization: `Bearer ${token}` } : {} });
 
             if (!res.ok) {
-                let message = 'The quotation could not be opened.';
+                let message = 'The proforma could not be opened.';
                 try { message = (await res.json()).error || message; } catch (e) { /* not json */ }
                 Toast.error(message);
                 return;
@@ -1558,19 +1558,19 @@ const LineItemsPanel = (() => {
 
             const url = URL.createObjectURL(await res.blob());
             const win = window.open(url, '_blank', 'noopener');
-            if (!win) Toast.info('Allow pop-ups to open the quotation.');
+            if (!win) Toast.info('Allow pop-ups to open the proforma.');
             // Revoked late: revoking immediately can race the new tab's load.
             setTimeout(() => URL.revokeObjectURL(url), 60000);
         } catch (e) {
-            console.error('Could not open the quotation:', e);
-            Toast.error('The quotation could not be opened.');
+            console.error('Could not open the proforma:', e);
+            Toast.error('The proforma could not be opened.');
         } finally {
             if (btn) btn.disabled = false;
         }
     }
 
     /**
-     * Is the raised quotation still a draft?
+     * Is the raised proforma still a draft?
      *
      * Read from the NUMBER rather than by fetching the document, because Accounts
      * guarantees the two cannot disagree: "a proforma that is not a draft never
@@ -1583,11 +1583,11 @@ const LineItemsPanel = (() => {
                /^DRAFT-/i.test(String(state.quotationNumber || ''));
     }
 
-    // ─── Viewing the raised quotation ───────────────────────────────────────
+    // ─── Viewing the raised proforma ───────────────────────────────────────
     //
     // ⭐ A BUTTON THAT SAYS "VIEW" HAS TO SHOW THE DOCUMENT.
     //
-    // This used to POST /quotation again and toast "Quotation DRAFT-… already
+    // This used to POST /quotation again and toast "Proforma DRAFT-… already
     // exists for this deal" — a sentence about a document, where the rep asked
     // for the document. Reported exactly that way.
     //
@@ -1618,7 +1618,7 @@ const LineItemsPanel = (() => {
         el.className = 'lip-pdf-overlay';
         el.dataset.objectUrl = objectUrl;
         el.innerHTML =
-            '<div class="lip-pdf-modal" role="dialog" aria-modal="true" aria-label="Quotation">' +
+            '<div class="lip-pdf-modal" role="dialog" aria-modal="true" aria-label="Proforma">' +
               '<div class="lip-pdf-head">' +
                 '<span class="lip-pdf-name"></span>' +
                 '<span class="lip-pdf-actions">' +
@@ -1626,7 +1626,7 @@ const LineItemsPanel = (() => {
                   '<button type="button" class="btn btn-sm btn-outline-secondary" data-lip-pdf="close">Close</button>' +
                 '</span>' +
               '</div>' +
-              '<iframe class="lip-pdf-frame" title="Quotation"></iframe>' +
+              '<iframe class="lip-pdf-frame" title="Proforma"></iframe>' +
             '</div>';
         document.body.appendChild(el);
         el.querySelector('.lip-pdf-name').textContent = fileName;
@@ -1640,7 +1640,7 @@ const LineItemsPanel = (() => {
     }
 
     /**
-     * Correct who a DRAFT quotation is addressed to.
+     * Correct who a DRAFT proforma is addressed to.
      *
      * A separate door from the raise on purpose: raising again returns the same document and would
      * discard what was typed, so a button that LOOKED like it corrected the recipient and silently
@@ -1669,13 +1669,13 @@ const LineItemsPanel = (() => {
             // The number can be unchanged and the TOTAL can still have moved — a corrected GSTIN
             // re-costs the document. Both are refreshed from what Accounts now holds.
             st.quotationNumber = res.proforma_number || st.quotationNumber;
-            Toast.success(`Quotation now addressed to ${res.recipient_name}`);
+            Toast.success(`Proforma now addressed to ${res.recipient_name}`);
             // Reloaded rather than patched in place: the totals block is rendered from the
             // line-items read, and leaving it stale would show the old tax beside the new buyer.
             await load(container);
         } catch (e) {
-            console.error('Failed to correct the quotation recipient:', e);
-            Toast.error(e.message || 'Could not update who the quotation is addressed to');
+            console.error('Failed to correct the proforma recipient:', e);
+            Toast.error(e.message || 'Could not update who the proforma is addressed to');
         } finally {
             st.fixingRecipient = false;
             render(container);
@@ -1695,10 +1695,10 @@ const LineItemsPanel = (() => {
             // it goes on advertising the placeholder the rep just replaced.
             st.quotationNumber = res.proforma_number || st.quotationNumber;
             render(container);
-            Toast.success(`Quotation issued as ${res.proforma_number}`);
+            Toast.success(`Proforma issued as ${res.proforma_number}`);
         } catch (e) {
-            console.error('Failed to issue the quotation:', e);
-            Toast.error(e.message || 'Could not issue the quotation');
+            console.error('Failed to issue the proforma:', e);
+            Toast.error(e.message || 'Could not issue the proforma');
             if (btn) { btn.disabled = false; btn.textContent = original; }
         }
     }
@@ -1719,7 +1719,7 @@ const LineItemsPanel = (() => {
                 // than leaving the rep with a button that did nothing.
                 let why = '';
                 try { why = (await res.json()).error || ''; } catch (_) {}
-                Toast.error(why || 'Could not open the quotation');
+                Toast.error(why || 'Could not open the proforma');
                 // The full-page quote screen is a DEAL screen. A lead has nowhere to fall back
                 // to, and sending it to quote.html?deal=<leadId> would open an empty deal page
                 // on top of a message the rep has not read yet.
@@ -1731,12 +1731,12 @@ const LineItemsPanel = (() => {
 
             const blob = await res.blob();
             const name = st.quotationNumber
-                ? `Quotation-${st.quotationNumber}.pdf`
-                : 'Quotation.pdf';
+                ? `Proforma-${st.quotationNumber}.pdf`
+                : 'Proforma.pdf';
             showQuotePdf(URL.createObjectURL(blob), name);
         } catch (e) {
-            console.error('Failed to open the quotation PDF:', e);
-            Toast.error(e.message || 'Could not open the quotation');
+            console.error('Failed to open the proforma PDF:', e);
+            Toast.error(e.message || 'Could not open the proforma');
         } finally {
             if (btn) { btn.disabled = false; btn.textContent = original; }
         }
@@ -1770,7 +1770,7 @@ const LineItemsPanel = (() => {
             render(container);
 
             // ⭐ "ALREADY RAISED" IS A DIFFERENT FACT FROM "RAISED".
-            // Reporting both as success would imply a second quotation just went
+            // Reporting both as success would imply a second proforma just went
             // out to the customer, and somebody would go looking for it.
             // ⭐ SAY WHAT IT IS FOR, NOT JUST THAT IT EXISTS.
             //
@@ -1783,8 +1783,8 @@ const LineItemsPanel = (() => {
                 ? ` for ${money(result.total_amount, result.currency || st.currency)}`
                 : '';
             Toast.success(result.already_existed
-                ? `Quotation ${result.proforma_number || ''}${raisedFor} already exists for this ${st.ownerKind}`.trim()
-                : `Quotation ${result.proforma_number || ''}${raisedFor} raised`.trim());
+                ? `Proforma ${result.proforma_number || ''}${raisedFor} already exists for this ${st.ownerKind}`.trim()
+                : `Proforma ${result.proforma_number || ''}${raisedFor} raised`.trim());
 
             // ⭐ THE QUOTE WORKED; THE INVOICE IT BECOMES MIGHT NOT.
             //
@@ -1800,8 +1800,8 @@ const LineItemsPanel = (() => {
             if (result.conversion_warning) Toast.info(result.conversion_warning);
 
         } catch (e) {
-            console.error('Failed to raise the quotation:', e);
-            Toast.error(e.message || 'Could not raise the quotation');
+            console.error('Failed to raise the proforma:', e);
+            Toast.error(e.message || 'Could not raise the proforma');
         } finally {
             if (btn) btn.disabled = false;
         }
@@ -1819,14 +1819,14 @@ const LineItemsPanel = (() => {
     }
 
     /**
-     * ⭐⭐⭐ ONCE A QUOTATION EXISTS, THE FORM SHOWS THE DOCUMENT — NOT THE LEAD.
+     * ⭐⭐⭐ ONCE A PROFORMA EXISTS, THE FORM SHOWS THE DOCUMENT — NOT THE LEAD.
      *
      * The recipient was corrected at raise time precisely because the lead was wrong, so leaving
      * the form prefilled from the lead would display the stale "Nair Textiles" beside a document
      * that says "Nair Textiles LLP" — and pressing Update would overwrite the correction with the
      * thing that was wrong in the first place.
      *
-     * Fetched only when there IS a quotation, so the ordinary path costs nothing extra.
+     * Fetched only when there IS a proforma, so the ordinary path costs nothing extra.
      *
      * The contact person is stored on the document as an "Attn:" line on the address (Accounts
      * carries one recipient name), so it is split back out here — otherwise a second correction
@@ -1852,7 +1852,7 @@ const LineItemsPanel = (() => {
         } catch (e) {
             // The lines still render. A prefill that could not load is a form showing the lead's
             // values, which is why the caption above the button says what it is correcting.
-            console.error('Could not read the quotation recipient:', e);
+            console.error('Could not read the proforma recipient:', e);
         }
     }
 
@@ -1971,7 +1971,7 @@ const LineItemsPanel = (() => {
             if (e.target.closest('[data-lip="issue"]')) return issueQuotation(container);
             if (e.target.closest('[data-lip="fix-recipient"]')) return fixRecipient(container);
             if (e.target.closest('[data-lip="quote"]')) {
-                // Two halves, two actions. With a quotation already raised the
+                // Two halves, two actions. With a proforma already raised the
                 // button says "View / re-fetch", and viewing is a GET of the
                 // document — not another POST whose only visible result was a
                 // toast saying it already existed.

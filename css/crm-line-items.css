@@ -626,7 +626,7 @@
 .lip-spacer { flex: 1 1 auto; }
 .ppp-actions { justify-content: flex-end; }
 
-/* ── Quotation ───────────────────────────────────────────────────────── */
+/* ── Proforma ───────────────────────────────────────────────────────── */
 .lip-quote {
   display: flex;
   flex-direction: column;
