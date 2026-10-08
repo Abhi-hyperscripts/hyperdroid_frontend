@@ -46,6 +46,45 @@ const AppointmentsPanel = (() => {
     const SETTABLE = ['scheduled', 'confirmed', 'completed', 'no_show', 'cancelled'];
     const RELEASING = ['cancelled', 'no_show'];
 
+    /**
+     * The visit is over and JUDGED. Joining a call for a meeting that has already happened is an action
+     * with nothing behind it — the same "offering what no longer applies" defect as the status buttons,
+     * in the same row of the same screenshot.
+     *
+     * `cancelled` is deliberately NOT here. A cancelled appointment is fully reversible (see
+     * ALLOWED_NEXT), the slot is merely released, and the meeting link is often how the parties sort out
+     * rebooking — hiding it would remove a working control to be tidy.
+     */
+    const SETTLED = ['completed', 'no_show'];
+
+    /**
+     * ⭐ WHICH MOVES ARE OFFERED FROM WHERE.
+     *
+     * This panel used to render `SETTABLE.filter(s => s !== a.status)` — every status except the current
+     * one — and the server accepted all of them, because it only checked the word was in the vocabulary.
+     * So after a rep marked a finished meeting "Attended", the row still offered **Scheduled, Confirmed,
+     * No show and Cancelled** directly under the Attended badge. Reported from a live sales desk: "ye
+     * meeting attend ho gaya uske baad attended mark krdiya, but ye option show ho rahe hai."
+     *
+     * Offering to re-schedule or cancel something that has already happened is incoherent, and a "No
+     * show" button beside "Attended" is a mis-click that rewrites what happened with a customer.
+     *
+     * Two phases: scheduled/confirmed are PLANS and move freely among themselves, to either outcome, or
+     * to cancelled; completed/no_show are OUTCOMES and the only move left is to the other outcome, which
+     * is the correction a human actually needs. Removing one is Delete, not Cancel.
+     *
+     * ⚠ THIS TABLE IS A COPY OF AppointmentStatuses.AllowedNext IN C#. The server is the enforcer —
+     * fixing only this file would leave the hole open to the mobile app and to any script. They are kept
+     * honest by AppointmentStatusTransitionsAgreeTests, which reads both and fails if they drift.
+     */
+    const ALLOWED_NEXT = {
+        scheduled: ['confirmed', 'completed', 'no_show', 'cancelled'],
+        confirmed: ['scheduled', 'completed', 'no_show', 'cancelled'],
+        completed: ['no_show'],
+        no_show:   ['completed'],
+        cancelled: ['scheduled', 'confirmed', 'completed', 'no_show'],
+    };
+
     const DURATIONS = [15, 30, 45, 60, 90, 120];
 
     /**
@@ -229,7 +268,7 @@ const AppointmentsPanel = (() => {
                 ${a.assigned_user_name ? `<span>with ${esc(a.assigned_user_name)}</span>` : ''}
                 ${a.property_name ? `<span class="apt-item-unit">${esc(a.property_name)}</span>` : ''}
                 ${a.location ? `<span>${esc(a.location)}</span>` : ''}
-                ${a.meeting_url && /^https?:\/\//i.test(a.meeting_url)
+                ${a.meeting_url && /^https?:\/\//i.test(a.meeting_url) && !SETTLED.includes(a.status)
                     ? `<a class="apt-item-join" href="${esc(a.meeting_url)}" target="_blank" rel="noopener noreferrer">Join call</a>`
                     : ''}
             </div>
@@ -237,7 +276,7 @@ const AppointmentsPanel = (() => {
             ${a.notes ? `<p class="apt-item-notes">${esc(a.notes)}</p>` : ''}
             ${state.canEdit ? `
             <div class="apt-item-actions" role="group" aria-label="Change status">
-                ${SETTABLE.filter(s => s !== a.status).map(s => `
+                ${(ALLOWED_NEXT[a.status] || []).map(s => `
                     <button type="button" class="apt-step${RELEASING.includes(s) ? ' is-off' : ''}"
                             data-apt-status="${s}">${esc(STATUS_LABEL[s])}</button>`).join('')}
                 <span class="apt-item-sep" aria-hidden="true"></span>
