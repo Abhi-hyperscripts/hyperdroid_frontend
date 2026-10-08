@@ -396,7 +396,12 @@ async function handleTaskSubmit(event) {
     const due = document.getElementById('taskDueDate').value;
     const body = {
         title,
-        description: document.getElementById('taskDescription').value.trim() || null,
+        // "" clears, null means UNCHANGED (`request.X?.Trim() ?? existing.X`),
+        // so `|| null` made the description the one field on this form that
+        // could be written but never emptied. null is kept on CREATE, where
+        // CreateTaskAsync would otherwise store '' instead of NULL.
+        description: document.getElementById('taskDescription').value.trim()
+                     || (_editingId ? '' : null),
         due_date: due ? new Date(due + 'T00:00:00').toISOString() : null,
         priority: document.getElementById('taskPriority').value || 'medium',
         assigned_to_user_id: document.getElementById('taskAssignee').value || null

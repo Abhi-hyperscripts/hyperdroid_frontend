@@ -1314,7 +1314,16 @@
     async function saveTeam() {
         const name = document.getElementById('teamNameInput').value.trim();
         const team_code = document.getElementById('teamCodeInput').value.trim() || null;
-        const description = document.getElementById('teamDescInput').value.trim() || null;
+        // "" clears, null means UNCHANGED — crm_teams is updated with
+        // `description = COALESCE(@description, description)`, so `|| null`
+        // meant a team description could be set but never removed. On create
+        // null is still right, so the row starts NULL rather than ''.
+        //
+        // team_code above keeps its `|| null` deliberately: UpdateTeamAsync
+        // only re-validates a code when it is NON-blank, so '' there is a
+        // no-op either way — a team code is not a clearable field.
+        const description = document.getElementById('teamDescInput').value.trim()
+                            || (_teamModal.mode === 'create' ? null : '');
         const functional_area_ids = [..._teamModal.selectedFaIds];
         const color = document.getElementById('teamColorPicker')?.value || '#6366f1';
 

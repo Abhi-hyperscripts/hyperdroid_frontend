@@ -334,16 +334,40 @@ async function handleCompanySubmit(event) {
     submitBtn.innerHTML = '<span class="btn-spinner"></span>Saving...';
 
     try {
+        // ⭐⭐⭐ ON AN EDIT, A BLANK BOX MUST TRAVEL AS "" — NOT null.
+        //
+        // CRM reads a partial update as `existing.X = request.X?.Trim() ?? existing.X`:
+        // **null means UNCHANGED**, "" means CLEAR. Sending `.trim() || null`
+        // therefore made every one of these fields write-only — a rep could fix
+        // a wrong phone number but never delete one, and the 200 plus "Company
+        // updated successfully" said otherwise.
+        //
+        // ⚠️ VERB-AWARE ON PURPOSE. CreateCompanyAsync stores `request.X?.Trim()`
+        // verbatim, so sending "" on a CREATE would write an empty string where
+        // this form has always written NULL — a different value to every
+        // `IS NULL` filter. The ambiguity exists only on the edit path, so that
+        // is the only path that changes.
+        //
+        // gst_treatment below deliberately keeps its `|| null`:
+        // UpdateCompanyAsync does NOT use the `?? existing` pattern for it, so
+        // null already clears it. Same symptom, opposite fix — which is why
+        // every field here was checked against its own server-side line.
+        const text = id => {
+            const v = document.getElementById(id).value.trim();
+            return v || (editingCompanyId ? '' : null);
+        };
+
         const payload = {
             company_name: document.getElementById('companyName').value.trim(),
-            industry: (companyIndustryDropdown ? companyIndustryDropdown.getValue() : document.getElementById('companyIndustry').value) || null,
-            website: document.getElementById('companyWebsite').value.trim() || null,
-            phone: document.getElementById('companyPhone').value.trim() || null,
-            email: document.getElementById('companyEmail').value.trim() || null,
-            address: document.getElementById('companyAddress').value.trim() || null,
-            city: document.getElementById('companyCity').value.trim() || null,
-            state: document.getElementById('companyState').value.trim() || null,
-            country: document.getElementById('companyCountry').value.trim() || null,
+            industry: (companyIndustryDropdown ? companyIndustryDropdown.getValue() : document.getElementById('companyIndustry').value)
+                      || (editingCompanyId ? '' : null),
+            website: text('companyWebsite'),
+            phone: text('companyPhone'),
+            email: text('companyEmail'),
+            address: text('companyAddress'),
+            city: text('companyCity'),
+            state: text('companyState'),
+            country: text('companyCountry'),
             // Empty means NOT STATED, which is a real answer — it is why a quote
             // for this company carries no tax rather than a guessed one.
             gst_treatment: document.getElementById('companyGstTreatment').value || null

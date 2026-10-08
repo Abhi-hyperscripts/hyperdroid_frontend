@@ -303,8 +303,21 @@ const AppointmentsPanel = (() => {
                 // user picked survives the trip whatever the server's zone is.
                 starts_at: starts.toISOString(),
                 ends_at: ends.toISOString(),
-                location: draft.location.trim() || null,
-                meeting_url: draft.meetingUrl.trim() || null,
+                // ⭐⭐⭐ EMPTY STRING, NOT null — OR THESE CANNOT BE CLEARED.
+                //
+                // CRM reads a partial update as `request.X ?? existing.X`, so
+                // **null means UNCHANGED**. Sending `.trim() || null` meant that
+                // emptying the Location box on a reschedule transmitted "leave
+                // it alone": the appointment kept its old address, the PUT
+                // answered 200, and the panel closed as though it had saved.
+                //
+                // "" is safe on BOTH verbs here, which is why one change covers
+                // this shared body: CreateAppointmentAsync stores
+                // `IsNullOrWhiteSpace(x) ? null : x.Trim()`, so a blank still
+                // lands as NULL on a new booking, and ValidateDetails checks the
+                // meeting link's scheme only when it is non-blank.
+                location: draft.location.trim(),
+                meeting_url: draft.meetingUrl.trim(),
             };
             body[st.entityType === 'lead' ? 'lead_id' : 'deal_id'] = st.entityId;
             if (draft.assignee) body.assigned_user_id = draft.assignee;

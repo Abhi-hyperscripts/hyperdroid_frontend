@@ -183,7 +183,11 @@ const ActivitiesPanel = (() => {
             await api.request(`/crm/activities/${encodeURIComponent(id)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ subject, description: description || null })
+                // "" clears, null means UNCHANGED — so `description || null`
+                // made the description the one field on this row that could be
+                // written but never emptied. See the note in
+                // appointments-panel.js for the convention this follows.
+                body: JSON.stringify({ subject, description })
             });
             Toast.success('Activity updated');
             await load(container);

@@ -328,14 +328,24 @@
 
     async function reassignLead(leadId, value) {
         if (value === '__unassigned__') {
-            // PUT /leads/{id} with owner_user_id=null nulls the owner. The
-            // assignment-history table picks this up via the same code path
-            // as a named-owner reassign (see BusinessLayer_Leads.AssignLead).
-            await api.request(`/crm/leads/${leadId}`, {
-                method: 'PUT',
-                body: JSON.stringify({ owner_user_id: null }),
-                headers: { 'Content-Type': 'application/json' }
-            });
+            // ⭐⭐⭐ THIS USED TO BE `PUT /leads/{id}` WITH `owner_user_id: null`,
+            // AND IT DID NOTHING AT ALL.
+            //
+            // The comment here asserted that null "nulls the owner" and that the
+            // assignment-history table picked it up through the same path as a
+            // named reassign. Both were false. CRM's partial-update rule is
+            // `request.OwnerUserId ?? existing.OwnerUserId` — null means
+            // UNCHANGED — so the lead kept its owner, the request answered 200,
+            // and the queue toasted "Reassigned N leads". And UpdateLeadAsync
+            // writes no assignment history for an owner change, so even a
+            // working version would have left no trace of the redistribution
+            // this screen exists to make auditable.
+            //
+            // PUT .../unassign is its own door: it writes "" (the spelling
+            // LeadOwnership.IsUnassigned and its SQL twin both recognise), logs
+            // an `unassigned` history row, and carries the same
+            // members-cannot-reassign gate as /assign.
+            await api.request(`/crm/leads/${leadId}/unassign`, { method: 'PUT' });
         } else {
             await api.request(`/crm/leads/${leadId}/assign`, {
                 method: 'PUT',

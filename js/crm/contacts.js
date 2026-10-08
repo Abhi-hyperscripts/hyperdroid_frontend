@@ -577,15 +577,32 @@ async function handleContactSubmit(event) {
             }
         }
 
+        // ⭐⭐⭐ EMPTY STRING, NOT null — OR THE FIELD CANNOT BE CLEARED.
+        //
+        // CRM's partial-update rule is `existing.X = request.X ?? existing.X`:
+        // **null means UNCHANGED** and **"" means CLEAR**. Every field here used
+        // to be sent as `.trim() || null`, so emptying the box transmitted
+        // "leave it as it was" — the rep cleared a wrong phone number, saved,
+        // got "Contact updated successfully", and the old number was still
+        // there. Nothing failed anywhere; the request was a 200 doing nothing.
+        //
+        // This form is EDIT-ONLY (creation 403s backend-side — see below), so
+        // there is no create path here for which null would have been right.
+        //
+        // ⚠️ company_id is deliberately left as-is. It binds to a Guid? on the
+        // server, and "" raises a JSON deserialisation error rather than
+        // clearing it — so detaching a contact from its company is not
+        // something this contract can express, and faking it here would just
+        // turn a silent no-op into a 400.
         const payload = {
             first_name: document.getElementById('firstName').value.trim(),
             last_name: document.getElementById('lastName').value.trim(),
-            email: document.getElementById('contactEmail').value.trim() || null,
-            phone: document.getElementById('contactPhone').value.trim() || null,
-            mobile: document.getElementById('contactMobile').value.trim() || null,
+            email: document.getElementById('contactEmail').value.trim(),
+            phone: document.getElementById('contactPhone').value.trim(),
+            mobile: document.getElementById('contactMobile').value.trim(),
             company_id: companyId,
-            job_title: document.getElementById('contactJobTitle').value.trim() || null,
-            contact_source: (contactSourceDropdown ? contactSourceDropdown.getValue() : document.getElementById('contactSource').value) || null
+            job_title: document.getElementById('contactJobTitle').value.trim(),
+            contact_source: (contactSourceDropdown ? contactSourceDropdown.getValue() : document.getElementById('contactSource').value) || ''
         };
 
         // Contacts can only be EDITED here. Direct creation is disabled backend-side (POST /crm/contacts
