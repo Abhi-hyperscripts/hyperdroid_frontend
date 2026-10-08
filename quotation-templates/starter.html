@@ -1,0 +1,258 @@
+<!--
+  ════════════════════════════════════════════════════════════════════════════
+  A STARTER QUOTATION TEMPLATE
+  ════════════════════════════════════════════════════════════════════════════
+
+  This is a plain, self-contained HTML file. Everything between {{ }} is
+  replaced with the real quote when you produce a quotation; everything else is
+  yours to change — the colours, the wording, the column headings, the order of
+  the sections, the terms at the bottom.
+
+  TO MAKE IT YOURS
+    · Replace the logo block with your own <img>. A link to a hosted image or
+      an inline data: URI both work.
+    · Change --accent and --accent-dark below to your brand colours.
+    · Edit the Terms & Conditions. They are ordinary text, not a setting.
+    · Delete any row or box you do not want.
+
+  THE TWO THINGS THE ENGINE UNDERSTANDS
+    {{group.field}}             one value
+    {{#lines}} … {{/lines}}     repeated once per line on the quote
+
+  Settings → Quotation template lists every placeholder you can use, with an
+  example of each. Anything it does not recognise is left visible on the
+  preview and named underneath it, so you can fix it and upload again.
+
+  COLOURS ARE DELIBERATELY FIXED HERE, not theme variables: this is a document
+  that gets printed and emailed, not a screen that follows the reader's dark
+  mode. A quotation that changed colour depending on who opened it would be a
+  different document each time.
+-->
+<style>
+  :root {
+    --accent:      #1f4e79;   /* your brand colour — headings and the banner  */
+    --accent-dark: #163a5a;   /* a darker shade, for the table head           */
+    --rule:        #d7dee6;
+    --ink:         #1a1a1a;
+    --ink-soft:    #4a5560;
+    --wash:        #f4f7fa;
+  }
+
+  /* A4 with sane print margins. The browser's own print dialogue can override
+     these, which is fine — nothing below depends on an exact page size. */
+  @page { size: A4; margin: 14mm 12mm; }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font: 11pt/1.45 "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: #fff;
+  }
+
+  /* Keeps the banner and table head from printing white in browsers that strip
+     backgrounds by default. */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .sheet { max-width: 190mm; margin: 0 auto; padding: 0 0 8mm; }
+
+  /* ── Masthead ─────────────────────────────────────────────────────────── */
+  .masthead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12mm; }
+  .brand-name { font-size: 17pt; font-weight: 700; color: var(--accent); letter-spacing: -0.2px; }
+  .brand-tag  { font-size: 9.5pt; color: var(--ink-soft); margin-top: 1mm; }
+  .brand-meta { font-size: 9pt; color: var(--ink-soft); margin-top: 3mm; line-height: 1.6; }
+  .doc-title  { text-align: right; }
+  .doc-title h1 {
+    margin: 0; font-size: 20pt; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent);
+  }
+  .doc-ref { font-size: 10pt; color: var(--ink-soft); margin-top: 2mm; }
+
+  .band { height: 3mm; background: var(--accent); margin: 5mm 0 6mm; border-radius: 1mm; }
+
+  /* ── The two detail boxes ─────────────────────────────────────────────── */
+  .boxes { display: flex; gap: 6mm; }
+  .box {
+    flex: 1; border: 1px solid var(--rule); border-radius: 1.5mm; overflow: hidden;
+  }
+  .box h2 {
+    margin: 0; padding: 2.5mm 4mm; font-size: 9pt; text-transform: uppercase;
+    letter-spacing: 1px; color: #fff; background: var(--accent);
+  }
+  .box dl { margin: 0; padding: 3mm 4mm; display: grid; grid-template-columns: auto 1fr; gap: 1.2mm 4mm; }
+  .box dt { font-size: 9pt; color: var(--ink-soft); }
+  .box dd { margin: 0; font-size: 9.5pt; }
+
+  /* ── The lines ────────────────────────────────────────────────────────── */
+  table.lines { width: 100%; border-collapse: collapse; margin-top: 6mm; }
+  table.lines thead th {
+    background: var(--accent-dark); color: #fff; font-size: 8.5pt;
+    text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600;
+    padding: 2.5mm 3mm; text-align: left;
+  }
+  table.lines tbody td { padding: 2.5mm 3mm; border-bottom: 1px solid var(--rule); font-size: 9.5pt; vertical-align: top; }
+  table.lines tbody tr:nth-child(even) td { background: var(--wash); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .narrow { width: 10mm; }
+  .sku { display: block; font-size: 8pt; color: var(--ink-soft); margin-top: 0.8mm; }
+
+  /* ── Notes and totals, side by side ───────────────────────────────────── */
+  .foot { display: flex; gap: 6mm; margin-top: 6mm; align-items: flex-start; }
+  .notes { flex: 1.4; }
+  .notes h3, .terms h3 {
+    margin: 0 0 2mm; font-size: 9pt; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--accent);
+  }
+  .notes p { margin: 0; font-size: 9.5pt; color: var(--ink-soft); }
+
+  table.totals { flex: 1; border-collapse: collapse; }
+  table.totals td { padding: 2mm 3mm; font-size: 9.5pt; border-bottom: 1px solid var(--rule); }
+  table.totals td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.totals tr.grand td {
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 11pt;
+    border-bottom: none;
+  }
+
+  /* ── Terms and signature ─────────────────────────────────────────────── */
+  .terms { margin-top: 8mm; }
+  .terms ol { margin: 0; padding-left: 5mm; font-size: 9pt; color: var(--ink-soft); }
+  .terms li { margin-bottom: 1mm; }
+
+  .sign { display: flex; justify-content: flex-end; margin-top: 12mm; }
+  .sign-box { width: 60mm; text-align: center; }
+  .sign-rule { border-top: 1px solid var(--ink); padding-top: 2mm; font-size: 9pt; }
+
+  .colophon {
+    margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--rule);
+    font-size: 8.5pt; color: var(--ink-soft); text-align: center;
+  }
+
+  /* The marker the preview puts around a placeholder it does not recognise.
+     Styled here so it is impossible to miss on your own template. */
+  .rz-unresolved {
+    background: #fff3cd; color: #8a6100; border: 1px dashed #c89a2b;
+    padding: 0 2px; border-radius: 2px; font-family: monospace; font-size: 8.5pt;
+  }
+</style>
+
+<div class="sheet">
+
+  <div class="masthead">
+    <div>
+      <!-- Replace this block with your own logo:
+           <img src="https://yourdomain.example/logo.png" alt="" style="height:16mm"> -->
+      <div class="brand-name">{{seller.company}}</div>
+      <div class="brand-tag">{{seller.tagline}}</div>
+      <div class="brand-meta">
+        {{seller.address}}<br>
+        {{seller.phone}} &nbsp;·&nbsp; {{seller.email}}<br>
+        GSTIN {{seller.gstin}}
+      </div>
+    </div>
+    <div class="doc-title">
+      <h1>Quotation</h1>
+      <div class="doc-ref">
+        <strong>{{quote.number}}</strong><br>
+        {{quote.date}}
+      </div>
+    </div>
+  </div>
+
+  <div class="band"></div>
+
+  <div class="boxes">
+    <section class="box">
+      <h2>Client details</h2>
+      <dl>
+        <dt>Company</dt><dd>{{buyer.company}}</dd>
+        <dt>Contact</dt><dd>{{buyer.contact}}</dd>
+        <dt>Email</dt><dd>{{buyer.email}}</dd>
+        <dt>Phone</dt><dd>{{buyer.phone}}</dd>
+        <dt>Address</dt><dd>{{buyer.address}}</dd>
+      </dl>
+    </section>
+
+    <section class="box">
+      <h2>Quotation information</h2>
+      <dl>
+        <dt>Reference</dt><dd>{{quote.number}}</dd>
+        <dt>Date</dt><dd>{{quote.date}}</dd>
+        <dt>Valid until</dt><dd>{{quote.valid_until}}</dd>
+        <dt>Regarding</dt><dd>{{quote.subject}}</dd>
+        <dt>Prepared by</dt><dd>{{owner.name}}</dd>
+      </dl>
+    </section>
+  </div>
+
+  <table class="lines">
+    <thead>
+      <tr>
+        <th class="narrow">#</th>
+        <th>Description</th>
+        <th class="num">Qty</th>
+        <th class="num">Unit price</th>
+        <th class="num">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- This block repeats once per line on the quote. Add or remove <td>s to
+           match the columns above — every field listed in Settings → Quotation
+           template is available inside here. -->
+      {{#lines}}
+      <tr>
+        <td class="narrow">{{no}}</td>
+        <td>
+          {{description}}
+          <span class="sku">{{sku}} {{hsn_sac}}</span>
+        </td>
+        <td class="num">{{quantity}} {{uom}}</td>
+        <td class="num">{{unit_price}}</td>
+        <td class="num">{{amount}}</td>
+      </tr>
+      {{/lines}}
+    </tbody>
+  </table>
+
+  <div class="foot">
+    <section class="notes">
+      <h3>Additional notes</h3>
+      <p>{{quote.notes}}</p>
+    </section>
+
+    <table class="totals">
+      <tr><td>Subtotal</td><td>{{quote.currency}} {{totals.subtotal}}</td></tr>
+      <!-- Taxable / not taxable, when a quote mixes the two. Delete if you do
+           not need the split. -->
+      <tr><td>Taxable value</td><td>{{quote.currency}} {{totals.taxable}}</td></tr>
+      <tr><td>GST {{totals.tax_rate}}%</td><td>{{quote.currency}} {{totals.tax}}</td></tr>
+      <!-- Use this block INSTEAD of the single GST row above if your quotes mix
+           tax rates — it prints one row per tax head and is always correct:
+           {{#tax_groups}}
+           <tr><td>{{name}} {{rate}}%</td><td>{{quote.currency}} {{amount}}</td></tr>
+           {{/tax_groups}}
+      -->
+      <tr class="grand"><td>Total</td><td>{{quote.currency}} {{totals.total}}</td></tr>
+    </table>
+  </div>
+
+  <section class="terms">
+    <h3>Terms &amp; conditions</h3>
+    <ol>
+      <li>This quotation is valid until {{quote.valid_until}}.</li>
+      <li>Prices are exclusive of taxes unless stated otherwise above.</li>
+      <li>Delivery timelines are confirmed on receipt of a purchase order.</li>
+      <li>Payment terms as agreed in writing.</li>
+      <li>This is a quotation and not a tax invoice.</li>
+    </ol>
+  </section>
+
+  <div class="sign">
+    <div class="sign-box">
+      <div class="sign-rule">Authorised signatory<br>{{seller.company}}</div>
+    </div>
+  </div>
+
+  <div class="colophon">{{seller.footer}}</div>
+
+</div>

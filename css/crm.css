@@ -7211,3 +7211,88 @@ body.crm-leads-page .lp-toolbar .crm-filter-group--no-label { flex-shrink: 0; di
   .lip-pdf-overlay { padding: 0; }
   .lip-pdf-modal { width: 100%; height: 100%; border-radius: 0; }
 }
+
+/* ── Settings → Quotation Template ──────────────────────────────────────────
+ *
+ * In crm.css rather than beside the lead panel's .qtp-* block, because
+ * settings.html does NOT load crm-line-items.css — and a stylesheet a page
+ * does not load is the silent-feature-failure that check-helper-pairs.js
+ * exists for. Both pages load this file.
+ */
+.qts-intro p { margin: 0 0 8px; font-size: 13px; line-height: 1.55; color: var(--text-primary); }
+.qts-hint { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+.qts-upload {
+    display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+    margin: 16px 0 20px; padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+.qts-field { display: flex; flex-direction: column; gap: 4px; width: 100%; max-width: 420px; }
+.qts-field > span { font-size: 12px; color: var(--text-secondary); }
+.qts-file-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; width: 100%; }
+.qts-ready { margin: 0; font-size: 12px; color: var(--color-success); }
+
+.qts-empty {
+    margin: 16px 0; padding: 14px 16px; font-size: 13px; line-height: 1.5;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+}
+
+.qts-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+.qts-table th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-secondary); padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+.qts-table td {
+    padding: 10px; font-size: 13px; color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color); vertical-align: top;
+}
+.qts-table code { font-size: 12px; white-space: nowrap; }
+.qts-example { color: var(--text-secondary); font-size: 12px; }
+.qts-row-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+
+.qts-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; color: var(--text-secondary); background: var(--bg-tertiary);
+}
+.qts-badge-active { color: var(--text-inverse); background: var(--color-success); }
+
+.qts-preview { margin-top: 20px; }
+.qts-preview-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-bottom: 10px;
+}
+.qts-preview-head h4 { margin: 0; font-size: 14px; color: var(--text-primary); }
+.qts-sample {
+    font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-secondary); margin-left: 6px;
+}
+
+.qts-unresolved,
+.qts-ok {
+    padding: 10px 14px; margin-bottom: 10px;
+    font-size: 12px; line-height: 1.5; border-radius: 6px;
+    border: 1px solid var(--border-color); border-left-width: 3px;
+    color: var(--text-primary);
+}
+.qts-unresolved { border-color: var(--color-warning); background: var(--bg-secondary); }
+.qts-ok { border-color: var(--color-success); background: var(--bg-secondary); }
+
+/* Same reasoning as .qtp-frame: the frame is sandboxed without allow-scripts,
+   so nothing inside can report its height, and the template paints a white
+   page that would otherwise sit on the app's dark background. */
+.qts-frame {
+    width: 100%; min-height: 60vh;
+    border: 1px solid var(--border-color); border-radius: 8px;
+    background: #fff;
+}
+
+.qts-placeholders { margin-top: 24px; }
+.qts-placeholders > summary {
+    cursor: pointer; font-size: 13px; color: var(--text-primary); padding: 6px 0;
+}

@@ -397,6 +397,19 @@
                     { ownerKind: 'lead', canEdit: true, showOpenFull: false });
             }
 
+            // ⭐ THE QUOTATION TAB — the tenant's own document, from their own
+            // template, pricing the same lines.
+            //
+            // Mounted here for a different reason than the panel above: it needs
+            // nothing from the lead but the id, yet mounting it early would fire
+            // its render request before the pane exists and before the rep has
+            // necessarily opened that tab. Mounting beside its sibling keeps the
+            // two tabs' lifecycles identical, which is what stops one of them
+            // being refreshed and the other going stale after a line edit.
+            if (typeof QuotationPanel !== 'undefined') {
+                QuotationPanel.mount(document.getElementById('leadQuotationPanel'), lead, {});
+            }
+
             // Parse custom fields. Resolve codes against the tenant's
             // schema (active or archived — `getLeadFieldDef` uses the
             // _allFieldsByCode map populated by lead-fields-runtime.js so

@@ -347,6 +347,7 @@ const settingsTabNames = {
     'functional-groups': 'Functional Groups',
     'teams': 'Teams Setup',
     'documents': 'Documents',
+    'quotation-template': 'Quotation Template',
     'crm-users': 'CRM Users'
 };
 
@@ -478,6 +479,9 @@ function switchSettingsTab(tabName) {
         if (typeof loadAiAssistant === 'function') loadAiAssistant();
     } else if (tabName === 'lead-fields' && typeof loadLeadFieldsTab === 'function') {
         loadLeadFieldsTab();
+    } else if (tabName === 'quotation-template'
+               && typeof loadQuotationTemplateTab === 'function') {
+        loadQuotationTemplateTab();
     } else if (tabName === 'lead-sources') {
         loadLeadSources();
     } else if (tabName === 'functional-groups' && typeof loadFunctionalGroups === 'function') {

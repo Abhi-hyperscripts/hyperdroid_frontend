@@ -33,6 +33,11 @@ const PAIRS = [
   // It silently renders no Quotation tab content at all, which is the quietest possible
   // failure for the one panel that puts a price in front of a customer.
   { helper: 'js/crm/line-items-panel.js',  call: /\bLineItemsPanel\s*\./ },
+  // The Quotation tab's panel. One caller today (the lead detail pane), and it is
+  // in the table from the first commit for the reason in the header: a page that
+  // calls it without loading it throws ReferenceError at render time, which in
+  // this codebase has repeatedly meant a tab that silently stays blank.
+  { helper: 'js/crm/quotation-panel.js',   call: /\bQuotationPanel\s*\./ },
 ];
 
 function walk(dir, ext, out = []) {

@@ -1333,3 +1333,54 @@
 .lip-rcp-f:last-child { grid-column: 1 / -1; }
 
 .lip-recipient-locked { font-style: italic; }
+
+/* ── Quotation tab (the tenant's own template) ───────────────────────────── */
+/*
+ * Lives beside the proforma panel's styles because the two tabs are siblings in
+ * the same pane and are always loaded together — a separate stylesheet would be
+ * a second file for leads.html to pair, and check-helper-pairs.js exists because
+ * that pairing gets forgotten.
+ */
+.qtp-wrap { display: flex; flex-direction: column; gap: 12px; }
+
+.qtp-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap;
+}
+.qtp-title { margin: 0; font-size: 15px; color: var(--text-primary); }
+.qtp-actions { display: flex; gap: 8px; }
+
+.qtp-hint { margin: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.qtp-empty {
+    margin: 0; padding: 14px 16px; font-size: 13px; line-height: 1.5;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+/* The template's own unresolved placeholders, reported above the document. */
+.qtp-unresolved {
+    padding: 10px 14px; font-size: 12px; line-height: 1.5;
+    color: var(--text-primary);
+    background: var(--color-warning-bg, var(--bg-secondary));
+    border: 1px solid var(--color-warning);
+    border-left-width: 3px;
+    border-radius: 6px;
+}
+
+/*
+ * The document itself. A fixed, generous height rather than auto: the frame is
+ * sandboxed without allow-scripts, so nothing inside it can report its own
+ * height back, and a short frame on a two-page quotation would hide the totals.
+ * The frame scrolls; the panel does not grow without bound.
+ */
+.qtp-frame {
+    width: 100%;
+    min-height: 70vh;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    /* The template paints its own white page. Without this the frame shows the
+       app's dark background behind a document designed for paper. */
+    background: #fff;
+}
