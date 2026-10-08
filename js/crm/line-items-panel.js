@@ -291,10 +291,21 @@ const LineItemsPanel = (() => {
         // is won — the invoice will use ITS state and treatment, which may
         // differ. Saying nothing here is how a rep quotes a figure the invoice
         // then contradicts.
-        const provisional = state.taxIsProvisional
-            ? `<div class="lip-total-warn">Provisional — recalculated against the customer's own
-                 details once they exist in Accounts, so the final invoice may differ.</div>`
-            : '';
+        // ⭐ A LEAD'S PROVISIONAL IS PROVISIONAL FOR A DIFFERENT REASON, so it says a different thing.
+        //
+        // On a deal, "provisional" means the customer record does not exist yet and the invoice will use
+        // its state and treatment. On a LEAD the quote is deliberately computed the way the document will
+        // be — unregistered, in the seller's own state — so the figure is not a stand-in for a missing
+        // record. What can still move it is the GSTIN the rep may type when raising: a buyer in another
+        // state flips the supply to IGST. Naming the real reason is the difference between a caveat a rep
+        // can act on and one they learn to skim past.
+        const provisional = !state.taxIsProvisional ? ''
+            : state.ownerKind === 'lead'
+            ? `<div class="lip-total-warn">Provisional — quoted as an unregistered buyer in your own
+                 state, which is how the document is raised. Entering a GSTIN below can change the place
+                 of supply, and with it the tax.</div>`
+            : `<div class="lip-total-warn">Provisional — recalculated against the customer's own
+                 details once they exist in Accounts, so the final invoice may differ.</div>`;
         return `
         <div class="lip-totals">
             <div class="lip-total-row"><span>Taxable</span><b>${esc(money(state.taxableTotal, currency))}</b></div>
