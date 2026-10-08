@@ -280,8 +280,15 @@
             <tr><td>GST {{totals.tax_rate}}%</td><td>{{quote.currency}} {{totals.tax}}</td></tr>
         {{totals.tax_rate}} is deliberately BLANK when the lines disagree.
       -->
+      <!-- {{name}} ALONE, not "{{name}} {{rate}}%".
+           Accounts names its tax heads with the rate already in them — a real
+           quote renders "CGST @2.5%" — so printing the rate beside the name
+           gives "CGST @2.5% 2.5%" on the customer's document. Measured on live
+           data; it is invisible against tidy test names like "CGST".
+           {{rate}} is still available inside this block if your own tax heads
+           are named without it. -->
       {{#tax_groups}}
-      <tr><td>{{name}} {{rate}}%</td><td>{{quote.currency}} {{amount}}</td></tr>
+      <tr><td>{{name}}</td><td>{{quote.currency}} {{amount}}</td></tr>
       {{/tax_groups}}
 
       <tr class="grand"><td>Total</td><td>{{quote.currency}} {{totals.total}}</td></tr>
