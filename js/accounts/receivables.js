@@ -3715,8 +3715,6 @@ async function renderEwayBillPanel(inv) {
     if (st === 'draft' || st === 'cancelled') return;
 
     const status = await loadEwbStatusOnce();
-    // Nothing is set up: say nothing rather than show a dead button on every invoice.
-    if (!status.enabled && !status.configured) return;
 
     const panel = document.createElement('div');
     panel.className = 'ewb-panel';
@@ -3759,14 +3757,21 @@ async function renderEwayBillPanel(inv) {
     }
 
     statusEl.innerHTML = '<span style="color:var(--text-secondary);">● Not raised</span>';
-    if (!status.enabled) {
-        detailEl.textContent = 'E-way bills are set up but switched off (Taxation → e-Way Bill).';
+    if (!status.enabled && !status.configured) {
+        // No credentials anywhere — but recording a bill raised on the portal needs none, and that is
+        // how most tenants will use this on day one.
+        detailEl.innerHTML = `Raise the bill on the government portal, then record its number here so it
+            prints on the invoice and its validity is tracked.
+            ${isAdmin ? `<div style="margin-top:10px;"><button class="btn btn-sm btn-secondary" onclick="promptEwbRecord('${inv.id}')">Record one raised on the portal</button></div>` : ''}`;
         return;
     }
     const below = status.threshold_value && Number(inv.total_amount) < Number(status.threshold_value);
     detailEl.innerHTML = `Raise an e-way bill for the movement of these goods.
         ${below ? `<div style="margin-top:4px;">This invoice is below your ₹${Number(status.threshold_value).toLocaleString('en-IN')} threshold, so one is usually not required — you can still raise one.</div>` : ''}
-        ${isAdmin ? `<div style="margin-top:10px;"><button class="btn btn-sm btn-primary" onclick="promptEwbGenerate('${inv.id}')">Raise e-way bill</button></div>` : ''}`;
+        ${isAdmin ? `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            ${status.enabled ? `<button class="btn btn-sm btn-primary" onclick="promptEwbGenerate('${inv.id}')">Raise e-way bill</button>` : ''}
+            <button class="btn btn-sm btn-secondary" onclick="promptEwbRecord('${inv.id}')">Record one raised on the portal</button>
+          </div>` : ''}`;
 }
 
 /// A small prompt-based flow rather than a bespoke modal: these are rare, operator-driven actions and
@@ -3833,7 +3838,30 @@ async function promptEwbCancel(recordId, invoiceId) {
 
 async function refreshEwbPanel(invoiceId) {
     try {
-        const inv = await api.request(AccountsCommon.buildUrl(`customer-invoices/${invoiceId}`), { _skipSpinner: true });
+        const inv = await api.request(AccountsCommon.buildUrl(`invoices/${invoiceId}`), { _skipSpinner: true });
         await renderEwayBillPanel(inv);
     } catch { /* cosmetic-default: the action already succeeded and was toasted; a stale panel refreshes on reopen */ }
+}
+
+/// Recording a bill raised on the portal. No credentials involved — this is the path every tenant has
+/// before (and sometimes instead of) a GSP contract.
+async function promptEwbRecord(invoiceId) {
+    const number = prompt('E-way bill number from the portal (12 digits):', '');
+    if (!number) return;
+    const raised = prompt('Date raised (YYYY-MM-DD), blank for today:', '') || '';
+    const valid = prompt('Valid until (YYYY-MM-DD), blank if unknown:', '') || '';
+    const vehicle = prompt('Vehicle number (optional):', '') || '';
+    try {
+        const rec = await api.request(AccountsCommon.buildUrl('ewaybill/record'), {
+            method: 'POST',
+            body: JSON.stringify({
+                source_type: 'invoice', source_id: invoiceId, ewb_no: number,
+                ewb_date: raised ? new Date(raised + 'T00:00:00Z').toISOString() : null,
+                valid_upto: valid ? new Date(valid + 'T23:59:00Z').toISOString() : null,
+                vehicle_no: vehicle.trim() || null,
+            })
+        });
+        Toast.success(`Recorded e-way bill ${rec.ewb_no}`);
+        await refreshEwbPanel(invoiceId);
+    } catch (e) { Toast.error(e.message || 'Could not record the e-way bill'); }
 }
