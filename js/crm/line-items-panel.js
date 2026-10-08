@@ -501,11 +501,24 @@ const LineItemsPanel = (() => {
         if (state.ownerKind !== 'lead') return '';
 
         const r = state.recipient || {};
-        if (state.hasQuotation) {
+
+        // ⭐⭐⭐ A TYPO HAS A WAY BACK, UNTIL THE DOCUMENT IS ISSUED.
+        //
+        // The raise is deduped on the lead, so raising again returns the SAME document and ignores
+        // anything retyped — which is why this block used to go read-only the moment a quotation
+        // existed, and why a rep who misspelled the company was simply stuck.
+        //
+        // While it is still a DRAFT the correction goes through a different door
+        // (PUT .../quotation/recipient), so the form stays open and the button says what it does.
+        // Once ISSUED the official number is drawn and the document is one the customer holds —
+        // Accounts refuses the edit, and saying so here is better than offering a control that
+        // collects a correction and discards it.
+        const issued = state.hasQuotation && !isDraftQuote(state);
+        if (issued) {
             return `
             <p class="lip-hint lip-recipient-locked">
-                The quotation is already raised, so who it is addressed to is fixed on the
-                document. Open it to see what it says.
+                This quotation is issued, so who it is addressed to is fixed on the document.
+                Open it to see what it says.
             </p>`;
         }
 
@@ -518,7 +531,7 @@ const LineItemsPanel = (() => {
             </label>`;
 
         return `
-        <details class="lip-recipient"${state.recipientOpen ? ' open' : ''}>
+        <details class="lip-recipient"${state.recipientOpen || state.hasQuotation ? ' open' : ''}>
             <summary>Quote to — <strong>${esc(r.company_name || r.contact_name || 'this lead')}</strong></summary>
             <div class="lip-rcp-grid">
                 ${f('company_name', 'Company name', 'Who is being billed')}
@@ -528,10 +541,18 @@ const LineItemsPanel = (() => {
                 ${f('phone', 'Phone', 'Needed to turn this into an invoice')}
                 ${f('address', 'Address', 'Billing address')}
             </div>
+            ${state.hasQuotation ? `
+            <button type="button" class="btn btn-sm btn-secondary" data-lip="fix-recipient"${
+                state.fixingRecipient ? ' disabled' : ''}>Update who it is addressed to</button>
+            <p class="lip-hint">
+                The quotation is still a draft, so this can still be corrected. Changing the GSTIN
+                moves the place of supply and re-costs the document. Once it is issued the
+                recipient is fixed.
+            </p>` : `
             <p class="lip-hint">
                 Prefilled from the lead — correct anything that is wrong or missing. This is used
                 for the quotation only; the lead itself is not changed.
-            </p>
+            </p>`}
         </details>`;
     }
 
@@ -1618,6 +1639,49 @@ const LineItemsPanel = (() => {
         document.addEventListener('keydown', _pdfEsc, true);
     }
 
+    /**
+     * Correct who a DRAFT quotation is addressed to.
+     *
+     * A separate door from the raise on purpose: raising again returns the same document and would
+     * discard what was typed, so a button that LOOKED like it corrected the recipient and silently
+     * did nothing is the thing being avoided here.
+     */
+    async function fixRecipient(container) {
+        const st = mounted.get(container);
+        if (!st || !st.recipient) return;
+        st.fixingRecipient = true;
+        render(container);
+        try {
+            const res = await api.request(
+                `/crm/${ownerPath(st)}/quotation/recipient`,
+                {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        company_name: (st.recipient.company_name || '').trim() || null,
+                        contact_name: (st.recipient.contact_name || '').trim() || null,
+                        gstin:        (st.recipient.gstin        || '').trim() || null,
+                        email:        (st.recipient.email        || '').trim() || null,
+                        phone:        (st.recipient.phone        || '').trim() || null,
+                        address:      (st.recipient.address      || '').trim() || null,
+                    }),
+                });
+
+            // The number can be unchanged and the TOTAL can still have moved — a corrected GSTIN
+            // re-costs the document. Both are refreshed from what Accounts now holds.
+            st.quotationNumber = res.proforma_number || st.quotationNumber;
+            Toast.success(`Quotation now addressed to ${res.recipient_name}`);
+            // Reloaded rather than patched in place: the totals block is rendered from the
+            // line-items read, and leaving it stale would show the old tax beside the new buyer.
+            await load(container);
+        } catch (e) {
+            console.error('Failed to correct the quotation recipient:', e);
+            Toast.error(e.message || 'Could not update who the quotation is addressed to');
+        } finally {
+            st.fixingRecipient = false;
+            render(container);
+        }
+    }
+
     async function issueQuotation(container) {
         const st = mounted.get(container);
         const btn = container.querySelector('[data-lip="issue"]');
@@ -1754,6 +1818,44 @@ const LineItemsPanel = (() => {
         revealPickersIfAvailable(container);
     }
 
+    /**
+     * ⭐⭐⭐ ONCE A QUOTATION EXISTS, THE FORM SHOWS THE DOCUMENT — NOT THE LEAD.
+     *
+     * The recipient was corrected at raise time precisely because the lead was wrong, so leaving
+     * the form prefilled from the lead would display the stale "Nair Textiles" beside a document
+     * that says "Nair Textiles LLP" — and pressing Update would overwrite the correction with the
+     * thing that was wrong in the first place.
+     *
+     * Fetched only when there IS a quotation, so the ordinary path costs nothing extra.
+     *
+     * The contact person is stored on the document as an "Attn:" line on the address (Accounts
+     * carries one recipient name), so it is split back out here — otherwise a second correction
+     * would prefix it again and the document would read "Attn: Priya, Attn: Priya, 4 Linking Road".
+     */
+    async function prefillRecipientFromDocument(st) {
+        if (st.ownerKind !== 'lead' || !st.hasQuotation || !st.recipient) return;
+        try {
+            const doc = await api.request(`/crm/${ownerPath(st)}/quotation`);
+            let address = doc.recipient_address || '';
+            let contact = '';
+            const attn = address.match(/^\s*Attn:\s*([^,]+)(?:,\s*)?([\s\S]*)$/i);
+            if (attn) { contact = attn[1].trim(); address = (attn[2] || '').trim(); }
+
+            st.recipient = {
+                company_name: doc.recipient_name || doc.customer_name || '',
+                contact_name: contact,
+                gstin: doc.recipient_gstin || '',
+                email: doc.recipient_email || '',
+                phone: doc.recipient_phone || '',
+                address,
+            };
+        } catch (e) {
+            // The lines still render. A prefill that could not load is a form showing the lead's
+            // values, which is why the caption above the button says what it is correcting.
+            console.error('Could not read the quotation recipient:', e);
+        }
+    }
+
     async function load(container) {
         const st = mounted.get(container);
         try {
@@ -1762,6 +1864,7 @@ const LineItemsPanel = (() => {
             st.currency = result.currency || st.currency;
             applyTotals(st, result);
             st.loadFailed = false;
+            await prefillRecipientFromDocument(st);
         } catch (e) {
             // ⭐⭐⭐ AN EMPTY PANEL AND A PANEL THAT COULD NOT LOAD LOOK IDENTICAL.
             //
@@ -1866,6 +1969,7 @@ const LineItemsPanel = (() => {
 
             if (e.target.closest('[data-lip="save"]')) return save(container);
             if (e.target.closest('[data-lip="issue"]')) return issueQuotation(container);
+            if (e.target.closest('[data-lip="fix-recipient"]')) return fixRecipient(container);
             if (e.target.closest('[data-lip="quote"]')) {
                 // Two halves, two actions. With a quotation already raised the
                 // button says "View / re-fetch", and viewing is a GET of the
