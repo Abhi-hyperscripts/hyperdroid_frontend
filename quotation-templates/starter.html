@@ -106,7 +106,11 @@
   }
   .notes p { margin: 0; font-size: 9.5pt; color: var(--ink-soft); }
 
-  table.totals { flex: 1; border-collapse: collapse; }
+  /* flex-end + a cap, so the totals keep their shape when the notes section
+     next to them has hidden itself (a quote with no notes). Without the cap a
+     lone totals table stretches the full page width and the label drifts miles
+     from its figure. */
+  table.totals { flex: 1; max-width: 85mm; margin-left: auto; border-collapse: collapse; }
   table.totals td { padding: 2mm 3mm; font-size: 9.5pt; border-bottom: 1px solid var(--rule); }
   table.totals td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   table.totals tr.grand td {
@@ -128,6 +132,34 @@
     font-size: 8.5pt; color: var(--ink-soft); text-align: center;
   }
 
+  /* ── Rows that hide themselves when the value is empty ────────────────────
+   *
+   * A quotation is printed from whatever the record happens to hold, and real
+   * records have gaps: a prospect with no address, a tenant who has not filled
+   * in their GSTIN yet. Printing "GSTIN" with nothing after it, or an empty
+   * "Address" row, makes a careful document look broken.
+   *
+   * The template engine has NO conditionals, on purpose — it is two features so
+   * that a file nobody here reviews cannot be subtly wrong. This is the same job
+   * done in the right layer: an element whose only content was a placeholder is
+   * :empty when that placeholder resolved to nothing, so CSS can remove it. The
+   * LABEL is attached with ::before so it disappears along with the value.
+   *
+   * Copy this pattern for any row of your own that may be blank.
+   */
+  .opt:empty { display: none; }
+  .opt:not(:empty)::before { content: attr(data-label); color: var(--ink-soft); }
+
+  /* A definition row: hide the <dt> too when its <dd> came back empty. */
+  .box dd:empty { display: none; }
+  .box dt:has(+ dd:empty) { display: none; }
+
+  /* A whole SECTION disappears when the thing it is there to show is empty —
+     otherwise the document prints an "Additional notes" heading over nothing,
+     and a bordered colophon band with no text in it. */
+  .notes:has(> p:empty) { display: none; }
+  .colophon:empty { display: none; }
+
   /* The marker the preview puts around a placeholder it does not recognise.
      Styled here so it is impossible to miss on your own template. */
   .rz-unresolved {
@@ -142,12 +174,14 @@
     <div>
       <!-- Replace this block with your own logo:
            <img src="https://yourdomain.example/logo.png" alt="" style="height:16mm"> -->
-      <div class="brand-name">{{seller.company}}</div>
-      <div class="brand-tag">{{seller.tagline}}</div>
+      <div class="brand-name opt">{{seller.company}}</div>
+      <div class="brand-tag opt">{{seller.tagline}}</div>
       <div class="brand-meta">
-        {{seller.address}}<br>
-        {{seller.phone}} &nbsp;·&nbsp; {{seller.email}}<br>
-        GSTIN {{seller.gstin}}
+        <div class="opt">{{seller.address}}</div>
+        <div class="opt">{{seller.phone}}</div>
+        <div class="opt">{{seller.email}}</div>
+        <!-- data-label puts the word GSTIN on the row only when there IS one. -->
+        <div class="opt" data-label="GSTIN ">{{seller.gstin}}</div>
       </div>
     </div>
     <div class="doc-title">
@@ -217,21 +251,39 @@
   <div class="foot">
     <section class="notes">
       <h3>Additional notes</h3>
-      <p>{{quote.notes}}</p>
+      <p class="opt">{{quote.notes}}</p>
     </section>
 
     <table class="totals">
       <tr><td>Subtotal</td><td>{{quote.currency}} {{totals.subtotal}}</td></tr>
-      <!-- Taxable / not taxable, when a quote mixes the two. Delete if you do
-           not need the split. -->
-      <tr><td>Taxable value</td><td>{{quote.currency}} {{totals.taxable}}</td></tr>
-      <tr><td>GST {{totals.tax_rate}}%</td><td>{{quote.currency}} {{totals.tax}}</td></tr>
-      <!-- Use this block INSTEAD of the single GST row above if your quotes mix
-           tax rates — it prints one row per tax head and is always correct:
-           {{#tax_groups}}
-           <tr><td>{{name}} {{rate}}%</td><td>{{quote.currency}} {{amount}}</td></tr>
-           {{/tax_groups}}
+
+      <!--
+        TAX, ONE ROW PER HEAD — and the block DISAPPEARS when there is no tax.
+
+        This uses {{#tax_groups}} rather than a fixed "GST {{totals.tax_rate}}%"
+        row on purpose, and the reason is worth keeping:
+
+          · A quote of free-typed lines ("Consulting", "Site survey") carries no
+            tax at all, because there is no catalogue item to take a rate from.
+            A fixed row then prints "GST %  0.00" with an empty rate — which is
+            how the first version of this file actually rendered, found by
+            quoting a real lead. An empty repeating block renders NOTHING, so
+            the row simply is not there.
+          · A quote CAN carry two rates (an 18% good beside a 5% one), and a
+            single "GST 18%" row beside a total computed from both would be a
+            document contradicting its own arithmetic.
+          · Intra-state GST arrives as CGST 9% + SGST 9% for one 18% supply,
+            which is what a tax document is expected to show anyway.
+
+        If you prefer a single line and your quotes only ever carry one rate,
+        replace the block with:
+            <tr><td>GST {{totals.tax_rate}}%</td><td>{{quote.currency}} {{totals.tax}}</td></tr>
+        {{totals.tax_rate}} is deliberately BLANK when the lines disagree.
       -->
+      {{#tax_groups}}
+      <tr><td>{{name}} {{rate}}%</td><td>{{quote.currency}} {{amount}}</td></tr>
+      {{/tax_groups}}
+
       <tr class="grand"><td>Total</td><td>{{quote.currency}} {{totals.total}}</td></tr>
     </table>
   </div>
@@ -249,10 +301,10 @@
 
   <div class="sign">
     <div class="sign-box">
-      <div class="sign-rule">Authorised signatory<br>{{seller.company}}</div>
+      <div class="sign-rule">Authorised signatory<div class="opt">{{seller.company}}</div></div>
     </div>
   </div>
 
-  <div class="colophon">{{seller.footer}}</div>
+  <div class="colophon opt">{{seller.footer}}</div>
 
 </div>

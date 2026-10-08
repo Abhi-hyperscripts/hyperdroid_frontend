@@ -86,7 +86,19 @@
                 <div class="qts-file-row">
                     <input type="file" id="qtsFile" accept=".html,.htm,text/html" class="form-control">
                     <button type="button" class="btn btn-sm btn-secondary" id="qtsStarter">Start from our template</button>
+                    <!-- A PLAIN ANCHOR, NOT A FETCH-AND-BLOB. The sample is a static
+                         same-origin file, so the download attribute saves it with no
+                         JavaScript at all - which also means it keeps working if this
+                         script throws, and the browser shows its real size and type in
+                         the download shelf. (No backticks in here: this comment sits
+                         inside a template literal, and one terminates the string.) -->
+                    <a class="btn btn-sm btn-secondary"
+                       href="../../quotation-templates/starter.html"
+                       download="quotation-template-sample.html">Download sample</a>
                 </div>
+                <p class="qts-hint">Send the sample to whoever converts your quotation — it is a
+                   working template with every placeholder in it and comments explaining how to
+                   change it.</p>
                 ${pendingHtml ? `
                     <p class="qts-ready">A file is ready to upload
                        (${(new Blob([pendingHtml]).size / 1024).toFixed(1)} KB).</p>` : ''}
@@ -108,6 +120,7 @@
                         <td>${esc(new Date(t.updated_at).toLocaleDateString())}</td>
                         <td class="qts-row-actions">
                             <button type="button" class="btn btn-sm btn-secondary" data-qts="preview">Preview</button>
+                            <button type="button" class="btn btn-sm btn-secondary" data-qts="download">Download</button>
                             ${t.is_active ? '' :
                               '<button type="button" class="btn btn-sm btn-secondary" data-qts="activate">Use this</button>'}
                             <button type="button" class="btn btn-sm btn-danger" data-qts="delete">Delete</button>
@@ -230,6 +243,44 @@
         }
     }
 
+    /**
+     * Download a template that is already uploaded.
+     *
+     * ⭐⭐ WITHOUT THIS THE LOOP ONLY RUNS ONCE. "Preview, fix if something is
+     * broken, upload again" assumes the tenant still has the file — and the
+     * person who needs to fix it is often not the person who uploaded it, weeks
+     * later, on a different machine. The list read omits the html deliberately
+     * (a settings page would ship a megabyte to draw ten rows), so the single
+     * read is fetched on demand here.
+     *
+     * A blob rather than an anchor to the API, because the endpoint answers JSON
+     * with an auth header — a bare <a href> to it would download the wrapper, or
+     * a 401.
+     */
+    async function download(id) {
+        try {
+            const t = await api.request(`/crm/quotation-templates/${encodeURIComponent(id)}`);
+            if (!t || !t.html) { Toast.error('That template has no file to download.'); return; }
+
+            const safe = (t.name || 'quotation-template')
+                .replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase();
+
+            const url = URL.createObjectURL(new Blob([t.html], { type: 'text/html' }));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${safe || 'quotation-template'}.html`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            // Revoked on the next tick: revoking synchronously races the
+            // download in some browsers and silently produces an empty file.
+            setTimeout(() => URL.revokeObjectURL(url), 0);
+        } catch (e) {
+            console.error('Could not download the template:', e);
+            Toast.error(e.message || 'Could not download the template.');
+        }
+    }
+
     async function showPreview(id) {
         try {
             const res = await api.request(
@@ -305,6 +356,7 @@
             const id = row.getAttribute('data-qts-id');
 
             if (e.target.closest('[data-qts="preview"]')) return showPreview(id);
+            if (e.target.closest('[data-qts="download"]')) return download(id);
             if (e.target.closest('[data-qts="activate"]')) return activate(id);
             if (e.target.closest('[data-qts="delete"]')) return remove(id);
         });
