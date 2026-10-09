@@ -747,15 +747,17 @@ const LineItemsPanel = (() => {
                <input type="number" class="lip-f lip-n lip-n-price" data-lip-field="unit_price"
                       step="0.01" min="0" value="${esc(line.unit_price)}"
                       aria-label="Line ${index + 1} unit price"
-                      ${isCatalogue ? `readonly placeholder="—" title="${
-                          // Two states, as the deleted painter had. The generic
-                          // sentence never said the thing that matters: WHY the
-                          // number can change when the quote is saved.
+                      ${isCatalogue ? `placeholder="—" title="${
+                          // ⭐ EDITABLE. This box was readonly on every catalogue line, so a rep could
+                          // set the quantity and nothing else — which makes the e-kart loop pointless:
+                          // a client asks for ten of something and the person whose job is to quote it
+                          // cannot put a number against it. Typing here marks the line overridden and
+                          // the server keeps the figure instead of taking the catalogue's.
                           unanswered
-                              ? 'The client asked for this through the catalogue. It has not been priced yet — saving prices it.'
+                              ? 'The client asked for this through the catalogue and nobody has priced it yet. Type a price, or leave it and saving takes the catalogue\'s.'
                               : line.unit_price === '' || line.unit_price === null || line.unit_price === undefined
-                              ? 'This price comes from the product catalogue'
-                              : 'The catalogue price. If this customer has an agreed rate it replaces this on save.'
+                              ? 'From the product catalogue. Type over it to quote your own price.'
+                              : 'The catalogue price, replaced on save by this customer\'s agreed rate if they have one. Type over it to quote your own price instead.'
                       }"` : ''}>
                <span class="lip-op" aria-hidden="true">=</span>`
             : `<span class="lip-f lip-n lip-n-ro">${esc(line.quantity)}</span>
@@ -773,7 +775,10 @@ const LineItemsPanel = (() => {
             // refreshTotals re-decides from the DOM on every keystroke, so the flag has to
             // live ON the row or the corrected label would be undone by the first edit
             // anywhere in the panel.
-            unanswered ? ' data-lip-awaiting' : ''}>
+            unanswered ? ' data-lip-awaiting' : ''}${
+            // Carried back from the server so a saved override survives a reload: without it the next
+            // save would drop the flag and the catalogue price would quietly reclaim the line.
+            line.price_overridden === true ? ' data-lip-price-overridden' : ''}>
 
             <div class="lip-band">
                 ${isCatalogue ? productThumb(line) : '<span class="lip-thumb-gap" aria-hidden="true"></span>'}
@@ -1296,6 +1301,12 @@ const LineItemsPanel = (() => {
                 description: tr.querySelector('[data-lip-field="description"]')?.value ?? '',
                 quantity: tr.querySelector('[data-lip-field="quantity"]')?.value ?? '',
                 unit_price: tr.querySelector('[data-lip-field="unit_price"]')?.value ?? '',
+                // ⭐ A FLAG, NOT "whatever price arrived". The panel round-trips the price it last
+                // loaded, so if the server honoured every incoming figure, a rep who edited only the
+                // quantity would silently pin that line at its load-time price and it would never pick
+                // up the customer's agreed rate again. This is set only when the human actually typed
+                // in the price box (see the input handler), so it means what it says.
+                price_overridden: tr.hasAttribute('data-lip-price-overridden') || from.price_overridden === true,
                 account_code: tr.querySelector('[data-lip-field="account_code"]')?.value ?? '',
                 // Read back off the ROW. Without this the catalogue link is lost on
                 // save and the line silently becomes free text.
@@ -1446,10 +1457,16 @@ const LineItemsPanel = (() => {
                             quantity: Number(l.quantity),
                             unit_price: Number(l.unit_price),
                             account_code: String(l.account_code || '').trim() || null,
-                            // The server RE-PRICES a line that carries this and
-                            // ignores the unit_price above, so the number on
-                            // screen can never become the number quoted.
+                            // The server re-prices a line that carries this and ignores the unit_price
+                            // above — UNLESS price_overridden says the rep typed the figure themselves.
                             item_id: l.item_id || null,
+                            // ⭐ THIS BODY IS A WHITELIST, AND A FIELD MISSING FROM IT IS A DEAD CONTROL.
+                            // The row carried the override flag, readLines() read it back, the total
+                            // recalculated on screen — and the save dropped it here, so the catalogue
+                            // price silently reclaimed the line. Everything looked right except the
+                            // saved row. Adding a field to the model and the reader is not adding it
+                            // to the request.
+                            price_overridden: l.price_overridden === true,
                         })),
                         // What this screen was showing when it loaded. Omitting
                         // it does not fail — it turns the check off, which is
@@ -2003,6 +2020,26 @@ const LineItemsPanel = (() => {
 
         container.addEventListener('input', (e) => {
             if (e.target.matches('[data-lip-field="quantity"], [data-lip-field="unit_price"]')) {
+                refreshTotals(container);
+            }
+            // ⭐ THE HUMAN TOUCHED THE PRICE. Stamped on the ROW rather than kept in state because
+            // refreshTotals and the save reader both work off the DOM, and because it must survive the
+            // re-renders between here and save. It is what tells the server to keep this figure instead
+            // of taking the catalogue's — and it is set ONLY from a real input event, so a line the rep
+            // never touched still re-prices from Accounts on every save.
+            if (e.target.matches('[data-lip-field="unit_price"]')) {
+                const row = e.target.closest('[data-lip-row]');
+                if (String(e.target.value).trim() !== '') {
+                    row?.setAttribute('data-lip-price-overridden', '');
+                    // No longer waiting for anybody to price it — the rep just did.
+                    row?.removeAttribute('data-lip-awaiting');
+                } else {
+                    // CLEARING THE BOX MEANS "use the catalogue price", not "this costs nothing".
+                    // Leaving the flag set would post an override of 0 and quote the product free —
+                    // and on a catalogue line the blank immediately reads as "on save" again, which
+                    // is exactly what is about to happen.
+                    row?.removeAttribute('data-lip-price-overridden');
+                }
                 refreshTotals(container);
             }
             // Recipient fields are captured as they are typed, for the re-render reason above.
