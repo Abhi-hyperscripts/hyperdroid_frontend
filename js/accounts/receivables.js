@@ -3451,6 +3451,10 @@ async function showSalesOrderForm() {
     document.getElementById('soId').value = '';
     document.getElementById('soBookedBy').value = '';
     document.getElementById('soNotes').value = '';
+    document.getElementById('soBillingAddress').value = '';
+    document.getElementById('soShippingAddress').value = '';
+    document.getElementById('soShipSame').checked = true;
+    _onSoShipSameChange();
     document.getElementById('soLines').innerHTML = '';
     document.getElementById('soStatusBanner').style.display = 'none';
     _setSoReadOnly(false);
@@ -3469,10 +3473,38 @@ async function showSalesOrderForm() {
         id: 'soCustomerSD',
         options: [{ value: '', label: 'Select customer...' },
             ...customers.filter(c => c.is_active !== false).map(c => ({ value: c.id, label: c.name, description: AccountsCommon.customerSearchLine(c) }))],
-        value: '', placeholder: 'Select customer...', searchPlaceholder: 'Search customers…'
+        value: '', placeholder: 'Select customer...', searchPlaceholder: 'Search customers…',
+        onChange: (v) => _fillSoAddressFromCustomer(v)
     });
     addSoLine();
     AccountsCommon.showFormPage('salesOrderModal');
+}
+
+// Billing defaults to the customer's address on file (same order the server uses when it is left blank);
+// shipping follows billing while "Same as billing" is ticked.
+function _customerAddressText(c) {
+    if (!c) return '';
+    return [c.billing_address_line1, c.billing_address_line2, c.city, c.state, c.postal_code, c.country]
+        .map(p => (p || '').trim()).filter(Boolean).join(', ');
+}
+
+function _fillSoAddressFromCustomer(customerId) {
+    const bill = document.getElementById('soBillingAddress');
+    bill.value = _customerAddressText(customers.find(c => c.id === customerId));
+    _syncSoShipping();
+}
+
+function _syncSoShipping() {
+    if (document.getElementById('soShipSame').checked)
+        document.getElementById('soShippingAddress').value = document.getElementById('soBillingAddress').value;
+}
+
+function _onSoShipSameChange() {
+    const same = document.getElementById('soShipSame').checked;
+    const ship = document.getElementById('soShippingAddress');
+    ship.readOnly = same;
+    if (same) _syncSoShipping();
+    else if (ship.value === document.getElementById('soBillingAddress').value) { ship.value = ''; ship.focus(); }
 }
 
 function addSoLine(data = {}) {
@@ -3556,6 +3588,8 @@ async function saveSalesOrder() {
                 expected_date: document.getElementById('soExpected').value || null,
                 booked_by: document.getElementById('soBookedBy').value.trim() || null,
                 notes: document.getElementById('soNotes').value.trim() || null,
+                billing_address: document.getElementById('soBillingAddress').value.trim() || null,
+                shipping_address: document.getElementById('soShippingAddress').value.trim() || null,
                 lines
             })
         });
@@ -3578,6 +3612,9 @@ async function viewSalesOrder(id) {
         document.getElementById('soExpected').value = so.expected_date ? so.expected_date.slice(0, 10) : '';
         document.getElementById('soBookedBy').value = so.booked_by || '';
         document.getElementById('soNotes').value = so.notes || '';
+        document.getElementById('soBillingAddress').value = so.billing_address || '';
+        document.getElementById('soShippingAddress').value = so.shipping_address || '';
+        document.getElementById('soShipSame').checked = (so.shipping_address || '') === (so.billing_address || '');
         soCustomerDD = new SearchableDropdown(document.getElementById('soCustomerDD'), {
             id: 'soCustomerSD', options: [{ value: so.customer_id, label: so.customer_name || 'Customer' }], value: so.customer_id
         });
@@ -3602,7 +3639,7 @@ async function viewSalesOrder(id) {
 
 function _setSoReadOnly(readOnly, so = null) {
     const modal = document.getElementById('salesOrderModal');
-    modal.querySelectorAll('input').forEach(el => { if (el.type !== 'hidden') el.disabled = readOnly; });
+    modal.querySelectorAll('input, textarea').forEach(el => { if (el.type !== 'hidden') el.disabled = readOnly; });
     modal.querySelectorAll('.searchable-dropdown-container').forEach(el => {
         el.style.pointerEvents = readOnly ? 'none' : '';
         el.style.opacity = readOnly ? '0.7' : '';

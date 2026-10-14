@@ -1121,6 +1121,16 @@
                     </div>
                 </div>
                 <div class="form-section">
+                    <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Addresses</div>
+                    <div class="pgrid">
+                        <div class="form-group"><label for="soBillingAddress">Billing Address</label><textarea id="soBillingAddress" class="form-control" oninput="_syncSoShipping()" rows="3" maxlength="500" placeholder="Filled from the customer — edit for this order if needed"></textarea></div>
+                        <div class="form-group"><label for="soShippingAddress">Shipping Address</label><textarea id="soShippingAddress" class="form-control" rows="3" maxlength="500" placeholder="Where the goods are delivered"></textarea>
+                            <label class="checkbox-label" style="display:flex;align-items:center;gap:0.5rem;margin-top:6px;font-weight:normal;"><input type="checkbox" id="soShipSame" onchange="_onSoShipSameChange()"> <span>Same as billing address</span></label>
+                        </div>
+                    </div>
+                    <small class="field-hint" style="display:block;margin-top:6px;">A different shipping address is added to the invoice notes as "Deliver to" when the order is converted.</small>
+                </div>
+                <div class="form-section">
                     <div class="section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Order Lines</div>
                     <div class="po-lines-wrap">
                         <div class="data-table-container po-lines-container">
